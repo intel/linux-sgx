@@ -2,27 +2,27 @@
 
 ## Issues
 
-Specific SGX SDK and PSW design and development issues, bugs, and feature requests are maintained by GitHub Issues.
+GitHub Issues track SGX SDK and PSW design and development issues, bugs, and feature requests.
 
 _Please do not post usage, installation, or other requests for help to Issues._
 Use the [01.org](https://01.org/intel-software-guard-extensions/forum/forum) forum instead. 
 
-When reporting a bug, it's most helpful to provide the following information, where applicable:
+When reporting a bug, please provide the following information, where applicable:
 
-* What are the steps to reproduce the bug?
+* What are the Steps to reproduce the bug?
 * Can you reproduce the bug using the latest [master](https://github.com/01org/linux-sgx/tree/master)?
 * What CPU, platform and operating system/distribution are you running? The more specific, the better.
-* If the bug is a crash, please provide the backtrace (use gdb).
+* Foe crashes, please provide the backtrace (use gdb).
 
 
 ### Contribution Guide
 
 We accept contributions as pull requests on GitHub. More detailed guidelines will be added later. Please follow these simple rules for now: 
 
-* A PR should do one clear thing, and nothing more. Making many smaller PRs is better than making one large PR. This will enable us review your PR more quickly.
+* A PR should have clear purpose, and do one thing only, and nothing more. This will enable us review your PR more quickly.
 * Similarly, each commit should be a small, atomic change representing one step in development. PRs should be made of many commits where appropriate.
-* Please do rewrite PR history to be clean rather than chronological. Within-PR bugfixes, style cleanups, reversions, etc. should be squashed and should not appear in merged PR history.
-* Anything nonobvious from the code should be explained in comments, commit messages, or the PR description, as appropriate.
+* Please do rewrite PR history to be clean. Please squash intermediate steps within PR for bugfixes, style cleanups, reversions, etc., so they would not appear in merged PR history.
+* Please explain anything nonobvious from the code in comments, commit messages, or the PR description, as appropriate.
 
 ### License
 
