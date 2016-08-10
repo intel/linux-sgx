@@ -92,4 +92,4 @@ vpath %.cpp $(COMMON_DIR)/src:\
 
 .PHONY : version
 version:
-	echo "#include \"se_version.h\"\nchar version[] = \"\$$SGXVer: LinuxOpenSource\" STRFILEVER \"\$$\";" > $(LINUX_PSW_DIR)/ae/common/version.cpp
+	echo -e "#include \"se_version.h\"\nchar version[] = \"\$$SGXVer: LinuxOpenSource\" STRFILEVER \"\$$\";" > $(LINUX_PSW_DIR)/ae/common/version.cpp
