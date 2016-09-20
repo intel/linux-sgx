@@ -46,7 +46,7 @@ public:
     virtual int destroy_enclave(sgx_enclave_id_t enclave_id);
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
     bool get_plat_cap(sgx_misc_attribute_t *se_attr);
-    int initialize(sgx_enclave_id_t enclave_id);
+    int initialize(sgx_enclave_id_t enclave_id, uint64_t xfrm);
     bool use_se_hw() const;
 };
 

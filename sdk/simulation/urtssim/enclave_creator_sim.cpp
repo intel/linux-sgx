@@ -177,7 +177,7 @@ int EnclaveCreatorSim::destroy_enclave(sgx_enclave_id_t enclave_id)
     return ::destroy_enclave(enclave_id);
 }
 
-int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
+int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id, uint64_t xfrm)
 {
     CEnclave *enclave = CEnclavePool::instance()->get_enclave(enclave_id);
 
@@ -216,7 +216,9 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
     cpu_sdk_info_t info;
     info.cpu_features = 0;
     get_cpu_features(&info.cpu_features);
-    info.version = SDK_VERSION_1_5;
+    //XCR0 will be loaded from SECS.ATTRIBUTES.XFRM, send XFRM to tRTS so that it is aware of the effective XCR0.
+    info.xfrm = xfrm;
+    info.version = SDK_VERSION_1_6;
     status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
     //free the tcs used by initialization;
     enclave->get_thread_pool()->reset();
