@@ -45,7 +45,7 @@ bool EnclaveCreatorHW::use_se_hw() const
     return true;
 }
 
-int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
+int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id, uint64_t xfrm)
 {
     cpu_sdk_info_t info;
 
@@ -57,7 +57,9 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
     //Since CPUID instruction is NOT supported within enclave, we enumerate the cpu features here and send to tRTS.
     info.cpu_features = 0;
     get_cpu_features(&info.cpu_features);
-    info.version = SDK_VERSION_1_5;
+    //XCR0 will be loaded from SECS.ATTRIBUTES.XFRM, send XFRM to tRTS so that it is aware of the effective XCR0.
+    info.xfrm = xfrm;
+    info.version = SDK_VERSION_1_6;
 
     int status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
     //free the tcs used by initialization;

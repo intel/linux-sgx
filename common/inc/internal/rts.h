@@ -60,6 +60,7 @@ typedef struct _ocall_context_t
 typedef enum
 {
     SDK_VERSION_1_5,
+    SDK_VERSION_1_6,
     SDK_VERSION_2_0
 } sdk_version_t;
 
@@ -67,6 +68,7 @@ typedef struct _cpu_feature_sdk_version
 {
     uint64_t cpu_features;
     sdk_version_t version;
+    uint64_t xfrm;
 }cpu_sdk_info_t;
 
 #define     OCALL_FLAG        0x4F434944

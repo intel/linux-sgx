@@ -249,9 +249,9 @@ bool EnclaveCreatorST::get_plat_cap(sgx_misc_attribute_t *se_attr)
     return false;
 }
 
-int EnclaveCreatorST::initialize(sgx_enclave_id_t enclave_id)
+int EnclaveCreatorST::initialize(sgx_enclave_id_t enclave_id, uint64_t xfrm)
 {
-    UNUSED(enclave_id);
+    UNUSED(enclave_id), UNUSED(xfrm);
     return SGX_SUCCESS;
 }
 

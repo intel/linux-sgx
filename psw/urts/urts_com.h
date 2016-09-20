@@ -244,7 +244,7 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
 
 
     //call trts to do some intialization
-    if(SGX_SUCCESS != (ret = get_enclave_creator()->initialize(loader.get_enclave_id())))
+    if(SGX_SUCCESS != (ret = get_enclave_creator()->initialize(loader.get_enclave_id(), loader.get_secs().attributes.xfrm)))
     {
         sgx_status_t status = SGX_SUCCESS;
         CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
