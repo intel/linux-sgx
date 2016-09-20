@@ -171,7 +171,7 @@ int CLoader::build_mem_region(const section_info_t * const sec_info)
     {
         size_t size = (size_t)(ROUND_TO_PAGE(sec_info->virtual_size) - ROUND_TO_PAGE(sec_info->raw_data_size));
         sinfo.flags = sec_info->flag;
-        if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
+        if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_PAGE_ONLY)))
             return ret;
     }
 
