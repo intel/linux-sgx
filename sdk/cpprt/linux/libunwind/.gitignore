@@ -1,0 +1,30 @@
+libtool
+
+#libtool static library
+*.la
+
+#libtool shared object
+*.lo
+
+*.dirstamp
+.deps/
+.libs/
+
+INSTALL
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache/
+config.log
+config.status
+config/
+configure
+include/config.h
+include/config.h.in
+include/libunwind-common.h
+include/libunwind.h
+include/pthread_compat.h
+include/stamp-h1
+include/tdep/libunwind_i.h
+src/Makefile
+src/Makefile.in

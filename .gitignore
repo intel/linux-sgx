@@ -8,6 +8,9 @@
 *.so
 *.so.*
 
+#map files
+*.map
+
 #generated proxy
 *_u.c
 *_u.h
@@ -15,5 +18,27 @@
 *_t.h
 
 #output files
+output/
 /build/
+/sdk/edger8r/linux/_build/
+
+#installer files
 /linux/installer/bin/*.bin
+/linux/installer/common/sdk/pkgconfig/x86/
+/linux/installer/common/sdk/pkgconfig/x64/
+/linux/installer/common/psw/gen_source.py
+/linux/installer/common/sdk/gen_source.py
+
+#AESM generated files
+/psw/ae/aesm_service/aesm_service
+/psw/ae/aesm_service/data/
+/psw/ae/aesm_service/source/protobuf/messages.pb.cc
+/psw/ae/aesm_service/source/protobuf/messages.pb.h
+/psw/ae/aesm_service/source/protobuf/messages.proto
+/psw/ae/common/proto/messages.pb.cc
+/psw/ae/common/proto/messages.pb.h
+/psw/ae/common/version.cpp
+
+#misc executables
+/sdk/sign_tool/SignTool/sgx_sign
+/sdk/simulation/SEConfigureCPUSVN/linux/sgx_config_cpusvn
