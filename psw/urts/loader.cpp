@@ -182,32 +182,41 @@ int CLoader::build_sections(vector<uint8_t> *bitmap)
 {
     int ret = SGX_SUCCESS;
     std::vector<Section*> sections = m_parser.get_sections();
-    uint64_t max_rva =0;
     Section* last_section = NULL;
+
+    // Return now if there are no sections to process.
+    if (sections.empty())
+        return SGX_SUCCESS;
+
+    // Sort the sections by ascending rva, this allows for the easy insertion of
+    // guard pages between sections.
+    sort(sections.begin(), sections.end(),
+        [](const Section * a, const Section * b) -> bool
+    {
+        return a->get_rva() < b->get_rva();
+    });
 
     for(unsigned int i = 0; i < sections.size() ; i++)
     {
-        
-        
-        
+        // If this is not the first section, attempt to insert a guard page at
+        // the end of the last section.  A guard page can be inserted if there
+        // is at least one unused page between the last section and this section.
+        // Sections are sorted by ascending address, so we don't need to do any
+        // fancy tracking to detect unused pages, simply compare the end of the
+        // last section (rounded up) to the start of this section (rounded down).
         if((last_section != NULL) &&
-           (ROUND_TO_PAGE(last_section->virtual_size() + last_section->get_rva()) < ROUND_TO_PAGE(ROUND_TO_PAGE(last_section->virtual_size()) + last_section->get_rva())) &&
-           (ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size()) < (sections[i]->get_rva() & (~(SE_PAGE_SIZE - 1)))))
+           (ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size()) < TRIM_TO_PAGE(sections[i]->get_rva())))
         {
-            size_t size = SE_PAGE_SIZE;
+            // sinfo.flags is intentionally left as '0', the guard page should
+            // not be accessible, i.e. not readable, writable or executable.
             sec_info_t sinfo;
             memset(&sinfo, 0, sizeof(sinfo));
-            sinfo.flags = last_section->get_si_flags();
             uint64_t rva = ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size());
-            if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
+            if(SGX_SUCCESS != (ret = build_pages(rva, SE_PAGE_SIZE, 0, sinfo, ADD_EXTEND_PAGE)))
                 return ret;
         }
+        last_section = sections[i];
 
-        if(sections[i]->get_rva() > max_rva) 
-        {
-            max_rva = sections[i]->get_rva();
-            last_section = sections[i];
-        }
         //since build_mem_region require the sec_info.rva be page aligned, we need handle the first page.
         //build the first page;
         uint64_t offset = (sections[i]->get_rva() & (SE_PAGE_SIZE -1));
@@ -243,21 +252,13 @@ int CLoader::build_sections(vector<uint8_t> *bitmap)
         }
        
     }
-    
-    
-    
-    
-    if((last_section != NULL) &&
-       (ROUND_TO_PAGE(last_section->virtual_size() + last_section->get_rva()) < ROUND_TO_PAGE(ROUND_TO_PAGE(last_section->virtual_size()) + last_section->get_rva())))
-    {
-        size_t size = SE_PAGE_SIZE;
-        sec_info_t sinfo;
-        memset(&sinfo, 0, sizeof(sinfo));
-        sinfo.flags = last_section->get_si_flags();
-        uint64_t rva = ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size());
-        if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
-            return ret;
-    }
+
+    // Unconditionally add a guard page after the last section.
+    sec_info_t sinfo;
+    memset(&sinfo, 0, sizeof(sinfo));
+    uint64_t rva = ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size());
+    if(SGX_SUCCESS != (ret = build_pages(rva, SE_PAGE_SIZE, 0, sinfo, ADD_EXTEND_PAGE)))
+        return ret;
 
     return SGX_SUCCESS;
 }
