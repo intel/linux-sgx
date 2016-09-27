@@ -414,6 +414,36 @@ bool get_meta_property(const uint8_t *start_addr, const ElfW(Ehdr) *elf_hdr, uin
     return true;
 }
 
+bool get_unmeasured_section(const ElfW(Ehdr) *elf_hdr, uint64_t &unmeasured_address, uint64_t &unmeasured_size)
+{
+    unmeasured_address = 0;
+    unmeasured_size = 0;
+
+    const ElfW(Shdr)* shdr = get_section_by_name(elf_hdr, ".sgx.unmeasured");
+    if (shdr == NULL)
+    {
+        return true;
+    }
+
+    if (shdr->sh_addralign != SE_PAGE_SIZE)
+    {
+        SE_TRACE_ERROR("ERROR: The '.sgx.unmeasured' section must be aligned to a SE page boundary\n");
+        return false;
+    }
+    if ((shdr->sh_size % SE_PAGE_SIZE) != 0)
+    {
+        SE_TRACE_ERROR("ERROR: The '.sgx.unmeasured' section size must be a multiple of SE page size\n");
+        return false;
+    }
+
+    unmeasured_address = shdr->sh_addr;
+    unmeasured_size = shdr->sh_size;
+
+    SE_TRACE_NOTICE("Found '.sgx.unmeasured' section: addr = %lx, size = %lx\n", unmeasured_address, unmeasured_size);
+
+    return true;
+}
+
 bool validate_segment(const ElfW(Ehdr) *elf_hdr, uint64_t len)
 {
     const ElfW(Phdr) *prg_hdr = GET_PTR(ElfW(Phdr), elf_hdr, elf_hdr->e_phoff);
@@ -511,14 +541,20 @@ bool build_regular_sections(const uint8_t* start_addr,
                             vector<Section *>& sections,
                             const Section*& tls_sec,
                             uint64_t& metadata_offset,
-                            uint64_t& metadata_block_size)
+                            uint64_t& metadata_block_size,
+                            uint64_t& unmeasured_address,
+                            uint64_t& unmeasured_size)
 {
     const ElfW(Ehdr) *elf_hdr = (const ElfW(Ehdr) *)start_addr;
     const ElfW(Phdr) *prg_hdr = GET_PTR(ElfW(Phdr), start_addr, elf_hdr->e_phoff);
-    uint64_t virtual_size = 0, alignment = 0, aligned_virtual_size = 0;
+    uint64_t virtual_size = 0, alignment = 0, aligned_virtual_size = 0, unmeasured_end = 0;
 
     if (get_meta_property(start_addr, elf_hdr, metadata_offset, metadata_block_size) == false)
         return false;
+
+    if (get_unmeasured_section(elf_hdr, unmeasured_address, unmeasured_size) == false)
+        return false;
+    unmeasured_end = unmeasured_address + unmeasured_size;
 
     for (unsigned idx = 0; idx < elf_hdr->e_phnum; ++idx, ++prg_hdr)
     {
@@ -553,6 +589,14 @@ bool build_regular_sections(const uint8_t* start_addr,
 
         if (sec == NULL)
             return false;
+
+        if (unmeasured_size > 0 &&
+            ((sec->get_rva() >= unmeasured_address && sec->get_rva() < unmeasured_end) ||
+            ((sec->get_rva() + sec->raw_data_size() - 1) >= unmeasured_address && (sec->get_rva() + sec->raw_data_size() - 1) < unmeasured_end)))
+        {
+            SE_TRACE_ERROR("ERROR: The '.sgx.unmeasured' section is not allowed to contain initialized data.\n");
+            return false;
+        }
 
         /* We've filtered segments that are not of PT_LOAD or PT_TLS type. */
         if (!is_tls_segment(prg_hdr))
@@ -589,7 +633,8 @@ const Section* get_max_rva_section(const vector<Section*> sections)
 
 ElfParser::ElfParser (const uint8_t* start_addr, uint64_t len)
     :m_start_addr(start_addr), m_len(len), m_bin_fmt(BF_UNKNOWN),
-     m_tls_section(NULL), m_metadata_offset(0), m_metadata_block_size(0)
+     m_tls_section(NULL), m_metadata_offset(0), m_metadata_block_size(0),
+     m_unmeasured_address(0), m_unmeasured_size(0)
 {
     memset(&m_dyn_info, 0, sizeof(m_dyn_info));
 }
@@ -635,7 +680,7 @@ sgx_status_t ElfParser::run_parser()
         return SGX_ERROR_INVALID_ENCLAVE;
 
     /* build regular sections */
-    if (build_regular_sections(m_start_addr, m_sections, m_tls_section, m_metadata_offset, m_metadata_block_size))
+    if (build_regular_sections(m_start_addr, m_sections, m_tls_section, m_metadata_offset, m_metadata_block_size, m_unmeasured_address, m_unmeasured_size))
         return SGX_SUCCESS;
     else
         return SGX_ERROR_INVALID_ENCLAVE;
@@ -670,6 +715,15 @@ uint64_t ElfParser::get_metadata_block_size() const
     return m_metadata_block_size;
 }
 
+uint64_t ElfParser::get_unmeasured_address() const
+{
+    return m_unmeasured_address;
+}
+
+uint64_t ElfParser::get_unmeasured_size() const
+{
+    return m_unmeasured_size;
+}
 
 const uint8_t* ElfParser::get_start_addr() const
 {

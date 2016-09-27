@@ -171,6 +171,34 @@ int CLoader::build_mem_region(const section_info_t * const sec_info)
     {
         size_t size = (size_t)(ROUND_TO_PAGE(sec_info->virtual_size) - ROUND_TO_PAGE(sec_info->raw_data_size));
         sinfo.flags = sec_info->flag;
+
+        // Pages that contain **only** uninitialized data may be part of the
+        // .sgx.unmeasured section, in which case they build with ADD_PAGE_ONLY.
+        // If the application defined an unmeasured section and this section
+        // overlaps the unmeasured section, then we need to split this section
+        // and make multiple calls to build_pages.
+        uint64_t unmeasured_size = m_parser.get_unmeasured_size();
+        uint64_t unmeasured_start = m_parser.get_unmeasured_address();
+        uint64_t unmeasured_end = unmeasured_start + unmeasured_size;
+        if (unmeasured_size > 0 &&
+            ((rva >= unmeasured_start && rva < unmeasured_end) || ((rva + size - 1) >= unmeasured_start && (rva + size - 1) < unmeasured_end)))
+        {
+            // It should be impossible for any section to straddle multiple segments.
+            assert(unmeasured_end <= (rva + size));
+
+            // Build pages for any uninitialized data preceding the unmeasured section.
+            // No need to check for a zero size, build_pages does that for us.
+            if(SGX_SUCCESS != (ret = build_pages(rva, unmeasured_start - rva, 0, sinfo, ADD_EXTEND_PAGE)))
+                return ret;
+
+            if(SGX_SUCCESS != (ret = build_pages(unmeasured_start, unmeasured_size, 0, sinfo, ADD_PAGE_ONLY)))
+                return ret;
+
+            // Update the modified rva and size to point to the end of the unmeasured section.
+            size = size - (unmeasured_start - rva) - unmeasured_size;
+            rva = unmeasured_end;
+        }
+
         if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
             return ret;
     }

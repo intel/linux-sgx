@@ -51,4 +51,7 @@
 
 #define SGX_NOCONVENTION /* Empty.  No calling convention specified. */
 
+#define __unmeasured __attribute__((__section__(".sgx.unmeasured, \"wa\", @nobits#")))
+#define __unmeasured_aligned __unmeasured __attribute__((aligned(0x1000)))
+
 #endif /* !_SGX_DEFS_H_ */

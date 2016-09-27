@@ -74,6 +74,10 @@ public:
 
     virtual uint64_t get_metadata_block_size() const = 0;
 
+    virtual uint64_t get_unmeasured_address() const = 0;
+
+    virtual uint64_t get_unmeasured_size() const = 0;
+
     virtual const uint8_t* get_start_addr() const = 0;
 
     // Get a vector of sections to be loaded

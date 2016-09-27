@@ -59,6 +59,10 @@ public:
 
     uint64_t get_metadata_block_size() const;
 
+    uint64_t get_unmeasured_address() const;
+
+    uint64_t get_unmeasured_size() const;
+
     const uint8_t* get_start_addr() const;
 
     // The `section' here is a section in PE's concept.
@@ -96,6 +100,8 @@ private:
     const Section*      m_tls_section;
     uint64_t            m_metadata_offset;
     uint64_t            m_metadata_block_size;/*multiple metadata block size*/
+    uint64_t            m_unmeasured_address;
+    uint64_t            m_unmeasured_size;
 
     ElfW(Dyn)           m_dyn_info[DT_NUM + DT_ADDRNUM];
 
