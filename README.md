@@ -41,7 +41,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 ```
 - Use the following command to install additional required tools to build Intel(R) SGX PSW:  
 ```
-  $ sudo apt-get install libcurl4-openssl-dev protobuf-compiler protobuf-c-compiler libprotobuf-dev libprotobuf-c0-dev
+  $ sudo apt-get install libcurl4-openssl-dev protobuf-compiler protobuf-c-compiler libprotobuf-dev libprotobuf-c0-dev libssl-dev
 ```
 - Use the script `download_prebuilt.sh` inside source code package to download prebuilt binaries to prebuilt folder  
   You may need set https proxy for wget tool used by the script (such as `export https_proxy=http://test-proxy:test-port`)  
@@ -129,7 +129,7 @@ Install Intel(R) SGX PSW
   See the topic, Build and Install the Intel(R) SGX Driver, on how to install the SGX driver.
 - Install the library using the following command:  
 ```
-  $ sudo apt-get install libcurl4-openssl-dev libprotobuf-dev libprotobuf-c0-dev
+  $ sudo apt-get install libcurl4-openssl-dev libprotobuf-dev libprotobuf-c0-dev libssl-dev
 ```
 
 ###Install Intel(R) SGX PSW
