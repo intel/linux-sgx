@@ -614,27 +614,24 @@ void* CMetadata::get_rawdata_by_rva(uint64_t rva)
 uint64_t CMetadata::calculate_sections_size()
 {
     std::vector<Section*> sections = m_parser->get_sections();
-    uint64_t max_rva = 0;
     Section *last_section = NULL;
 
     for(unsigned int i = 0; i < sections.size() ; i++)
     {
-        if(sections[i]->get_rva() > max_rva) {
-            max_rva = sections[i]->get_rva();
+        if(last_section == NULL || sections[i]->get_rva() > last_section->get_rva()) {
             last_section = sections[i];
         }
     }
 
-    uint64_t size = (NULL == last_section) ? (0) : (last_section->get_rva() + last_section->virtual_size());
-    size = ROUND_TO_PAGE(size);
-    
-    
-    
-    if(size < ROUND_TO_PAGE(last_section->get_rva() + ROUND_TO_PAGE(last_section->virtual_size())))
+    // If last_section is valid, i.e. there is at least one section, then the
+    // effective size of the enclave's loaded sections is the relative address
+    // of the end of the last section (rounded up to the next page boundary),
+    // plus an additional page to account for the final guard page.
+    uint64_t size = 0;
+    if (NULL != last_section)
     {
-        size += SE_PAGE_SIZE;
-    }    
-
+        size = ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size()) + SE_PAGE_SIZE;
+    }
     return size;
 }
 
