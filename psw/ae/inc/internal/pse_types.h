@@ -101,7 +101,7 @@ typedef struct _pse_dh_msg3_t
 #define MC_POLICY_ENCLAVE 0x2
 
 #define PAYLOAD_IV_SIZE   12
-typedef struct _pse_msssage_t
+typedef struct _pse_message_t
 {
     uint32_t session_id;
     uint32_t exp_resp_size;                      /* 0: response message*/
