@@ -1,0 +1,37 @@
+// -*- C++ -*-
+//===--------------------------- sgx_support ------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef _LIBCPP_SGX_SUPPORT
+#define _LIBCPP_SGX_SUPPORT
+
+#include <__config>
+
+#if defined(_LIBCPP_MSVC)
+
+// Returns the number of trailing 0-bits in x, starting at the least significant
+// bit position. If x is 0, the result is undefined.
+int __builtin_ctzll(unsigned long long mask);
+
+int __builtin_ctzl(unsigned long mask);
+
+int __builtin_ctz(unsigned int mask);
+
+// Returns the number of leading 0-bits in x, starting at the most significant
+// bit position. If x is 0, the result is undefined.
+int __builtin_clzll(unsigned long long mask);
+
+int __builtin_clzl(unsigned long mask);
+
+int __builtin_clz(unsigned int x);
+
+
+#endif // _LIBCPP_MSVC
+
+#endif //_LIBCPP_SGX_SUPPORT

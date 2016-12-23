@@ -19,6 +19,11 @@ Contributing
 -------
 See CONTRIBUTING.md for details.
 
+What's New
+----------
+Added pre-release libc++ to enable C++11 inside the enclave.
+See sdk/tlibcxx/README.sgx for details.
+
 Documentation
 -------------
 - [Intel(R) SGX for Linux\* OS][1] project home page on [01.org](https://01.org)

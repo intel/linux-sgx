@@ -34,6 +34,7 @@
 #  - Trusted libraries
 #        - tstdc:         libsgx_tstdc.a
 #        - tstdcxx:       libsgx_tstdcxx.a
+#        - tcxx:          libsgx_tcxx.a
 #        - tservice:      libsgx_tservice.a
 #        - trts:          libsgx_trts.a
 #        - tcrypto:       libsgx_tcrypto.a
@@ -53,10 +54,11 @@ include ../buildenv.mk
 
 LIBTLIBC   := $(BUILD_DIR)/libsgx_tstdc.a
 LIBTLIBCXX := $(BUILD_DIR)/libsgx_tstdcxx.a
+LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: all
-all: tstdc tstdcxx tservice trts tcrypto tkey_exchange ukey_exchange ptrace sample_crypto simulation signtool edger8r tsetjmp
+all: tstdc tstdcxx tcxx tservice trts tcrypto tkey_exchange ukey_exchange ptrace sample_crypto simulation signtool edger8r tsetjmp
 
 # ---------------------------------------------------
 #  tstdc
@@ -118,6 +120,26 @@ cpprt:
 tlibstdcxx: $(BUILD_DIR)
 	$(MAKE) -C tlibstdcxx/ 2> /dev/null
 	$(CP) tlibstdcxx/README.sgx $(BUILD_DIR)/STLport_Changes_SGX.txt
+
+# ---------------------------------------------------
+#  tcxx
+#      includes: cpprt, tlibcxx
+# ---------------------------------------------------
+.PHONY: tcxx
+tcxx: $(LIBTCXX)
+
+$(LIBTCXX): cpprt tlibcxx
+	@$(MKDIR) $(BUILD_DIR)/.cpprt   $(BUILD_DIR)/.tlibcxx
+	@$(RM) -f $(BUILD_DIR)/.cpprt/* $(BUILD_DIR)/.tlibcxx/*
+	@cd $(BUILD_DIR)/.cpprt      && $(AR) x $(LINUX_SDK_DIR)/cpprt/libcpprt.a
+	@cd $(BUILD_DIR)/.tlibcxx    && $(AR) x $(LINUX_SDK_DIR)/tlibcxx/libcxx.a
+	$(AR) rcsD $@ $(BUILD_DIR)/.cpprt/*.o $(BUILD_DIR)/.tlibcxx/*.o
+	@$(RM) -rf   $(BUILD_DIR)/.cpprt     $(BUILD_DIR)/.tlibcxx
+
+.PHONY: tlibcxx
+tlibcxx: $(BUILD_DIR)
+	$(MAKE) -C tlibcxx/ 2> /dev/null
+	$(CP) tlibcxx/README.sgx $(BUILD_DIR)/libc++_Changes_SGX.txt
 
 # ---------------------------------------------------
 #  tse
@@ -209,6 +231,7 @@ clean:
 	$(MAKE) -C compiler-rt/                        clean
 	$(MAKE) -C cpprt                               clean
 	$(MAKE) -C tlibstdcxx/                         clean
+	$(MAKE) -C tlibcxx/                            clean
 	$(MAKE) -C tseal/linux/                        clean
 	$(MAKE) -C selib/linux/                        clean
 	$(MAKE) -C tae_service/                        clean
@@ -224,4 +247,4 @@ clean:
 	$(MAKE) -C edger8r/linux                       clean
 	@$(RM) $(LIBTLIBC) $(LIBTLIBCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/STLport_Changes_SGX.txt
-
+	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt

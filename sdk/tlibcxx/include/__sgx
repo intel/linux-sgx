@@ -1,0 +1,310 @@
+/**
+ *
+ * INTEL CONFIDENTIAL
+ * Copyright(c) 2011-2016 Intel Corporation All Rights Reserved.
+ *
+ * The source code contained or described herein and all documents related to
+ * the source code ("Material") are owned by Intel Corporation or its suppliers
+ * or licensors. Title to the Material remains with Intel Corporation or its
+ * suppliers and licensors. The Material contains trade secrets and proprietary
+ * and confidential information of Intel or its suppliers and licensors. The
+ * Material is protected by worldwide copyright and trade secret laws and treaty
+ * provisions. No part of the Material may be used, copied, reproduced, modified,
+ * published, uploaded, posted, transmitted, distributed, or disclosed in any
+ * way without Intel's prior express written permission.
+ *
+ * No license under any patent, copyright, trade secret or other intellectual
+ * property right is granted to or conferred upon you by disclosure or delivery
+ * of the Materials, either expressly, by implication, inducement, estoppel or
+ * otherwise. Any license under such intellectual property rights must be
+ * express and approved by Intel(R) in writing.
+ *
+ */
+
+#ifndef __LIBCPP_SGX
+#define __LIBCPP_SGX
+
+
+// Note: ICC16 compiler predefines the following (which are usually defined by VS compiler)
+// _WIN32
+// _MSC_VER && _MSC_VER >= 1400
+
+// Note: The following defines will have different meaning
+// _LIBCPP_MSVC - Using ICC 16 C++ compiler
+// _LIBCPP_MSVCRT - Using SGX cpprt runtime library
+
+/*
+ * libc++ configuration file specific to SGX SDK
+ * It is internal libc++ header - DO NOT include it directly 
+ */
+
+#ifndef UNREFERENCED_PARAMETER
+#    define UNREFERENCED_PARAMETER(P) (P)
+#endif //UNREFERENCED_PARAMETER
+
+// SECTION 1: NEW DEFINES SPECIFIC TO SGX
+
+#define _LIBCPP_SGX_CONFIG
+
+/* No I/O operations that involve OCALLs allowed */
+#define _LIBCPP_SGX_NO_IOSTREAMS
+
+// Intel Compiler 
+#define _LIBCPP_ICC
+
+// Define to replace usage of __cplusplus 
+// The compiler sets this to latest standard it supports although we want code using
+// this to conform to C++11 not C++14 or later.
+// More specific we should not compile code under __cplusplus > 201103L.
+// Code under __cplusplus >= 201103L is fine.
+#define sgx__cplusplus 201103L
+// We need to make sure that where __cplusplus is used in defines it always goes to path for 
+// #define __cplusplus 201103L because it might be defined to something higher.
+
+// Set SGX platform specifics
+#if defined(__INTEL_COMPILER) || defined(_MSC_VER) //compile with ICC or VS
+#    if defined _M_IX86
+#        define _LIBCPP_SGX_I386 _M_IX86
+#    endif
+#    if defined _M_X64
+#        define _LIBCPP_SGX_X86_64 _M_X64
+#    endif
+#endif
+
+// This is defined in case MS VS compiler has been detected
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER)
+#    define _LIBCPP_SGX_MSVS_COMPILER
+#endif //_MSC_VER
+
+// Set SGX specific endianess below
+#include <sys/endian.h>
+#ifdef _LIBCPP_LITTLE_ENDIAN
+#undef _LIBCPP_LITTLE_ENDIAN
+#endif // _LIBCPP_LITTLE_ENDIAN
+#ifdef _LIBCPP_BIG_ENDIAN
+#undef _LIBCPP_BIG_ENDIAN
+#endif //_LIBCPP_BIG_ENDIAN
+#if _BYTE_ORDER == _LITTLE_ENDIAN
+#    define _LIBCPP_LITTLE_ENDIAN 1
+#    define _LIBCPP_BIG_ENDIAN    0
+#else  // _BYTE_ORDER == _LITTLE_ENDIAN
+#    define _LIBCPP_LITTLE_ENDIAN 0
+#    define _LIBCPP_BIG_ENDIAN    1
+#endif  // _BYTE_ORDER == _LITTLE_ENDIAN
+
+// Use sgx assert
+#include <assert.h>
+#if defined(_LIBCPP_ASSERT)
+#undef _LIBCPP_ASSERT
+#endif // _LIBCPP_ASSERT
+#define _LIBCPP_ASSERT(x, m)  (assert(x))
+
+// RTTI comes from cpprt. Undefine NO_RTTI
+#if defined(_LIBCPP_NO_RTTI)
+#undef _LIBCPP_NO_RTTI
+#endif // _LIBCPP_NO_RTTI
+
+// SECTION 2: DISABLE CLANG'S BUILTINs BELOW
+
+/* Disable clang's builtins because ICC16 doesn't support them */
+#if defined(__has_attribute)
+#undef __has_attribute
+#endif
+#define __has_attribute(__x) 0
+
+#if defined(__has_builtin)
+#undef __has_builtin
+#endif 
+#define __has_builtin(__x) 0
+
+#if defined(__has_extension)
+#undef __has_extension
+#endif
+#define __has_extension(__x) 0
+
+#if defined(__has_feature)
+#undef __has_feature
+#endif
+#define __has_feature(x) 0
+
+#if defined(__is_identifier)
+#undef __is_identifier
+#endif
+#define __is_identifier(__x)  1
+
+// Platform specific?
+GCC_MESSAGE("Platform check")
+
+#if defined(_MSC_VER)
+GCC_MESSAGE("_MSC_VER defined")
+
+/////////////
+// SECTION 3: UNDEF VARIOUS LIBC++ DEFINES FOR SUPPORTED FEATURES
+/////////////
+#undef _LIBCPP_HAS_NO_TEMPLATE_ALIASES
+#undef _LIBCPP_HAS_NO_CONSTEXPR
+#undef _LIBCPP_HAS_NO_UNICODE_CHARS
+#undef _LIBCPP_HAS_NO_DELETED_FUNCTIONS
+#undef _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
+#undef _LIBCPP_HAS_NO_VARIADICS
+#undef _LIBCPP_HAS_NO_ADVANCED_SFINAE
+#undef _LIBCPP_HAS_NO_VARIABLE_TEMPLATES
+#undef _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
+#undef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#undef _LIBCPP_HAS_QUICK_EXIT
+#undef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#undef _LIBCPP_NO_EXCEPTIONS
+
+#undef _LIBCPP_DEBUG
+
+#undef _LIBCPP_USING_WIN32_RANDOM  // WIN32
+#define _LIBCPP_USING_SGX_RANDOM
+
+// Current goal is to support C++11 so define the version accordingly.
+// Libc++ also supports 14 and beyond. 
+#define _LIBCPP_STD_VER 11
+
+/////////////
+// SECTION 4: DEFINE VARIOUS LIBC++ DEFINES TO CUSTOMIZE USAGE FOR SGX AND ICC16
+/////////////
+#define _LIBCPP_HAS_NO_BUILTIN_OPERATOR_NEW_DELETE
+
+#define _LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER
+#define _LIBCPP_HAS_NO_CXX14_CONSTEXPR
+
+#define __alignof__ __alignof
+#define _LIBCPP_NORETURN __declspec(noreturn)
+#define _ALIGNAS_TYPE(x) alignas(x)
+#define _ALIGNAS(x) __declspec(align(x))
+#define _LIBCPP_UNUSED
+
+#define _LIBCPP_UNDERLYING_TYPE(T) __underlying_type(T)
+#define _LIBCPP_IS_LITERAL(T) __is_literal_type(T)
+
+#define _LIBCPP_HAS_IS_FINAL
+#define _LIBCPP_HAS_NO_THREADS
+#define _LIBCPP_HAS_NO_STDIN
+#define _LIBCPP_HAS_NO_STDOUT
+#define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
+
+#define _LIBCPP_BUILDING_SYSTEM_ERROR
+
+#define _NOEXCEPT noexcept
+#define _NOEXCEPT_(x) noexcept(x)
+#define _NOEXCEPT_OR_FALSE(x) noexcept(x)
+
+#define _LIBCPP_BEGIN_NAMESPACE_STD namespace std {
+#define _LIBCPP_END_NAMESPACE_STD  }
+#define _VSTD std
+
+#  define _LIBCPP_WEAK
+namespace std {
+}
+
+#define _LIBCPP_HAS_NO_ASAN
+
+#if defined _LIBCPP_SGX_I386
+#    define __SIZEOF_SIZE_T__ 4
+#elif defined _LIBCPP_SGX_X86_64
+#    define __SIZEOF_SIZE_T__ 8
+#endif
+
+#undef _LIBCPP_SGX_HAS_NO_THREADS
+#undef _LIBCPP_SGX_HAS_NO_ATOMIC
+
+/////////////
+// SECTION 5: SGX specific defines which replace __has_feature(cxx_something)
+/////////////
+// All below are supported by Intel Compiler in SGX
+#define _LIBCPP_SGX_HAS_CXX_NOEXCEPT // __has_feature(cxx_noexcept)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_UNION // __has_feature(is_union)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_CLASS // __has_feature(is_class)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_ENUM //__has_feature(is_enum)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_CONVERTIBLE_TO  // __has_feature(is_convertible_to)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_EMPTY __has_feature(is_empty)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_POLYMORPHIC //__has_feature(is_polymorphic)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_TRIVIAL // __has_feature(__is_trivial)
+#define _LIBCPP_SGX_HAS_TRAIT_HAS_VIRTUAL_DESTRUCTOR //__has_feature(has_virtual_destructor)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_TRIVIALLY_COPYABLE // __has_feature(is_trivially_copyable)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_TRIVIALLY_CONSTRUCTIBLE //__has_feature(is_trivially_constructible)
+#define _LIBCPP_SGX_HAS_TRAIT_HAS_TRIVIAL_CONSTRUCTOR //__has_feature(has_trivial_constructor)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_TRIVIALLY_ASSIGNABLE // __has_feature(is_trivially_assignable)
+#define _LIBCPP_SGX_HAS_TRAIT_HAS_TRIVIAL_DESTRUCTOR //__has_feature(has_trivial_destructor) 
+#define _LIBCPP_SGX_HAS_TRAIT_IS_DESTRUCTIBLE
+#define _LIBCPP_SGX_HAS_TRAIT_IS_CONSTRUCTIBLE // __has_feature(is_constructible)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_NOTHROW_CONSTRUCTIBLE  // __has_feature(is_nothrow_constructible)
+#define _LIBCPP_SGX_HAS_TRAIT_HAS_NOTHROW_CONSTRUCTOR //__has_feature(has_nothrow_constructor)
+#define _LIBCPP_SGX_HAS_TRAIT_HAS_NOTHROW_COPY //__has_feature(has_nothrow_copy)
+#define _LIBCPP_SGX_HAS_TRAIT_HAS_NOTHROW_ASSIGN //__has_feature(has_nothrow_assign) 
+#define _LIBCPP_SGX_HAS_TRAIT_IS_POD //__has_feature(is_pod)
+#define _LIBCPP_SGX_HAS_TRAIT_IS_STANDARD_LAYOUT //__has_feature(is_standard_layout) 
+#define _LIBCPP_SGX_HAS_CXX_REFERENCE_QUALIFIED_FUNCTIONS //__has_feature(cxx_reference_qualified_functions) 
+#define _LIBCPP_SGX_HAS_CXX_ATOMIC //__has_feature(cxx_atomic)
+#define _LIBCPP_SGX_HAS_CXX_STRONG_ENUMS //__has_feature(cxx_strong_enums)
+#define _LIBCPP_SGX_HAS_CXX_ACCESS_CONTROL_SFINAE //__has_feature(cxx_access_control_sfinae)
+#undef _LIBCPP_SGX_HAS_CXX_UNRESTRICTED_UNIONS // __has_feature(cxx_unrestricted_unions)
+
+#elif defined(__GNUC__)
+GCC_MESSAGE("__GNUC__ defined")
+
+/////////////
+// SECTION 3: UNDEF VARIOUS LIBC++ DEFINES FOR SUPPORTED FEATURES
+/////////////
+#undef _LIBCPP_USING_DEV_RANDOM
+#define _LIBCPP_USING_SGX_RANDOM
+#undef _LIBCPP_NO_EXCEPTIONS
+#undef _LIBCPP_HAS_NO_TEMPLATE_ALIASES
+#undef _LIBCPP_HAS_NO_CONSTEXPR
+#undef _LIBCPP_HAS_NO_UNICODE_CHARS
+#undef _LIBCPP_HAS_NO_DELETED_FUNCTIONS
+#undef _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
+#undef _LIBCPP_HAS_NO_VARIADICS
+#undef _LIBCPP_HAS_NO_ADVANCED_SFINAE
+#undef _LIBCPP_HAS_NO_VARIABLE_TEMPLATES        // Will be set
+#undef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#undef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+
+//#undef _LIBCPP_DEBUG // TBD. Debug without I/O?
+#undef _LIBCPP_HAS_QUICK_EXIT
+#undef _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS // Not used
+
+// Current goal is to support C++11 so define the version accordingly.
+// Libc++ also supports 14 and beyond. 
+#define _LIBCPP_STD_VER 11
+
+/////////////
+// SECTION 4: DEFINE VARIOUS LIBC++ DEFINES TO CUSTOMIZE USAGE FOR SGX
+/////////////
+//#define _LIBCPP_HAS_NO_BUILTIN_OPERATOR_NEW_DELETE
+//#define __alignof__ __alignof
+
+//#define _LIBCPP_UNDERLYING_TYPE(T) __underlying_type(T)
+//#define _LIBCPP_IS_LITERAL(T) __is_literal_type(T)
+//#define _LIBCPP_HAS_IS_FINAL
+
+#define _LIBCPP_HAS_NO_THREADS
+#define _LIBCPP_HAS_NO_STDIN
+#define _LIBCPP_HAS_NO_STDOUT
+#define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
+
+//#define _LIBCPP_BUILDING_SYSTEM_ERROR
+
+
+//#if defined _LIBCPP_SGX_I386
+//#    define __SIZEOF_SIZE_T__ 4
+//#elif defined _LIBCPP_SGX_X86_64
+//#    define __SIZEOF_SIZE_T__ 8
+//#endif
+
+#undef _LIBCPP_SGX_HAS_NO_THREADS
+#undef _LIBCPP_SGX_HAS_NO_ATOMIC
+
+/////////////
+// SECTION 5: SGX specific defines which replace __has_feature(cxx_something)
+/////////////
+
+#else
+GCC_MESSAGE("Unsupported platform")
+#endif
+
+#endif  // _LIBCPP_SGX
