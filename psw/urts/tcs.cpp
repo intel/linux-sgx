@@ -150,7 +150,7 @@ int CTrustThreadPool::bind_thread(const se_thread_id_t thread_id,  CTrustThread 
 
 CTrustThread * CTrustThreadPool::get_bound_thread(const se_thread_id_t thread_id)
 {
-    CTrustThread* trust_thread = nullptr;
+    CTrustThread *trust_thread = nullptr;
 
     if(m_thread_list)
     {
