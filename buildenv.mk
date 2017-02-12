@@ -89,7 +89,7 @@ COMMON_FLAGS += -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
 CFLAGS += -Wjump-misses-init -Wstrict-prototypes -Wunsuffixed-float-constants
 
 # additional warnings flags for C++
-CXXFLAGS += -Wnon-virtual-dtor -DPROTOBUF_INLINE_NOT_IN_HEADERS=0
+CXXFLAGS += -Wnon-virtual-dtor
 
 # for static_assert()
 CXXFLAGS += -std=c++0x
