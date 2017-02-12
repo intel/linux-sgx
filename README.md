@@ -11,6 +11,8 @@ The Linux SGX software stack is comprised of the SGX driver, the SGX SDK, and th
 
 The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the out-of-tree driver for the Linux SGX software stack, which will be used until the driver upstreaming process is complete. 
 
+**Note**  This repository includes a subset of the Intel(R) IPP Cryptography library under [external/crypto_px](https://github.com/01org/linux-sgx/external/crypto_px). It is provided as reference implementation for the cryptographic primitives used in SDK and PSW. They are written in pure C and are not optimized for performance. Instructions are provided below for building the SDK and PSW with both precompiled optimized IPP binaries and the non-optimized source code version.
+
 License
 -------
 See License.txt for details.
