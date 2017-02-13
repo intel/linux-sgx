@@ -59,7 +59,9 @@
     "   -ignore-rel-error   By default, sgx_sign provides an error for enclaves with\n" \
     "                       text relocations. You can ignore the error and continue signing\n" \
     "                       by providing this option. But it is recommended you eliminate the\n" \
-    "                       text relocations instead of bypassing the error with this option.\n"
+    "                       text relocations instead of bypassing the error with this option\n" \
+    "   -hash               Specify a file to write enclave hash to\n" \
+    "                       It is an option for \"sign\" and \"gendata\".\n"
 
 // General error message
 #define OVERALL_ERROR                       "Error happened while signing the enclave.\n"

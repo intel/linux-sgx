@@ -88,7 +88,8 @@ typedef enum _file_path_t
     OUTPUT,
     SIG,
     UNSIGNED,
-    REVIEW_ENCLAVE
+    REVIEW_ENCLAVE,
+    HASH
 } file_path_t;
 
 static bool get_time(uint32_t *date)
@@ -679,7 +680,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-review_enclave", NULL, PAR_INVALID}};
+        {"-review_enclave", NULL, PAR_INVALID},
+        {"-hash", NULL, PAR_OPTIONAL}};
     param_struct_t params_gendata[] = {
         {"-enclave", NULL, PAR_REQUIRED},
         {"-config", NULL, PAR_OPTIONAL},
@@ -687,7 +689,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-review_enclave", NULL, PAR_INVALID}};
+        {"-review_enclave", NULL, PAR_INVALID},
+        {"-hash", NULL, PAR_OPTIONAL}};
     param_struct_t params_catsig[] = {
         {"-enclave", NULL, PAR_REQUIRED},
         {"-config", NULL, PAR_OPTIONAL},
@@ -695,7 +698,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_REQUIRED},
         {"-unsigned", NULL, PAR_REQUIRED},
-        {"-review_enclave", NULL, PAR_INVALID}};
+        {"-review_enclave", NULL, PAR_INVALID},
+        {"-hash", NULL, PAR_INVALID}};
     param_struct_t params_compare[] = {
         {"-enclave", NULL, PAR_REQUIRED},
         {"-config", NULL, PAR_OPTIONAL},
@@ -703,7 +707,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_INVALID},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_REQUIRED},
-        {"-review_enclave", NULL, PAR_REQUIRED}};
+        {"-review_enclave", NULL, PAR_REQUIRED},
+        {"-hash", NULL, PAR_INVALID}};
 
 
     const char *mode_m[] ={"sign", "gendata","catsig", "compare"};
@@ -1114,7 +1119,7 @@ int main(int argc, char* argv[])
                                    {"MiscSelect", 0xFFFFFFFF, 0, DEFAULT_MISC_SELECT, 0},
                                    {"MiscMask", 0xFFFFFFFF, 0, DEFAULT_MISC_MASK, 0}};
 
-    const char *path[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+    const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
     metadata_t metadata;
     int res = -1, mode = -1;
@@ -1181,6 +1186,22 @@ int main(int argc, char* argv[])
     {
         se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
         goto clear_return;
+    }
+
+    if(path[HASH] != NULL)
+    {
+        FILE *fp = fopen(path[HASH], "wb");
+        if(fp == NULL)
+        {
+            se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
+            goto clear_return;
+        }
+        if(fwrite(enclave_hash, sizeof(enclave_hash), 1, fp) != 1)
+        {
+            se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
+            goto clear_return;
+        }
+        fclose(fp);
     }
 
     if((generate_output(mode, key_type, enclave_hash, parameter, &rsa, &metadata, path, bin_fmt, meta_offset)) == false)
