@@ -752,7 +752,7 @@ int CLoader::set_context_protection(layout_t *layout_start, layout_t *layout_end
         if (!IS_GROUP_ID(layout->group.id))
         {
             int prot = 0 ;
-            if(layout->entry.attributes == SI_FLAG_NONE)
+            if(layout->entry.si_flags == SI_FLAG_NONE)
             {
                 prot = SI_FLAG_NONE & SI_MASK_MEM_ATTRIBUTE;
             }
