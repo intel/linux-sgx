@@ -150,11 +150,15 @@ int CTrustThreadPool::bind_thread(const se_thread_id_t thread_id,  CTrustThread 
 
 CTrustThread * CTrustThreadPool::get_bound_thread(const se_thread_id_t thread_id)
 {
-    CTrustThread *trust_thread = NULL;
+    CTrustThread *trust_thread = nullptr;
 
-    Node<se_thread_id_t, CTrustThread*>* it = m_thread_list->Find(thread_id);
-    if(it != NULL)
-        trust_thread = it->value;
+    if(m_thread_list)
+    {
+        auto it =  m_thread_list->Find(thread_id);
+
+        if(it)
+           trust_thread = it->value;
+    }
 
     return trust_thread;
 }
