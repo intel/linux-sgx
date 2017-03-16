@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -178,7 +178,7 @@ endif
 .PHONY: all run
 
 ifeq ($(Build_Mode), HW_RELEASE)
-all: libservice_provider.so $(App_Name) $(Enclave_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) libservice_provider.so $(App_Name) $(Enclave_Name)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclave use the command:"
@@ -186,7 +186,7 @@ all: libservice_provider.so $(App_Name) $(Enclave_Name)
 	@echo "You can also sign the enclave using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: libservice_provider.so $(App_Name) $(Signed_Enclave_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) libservice_provider.so $(App_Name) $(Signed_Enclave_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -205,6 +205,11 @@ ifneq ($(Build_Mode), HW_RELEASE)
 	@$(CURDIR)/$(App_Name) 	
 	@echo "RUN  =>  $(App_Name) [$(SGX_MODE)|$(SGX_ARCH), OK]"
 endif
+
+.config_$(Build_Mode)_$(SGX_ARCH):
+	@rm -f .config_* $(App_Name) $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) isv_app/isv_enclave_u.* $(Enclave_Cpp_Objects) isv_enclave/isv_enclave_t.* libservice_provider.* $(ServiceProvider_Cpp_Objects)
+	@touch .config_$(Build_Mode)_$(SGX_ARCH)
+
 
 ######## App Objects ########
 
@@ -260,4 +265,4 @@ $(Signed_Enclave_Name): $(Enclave_Name)
 .PHONY: clean
 
 clean:
-	@rm -f $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) isv_app/isv_enclave_u.* $(Enclave_Cpp_Objects) isv_enclave/isv_enclave_t.* libservice_provider.* $(ServiceProvider_Cpp_Objects)
+	@rm -f .config_* $(App_Name) $(App_Name) $(Enclave_Name) $(Signed_Enclave_Name) $(App_Cpp_Objects) isv_app/isv_enclave_u.* $(Enclave_Cpp_Objects) isv_enclave/isv_enclave_t.* libservice_provider.* $(ServiceProvider_Cpp_Objects)

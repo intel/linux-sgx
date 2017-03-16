@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,14 +41,14 @@ class Node: private Uncopyable
 public:
     const T1 key;
     const T2 value;
-    
+
     Node<T1, T2> * next;
 
     Node();
     Node(const T1& key, const T2& value);
 
     bool InsertNext(Node<T1, T2>* p);
-    
+
     Node<T1, T2>* Find(const T1& key);
     Node<T1, T2>* Remove(const T1& key);
 };

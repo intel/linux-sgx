@@ -24,11 +24,11 @@ tools Plug-in to allow ISVs develop secure extensions in C or
 C++. The Plug-in also allows conversion of an Linux Application
 project into an Linux Application project with Software Guard
 Extensions.
-Using the Plug-in features and SGX Plug-in Menu options, a developer
+Using the Plug-in features and Intel(R) SGX Plug-in Menu options, a developer
 can modify the Signing keys and Enclave Configuration for an
 Enclave project and can add enclaves inside a project with SGX Nature.
 Once development is complete, the developer can build the Enclave
-and the Linux project using the SGX SDK for Linux with Release/Debug Configurations in Simulation/Hardware
+and the Linux project using the Intel(R) SGX SDK for Linux with Release/Debug Configurations in Simulation/Hardware
 mode and Hardware Prerelease mode.
    </description>
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -118,6 +118,10 @@ App_Name := app
 
 ######## Enclave Settings ########
 
+Enclave1_Version_Script := Enclave1/Enclave1.lds
+Enclave2_Version_Script := Enclave2/Enclave2.lds
+Enclave3_Version_Script := Enclave3/Enclave3.lds
+
 ifneq ($(SGX_MODE), HW)
 	Trts_Library_Name := sgx_trts_sim
 	Service_Library_Name := sgx_tservice_sim
@@ -141,12 +145,15 @@ Enclave_Compile_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpi
 #       Use `--start-group' and `--end-group' to link these libraries.
 # Do NOT move the libraries linked with `--start-group' and `--end-group' within `--whole-archive' and `--no-whole-archive' options.
 # Otherwise, you may get some undesirable errors.
-Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
+Common_Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
 	-Wl,--start-group -lsgx_tstdc -lsgx_tstdcxx -l$(Crypto_Library_Name) -L. -lLocalAttestation_Trusted -l$(Service_Library_Name) -Wl,--end-group \
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0
+Enclave1_Link_Flags := $(Common_Enclave_Link_Flags) -Wl,--version-script=$(Enclave1_Version_Script)
+Enclave2_Link_Flags := $(Common_Enclave_Link_Flags) -Wl,--version-script=$(Enclave2_Version_Script)
+Enclave3_Link_Flags := $(Common_Enclave_Link_Flags) -Wl,--version-script=$(Enclave3_Version_Script)
 
 Enclave_Cpp_Objects_1 := $(Enclave_Cpp_Files_1:.cpp=.o)
 Enclave_Cpp_Objects_2 := $(Enclave_Cpp_Files_2:.cpp=.o)
@@ -175,7 +182,7 @@ endif
 endif
 
 ifeq ($(Build_Mode), HW_RELEASE)
-all: $(Trust_Lib_Name) $(UnTrustLib_Name) Enclave1.so Enclave2.so Enclave3.so $(App_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) Enclave1.so Enclave2.so Enclave3.so $(App_Name)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the enclaves (Enclave1.so, Enclave2.so, Enclave3.so) first with your signing keys before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclaves use the following commands:"
@@ -185,7 +192,7 @@ all: $(Trust_Lib_Name) $(UnTrustLib_Name) Enclave1.so Enclave2.so Enclave3.so $(
 	@echo "You can also sign the enclaves using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: $(Trust_Lib_Name) $(UnTrustLib_Name) $(Enclave_Name_1) $(Enclave_Name_2) $(Enclave_Name_3) $(App_Name)
+all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) $(Enclave_Name_1) $(Enclave_Name_2) $(Enclave_Name_3) $(App_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -198,6 +205,10 @@ else
 	@echo "The project has been built in release simulation mode."
 endif
 endif
+
+.config_$(Build_Mode)_$(SGX_ARCH):
+	@rm -rf .config_* $(App_Name) *.so *.a App/*.o Enclave1/*.o Enclave1/*_t.* Enclave1/*_u.* Enclave2/*.o Enclave2/*_t.* Enclave2/*_u.* Enclave3/*.o Enclave3/*_t.* Enclave3/*_u.*              LocalAttestationCode/*.o Untrusted_LocalAttestation/*.o LocalAttestationCode/*_t.* 
+	@touch .config_$(Build_Mode)_$(SGX_ARCH)
 
 ######## Library Objects ########
 
@@ -274,7 +285,7 @@ Enclave1/%.o: Enclave1/%.cpp Enclave1/Enclave1_t.h
 	@echo "CXX  <=  $<"
 
 Enclave1.so: Enclave1/Enclave1_t.o $(Enclave_Cpp_Objects_1) $(Trust_Lib_Name)
-	@$(CXX) Enclave1/Enclave1_t.o $(Enclave_Cpp_Objects_1) -o $@ $(Enclave_Link_Flags)
+	@$(CXX) Enclave1/Enclave1_t.o $(Enclave_Cpp_Objects_1) -o $@ $(Enclave1_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Enclave_Name_1): Enclave1.so
@@ -294,7 +305,7 @@ Enclave2/%.o: Enclave2/%.cpp
 	@echo "CXX  <=  $<"
 
 Enclave2.so: Enclave2/Enclave2_t.o $(Enclave_Cpp_Objects_2) $(Trust_Lib_Name)
-	@$(CXX) Enclave2/Enclave2_t.o $(Enclave_Cpp_Objects_2) -o $@ $(Enclave_Link_Flags)
+	@$(CXX) Enclave2/Enclave2_t.o $(Enclave_Cpp_Objects_2) -o $@ $(Enclave2_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Enclave_Name_2): Enclave2.so
@@ -314,7 +325,7 @@ Enclave3/%.o: Enclave3/%.cpp
 	@echo "CXX  <=  $<"
 
 Enclave3.so: Enclave3/Enclave3_t.o $(Enclave_Cpp_Objects_3) $(Trust_Lib_Name)
-	@$(CXX) Enclave3/Enclave3_t.o $(Enclave_Cpp_Objects_3) -o $@ $(Enclave_Link_Flags)
+	@$(CXX) Enclave3/Enclave3_t.o $(Enclave_Cpp_Objects_3) -o $@ $(Enclave3_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(Enclave_Name_3): Enclave3.so
@@ -325,4 +336,4 @@ $(Enclave_Name_3): Enclave3.so
 .PHONY: clean
 
 clean:
-	@rm -rf $(App_Name) *.so *.a App/*.o Enclave1/*.o Enclave1/*_t.* Enclave1/*_u.* Enclave2/*.o Enclave2/*_t.* Enclave2/*_u.* Enclave3/*.o Enclave3/*_t.* Enclave3/*_u.* LocalAttestationCode/*.o Untrusted_LocalAttestation/*.o LocalAttestationCode/*_t.*
+	@rm -rf .config_* $(App_Name) *.so *.a App/*.o Enclave1/*.o Enclave1/*_t.* Enclave1/*_u.* Enclave2/*.o Enclave2/*_t.* Enclave2/*_u.* Enclave3/*.o Enclave3/*_t.* Enclave3/*_u.* LocalAttestationCode/*.o Untrusted_LocalAttestation/*.o LocalAttestationCode/*_t.*

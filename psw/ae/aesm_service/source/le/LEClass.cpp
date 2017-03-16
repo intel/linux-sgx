@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,7 +53,6 @@ int CLEClass::white_list_register(
     int retry = 0;
     uint32_t status = 0;
     AESMLogicLock locker(AESMLogic::_le_mutex);
-    const wl_cert_chain_t *wl_cert_chain = reinterpret_cast<const wl_cert_chain_t *>(white_list_cert);
     if (white_list_cert_size < sizeof(wl_cert_chain_t)){
         return LE_INVALID_PARAMETER;
     }
@@ -123,10 +122,12 @@ ae_error_t CLEClass::update_white_list_by_url()
         if (ret == AE_SUCCESS){
             if (resp_buf != NULL && resp_size > 0){
                 ret = (ae_error_t)instance().white_list_register(resp_buf, resp_size, true);
+#ifdef DBG_LOG
                 if (AE_SUCCESS == ret&&resp_size >= sizeof(wl_cert_chain_t)){
                     const wl_cert_chain_t* wl = reinterpret_cast<const wl_cert_chain_t*>(resp_buf);
                     AESM_DBG_INFO("White list update request successful for Version: %d", _ntohl(wl->wl_cert.wl_version));
                 }
+#endif
             }
             last_updated_time = cur_time;
             aesm_free_network_response_buffer(resp_buf);

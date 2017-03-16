@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -158,6 +158,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     assert(hash && dllpath && metadata && bin_fmt && meta_offset);
     bool res = false;
     uint32_t file_size = 0;
+    uint64_t quota = 0;
 
     se_file_handle_t fh = open_file(dllpath);
     if (fh == THE_INVALID_HANDLE)
@@ -234,12 +235,13 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
         res = false;
         break;
     case SGX_SUCCESS:
-        ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(hash, SGX_HASH_SIZE);
+        ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(hash, SGX_HASH_SIZE, &quota);
         if(ret != SGX_SUCCESS)
         {
             res = false;
             break;
         }
+        se_trace(SE_TRACE_ERROR, REQUIRED_ENCLAVE_SIZE, quota);
         res = true;
         break;
     default:
@@ -336,8 +338,8 @@ static bool fill_enclave_css(const IppsRSAPublicKeyState *pub_key, const xml_par
     }
     if(para[LAUNCHKEY].value == 1)
     {
-        enclave_css.body.attributes.flags |= SGX_FLAGS_EINITOKEN_KEY;
-        enclave_css.body.attribute_mask.flags |= SGX_FLAGS_EINITOKEN_KEY;
+        enclave_css.body.attributes.flags |= SGX_FLAGS_EINITTOKEN_KEY;
+        enclave_css.body.attribute_mask.flags |= SGX_FLAGS_EINITTOKEN_KEY;
     }
     if(bf == BF_PE64 || bf == BF_ELF64)
     {
@@ -371,6 +373,7 @@ static bool fill_enclave_css(const IppsRSAPublicKeyState *pub_key, const xml_par
         if(read_file_to_buf(path[UNSIGNED], buf, fsize) == false)
         {
             se_trace(SE_TRACE_ERROR, READ_FILE_ERROR, path[UNSIGNED]);
+            delete [] buf;
             return false;
         }
         memcpy_s(&enclave_css.header, sizeof(enclave_css.header), buf, sizeof(enclave_css.header));
@@ -936,6 +939,7 @@ static bool compare_enclave(const char **path, const xml_parameter_t *para)
     bin_fmt_t bin_fmt1 = BF_UNKNOWN, bin_fmt2 = BF_UNKNOWN;
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
     uint8_t *buf = NULL;
+    uint64_t quota = 0;
     CMetadata *meta = NULL;
     metadata_t metadata;
     enclave_diff_info_t enclave_diff_info1, enclave_diff_info2;
@@ -1065,7 +1069,7 @@ static bool compare_enclave(const char **path, const xml_parameter_t *para)
     {
         goto clear_return;
     }
-    ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(enclave_hash, SGX_HASH_SIZE);
+    ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(enclave_hash, SGX_HASH_SIZE, &quota);
     if(ret != SGX_SUCCESS)
     {
         goto clear_return;
@@ -1127,17 +1131,6 @@ int main(int argc, char* argv[])
 
     memset(&rsa,      0, sizeof(rsa));
     memset(&metadata, 0, sizeof(metadata));
-
-#ifdef SGX_USE_OPT_LIB
-    //NOTE: 
-    //    We can not use any other Intel IPP function 
-    //    while the function ippInit() continues execution.
-    if(ippInit() != ippStsNoErr)
-    {
-        se_trace(SE_TRACE_ERROR, INIT_IPP_LIBRARY_ERROR);
-        return -1;
-    }
-#endif
 
     //Parse command line
     if(cmdline_parse(argc, argv, &mode, path, &ignore_rel_error) == false)

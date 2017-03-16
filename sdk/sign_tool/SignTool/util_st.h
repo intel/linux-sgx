@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,7 +74,7 @@
 #define OUT_OF_EPC_ERROR                    "The required memory is too large. Please check TCSNum/HeapMaxSize/StackMaxSize.\n"
 #define META_VERSION_ERROR                  "Metadata version is mismatched between uRTS and sgx_sign.\n"
 #define INVALID_ENCLAVE_ERROR               "The input enclave file is not correct.\n"
-#define REQUIRED_ENCLAVE_SIZE               "The required memory is 0x%x.\n"
+#define REQUIRED_ENCLAVE_SIZE               "The required memory is %lluB.\n"
 #define TEXT_REL_ERROR                      "The enclave image has text relocations.\n"
 
 // error message for fill_enclave_css()

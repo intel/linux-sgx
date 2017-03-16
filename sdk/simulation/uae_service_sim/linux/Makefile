@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -95,10 +95,6 @@ $(DLLNAME): $(OBJ) -lrdrand -lcrypto_px
 endif
 
 $(DLLNAME_DEBUG): $(DLLNAME)
-	((test -f $(DLLNAME_DEBUG)) || $(MAKE) separate_debug_info)
-
-.PHONY: separate_debug_info
-separate_debug_info:
 ifndef DEBUG
 	$(CP) $(DLLNAME) $(DLLNAME).orig
 	$(OBJCOPY) --only-keep-debug $(DLLNAME) $(DLLNAME_DEBUG)

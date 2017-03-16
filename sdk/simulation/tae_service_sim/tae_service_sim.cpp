@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -101,6 +101,25 @@ sgx_status_t sgx_get_ps_sec_prop(sgx_ps_sec_prop_desc_t *p_security_property)
         memset(&p_security_property_internal->cse_sec_prop.ca_id_cse, 0, sizeof(p_security_property_internal->cse_sec_prop.ca_id_cse));
         memset(&p_security_property_internal->cse_sec_prop.sec_info, 0, sizeof(p_security_property_internal->cse_sec_prop.sec_info));
     }
+    return ret;
+}
+
+sgx_status_t sgx_get_ps_sec_prop_ex(sgx_ps_sec_prop_desc_ex_t* ps_security_property_ex)
+{
+    sgx_status_t ret;
+    if (!ps_security_property_ex)
+        return SGX_ERROR_INVALID_PARAMETER;
+    ret = sgx_get_ps_sec_prop(&ps_security_property_ex->ps_sec_prop_desc);
+    if (ret != SGX_SUCCESS)
+    {
+        return ret;
+    }
+
+    se_ps_sec_prop_desc_internal_t* desc_internal =
+        (se_ps_sec_prop_desc_internal_t*)&ps_security_property_ex->ps_sec_prop_desc;
+    memcpy(&ps_security_property_ex->pse_mrsigner, &desc_internal->pse_mr_signer, sizeof(sgx_measurement_t));
+    memcpy(&ps_security_property_ex->pse_prod_id, &desc_internal->pse_prod_id, sizeof(sgx_prod_id_t));
+    memcpy(&ps_security_property_ex->pse_isv_svn, &desc_internal->pse_isvsvn, sizeof(sgx_isv_svn_t));
     return ret;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -333,7 +333,7 @@ static const char *get_ae_error_t_string(ae_error_t ae_error)
         CASE_ENUM_RET_STRING(PVE_PERFORMANCE_REKEY_NOT_SUPPORTED)
         CASE_ENUM_RET_STRING(LE_UNEXPECTED_ERROR)
         CASE_ENUM_RET_STRING(LE_INVALID_PARAMETER)
-        CASE_ENUM_RET_STRING(LE_GET_EINITOKEN_KEY_ERROR)
+        CASE_ENUM_RET_STRING(LE_GET_EINITTOKEN_KEY_ERROR)
         CASE_ENUM_RET_STRING(LE_INVALID_ATTRIBUTE)
         CASE_ENUM_RET_STRING(LE_INVALID_PRIVILEGE_ERROR)
         CASE_ENUM_RET_STRING(LE_WHITELIST_UNINITIALIZED_ERROR)
@@ -361,7 +361,7 @@ static const char *get_ae_error_t_string(ae_error_t ae_error)
         CASE_ENUM_RET_STRING(AESM_PSE_PR_GET_PRIVRL_ERROR)
         CASE_ENUM_RET_STRING(AESM_NETWORK_TIMEOUT)
 
-        CASE_ENUM_RET_STRING(PSW_UPDATED_REQUIRED)
+        CASE_ENUM_RET_STRING(PSW_UPDATE_REQUIRED)
         CASE_ENUM_RET_STRING(PSE_OP_ERROR_KDF_MISMATCH)
         CASE_ENUM_RET_STRING(AESM_AE_OUT_OF_EPC)
 
@@ -414,6 +414,7 @@ static const char *get_aesm_error_t_string(aesm_error_t aesm_error)
         CASE_ENUM_RET_STRING(AESM_PLATFORM_INFO_BLOB_INVALID_SIG)
         CASE_ENUM_RET_STRING(AESM_OUT_OF_EPC)
         CASE_ENUM_RET_STRING(AESM_SERVICE_UNAVAILABLE)
+        CASE_ENUM_RET_STRING(AESM_UNRECOGNIZED_PLATFORM)
     default:
         return "Unknow aesm_error_t";
     }

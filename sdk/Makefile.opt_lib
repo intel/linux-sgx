@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -39,6 +39,7 @@
 #        - tcrypto:       libsgx_tcrypto.a
 #        - tkey_exchange: libsgx_tkey_exchange.a
 #        - tsetjmp:       libsgx_tsetjmp.a
+#        - tcmalloc:      libsgx_tcmalloc.a
 #  - Untrtusted libraries
 #        - ukey_exchange: libsgx_ukey_exchange.a
 #        - sample_crypto: libsample_crypto.so (for sample code use)
@@ -72,7 +73,7 @@ all: $(CHECK_OPT)
 	$(MAKE) components
 
 .PHONY: components
-components: tstdc tstdcxx tservice trts tcrypto tkey_exchange ukey_exchange ptrace sample_crypto simulation signtool edger8r tsetjmp
+components: tstdc tstdcxx tservice trts tcrypto tkey_exchange ukey_exchange ptrace sample_crypto simulation signtool edger8r tsetjmp tcmalloc
 
 # ---------------------------------------------------
 #  tstdc
@@ -184,6 +185,11 @@ tkey_exchange: edger8r
 .PHONY: tsetjmp
 tsetjmp:
 	$(MAKE) -C tsetjmp/
+
+.PHONY: tcmalloc
+tcmalloc:
+	$(MAKE) -C gperftools/
+
 # ---------------------------------------------------
 #  Untrusted libraries
 # ---------------------------------------------------
@@ -231,7 +237,8 @@ clean:
 	$(MAKE) -C selib/linux/                        clean
 	$(MAKE) -C tae_service/                        clean
 	$(MAKE) -C trts/                               clean
-	$(MAKE) -C tsetjmp/                           clean
+	$(MAKE) -C tsetjmp/                            clean
+	$(MAKE) -C gperftools/                         clean
 	$(MAKE) -C tlibcrypto/                         clean
 	$(MAKE) -C tkey_exchange/                      clean
 	$(MAKE) -C ukey_exchange/                      clean

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -54,7 +54,7 @@ OBJS := init_enclave.o   \
 all: $(OBJS) elf_parser
 
 $(OBJS): %.o: %.cpp
-	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -fPIC $< -o $@
 
 .PHONY: elf_parser
 elf_parser:

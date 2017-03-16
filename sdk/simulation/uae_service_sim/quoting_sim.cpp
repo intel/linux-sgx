@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -104,8 +104,7 @@ sgx_status_t sgx_init_quote(
     memset(&(p_target_info->mr_enclave), 0xEE, sizeof(sgx_measurement_t));
 
     //Make sure the size of prebuilt data are the same with target buffer.
-    static_assert(sizeof(EPID_GROUP_CERT) == sizeof(GroupPubKey),
-                  "Group cert size changed!");
+    se_static_assert(sizeof(EPID_GROUP_CERT) == sizeof(GroupPubKey)); /* "Group cert size changed*/
 
     //Copy hard coded gid into output buffer.
     GroupPubKey *p_epid_group_cert = (GroupPubKey *)const_cast<uint8_t*>(EPID_GROUP_CERT);

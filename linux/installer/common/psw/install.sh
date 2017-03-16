@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -118,15 +118,22 @@ rm -fr /var/opt/aesmd
 # Removing runtime libraries
 rm -f /usr/lib/libsgx_uae_service.so
 rm -f /usr/lib/libsgx_urts.so
+rm -f /usr/lib/i386-linux-gnu/libsgx_uae_service.so
+rm -f /usr/lib/i386-linux-gnu/libsgx_urts.so
 
 # Removing AESM folder
 rm -fr $PSW_DST_PATH
 
 # Removing AESM user and group
 /usr/sbin/userdel aesmd
+
+echo "SGX PSW uninstalled."
 EOF
 
 chmod +x $PSW_DST_PATH/uninstall.sh
+
+$AESM_PATH/cse_provision_tool || true
+rm $AESM_PATH/cse_provision_tool
 
 # Start the aesmd service
 if [ -d /run/systemd/system ]; then

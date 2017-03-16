@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,8 +51,7 @@
 
 
 EnclaveCreator* g_enclave_creator = new EnclaveCreatorHW();
-static uint32_t g_eid_low = 0x1;
-static uint32_t g_eid_high = 0x0;
+static uint64_t g_eid = 0x1;
 
 EnclaveCreatorHW::EnclaveCreatorHW():
     m_hdevice(-1),
@@ -147,11 +146,7 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
         SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_CREATE fails: errno = %x\n", errno);
         return error_driver2urts(ret);
     }
-    uint32_t tmp = se_atomic_inc(&g_eid_low);
-    //32bit overflow
-    if(0 == tmp)
-        g_eid_high++;
-    *enclave_id = ((uint64_t)g_eid_high << 32) | g_eid_low;
+    *enclave_id = se_atomic_inc64(&g_eid);
     *start_addr = secs->base;
 
     return SGX_SUCCESS;

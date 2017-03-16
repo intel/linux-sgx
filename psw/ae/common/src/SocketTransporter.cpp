@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,6 +34,7 @@
 #include <IAEResponse.h>
 #include <ISerializer.h>
 #include <ICommunicationSocket.h>
+#include <IAEMessage.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -80,7 +81,7 @@ uae_oal_status_t SocketTransporter::sendMessage(AEMessage *message, ICommunicati
     return UAE_OAL_SUCCESS;
 }
 
-uae_oal_status_t SocketTransporter::transact(IAERequest* request, IAEResponse* response)
+uae_oal_status_t SocketTransporter::transact(IAERequest* request, IAEResponse* response, uint32_t timeout)
 {
     if (request == NULL || response == NULL)
         return UAE_OAL_ERROR_UNEXPECTED;
@@ -94,10 +95,10 @@ uae_oal_status_t SocketTransporter::transact(IAERequest* request, IAEResponse* r
     uae_oal_status_t ret = UAE_OAL_ERROR_UNEXPECTED;
 
     //set the timeout value
-    if (request->GetTimeout() > 0)
-        communicationSocket->setTimeout(request->GetTimeout());
+    if (timeout > 0)
+        communicationSocket->setTimeout(timeout);
 
-    AEMessage * reqMsg = request->serialize(mSerializer);
+    AEMessage * reqMsg = request->serialize();
     
     if (reqMsg != NULL)
     {
@@ -112,7 +113,7 @@ uae_oal_status_t SocketTransporter::transact(IAERequest* request, IAEResponse* r
             if (communicationSocket->wasTimeoutDetected() == false)
             {
                 if (resMsg != NULL && resMsg->data != NULL)
-                    response->inflateWithMessage(resMsg, mSerializer);
+                    response->inflateWithMessage(resMsg);
                 else
                     ret = UAE_OAL_ERROR_UNEXPECTED;
             }
@@ -139,7 +140,7 @@ IAERequest* SocketTransporter::receiveRequest(ICommunicationSocket* sock) {
 }
 
 uae_oal_status_t SocketTransporter::sendResponse(IAEResponse* response, ICommunicationSocket* sock) {
-    AEMessage * message = response->serialize(mSerializer);
+    AEMessage * message = response->serialize();
     uae_oal_status_t retVal = sendMessage(message, sock);
     delete message;
     return retVal;

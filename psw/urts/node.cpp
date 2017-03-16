@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -69,7 +69,8 @@ Node<T1, T2>* Node<T1, T2>::Remove(const T1& k)
 template<class T1, class T2>
 Node<T1, T2>* Node<T1, T2>::Find(const T1& k)
 {
-    for(auto c = this; c != nullptr; c = c->next) {
+    for(auto c= this; c != nullptr; c = c->next)
+    {
         if (c->key == k)
             return c;
     }

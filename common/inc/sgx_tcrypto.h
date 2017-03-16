@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,6 +57,12 @@ typedef struct _sgx_ec256_dh_shared_t
 {
     uint8_t s[SGX_ECP256_KEY_SIZE];
 } sgx_ec256_dh_shared_t;
+
+typedef struct _sgx_ec256_dh_shared512_t
+{
+    uint8_t x[SGX_ECP256_KEY_SIZE];
+    uint8_t y[SGX_ECP256_KEY_SIZE];
+} sgx_ec256_dh_shared512_t;
 
 typedef struct _sgx_ec256_private_t
 {
@@ -512,6 +518,19 @@ extern "C" {
     sgx_status_t SGXAPI sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
                                                     sgx_ec256_public_t *p_public_ga,
                                                     sgx_ec256_dh_shared_t *p_shared_key,
+                                                    sgx_ecc_state_handle_t ecc_handle);
+
+   /* Computes 512-bit DH shared key based on private B key (local) and remote public Ga Key
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: sgx_ecc_state_handle_t ecc_handle - Handle to the ECC crypto system
+    *           sgx_ec256_private_t *p_private_b - Pointer to the local private key
+    *           sgx_ec256_public_t *p_public_ga - Pointer to the remote public key
+    *   Output: sgx_ec256_dh_shared512_t *p_shared_key - Pointer to the 512-bit shared DH key
+    */
+    sgx_status_t SGXAPI sgx_ecc256_compute_shared_dhkey512(sgx_ec256_private_t *p_private_b,
+                                                    sgx_ec256_public_t *p_public_ga,
+                                                    sgx_ec256_dh_shared512_t *p_shared_key,
                                                     sgx_ecc_state_handle_t ecc_handle);
 
    /** Computes signature for data based on private key.

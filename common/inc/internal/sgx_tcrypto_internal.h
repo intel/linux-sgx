@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,11 +34,6 @@
 
 #include "sgx_tcrypto.h"
 
-typedef struct _sgx_ec256_dh_shared512_t
-{
-    uint8_t x[SGX_ECP256_KEY_SIZE];
-    uint8_t y[SGX_ECP256_KEY_SIZE];
-} sgx_ec256_dh_shared512_t;
 
 #ifdef __cplusplus
 extern "C" {

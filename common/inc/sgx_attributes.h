@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,8 +39,8 @@
 #define SGX_FLAGS_DEBUG          0x0000000000000002ULL     /* If set, then the enclave is debug */
 #define SGX_FLAGS_MODE64BIT      0x0000000000000004ULL     /* If set, then the enclave is 64 bit */
 #define SGX_FLAGS_PROVISION_KEY  0x0000000000000010ULL     /* If set, then the enclave has access to provision key */
-#define SGX_FLAGS_EINITOKEN_KEY  0x0000000000000020ULL     /* If set, then the enclave has access to EINITOKEN key */
-#define SGX_FLAGS_RESERVED       (~(SGX_FLAGS_INITTED | SGX_FLAGS_DEBUG | SGX_FLAGS_MODE64BIT | SGX_FLAGS_PROVISION_KEY | SGX_FLAGS_EINITOKEN_KEY))
+#define SGX_FLAGS_EINITTOKEN_KEY  0x0000000000000020ULL     /* If set, then the enclave has access to EINITTOKEN key */
+#define SGX_FLAGS_RESERVED       (~(SGX_FLAGS_INITTED | SGX_FLAGS_DEBUG | SGX_FLAGS_MODE64BIT | SGX_FLAGS_PROVISION_KEY | SGX_FLAGS_EINITTOKEN_KEY))
 
 /* XSAVE Feature Request Mask */
 #define SGX_XFRM_LEGACY          0x0000000000000003ULL     /* Legacy XFRM */

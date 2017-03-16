@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -86,6 +86,18 @@ typedef enum _status_t
     SGX_ERROR_MC_USED_UP                = SGX_MK_ERROR(0x400e),   /* Monotonic counters are used out */
     SGX_ERROR_MC_OVER_QUOTA             = SGX_MK_ERROR(0x400f),   /* Monotonic counters exceeds quota limitation */
     SGX_ERROR_KDF_MISMATCH              = SGX_MK_ERROR(0x4011),   /* Key derivation function doesn't match during key exchange */
+    SGX_ERROR_UNRECOGNIZED_PLATFORM     = SGX_MK_ERROR(0x4012),   /* EPID Provisioning failed due to platform not recognized by backend server*/
+    
+    /* SGX errors are only used in the file API when there is no appropriate EXXX (EINVAL, EIO etc.) error code */
+    SGX_ERROR_FILE_BAD_STATUS               = SGX_MK_ERROR(0x7001),	/* The file is in bad status, run sgx_clearerr to try and fix it */
+    SGX_ERROR_FILE_NO_KEY_ID                = SGX_MK_ERROR(0x7002),	/* The Key ID field is all zeros, can't re-generate the encryption key */
+    SGX_ERROR_FILE_NAME_MISMATCH            = SGX_MK_ERROR(0x7003),	/* The current file name is different then the original file name (not allowed, substitution attack) */
+    SGX_ERROR_FILE_NOT_SGX_FILE             = SGX_MK_ERROR(0x7004), /* The file is not an SGX file */
+    SGX_ERROR_FILE_CANT_OPEN_RECOVERY_FILE  = SGX_MK_ERROR(0x7005),	/* A recovery file can't be opened, so flush operation can't continue (only used when no EXXX is returned)  */
+    SGX_ERROR_FILE_CANT_WRITE_RECOVERY_FILE = SGX_MK_ERROR(0x7006), /* A recovery file can't be written, so flush operation can't continue (only used when no EXXX is returned)  */
+    SGX_ERROR_FILE_RECOVERY_NEEDED          = SGX_MK_ERROR(0x7007),	/* When openeing the file, recovery is needed, but the recovery process failed */
+    SGX_ERROR_FILE_FLUSH_FAILED             = SGX_MK_ERROR(0x7008),	/* fflush operation (to disk) failed (only used when no EXXX is returned) */
+    SGX_ERROR_FILE_CLOSE_FAILED             = SGX_MK_ERROR(0x7009),	/* fclose operation (to disk) failed (only used when no EXXX is returned) */
 
 } sgx_status_t;
 

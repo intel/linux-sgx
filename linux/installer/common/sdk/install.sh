@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -51,7 +51,7 @@ generate_gdb_script()
     cat > $GDB_SCRIPT <<EOF
 #!/usr/bin/env bash
 #
-#  Copyright (c) 2011-2015, Intel Corporation.
+#  Copyright (c) 2011-2017, Intel Corporation.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -119,6 +119,8 @@ if [ \$? -ne 0 ]; then
     echo "Superuser privilege is required."
     exit 1
 fi
+
+echo "SGX SDK uninstalled."
 
 EOF
 }

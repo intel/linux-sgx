@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2016 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,7 +40,6 @@
 
 #include <UnixCommunicationSocket.h>
 
-#include <Config.h>
 
 UnixCommunicationSocket::UnixCommunicationSocket(const char* socketbase)
 :mSocketBase(NULL), mWasTimeout(false), mTimeoutMseconds(0)
@@ -140,11 +139,6 @@ bool UnixCommunicationSocket::CheckForTimeout()
 ssize_t UnixCommunicationSocket::writeRaw(const char* data, ssize_t length)
 {
     MarkStartTime();
-
-    if (length > MAX_MEMORY_ALLOCATION)
-    {
-        return -1;
-    }
 
     if (mSocket == -1)
         return -1;
