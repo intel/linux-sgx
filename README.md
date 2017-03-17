@@ -34,7 +34,7 @@ Follow the instructions in the [linux-sgx-driver](https://github.com/01org/linux
 
 Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
-###Prerequisites:
+### Prerequisites:
 - Ensure that you have the following required operating systems:  
   * Ubuntu\* Desktop-16.04-LTS 64bits
   * Red Hat Enterprise Linux Server release 7.2 64bits
@@ -65,7 +65,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   $ ./download_prebuilt.sh
 ```
 
-###Build the Intel(R) SGX SDK and Intel(R) SGX PSW
+### Build the Intel(R) SGX SDK and Intel(R) SGX PSW
 The following steps describe how to build the Intel SGX SDK and PSW. You can build the project according to your requirement.  
 - To build both Intel SGX SDK and PSW with default configuration, enter the following command:  
   You can find the tools and libraries generated in the `build/linux` directory.  
@@ -95,14 +95,14 @@ The following steps describe how to build the Intel SGX SDK and PSW. You can bui
   $ make
 ``` 
 
-###Build Intel(R) SGX SDK Installer
+### Build Intel(R) SGX SDK Installer
 To build Intel(R) SGX SDK installer, enter the following command:
 ```
 $ make sdk_install_pkg
 ```
 You can find the generated Intel SGX SDK installer ``sgx_linux_x64_sdk_${version}.bin`` located under `linux/installer/bin/`, where `${version}` refers to the version number.
 
-###Build Intel(R) SGX PSW Installer
+### Build Intel(R) SGX PSW Installer
 To build Intel(R) SGX PSW installer, enter the following command:
 ```
 $ make psw_install_pkg
@@ -111,7 +111,7 @@ You can find the generated Intel SGX PSW installer ``sgx_linux_x64_psw_${version
 
 Install Intel(R) SGX SDK
 ------------------------
-###Prerequisites
+### Prerequisites
 - Ensure that you have the following required operating systems:  
   * Ubuntu\* Desktop-16.04-LTS 64bits
   * Red Hat Enterprise Linux Server release 7.2 64bits
@@ -127,13 +127,13 @@ Install Intel(R) SGX SDK
      $ sudo yum install python 
   ```
 
-###Install Intel(R) SGX SDK
+### Install Intel(R) SGX SDK
 To install Intel(R) SGX SDK, execute the installer with root privilege:
 ```
 $ cd linux/installer/bin
 $ sudo ./sgx_linux_x64_sdk_${version}.bin 
 ```
-###Test Intel(R) SGX SDK Package with the Sample Codes
+### Test Intel(R) SGX SDK Package with the Sample Codes
 - Copy the sample codes installed by Intel(R) SGX SDK package into your work folder, such as:  
 ```
   $ cp -r /opt/intel/sgxsdk/SampleCode ~
@@ -145,7 +145,7 @@ $ sudo ./sgx_linux_x64_sdk_${version}.bin
   $ ./app
 ```
    Use similar commands for other sample codes.
-###Compile and Run the Sample Codes in the Hardware Mode
+### Compile and Run the Sample Codes in the Hardware Mode
 If you use an Intel SGX hardware enabled machine, you can run the sample codes in the hardware mode.
 Ensure that you install Intel(R) SGX driver and Intel(R) SGX PSW installer on the machine.  
 See the topic, Build and Install the Intel(R) SGX Driver, on how to install the Intel(R) SGX driver.  
@@ -160,16 +160,19 @@ See the topic, Install Intel(R) SGX PSW, on how to install the PSW package.
   $ make
   $ ./app
 ```
-   Use similar commands for other sample codes.
+   Use similar commands for other sample codes.   
+
+
 Install Intel(R) SGX PSW
 ------------------------
-###Prerequisites
+### Prerequisites
 - Ensure that you have the following required operating systems:  
   * Ubuntu\* Desktop-16.04-LTS 64bits
   * Red Hat Enterprise Linux Server release 7.2 64bits
   * CentOS 7.3.1611 64bits
 - Ensure that you have the following required hardware:  
-  6th Generation Intel(R) Core(TM) Processor (code named Skylake)
+  * 6th Generation Intel(R) Core(TM) Processor (code named Skylake)
+  * 7th Generation Intel(R) Core(TM) Processor (code named Kaby Lake)
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel SGX driver in advance.  
   See the topic, Build and Install the Intel(R) SGX Driver, on how to install the Intel SGX driver.
 - Install the library using the following command:  
@@ -177,7 +180,7 @@ Install Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.2 and CentOS 7.3:
+  * On Red Hat Enterprise Linux 7.2 and CentOS 7.3:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -195,20 +198,25 @@ $ sudo apt-get install uuid-dev libxml2-dev
 $ cmake .;make;sudo make install;sudo systemclt enable jhi
 ```
 
-###Install Intel(R) SGX PSW
+### Install Intel(R) SGX PSW
 To install Intel(R) SGX PSW, execute the installer with root privilege:  
 ```
 $ cd linux/installer/bin
 $ sudo ./sgx_linux_x64_psw_${version}.bin
 ```
+**Note**: On Red Hat Enterprise Linux 7.2 and CentOS 7.3, after Intel(R) SGX PSW installation, execute the following command to update the shared library cache additionally:  
+```
+$ sudo ldconfig
+```
+ 
 
-###Start or Stop aesmd Service
+### Start or Stop aesmd Service
 The Intel(R) SGX PSW installer installs an aesmd service in your machine which is running in a special linux account aesmd.  
 To stop the service: `$ sudo service aesmd stop`  
 To start the service: `$ sudo service aesmd start`  
 To restart the service: `$ sudo service aesmd restart`
 
-###Configure the Proxy for aesmd Service
+### Configure the Proxy for aesmd Service
 The aesmd service uses HTTP protocol to initialize some services.  
 If proxy is required for HTTP protocol, you may need manually setup the proxy for aesmd service.  
 You should manually edit file `/etc/aesmd.conf` (refer the comment in the file) to set the proxy for aesmd service.  
