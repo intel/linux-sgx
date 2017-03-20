@@ -23,10 +23,8 @@ See CONTRIBUTING.md for details.
 
 Documentation
 -------------
-- [Intel(R) SGX for Linux\* OS][1] project home page on [01.org](https://01.org)
-- [Intel(R) SGX Programming Reference][2]
-[1]: https://01.org/intel-softwareguard-extensions
-[2]: https://software.intel.com/sites/default/files/managed/48/88/329298-002.pdf
+- [Intel(R) SGX for Linux\* OS](https://01.org/intel-softwareguard-extensions) project home page on [01.org](https://01.org)
+- [Intel(R) SGX Programming Reference](https://software.intel.com/sites/default/files/managed/48/88/329298-002.pdf)
 
 Build and Install the Intel(R) SGX Driver
 -----------------------------------------
@@ -184,19 +182,35 @@ Install Intel(R) SGX PSW
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
-- To use trusted platform service on Ubuntu 16.04  
+- To use trusted platform service  
   Ensure mei_me driver is enabled and /dev/mei0 exists.  
-  [Download iclsClient](https://software.intel.com/en-us/sgx-sdk/download) and install it using the following commands:  
-```
-$ sudo apt-get install alien
-$ sudo alien --scripts iclsClient-1.45.449.12-1.x86_64.rpm
-$ sudo dpkg -i iclsclient_1.45.449.12-2_amd64.deb
-```
+  * On Red Hat Enterprise Linux 7.2:  
+  Update kernel version to kernel-3.10.0-514.el7 or newer on Red Hat Enterprise Linux 7.2.
+  ```
+    $ sudo yum update kernel
+  ```
+  Download [iclsClient](https://software.intel.com/en-us/sgx-sdk/download) and install it using the following commands:  
+  * On Ubuntu 16.04:
+  ```
+    $ sudo apt-get install alien
+    $ sudo alien --scripts iclsClient-1.45.449.12-1.x86_64.rpm
+    $ sudo dpkg -i iclsclient_1.45.449.12-2_amd64.deb
+  ```
+  * On Red Hat Enterprise Linux 7.2 and CentOS 7.3:  
+  ```
+    $ sudo yum install iclsClient-1.45.449.12-1.x86_64.rpm
+  ```
   Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder build and install JHI service using the following commands:
-```
-$ sudo apt-get install uuid-dev libxml2-dev
-$ cmake .;make;sudo make install;sudo systemclt enable jhi
-```
+  * On Ubuntu 16.04:
+  ```
+    $ sudo apt-get install uuid-dev libxml2-dev
+    $ cmake .;make;sudo make install;sudo systemclt enable jhi
+  ```
+  * On Red Hat Enterprise Linux 7.2 and CentOS 7.3:  
+  ```
+    $ sudo yum install libuuid-devel libxml2-devel cmake
+    $ cmake .;make;sudo make install;sudo systemclt enable jhi
+  ```
 
 ### Install Intel(R) SGX PSW
 To install Intel(R) SGX PSW, execute the installer with root privilege:  
@@ -221,3 +235,4 @@ The aesmd service uses HTTP protocol to initialize some services.
 If proxy is required for HTTP protocol, you may need manually setup the proxy for aesmd service.  
 You should manually edit file `/etc/aesmd.conf` (refer the comment in the file) to set the proxy for aesmd service.  
 After you configure the proxy, you need to restart the service to enable the proxy.
+
