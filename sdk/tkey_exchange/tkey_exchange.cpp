@@ -216,12 +216,12 @@ extern "C" sgx_status_t sgx_ra_proc_msg2_trusted(
         return se_ret;
     }
     // Verify signature of gb_ga
-    uint8_t result;
+    sgx_generic_ecresult_t result;
     sgx_ec256_signature_t* p_msg2_sign_gb_ga = const_cast<sgx_ec256_signature_t*>(&p_msg2->sign_gb_ga);
     se_ret = sgx_ecdsa_verify((uint8_t *)&gb_ga, sizeof(gb_ga),
-        &sp_pubkey,
-        p_msg2_sign_gb_ga,
-        &result, ecc_state);
+                              &sp_pubkey,
+                              p_msg2_sign_gb_ga,
+                              &result, ecc_state);
     if(SGX_SUCCESS != se_ret)
     {
         if (SGX_ERROR_OUT_OF_MEMORY != se_ret)

@@ -563,10 +563,10 @@ extern "C" {
     *   Output: ec256_signature_t *p_signature - Pointer to the signature - LITTLE ENDIAN
     */
     sgx_status_t SGXAPI sgx_ecdsa_sign(const uint8_t *p_data,
-                                    uint32_t data_size,
-                                    sgx_ec256_private_t *p_private,
-                                    sgx_ec256_signature_t *p_signature,
-                                    sgx_ecc_state_handle_t ecc_handle);
+                                       uint32_t data_size,
+                                       const sgx_ec256_private_t *p_private,
+                                       sgx_ec256_signature_t *p_signature,
+                                       sgx_ecc_state_handle_t ecc_handle);
 
    /** Verifies the signature for the given data based on the public key.
     *
@@ -594,11 +594,11 @@ extern "C" {
     *   Output: uint8_t *p_result - Pointer to the result of verification check
     */
     sgx_status_t SGXAPI sgx_ecdsa_verify(const uint8_t *p_data,
-                                        uint32_t data_size,
-                                        const sgx_ec256_public_t *p_public,
-                                        sgx_ec256_signature_t *p_signature,
-                                        uint8_t *p_result,
-                                        sgx_ecc_state_handle_t ecc_handle);
+                                         uint32_t data_size,
+                                         const sgx_ec256_public_t *p_public,
+                                         const sgx_ec256_signature_t *p_signature,
+                                         sgx_generic_ecresult_t *p_result,
+                                         sgx_ecc_state_handle_t ecc_handle);
 
 #ifdef __cplusplus
 }
