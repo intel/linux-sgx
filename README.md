@@ -203,13 +203,13 @@ Install Intel(R) SGX PSW
   Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder build and install JHI service using the following commands:
   * On Ubuntu 16.04:
   ```
-    $ sudo apt-get install uuid-dev libxml2-dev
-    $ cmake .;make;sudo make install;sudo systemclt enable jhi
+    $ sudo apt-get install uuid-dev libxml2-dev cmake
+    $ cmake .;make;sudo make install;sudo systemctl enable jhi
   ```
   * On Red Hat Enterprise Linux 7.2 and CentOS 7.3:  
   ```
     $ sudo yum install libuuid-devel libxml2-devel cmake
-    $ cmake .;make;sudo make install;sudo systemclt enable jhi
+    $ cmake .;make;sudo make install;sudo systemctl enable jhi
   ```
 
 ### Install Intel(R) SGX PSW
