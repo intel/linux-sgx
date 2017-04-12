@@ -39,4 +39,4 @@
     .long 0x01              /* type */
 0:  .asciz "sgx_metadata"   /* name */
 1:  .fill METADATA_SIZE, 1, 0      /* desc - stand for metadata which is initialized with 0 */
-2:  .p2align 0
+2:  .p2align 2
