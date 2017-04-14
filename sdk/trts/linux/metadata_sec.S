@@ -33,10 +33,10 @@
 
 #define METADATA_SIZE 4096
 .section ".note.sgxmeta", "", @note
-    .p2align 0              /* section no alignment */
+    .p2align 2              /* section no alignment */
     .long 1f - 0f           /* name size (not including padding) */
     .long 2f - 1f           /* desc size (not including padding) */
     .long 0x01              /* type */
 0:  .asciz "sgx_metadata"   /* name */
 1:  .fill METADATA_SIZE, 1, 0      /* desc - stand for metadata which is initialized with 0 */
-2:  .p2align 0
+2:  .p2align 2
