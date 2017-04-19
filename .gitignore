@@ -17,3 +17,6 @@
 #output files
 /build/
 /linux/installer/bin/*.bin
+
+#libunwind generated files
+libunwind/
