@@ -34,8 +34,6 @@
 #include "se_memcpy.h"
 #include "global_data.h"
 
-#define META_SECTION_ALIGNMENT    1  /*metadata section no alignment*/
-
 namespace {
 /** the callback function to filter a section.
  *
@@ -388,16 +386,10 @@ bool get_meta_property(const uint8_t *start_addr, const ElfW(Ehdr) *elf_hdr, uin
      * |  metadata       |
      */
 
-    if (shdr->sh_addralign != META_SECTION_ALIGNMENT)
-    {
-        se_trace(SE_TRACE_ERROR, "ERROR: The '.note.sgxmeta' section must be 4byte aligned\n");
-        return false;
-    }
-
     const ElfW(Note) *note = GET_PTR(ElfW(Note), start_addr, shdr->sh_offset);
     assert(note != NULL);
 
-    if (shdr->sh_size != ROUND_TO(sizeof(ElfW(Note)) + note->namesz + note->descsz, META_SECTION_ALIGNMENT))
+    if (shdr->sh_size != ROUND_TO(sizeof(ElfW(Note)) + note->namesz + note->descsz, shdr->sh_addralign))
     {
         se_trace(SE_TRACE_ERROR, "ERROR: The '.note.sgxmeta' section size is not correct.\n");
         return false;
