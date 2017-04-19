@@ -59,7 +59,7 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
     {
         return SGX_ERROR_UNEXPECTED;
     }
-    pState = (IppsAES_CMACState*)malloc(ippStateSize);
+    pState = (IppsAES_CMACState*)alloca(ippStateSize);
     if (pState == NULL)
     {
         return SGX_ERROR_OUT_OF_MEMORY;
@@ -67,9 +67,8 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
     error_code = ippsAES_CMACInit((const Ipp8u *)p_key, SGX_CMAC_KEY_SIZE, pState, ippStateSize);
     if (error_code != ippStsNoErr)
     {
-        // Clear temp State before free.
+        // Clear temp State.
         memset_s(pState, ippStateSize, 0, ippStateSize);
-        free(pState);
         switch (error_code)
         {
         case ippStsMemAllocErr: return SGX_ERROR_OUT_OF_MEMORY;
@@ -81,9 +80,8 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
     error_code = ippsAES_CMACUpdate((const Ipp8u *)p_src, src_len, pState);
     if (error_code != ippStsNoErr)
     {
-        // Clear temp State before free.
+        // Clear temp State.
         memset_s(pState, ippStateSize, 0, ippStateSize);
-        free(pState);
         switch (error_code)
         {
         case ippStsNullPtrErr:
@@ -94,9 +92,8 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
     error_code = ippsAES_CMACFinal((Ipp8u *)p_mac, SGX_CMAC_MAC_SIZE, pState);
     if (error_code != ippStsNoErr)
     {
-        // Clear temp State before free.
+        // Clear temp State.
         memset_s(pState, ippStateSize, 0, ippStateSize);
-        free(pState);
         switch (error_code)
         {
         case ippStsNullPtrErr:
@@ -104,9 +101,8 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
         default: return SGX_ERROR_UNEXPECTED;
         }
     }
-    // Clear temp State before free.
+    // Clear temp State.
     memset_s(pState, ippStateSize, 0, ippStateSize);
-    free(pState);
     return SGX_SUCCESS;
 }
 
