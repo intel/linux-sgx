@@ -1,0 +1,5 @@
+src/test
+src/Makefile
+src/config.h
+src/config.log
+src/config.status
