@@ -209,7 +209,7 @@ char* NonBlockingUnixCommunicationSocket::readRaw(ssize_t length)
     
         if (total_read != length)
         {
-            if (errorDetected || cancellationDetected || wasTimeoutDetected())
+            if (errorDetected || cancellationDetected || wasTimeoutDetected() || peerSocketClosed)
             {
                 disconnect();
                 delete [] recBuf;
