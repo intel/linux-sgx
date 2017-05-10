@@ -1199,6 +1199,7 @@ int main(int argc, char* argv[])
         if(fwrite(enclave_hash, sizeof(enclave_hash), 1, fp) != 1)
         {
             se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
+            fclose(fp);
             goto clear_return;
         }
         fclose(fp);
