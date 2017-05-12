@@ -54,6 +54,15 @@ chmod  0644 /etc/aesmd.conf
 chown -R aesmd /var/opt/aesmd
 chmod 0750 /var/opt/aesmd
 
+# By default the AESM's communication socket will be created in
+# /var/run/aesmd.  Putting the socket in the aesmd sub-directory
+# as opposed to directly in /var/run allows the user to create a
+# mount a volume at /var/run/aesmd and thus expose the socket to
+# a different filesystem or namespace, e.g. a Docker container.
+mkdir -p /var/run/aesmd
+chown -R aesmd /var/run/aesmd
+chmod 0755 /var/run/aesmd
+
 if [ -d /run/systemd/system ]; then
     AESMD_NAME=aesmd.service
     AESMD_TEMP=$AESM_PATH/$AESMD_NAME
@@ -112,8 +121,9 @@ $DISABLE_AESMD
 rm -f $AESMD_DEST
 rm -f /etc/aesmd.conf
 
-# Removing AESM internal folder
+# Removing AESM internal folders
 rm -fr /var/opt/aesmd
+rm -fr /var/run/aesmd
 
 # Removing runtime libraries
 rm -f /usr/lib/libsgx_uae_service.so

@@ -33,7 +33,7 @@
 
 
 #ifndef CONFIG_SOCKET_PATH
-    #define CONFIG_SOCKET_PATH "sgx_aesm_socket_base"
+    #define CONFIG_SOCKET_PATH "/var/run/aesmd/aesm.socket"
 #endif /* CONFIG_SOCKET_PATH */
 
 #endif

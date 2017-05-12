@@ -208,8 +208,7 @@ bool UnixCommunicationSocket::init()
         memset(&serv_addr, 0, sizeof(struct sockaddr_un));
         serv_addr.sun_family = AF_UNIX;
         memset(serv_addr.sun_path, 0, sizeof(serv_addr.sun_path));
-        // leave the first byte to 0 in order to have an abstract socket address
-        strncpy(serv_addr.sun_path + 1, mSocketBase, sizeof(serv_addr.sun_path) - 1);
+        strncpy(serv_addr.sun_path, mSocketBase, sizeof(serv_addr.sun_path));
 
         if( connect(mSocket, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != 0)
         {

@@ -30,6 +30,7 @@
  */
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/un.h>
 #include <unistd.h>
 #include <errno.h>
@@ -45,8 +46,10 @@ UnixServerSocket::UnixServerSocket(const char* socketbase, const unsigned int cl
 }
 
 UnixServerSocket::~UnixServerSocket() {
-    if (mSocket > 0)
+    if (mSocket > 0) {
+        unlink(mSocketBase);
         close(mSocket);
+    }
 }
 
 void UnixServerSocket::init()
@@ -64,8 +67,7 @@ void UnixServerSocket::init()
 
     server_address.sun_family = AF_UNIX;
     memset(server_address.sun_path, 0, sizeof(server_address.sun_path));
-    // leave the first byte to 0 in order to have an abstract socket address
-    strncpy(server_address.sun_path + 1, mSocketBase, sizeof(server_address.sun_path) - 1);
+    strncpy(server_address.sun_path, mSocketBase, sizeof(server_address.sun_path));
     unlink(server_address.sun_path);
 
     socklen_t server_len = sizeof(server_address);
@@ -74,6 +76,8 @@ void UnixServerSocket::init()
         close(mSocket);
         throw("Failed to create socket");
     }
+
+    chmod(mSocketBase, 0777);
 
     rc = listen(mSocket, 32);
     if (rc < 0) {
