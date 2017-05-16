@@ -171,7 +171,7 @@ char* NonBlockingUnixCommunicationSocket::readRaw(ssize_t length)
                 if (mEvents[i].events & EPOLLHUP) 
                 {
                     peerSocketClosed = true;
-                    continue;    
+                    //peer closed socket. one more reading all remaining data.
                 }
                 if ((mEvents[i].events & EPOLLERR) ||
                     (!(mEvents[i].events & EPOLLIN)))
