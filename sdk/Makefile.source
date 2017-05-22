@@ -44,6 +44,8 @@
 #        - ukey_exchange: libsgx_ukey_exchange.a
 #        - ptrace:        libsgx_ptrace.so, gdb-sgx-plugin
 #        - sample_crypto: libsample_crypto.so (for sample code use)
+#  - Standalone, untrusted libraries
+#        - libcapable:    libsgx_capable.a libsgx_capable.so
 #  - Tools
 #        - signtool:      sgx_sign
 #        - edger8r:       sgx_edger8r
@@ -57,7 +59,7 @@ LIBTLIBCXX := $(BUILD_DIR)/libsgx_tstdcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: all
-all: tstdc tstdcxx tservice trts tcrypto tkey_exchange ukey_exchange ptrace sample_crypto simulation signtool edger8r tsetjmp tcmalloc
+all: tstdc tstdcxx tservice trts tcrypto tkey_exchange ukey_exchange ptrace sample_crypto libcapable simulation signtool edger8r tsetjmp tcmalloc
 
 # ---------------------------------------------------
 #  tstdc
@@ -187,6 +189,14 @@ sample_crypto:
 	$(MAKE) -C sample_libcrypto
 
 # ---------------------------------------------------
+#  standalone, untrusted libraries
+# ---------------------------------------------------
+
+.PHONY: libcapable
+libcapable:
+	$(MAKE) -C libcapable/linux/
+
+# ---------------------------------------------------
 #  simualtion libraries and tools
 # ---------------------------------------------------
 .PHONY: simulation
@@ -226,6 +236,7 @@ clean:
 	$(MAKE) -C ukey_exchange/                      clean
 	$(MAKE) -C debugger_interface/linux/           clean
 	$(MAKE) -C sample_libcrypto/                   clean
+	$(MAKE) -C libcapable/linux/                   clean
 	$(MAKE) -C simulation/                         clean
 	$(MAKE) -C sign_tool/SignTool                  clean
 	$(MAKE) -C edger8r/linux                       clean
