@@ -87,9 +87,6 @@ typedef enum _status_t
     SGX_ERROR_MC_OVER_QUOTA             = SGX_MK_ERROR(0x400f),   /* Monotonic counters exceeds quota limitation */
     SGX_ERROR_KDF_MISMATCH              = SGX_MK_ERROR(0x4011),   /* Key derivation function doesn't match during key exchange */
     SGX_ERROR_UNRECOGNIZED_PLATFORM     = SGX_MK_ERROR(0x4012),   /* EPID Provisioning failed due to platform not recognized by backend server*/
-
-    SGX_ERROR_NO_PRIVILEGE              = SGX_MK_ERROR(0x5002),   /* Not enough privilege to perform the operation */
-
     
     /* SGX errors are only used in the file API when there is no appropriate EXXX (EINVAL, EIO etc.) error code */
     SGX_ERROR_FILE_BAD_STATUS               = SGX_MK_ERROR(0x7001),	/* The file is in bad status, run sgx_clearerr to try and fix it */

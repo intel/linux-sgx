@@ -18,8 +18,6 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/libsgx_uae_service_deploy.so	<installdir>/package/lib64/libsgx_uae_service.so	0	main	STP
 <deliverydir>/build/linux/libsgx_uae_service_sim.so	<installdir>/package/lib64/libsgx_uae_service_sim.so	0	main	STP
 <deliverydir>/build/linux/libsgx_ukey_exchange.a	<installdir>/package/lib64/libsgx_ukey_exchange.a	0	main	STP
-<deliverydir>/build/linux/libsgx_capable.a	<installdir>/package/lib64/libsgx_capable.a	0	main	STP
-<deliverydir>/build/linux/libsgx_capable.so	<installdir>/package/lib64/libsgx_capable.so	0	main	STP
 <deliverydir>/build/linux/libsgx_urts_deploy.so	<installdir>/package/lib64/libsgx_urts.so	0	main	STP
 <deliverydir>/build/linux/libsgx_urts_sim.so	<installdir>/package/lib64/libsgx_urts_sim.so	0	main	STP
 <deliverydir>/build/linux/STLport_Changes_SGX.txt	<installdir>/package/lib64/STLport_Changes_SGX.txt	0	main	STP
