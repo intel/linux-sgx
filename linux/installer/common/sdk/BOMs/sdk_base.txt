@@ -1,6 +1,7 @@
 DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/libsample_libcrypto.so	<installdir>/package/SampleCode/RemoteAttestation/sample_libcrypto/libsample_libcrypto.so	0	main	STP
 <deliverydir>/common/inc/sgx_attributes.h	<installdir>/package/include/./sgx_attributes.h	0	main	STP
+<deliverydir>/common/inc/sgx_capable.h	<installdir>/package/include/./sgx_capable.h	0	main	STP
 <deliverydir>/common/inc/sgx_cpuid.h	<installdir>/package/include/./sgx_cpuid.h	0	main	STP
 <deliverydir>/common/inc/sgx_defs.h	<installdir>/package/include/./sgx_defs.h	0	main	STP
 <deliverydir>/common/inc/sgx_dh.h	<installdir>/package/include/./sgx_dh.h	0	main	STP
