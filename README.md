@@ -7,19 +7,19 @@ Introduction
 ------------
 Intel(R) Software Guard Extensions (Intel(R) SGX) is an Intel technology for application developers seeking to protect select code and data from disclosure or modification.
 
-The Linux Intel SGX software stack is comprised of the Intel SGX driver, the Intel SGX SDK, and the Intel SGX Platform Software. The Intel SGX SDK and Intel SGX PSW are hosted in the [linux-sgx](https://github.com/01org/linux-sgx) project.
+The Linux&ast; Intel SGX software stack is comprised of the Intel SGX driver, the Intel SGX SDK, and the Intel SGX Platform Software (PSW). The Intel SGX SDK and Intel SGX PSW are hosted in the [linux-sgx](https://github.com/01org/linux-sgx) project.
 
 The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the out-of-tree driver for the Linux Intel SGX software stack, which will be used until the driver upstreaming process is complete. 
 
-**Note**  This repository includes a subset of the Intel(R) IPP Cryptography library under [external/crypto_px](https://github.com/01org/linux-sgx/external/crypto_px). It is provided as reference implementation for the cryptographic primitives used in SDK and PSW. They are written in pure C and are not optimized for performance. Instructions are provided below for building the SDK and PSW with both precompiled optimized IPP binaries and the non-optimized source code version. 
+**Note:**  This repository includes a subset of the Intel(R) Integrated Performance Primitives (IPP) Cryptography library under [external/crypto_px](https://github.com/01org/linux-sgx/external/crypto_px). It is provided as reference implementation for the cryptographic primitives used in SDK and PSW. The primitives are written in pure C and are not optimized for performance. Instructions are provided below for building the SDK and PSW with both precompiled, optimized IPP binaries and the non-optimized source code version. 
 
 License
 -------
-See License.txt for details.
+See `License.txt` for details.
 
 Contributing
 -------
-See CONTRIBUTING.md for details.
+See `CONTRIBUTING.md` for details.
 
 Documentation
 -------------
@@ -33,12 +33,12 @@ Follow the instructions in the [linux-sgx-driver](https://github.com/01org/linux
 Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
-- Ensure that you have the following required operating systems:  
+- Ensure that you have the one of following operating systems:  
   * Ubuntu\* Desktop-16.04-LTS 64bits
   * Red Hat Enterprise Linux Server release 7.2 64bits
   * CentOS 7.3.1611 64bits
 
-- Use the following command(s) to install the required tools to build Intel(R) SGX SDK:  
+- Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
   * On Ubuntu 16.04:
   ```
     $ sudo apt-get install build-essential ocaml automake autoconf libtool wget python
@@ -48,7 +48,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml wget python
   ```
-- Use the following command to install additional required tools to build Intel(R) SGX PSW:  
+- Use the following command to install additional required tools to build the Intel(R) SGX PSW:  
   * On Ubuntu 16.04:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev
@@ -58,21 +58,21 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo yum install openssl-devel libcurl-devel protobuf-compiler protobuf-devel
   ```
 - Use the script ``download_prebuilt.sh`` inside source code package to download prebuilt binaries to prebuilt folder  
-  You may need set https proxy for wget tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
+  You may need set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
 ```
   $ ./download_prebuilt.sh
 ```
 
 ### Build the Intel(R) SGX SDK and Intel(R) SGX PSW
-The following steps describe how to build the Intel SGX SDK and PSW. You can build the project according to your requirement.  
-- To build both Intel SGX SDK and PSW with default configuration, enter the following command:  
-  You can find the tools and libraries generated in the `build/linux` directory.  
-  **Note**: You can also go to the sdk folder and use the `make` command to build the Intel SGX SDK component only. However, the building of PSW component is dependent on the building result of Intel SGX SDK.  
+The following steps describe how to build the Intel SGX SDK and PSW. You can build the project according to your requirements.  
+- To build both Intel SGX SDK and PSW with the default configuration, enter the following command:  
 ```
   $ make  
 ```  
+  You can find the tools and libraries generated in the `build/linux` directory.  
+  **Note**: You can also go to the `sdk` folder and use the `make` command to build the Intel SGX SDK component only. However, building the PSW component is dependent on the result of building the Intel SGX SDK.  
 
-- The default build uses precompiled optimized libraries which have been downloaded by the script ``./download_prebuilt.sh``.
+- The default build uses precompiled optimized libraries, which are downloaded by the script ``./download_prebuilt.sh``.
   You can also use the non-optimized source code version implementation instead by entering the following command:
 ```
   $ make USE_OPT_LIBS=0
@@ -110,7 +110,7 @@ You can find the generated Intel SGX PSW installer ``sgx_linux_x64_psw_${version
 Install Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
-- Ensure that you have the following required operating systems:  
+- Ensure that you have one of the following operating systems:  
   * Ubuntu\* Desktop-16.04-LTS 64bits
   * Red Hat Enterprise Linux Server release 7.2 64bits
   * CentOS 7.3.1611 64bits
@@ -126,53 +126,53 @@ Install Intel(R) SGX SDK
   ```
 
 ### Install Intel(R) SGX SDK
-To install Intel(R) SGX SDK, execute the installer with root privilege:
+To install Intel(R) SGX SDK, invoke the installer with root privilege, as follows:
 ```
 $ cd linux/installer/bin
 $ sudo ./sgx_linux_x64_sdk_${version}.bin 
 ```
-### Test Intel(R) SGX SDK Package with the Sample Codes
-- Copy the sample codes installed by Intel(R) SGX SDK package into your work folder, such as:  
+### Test Intel(R) SGX SDK Package with the Code Samples
+- Copy the code samples installed by Intel(R) SGX SDK package into your work folder, for example:  
 ```
   $ cp -r /opt/intel/sgxsdk/SampleCode ~
 ```
-- Compile and run each sample codes in the simulation mode to make sure the package works well:    
+- Compile and run each code sample in Simulation mode to make sure the package works well:    
 ```
   $ cd SampleCode/LocalAttestation
   $ make SGX_MODE=SIM
   $ ./app
 ```
-   Use similar commands for other sample codes.
-### Compile and Run the Sample Codes in the Hardware Mode
-If you use an Intel SGX hardware enabled machine, you can run the sample codes in the hardware mode.
+   Use similar commands for the other code samples.
+### Compile and Run the Code Samples in Hardware Mode
+If you use an Intel SGX hardware enabled machine, you can run the code samples in Hardware mode.
 Ensure that you install Intel(R) SGX driver and Intel(R) SGX PSW installer on the machine.  
-See the topic, Build and Install the Intel(R) SGX Driver, on how to install the Intel(R) SGX driver.  
-See the topic, Install Intel(R) SGX PSW, on how to install the PSW package.
-- Copy the sample codes installed by the Intel(R) SGX SDK package into your work folder, such as:   
+See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on installing the Intel(R) SGX driver.  
+See the later topic, *Install Intel(R) SGX PSW*, on for information on installing the PSW package.
+- Copy the code samples installed by the Intel(R) SGX SDK package into your work folder, for example:   
 ```
   $ cp -r /opt/intel/sgxsdk/SampleCode ~
 ```
-- Compile and run each sample codes in the hardware mode, debug build:  
+- Compile and run each code sample in Hardware mode, Bebug build, as follows:  
 ```
   $ cd SampleCode/LocalAttestation
   $ make
   $ ./app
 ```
-   Use similar commands for other sample codes.   
+   Use similar commands for other code samples.   
 
 
 Install Intel(R) SGX PSW
 ------------------------
 ### Prerequisites
-- Ensure that you have the following required operating systems:  
+- Ensure that you have one of the following operating systems:  
   * Ubuntu\* Desktop-16.04-LTS 64bits
   * Red Hat Enterprise Linux Server release 7.2 64bits
   * CentOS 7.3.1611 64bits
-- Ensure that you have the following required hardware:  
+- Ensure that you have a system with one of the following processors:  
   * 6th Generation Intel(R) Core(TM) Processor (code named Skylake)
   * 7th Generation Intel(R) Core(TM) Processor (code named Kaby Lake)
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel SGX driver in advance.  
-  See the topic, Build and Install the Intel(R) SGX Driver, on how to install the Intel SGX driver.
+  See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on installing the Intel SGX driver.
 - Install the library using the following command:  
   * On Ubuntu 16.04:
   ```
@@ -182,8 +182,8 @@ Install Intel(R) SGX PSW
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
-- To use trusted platform service  
-  Ensure mei_me driver is enabled and /dev/mei0 exists.  
+- To use Trusted Platform Service functions:  
+  Ensure `mei_me` driver is enabled and `/dev/mei0` exists.  
   * On Red Hat Enterprise Linux 7.2:  
   Update kernel version to kernel-3.10.0-514.el7 or newer on Red Hat Enterprise Linux 7.2.
   ```
@@ -200,7 +200,7 @@ Install Intel(R) SGX PSW
   ```
     $ sudo yum install iclsClient-1.45.449.12-1.x86_64.rpm
   ```
-  Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder build and install JHI service using the following commands:
+  Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder, build and install the `JHI` service using the following commands:
   * On Ubuntu 16.04:
   ```
     $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config
@@ -213,26 +213,26 @@ Install Intel(R) SGX PSW
   ```
 
 ### Install Intel(R) SGX PSW
-To install Intel(R) SGX PSW, execute the installer with root privilege:  
+To install Intel(R) SGX PSW, invoke the installer with root privilege:  
 ```
 $ cd linux/installer/bin
 $ sudo ./sgx_linux_x64_psw_${version}.bin
 ```
-**Note**: On Red Hat Enterprise Linux 7.2 and CentOS 7.3, after Intel(R) SGX PSW installation, execute the following command to update the shared library cache additionally:  
+**Note**: On Red Hat Enterprise Linux 7.2 and CentOS 7.3, after Intel(R) SGX PSW installation, execute the following command to also update the shared library cache:  
 ```
 $ sudo ldconfig
 ```
  
 
 ### Start or Stop aesmd Service
-The Intel(R) SGX PSW installer installs an aesmd service in your machine which is running in a special linux account aesmd.  
+The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.  
 To stop the service: `$ sudo service aesmd stop`  
 To start the service: `$ sudo service aesmd start`  
 To restart the service: `$ sudo service aesmd restart`
 
 ### Configure the Proxy for aesmd Service
-The aesmd service uses HTTP protocol to initialize some services.  
-If proxy is required for HTTP protocol, you may need manually setup the proxy for aesmd service.  
-You should manually edit file `/etc/aesmd.conf` (refer the comment in the file) to set the proxy for aesmd service.  
+The aesmd service uses the HTTP protocol to initialize some services.  
+If a proxy is required for the HTTP protocol, you may need to manually set up the proxy for the aesmd service.  
+You should manually edit the file `/etc/aesmd.conf` (refer to the comments in the file) to set the proxy for the aesmd service.  
 After you configure the proxy, you need to restart the service to enable the proxy.
 
