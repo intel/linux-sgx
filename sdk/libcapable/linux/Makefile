@@ -31,11 +31,6 @@
 
 include ../../../buildenv.mk
 
-ifndef DEBUG
-CXXFLAGS += -DDISABLE_TRACE
-CFLAGS += -DDISABLE_TRACE
-endif
-
 CXXFLAGS += -fPIC -Werror -g
 CXXFLAGS += $(ADDED_INC)
 
