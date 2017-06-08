@@ -48,7 +48,7 @@ const uint32_t sgx_nistp256_r[] = {
 *   Output: sgx_ec256_signature_t *p_signature - Pointer to the signature - LITTLE ENDIAN  */
 sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
                             uint32_t data_size,
-                            sgx_ec256_private_t *p_private,
+                            const sgx_ec256_private_t *p_private,
                             sgx_ec256_signature_t *p_signature,
                             sgx_ecc_state_handle_t ecc_handle)
 {
@@ -186,8 +186,8 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
 sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
                               uint32_t data_size,
                               const sgx_ec256_public_t *p_public,
-                              sgx_ec256_signature_t *p_signature,
-                              uint8_t *p_result,
+                              const sgx_ec256_signature_t *p_signature,
+                              sgx_generic_ecresult_t *p_result,
                               sgx_ecc_state_handle_t ecc_handle)
 {
     if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||

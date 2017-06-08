@@ -43,7 +43,7 @@
 
 //Function to verify the ECDSA signature of a PEK
 //SHA1 value for integrity checking is not verified since the ECDSA verification could make sure the integrity at the same time.
-sgx_status_t check_pek_signature(const signed_pek_t& signed_pek, const sgx_ec256_public_t* pek_sk, uint8_t *result)
+sgx_status_t check_pek_signature(const signed_pek_t& signed_pek, const sgx_ec256_public_t* pek_sk, sgx_generic_ecresult_t *result)
 {
     sgx_status_t status = SGX_SUCCESS;
     sgx_ecc_state_handle_t handle= 0;
@@ -67,7 +67,7 @@ sgx_status_t check_pek_signature(const signed_pek_t& signed_pek, const sgx_ec256
 }
 
 //Function to verify that ECDSA signature of XEGB is correct
-sgx_status_t verify_xegb(const extended_epid_group_blob_t& xegb, uint8_t *result){
+sgx_status_t verify_xegb(const extended_epid_group_blob_t& xegb, sgx_generic_ecresult_t *result){
     if (lv_htons(xegb.data_length) != EXTENDED_EPID_GROUP_BLOB_DATA_LEN
         || xegb.format_id != XEGB_FORMAT_ID){
         return SGX_ERROR_INVALID_PARAMETER;
@@ -97,7 +97,7 @@ sgx_status_t verify_xegb(const extended_epid_group_blob_t& xegb, uint8_t *result
     return SGX_SUCCESS;
 }
 
-sgx_status_t verify_xegb_with_default(const extended_epid_group_blob_t& xegb, uint8_t *result, extended_epid_group_blob_t& out_xegb)
+sgx_status_t verify_xegb_with_default(const extended_epid_group_blob_t& xegb, sgx_generic_ecresult_t *result, extended_epid_group_blob_t& out_xegb)
 {
     const uint8_t *pxegb = reinterpret_cast<const uint8_t *>(&xegb);
     uint32_t i;

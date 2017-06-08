@@ -685,7 +685,7 @@ ae_error_t pib_verify_signature(platform_info_blob_wrapper_t& piBlobWrapper)
     ae_error_t ae_err = AE_FAILURE;
     sgx_ecc_state_handle_t ecc_handle = NULL;
 
-    uint8_t result = SGX_EC_INVALID_SIGNATURE;
+    sgx_generic_ecresult_t result = SGX_EC_INVALID_SIGNATURE;
 
     const uint32_t data_size = static_cast<uint32_t>(sizeof(piBlobWrapper.platform_info_blob) - sizeof(piBlobWrapper.platform_info_blob.signature));
 

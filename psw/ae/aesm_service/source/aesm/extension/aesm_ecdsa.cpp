@@ -37,7 +37,7 @@
 
 ae_error_t aesm_check_pek_signature(const signed_pek_t& signed_pek, const extended_epid_group_blob_t& xegb)
 {
-    uint8_t result = SGX_EC_INVALID_SIGNATURE;
+    sgx_generic_ecresult_t result = SGX_EC_INVALID_SIGNATURE;
     uint32_t i;
     sgx_status_t sgx_code;
     const uint8_t *p = (const uint8_t *)&xegb;
@@ -64,7 +64,7 @@ ae_error_t aesm_check_pek_signature(const signed_pek_t& signed_pek, const extend
 
 ae_error_t aesm_verify_xegb(const extended_epid_group_blob_t& signed_xegb)
 {
-    uint8_t result = SGX_EC_INVALID_SIGNATURE;
+    sgx_generic_ecresult_t result = SGX_EC_INVALID_SIGNATURE;
     sgx_status_t sgx_code = verify_xegb(signed_xegb, &result);
     if (sgx_code == SGX_ERROR_INVALID_PARAMETER)
         return AE_INVALID_PARAMETER; 
