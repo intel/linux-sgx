@@ -90,7 +90,7 @@ elif [ -d /etc/init/ ]; then
     chmod 0644 $AESMD_DEST
     rm -f $AESMD_TEMP
     rm -f $AESM_PATH/aesmd.service
-    sudo /sbin/initctl reload-configuration
+    /sbin/initctl reload-configuration
     retval=$?
 else
     echo " failed."
@@ -115,7 +115,7 @@ if test \$(id -u) -ne 0; then
 fi
 
 # Killing AESM service
-sudo /usr/sbin/service aesmd stop
+/usr/sbin/service aesmd stop
 $DISABLE_AESMD
 # Removing AESM configuration files
 rm -f $AESMD_DEST
@@ -149,7 +149,7 @@ rm $AESM_PATH/cse_provision_tool
 if [ -d /run/systemd/system ]; then
     systemctl start aesmd
 elif [ -d /etc/init/ ]; then
-    sudo /sbin/initctl start aesmd
+    /sbin/initctl start aesmd
 fi
 
 echo -e "\nuninstall.sh script generated in $PSW_DST_PATH\n"
