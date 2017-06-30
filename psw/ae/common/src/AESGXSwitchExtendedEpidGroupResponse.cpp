@@ -108,7 +108,7 @@ bool AESGXSwitchExtendedEpidGroupResponse::inflateWithMessage(AEMessage* message
     return true;
 }
 
-bool AESGXSwitchExtendedEpidGroupResponse::GetValues(uint32_t* errorCode)
+bool AESGXSwitchExtendedEpidGroupResponse::GetValues(uint32_t* errorCode) const
 {
     *errorCode = m_response->errorcode();
     return true;

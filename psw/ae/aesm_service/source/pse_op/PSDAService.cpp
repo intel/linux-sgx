@@ -61,16 +61,7 @@ bool PSDAService::start_service()
     {
         if (!start_service_internal()) 
         {
-            if (!is_session_active())
-            {
-                // session is invalid, maybe caused by power event. continue to RETRY
-                continue;
-            }
-            else
-            {
-                // session is active , will not retry
-                return false;
-            }
+            continue;
         }
         else
         {
@@ -82,9 +73,37 @@ bool PSDAService::start_service()
     return false;
 }
 
+bool PSDAService::install_psda()
+{
+    // get PSDA full path
+    TCHAR psda_path[MAX_PATH] = { 0 };
+    if (aesm_get_pathname(FT_PERSISTENT_STORAGE, PSDA_FID, psda_path, MAX_PATH) != AE_SUCCESS)
+    {
+        return false;
+    }
+    else
+    {
+        // install the PSDA 
+        JHI_RET jhi_ret = JHI_Install2(jhi_handle, g_psda_id, psda_path);
+        if (jhi_ret != JHI_SUCCESS)
+        {
+            AESM_DBG_ERROR("Failed to install PSDA. JHI_Install2() returned %d", jhi_ret);
+            return false;
+        }
+        // get the psda svn and keep it in memory
+        if (!save_current_psda_svn())
+        {
+            AESM_DBG_ERROR("Failed to get PSDA SVN.");
+            return false;
+        }
+
+        return true;
+    }
+}
+
 bool PSDAService::start_service_internal()
 {
-    bool retVal = true;
+    bool retVal = false;
 
     SGX_DBGPRINT_PRINT_ANSI_STRING(__FUNCTION__);
 
@@ -104,46 +123,35 @@ bool PSDAService::start_service_internal()
                 if ((jhi_ret = JHI_Initialize(&jhi_handle, NULL, 0)) != JHI_SUCCESS)
                 {
                     AESM_DBG_ERROR("JHI_Initialize() failed. The return value is %d", jhi_ret);
-                    retVal = false;
                     break;
                 }
-                else
+                else if(!install_psda()) 
                 {
-                    // get PSDA full path
-                    TCHAR psda_path[MAX_PATH] = {0};
-                    if(aesm_get_pathname(FT_PERSISTENT_STORAGE, PSDA_FID, psda_path, MAX_PATH)!=AE_SUCCESS)
-                    {
-                        retVal = false;
-                        break;
-                    }
-                    else
-                    {
-                        // install the PSDA 
-                        jhi_ret = JHI_Install2(jhi_handle, g_psda_id, psda_path);
-                        if (jhi_ret != JHI_SUCCESS)
-                        {
-                            AESM_DBG_ERROR("Failed to install PSDA. JHI_Install2() returned %d", jhi_ret);
-                            retVal = false;
-                            break;
-                        }
-                        // get the psda svn and keep it in memory
-                        if (!save_current_psda_svn())
-                        {
-                            AESM_DBG_ERROR("Failed to get PSDA SVN.");
-                            retVal = false;
-                            break;
-                        }
-                    }
+                    break;
                 }
             }
 
             // Create JHI session
-            if ((jhi_ret = JHI_CreateSession(jhi_handle, g_psda_id, 0, NULL, &psda_session_handle)) != JHI_SUCCESS)
+            if ((jhi_ret = JHI_CreateSession(jhi_handle, g_psda_id, 0, NULL, &psda_session_handle)) != JHI_SUCCESS) 
             {
-                AESM_DBG_ERROR("Failed to create session. JHI_CreateSession() returned %d", jhi_ret);
-                retVal = false;
-                break;
+                if (jhi_ret == JHI_APPID_NOT_EXIST)
+                {
+                    // if the system resumed from hibernate or fast startup after RTC is cleared, JHI_CreateSession would 
+                    // return JHI_APPID_NOT_EXIST and we need to re-install PSDA and call JHI_CreateSession again
+                    if (!install_psda() || (jhi_ret = JHI_CreateSession(jhi_handle, g_psda_id, 0, NULL, &psda_session_handle)) != JHI_SUCCESS)
+                    {
+                        AESM_DBG_ERROR("Failed to install psda or create session. Returned %d", jhi_ret);
+                        break;
+                    }
+                }
+                else
+                {
+                    AESM_DBG_ERROR("Failed to create session. JHI_CreateSession() returned %d", jhi_ret);
+                    break;
+                }
             }
+
+            retVal = true;
 
 #if defined(DAL_DIAGNOSTICS)
 
@@ -162,8 +170,8 @@ bool PSDAService::start_service_internal()
             if (NULL != tempId)
             {
                 strcpy_s(tempId, len, g_psda_id);
-                char* txBuf = "security.version";
-                appletProperty.TxBuf->buffer = txBuf;
+                char const * txBuf = "security.version";
+                appletProperty.TxBuf->buffer = (PVOID)txBuf;
                 appletProperty.TxBuf->length = sizeof(*txBuf)*(strlen(txBuf)+1);
                 JHI_RET jhiRet = JHI_GetAppletProperty(jhi_handle, tempId, &appletProperty);
 
@@ -341,15 +349,15 @@ bool PSDAService::save_current_psda_svn()
     appletProperty.RxBuf->buffer = rxBuf;
     appletProperty.RxBuf->length = sizeof(rxBuf);
 
-    char* txBuf = "security.version";
-    appletProperty.TxBuf->buffer = txBuf;
+    char const * txBuf = "security.version";
+    appletProperty.TxBuf->buffer = (PVOID)txBuf;
     appletProperty.TxBuf->length = (UINT32)(sizeof(*txBuf)*(strlen(txBuf)+1));
 
     //
     // all this to get rid of const-ness of g_psda_id,
     // required by JHI_GetAppletProperty
     //
-    unsigned len = strnlen_s(g_psda_id, 128) + 1;
+    unsigned len = (unsigned)strnlen_s(g_psda_id, 128) + 1;
     char* tempId = (char*) malloc(len);
     if (NULL != tempId)
     {
@@ -363,7 +371,7 @@ bool PSDAService::save_current_psda_svn()
             if (!(LONG_MIN == tempSvn || LONG_MAX == tempSvn || 0 == tempSvn))
             {
                 retVal = true;
-                psda_svn = tempSvn;
+                psda_svn = (unsigned int)tempSvn;
                 SGX_DBGPRINT_ONE_STRING_ONE_INT("psdaSvn = ", tempSvn);
             }
             else

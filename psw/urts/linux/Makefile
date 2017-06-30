@@ -57,7 +57,7 @@ LDFLAGS := -lwrapper
 LDFLAGS += -Wl,-Bdynamic -lsgx_uae_service
 
 LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
-LDFLAGS += -Wl,--version-script=urts.lds
+LDFLAGS += -Wl,--version-script=urts.lds -Wl,--gc-sections
 
 DIR1 := $(LINUX_PSW_DIR)/urts/linux
 DIR2 := $(LINUX_PSW_DIR)/urts

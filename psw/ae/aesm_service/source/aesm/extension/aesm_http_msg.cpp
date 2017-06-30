@@ -80,13 +80,13 @@ static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
             AESM_DBG_ERROR("malloc error in write callback fun");
             return 0;
         }
-        memcpy(p, s->base, s->size);
+        memcpy_s(p, newsize, s->base, s->size);
         free(s->base);
         start = s->size;
         s->base = p;
         s->size = newsize;
     }
-    memcpy(s->base +start, ptr, size*nmemb);
+    memcpy_s(s->base +start, s->size-start, ptr, size*nmemb);
     return nmemb;
 }
 

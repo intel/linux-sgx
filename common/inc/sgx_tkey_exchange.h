@@ -121,7 +121,7 @@ typedef sgx_status_t(*sgx_ra_derive_secret_keys_t)(
  *                      shared keys (SMK, SK, MK and VK).
  * @param p_context The output context for the subsequent remote attestation
  *                  and key exchange process, to be used in sgx_ra_get_msg1 and
- *                  sgx_ra_get_msg2.
+ *                  sgx_ra_proc_msg2.
  * @return sgx_status_t SGX_SUCCESS                     Indicates success.
  *                      SGX_ERROR_INVALID_PARAMETER     Indicates an error that
  *                                                      the input parameters are

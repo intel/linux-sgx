@@ -413,7 +413,7 @@ void EndpointSelectionInfo::get_proxy(uint32_t& proxy_type, char proxy_url[MAX_P
          _is_white_list_url_valid=true;
     }
     proxy_type = _config_urls.proxy_type;
-    strcpy(proxy_url, _config_urls.aesm_proxy);
+    strcpy_s(proxy_url, MAX_PATH, _config_urls.aesm_proxy);
 }
 const char *EndpointSelectionInfo::get_pse_provisioning_url(const endpoint_selection_infos_t& es_info)
 {

@@ -36,7 +36,7 @@ set -e
 SCRIPT_DIR=$(dirname "$0")
 source ${SCRIPT_DIR}/installConfig
 
-# Generate the script to preload SGX ptrace library for gdb
+# Generate the script to preload Intel(R) SGX ptrace library for gdb
 SDK_DST_PATH=${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}
 SDK_LIB_PATH=${SDK_DST_PATH}/${LIB_DIR}
 
@@ -69,8 +69,19 @@ shopt -s expand_aliases
 
 GDB_SGX_PLUGIN_PATH=$SDK_LIB_PATH/gdb-sgx-plugin
 SGX_LIBRARY_PATH=$SDK_LIB_PATH
+
+if [ -f /usr/local/bin/gdb ]
+then
+    GDB=/usr/local/bin/gdb
+elif [ -f /usr/bin/gdb ]
+then
+    GDB=/usr/bin/gdb
+else
+    GDB=gdb
+fi
+
 export PYTHONPATH=\$GDB_SGX_PLUGIN_PATH
-LD_PRELOAD=\$SGX_LIBRARY_PATH/libsgx_ptrace.so /usr/bin/gdb -iex "directory \$GDB_SGX_PLUGIN_PATH" -iex "source \$GDB_SGX_PLUGIN_PATH/gdb_sgx_plugin.py" -iex "set environment LD_PRELOAD" -iex "add-auto-load-safe-path /usr/lib" "\$@"
+LD_PRELOAD=\$SGX_LIBRARY_PATH/libsgx_ptrace.so \$GDB -iex "directory \$GDB_SGX_PLUGIN_PATH" -iex "source \$GDB_SGX_PLUGIN_PATH/gdb_sgx_plugin.py" -iex "set environment LD_PRELOAD" -iex "add-auto-load-safe-path /usr/lib" "\$@"
 EOF
 
     chmod +x $GDB_SCRIPT
@@ -120,7 +131,7 @@ if [ \$? -ne 0 ]; then
     exit 1
 fi
 
-echo "SGX SDK uninstalled."
+echo "Intel(R) SGX SDK uninstalled."
 
 EOF
 }

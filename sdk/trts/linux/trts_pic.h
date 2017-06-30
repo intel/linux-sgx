@@ -65,6 +65,7 @@
 #define stack_limit_addr    (SE_WORDSIZE * 3)
 #define first_ssa_gpr       (SE_WORDSIZE * 4)
 #define self_addr           0
+#define stack_guard         (SE_WORDSIZE * 5)
 
 /* SSA GPR */
 #define ssa_sp_t            32

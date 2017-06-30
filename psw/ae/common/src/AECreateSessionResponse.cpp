@@ -111,7 +111,7 @@ bool AECreateSessionResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AECreateSessionResponse::GetValues(uint32_t* errorCode, uint32_t* sessionId, uint32_t dhMsg1Length, uint8_t* dhMsg1)
+bool AECreateSessionResponse::GetValues(uint32_t* errorCode, uint32_t* sessionId, uint32_t dhMsg1Length, uint8_t* dhMsg1) const
 {
     if (m_response->has_se_dh_msg1() && dhMsg1 != NULL)
     {

@@ -61,7 +61,7 @@ class AEGetWhiteListResponse : public IAEResponse
         //getters
         AEMessage*  serialize();
 
-        bool GetValues(uint32_t* errorCode, uint32_t whiteListLength, uint8_t * whiteList);
+        bool GetValues(uint32_t* errorCode, uint32_t whiteListLength, uint8_t * whiteList) const;
         //operators
         AEGetWhiteListResponse& operator=(const AEGetWhiteListResponse &other);
 

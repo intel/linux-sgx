@@ -107,7 +107,7 @@ bool AECloseSessionResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AECloseSessionResponse::GetValues(uint32_t* errorCode)
+bool AECloseSessionResponse::GetValues(uint32_t* errorCode) const
 {
     *errorCode = m_response->errorcode(); 
     return true;

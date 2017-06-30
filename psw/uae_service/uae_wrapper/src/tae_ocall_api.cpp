@@ -46,6 +46,18 @@
 #include <AECloseSessionRequest.h>
 #include <AECloseSessionResponse.h>
 
+#include <new>
+
+#define TRY_CATCH_BAD_ALLOC(block) \
+    try{ \
+        block; \
+    } \
+    catch(std::bad_alloc& e) \
+    { \
+        *result = AESM_OUT_OF_MEMORY_ERROR; \
+        return UAE_OAL_SUCCESS; \
+    }
+
 extern "C"
 {
 
@@ -57,44 +69,48 @@ uae_oal_status_t oal_create_session(
         uint32_t timeout_usec, 
         aesm_error_t *result)
 {
+    TRY_CATCH_BAD_ALLOC({
     //get services provider
-    AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
-    if (servicesProvider == NULL)
-        return UAE_OAL_ERROR_UNEXPECTED;
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
 
 
-    AECreateSessionRequest createSessionRequest(dh_msg1_size, timeout_usec / 1000);
+        AECreateSessionRequest createSessionRequest(dh_msg1_size, timeout_usec / 1000);
 
-    AECreateSessionResponse createSessionResponse;
-    uae_oal_status_t ret = servicesProvider->InternalInterface(&createSessionRequest, &createSessionResponse, timeout_usec / 1000);
-    if (ret == UAE_OAL_SUCCESS)
-    {
-        bool valid = createSessionResponse.GetValues((uint32_t*)result, sid, dh_msg1_size, dh_msg1);
-        if (!valid)
-            ret = UAE_OAL_ERROR_UNEXPECTED;
-    }
-    return ret;
+        AECreateSessionResponse createSessionResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&createSessionRequest, &createSessionResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = createSessionResponse.GetValues((uint32_t*)result, sid, dh_msg1_size, dh_msg1);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
 }
 
 uae_oal_status_t oal_close_session(uint32_t sid,
         uint32_t timeout_usec, 
         aesm_error_t *result)
 {
-    AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
-    if (servicesProvider == NULL)
-        return UAE_OAL_ERROR_UNEXPECTED;
+    TRY_CATCH_BAD_ALLOC({
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
 
-    AECloseSessionRequest closeSessionRequest(sid, timeout_usec / 1000);
+        AECloseSessionRequest closeSessionRequest(sid, timeout_usec / 1000);
 
-    AECloseSessionResponse closeSessionResponse;
-    uae_oal_status_t ret = servicesProvider->InternalInterface(&closeSessionRequest, &closeSessionResponse, timeout_usec / 1000);
-    if (ret == UAE_OAL_SUCCESS)
-    {
-        bool valid = closeSessionResponse.GetValues((uint32_t*)result);
-        if (!valid)
-            ret = UAE_OAL_ERROR_UNEXPECTED;
-    }
-    return ret;
+        AECloseSessionResponse closeSessionResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&closeSessionRequest, &closeSessionResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = closeSessionResponse.GetValues((uint32_t*)result);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
 
 }
 
@@ -106,22 +122,23 @@ uae_oal_status_t oal_exchange_report(uint32_t sid,
         uint32_t timeout_usec, 
         aesm_error_t *result)
 {
+    TRY_CATCH_BAD_ALLOC({
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
 
-    AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
-    if (servicesProvider == NULL)
-        return UAE_OAL_ERROR_UNEXPECTED;
+        AEExchangeReportRequest exchangeReportRequest(sid, dh_msg2_size, dh_msg2, dh_msg3_size, timeout_usec / 1000);
 
-    AEExchangeReportRequest exchangeReportRequest(sid, dh_msg2_size, dh_msg2, dh_msg3_size, timeout_usec / 1000);
-
-    AEExchangeReportResponse exchangeReportResponse;
-    uae_oal_status_t ret = servicesProvider->InternalInterface(&exchangeReportRequest, &exchangeReportResponse, timeout_usec / 1000);
-    if (ret == UAE_OAL_SUCCESS)
-    {
-        bool valid = exchangeReportResponse.GetValues((uint32_t*)result, dh_msg3_size, dh_msg3);
-        if (!valid)
-            ret = UAE_OAL_ERROR_UNEXPECTED;
-    }
-    return ret;
+        AEExchangeReportResponse exchangeReportResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&exchangeReportRequest, &exchangeReportResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = exchangeReportResponse.GetValues((uint32_t*)result, dh_msg3_size, dh_msg3);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
 }
 
 uae_oal_status_t oal_invoke_service(const uint8_t* pse_message_req,
@@ -131,21 +148,23 @@ uae_oal_status_t oal_invoke_service(const uint8_t* pse_message_req,
         uint32_t timeout_usec, 
         aesm_error_t *result)
 {
-    AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
-    if (servicesProvider == NULL)
-        return UAE_OAL_ERROR_UNEXPECTED;
+    TRY_CATCH_BAD_ALLOC({
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
 
-    AEInvokeServiceRequest invokeServiceRequest(pse_message_req_size, pse_message_req, pse_message_resp_size, timeout_usec / 1000);
+        AEInvokeServiceRequest invokeServiceRequest(pse_message_req_size, pse_message_req, pse_message_resp_size, timeout_usec / 1000);
 
-    AEInvokeServiceResponse invokeServiceResponse;
-    uae_oal_status_t ret = servicesProvider->InternalInterface(&invokeServiceRequest, &invokeServiceResponse, timeout_usec / 1000);
-    if (ret == UAE_OAL_SUCCESS)
-    {
-        bool valid = invokeServiceResponse.GetValues((uint32_t*)result, pse_message_resp_size, pse_message_resp);
-        if (!valid)
-            ret = UAE_OAL_ERROR_UNEXPECTED;
-    }
-    return ret;
+        AEInvokeServiceResponse invokeServiceResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&invokeServiceRequest, &invokeServiceResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = invokeServiceResponse.GetValues((uint32_t*)result, pse_message_resp_size, pse_message_resp);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
 }
 
 } //end of extern block

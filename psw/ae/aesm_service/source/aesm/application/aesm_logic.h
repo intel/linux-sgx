@@ -82,6 +82,7 @@ class AESMLogic{
 public:
     static AESMLogicMutex _qe_pve_mutex, _pse_mutex, _le_mutex; /*mutex to lock external interface*/
 private:
+    static aesm_thread_t qe_thread, pse_thread;
     static psvn_t _qe_psvn, _pse_psvn, _pce_psvn;   /*different cpu svn used although they're same. We should only access _qe_psvn/_pce_svn when qe_pve_mutex is acquired and only access _pse_psvn when pse_mutext is acquired*/
     static bool _is_qe_psvn_set, _is_pse_psvn_set, _is_pce_psvn_set;
     static uint32_t active_extended_epid_group_id;

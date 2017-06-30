@@ -38,7 +38,10 @@
 
  /* version of metadata */
 #define MAJOR_VERSION 1         /* MAJOR_VERSION should not larger than 0ffffffff */
-#define MINOR_VERSION 3         /* MINOR_VERSION should not larger than 0ffffffff */
+#define MINOR_VERSION 4         /* MINOR_VERSION should not larger than 0ffffffff */
+
+#define SGX_1_5_MAJOR_VERSION 1         //MAJOR_VERSION should not larger than 0ffffffff
+#define SGX_1_5_MINOR_VERSION 3         //MINOR_VERSION should not larger than 0ffffffff
 
 #define META_DATA_MAKE_VERSION(major, minor) (((uint64_t)major)<<32 | minor)
 

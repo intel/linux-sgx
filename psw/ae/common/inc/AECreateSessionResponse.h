@@ -53,7 +53,7 @@ class AECreateSessionResponse : public IAEResponse
 
         AEMessage* serialize();
         bool inflateWithMessage(AEMessage* message);
-        bool GetValues(uint32_t* errorCode, uint32_t* sessionId, uint32_t dhMsg1Length, uint8_t* dhMsg1);
+        bool GetValues(uint32_t* errorCode, uint32_t* sessionId, uint32_t dhMsg1Length, uint8_t* dhMsg1) const;
         //operators
         AECreateSessionResponse& operator=(const AECreateSessionResponse& other);
 

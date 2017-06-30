@@ -52,6 +52,12 @@ clean:
 	@$(MAKE) -C psw/                                clean
 	@$(RM)   -r $(ROOT_DIR)/build
 	@$(RM)   -r linux/installer/bin/sgx_linux*.bin
+	@$(RM)   -rf linux/installer/common/psw/output
+	@$(RM)   -rf linux/installer/common/psw/gen_source.py
+	@$(RM)   -rf linux/installer/common/sdk/output
+	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x64
+	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x86
+	@$(RM)   -rf linux/installer/common/sdk/gen_source.py
 
 rebuild:
 	$(MAKE) clean

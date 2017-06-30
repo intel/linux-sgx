@@ -111,7 +111,7 @@ bool AEExchangeReportResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AEExchangeReportResponse::GetValues(uint32_t* errorCode, uint32_t dhMsg3Length, uint8_t* dhMsg3)
+bool AEExchangeReportResponse::GetValues(uint32_t* errorCode, uint32_t dhMsg3Length, uint8_t* dhMsg3) const
 {
     if (m_response->has_se_dh_msg3() && dhMsg3 != NULL)
     {

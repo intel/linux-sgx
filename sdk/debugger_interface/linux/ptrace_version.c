@@ -38,7 +38,7 @@
 #define SGX_PTRACE_VERSION_STR  __CONCAT("SGX_PTRACE_VERSION_", STRFILEVER)
 
 __attribute__((visibility("default")))
-const char * sgx_ptrace_version = SGX_PTRACE_VERSION_STR;
+char sgx_ptrace_version[] = SGX_PTRACE_VERSION_STR;
 
 
 SGX_ACCESS_VERSION(ptrace, 1)

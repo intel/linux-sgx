@@ -53,7 +53,7 @@ class AEExchangeReportResponse : public IAEResponse
 
         AEMessage* serialize();
         bool inflateWithMessage(AEMessage* message);
-        bool GetValues(uint32_t* errorCode, uint32_t dhMsg3Length, uint8_t* dhMsg3);
+        bool GetValues(uint32_t* errorCode, uint32_t dhMsg3Length, uint8_t* dhMsg3) const;
 
         //operators
         AEExchangeReportResponse& operator=(const AEExchangeReportResponse& other);

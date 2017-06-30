@@ -72,6 +72,7 @@ public:
     UINT32 csme_gid;
     unsigned psda_svn;
 private:
+    bool install_psda();
     bool start_service_internal();
     bool save_current_psda_svn();
 };

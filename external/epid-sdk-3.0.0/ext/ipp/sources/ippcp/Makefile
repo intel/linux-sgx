@@ -6,7 +6,7 @@ LIB_INSTALL_DIR = $(epidinstalldir)/lib/posix-$(ARCH)/
 
 PCP_INCLUDE_DIR = ./src
 PCP_SRC = $(wildcard ./src/*.c)
-PCP_OBJ = $(PCP_SRC:.c=.o)
+PCP_OBJ = $(sort $(PCP_SRC:.c=.o))
 PCP_LIB = ./src/libippcp.a
 
 

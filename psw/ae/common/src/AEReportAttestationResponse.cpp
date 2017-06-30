@@ -110,7 +110,7 @@ bool AEReportAttestationResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AEReportAttestationResponse::GetValues(uint32_t* errorCode, uint32_t updateInfoLength, uint8_t* updateInfo)
+bool AEReportAttestationResponse::GetValues(uint32_t* errorCode, uint32_t updateInfoLength, uint8_t* updateInfo) const
 {
     if (m_response->has_platform_update_info() && updateInfo != NULL)
     {

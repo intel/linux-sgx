@@ -19,13 +19,13 @@ VERIFIER_11_INCLUDE_DIR = ../../1.1
 
 VERIFIER_SRC =  $(wildcard ./src/*.c)
 VERIFIER_SRC += $(wildcard ./1.1/src/*.c)
-VERIFIER_OBJ = $(VERIFIER_SRC:.c=.o)
+VERIFIER_OBJ = $(sort $(VERIFIER_SRC:.c=.o))
 VERIFIER_LIB = ./libverifier.a
 
 VERIFIER_UTEST_EXE = ./verifier-utest
 VERIFIER_UTEST_SRC = $(wildcard ./unittests/*.cc)
 VERIFIER_UTEST_SRC += $(wildcard ./1.1/unittests/*.cc)
-VERIFIER_UTEST_OBJ = $(VERIFIER_UTEST_SRC:.cc=.o)
+VERIFIER_UTEST_OBJ = $(sort $(VERIFIER_UTEST_SRC:.cc=.o))
 LIB_VERIFIER_DIR = .
 LIB_COMMON_TESTHELPER_DIR = ../common-testhelper
 LIB_COMMON_DIR = ../common

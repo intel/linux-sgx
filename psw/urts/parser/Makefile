@@ -33,7 +33,7 @@ include ../../../buildenv.mk
 
 SRCS := $(wildcard *.cpp)
 SRCS := $(filter-out elfparser.cpp, $(SRCS))
-OBJS := $(SRCS:.cpp=.o)
+OBJS := $(sort $(SRCS:.cpp=.o))
 
 TARGET := libenclaveparser.a
 

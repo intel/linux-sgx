@@ -80,7 +80,9 @@ static const se_owner_epoch_t SIMU_OWNER_EPOCH_MSR = {
 };
 
 //simulated QE ISVSVN
-static const sgx_isv_svn_t QE_ISVSVN = 1;
+static const sgx_isv_svn_t QE_ISVSVN = 0XEF;
+static const sgx_isv_svn_t PCE_ISVSVN = 0xEF;
+static const uint32_t EXT_EPID_GID = 0xEFEFEFEF;
 
 #if !defined(ntohl)
 #define ntohl(u32)                                        \
@@ -156,7 +158,6 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
     sgx_status_t sgx_ret = SGX_ERROR_UNEXPECTED;
     IppsAES_CMACState* p_cmac_state = NULL;
     int ippStateSize = 0;
-    IppStatus ipp_ret = ippStsNoErr;
 
     //prepare reprot_data
     do
@@ -211,8 +212,8 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
                     &temp_qe_report.key_id, sizeof(sgx_key_id_t)))
             break;
 
-        ipp_ret = ippsAES_CMACGetSize(&ippStateSize);
-        if(ipp_ret != ippStsNoErr)break;
+        ret = ippsAES_CMACGetSize(&ippStateSize);
+        if(ret != ippStsNoErr)break;
 
         p_cmac_state = (IppsAES_CMACState*)malloc(ippStateSize);
         if(p_cmac_state == NULL)
@@ -222,11 +223,11 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
         }
 
         // calculate the derived key
-        ipp_ret = ippsAES_CMACInit((const Ipp8u *)BASE_REPORT_KEY, 16,
+        ret = ippsAES_CMACInit((const Ipp8u *)BASE_REPORT_KEY, 16,
                                    p_cmac_state, ippStateSize);
-        if(ipp_ret != ippStsNoErr)
+        if(ret != ippStsNoErr)
         {
-            if(ipp_ret == ippStsMemAllocErr)
+            if(ret == ippStsMemAllocErr)
             {
                 sgx_ret = SGX_ERROR_OUT_OF_MEMORY;
                 break;
@@ -238,23 +239,23 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
             }
         }
 
-        ipp_ret = ippsAES_CMACUpdate((const Ipp8u *)dd.ddbuf,
+        ret = ippsAES_CMACUpdate((const Ipp8u *)dd.ddbuf,
                                      dd.size, p_cmac_state);
-        if(ipp_ret != ippStsNoErr)break;
+        if(ret != ippStsNoErr)break;
 
         sgx_key_128bit_t tmp_report_key;
         memset(tmp_report_key, 0, sizeof(tmp_report_key));
-        ipp_ret = ippsAES_CMACFinal((Ipp8u *)&tmp_report_key,
+        ret = ippsAES_CMACFinal((Ipp8u *)&tmp_report_key,
                                     sizeof(tmp_report_key), p_cmac_state);
-        if(ipp_ret != ippStsNoErr)break;
+        if(ret != ippStsNoErr)break;
 
         // call cryptographic CMAC function
         // CMAC data are *NOT* including MAC and KEYID
-        ipp_ret = ippsAES_CMACInit((const Ipp8u *)tmp_report_key, 16,
+        ret = ippsAES_CMACInit((const Ipp8u *)tmp_report_key, 16,
                                    p_cmac_state, ippStateSize);
-        if(ipp_ret != ippStsNoErr)
+        if(ret != ippStsNoErr)
         {
-            if(ipp_ret == ippStsMemAllocErr)
+            if(ret == ippStsMemAllocErr)
             {
                 sgx_ret = SGX_ERROR_OUT_OF_MEMORY;
                 break;
@@ -266,14 +267,14 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
             }
         }
 
-        ipp_ret = ippsAES_CMACUpdate((const Ipp8u *)&temp_qe_report.body,
+        ret = ippsAES_CMACUpdate((const Ipp8u *)&temp_qe_report.body,
                                      sizeof(temp_qe_report.body),
                                      p_cmac_state);
-        if(ipp_ret != ippStsNoErr)break;
+        if(ret != ippStsNoErr)break;
 
-        ipp_ret = ippsAES_CMACFinal((Ipp8u *)&temp_qe_report.mac,
+        ret = ippsAES_CMACFinal((Ipp8u *)&temp_qe_report.mac,
                                     sizeof(temp_qe_report.mac), p_cmac_state);
-        if(ipp_ret != ippStsNoErr)break;
+        if(ret != ippStsNoErr)break;
 
         if(memcpy_s(p_qe_report, sizeof(*p_qe_report),
                     &temp_qe_report, sizeof(temp_qe_report)))
@@ -399,7 +400,7 @@ sgx_status_t sgx_get_quote(
 
     /* Copy the data in the report into quote body. */ 
     memset(p_quote, 0xEE, quote_size);
-    p_quote->version = 1;
+    p_quote->version = 2;
     p_quote->sign_type = (uint16_t)quote_type;
 
     p_quote->epid_group_id[0] = p_epid_group_cert->gid.data[3];
@@ -408,6 +409,8 @@ sgx_status_t sgx_get_quote(
     p_quote->epid_group_id[3] = p_epid_group_cert->gid.data[0];
 
     p_quote->qe_svn = QE_ISVSVN;
+    p_quote->pce_svn = PCE_ISVSVN;
+    p_quote->xeid = EXT_EPID_GID;
     if(memcpy_s(&p_quote->basename, sizeof(sgx_basename_t),
              &basename, sizeof(basename))){
             ret = SGX_ERROR_UNEXPECTED;

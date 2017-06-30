@@ -63,7 +63,7 @@ typedef uint16_t            sgx_prod_id_t;
 #define SGX_TARGET_INFO_RESERVED1_BYTES 4
 #define SGX_TARGET_INFO_RESERVED2_BYTES 456
 
-typedef struct _targe_info_t
+typedef struct _target_info_t
 {
     sgx_measurement_t       mr_enclave;     /* (  0) The MRENCLAVE of the target enclave */
     sgx_attributes_t        attributes;     /* ( 32) The ATTRIBUTES field of the target enclave */

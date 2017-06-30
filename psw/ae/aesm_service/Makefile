@@ -89,7 +89,12 @@ INCLUDE += -I$(SGX_IPP_INC) \
 EDGER8R  := $(LINUX_SDK_DIR)/edger8r/linux/_build/Edger8r.native
 
 
-SQLITECFLAGS := -fstack-protector -fPIC -Wall -Wno-unused-const-variable -Werror
+SQLITECFLAGS := -fPIC -Wall -Wno-unused-const-variable -Werror
+ifeq ($(CC_BELOW_4_9), 1)
+	SQLITECFLAGS += -fstack-protector
+else
+	SQLITECFLAGS += -fstack-protector-strong
+endif
 
 ifdef DEBUG
 	SQLITECFLAGS += -ggdb -DDEBUG -UNDEBUG
@@ -258,7 +263,7 @@ AESM_SRC  := AESMLogicWrapper.cpp  \
 AESM_SRC  += aesm_http_msg.cpp 
 AESM_SRC  += source/pse_op/jhi_proxy.cpp
 
-CSRC       := $(wildcard *.c)
+CSRC       := $(sort $(wildcard *.c))
 
 MEMCMPSRC  := consttime_memequal.c
 

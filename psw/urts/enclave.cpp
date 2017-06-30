@@ -421,7 +421,7 @@ CEnclave* CEnclavePool::remove_enclave(const sgx_enclave_id_t enclave_id, sgx_st
     if(NULL == enclave)
     {
         status = SGX_ERROR_INVALID_ENCLAVE_ID;
-        SE_TRACE(SE_TRACE_WARNING, "remove an unkonwn enclave\n");
+        SE_TRACE(SE_TRACE_WARNING, "remove an unknown enclave\n");
         se_mutex_unlock(&m_enclave_mutex);
         return enclave;
     }

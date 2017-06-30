@@ -68,7 +68,7 @@ vpath %.c   $(COMMON_DIR)/src
 CPP_SRC := $(wildcard *.cpp ../*.cpp) se_sig_rl.cpp cpusvn_util.cpp sgx_read_rand.cpp
 C_SRC   := se_trace.c se_thread.c
 
-OBJ := $(CPP_SRC:.cpp=.o) \
+OBJ := $(sort $(CPP_SRC:.cpp=.o)) \
        $(C_SRC:.c=.o)
 
 DLLNAME = libsgx_uae_service_sim.so

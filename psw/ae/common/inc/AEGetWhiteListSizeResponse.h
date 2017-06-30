@@ -58,7 +58,7 @@ class AEGetWhiteListSizeResponse : public IAEResponse
 
         AEMessage*  serialize();
 
-        bool GetValues(uint32_t* errorCode, uint32_t* white_list_size);
+        bool GetValues(uint32_t* errorCode, uint32_t* white_list_size) const;
         //operators
         AEGetWhiteListSizeResponse& operator=(const AEGetWhiteListSizeResponse &other);
 

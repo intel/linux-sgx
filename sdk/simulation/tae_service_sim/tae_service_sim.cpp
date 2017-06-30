@@ -34,6 +34,7 @@
 
 #include "sgx_tae_service.h"
 #include "tae_service_internal.h"
+#include "se_memcpy.h"
 #include "pse_types.h"
 #include "stdlib.h"
 #include "string.h"
@@ -117,9 +118,12 @@ sgx_status_t sgx_get_ps_sec_prop_ex(sgx_ps_sec_prop_desc_ex_t* ps_security_prope
 
     se_ps_sec_prop_desc_internal_t* desc_internal =
         (se_ps_sec_prop_desc_internal_t*)&ps_security_property_ex->ps_sec_prop_desc;
-    memcpy(&ps_security_property_ex->pse_mrsigner, &desc_internal->pse_mr_signer, sizeof(sgx_measurement_t));
-    memcpy(&ps_security_property_ex->pse_prod_id, &desc_internal->pse_prod_id, sizeof(sgx_prod_id_t));
-    memcpy(&ps_security_property_ex->pse_isv_svn, &desc_internal->pse_isvsvn, sizeof(sgx_isv_svn_t));
+    memcpy_s(&ps_security_property_ex->pse_mrsigner, sizeof(ps_security_property_ex->pse_mrsigner),
+        &desc_internal->pse_mr_signer, sizeof(sgx_measurement_t));
+    memcpy_s(&ps_security_property_ex->pse_prod_id, sizeof(ps_security_property_ex->pse_prod_id),
+         &desc_internal->pse_prod_id, sizeof(sgx_prod_id_t));
+    memcpy_s(&ps_security_property_ex->pse_isv_svn, sizeof(ps_security_property_ex->pse_isv_svn),
+         &desc_internal->pse_isvsvn, sizeof(sgx_isv_svn_t));
     return ret;
 }
 
@@ -176,8 +180,8 @@ sgx_status_t sgx_get_trusted_time
            || p_timer_resp->resp_hdr.status != PSE_SUCCESS){
             status = SGX_ERROR_UNEXPECTED;
         } else {
-            memcpy(p_current_time, &p_timer_resp->timestamp, sizeof(sgx_time_t));
-            memcpy(p_time_source_nonce, p_timer_resp->time_source_nonce,
+            memcpy_s(p_current_time, sizeof(*p_current_time), &p_timer_resp->timestamp, sizeof(sgx_time_t));
+            memcpy_s(p_time_source_nonce, sizeof(*p_time_source_nonce), p_timer_resp->time_source_nonce,
                        sizeof(sgx_time_source_nonce_t));
             status = SGX_SUCCESS;
             break;
@@ -223,7 +227,7 @@ sgx_status_t sgx_create_monotonic_counter_ex(
     p_mc_req->req_hdr.service_id = PSE_MC_SERVICE;
     p_mc_req->req_hdr.service_cmd = PSE_MC_CREATE;
     p_mc_req->policy = owner_policy;
-    memcpy(p_mc_req->attr_mask , owner_attribute_mask, sizeof(p_mc_req->attr_mask));
+    memcpy_s(&p_mc_req->attr_mask, sizeof(p_mc_req->attr_mask), owner_attribute_mask, sizeof(*owner_attribute_mask));
 
     pse_mc_create_resp_t *p_mc_resp
         = (pse_mc_create_resp_t *)p_resp_msg->payload;
@@ -250,12 +254,10 @@ sgx_status_t sgx_create_monotonic_counter_ex(
            || p_mc_resp->resp_hdr.status != PSE_SUCCESS){
             status = SGX_ERROR_UNEXPECTED;
         } else {
-            memcpy(p_counter_uuid->counter_id,
-                   &p_mc_resp->counter_id,
-                   sizeof(p_counter_uuid->counter_id));
-            memcpy(p_counter_uuid->nonce,
-                   &p_mc_resp->nonce,
-                   sizeof(p_counter_uuid->nonce));
+            memcpy_s(&p_counter_uuid->counter_id, sizeof(p_counter_uuid->counter_id),
+                   &p_mc_resp->counter_id, sizeof(p_mc_resp->counter_id));
+            memcpy_s(&p_counter_uuid->nonce, sizeof(p_counter_uuid->nonce),
+                   &p_mc_resp->nonce, sizeof(p_mc_resp->nonce));
             *p_counter_value = 0;
             status = SGX_SUCCESS;
             break;
@@ -291,12 +293,10 @@ sgx_status_t sgx_increment_monotonic_counter(
 
     pse_mc_inc_req_t *p_mc_req
         = (pse_mc_inc_req_t *)p_req_msg->payload;
-    memcpy(p_mc_req->counter_id,
-           p_counter_uuid->counter_id,
-           sizeof(p_mc_req->counter_id));
-    memcpy(p_mc_req->nonce,
-           p_counter_uuid->nonce,
-           sizeof(p_mc_req->nonce));
+    memcpy_s(&p_mc_req->counter_id, sizeof(p_mc_req->counter_id),
+           &p_counter_uuid->counter_id, sizeof(p_counter_uuid->counter_id));
+    memcpy_s(&p_mc_req->nonce, sizeof(p_mc_req->nonce),
+           &p_counter_uuid->nonce, sizeof(p_counter_uuid->nonce));
     p_mc_req->req_hdr.service_id = PSE_MC_SERVICE;
     p_mc_req->req_hdr.service_cmd = PSE_MC_INC;
 
@@ -367,12 +367,11 @@ sgx_status_t sgx_read_monotonic_counter(
 
     pse_mc_read_req_t *p_mc_req
         = (pse_mc_read_req_t *)p_req_msg->payload;
-    memcpy(p_mc_req->counter_id,
-           p_counter_uuid->counter_id,
-           sizeof(p_mc_req->counter_id));
-    memcpy(p_mc_req->nonce,
-           p_counter_uuid->nonce,
-           sizeof(p_mc_req->nonce));
+
+    memcpy_s(&p_mc_req->counter_id, sizeof(p_mc_req->counter_id),
+           &p_counter_uuid->counter_id, sizeof(p_counter_uuid->counter_id));
+    memcpy_s(&p_mc_req->nonce, sizeof(p_mc_req->nonce),
+           &p_counter_uuid->nonce, sizeof(p_counter_uuid->nonce));
     p_mc_req->req_hdr.service_id = PSE_MC_SERVICE;
     p_mc_req->req_hdr.service_cmd = PSE_MC_READ;
 
@@ -455,12 +454,10 @@ sgx_status_t sgx_destroy_monotonic_counter(const sgx_mc_uuid_t *p_counter_uuid)
 
     pse_mc_del_req_t *p_mc_req
         = (pse_mc_del_req_t *)p_req_msg->payload;
-    memcpy(p_mc_req->counter_id,
-           p_counter_uuid->counter_id,
-           sizeof(p_mc_req->counter_id));
-    memcpy(p_mc_req->nonce,
-           p_counter_uuid->nonce,
-           sizeof(p_mc_req->nonce));
+    memcpy_s(&p_mc_req->counter_id, sizeof(p_mc_req->counter_id),
+           &p_counter_uuid->counter_id, sizeof(p_counter_uuid->counter_id));
+    memcpy_s(&p_mc_req->nonce, sizeof(p_mc_req->nonce),
+           &p_counter_uuid->nonce, sizeof(p_counter_uuid->nonce));
     p_mc_req->req_hdr.service_id = PSE_MC_SERVICE;
     p_mc_req->req_hdr.service_cmd = PSE_MC_DEL;
 

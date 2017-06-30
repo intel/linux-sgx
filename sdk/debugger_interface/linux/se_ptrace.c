@@ -631,7 +631,8 @@ static long int do_singlestep(pid_t pid, void* addr, void* data)
     if ((thread_status = get_thread_status(pid)) == NULL)
         thread_status = add_thread_status(pid);
 
-    thread_status->singlestep = 1;
+    if (thread_status != NULL)
+	    thread_status->singlestep = 1;
 
     return g_sys_ptrace(PTRACE_SINGLESTEP, pid, addr, data);
 }

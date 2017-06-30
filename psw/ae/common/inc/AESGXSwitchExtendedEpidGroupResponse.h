@@ -52,7 +52,7 @@ class AESGXSwitchExtendedEpidGroupResponse : public IAEResponse
 
         AEMessage* serialize();
         bool inflateWithMessage(AEMessage* message);
-        bool GetValues(uint32_t* errorCode);
+        bool GetValues(uint32_t* errorCode) const;
 
         //operators
         AESGXSwitchExtendedEpidGroupResponse& operator=(const AESGXSwitchExtendedEpidGroupResponse& other);

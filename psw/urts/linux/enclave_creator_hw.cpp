@@ -50,8 +50,11 @@
 #include <stdlib.h>
 
 
-EnclaveCreator* g_enclave_creator = new EnclaveCreatorHW();
+static EnclaveCreatorHW g_enclave_creator_hw;
+
+EnclaveCreator* g_enclave_creator = &g_enclave_creator_hw;
 static uint64_t g_eid = 0x1;
+
 
 EnclaveCreatorHW::EnclaveCreatorHW():
     m_hdevice(-1),
@@ -123,9 +126,9 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
              , secs->attributes.flags, secs->attributes.xfrm);
     //SECS:BASEADDR must be naturally aligned on an SECS.SIZE boundary
     void* enclave_base = mmap(NULL, (size_t)secs->size *2, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, m_hdevice, 0);
-    if(enclave_base == NULL)
+    if(enclave_base == MAP_FAILED)
     {
-        SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_CREATE fails: mmap fail\n");
+        SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_CREATE failed: mmap failed, errno = %d\n", errno);
         return SGX_ERROR_OUT_OF_MEMORY;
     }
     //find a suitable base for enclave
@@ -143,7 +146,7 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     param.src = (uintptr_t)(secs);
     ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_CREATE, &param);
     if(ret) {
-        SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_CREATE fails: errno = %x\n", errno);
+        SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_CREATE failed: errno = %d\n", errno);
         return error_driver2urts(ret);
     }
     *enclave_id = se_atomic_inc64(&g_eid);
@@ -194,7 +197,7 @@ int EnclaveCreatorHW::try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_
     initp.einittoken = reinterpret_cast<uintptr_t>(launch);
     ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_INIT, &initp);
     if (ret) {
-        SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_INIT fails error = %x\n", ret);
+        SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_INIT failed error = %d\n", ret);
         return error_driver2urts(ret);
     }
 

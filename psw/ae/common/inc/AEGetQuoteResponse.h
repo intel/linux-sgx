@@ -55,7 +55,7 @@ class AEGetQuoteResponse : public IAEResponse
         AEMessage* serialize();
         bool inflateWithMessage(AEMessage* message);
         bool GetValues(uint32_t* errorCode, uint32_t quoteLength,uint8_t* quote, 
-                                          uint32_t qeReportLength, uint8_t* qeReport);
+                                          uint32_t qeReportLength, uint8_t* qeReport) const;
 
 
         //operators

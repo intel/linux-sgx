@@ -605,16 +605,24 @@ ae_error_t TEpidSigma11Verifier::VerifyM8
 
         /* X509Parser::ParseGroupCertificate() expecting big endian format public key */
         uint8_t SerializedPublicKey[SIGMA_SESSION_PUBKEY_LENGTH];
-        memcpy(SerializedPublicKey, (EcDsaPubKey*)Keys::EpidVerifyKey(), SIGMA_SESSION_PUBKEY_LENGTH);
-        SwapEndian_32B(SerializedPublicKey);
-        SwapEndian_32B(&(SerializedPublicKey[32])); 
-        if (0 !=  X509Parser::ParseGroupCertificate( /*in */ (EcDsaPubKey*)SerializedPublicKey,
-            /*in */ X509GroupCertVlr, /*out*/ &S3GID, /*out*/ &groupPubKey ))
-        {
-            status = PSE_PR_X509_PARSE_ERROR;
-            break;
-        }
 
+        for (uint32_t i = 0; i < Keys::EpidVerifyKeyNum(); i++)
+        {
+            memcpy(SerializedPublicKey, (EcDsaPubKey*)Keys::EpidVerifyKeys()[i], SIGMA_SESSION_PUBKEY_LENGTH);
+            SwapEndian_32B(SerializedPublicKey);
+            SwapEndian_32B(&(SerializedPublicKey[32]));
+            if (0 == X509Parser::ParseGroupCertificate( /*in */ (EcDsaPubKey*)SerializedPublicKey,
+                /*in */ X509GroupCertVlr, /*out*/ &S3GID, /*out*/ &groupPubKey))
+            {
+                tmp_status = AE_SUCCESS;
+                break;
+            }
+            else
+            {
+                tmp_status = PSE_PR_X509_PARSE_ERROR;
+            }
+        }
+        BREAK_IF_TRUE(AE_SUCCESS != tmp_status, status, tmp_status);
         BREAK_IF_FALSE((S3GID == m_gid), status, PSE_PR_GID_MISMATCH_ERROR );
 
         //*********************************************************************
@@ -972,12 +980,18 @@ ae_error_t TEpidSigma11Verifier::ValidateSigRL(const EPID11_SIG_RL* pSigRL, uint
         SwapEndian_32B(ecc_sig);
         SwapEndian_32B(&(ecc_sig[32]));
 
-        sgx_status = sgx_ecdsa_verify((uint8_t*)pSigRL, 
-            nBaseSigRL_size,  
-            (sgx_ec256_public_t *)(Keys::EpidVerifyKey()), /* requiring little endian format */
-            (sgx_ec256_signature_t *) ecc_sig, 
-            &result, 
-            ivk_ecc_handle);
+        const uint8_t** pEpidVerifyKeys = Keys::EpidVerifyKeys();
+        for (uint32_t i = 0; i < Keys::EpidVerifyKeyNum(); i++)
+        {
+            sgx_status = sgx_ecdsa_verify((uint8_t*)pSigRL,
+                nBaseSigRL_size,
+                (sgx_ec256_public_t *)(pEpidVerifyKeys[i]), /* requiring little endian format */
+                (sgx_ec256_signature_t *)ecc_sig,
+                &result,
+                ivk_ecc_handle);
+            if (sgx_status == SGX_SUCCESS && result == SGX_EC_VALID)
+                break;
+        }
         BREAK_IF_TRUE((SGX_ERROR_OUT_OF_MEMORY == sgx_status), status, PSE_PR_INSUFFICIENT_MEMORY_ERROR);
         BREAK_IF_TRUE((SGX_SUCCESS != sgx_status), status, PSE_PR_MSG_COMPARE_ERROR);
         BREAK_IF_TRUE((SGX_EC_VALID != result), status, PSE_PR_MSG_COMPARE_ERROR);
@@ -1027,12 +1041,18 @@ ae_error_t TEpidSigma11Verifier::ValidatePrivRL(const EPID11_PRIV_RL* pPrivRL, u
         SwapEndian_32B(ecc_sig);
         SwapEndian_32B(&(ecc_sig[32]));
 
-        sgx_status = sgx_ecdsa_verify((uint8_t*)pPrivRL, 
-            nBasePrivRL_size,  
-            (sgx_ec256_public_t*)(Keys::EpidVerifyKey()), /* should hardcode it in little endian format */
-            (sgx_ec256_signature_t *) ecc_sig, 
-            &result, 
-            ivk_ecc_handle);
+        const uint8_t** pEpidVerifyKeys = Keys::EpidVerifyKeys();
+        for (uint32_t i = 0; i < Keys::EpidVerifyKeyNum(); i++)
+        {
+            sgx_status = sgx_ecdsa_verify((uint8_t*)pPrivRL,
+                nBasePrivRL_size,
+                (sgx_ec256_public_t *)(pEpidVerifyKeys[i]), /* requiring little endian format */
+                (sgx_ec256_signature_t *)ecc_sig,
+                &result,
+                ivk_ecc_handle);
+            if (sgx_status == SGX_SUCCESS && result == SGX_EC_VALID)
+                break;
+        }
         BREAK_IF_TRUE((SGX_ERROR_OUT_OF_MEMORY == sgx_status), status, PSE_PR_INSUFFICIENT_MEMORY_ERROR);
         BREAK_IF_TRUE((SGX_SUCCESS != sgx_status), status, PSE_PR_MSG_COMPARE_ERROR);
         BREAK_IF_TRUE((SGX_EC_VALID != result), status, PSE_PR_MSG_COMPARE_ERROR);

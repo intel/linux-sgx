@@ -120,11 +120,16 @@ Crypto_Library_Name := sgx_tcrypto
 
 Enclave_Cpp_Files := $(wildcard Enclave/*.cpp)
 
-Enclave_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/stlport -I./Common
+Enclave_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -I./Common
 
-Enclave_Compile_CFlags := -nostdinc -ffreestanding -fvisibility=hidden -fpie \
-			 $(Enclave_Include_Paths)
-Enclave_Compile_CXXFlags := -nostdinc++ -std=c++03 $(Enclave_Compile_CFlags)
+CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
+ifeq ($(CC_BELOW_4_9), 1)
+	Enclave_Compile_CFlags := -fstack-protector
+else
+	Enclave_Compile_CFlags := -fstack-protector-strong
+endif
+Enclave_Compile_CFlags += -nostdinc -ffreestanding -fvisibility=hidden -fpie -ffunction-sections -fdata-sections $(Enclave_Include_Paths)
+Enclave_Compile_CXXFlags := -nostdinc++ -std=c++11 $(Enclave_Compile_CFlags)
 
 # To generate a proper enclave, it is recommended to follow below guideline to link the trusted libraries:
 #    1. Link sgx_trts with the `--whole-archive' and `--no-whole-archive' options,
@@ -135,9 +140,9 @@ Enclave_Compile_CXXFlags := -nostdinc++ -std=c++03 $(Enclave_Compile_CFlags)
 # Otherwise, you may get some undesirable errors.
 Enclave_Link_Flags := -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
-	-Wl,--start-group -lsgx_tstdc -lsgx_tstdcxx -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
+	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
 	-Wl,--version-script=Enclave/Enclave.lds -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
-        -Wl,-pie,-eenclave_entry -Wl,--export-dynamic -Wl,--defsym,__ImageBase=0
+	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic -Wl,--defsym,__ImageBase=0 -Wl,--gc-sections
 
 Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
 Gen_Trusted_Source := Enclave/Enclave_t.c

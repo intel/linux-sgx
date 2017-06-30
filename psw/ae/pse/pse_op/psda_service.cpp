@@ -392,7 +392,6 @@ static pse_op_error_t calculate_time_source_nonce(const uint8_t* pairing_nonce,
     }
 }
 
-
 // call PSDA RPDATA service to read RPDATA
 pse_op_error_t psda_read_rpdata(uint8_t* rpdata, uint32_t* rp_epoch)
 {
@@ -543,3 +542,4 @@ pse_op_error_t psda_read_timer(
 
     return ret;
 }
+
