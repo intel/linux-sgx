@@ -94,10 +94,7 @@ ICommunicationSocket* UnixServerSocket::accept()
 
     NonBlockingUnixCommunicationSocket* sock = new NonBlockingUnixCommunicationSocket(client_sockfd);
 
-    bool initializationSuccessfull = false;
-
-    if (sock != NULL)
-        initializationSuccessfull = sock->init();
+    bool initializationSuccessfull = sock->init();
 
     if (initializationSuccessfull == false)
     {

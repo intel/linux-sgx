@@ -55,7 +55,7 @@ typedef struct _session_t
 {
     uint32_t session_id;
     sgx_key_128bit_t authenticated_encryption_key;
-    se_ps_sec_prop_desc_internal_t ps_security_property;//!ref i205169
+    se_ps_sec_prop_desc_internal_t ps_security_property;
     uint32_t transaction_number;//valid transaction_number is from 0 to 0x7FFFFFFF
     //seq_num in request message is transaction_number*2 and seq_num in response message is expected to be transaction_number*2+1
     bool session_inited;

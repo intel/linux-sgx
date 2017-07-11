@@ -76,25 +76,25 @@ void edger8r_pointer_attributes(void)
     ret = ecall_pointer_string(global_eid, str1);
     if (ret != SGX_SUCCESS)
         abort();
-    assert(memcmp(str1, "0987654321", strlen(str1)) == 0);
+    assert(strlen(str1) == 10 && memcmp(str1, "0987654321", strlen(str1)) == 0);
 
     const char str2[] = "1234567890";
     ret = ecall_pointer_string_const(global_eid, str2);
     if (ret != SGX_SUCCESS)
         abort();
-    assert(memcmp(str2, "1234567890", strlen(str2)) == 0);
+    assert(strlen(str2) == 10 && memcmp(str2, "1234567890", strlen(str2)) == 0);
 
     char str3[] = "1234567890";
     ret = ecall_pointer_size(global_eid, (void*)str3, strlen(str3));
     if (ret != SGX_SUCCESS)
         abort();
-    assert(memcmp(str3, "0987654321", strlen(str3)) == 0);
+    assert(strlen(str3) == 10 && memcmp(str3, "0987654321", strlen(str3)) == 0);
 
     char str4[] = "1234567890";
     ret = ecall_pointer_isptr_readonly(global_eid, (buffer_t)str4, strlen(str4));
     if (ret != SGX_SUCCESS)
         abort();
-    assert(memcmp(str4, "1234567890", strlen(str4)) == 0);
+    assert(strlen(str4) == 10 && memcmp(str4, "1234567890", strlen(str4)) == 0);
 
     int arr[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     ret = ecall_pointer_count(global_eid, arr, 10);

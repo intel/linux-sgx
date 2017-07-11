@@ -80,6 +80,17 @@ DECLARE_LOCAL_FUNC get_thread_data
 
 /* 
  * ---------------------------------------------------------------------
+ * Function: sys_word_t get_stack_guard(void);
+ *
+ *     Get the value of stack_guard
+ * ---------------------------------------------------------------------
+ */
+DECLARE_LOCAL_FUNC get_stack_guard 
+    READ_TD_DATA stack_guard 
+    ret
+    
+/* 
+ * ---------------------------------------------------------------------
  * Function: enclave_entry
  *      The entry point of the enclave.
  *

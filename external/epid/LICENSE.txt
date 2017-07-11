@@ -203,9 +203,9 @@
 
 =======================================================================
 
-EPID SDK Subcomponents:
+Intel(R) Enhanced Privacy ID (Intel(R) EPID) SDK Subcomponents:
 
-The EPID SDK contains subcomponents with separate copyright notices
+The Intel(R) EPID SDK contains subcomponents with separate copyright notices
 and license terms. Your use of the source code for these subcomponents
 is subject to the terms and conditions of the following licenses.
 
@@ -214,7 +214,7 @@ is subject to the terms and conditions of the following licenses.
 The BSD 3-Clause License
 -----------------------------------------------------------------------
 
-The EPID SDK bundles portions of the following under the BSD 3-Clause
+The Intel(R) EPID SDK bundles portions of the following under the BSD 3-Clause
 License:
 
  - Google Test (https://github.com/google/googletest)

@@ -241,6 +241,7 @@ void MallocExtension::Register(MallocExtension* implementation) {
 // -----------------------------------------------------------------------
 // Heap sampling support
 // -----------------------------------------------------------------------
+#ifndef TCMALLOC_SGX    
 
 namespace {
 
@@ -300,6 +301,7 @@ void PrintStackEntry(MallocExtensionWriter* writer, void** entry) {
 }
 
 }
+#endif
 
 void MallocExtension::GetHeapSample(MallocExtensionWriter* writer) {
    /*Disable in SGX*/

@@ -108,7 +108,7 @@ bool AEGetWhiteListResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AEGetWhiteListResponse::GetValues(uint32_t* errorCode, uint32_t whiteListLength,uint8_t* whiteList)
+bool AEGetWhiteListResponse::GetValues(uint32_t* errorCode, uint32_t whiteListLength,uint8_t* whiteList) const
 {
     if (m_response->has_white_list() && whiteList != NULL)
     {

@@ -57,9 +57,9 @@ class UnixCommunicationSocket : public ICommunicationSocket{
 
         void MarkStartTime();
         bool CheckForTimeout();
-        
-        struct timeval mStartTime;
+
         uint32_t mTimeoutMseconds;
+        struct timeval mStartTime;
 
     private:
         //non-copyable

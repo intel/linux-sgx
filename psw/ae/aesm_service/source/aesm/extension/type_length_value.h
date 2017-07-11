@@ -77,6 +77,7 @@
 #include "se_sig_rl.h"
 #include "pce_cert.h"
 #include "sgx_report.h"
+#include "se_memcpy.h"
 
 #define FOUR_BYTES_SIZE_TYPE 128 /*mask used in type of TLV to indicate that 'size' field uses 4 bytes*/
 
@@ -326,7 +327,7 @@ protected:
             if(p==NULL){
                 return TLV_OUT_OF_MEMORY_ERROR;
             }
-            memcpy(p, infos, sizeof(tlv_info_t)*num_infos);
+            memcpy_s(p, sizeof(tlv_info_t)*num_infos, infos, sizeof(tlv_info_t)*num_infos);
             free(infos);
             infos = p;
             new_info = infos + (num_infos);

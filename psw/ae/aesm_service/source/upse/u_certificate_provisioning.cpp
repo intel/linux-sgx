@@ -580,7 +580,7 @@ static ae_error_t do_get_quote
         if (0 != nSigRL)
             pSigRL = const_cast<uint8_t*>(sigRLBuffer.getData());
 
-        if (SGX_SUCCESS != sgx_get_quote_size(pSigRL, &nQuote))
+        if (SGX_SUCCESS != sgx_calc_quote_size(pSigRL, nSigRL, &nQuote))
             break;
 
         tmp_status = quoteBuffer.Alloc(nQuote);

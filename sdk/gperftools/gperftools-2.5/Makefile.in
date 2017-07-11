@@ -4138,15 +4138,28 @@ uninstall-binSCRIPTS:
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f config.log
+	-rm -f config.status
+	-rm -f libtool
 	-rm -f benchmark/*.$(OBJEXT)
 	-rm -f benchmark/*.lo
+	-rm -rf benchmark/.deps
 	-rm -f src/*.$(OBJEXT)
 	-rm -f src/*.lo
+	-rm -rf src/.deps
+	-rm -rf src/.dirstamp
+	-rm -f src/config.h
+	-rm -f src/stamp-h1
 	-rm -f src/base/*.$(OBJEXT)
 	-rm -f src/base/*.lo
+	-rm -rf src/base/.deps
+	-rm -rf src/base/.dirstamp
 	-rm -f src/tests/*.$(OBJEXT)
+	-rm -rf src/tests/.deps
 	-rm -f src/windows/*.$(OBJEXT)
 	-rm -f src/windows/*.lo
+	-rm -rf src/windows/.deps
+	-rm -f src/gperftools/tcmalloc.h
 
 distclean-compile:
 	-rm -f *.tab.c

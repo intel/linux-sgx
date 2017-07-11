@@ -40,7 +40,7 @@ CPPLAGS += -I$(COMMON_DIR)/inc/              \
 
 
 SRC  := $(wildcard ../*.cpp)
-OBJS := $(SRC:.cpp=.o)
+OBJS := $(sort $(SRC:.cpp=.o))
 
 LIBSELIB := libselib.a
 

@@ -41,19 +41,6 @@ INCLUDE += -I$(LINUX_PSW_DIR)/ae/inc           \
            -I$(LINUX_PSW_DIR)/ae/pse/pse_op    \
            -I$(LINUX_EXTERNAL_DIR)/sqlite/src
 
-SQLITECFLAGS := -fstack-protector -fPIC -Wall -Werror
-
-ifdef DEBUG
-	SQLITECFLAGS += -ggdb -DDEBUG -UNDEBUG
-else
-	SQLITECFLAGS += -O2 -UDEBUG -DNDEBUG
-endif
-ifeq ($(ARCH), x86)
-	SQLITECFLAGS += -m32
-else
-	SQLITECFLAGS += -m64
-endif
-
 CXXFLAGS += -fPIC
 
 TCRYPTO_LIBDIR  := $(LINUX_SDK_DIR)/tlibcrypto
@@ -80,7 +67,7 @@ sgx_tcrypto:
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 
 sqlite3.o :sqlite3.c
-	$(CC) $(SQLITECFLAGS) $(INCLUDE) -c $< -o $@
+	$(CC) $(CFLAGS) $(INCLUDE) -c $< -o $@
 
 $(APPNAME): $(OBJ) sgx_tcrypto
 	$(CXX) $(CXXFLAGS) $(OBJ) $(LIBNAME) $(LDUFLAGS) $(EXTERNAL_LIB)   -o $@ -ldl -pthread

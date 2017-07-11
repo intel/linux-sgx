@@ -82,8 +82,8 @@ LDTFLAGS_NO_CRYPTO = -L$(BUILD_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whol
             -Wl,--start-group $(EXTERNAL_LIB_NO_CRYPTO) -Wl,--end-group                    \
             -Wl,--version-script=$(ROOT_DIR)/build-scripts/enclave.lds $(ENCLAVE_LDFLAGS)
 
-LDTFLAGS += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map
-LDTFLAGS_NO_CRYPTO += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map
+LDTFLAGS += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map -Wl,--undefined=version -Wl,--gc-sections
+LDTFLAGS_NO_CRYPTO += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map -Wl,--undefined=version -Wl,--gc-sections
 
 DEFINES := -D__linux__
 

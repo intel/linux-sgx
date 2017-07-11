@@ -149,8 +149,9 @@ sgx_status_t sgx_ra_proc_msg2(
         }
 
         uint32_t quote_size = 0;
-        ret = sgx_get_quote_size(p_msg2->sig_rl_size ?
+        ret = sgx_calc_quote_size(p_msg2->sig_rl_size ?
                                     const_cast<uint8_t *>(p_msg2->sig_rl):NULL,
+                                 p_msg2->sig_rl_size,
                                  &quote_size);
         if(SGX_SUCCESS!=ret)
         {

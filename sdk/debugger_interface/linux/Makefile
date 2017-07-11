@@ -37,7 +37,12 @@ CFLAGS :=
 CPPFLAGS += -I$(COMMON_DIR)/inc/           \
             -I$(COMMON_DIR)/inc/internal/
 
-CFLAGS += -W -Wall -Werror -D_GNU_SOURCE -fpic -fstack-protector
+CFLAGS += -W -Wall -Werror -D_GNU_SOURCE -fpic
+ifeq ($(CC_BELOW_4_9), 1)
+	CFLAGS += -fstack-protector
+else
+	CFLAGS += -fstack-protector-strong
+endif
 LDLIBS += -ldl
 
 ifdef DEBUG
@@ -69,7 +74,7 @@ install: $(TARGET) | $(GDB_OUT_DIR) $(GDB_PLUGINS_FILES)
 	$(CP) $(TARGET) $(BUILD_DIR)
 
 $(TARGET): $(OBJS)
-	$(CC) -shared -o $@ $^ $(LDLIBS) $(CFLAGS)
+	$(CC) -shared -o $@ $^ $(LDLIBS) $(CFLAGS) -Wl,--gc-sections
 
 $(OBJ1): %.o: $(COMMON_DIR)/src/%.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@

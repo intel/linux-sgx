@@ -53,7 +53,7 @@ class AECloseSessionResponse : public IAEResponse
         bool inflateWithMessage(AEMessage* message);
 
 
-        bool GetValues(uint32_t* errorCode);        //operators
+        bool GetValues(uint32_t* errorCode) const;        //operators
         AECloseSessionResponse& operator=(const AECloseSessionResponse& other);
 
         //checks

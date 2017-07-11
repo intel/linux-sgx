@@ -100,7 +100,7 @@ bool AEGetLaunchTokenResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AEGetLaunchTokenResponse::GetValues(uint32_t* result, uint8_t* token, uint32_t tokenLength)
+bool AEGetLaunchTokenResponse::GetValues(uint32_t* result, uint8_t* token, uint32_t tokenLength) const
 {
     if (m_response->has_token() && token != NULL)
     {

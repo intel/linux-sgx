@@ -14,12 +14,12 @@ API_HEADERS_INSTALL = ./api.h
 MEMBER_INCLUDE_DIR = ../../
 
 MEMBER_SRC =  $(wildcard ./src/*.c)
-MEMBER_OBJ = $(MEMBER_SRC:.c=.o)
+MEMBER_OBJ = $(sort $(MEMBER_SRC:.c=.o))
 MEMBER_LIB = ./libmember.a
 
 MEMBER_UTEST_EXE = ./member-utest
 MEMBER_UTEST_SRC = $(wildcard ./unittests/*.cc)
-MEMBER_UTEST_OBJ = $(MEMBER_UTEST_SRC:.cc=.o)
+MEMBER_UTEST_OBJ = $(sort $(MEMBER_UTEST_SRC:.cc=.o))
 LIB_MEMBER_DIR = .
 LIB_VERIFIER_DIR = ../verifier
 LIB_COMMON_TESTHELPER_DIR = ../common-testhelper

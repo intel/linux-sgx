@@ -60,10 +60,7 @@ UnixSocketFactory::~UnixSocketFactory()
 ICommunicationSocket* UnixSocketFactory::NewCommunicationSocket()
 {
     UnixCommunicationSocket* sock = new UnixCommunicationSocket(mSocketBase);
-    bool initializationSuccessfull = false;
-
-    if (sock != NULL)
-        initializationSuccessfull = sock->init();
+    bool initializationSuccessfull = sock->init();
 
     if (initializationSuccessfull == false)
     {

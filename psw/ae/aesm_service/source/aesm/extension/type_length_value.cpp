@@ -511,7 +511,7 @@ tlv_status_t TLVsMsg::add_pce_report_sign(const sgx_report_body_t& report, const
     tlv_info_t one_info;
     one_info.header_size = LARGE_TLV_HEADER_SIZE;
     one_info.payload = NULL;
-    one_info.size = sizeof(report)+64;
+    one_info.size = static_cast<uint32_t>(sizeof(report)+64);
     one_info.type = TLV_SE_REPORT;
     one_info.version = TLV_VERSION_1;
     uint32_t size = ::calc_one_tlv_size(one_info);

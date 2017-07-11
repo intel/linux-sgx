@@ -121,8 +121,7 @@ static sgx_status_t get_launch_token_internal(
     p_token->attributes_le.flags = SGX_FLAGS_INITTED;
     p_token->attributes_le.xfrm = SGX_XFRM_LEGACY;
 
-    IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashMessage((const Ipp8u *)&(p_signature->key.modulus),
+    IppStatus ipp_ret = ippsHashMessage((const Ipp8u *)&(p_signature->key.modulus),
         sizeof(p_signature->key.modulus),
         (Ipp8u *)&(p_token->body.mr_signer), IPP_ALG_HASH_SHA256);
     if(ipp_ret != ippStsNoErr){

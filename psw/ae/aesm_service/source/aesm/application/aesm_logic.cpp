@@ -88,6 +88,8 @@ bool AESMLogic::_is_pce_psvn_set;
 psvn_t AESMLogic::_qe_psvn;
 psvn_t AESMLogic::_pce_psvn;
 psvn_t AESMLogic::_pse_psvn;
+aesm_thread_t AESMLogic::qe_thread = NULL;
+aesm_thread_t AESMLogic::pse_thread = NULL;
 
 uint32_t AESMLogic::active_extended_epid_group_id;
 
@@ -237,18 +239,14 @@ ae_error_t AESMLogic::service_start()
         AESM_LOG_FATAL("%s", g_event_string_table[SGX_EVENT_SERVICE_UNAVAILABLE]);
         return ae_ret;
     }
-    aesm_thread_t qe_thread=NULL, pse_thread=NULL;
+
     ae_error_t aesm_ret1 = aesm_create_thread(thread_to_load_qe, 0,&qe_thread);
     ae_error_t aesm_ret2 = aesm_create_thread(thread_to_init_pse, 0, &pse_thread);
     if(AE_SUCCESS != aesm_ret1 ){
-        AESM_DBG_WARN("Fail to create thread to preload QE:%d",aesm_ret1);
-    }else{
-        (void)aesm_free_thread(qe_thread);// Release thread handle to free memory
-        }
+        AESM_DBG_WARN("Fail to create thread to preload QE:(ae %d)",aesm_ret1);
+    }
     if(AE_SUCCESS != aesm_ret2 ){
-        AESM_DBG_WARN("Fail to create thread to init PSE:%d",aesm_ret2);
-    }else{
-        (void)aesm_free_thread(pse_thread);// Release thread handle to free memory
+        AESM_DBG_WARN("Fail to create thread to init PSE:( ae %d)",aesm_ret2);
     }
     start_white_list_thread();
     AESM_DBG_TRACE("aesm service is started");
@@ -258,6 +256,22 @@ ae_error_t AESMLogic::service_start()
 
 void AESMLogic::service_stop()
 {
+    ae_error_t ae_ret, thread_ret;
+    // Waiting for QE and PSE thread
+    ae_ret = aesm_wait_thread(qe_thread, &thread_ret, AESM_STOP_TIMEOUT);
+    if (ae_ret != AE_SUCCESS || thread_ret != AE_SUCCESS)
+    {
+        AESM_DBG_INFO("aesm_wait_thread failed(qe_thread):(ae %d) (%d)", ae_ret, thread_ret);
+    }
+    (void)aesm_free_thread(qe_thread);//release thread handle to free memory
+    ae_ret = aesm_wait_thread(pse_thread, &thread_ret, AESM_STOP_TIMEOUT);
+    if (ae_ret != AE_SUCCESS || thread_ret != AE_SUCCESS)
+    {
+        AESM_DBG_INFO("aesm_wait_thread failed(pse_thread):(ae %d) (%d)", ae_ret, thread_ret);
+    }
+    (void)aesm_free_thread(pse_thread);//release thread handle to free memory
+
+    //waiting for pending threads util timeout
     stop_all_long_lived_threads(0);//waiting for pending threads util timeout
     CPVEClass::instance().unload_enclave();
     CPCEClass::instance().unload_enclave();
@@ -267,7 +281,6 @@ void AESMLogic::service_stop()
     CPSEPRClass::instance().unload_enclave();
     AESM_DBG_INFO("start to stop psda service");
     PSDAService::instance().stop_service();
-    stop_all_long_lived_threads(0);
     AESM_DBG_INFO("aesm service down");
     AESM_LOG_FINI();
 

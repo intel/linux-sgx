@@ -32,8 +32,12 @@
 #include "pse_pr_inc.h"
 #include "epid_verify_pub.hh"
 
-
-const uint8_t* Keys::EpidVerifyKey()
+const uint8_t** Keys::EpidVerifyKeys()
 {
-    return pEpidVerifyKey;
+    return pEpidVerifyKeys;
+}
+
+const uint32_t Keys::EpidVerifyKeyNum()
+{
+    return sizeof(pEpidVerifyKeys) / sizeof(pEpidVerifyKeys[0]);
 }

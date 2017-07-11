@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 __attribute__((visibility("default")))
-const char * sgx_trts_version = SGX_TRTS_VERSION_STR;
+char sgx_trts_version[] = SGX_TRTS_VERSION_STR;
 
 #ifdef __cplusplus
 }

@@ -161,13 +161,6 @@ aesm_error_t QEAESMLogic::init_quote(
     assert(sizeof(uint32_t) ==  gid_size);
     UNUSED(gid_size);
 
-    if (AE_SUCCESS != EPIDBlob::instance().get_sgx_gid((uint32_t*) gid)) {
-        aesm_result = AESM_UNEXPECTED_ERROR;
-        goto ret_point;
-    }
-
-    AESM_DBG_TRACE("get gid %d from epid blob (little-endian)",
-                    *(uint32_t*) gid);
     ae_ret = get_qe_target(target);
     if(ae_ret!=AE_SUCCESS){
         AESM_DBG_ERROR("get qe target failed (ae%d)",ae_ret);
@@ -199,10 +192,19 @@ aesm_error_t QEAESMLogic::init_quote(
     //Any Quoting enclave related code must be before this section to avoid QE/PvE unloading each other */
     aesm_result = AESM_SUCCESS;
 ret_point:
-    if(resealed && aesm_result == AESM_SUCCESS){
-        AESM_DBG_TRACE("Update epid blob");
-        if((ae_ret=epid_blob.write(epid_data))!=AE_SUCCESS){
-            AESM_DBG_WARN("Fail to update epid blob:(ae%d)",ae_ret);
+    if(aesm_result == AESM_SUCCESS){
+        if (resealed) {
+            AESM_DBG_TRACE("Update epid blob");
+            if ((ae_ret = epid_blob.write(epid_data)) != AE_SUCCESS) {
+                AESM_DBG_WARN("Fail to update epid blob:(ae%d)", ae_ret);
+            }
+        }
+        if (AE_SUCCESS != EPIDBlob::instance().get_sgx_gid((uint32_t*)gid)) {
+            aesm_result = AESM_UNEXPECTED_ERROR;
+        }
+        else {
+            AESM_DBG_TRACE("get gid %d from epid blob (little-endian)",
+                *(uint32_t*)gid);
         }
     }
     return aesm_result;

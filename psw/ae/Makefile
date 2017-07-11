@@ -40,17 +40,12 @@ else
 endif
 
 .PHONY: all
-all: $(CURL_RESULT) PSEPR_EPID AESM COPY_AES CSE| $(BUILD_DIR)
+all: $(CURL_RESULT) AESM COPY_AES CSE| $(BUILD_DIR)
 
 # COPY_AES: currently copy le, qe, pve, pce, pse_op, pse_pr
 .PHONY: COPY_AES
 COPY_AES: | $(BUILD_DIR)
 	$(CP) data/prebuilt/* $(BUILD_DIR)
-
-.PHONY: PSEPR_EPID
-PSEPR_EPID:
-	cd $(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0 && ./configure prefix=/usr/local
-	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0 ARCH=$(ARCH)
 
 .PHONY: AESM
 AESM: | $(BUILD_DIR)
@@ -70,7 +65,6 @@ $(BUILD_DIR):
 clean::
 	$(MAKE) -C aesm_service/                   clean
 	$(MAKE) -C cse_provision_tool              clean
-	-$(MAKE) -C $(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0 clean
 
 .PHONY: rebuild
 rebuild:

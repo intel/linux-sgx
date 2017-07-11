@@ -59,7 +59,7 @@ class AEInitQuoteResponse : public IAEResponse
         AEMessage*  serialize();
 
         bool GetValues(uint32_t* errorCode, uint32_t gidLength, uint8_t* gid,
-                uint32_t targetInfoLength, uint8_t* targetInfo);
+                uint32_t targetInfoLength, uint8_t* targetInfo) const;
 
 
         //operators

@@ -389,13 +389,14 @@ bool get_meta_property(const uint8_t *start_addr, const ElfW(Ehdr) *elf_hdr, uin
     const ElfW(Note) *note = GET_PTR(ElfW(Note), start_addr, shdr->sh_offset);
     assert(note != NULL);
 
-    if (shdr->sh_size != ROUND_TO(sizeof(ElfW(Note)) + note->namesz + note->descsz, shdr->sh_addralign))
+    if (shdr->sh_size != ROUND_TO(sizeof(ElfW(Note)) + note->namesz + note->descsz, shdr->sh_addralign ))
     {
         se_trace(SE_TRACE_ERROR, "ERROR: The '.note.sgxmeta' section size is not correct.\n");
         return false;
     }
-
-    if (memcmp(GET_PTR(void, start_addr, shdr->sh_offset + sizeof(ElfW(Note))), "sgx_metadata", note->namesz))
+    
+    const char * meta_name = "sgx_metadata";
+    if (note->namesz != (strlen(meta_name)+1) || memcmp(GET_PTR(void, start_addr, shdr->sh_offset + sizeof(ElfW(Note))), meta_name, note->namesz))
     {
         se_trace(SE_TRACE_ERROR, "ERROR: The note in the '.note.sgxmeta' section must be named as \"sgx_metadata\"\n");
         return false;

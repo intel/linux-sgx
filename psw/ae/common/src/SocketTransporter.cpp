@@ -40,10 +40,8 @@
 #include <stdlib.h>
 
 SocketTransporter::SocketTransporter(ISocketFactory* socketFactory, ISerializer* serializer)
-:mSocketFactory(NULL), mSerializer(NULL)
+:mSocketFactory(socketFactory), mSerializer(serializer)
 {
-    mSocketFactory = socketFactory;
-    mSerializer = serializer;
 }
 
 SocketTransporter::~SocketTransporter()
@@ -61,7 +59,7 @@ SocketTransporter::~SocketTransporter()
 }
 
 AEMessage* SocketTransporter::receiveMessage(ICommunicationSocket* sock) {
-    AEMessage * message = new AEMessage;
+    AEMessage * message = new AEMessage();
     char* msgSize = NULL;
     msgSize = sock->readRaw(sizeof(AEMessage::size));
     if (msgSize != NULL)

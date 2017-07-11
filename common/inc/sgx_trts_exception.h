@@ -125,7 +125,7 @@ extern "C" {
  *      exception_handler - a pointer to the handler to be called.
  * Return Value
  *      handler - success
- *          NULL - fail
+ *         NULL - fail
 */
 void * SGXAPI sgx_register_exception_handler(int is_first_handler, sgx_exception_handler_t exception_handler);
 

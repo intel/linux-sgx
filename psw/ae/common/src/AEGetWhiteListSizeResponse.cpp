@@ -110,7 +110,7 @@ bool AEGetWhiteListSizeResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AEGetWhiteListSizeResponse::GetValues(uint32_t* errorCode, uint32_t* white_list_size)
+bool AEGetWhiteListSizeResponse::GetValues(uint32_t* errorCode, uint32_t* white_list_size) const
 {
     *white_list_size = m_response->white_list_size();
     *errorCode = m_response->errorcode();

@@ -104,6 +104,7 @@ uint32_t upse_iclsInit()
 
 int main(int argc, char* argv[])
 {
+    (void)argv;
     if(argc != 1 || getuid() != 0)
     {
         fprintf(stderr, "%s", USAGE_STRING);

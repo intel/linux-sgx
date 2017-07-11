@@ -34,10 +34,7 @@
 ICommunicationSocket* NonBlockingUnixSocketFactory::NewCommunicationSocket()
 {
     NonBlockingUnixCommunicationSocket* sock = new NonBlockingUnixCommunicationSocket(mSocketBase);
-    bool initializationSuccessfull = false;
-
-    if (sock != NULL)
-        initializationSuccessfull = sock->init();
+    bool initializationSuccessfull = sock->init();
 
     if (initializationSuccessfull == false)
     {

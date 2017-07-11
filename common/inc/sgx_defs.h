@@ -48,6 +48,8 @@
 # define SGX_DLLIMPORT
 # define SGX_UBRIDGE(attr, fname, args...) attr fname args
 
+# define SGX_DEPRECATED __attribute__((deprecated))
+
 
 #define SGX_NOCONVENTION /* Empty.  No calling convention specified. */
 

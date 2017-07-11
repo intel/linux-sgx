@@ -110,7 +110,7 @@ bool AEInvokeServiceResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AEInvokeServiceResponse::GetValues(uint32_t* errorCode, uint32_t pseMessageLength,uint8_t* pseMessage)
+bool AEInvokeServiceResponse::GetValues(uint32_t* errorCode, uint32_t pseMessageLength,uint8_t* pseMessage) const
 {
     if (m_response->has_pse_message() && pseMessage != NULL)
     {
