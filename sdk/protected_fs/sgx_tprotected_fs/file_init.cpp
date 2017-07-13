@@ -67,7 +67,7 @@ bool protected_fs_file::cleanup_filename(const char* src, char* dest)
 }
 
 
-protected_fs_file::protected_fs_file(const char* filename, const char* mode, sgx_aes_gcm_128bit_key_t* import_key, sgx_aes_gcm_128bit_key_t* kdk_key)
+protected_fs_file::protected_fs_file(const char* filename, const char* mode, const sgx_aes_gcm_128bit_key_t* import_key, const sgx_aes_gcm_128bit_key_t* kdk_key)
 {
 	sgx_status_t status = SGX_SUCCESS;
 	uint8_t result = 0;
@@ -385,7 +385,7 @@ bool protected_fs_file::file_recovery(const char* filename)
 }
 
 
-bool protected_fs_file::init_existing_file(const char* filename, const char* clean_filename, sgx_aes_gcm_128bit_key_t* import_key)
+bool protected_fs_file::init_existing_file(const char* filename, const char* clean_filename, const sgx_aes_gcm_128bit_key_t* import_key)
 {
 	sgx_status_t status;
 	int32_t result32;
