@@ -53,7 +53,7 @@ fi
 
 
 PKG_ARCH=@arch@
-ARCH=$(arch)
+ARCH=$(uname -m)
 
 if [ $ARCH == "i386" ] || [ $ARCH == "i586" ] || [ $ARCH == "i686" ]; then
     ARCH=x86
