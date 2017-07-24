@@ -187,7 +187,7 @@ private:
 	bool cleanup_filename(const char* src, char* dest);
 	bool parse_mode(const char* mode);
 	bool file_recovery(const char* filename);
-	bool init_existing_file(const char* filename, const char* clean_filename, sgx_aes_gcm_128bit_key_t* import_key);
+	bool init_existing_file(const char* filename, const char* clean_filename, const sgx_aes_gcm_128bit_key_t* import_key);
 	bool init_new_file(const char* clean_filename);
 	
 	bool generate_secure_blob(sgx_aes_gcm_128bit_key_t* key, const char* label, uint64_t physical_node_number, sgx_aes_gcm_128bit_tag_t* output);
@@ -195,7 +195,7 @@ private:
 	bool init_session_master_key();
 	bool derive_random_node_key(uint64_t physical_node_number);
 	bool generate_random_meta_data_key();
-	bool restore_current_meta_data_key(sgx_aes_gcm_128bit_key_t* import_key);
+	bool restore_current_meta_data_key(const sgx_aes_gcm_128bit_key_t* import_key);
 	
 	
 	file_data_node_t* get_data_node();
@@ -214,7 +214,7 @@ private:
 	bool internal_flush(/*bool mc,*/ bool flush_to_disk);
 
 public:
-	protected_fs_file(const char* filename, const char* mode, sgx_aes_gcm_128bit_key_t* import_key, sgx_aes_gcm_128bit_key_t* kdk_key);
+	protected_fs_file(const char* filename, const char* mode, const sgx_aes_gcm_128bit_key_t* import_key, const sgx_aes_gcm_128bit_key_t* kdk_key);
 	~protected_fs_file();
 
 	size_t write(const void* ptr, size_t size, size_t count);

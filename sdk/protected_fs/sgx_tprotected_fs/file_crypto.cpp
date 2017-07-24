@@ -238,7 +238,7 @@ bool protected_fs_file::generate_random_meta_data_key()
 }
 
 
-bool protected_fs_file::restore_current_meta_data_key(sgx_aes_gcm_128bit_key_t* import_key)
+bool protected_fs_file::restore_current_meta_data_key(const sgx_aes_gcm_128bit_key_t* import_key)
 {
 	if (import_key != NULL)
 	{		

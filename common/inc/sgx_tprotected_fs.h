@@ -74,7 +74,7 @@ extern "C" {
  *  Return value:
  *     SGX_FILE*  - pointer to the newly created file handle, NULL if an error occurred - check errno for the error code.
 */
-SGX_FILE* SGXAPI sgx_fopen(const char* filename, const char* mode, sgx_key_128bit_t *key);
+SGX_FILE* SGXAPI sgx_fopen(const char* filename, const char* mode, const sgx_key_128bit_t *key);
 
 
 /* sgx_fopen_auto_key
@@ -252,7 +252,7 @@ int32_t SGXAPI sgx_fexport_auto_key(const char* filename, sgx_key_128bit_t *key)
 *  Return value:
 *     int32_t  - result, 0 - success, 1 - there was an error, check errno for the error code
 */
-int32_t SGXAPI sgx_fimport_auto_key(const char* filename, sgx_key_128bit_t *key);
+int32_t SGXAPI sgx_fimport_auto_key(const char* filename, const sgx_key_128bit_t *key);
 
 
 /* sgx_fclear_cache
