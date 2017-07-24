@@ -124,23 +124,25 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
 
     SE_TRACE(SE_TRACE_DEBUG, "\n secs.attibutes.flags = %llx, secs.attributes.xfrm = %llx \n"
              , secs->attributes.flags, secs->attributes.xfrm);
+
     //SECS:BASEADDR must be naturally aligned on an SECS.SIZE boundary
-    void* enclave_base = mmap(NULL, (size_t)secs->size *2, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, m_hdevice, 0);
+    //This alignment is guaranteed by driver, at linux-sgx-driver/sgx_main.c:141 to 146
+    //141     addr = current->mm->get_unmapped_area(file, addr, 2 * len, pgoff,
+    //142                           flags);
+    //143     if (IS_ERR_VALUE(addr))
+    //144         return addr;
+    //145
+    //146     addr = (addr + (len - 1)) & ~(len - 1);
+    //147
+    //148     return addr;
+    //Thus the only thing to do is to let the kernel driver align the memory.
+    void* enclave_base = mmap(NULL, (size_t)secs->size, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_SHARED, m_hdevice, 0);
     if(enclave_base == MAP_FAILED)
     {
         SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_CREATE failed: mmap failed, errno = %d\n", errno);
         return SGX_ERROR_OUT_OF_MEMORY;
     }
-    //find a suitable base for enclave
-    uintptr_t base = (uintptr_t)enclave_base + ((size_t)secs->size - ((uintptr_t)enclave_base % (size_t)secs->size)) ;
-    secs->base = (void*)base;
-    //remove unneed page
     munmap(enclave_base, (size_t)(secs->base) - (size_t)(enclave_base));
-
-    if(((uintptr_t)(enclave_base) + secs->size *2) != ((uintptr_t)secs->base + secs->size))
-    {
-        munmap((void*)((size_t)secs->base + secs->size), (size_t)(enclave_base) + (size_t)secs->size - (size_t)(secs->base));
-    }
     
     struct sgx_enclave_create param = {0};
     param.src = (uintptr_t)(secs);
