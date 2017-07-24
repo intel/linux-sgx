@@ -142,6 +142,7 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
         SE_TRACE(SE_TRACE_WARNING, "\nISGX_IOCTL_ENCLAVE_CREATE failed: mmap failed, errno = %d\n", errno);
         return SGX_ERROR_OUT_OF_MEMORY;
     }
+    munmap(enclave_base, (size_t)(secs->base) - (size_t)(enclave_base));
     
     struct sgx_enclave_create param = {0};
     param.src = (uintptr_t)(secs);
