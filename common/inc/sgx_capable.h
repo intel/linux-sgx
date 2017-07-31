@@ -82,33 +82,6 @@ sgx_status_t sgx_cap_enable_device(sgx_device_status_t* sgx_device_status);
 */
 sgx_status_t SGXAPI sgx_cap_get_status(sgx_device_status_t* sgx_device_status);
 
-
-/*
-* Function used to query the version of PSW installed.
-*
-* @param version_string[out] The version of PSW installed on the system, in string format.
-* @param version_string_len[in out] When version_string is not NULL, version_string_len is
-*           interpreted to be the length of version_string. If version_string_len is
-*           smaller than the buffer length needed, or if a NULL pointer is passed
-*           in version_string, version_string_len returns the number of characters
-*           required to hold the version string.
-*
-* @return If the function succeeds, return SGX_SUCCESS and the length of the string in
-*         version_string_len (not including NULL). SGX_ERROR_OUT_OF_MEMORY is returned if
-*         the buffer is too small or NULL, and the length required is in version_string_len.
-*         SGX_ERROR_SERVICE_UNAVAILABLE indicates the PSW is not installed. Any other value
-*         indicates an error.
-*/
-#if defined(_MSC_VER)
-#ifdef UNICODE
-#define sgx_cap_get_psw_version_string sgx_cap_get_psw_version_stringw
-#else
-#define sgx_cap_get_psw_version_string sgx_cap_get_psw_version_stringa
-#endif
-sgx_status_t SGXAPI sgx_cap_get_psw_version_stringw(LPWSTR version_string, DWORD *version_string_len);
-sgx_status_t SGXAPI sgx_cap_get_psw_version_stringa(LPSTR version_string, DWORD *version_string_len);
-#endif
-
 #ifdef  __cplusplus
 }
 #endif
