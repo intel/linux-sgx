@@ -40,6 +40,8 @@ class AESMLogicWrapper :public IAESMLogic {
     public:
         AESMLogicWrapper() {
         }
+        virtual ~AESMLogicWrapper() {
+        }
 
         ae_error_t service_start(){
             return AESMLogic::service_start();

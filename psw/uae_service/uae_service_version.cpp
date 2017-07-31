@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 __attribute__((visibility("default")))
-const char * sgx_uae_service_version = SGX_UAE_SERVICE_VERSION_STR;
+char sgx_uae_service_version[] = SGX_UAE_SERVICE_VERSION_STR;
 
 #ifdef __cplusplus
 }

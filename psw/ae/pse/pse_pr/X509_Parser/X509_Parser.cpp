@@ -1192,6 +1192,7 @@ STATUS VerifyBasicCertificateAttributes(const Uint8* certificateDerEncoded, cons
     UNUSED(EcdsaKey);
     UNUSED(CertType);
     UNUSED(CertLevel);
+    UNUSED(UseFacsimileEpid);
 #endif
 
     // Make sure the signature Algorithms for issuer is the same as the one used in the TbsCertificate
@@ -3074,7 +3075,7 @@ static STATUS ParseSignatureValue(UINT8 **ppCurrent, UINT8 *pEnd, UINT8 **pworkb
         // Signature value has been parsed successfully. Store the offset in the workbuffer in the DataBuffer that will be passed back to the caller
         SignatureValueBuf->buffer = *pworkbuffer;
         // length is the amount of work buffer we have used up
-        SignatureValueBuf->length = workbuffer_ptr - *pworkbuffer;
+        SignatureValueBuf->length = static_cast<Uint32>(workbuffer_ptr - *pworkbuffer);
     }else{
         DBG_ASSERT(0);
     }

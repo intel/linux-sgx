@@ -178,7 +178,8 @@ int CLoader::build_sections(vector<uint8_t> *bitmap)
         
         
         
-        if((last_section != NULL) &&
+        if((META_DATA_MAKE_VERSION(SGX_1_5_MAJOR_VERSION,SGX_1_5_MINOR_VERSION ) == m_metadata->version) &&
+            (last_section != NULL) &&
            (ROUND_TO_PAGE(last_section->virtual_size() + last_section->get_rva()) < ROUND_TO_PAGE(ROUND_TO_PAGE(last_section->virtual_size()) + last_section->get_rva())) &&
            (ROUND_TO_PAGE(last_section->get_rva() + last_section->virtual_size()) < (sections[i]->get_rva() & (~(SE_PAGE_SIZE - 1)))))
         {
@@ -205,7 +206,8 @@ int CLoader::build_sections(vector<uint8_t> *bitmap)
     
     
     
-    if((last_section != NULL) &&
+    if((META_DATA_MAKE_VERSION(SGX_1_5_MAJOR_VERSION,SGX_1_5_MINOR_VERSION ) == m_metadata->version) &&
+        (last_section != NULL) &&
        (ROUND_TO_PAGE(last_section->virtual_size() + last_section->get_rva()) < ROUND_TO_PAGE(ROUND_TO_PAGE(last_section->virtual_size()) + last_section->get_rva())))
     {
         size_t size = SE_PAGE_SIZE;
@@ -537,9 +539,10 @@ int CLoader::validate_metadata()
 {
     if(!m_metadata)
         return SGX_ERROR_INVALID_METADATA;
-    uint64_t version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION );
+    uint64_t version2 = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION );
+    uint64_t version1 = META_DATA_MAKE_VERSION(SGX_1_5_MAJOR_VERSION,SGX_1_5_MINOR_VERSION );
     //if the version of metadata does NOT match the version of metadata in urts, we should NOT launch enclave.
-    if(m_metadata->version != version)
+    if((m_metadata->version != version1) && (m_metadata->version != version2))
     {
         SE_TRACE(SE_TRACE_WARNING, "Mismatch between the metadata urts required and the metadata in use.\n");
         return SGX_ERROR_INVALID_VERSION;

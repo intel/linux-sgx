@@ -66,7 +66,9 @@ OBJS := $(sort $(OBJ) version.o)
 .PHONY: all
 all: $(SONAME) 
 
+.PHONY: EPID_SDK
 EPID_SDK:
+	cd $(EPID_SDK_DIR) && ./configure prefix=/usr/local
 	$(MAKE) -C $(EPID_SDK_DIR)
 	
 $(SONAME): $(OBJS) EPID_SDK
@@ -86,6 +88,8 @@ clean:
 	@$(RM) *.so
 	@$(RM) *.map
 	@$(RM) *_t.*
+	-$(MAKE) -C $(EPID_SDK_DIR) clean
+	@$(RM) -r $(EPID_SDK_DIR)/Makefile $(EPID_SDK_DIR)/config.log $(EPID_SDK_DIR)/config.status
 
 .PHONY: rebuild
 rebuild:

@@ -38,6 +38,9 @@ CXXFLAGS += -Werror -fno-rtti -fno-exceptions -fPIC
 CPPFLAGS := -isystem $(SGX_IPP_INC) \
             -I$(COMMON_DIR)/inc/internal/           
 
+LDFLAGS := -Bdynamic -L$(IPP_LIBS_DIR) $(LD_IPP) 
+LDFLAGS += -Wl,--version-script,sample_libcrypto.lds -Wl,--gc-sections
+
 OBJS := sample_libcrypto.o
 
 LIBSAMPLECRYPTO := libsample_libcrypto.so
@@ -51,14 +54,14 @@ all: $(LIBSAMPLECRYPTO) | $(BUILD_DIR)
 
 ifneq ($(USE_OPT_LIBS), 0) 
 $(LIBSAMPLECRYPTO): $(OBJS)
-	$(CXX) $(CXXFLAGS) -shared -Bdynamic -Wl,-soname,$(LIBSAMPLECRYPTO) $< -o $@ -L$(IPP_LIBS_DIR) $(LD_IPP) -Wl,--version-script,sample_libcrypto.lds	
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname,$(LIBSAMPLECRYPTO) $< -o $@ $(LDFLAGS)	
 
 else
 libcrypto_px:
 	$(MAKE) -C $(SGX_IPP_DIR)
 
 $(LIBSAMPLECRYPTO): $(OBJS) libcrypto_px
-	$(CXX) $(CXXFLAGS) -shared -Bdynamic -Wl,-soname,$(LIBSAMPLECRYPTO) $< -o $@ -L$(IPP_LIBS_DIR) $(LD_IPP) -Wl,--version-script,sample_libcrypto.lds
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname,$(LIBSAMPLECRYPTO) $< -o $@ $(LDFLAGS)
 endif
 
 $(OBJS): %.o: %.cpp

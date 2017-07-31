@@ -48,7 +48,7 @@ CPPFLAGS += -I..                     \
             -I$(COMMON_DIR)/inc/internal
 
 SOURCE := $(wildcard *.c)
-OBJECT := $(SOURCE:.c=.o)
+OBJECT := $(sort $(SOURCE:.c=.o))
 
 .PHONY: all
 all: $(OBJECT)

@@ -67,7 +67,12 @@ INCLUDE :=
 CUR_DIR := $(realpath $(call parent-dir,$(lastword $(wordlist 2,$(words $(MAKEFILE_LIST)),x $(MAKEFILE_LIST)))))
 
 # turn on stack protector for SDK
-COMMON_FLAGS += -fstack-protector
+CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
+ifeq ($(CC_BELOW_4_9), 1)
+    COMMON_FLAGS += -fstack-protector
+else
+    COMMON_FLAGS += -fstack-protector-strong
+endif
 
 ifdef DEBUG
     COMMON_FLAGS += -ggdb -DDEBUG -UNDEBUG
@@ -79,6 +84,8 @@ endif
 ifdef SE_SIM
     COMMON_FLAGS += -DSE_SIM
 endif
+
+COMMON_FLAGS += -ffunction-sections -fdata-sections
 
 # turn on compiler warnings as much as possible
 COMMON_FLAGS += -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \

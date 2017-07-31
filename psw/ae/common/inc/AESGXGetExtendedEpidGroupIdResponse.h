@@ -59,7 +59,7 @@ class AESGXGetExtendedEpidGroupIdResponse : public IAEResponse
         AEMessage*  serialize();
 
 
-        bool GetValues(uint32_t* errorCode, uint32_t* x_group_id);
+        bool GetValues(uint32_t* errorCode, uint32_t* x_group_id) const;
 
         //operators
         AESGXGetExtendedEpidGroupIdResponse& operator=(const AESGXGetExtendedEpidGroupIdResponse &other);

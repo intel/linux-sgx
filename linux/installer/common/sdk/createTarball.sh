@@ -73,7 +73,7 @@ generate_pkgconfig_files() {
     done
 }
 
-# Get SGX version
+# Get Intel(R) SGX version
 SGX_VERSION=$(awk '/STRFILEVER/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 
 # Generate pkgconfig files

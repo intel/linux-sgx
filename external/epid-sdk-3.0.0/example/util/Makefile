@@ -5,7 +5,7 @@ COMMON_INCLUDE_DIR = ../../
 UTIL_INCLUDE_DIR = ../
 
 UTIL_SRC =  $(wildcard ./src/*.c)
-UTIL_OBJ = $(UTIL_SRC:.c=.o)
+UTIL_OBJ = $(sort $(UTIL_SRC:.c=.o))
 UTIL_LIB = ./src/libutil.a
 
 #set additional compiler flag

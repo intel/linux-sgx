@@ -52,7 +52,7 @@ class AEReportAttestationResponse : public IAEResponse
 
         AEMessage* serialize();
         bool inflateWithMessage(AEMessage* message);
-        bool GetValues(uint32_t* errorCode, uint32_t updateInfoLength,uint8_t* updateInfo);
+        bool GetValues(uint32_t* errorCode, uint32_t updateInfoLength,uint8_t* updateInfo) const;
 
         
         //operators

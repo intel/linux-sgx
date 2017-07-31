@@ -46,13 +46,6 @@ static bool newer_psda_svn(uint32_t psdasvn1, uint32_t psdasvn2)
     return retval;
 }
 
-static bool newer_pse_svn(uint16_t psesvn1, uint16_t psesvn2)
-{
-    // return true if psesvn1 is newer than psesvn2
-    bool retVal = static_cast<bool>(psesvn1 > psesvn2);
-    SGX_DBGPRINT_ONE_STRING_TWO_INTS_CREATE_SESSION(__FUNCTION__" returning ", retVal, retVal);
-    return retVal;
-}
 
 ae_error_t PlatformInfoLogic::get_sgx_epid_group_flags(const platform_info_blob_wrapper_t* p_platform_info_blob, uint8_t* pflags)
 {

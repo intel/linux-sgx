@@ -43,7 +43,7 @@ INC := -I./include \
        -I./sources/ippcp/src
 
 SRCS := $(wildcard ./sources/ippcp/src/*.c)
-OBJS := $(SRCS:.c=.o)
+OBJS := $(sort $(SRCS:.c=.o))
 
 libcrypto_px.a: $(OBJS)
 	ar crv $@ $^

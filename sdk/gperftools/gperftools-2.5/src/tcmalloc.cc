@@ -346,12 +346,15 @@ static void ExtractStats(TCMallocStats* r, uint64_t* class_count,
   }
 }
 
+#ifndef TCMALLOC_SGX 
 static double PagesToMiB(uint64_t pages) {
   return (pages << kPageShift) / 1048576.0;
 }
+#endif
 
 // WRITE stats to "out"
 static void DumpStats(TCMalloc_Printer* out, int level) {
+#ifndef TCMALLOC_SGX   /*currently this function is disabled in SGX*/
   TCMallocStats stats;
   uint64_t class_count[kNumClasses];
   PageHeap::SmallSpanStats small;
@@ -477,6 +480,7 @@ static void DumpStats(TCMalloc_Printer* out, int level) {
                 PagesToMiB(large.returned_pages),
                 PagesToMiB(total_returned));
   }
+#endif
 }
 
 static void PrintStats(int level) {
@@ -1091,6 +1095,7 @@ static int64_t large_alloc_threshold =
    ? kPageSize : FLAGS_tcmalloc_large_alloc_report_threshold);
 
 static void ReportLargeAlloc(Length num_pages, void* result) {
+#ifndef TCMALLOC_SGX  /*Currently message output functions are all implemented empty, So set this function empty directly*/
   StackTrace stack;
   stack.depth = GetStackTrace(stack.stack, tcmalloc::kMaxStackDepth, 1);
 
@@ -1105,6 +1110,7 @@ static void ReportLargeAlloc(Length num_pages, void* result) {
   }
   printer.printf("\n");
   write(STDERR_FILENO, buffer, strlen(buffer));
+#endif
 }
 
 void* do_memalign(size_t align, size_t size);

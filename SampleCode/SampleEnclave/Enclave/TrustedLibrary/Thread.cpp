@@ -33,7 +33,7 @@
 #include "../Enclave.h"
 #include "Enclave_t.h"
 
-#include <sgx_thread.h>
+#include "sgx_thread.h"
 
 static size_t global_counter = 0;
 static sgx_thread_mutex_t global_mutex = SGX_THREAD_MUTEX_INITIALIZER;

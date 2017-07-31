@@ -78,6 +78,7 @@ DEFINE_string(symbolize_pprof,
 // a more-permanent copy that won't ever get destroyed.
 static string* g_pprof_path = new string(FLAGS_symbolize_pprof);
 
+#ifndef TCMALLOC_SGX    /*IN SGX HAVE_SYS_SOCKET_H is disabled*/
 // Returns NULL if we're on an OS where we can't get the invocation name.
 // Using a static var is ok because we're not called from a thread.
 static const char* GetProgramInvocationName() {
@@ -102,6 +103,7 @@ static const char* GetProgramInvocationName() {
   return NULL;   // figure out a way to get argv[0]
 #endif
 }
+#endif
 
 // Prints an error message when you can't run Symbolize().
 static void PrintError(const char* reason) {

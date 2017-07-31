@@ -106,6 +106,7 @@ ae_error_t check_epid_pve_pg_status_after_mac_verification(const  provision_resp
             return PVE_SERVER_REPORTED_ERROR;
         return AE_SUCCESS;
     case GRS_PROTOCOL_ERROR:
+        AESM_LOG_INFO_ADMIN("%s (%d)", g_admin_event_string_table[SGX_ADMIN_EVENT_EPID_PROV_BACKEND_PROTOCOL_ERROR], (int)pstatus);
         AESM_DBG_INFO("Server reported protocol error %d", (int)pstatus);
         switch(pstatus){
         case SE_PRS_STATUS_INTEGRITY_FAILED:

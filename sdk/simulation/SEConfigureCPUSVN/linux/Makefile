@@ -42,7 +42,7 @@ CPPFLAGS := -I$(COMMON_DIR)/inc           \
 SRCS := $(wildcard ./*.cpp)
 SRCS += $(SIM_DIR)/urtssim/cpusvn_util.cpp
 
-OBJS := $(SRCS:.cpp=.o)
+OBJS := $(sort $(SRCS:.cpp=.o))
 
 WRAPPER_LIB_DIR := $(COMMON_DIR)/se_wrapper
 LDFLAGS := -L$(WRAPPER_LIB_DIR)

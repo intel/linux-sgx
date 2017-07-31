@@ -40,7 +40,7 @@ extern "C" {
 #endif
 
 __attribute__((visibility("default")))
-const char * sgx_tstdc_version = SGX_TSTDC_VERSION_STR;
+char  sgx_tstdc_version[] = SGX_TSTDC_VERSION_STR;
 
 #ifdef __cplusplus
 }

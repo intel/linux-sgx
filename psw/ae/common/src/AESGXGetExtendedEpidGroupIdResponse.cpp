@@ -109,7 +109,7 @@ bool AESGXGetExtendedEpidGroupIdResponse::inflateWithMessage(AEMessage* message)
     return true;
 }
 
-bool AESGXGetExtendedEpidGroupIdResponse::GetValues(uint32_t* errorCode, uint32_t* extendedGroupId)
+bool AESGXGetExtendedEpidGroupIdResponse::GetValues(uint32_t* errorCode, uint32_t* extendedGroupId) const
 {
     *extendedGroupId = m_response->x_group_id();
     *errorCode = m_response->errorcode();

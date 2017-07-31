@@ -113,7 +113,7 @@ SRC :=       AEServicesImpl.cpp \
 OBJ := $(SRC:.cpp=.o) $(IPC_SRC:.cpp=.o)  $(PROTOBUF_SRC:.cc=.o) 
 
 LDUFLAGS:= -pthread -L$(BUILD_DIR)
-LDUFLAGS += -Wl,--version-script=uae_service.lds
+LDUFLAGS += -Wl,--version-script=uae_service.lds -Wl,--gc-sections
 
 LIBNAME  = libsgx_uae_service.so
 LIBNAME_DEBUG  = libsgx_uae_service.so.debug

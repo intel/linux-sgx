@@ -2,7 +2,7 @@
 
 DROPT_INCLUDE_DIR = ./include
 DROPT_SRC = $(wildcard ./src/*.c)
-DROPT_OBJ = $(DROPT_SRC:.c=.o)
+DROPT_OBJ = $(sort $(DROPT_SRC:.c=.o))
 
 DROPT_LIB = ./src/libdropt.a
 

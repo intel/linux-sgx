@@ -53,7 +53,7 @@ class AEInvokeServiceResponse : public IAEResponse
 
         AEMessage* serialize();
         bool inflateWithMessage(AEMessage* message);
-        bool GetValues(uint32_t* errorCode, uint32_t pseMessageLength, uint8_t* pseMessage);
+        bool GetValues(uint32_t* errorCode, uint32_t pseMessageLength, uint8_t* pseMessage) const;
         //operators
 
         AEInvokeServiceResponse& operator=(const AEInvokeServiceResponse& other);

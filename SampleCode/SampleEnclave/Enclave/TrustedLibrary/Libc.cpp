@@ -31,7 +31,7 @@
 
 
 #include <string.h>
-#include <sgx_cpuid.h>
+#include "sgx_cpuid.h"
 
 #include "sgx_trts.h"
 #include "../Enclave.h"

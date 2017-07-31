@@ -81,13 +81,3 @@ void init_global_object(void)
     do_ctors_aux();
 }
 
-void init_stack_guard(void)
-{
-    thread_data_t *thread_data = get_thread_data();
-    assert(thread_data != NULL);
-
-    if (SGX_SUCCESS != sgx_read_rand(
-                (unsigned char*)&thread_data->stack_guard,
-                sizeof(thread_data->stack_guard)))
-        abort();
-}

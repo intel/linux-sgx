@@ -8,6 +8,10 @@ User=aesmd
 Type=forking
 Environment=NAME=aesm_service
 Environment=AESM_PATH=@aesm_folder@
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/run/aesmd/
+ExecStartPre=/bin/chown -R aesmd:aesmd /var/run/aesmd/
+ExecStartPre=/bin/chmod 0755 /var/run/aesmd/
 ExecStart=@aesm_folder@/aesm_service
 InaccessibleDirectories=/home
 ExecReload=/bin/kill -SIGUP $MAINPID

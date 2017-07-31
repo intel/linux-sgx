@@ -200,7 +200,7 @@ ae_error_t CPSEClass::create_session(
     if(sizeof(pse_dh_msg1_t) != se_dh_msg1_size)
         return PSE_OP_PARAMETER_ERROR;
 
-    uint64_t milliseconds = (uint64_t)(se_get_tick_count() * 1000.0 / m_freq+0.5);
+    uint64_t milliseconds = static_cast<uint64_t>(static_cast<double>(se_get_tick_count()) * 1000.0 / static_cast<double>(m_freq) + 0.5);
     status = create_session_wrapper(m_enclave_id,&ret,milliseconds,session_id,(pse_dh_msg1_t*)se_dh_msg1);
     if (status == SGX_ERROR_ENCLAVE_LOST)
     {
@@ -234,7 +234,7 @@ ae_error_t CPSEClass::exchange_report(
         return PSE_OP_PARAMETER_ERROR;
 
     uint64_t sys_tick = se_get_tick_count();
-    uint64_t milliseconds = (uint64_t)(sys_tick * 1000.0 / m_freq +0.5);
+    uint64_t milliseconds = static_cast<uint64_t>(static_cast<double>(sys_tick) * 1000.0 / static_cast<double>(m_freq) + 0.5);
     //ECall
     status = exchange_report_wrapper(m_enclave_id, &ret,
         milliseconds,
@@ -290,7 +290,7 @@ ae_error_t CPSEClass::invoke_service(
         return AE_FAILURE;
 
     uint64_t sys_tick = se_get_tick_count();
-    uint64_t milliseconds = (uint64_t)(sys_tick * 1000.0 / m_freq + 0.5);
+    uint64_t milliseconds = static_cast<uint64_t>(static_cast<double>(sys_tick) * 1000.0 / static_cast<double>(m_freq) + 0.5);
     // ECall
     PROFILE_START("invoke_service_wrapper");
     status = invoke_service_wrapper(m_enclave_id,

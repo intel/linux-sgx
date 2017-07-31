@@ -226,7 +226,7 @@ do {                                                        \
         if (rel_entry_sz == 0)                              \
             return -1;                                      \
         n = total_sz/rel_entry_sz;                          \
-        if (do_relocs((ElfW(Addr))enclave_base, rel_offset, sym_offset, n)) \
+        if (do_relocs((ElfW(Addr))base_addr, rel_offset, sym_offset, n)) \
             return -1;                                      \
     }                                                       \
 } while (0)
