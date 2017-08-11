@@ -234,6 +234,20 @@ DECLARE_GLOBAL_FUNC enclave_entry
  */
 DECLARE_LOCAL_FUNC do_ocall
 
+/*
+ * If the enclave is crashed, loop forever. Do not allow possibly corrupted
+ * data to escape the enclave.
+ * The crash's ud2 should already signal to the OS to tear down the process
+ * state, so the loop waits for that to happen rather than issue another ud2.
+ */
+    lea_pic g_enclave_state, %xax
+    cmp    $ENCLAVE_CRASHED, (%xax)
+    jne .Ldo_ocall
+.Ldiverge:
+    pause
+    jmp .Ldiverge
+
+.Ldo_ocall:
 /* 
  * 8 for GPR, 1 for TD.last_sp, 1 for ocall_index
  * 1 for OCALL_FLAG, 4 for shadow space.
