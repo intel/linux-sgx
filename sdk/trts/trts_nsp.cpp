@@ -32,6 +32,8 @@
 /* Implement functions:
  *         init_stack_guard() 
  *         do_init_thread()
+ *         do_ecall()
+ *         enter_encalve()
  *
  *  The functions in this source file will be called during the stack guard initialization.
  *  They cannot be built with '-fstack-protector-strong'. Otherwise, stack guard check will
@@ -46,6 +48,8 @@
 #include "thread_data.h"
 #include "global_data.h"
 #include "trts_internal.h"
+
+#include "internal/rts.h"
 
 #include "linux/elf_parser.h"
 #define GET_TLS_INFO  elf_tls_info
@@ -95,3 +99,56 @@ extern "C" sgx_status_t do_init_thread(void *tcs)
     return SGX_SUCCESS;
 }
 
+sgx_status_t do_ecall(int index, void *ms, void *tcs)
+{
+    sgx_status_t status = SGX_ERROR_UNEXPECTED;
+    if(ENCLAVE_INIT_DONE != get_enclave_state())
+    {
+        return status;
+    }
+    thread_data_t *thread_data = get_thread_data();
+    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
+    {
+        status = do_init_thread(tcs);
+        if(0 != status)
+        {
+            return status;
+        }
+    }
+    status = trts_ecall(index, ms);
+    return status;
+}
+
+extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
+{
+    if(get_enclave_state() == ENCLAVE_CRASHED)
+    {
+        return SGX_ERROR_ENCLAVE_CRASHED;
+    }
+
+    sgx_status_t error = SGX_ERROR_UNEXPECTED;
+    if(cssa == 0)
+    {
+        if(index >= 0)
+        {
+            error = do_ecall(index, ms, tcs);
+        }
+        else if(index == ECMD_INIT_ENCLAVE)
+        {
+            error = do_init_enclave(ms);
+        }
+        else if(index == ECMD_ORET)
+        {
+            error = do_oret(ms);
+        }
+    }
+    else if((cssa == 1) && (index == ECMD_EXCEPT))
+    {
+        error = trts_handle_exception(tcs);
+    }
+    if(error == SGX_ERROR_UNEXPECTED)
+    {
+        set_enclave_state(ENCLAVE_CRASHED);
+    }
+    return error;
+}
