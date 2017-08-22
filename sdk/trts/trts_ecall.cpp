@@ -99,7 +99,7 @@ static volatile bool           g_is_first_ecall = true;
 static volatile sgx_spinlock_t g_ife_lock       = SGX_SPINLOCK_INITIALIZER;
 
 typedef sgx_status_t (*ecall_func_t)(void *ms);
-static sgx_status_t trts_ecall(uint32_t ordinal, void *ms)
+sgx_status_t trts_ecall(uint32_t ordinal, void *ms)
 {
     if (unlikely(g_is_first_ecall))
     {
@@ -132,25 +132,3 @@ static sgx_status_t trts_ecall(uint32_t ordinal, void *ms)
     CLEAN_XFEATURE_REGS
     return status;
 }
-
-extern "C" sgx_status_t do_init_thread(void *tcs);
-sgx_status_t do_ecall(int index, void *ms, void *tcs)
-{
-    sgx_status_t status = SGX_ERROR_UNEXPECTED;
-    if(ENCLAVE_INIT_DONE != get_enclave_state())
-    {
-        return status;
-    }
-    thread_data_t *thread_data = get_thread_data();
-    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
-    {
-        status = do_init_thread(tcs);
-        if(0 != status)
-        {
-            return status;
-        }
-    }
-    status = trts_ecall(index, ms);
-    return status;
-}
-

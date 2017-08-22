@@ -38,8 +38,6 @@
 #include "thread_data.h"
 #include "global_data.h"
 
-#include "internal/rts.h"
-
 #ifdef SE_SIM
 #include "t_instructions.h"    /* for `g_global_data_sim' */
 #include "sgx_spinlock.h"
@@ -285,39 +283,4 @@ sgx_status_t sgx_read_rand(unsigned char *rand, size_t length_in_bytes)
     }
     memset_s(&rand_num, sizeof(rand_num), 0, sizeof(rand_num));
     return SGX_SUCCESS;
-}
-
-#include "trts_internal.h"
-extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
-{
-    if(get_enclave_state() == ENCLAVE_CRASHED)
-    {
-        return SGX_ERROR_ENCLAVE_CRASHED;
-    }
-
-    sgx_status_t error = SGX_ERROR_UNEXPECTED;
-    if(cssa == 0)
-    {
-        if(index >= 0)
-        {
-            error = do_ecall(index, ms, tcs);
-        }
-        else if(index == ECMD_INIT_ENCLAVE)
-        {
-            error = do_init_enclave(ms);
-        }
-        else if(index == ECMD_ORET)
-        {
-            error = do_oret(ms);
-        }
-    }
-    else if((cssa == 1) && (index == ECMD_EXCEPT))
-    {
-        error = trts_handle_exception(tcs);
-    }
-    if(error == SGX_ERROR_UNEXPECTED)
-    {
-        set_enclave_state(ENCLAVE_CRASHED);
-    }
-    return error;
 }
