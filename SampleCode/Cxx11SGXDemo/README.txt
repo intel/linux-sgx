@@ -18,7 +18,7 @@ The project demonstrates serveral C++11 features inside the Enclave:
 - function object wrapper;
 - atomic, mutexes, condition_variables;
 - new smart pointer classes: shared_ptr, unique_ptr;
-- new c++ algorithms: all_off, any_of, none_of;
+- new c++ algorithms: all_of, any_of, none_of;
 - variadic templates;
 - SFINAE;
 
