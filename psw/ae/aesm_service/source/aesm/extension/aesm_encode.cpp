@@ -306,7 +306,7 @@ uint32_t certPseSvn()
 			// go from binary (tempCert) to mem bio (certBio) to internal OpenSSL representation of x509 cert (cert)
 			//
 			const upse::Buffer& tempCert = *iterator;
-			int retVal = certBio->method->bwrite(certBio, (const char*) tempCert.getData(), tempCert.getSize());
+			int retVal = BIO_write(certBio, (const char*) tempCert.getData(), tempCert.getSize());
 			if (retVal <= 0) break;
 
 			cert = d2i_X509_bio(certBio, NULL);
