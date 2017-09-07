@@ -190,13 +190,6 @@ DECLARE_GLOBAL_FUNC enclave_entry
     
     .cfi_endproc
 
-DECLARE_GLOBAL_FUNC force_exit_enclave
-    READ_TD_DATA last_sp
-    sub     $(2*SE_WORDSIZE), %xax
-    mov     %xax, %xbp
-    mov     $SGX_ERROR_ENCLAVE_CRASHED, %xbx
-    jmp     .Lexit_enclave
-
 /* 
  * -------------------------------------------------------------------------
  *  sgx_status_t do_ocall(unsigned int index, void *ms);
