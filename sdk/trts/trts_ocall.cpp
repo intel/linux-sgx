@@ -39,7 +39,6 @@
 #include "xsave.h"
 #include "trts_internal.h"
 
-extern "C" void force_exit_enclave();
 extern "C" sgx_status_t asm_oret(uintptr_t sp, void *ms);
 extern "C" sgx_status_t __morestack(const unsigned int index, void *ms);
 #define do_ocall __morestack
@@ -54,10 +53,6 @@ extern "C" sgx_status_t __morestack(const unsigned int index, void *ms);
 //
 sgx_status_t sgx_ocall(const unsigned int index, void *ms)
 {
-    if(get_enclave_state() == ENCLAVE_CRASHED) {
-        force_exit_enclave();
-    }
-
     // sgx_ocall is not allowed during exception handling
     thread_data_t *thread_data = get_thread_data();
     
