@@ -55,7 +55,7 @@ all: $(LIBNAME) | $(BUILD_DIR)
 	@$(CP) $< $|
 
 $(LIBNAME): sgx_tprotected_fs_t.h $(OBJ)
-	$(AR) rcsD $@ $^
+	$(AR) rcsD $@ $(OBJ)
 	
 sgx_tprotected_fs_t.h: $(EDGER8R)
 	$(EDGER8R) --header-only --trusted $(COMMON_DIR)/inc/sgx_tprotected_fs.edl --search-path $(COMMON_DIR)/inc
