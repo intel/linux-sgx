@@ -51,7 +51,7 @@ INCLUDE += -I$(LINUX_PSW_DIR)/ae/common \
            -I$(LINUX_PSW_DIR)/ae/inc/internal    \
            -I$(LINUX_SDK_DIR)/tseal
 
-INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid     \
+INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0    \
            -I$(IPC_COMMON_INC_DIR) \
            -I$(UAE_INC_DIR) \
            -I$(IPC_COMMON_PROTO_DIR) \
@@ -113,7 +113,7 @@ SRC :=       AEServicesImpl.cpp \
 
 OBJ := $(C_SRC:.c=.o) $(SRC:.cpp=.o) $(IPC_SRC:.cpp=.o)  $(PROTOBUF_SRC:.cc=.o) 
 
-LDUFLAGS:= -pthread -L$(BUILD_DIR)
+LDUFLAGS:= -pthread $(COMMON_LDFLAGS)
 LDUFLAGS += -Wl,--version-script=uae_service.lds -Wl,--gc-sections
 
 LIBNAME  = libsgx_uae_service.so

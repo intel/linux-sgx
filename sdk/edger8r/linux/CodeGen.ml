@@ -534,8 +534,13 @@ let gen_uheader_preemble (guard: string) (inclist: string)=
 let ms_writer out_chan ec =
   let ms_struct_ecall = List.map gen_ecall_marshal_struct ec.tfunc_decls in
   let ms_struct_ocall = List.map gen_ocall_marshal_struct ec.ufunc_decls in
-    List.iter (fun s -> output_string out_chan (s ^ "\n")) ms_struct_ecall;
-    List.iter (fun s -> output_string out_chan (s ^ "\n")) ms_struct_ocall
+  let output_struct s = 
+    match s with
+        "" -> s
+      | _  -> sprintf "%s\n" s
+  in
+    List.iter (fun s -> output_string out_chan (output_struct s)) ms_struct_ecall;
+    List.iter (fun s -> output_string out_chan (output_struct s)) ms_struct_ocall
 
 
 (* Generate untrusted header for enclave *)
@@ -855,8 +860,8 @@ let gen_check_tbridge_length_overflow (plist: Ast.pdecl list) =
     let gen_check_overflow cnt size_str =
       let if_statement =
         match cnt with
-            Ast.AString s -> sprintf "\tif ((size_t)%s > (SIZE_MAX / %s)) {\n" (mk_tmp_var s) size_str
-          | Ast.ANumber n -> sprintf "\tif (%d > (SIZE_MAX / %s)) {\n" n size_str
+            Ast.AString s -> sprintf "\tif (%s != 0 &&\n\t\t(size_t)%s > (SIZE_MAX / %s)) {\n" size_str (mk_tmp_var s) size_str
+          | Ast.ANumber n -> sprintf "\tif (%s != 0 &&\n\t\t%d > (SIZE_MAX / %s)) {\n" size_str n size_str
       in
         sprintf "%s\t\tstatus = SGX_ERROR_INVALID_PARAMETER;\n\t\tgoto err;\n\t}" if_statement
     in
@@ -916,18 +921,26 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
     let in_ptr_dst_name = mk_in_ptr_dst_name attr.Ast.pa_rdonly in_ptr_name in
     let tmp_ptr_name= mk_tmp_var name in
 
-    let check_sizefunc_ptr (fn: string) =
+    let mk_len_count v  =
+      match v with
+        None -> ""
+        |Some a ->
+          match a with
+            Ast.AString s -> sprintf "_tmp_%s * " s
+            | Ast.ANumber n -> sprintf "%d * " n
+    in
+    let check_sizefunc_with_cnt_ptr v fn =
       sprintf "\t\t/* check whether the pointer is modified. */\n\
-\t\tif (%s(%s) != %s) {\n\
+\t\tif (%s%s(%s) != %s) {\n\
 \t\t\tstatus = SGX_ERROR_INVALID_PARAMETER;\n\
 \t\t\tgoto err;\n\
-\t\t}" fn in_ptr_name len_var
+\t\t}" (mk_len_count v) fn in_ptr_name len_var
     in
     let malloc_and_copy pre_indent =
       match attr.Ast.pa_direction with
           Ast.PtrIn | Ast.PtrInOut ->
             let code_template = [
-              sprintf "if (%s != NULL) {" tmp_ptr_name;
+              sprintf "if (%s != NULL && %s != 0) {" tmp_ptr_name len_var;
               sprintf "\t%s = (%s)malloc(%s);" in_ptr_name in_ptr_type len_var;
               sprintf "\tif (%s == NULL) {" in_ptr_name;
               "\t\tstatus = SGX_ERROR_OUT_OF_MEMORY;";
@@ -946,11 +959,11 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
             let s3 =
               match attr.Ast.pa_size.Ast.ps_sizefunc with
                   None   -> s2
-                | Some s -> sprintf "%s\n%s\n" s2 (check_sizefunc_ptr(s))
+                | Some s -> sprintf "%s\n%s\n" s2 (check_sizefunc_with_cnt_ptr attr.Ast.pa_size.Ast.ps_count s)
             in sprintf "%s\t}\n" s3
         | Ast.PtrOut ->
             let code_template = [
-              sprintf "if (%s != NULL) {" tmp_ptr_name;
+              sprintf "if (%s != NULL && %s != 0) {" tmp_ptr_name len_var;
               sprintf "\tif ((%s = (%s)malloc(%s)) == NULL) {" in_ptr_name in_ptr_type len_var;
               "\t\tstatus = SGX_ERROR_OUT_OF_MEMORY;";
               "\t\tgoto err;";
@@ -1482,7 +1495,7 @@ let check_priv_funcs (ec: enclave_content) =
  * `ec' is the toplevel `enclave_content' record.
 
  * Here, a tree reduce algorithm is used. `ec' is the root-node, each
- * `import' expression is considerred as a children.
+ * `import' expression is considered as a children.
  *)
 let reduce_import (ec: enclave_content) =
   let combine (ec1: enclave_content) (ec2: enclave_content) =

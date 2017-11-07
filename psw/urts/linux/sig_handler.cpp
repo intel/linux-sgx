@@ -34,7 +34,6 @@
 #include "sgx_error.h"
 #include "tcs.h"
 #include "se_trace.h"
-#include "xsave.h"
 #include "rts.h"
 #include "enclave.h"
 #include <assert.h>
@@ -223,6 +222,7 @@ void reg_sig_handler()
 
 extern "C" int enter_enclave(const tcs_t *tcs, const long fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
 
+
 int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread)
 {
     int status = SGX_ERROR_UNEXPECTED;
@@ -236,14 +236,8 @@ int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread
 #endif
 
     tcs_t *tcs = trust_thread->get_tcs();
-    //seh_handler.cpp have the same code to save and restore pf register.
-    //put the save register code here, because we want remind maintainer we should do it near EENTER
-    uint8_t buffer[FXSAVE_SIZE];
-    save_and_clean_xfeature_regs(buffer);
 
     status = enter_enclave(tcs, fn, ocall_table, ms, trust_thread);
-
-    restore_xfeature_regs(buffer);
 
     return status;
 }
@@ -253,8 +247,6 @@ int do_ocall(const bridge_fn_t bridge, void *ms)
     int error = SGX_ERROR_UNEXPECTED;
 
     error = bridge(ms);
-
-    save_and_clean_xfeature_regs(NULL);
 
     return error;
 }

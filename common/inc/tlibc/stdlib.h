@@ -93,6 +93,7 @@ typedef struct {
 __BEGIN_DECLS
 
 _TLIBC_NORETURN_ void _TLIBC_CDECL_ abort(void);
+int     _TLIBC_CDECL_ atexit(void (*)(void));
 int     _TLIBC_CDECL_ abs(int);
 double  _TLIBC_CDECL_ atof(const char *);
 int     _TLIBC_CDECL_ atoi(const char *);

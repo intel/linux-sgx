@@ -38,8 +38,7 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
 
 INCLUDE += -I$(LINUX_SDK_DIR)/tlibcxx/include
 
-
-CXXFLAGS += $(ENCLAVE_CXXFLAGS) -U__STRICT_ANSI__ -Werror 
+CXXFLAGS += $(ENCLAVE_CXXFLAGS) -U__STRICT_ANSI__ -Werror
 #CXXFLAGS += -Wno-unused-local-typedefs -Wno-shadow -Wno-missing-field-initializers -Wno-unused-parameter
 
 SRC := $(wildcard *.cpp)

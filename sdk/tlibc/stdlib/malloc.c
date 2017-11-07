@@ -837,14 +837,14 @@ extern "C" {
 #if !ONLY_MSPACES
 
 /* ------------------- Declarations of public routines ------------------- */
-
 #ifndef USE_DL_PREFIX
-#define dlcalloc               calloc
-#define dlfree                 free
-#define dlmalloc               malloc
-#define dlmemalign             memalign
-#define dlrealloc              realloc
-#define dlmallinfo             mallinfo
+  #define ALIAS(tc_fn)   __attribute__ ((alias (#tc_fn), used))
+  void* __attribute__((weak)) malloc(size_t size)               ALIAS(dlmalloc);
+  void __attribute__((weak)) free(void* ptr)                     ALIAS(dlfree);
+  void* __attribute__((weak)) realloc(void* ptr, size_t size)    ALIAS(dlrealloc);
+  void* __attribute__((weak)) calloc(size_t n, size_t size)      ALIAS(dlcalloc);
+  void* __attribute__((weak)) memalign(size_t align, size_t s)  ALIAS(dlmemalign); 
+  struct mallinfo __attribute__((weak)) mallinfo(void)         ALIAS(dlmallinfo);
 #ifdef USE_MALLOC_DEPRECATED
 #define dlposix_memalign       posix_memalign
 #define dlrealloc_in_place     realloc_in_place
