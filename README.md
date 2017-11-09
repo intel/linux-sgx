@@ -143,6 +143,10 @@ To install the Intel(R) SGX SDK, invoke the installer, as follows:
 $ cd linux/installer/bin
 $ ./sgx_linux_x64_sdk_${version}.bin 
 ```
+NOTE: You need to set up the needed environment variables before compiling your code. To do so, run:
+```
+   $ source ${sgx-sdk-install-path}/environment
+```
 ### Test the Intel(R) SGX SDK Package with the Code Samples
 - Compile and run each code sample in Simulation mode to make sure the package works well:    
 ```
@@ -151,6 +155,7 @@ $ ./sgx_linux_x64_sdk_${version}.bin
   $ ./app
 ```
    Use similar commands for other sample codes.
+
 ### Compile and Run the Code Samples in the Hardware Mode
 If you use an Intel SGX hardware enabled machine, you can run the code samples in Hardware mode.
 Ensure that you install Intel(R) SGX driver and Intel(R) SGX PSW installer on the machine.  
