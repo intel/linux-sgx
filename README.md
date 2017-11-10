@@ -28,6 +28,8 @@ Build and Install the Intel(R) SGX Driver
 -----------------------------------------
 Follow the instructions in the [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project to build and install the Intel(R) SGX driver.
 
+**Note:** **SGX 2.0** feature support in the SDK and PSW depends on processor and driver support for the SGX 2.0 instruction set. Please consult the README in the driver for instructions on building the SGX 2.0 Linux Driver. Upcoming CPU releases will include hardware support for SGX 2.0.
+
 Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
