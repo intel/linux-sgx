@@ -39,7 +39,7 @@
 #include <sgx_capable.h>
 
 #include "se_cdefs.h"
-SGX_ACCESS_VERSION(sgx_capable, 1);
+SGX_ACCESS_VERSION(capable, 1);
 
 /* __cpuid(unsinged int info[4], unsigned int leaf, unsigned int subleaf); */
 /* Because gcc's __get_cpuid() intrinsic is difficult to work with */
