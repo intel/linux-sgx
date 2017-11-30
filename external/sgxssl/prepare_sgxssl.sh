@@ -34,7 +34,8 @@ top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
 openssl_ver_name=openssl-1.1.0f
 sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_ver_name=master
+sgxssl_ver_name=v1.0
+sgxssl_ver=1.0
 build_script=$top_dir/build_sgxssl.sh
 server_url_path=https://www.openssl.org/source/old/1.1.0
 full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
@@ -42,10 +43,11 @@ full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
 if [ ! -f $build_script ]; then
 	wget $sgxssl_github_archive/$sgxssl_ver_name.zip -P $top_dir --no-check-certificate || exit 1
 	unzip -qq $top_dir/$sgxssl_ver_name.zip -d $top_dir || exit 1
-	mv $top_dir/intel-sgx-ssl-master/* $top_dir || exit 1
+	mv $top_dir/intel-sgx-ssl-$sgxssl_ver/* $top_dir || exit 1
 	rm $top_dir/$sgxssl_ver_name.zip || exit 1
-	rm -rf $top_dir/intel-sgx-ssl-master || exit 1
+	rm -rf $top_dir/intel-sgx-ssl-$sgxssl_ver || exit 1
 fi
+
 
 if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 	wget $full_openssl_url -P $openssl_out_dir --no-check-certificate || exit 1
