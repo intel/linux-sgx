@@ -154,8 +154,16 @@ sgx_status_t do_init_enclave(void *ms)
     {
         if (0 != accept_post_remove(&g_global_data.layout_table[0], &g_global_data.layout_table[0] + g_global_data.layout_entry_num, 0))
             return SGX_ERROR_UNEXPECTED;
+
+        size_t heap_min_size = get_heap_min_size();
+        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), heap_min_size, 0, heap_min_size);
     }
+    else
 #endif
+    {
+        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);	
+    }
+
     g_enclave_state = ENCLAVE_INIT_DONE;
     return SGX_SUCCESS;
 }
