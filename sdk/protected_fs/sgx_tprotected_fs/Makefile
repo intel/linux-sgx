@@ -62,7 +62,7 @@ sgx_tprotected_fs_t.h: $(EDGER8R)
 $(EDGER8R):
 	$(MAKE) -C $(EDGER8R_DIR)
 
-$(OBJ): %.o :%.cpp
+$(OBJ): %.o :%.cpp sgx_tprotected_fs_t.h
 	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
 
 $(BUILD_DIR):
