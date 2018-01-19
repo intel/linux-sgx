@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,24 +40,25 @@ SGX_ACCESS_VERSION(tcrypto, 1)
 
 // SGXSSL's function. register and init cpuid exception handler.
 //
-extern "C" void init_exception_handler(void);
+extern "C" void init_exception_handler(uint32_t *cpuid_table);
+extern "C" void const_init_exception_handler(void);
 unsigned long openssl_last_err = 0;
 
 /* Crypto Library Initialization
 * Parameters:
 *	Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
 *	Inputs: uint64_t cpu_feature_indicator - Bit array of host CPU feature bits */
-extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator)
+extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator, uint32_t *cpuid_table)
 {
-    (void)(cpu_feature_indicator);
-    
-    // prevent linker from optimizing init_exception_handler function.
-    // **DON'T REMOVE**
-    //
     volatile int dead_code_flag = 0;
-    if (dead_code_flag == 1) {
-        init_exception_handler();
-    }
+    (void)(cpu_feature_indicator);
+    if (cpuid_table) {
+		init_exception_handler(cpuid_table);
+	}
+    
+    if (dead_code_flag) {
+		const_init_exception_handler();
+	}
 
     return SGX_SUCCESS;
 }

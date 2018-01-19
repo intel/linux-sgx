@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,6 +50,8 @@
 #include "launch_enclave_u.c"
 
 extern "C" sgx_status_t sgx_create_le(const char *file_name, const char *prd_css_file_name, const int debug, sgx_launch_token_t *launch_token, int *launch_token_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr, int *production_loaded);
+extern "C" bool is_in_kernel_driver();
+
 #endif
 
 
@@ -143,6 +145,11 @@ ae_error_t CLEClass::update_white_list_by_url()
     time_t cur_time = time(NULL);
     if (last_updated_time + UPDATE_DURATION > cur_time){
         return LE_WHITE_LIST_QUERY_BUSY;
+    }
+    if (is_in_kernel_driver())
+    {
+        AESM_DBG_INFO("InKernel LE loaded");
+        return AE_SUCCESS;
     }
     AESM_LOG_INFO_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_WL_UPDATE_START]);
     for (i = 0; i < 2; i++){//at most retry once if network error
@@ -324,6 +331,13 @@ ae_error_t CLEClass::load_enclave()
     if(m_enclave_id){//LE has been loaded before
          return AE_SUCCESS;
     }
+#ifndef REF_LE
+    if (is_in_kernel_driver())
+    {
+        AESM_DBG_INFO("InKernel LE loaded");
+        return AE_SUCCESS;
+    }
+#endif
     ae_error_t ae_err = load_enclave_only();
     if( AE_SUCCESS == ae_err){
         load_white_cert_list();

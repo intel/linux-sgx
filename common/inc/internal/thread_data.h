@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -83,6 +83,7 @@ typedef size_t sys_word_t;
  *
  * However, we need to take care when modifying the data structure in future.
  */
+#define SGX_UTILITY_THREAD  0x1
 
 typedef struct _thread_data_t
 {
@@ -93,7 +94,7 @@ typedef struct _thread_data_t
     sys_word_t  first_ssa_gpr;      /* set by urts, relative to TCS */
     sys_word_t  stack_guard;        /* GCC expects start_guard at 0x14 on x86 and 0x28 on x64 */
 
-    sys_word_t  reserved;
+    sys_word_t  flags;
     sys_word_t  xsave_size;         /* in bytes (se_ptrace.c needs to know its offset).*/
     sys_word_t  last_error;         /* init to be 0. Used by trts. */
 

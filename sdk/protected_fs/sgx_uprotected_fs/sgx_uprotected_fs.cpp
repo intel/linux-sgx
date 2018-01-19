@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,10 +41,8 @@
 #include <fcntl.h>
 
 #include "sgx_tprotected_fs_u.h"
+#include <uprotected_fs.h>
 
-#ifdef _PROTECTEDFS_VALIDATION
-#include "validation_hook_linux.h"
-#endif
 
 #ifdef DEBUG
 #define DEBUG_PRINT(fmt, args...) fprintf(stderr, "[sgx_uprotected_fs.h:%d] " fmt, __LINE__, ##args)

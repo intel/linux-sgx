@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -96,6 +96,9 @@ class AESMLogicWrapper :public IAESMLogic {
         virtual aesm_error_t getWhiteList(uint8_t** white_list, uint32_t mWhiteListSize);
         virtual aesm_error_t sgxGetExtendedEpidGroupId(uint32_t* x_group_id);
         virtual aesm_error_t sgxSwitchExtendedEpidGroup(uint32_t x_group_id);
+
+        typedef enum _sgx_register_type_t {SGX_REGISTER_WHITE_LIST_CERT} sgx_register_type_t;
+        virtual aesm_error_t sgxRegister(uint8_t* buf, uint32_t buf_size, uint32_t data_type);
 };
 
 #endif

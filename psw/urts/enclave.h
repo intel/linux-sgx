@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -81,7 +81,7 @@ public:
     sgx_status_t fill_tcs_mini_pool();
     sgx_status_t fill_tcs_mini_pool_fn();
 private:
-    CTrustThread * get_tcs(bool is_initialize_ecall = false);
+    CTrustThread * get_tcs(int ecall_cmd);
     void put_tcs(CTrustThread *trust_thread);
     sgx_status_t error_trts2urts(unsigned int trts_error);
 

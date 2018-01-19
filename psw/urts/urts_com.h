@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -103,58 +103,60 @@ static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t 
     assert(parser != NULL && metadata != NULL && sgx_misc_attr != NULL);
     uint64_t meta_rva = parser->get_metadata_offset();
     const uint8_t *base_addr = parser->get_start_addr();
-
-    uint64_t supported_metadata_version_list[] = {
-        META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION ),
-        META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION ),
-        META_DATA_MAKE_VERSION(SGX_1_5_MAJOR_VERSION,SGX_1_5_MINOR_VERSION ),
-        0
-    };
-
-    uint64_t *pmetadata_version = &supported_metadata_version_list[0];
+    uint64_t urts_version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION);
+    metadata_t *target_metadata = NULL;
 
 #ifndef SE_SIM
     EnclaveCreatorHW *enclave_creator = static_cast<EnclaveCreatorHW *>(get_enclave_creator());
     if (!(enclave_creator->is_cpu_edmm()) || !(enclave_creator->is_driver_compatible()))
     {
         // cannot support EDMM, adjust the possibly highest metadata version supported
-        pmetadata_version = &supported_metadata_version_list[1];
+        urts_version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
     }
 #else
     //for simulation, use the metadata of 1.9
-    pmetadata_version = &supported_metadata_version_list[1];
+    urts_version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
 #endif
 
     //scan multiple metadata list in sgx_metadata section
-    for (; *pmetadata_version != 0; pmetadata_version++)
-    {
-        meta_rva = parser->get_metadata_offset();
-        //scan multiple metadata list in sgx_metadata section
-        do {
-            *metadata = GET_PTR(metadata_t, base_addr, meta_rva);
-            if(metadata == NULL)
+    meta_rva = parser->get_metadata_offset();
+    do {
+        *metadata = GET_PTR(metadata_t, base_addr, meta_rva);
+        if(metadata == NULL)
+        {
+            return SGX_ERROR_INVALID_METADATA;
+        }
+        if((*metadata)->magic_num != METADATA_MAGIC)
+        {
+            break;
+        }
+        if(0 == (*metadata)->size)
+        {
+            SE_TRACE(SE_TRACE_ERROR, "ERROR: metadata's size can't be zero.\n");
+            return SGX_ERROR_INVALID_METADATA;
+        }
+        //check metadata version
+        if(MAJOR_VERSION_OF_METADATA(urts_version) >=
+           MAJOR_VERSION_OF_METADATA((*metadata)->version))
+        {
+            if(target_metadata == NULL ||
+               target_metadata->version < (*metadata)->version)
             {
-                return SGX_ERROR_INVALID_METADATA;
+                target_metadata = *metadata;
             }
-            if((*metadata)->magic_num != METADATA_MAGIC)
-                break;
-            //check metadata version
-            if(*pmetadata_version == (*metadata)->version)
-                goto find_metadata;  //find metadata
+        }
+        meta_rva += (*metadata)->size; /*goto next metadata offset*/
+    }while(1);
 
-            if(0 == (*metadata)->size)
-            {
-                SE_TRACE(SE_TRACE_ERROR, "ERROR: metadata's size can't be zero.\n");
-                return SGX_ERROR_INVALID_METADATA;
-            }
-            meta_rva += (*metadata)->size; /*goto next metadata offset*/
-        }while(1);
+    if(target_metadata == NULL )
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+    else
+    {
+        *metadata = target_metadata;
     }
 
-    if(*pmetadata_version == 0)
-        return SGX_ERROR_INVALID_METADATA;
-
-find_metadata:
     return (sgx_status_t)get_enclave_creator()->get_misc_attr(sgx_misc_attr, *metadata, NULL, debug);
 }
 
@@ -196,11 +198,18 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
 
     CEnclave* enclave = new CEnclave(loader);
     uint32_t enclave_version = SDK_VERSION_1_5;
+    uint64_t urts_version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION);
     // metadata->version has already been validated during load_encalve_ex()
-    if (metadata->version == META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION))
+    if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
+        MINOR_VERSION_OF_METADATA(metadata->version) >= MINOR_VERSION_OF_METADATA(urts_version))
+    {
+        enclave_version = SDK_VERSION_2_1;
+    }
+    else if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
+             MINOR_VERSION_OF_METADATA(metadata->version) < MINOR_VERSION_OF_METADATA(urts_version))
+    {
         enclave_version = SDK_VERSION_2_0;
-    else if (metadata->version == META_DATA_MAKE_VERSION(SGX_1_5_MAJOR_VERSION,SGX_1_5_MINOR_VERSION))
-        enclave_version = SDK_VERSION_1_5;
+    }
 
     // initialize the enclave object
     ret = enclave->initialize(file,
@@ -313,6 +322,7 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
         {
             SE_TRACE(SE_TRACE_ERROR, "trim range error.\n");
             sgx_status_t status = SGX_SUCCESS;
+            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
             CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
             goto fail;
         }
@@ -322,6 +332,7 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
     if(SGX_SUCCESS != (ret = get_enclave_creator()->initialize(loader.get_enclave_id())))
     {
         sgx_status_t status = SGX_SUCCESS;
+        generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
         CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
         goto fail;
     }
@@ -335,6 +346,7 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
         {
             SE_TRACE(SE_TRACE_ERROR, "trim page commit error.\n");
             sgx_status_t status = SGX_SUCCESS;
+            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
             CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
             goto fail;
         }
@@ -348,14 +360,16 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
         {
             SE_TRACE(SE_TRACE_ERROR, "fill_tcs_mini_pool error.\n");
             sgx_status_t status = SGX_SUCCESS;
+            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
             CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
             goto fail;
         }
     }
         
-    if(SGX_SUCCESS != (ret = loader.set_memory_protection()))
+    if(SGX_SUCCESS != (ret = loader.set_memory_protection(true)))
     {
         sgx_status_t status = SGX_SUCCESS;
+        generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
         CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
         goto fail;
     }
@@ -439,9 +453,6 @@ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t
                                misc_attr);
         //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
     } while(SGX_ERROR_ENCLAVE_LOST == ret);
-
-    if(SGX_ERROR_INVALID_CPUSVN == ret)
-        ret = SGX_ERROR_UNEXPECTED;
 
     if(SE_ERROR_INVALID_LAUNCH_TOKEN == ret)
         ret = SGX_ERROR_INVALID_LAUNCH_TOKEN;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,6 +57,8 @@
 #define GET_WHITE_LIST_MSEC (IPC_LATENCY)
 #define SGX_GET_EXTENDED_GROUP_ID_MSEC (IPC_LATENCY)
 #define SGX_SWITCH_EXTENDED_GROUP_MSEC (IPC_LATENCY)
+#define REG_WL_CERT_CHAIN_MSEC (IPC_LATENCY)
+
 extern "C" {
 
 sgx_status_t get_launch_token(
@@ -584,6 +586,40 @@ sgx_status_t sgx_switch_extended_epid_group(uint32_t extended_epid_group_id)
 
     //common mappings 
     sgx_status_t mapped = oal_map_status(ret);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
+    {
+        //operation specific mapping
+        if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
+        {
+            switch (result)
+            {
+            default:
+                mapped = SGX_ERROR_UNEXPECTED;
+            }
+        }
+    }
+    return mapped;
+}
+
+
+typedef enum _sgx_register_type_t {SGX_REGISTER_WHITE_LIST_CERT} sgx_register_type_t;
+
+sgx_status_t sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_cert_chain_size)
+{
+    if (p_wl_cert_chain == NULL || wl_cert_chain_size == 0)
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    aesm_error_t    result = AESM_UNEXPECTED_ERROR;
+    uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
+    oal_ret = oal_register_common(p_wl_cert_chain, wl_cert_chain_size, SGX_REGISTER_WHITE_LIST_CERT,
+            REG_WL_CERT_CHAIN_MSEC*1000, &result);
+
+    //common mappings 
+    sgx_status_t mapped = oal_map_status(oal_ret);
     if (mapped != SGX_SUCCESS)
         return mapped;
 

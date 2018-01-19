@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -89,7 +89,7 @@ extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
         }
         else if(index == ECMD_INIT_ENCLAVE)
         {
-            error = do_init_enclave(ms);
+            error = do_init_enclave(ms, tcs);
         }
         else if(index == ECMD_ORET)
         {

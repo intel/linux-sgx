@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -173,6 +173,28 @@ int CTrustThreadPool::bind_thread(const se_thread_id_t thread_id,  CTrustThread 
     return TRUE;
 }
 
+
+void CTrustThreadPool::unbind_thread(const se_thread_id_t thread_id)
+{
+    CTrustThread *trust_thread = nullptr;
+    if (m_thread_list)
+    {
+        auto it = m_thread_list->Remove(thread_id);
+        if(it)
+        {
+            trust_thread = it->value;
+            trust_thread->reset_ref();
+            add_to_free_thread_vector(trust_thread); 
+            if(it == m_thread_list)
+            {
+                m_thread_list = it->next;
+            }
+            delete it;
+        }
+    }
+}
+
+
 CTrustThread * CTrustThreadPool::get_bound_thread(const se_thread_id_t thread_id)
 {
     CTrustThread *trust_thread = nullptr;
@@ -307,17 +329,28 @@ CTrustThread * CTrustThreadPool::_acquire_thread()
     return trust_thread;
 }
 
-CTrustThread * CTrustThreadPool::acquire_thread(bool is_initialize_ecall)
+CTrustThread * CTrustThreadPool::acquire_thread(int ecall_cmd)
 {
     LockGuard lock(&m_thread_mutex);
     CTrustThread *trust_thread = NULL;
+    bool is_special_ecall = (ecall_cmd == ECMD_INIT_ENCLAVE) || (ecall_cmd == ECMD_UNINIT_ENCLAVE) ;
+    
 
-    if(is_initialize_ecall == true)
+    if(is_special_ecall == true)
     {
         if (m_utility_thread)
         {
             trust_thread = m_utility_thread;
             assert(trust_thread != NULL);
+            if(ecall_cmd == ECMD_UNINIT_ENCLAVE)
+            {
+                
+                
+                se_thread_id_t thread_id = get_thread_id();
+                unbind_thread(thread_id);
+                bind_thread(thread_id, trust_thread);
+                m_utility_thread = NULL;
+            }
         }
         else
         {
@@ -348,7 +381,7 @@ CTrustThread * CTrustThreadPool::acquire_thread(bool is_initialize_ecall)
         trust_thread->increase_ref();
     }
 
-    if(is_initialize_ecall != true &&
+    if(is_special_ecall != true &&
        need_to_new_thread() == true)
     {     
         m_utility_thread->get_enclave()->fill_tcs_mini_pool_fn();
@@ -447,7 +480,6 @@ sgx_status_t CTrustThreadPool::new_thread()
         trust_thread->get_enclave()->add_thread(trust_thread);
         add_to_free_thread_vector(trust_thread);
         m_unallocated_threads.pop_back();
-
         urts_add_tcs(tcsp);
     }
     

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,9 +74,10 @@ int do_emodpe(const sec_info_t*, size_t);
 int apply_EPC_pages(void *start_address, size_t page_number);
 int apply_pages_within_exception(void *start_address, size_t page_count);
 int trim_EPC_pages(void *start_address, size_t page_number);
-sgx_status_t SGXAPI sgx_trts_mprotect(size_t start, size_t size, uint64_t perms);
+sgx_status_t SGXAPI trts_mprotect(size_t start, size_t size, uint64_t perms);
 sgx_status_t do_add_thread(void *ms);
 int is_dynamic_thread(void *tcs);
+int is_dynamic_thread_exist(void);
 uint32_t get_dynamic_stack_max_page(void);
 #ifdef __cplusplus
 }

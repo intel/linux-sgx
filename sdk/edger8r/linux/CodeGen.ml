@@ -1,5 +1,5 @@
 (*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -1498,63 +1498,89 @@ let check_priv_funcs (ec: enclave_content) =
  * `import' expression is considered as a children.
  *)
 let reduce_import (ec: enclave_content) =
-  let combine (ec1: enclave_content) (ec2: enclave_content) =
-    { ec1 with
-        include_list = ec1.include_list @ ec2.include_list;
-        import_exprs = [];
-        comp_defs    = ec1.comp_defs   @ ec2.comp_defs;
-        tfunc_decls  = ec1.tfunc_decls @ ec2.tfunc_decls;
-        ufunc_decls  = ec1.ufunc_decls @ ec2.ufunc_decls; }
+  (* Append a EDL list to another. Keep the first element and replace the
+   second one with empty element contains functions not in the first one 
+   if both lists contain a same EDL. The function sequence is backwards compatible.*)
+  let join (ec1: enclave_content list) (ec2: enclave_content list) =
+    let join_one (acc: enclave_content list) (ec: enclave_content) =
+      if List.exists (fun (x: enclave_content) -> x.enclave_name = ec.enclave_name) acc
+      then
+        let match_ec = List.find (fun (x: enclave_content) -> x.enclave_name = ec.enclave_name) acc in
+        let filter_one func_decls decl= List.filter(fun x -> not (x = decl)) func_decls in
+        let filtered_ec =
+          {empty_ec with
+            tfunc_decls   =  List.fold_left(filter_one) ec.tfunc_decls match_ec.tfunc_decls;
+            ufunc_decls   =  List.fold_left(filter_one) ec.ufunc_decls match_ec.ufunc_decls; }
+        in
+        acc @ filtered_ec::[]
+      else
+        acc @ ec ::[]
+    in
+    List.fold_left(join_one) ec1 ec2
   in
   let parse_import_file fname =
-    let ec = parse_enclave_ast (start_parsing fname)
-    in
-      match ec.import_exprs with
-      [] -> (SimpleStack.pop already_read |> ignore; ec )
-    | _  -> ec
+    parse_enclave_ast (start_parsing fname)
   in
-  let check_funs funcs (ec: enclave_content) =
-    (* Check whether `funcs' are listed in `ec'.  It returns a
+  let check_funs funcs (ec: enclave_content list) =
+    (* Check whether `funcs' are listed in head of `ec'.  It returns a
        production (x, y), where:
-         x - functions not listed in `ec';
-         y - a new `ec' that contains functions from `funcs' listed in `ec'.
+         x - functions not listed in  head `ec';
+         y - a new `ec' that its head contains functions from `funcs' listed in `ec'.
     *)
     let enclave_funcs =
-      let trusted_func_names = get_trusted_func_names ec in
-      let untrusted_func_names = get_untrusted_func_names ec in
+      let trusted_func_names = get_trusted_func_names (List.hd ec) in
+      let untrusted_func_names = get_untrusted_func_names (List.hd ec) in
         trusted_func_names @ untrusted_func_names
     in
     let in_ec_def name = List.exists (fun x -> x = name) enclave_funcs in
     let in_import_list name = List.exists (fun x -> x = name) funcs in
     let x = List.filter (fun name -> not (in_ec_def name)) funcs in
     let y =
-      { empty_ec with
+      { (List.hd ec) with
           tfunc_decls = List.filter (fun tf ->
-                                       in_import_list (get_tf_fname tf)) ec.tfunc_decls;
+                                       in_import_list (get_tf_fname tf)) (List.hd ec).tfunc_decls;
           ufunc_decls = List.filter (fun uf ->
-                                       in_import_list (get_uf_fname uf)) ec.ufunc_decls; }
-    in (x, y)
+                                       in_import_list (get_uf_fname uf)) (List.hd ec).ufunc_decls; }
+    in (x, y::(List.tl ec))
   in
   (* Import functions listed in `funcs' from `importee'. *)
-  let rec import_funcs (funcs: string list) (importee: enclave_content) =
+  let rec import_funcs (funcs: string list) (importee: enclave_content list) =
     (* A `*' means importing all the functions. *)
     if List.exists (fun x -> x = "*") funcs
     then
-      List.fold_left (fun acc (ipd: Ast.import_decl) ->
-            let next_ec = parse_import_file ipd.Ast.mname
-            in combine acc (import_funcs ipd.Ast.flist next_ec)) importee importee.import_exprs
+      let finished_ec = List.fold_left (fun acc (ipd: Ast.import_decl) ->
+                   let next_ec = parse_import_file ipd.Ast.mname
+                   in join acc (import_funcs ipd.Ast.flist (next_ec::[]))) importee (List.hd importee).import_exprs
+      in
+      (SimpleStack.pop already_read |> ignore; finished_ec)
     else
       let (x, y) = check_funs funcs importee
       in
-        if x = [] then y                (* Resolved all importings *)
-        else
-          match importee.import_exprs with
-              [] -> failwithf "import failed - functions `%s' not found" (List.hd x)
-            | ex -> List.fold_left (fun acc (ipd: Ast.import_decl) ->
-                                      let next_ec = parse_import_file ipd.Ast.mname
-                                      in combine acc (import_funcs x next_ec)) y ex
+          match (List.hd importee).import_exprs with
+              [] -> 
+                if x = [] 
+                then (SimpleStack.pop already_read |> ignore;y)    (* Resolved all importings *)
+                else failwithf "import failed - functions `%s' not found" (List.hd x)
+              | ex -> 
+                (* Continue importing even if all function importings resolved to avoid circled import.*)
+                let finished_ec = List.fold_left (fun acc (ipd: Ast.import_decl) ->
+                                 let next_ec = parse_import_file ipd.Ast.mname
+                                 in join acc (import_funcs x (next_ec::[]))) y ex
+                in
+                (SimpleStack.pop already_read |> ignore; finished_ec)
   in
-    import_funcs ["*"] ec
+  let imported_ec_list = import_funcs ["*"] (ec::[])
+  in
+  (* combine two EDLs by appending items except import. *)
+  let combine (acc: enclave_content) (ec2: enclave_content) =
+    { acc with
+        include_list = acc.include_list @ ec2.include_list;
+        import_exprs = [];
+        comp_defs    = acc.comp_defs   @ ec2.comp_defs;
+        tfunc_decls  = acc.tfunc_decls @ ec2.tfunc_decls;
+        ufunc_decls  = acc.ufunc_decls @ ec2.ufunc_decls; }
+  in
+  List.fold_left (combine) (List.hd imported_ec_list) (List.tl imported_ec_list)
 
 (* Generate the Enclave code. *)
 let gen_enclave_code (e: Ast.enclave) (ep: edger8r_params) =

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -108,6 +108,13 @@ message Request{
         optional    uint32  x_group_id      = 1;
         optional    uint32  timeout         = 9;
     }
+
+    message SGXRegisterRequest{
+        required    bytes   buf             = 1;
+        required    uint32  data_type       = 2;
+        optional    uint32  timeout         = 9;
+    }
+
     optional    InitQuoteRequest initQuoteReq                 = 1;
     optional    GetQuoteRequest getQuoteReq                   = 2;
     optional    GetLaunchTokenRequest getLicTokenReq          = 3;
@@ -121,6 +128,7 @@ message Request{
     optional    GetWhiteListRequest     getWhiteListReq       = 11;
     optional    SGXGetExtendedEpidGroupIdRequest sgxGetExtendedEpidGroupIdReq   = 12;
     optional    SGXSwitchExtendedEpidGroupRequest sgxSwitchExtendedEpidGroupReq = 13;
+    optional    SGXRegisterRequest sgxRegisterReq             = 14;
 }
 
 message Response{
@@ -190,6 +198,11 @@ message Response{
     message SGXSwitchExtendedEpidGroupResponse{
         required   uint32 errorCode = 1 [ default = 1];
     }
+
+    message SGXRegisterResponse{
+        required   uint32 errorCode = 1 [ default = 1];
+    }
+
     optional    InitQuoteResponse initQuoteRes              = 1;
     optional    GetQuoteResponse getQuoteRes                = 2;
     optional    GetLaunchTokenResponse getLicTokenRes       = 3;
@@ -203,4 +216,5 @@ message Response{
     optional    GetWhiteListResponse  getWhiteListRes       = 11;
     optional    SGXGetExtendedEpidGroupIdResponse sgxGetExtendedEpidGroupIdRes = 12;
     optional    SGXSwitchExtendedEpidGroupResponse sgxSwitchExtendedEpidGroupRes = 13;
+    optional    SGXRegisterResponse sgxRegisterRes          = 14;
 }

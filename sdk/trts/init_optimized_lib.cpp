@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +38,8 @@
 #include "global_data.h"
 
 extern "C" int sgx_init_string_lib(uint64_t cpu_feature_indicator);
-extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator);
+extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator, uint32_t *cpuinfo_table);
+
 
 static int set_global_feature_indicator(uint64_t feature_bit_array, uint64_t xfrm)
 {
@@ -82,7 +83,7 @@ static int set_global_feature_indicator(uint64_t feature_bit_array, uint64_t xfr
     return 0;
 }
 
-extern "C" int init_optimized_libs(const uint64_t feature_bit_array, uint64_t xfrm)
+extern "C" int init_optimized_libs(const uint64_t feature_bit_array, uint32_t *cpuinfo_table, uint64_t xfrm)
 {
     if (g_enclave_state != ENCLAVE_INIT_IN_PROGRESS)
     {
@@ -101,7 +102,7 @@ extern "C" int init_optimized_libs(const uint64_t feature_bit_array, uint64_t xf
     }
 
     // Init IPP crypto library with the global feature indicator	
-    if(sgx_init_crypto_lib(g_cpu_feature_indicator) != 0)
+    if(sgx_init_crypto_lib(g_cpu_feature_indicator, cpuinfo_table) != 0)
     {
         return -1;
     }

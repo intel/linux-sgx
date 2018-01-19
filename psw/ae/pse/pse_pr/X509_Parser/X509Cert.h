@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,13 +39,9 @@
 #ifndef _X509CERT_H_
 #define _X509CERT_H_
 
-#ifndef WIN_TEST
 #include "typedef.h"
 #include "X509AlgoType.h"
 #include "pse_pr_sigma_1_1_defs.h"
-#else
-#include "special_defs.h"
-#endif
 
 typedef UINT32 Uint32 ;
 typedef UINT8  Uint8;

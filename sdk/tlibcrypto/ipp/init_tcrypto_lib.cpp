@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,13 +40,17 @@
 SGX_ACCESS_VERSION(tcrypto, 1)
 
 
+
 /* Crypto Library Initialization
 * Parameters:
 * 	Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
 *	Inputs: uint64_t cpu_feature_indicator - Bit array of host CPU feature bits */
-extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator)
+extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator, uint32_t *cpuid_table)
 {
     IppStatus error_code = ippStsNoOperation;
+
+
+    (void)(cpuid_table);
 
     // Use cpu_feature_indicator to determine the host CPU and specify that CPU type
     // in the initialization of the IPP dispatcher.

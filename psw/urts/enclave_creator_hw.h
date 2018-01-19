@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -58,6 +58,7 @@ public:
     bool is_EDMM_supported(sgx_enclave_id_t enclave_id);
     bool is_cpu_edmm() const;
     bool is_driver_compatible();
+    bool is_in_kernel_driver();
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
     bool get_plat_cap(sgx_misc_attribute_t *se_attr);
     int emodpr(uint64_t addr, uint64_t size, uint64_t flag);
@@ -75,6 +76,7 @@ private:
     Mutex               m_dev_mutex;
     bool                m_sig_registered;
     se_mutex_t          m_sig_mutex;
+    bool                m_in_kernel_driver;
 };
 
 #endif

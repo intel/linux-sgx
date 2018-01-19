@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -34,9 +34,9 @@ top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
 openssl_ver_name=openssl-1.1.0f
 sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_ver_name=v1.0
-sgxssl_ver=1.0
-build_script=$top_dir/build_sgxssl.sh
+sgxssl_ver_name=sdk_2.0_integ
+sgxssl_ver=sdk_2.0_integ
+build_script=$top_dir/Linux/build_sgxssl.sh
 server_url_path=https://www.openssl.org/source/old/1.1.0
 full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
 
@@ -48,9 +48,8 @@ if [ ! -f $build_script ]; then
 	rm -rf $top_dir/intel-sgx-ssl-$sgxssl_ver || exit 1
 fi
 
-
 if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 	wget $full_openssl_url -P $openssl_out_dir --no-check-certificate || exit 1
 fi
-
-$top_dir/build_sgxssl.sh no-clean linux-sgx || exit 1
+chmod +x $build_script
+$build_script no-clean linux-sgx || exit 1

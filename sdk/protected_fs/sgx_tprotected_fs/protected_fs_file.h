@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,13 +56,6 @@ typedef enum
 	//SGX_FILE_STATUS_MC_NOT_INCREMENTED,
 	SGX_FILE_STATUS_CLOSED,
 } protected_fs_status_e;
-
-/* copied from tseal_internal.h */
-/* set MISCMASK.exinfo_bit = 0 for data migration to the enclave
-   built with the SDK that supports exinfo bit */
-#define SGX_MISCSEL_EXINFO     0x00000001  /* report #PF and #GP inside enclave */
-#define TSEAL_DEFAULT_MISCMASK (~SGX_MISCSEL_EXINFO)
-/* end of copied... */
 
 #define MAX_PAGES_IN_CACHE 48
 

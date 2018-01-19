@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -33,9 +33,9 @@
 
 top_dir=`dirname $0`
 out_dir=$top_dir
-optlib_name=optimized_libs-2.0.tar
-ae_file_name=prebuilt-ae-2.0.tar
-server_url_path=https://download.01.org/intel-sgx/linux-2.0/
+optlib_name=optimized_libs-2.1.tar
+ae_file_name=prebuilt-ae-2.1.tar
+server_url_path=https://download.01.org/intel-sgx/linux-2.1/
 server_optlib_url=$server_url_path/$optlib_name
 server_ae_url=$server_url_path/$ae_file_name
 optlib_sha256=239cae39f87934d56c4eb919a4702c6ac82c19957b9a8d56c02b10eb4e27f573

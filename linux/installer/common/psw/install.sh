@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -42,7 +42,7 @@ AESM_PATH=$PSW_DST_PATH/aesm
 # Install the AESM service
 
 cut -d: -f1 /etc/passwd | grep -q -w aesmd || \
-    /usr/sbin/useradd -r -c "User for aesmd" \
+    /usr/sbin/useradd -r -U -c "User for aesmd" \
     -d /var/opt/aesmd -s /sbin/nologin aesmd
 
 mkdir -p /var/opt/aesmd
@@ -109,7 +109,7 @@ echo " done."
 cat > $PSW_DST_PATH/uninstall.sh <<EOF
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -169,6 +169,7 @@ rm -f /usr/lib/i386-linux-gnu/libsgx_urts.so
 
 # Removing AESM user and group
 /usr/sbin/userdel aesmd 2> /dev/null
+/usr/sbin/groupdel aesmd 2> /dev/null
 
 # Removing AESM folder
 rm -fr $PSW_DST_PATH
@@ -184,7 +185,7 @@ rm $AESM_PATH/cse_provision_tool
 cat > $AESM_PATH/linksgx.sh <<EOF
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -220,9 +221,13 @@ if test \$(id -u) -ne 0; then
     exit 1
 fi
 
-if [ -e /dev/sgx -a ! -h /dev/isgx ]; then
-    ln -sf /dev/sgx /dev/isgx
+if [ -e /dev/sgx ]; then
+    chmod 666 /dev/sgx &> /dev/null
+    /sbin/modprobe -r isgx &> /dev/null
+else
+    /sbin/modprobe isgx &> /dev/null || /sbin/modprobe --allow-unsupported isgx &> /dev/null
 fi
+echo ""
 EOF
 
 chmod +x $AESM_PATH/linksgx.sh

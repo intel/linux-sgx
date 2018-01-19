@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -256,6 +256,15 @@ aesm_error_t AESMLogicWrapper::sgxGetExtendedEpidGroupId(uint32_t* x_group_id)
 aesm_error_t AESMLogicWrapper::sgxSwitchExtendedEpidGroup(uint32_t x_group_id)
 {
     return AESMLogic::switch_extended_epid_group(x_group_id);
+}
+
+aesm_error_t AESMLogicWrapper::sgxRegister(uint8_t* buf, uint32_t buf_size, uint32_t data_type)
+{
+    if(data_type == SGX_REGISTER_WHITE_LIST_CERT){
+        return AESMLogic::white_list_register(buf, buf_size);
+    }else{
+        return AESM_PARAMETER_ERROR;
+    }
 }
 
 void AESMLogicWrapper::service_stop()

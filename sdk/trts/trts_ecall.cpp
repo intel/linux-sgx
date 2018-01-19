@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -254,7 +254,20 @@ static void init_static_stack_canary(void *tcs)
     *canary = (size_t)__stack_chk_guard;
 }
 
-static sgx_status_t do_init_thread(void *tcs)
+static bool is_utility_thread()
+{
+    thread_data_t *thread_data = get_thread_data();
+    if ((thread_data != NULL) && (thread_data->flags & SGX_UTILITY_THREAD))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+sgx_status_t do_init_thread(void *tcs)
 {
     thread_data_t *thread_data = GET_PTR(thread_data_t, tcs, g_global_data.td_template.self_addr);
 #ifndef SE_SIM
@@ -262,6 +275,7 @@ static sgx_status_t do_init_thread(void *tcs)
     bool thread_first_init = (saved_stack_commit_addr == 0) ? true : false;
 #endif
     size_t stack_guard = thread_data->stack_guard;
+    size_t thread_flags = thread_data->flags;
     memcpy_s(thread_data, SE_PAGE_SIZE, const_cast<thread_data_t *>(&g_global_data.td_template), sizeof(thread_data_t));
     thread_data->last_sp += (size_t)tcs;
     thread_data->self_addr += (size_t)tcs;
@@ -275,6 +289,7 @@ static sgx_status_t do_init_thread(void *tcs)
     thread_data->last_sp -= (size_t)STATIC_STACK_SIZE;
     thread_data->stack_base_addr -= (size_t)STATIC_STACK_SIZE;
     thread_data->stack_guard = stack_guard;
+    thread_data->flags = thread_flags;
     init_static_stack_canary(tcs);
 
 #ifndef SE_SIM
@@ -332,6 +347,9 @@ sgx_status_t do_ecall_add_thread(void *ms, void *tcs)
 {
     sgx_status_t status = SGX_ERROR_UNEXPECTED;
 
+    if(!is_utility_thread())
+        return status;
+
     struct ms_tcs *ms_tcs = (struct ms_tcs*)ms;
     if (ms_tcs == NULL)
     {
@@ -381,6 +399,10 @@ sgx_status_t do_ecall_add_thread(void *ms, void *tcs)
 //
 sgx_status_t do_uninit_enclave(void *tcs)
 {
+#ifndef SE_SIM
+    if(is_dynamic_thread_exist() && !is_utility_thread())
+        return SGX_ERROR_UNEXPECTED;
+#endif        
     sgx_spin_lock(&g_tcs_node_lock);
     tcs_node_t *tcs_node = g_tcs_node;
     g_tcs_node = NULL;
@@ -421,7 +443,9 @@ sgx_status_t do_uninit_enclave(void *tcs)
     return SGX_SUCCESS;
 }
 
-extern "C" sgx_status_t sgx_trts_mprotect(size_t start, size_t size, uint64_t perms)
+extern sdk_version_t g_sdk_version;
+
+extern "C" sgx_status_t trts_mprotect(size_t start, size_t size, uint64_t perms)
 {
     int rc = -1;
     size_t page;
@@ -431,10 +455,12 @@ extern "C" sgx_status_t sgx_trts_mprotect(size_t start, size_t size, uint64_t pe
     //Error return if start or size is not page-aligned or size is zero.
     if (!IS_PAGE_ALIGNED(start) || (size == 0) || !IS_PAGE_ALIGNED(size))
         return SGX_ERROR_INVALID_PARAMETER;
-
-    ret = change_permissions_ocall(start, size, perms);
-    if (ret != SGX_SUCCESS)
-        return ret;
+    if (g_sdk_version == SDK_VERSION_2_0)
+    {
+        ret = change_permissions_ocall(start, size, perms);
+        if (ret != SGX_SUCCESS)
+            return ret;
+    }
 
     si.flags = perms|SI_FLAG_REG|SI_FLAG_PR;
     memset(&si.reserved, 0, sizeof(si.reserved));

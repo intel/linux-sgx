@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -75,7 +75,7 @@ class CTrustThreadPool: private Uncopyable
 public:
     CTrustThreadPool(uint32_t tcs_min_pool);
     virtual ~CTrustThreadPool();
-    CTrustThread * acquire_thread(bool is_initialize_ecall = false);
+    CTrustThread * acquire_thread(int ecall_cmd);
     void release_thread(CTrustThread * const trust_thread);
     CTrustThread *add_thread(tcs_t * const tcs, CEnclave * const enclave, bool is_unallocated);
     CTrustThread *get_bound_thread(const tcs_t *tcs);
@@ -91,6 +91,7 @@ protected:
     inline int find_thread(vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id);
     inline CTrustThread * get_free_thread();
     int bind_thread(const se_thread_id_t thread_id, CTrustThread * const trust_thread);
+    void unbind_thread(const se_thread_id_t thread_id);
     CTrustThread * get_bound_thread(const se_thread_id_t thread_id);
     void add_to_free_thread_vector(CTrustThread* it);
     

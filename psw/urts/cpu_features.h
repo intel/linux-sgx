@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +34,7 @@
 
 #include "cpuid.h"
 
-void get_cpu_features(uint64_t *__intel_cpu_feature_indicator);
+void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo_table);
 
 inline void sgx_cpuid(unsigned int in_eax, unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsigned int *edx)
 {

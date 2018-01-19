@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -81,9 +81,8 @@ static sgx_status_t uae_create_session(
     uint32_t timeout
     )
 {
-    sgx_status_t status;
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    status = create_session_ocall(&ret, session_id, (uint8_t*)se_dh_msg1, sizeof(sgx_dh_msg1_t), timeout);
+    sgx_status_t status = create_session_ocall(&ret, session_id, (uint8_t*)se_dh_msg1, sizeof(sgx_dh_msg1_t), timeout);
     if (status!=SGX_SUCCESS)
         return status;
     return ret;
@@ -94,9 +93,8 @@ static sgx_status_t uae_close_session(
     uint32_t timeout
     )
 {
-    sgx_status_t status;
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    status = close_session_ocall(&ret, session_id, timeout);
+    sgx_status_t status = close_session_ocall(&ret, session_id, timeout);
     if (status!=SGX_SUCCESS)
         return status;
     return ret;
@@ -109,10 +107,9 @@ static sgx_status_t uae_exchange_report(
     uint32_t timeout
     )
 {
-    sgx_status_t status;
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    status = exchange_report_ocall(&ret, session_id, (uint8_t*)se_dh_msg2, static_cast<uint32_t>(sizeof(sgx_dh_msg2_t)),
-		                           (uint8_t*)se_dh_msg3, static_cast<uint32_t>(sizeof(sgx_dh_msg3_t)+sizeof(cse_sec_prop_t)),timeout);
+    sgx_status_t status = exchange_report_ocall(&ret, session_id, (uint8_t*)se_dh_msg2, static_cast<uint32_t>(sizeof(sgx_dh_msg2_t)),
+                                   (uint8_t*)se_dh_msg3, static_cast<uint32_t>(sizeof(sgx_dh_msg3_t)+sizeof(cse_sec_prop_t)),timeout);
     if (status!=SGX_SUCCESS)
         return status;
     return ret;
@@ -124,9 +121,8 @@ static sgx_status_t uae_invoke_service(
     uint32_t timeout
     )
 {
-    sgx_status_t status;
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    status = invoke_service_ocall(&ret, pse_message_req, pse_message_req_size, pse_message_resp, pse_message_resp_size, timeout);
+    sgx_status_t status = invoke_service_ocall(&ret, pse_message_req, pse_message_req_size, pse_message_resp, pse_message_resp_size, timeout);
     if (status!=SGX_SUCCESS)
         return status;
     return ret;
@@ -192,6 +188,11 @@ static sgx_status_t create_pse_session_within_mutex()
     sgx_key_128bit_t dh_aek;
     sgx_dh_session_enclave_identity_t dh_id;
 
+    memset(&se_dh_msg1, 0, sizeof(se_dh_msg1));
+    memset(&se_dh_msg2, 0, sizeof(se_dh_msg2));
+    memset(&dh_session_context, 0, sizeof(dh_session_context));
+    memset(&dh_aek, 0, sizeof(dh_aek));
+    memset(&dh_id, 0, sizeof(dh_id));
 
     //set start status
     status = sgx_dh_init_session(SGX_DH_SESSION_INITIATOR, &dh_session_context);
@@ -289,7 +290,7 @@ sgx_status_t sgx_create_pse_session()
 
 sgx_status_t sgx_get_ps_sec_prop(sgx_ps_sec_prop_desc_t* ps_security_property)
 {
-    sgx_status_t ret;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
     if(!ps_security_property)
         return SGX_ERROR_INVALID_PARAMETER;
     //lock mutex to read session status
@@ -308,7 +309,7 @@ sgx_status_t sgx_get_ps_sec_prop(sgx_ps_sec_prop_desc_t* ps_security_property)
 
 sgx_status_t sgx_get_ps_sec_prop_ex(sgx_ps_sec_prop_desc_ex_t* ps_security_property_ex)
 {
-    sgx_status_t ret;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
     if (!ps_security_property_ex)
         return SGX_ERROR_INVALID_PARAMETER;
     ret = sgx_get_ps_sec_prop(&ps_security_property_ex->ps_sec_prop_desc);
@@ -502,14 +503,14 @@ sgx_status_t sgx_get_trusted_time(
     req_msg->payload_size = sizeof(pse_timer_read_req_t);
 
     pse_timer_read_req_t timer_req;
+    memset(&timer_req, 0, sizeof(pse_timer_read_req_t));
     timer_req.req_hdr.service_id = PSE_TRUSTED_TIME_SERVICE;
     timer_req.req_hdr.service_cmd = PSE_TIMER_READ;
 
     pse_timer_read_resp_t timer_resp;
     memset(&timer_resp, 0, sizeof(pse_timer_read_resp_t));
 
-    sgx_status_t status;
-    status = crypt_invoke(req_msg, PSE_TIMER_READ_REQ_SIZE, &timer_req.req_hdr, SE_GET_TRUSTED_TIME_TIMEOUT_MSEC,
+    sgx_status_t status = crypt_invoke(req_msg, PSE_TIMER_READ_REQ_SIZE, &timer_req.req_hdr, SE_GET_TRUSTED_TIME_TIMEOUT_MSEC,
         resp_msg, PSE_TIMER_READ_RESP_SIZE, &timer_resp.resp_hdr);
     if (status==SGX_SUCCESS)
     {
@@ -556,6 +557,7 @@ sgx_status_t sgx_create_monotonic_counter_ex(
     req_msg->payload_size = sizeof(pse_mc_create_req_t);
 
     pse_mc_create_req_t mc_req;
+    memset(&mc_req, 0, sizeof(pse_mc_create_req_t));
     mc_req.req_hdr.service_id = PSE_MC_SERVICE;
     mc_req.req_hdr.service_cmd = PSE_MC_CREATE;
     mc_req.policy = owner_policy;
@@ -564,8 +566,7 @@ sgx_status_t sgx_create_monotonic_counter_ex(
     pse_mc_create_resp_t mc_resp;
     memset(&mc_resp, 0, sizeof(pse_mc_create_resp_t));
 
-    sgx_status_t status;
-    status = crypt_invoke(req_msg, PSE_CREATE_MC_REQ_SIZE, &mc_req.req_hdr, SE_CREATE_MONOTONIC_COUNTER_TIMEOUT_MSEC,
+    sgx_status_t status = crypt_invoke(req_msg, PSE_CREATE_MC_REQ_SIZE, &mc_req.req_hdr, SE_CREATE_MONOTONIC_COUNTER_TIMEOUT_MSEC,
         resp_msg, PSE_CREATE_MC_RESP_SIZE, &mc_resp.resp_hdr);
     if (status == SGX_SUCCESS)
     {
@@ -587,6 +588,7 @@ sgx_status_t sgx_create_monotonic_counter(
 {
     // Default attribute mask
     sgx_attributes_t attr_mask;
+    memset(&attr_mask, 0, sizeof(sgx_attributes_t));
     attr_mask.flags = DEFAULT_VMC_ATTRIBUTE_MASK;
     attr_mask.xfrm = DEFAULT_VMC_XFRM_MASK;
 
@@ -618,6 +620,7 @@ sgx_status_t sgx_destroy_monotonic_counter(const sgx_mc_uuid_t* counter_uuid)
     req_msg->payload_size = sizeof(pse_mc_del_req_t);
 
     pse_mc_del_req_t mc_req;
+    memset(&mc_req, 0, sizeof(pse_mc_del_req_t));
     memcpy(mc_req.counter_id, counter_uuid->counter_id, sizeof(mc_req.counter_id));
     memcpy(mc_req.nonce, counter_uuid->nonce, sizeof(mc_req.nonce));
     mc_req.req_hdr.service_id = PSE_MC_SERVICE;
@@ -626,8 +629,7 @@ sgx_status_t sgx_destroy_monotonic_counter(const sgx_mc_uuid_t* counter_uuid)
     pse_mc_del_resp_t mc_resp;
     memset(&mc_resp, 0, sizeof(pse_mc_del_resp_t));
 
-    sgx_status_t status;
-    status = crypt_invoke(req_msg, PSE_DEL_MC_REQ_SIZE, &mc_req.req_hdr, SE_DESTROY_MONOTONIC_COUNTER_TIMEOUT_MSEC,
+    sgx_status_t status = crypt_invoke(req_msg, PSE_DEL_MC_REQ_SIZE, &mc_req.req_hdr, SE_DESTROY_MONOTONIC_COUNTER_TIMEOUT_MSEC,
         resp_msg, PSE_DEL_MC_RESP_SIZE, &mc_resp.resp_hdr);
     //error condition
     free(req_msg);
@@ -660,6 +662,7 @@ sgx_status_t sgx_increment_monotonic_counter(
     req_msg->payload_size = sizeof(pse_mc_inc_req_t);
 
     pse_mc_inc_req_t mc_req;
+    memset(&mc_req, 0, sizeof(pse_mc_inc_req_t));
     memcpy(mc_req.counter_id, counter_uuid->counter_id, sizeof(mc_req.counter_id));
     memcpy(mc_req.nonce, counter_uuid->nonce, sizeof(mc_req.nonce));
     mc_req.req_hdr.service_id = PSE_MC_SERVICE;
@@ -668,8 +671,7 @@ sgx_status_t sgx_increment_monotonic_counter(
     pse_mc_inc_resp_t mc_resp;
     memset(&mc_resp, 0, sizeof(pse_mc_inc_resp_t));
 
-    sgx_status_t status;
-    status = crypt_invoke(req_msg, PSE_INC_MC_REQ_SIZE, &mc_req.req_hdr, SE_INCREMENT_MONOTONIC_COUNTER_TIMEOUT_MSEC,
+    sgx_status_t status = crypt_invoke(req_msg, PSE_INC_MC_REQ_SIZE, &mc_req.req_hdr, SE_INCREMENT_MONOTONIC_COUNTER_TIMEOUT_MSEC,
         resp_msg, PSE_INC_MC_RESP_SIZE, &mc_resp.resp_hdr);
     if (status == SGX_SUCCESS)
     {
@@ -707,6 +709,7 @@ sgx_status_t sgx_read_monotonic_counter(
     req_msg->payload_size = sizeof(pse_mc_read_req_t);
 
     pse_mc_read_req_t mc_req;
+    memset(&mc_req, 0, sizeof(pse_mc_read_req_t));
     memcpy(mc_req.counter_id, counter_uuid->counter_id, sizeof(mc_req.counter_id));
     memcpy(mc_req.nonce, counter_uuid->nonce, sizeof(mc_req.nonce));
     mc_req.req_hdr.service_id = PSE_MC_SERVICE;
@@ -715,8 +718,7 @@ sgx_status_t sgx_read_monotonic_counter(
     pse_mc_read_resp_t mc_resp;
     memset(&mc_resp, 0, sizeof(pse_mc_read_resp_t));
 
-    sgx_status_t status;
-    status = crypt_invoke(req_msg, PSE_READ_MC_REQ_SIZE, &mc_req.req_hdr, SE_READ_MONOTONIC_COUNTER_TIMEOUT_MSEC,
+    sgx_status_t status = crypt_invoke(req_msg, PSE_READ_MC_REQ_SIZE, &mc_req.req_hdr, SE_READ_MONOTONIC_COUNTER_TIMEOUT_MSEC,
         resp_msg, PSE_READ_MC_RESP_SIZE, &mc_resp.resp_hdr);
     if (status == SGX_SUCCESS)
     {

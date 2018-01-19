@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -830,8 +830,8 @@ bool CMetadata::get_xsave_size(uint64_t xfrm, uint32_t *xsave_size)
     } xsave_size_table[] = { // Note that the xsave_size should be in ascending order
         {SGX_XFRM_LEGACY, 512 + 64},                    // 512 for legacy features, 64 for xsave header
         {SGX_XFRM_AVX,    512 + 64 + 256},              // 256 for YMM0_H - YMM15_H registers
-        {SGX_XFRM_MPX,    512 + 64 + 256 + 80},         // 80? for BND0 - BND3, BNDCFGU, BNDCSR
-        {SGX_XFRM_AVX512, 512 + 64 + 256 + 80 + 1600},  // 1600? for k0 - k7, ZMM0_H - ZMM15_H, ZMM16 - ZMM31
+        {SGX_XFRM_MPX,    512 + 64 + 256 + 256},        // 256 for MPX
+        {SGX_XFRM_AVX512, 512 + 64 + 256 + 256 + 1600}, // 1600 for k0 - k7, ZMM0_H - ZMM15_H, ZMM16 - ZMM31
 //      PT, PKRU ...
     };
     bool ret = true;

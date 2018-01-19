@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -59,8 +59,9 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
 
     //Since CPUID instruction is NOT supported within enclave, we enumerate the cpu features here and send to tRTS.
     info.cpu_features = 0;
-    get_cpu_features(&info.cpu_features);
-    info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_2_0, enclave->get_enclave_version());
+    memset(info.cpuinfo_table, 0, sizeof(info.cpuinfo_table));
+    get_cpu_features(&info.cpu_features, (uint32_t*)info.cpuinfo_table);
+    info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_2_1, enclave->get_enclave_version());
     if (is_EDMM_supported(enclave_id))
             info.system_feature_set[0] |= EDMM_ENABLE_BIT;
 

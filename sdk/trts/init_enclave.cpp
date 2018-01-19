@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -102,7 +102,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         EDMM_supported = 0;
     }
-    else if (g_sdk_version == SDK_VERSION_2_0)
+    else if (g_sdk_version >= SDK_VERSION_2_0)
     {
         EDMM_supported = feature_supported((const uint64_t *)sys_features.system_feature_set, 0);
     }
@@ -118,11 +118,18 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     uint64_t xfrm = get_xfeature_state();
 
     // optimized libs
-    if(0 != init_optimized_libs((const uint64_t)sys_features.cpu_features, xfrm))
-    {
-        return -1;
-    }
-
+    if (SDK_VERSION_2_0 < g_sdk_version) {
+		if(0 != init_optimized_libs((const uint64_t)sys_features.cpu_features, (uint32_t*)sys_features.cpuinfo_table, xfrm))
+		{
+			return -1;
+		}
+	} else {
+		if(0 != init_optimized_libs((const uint64_t)sys_features.cpu_features, NULL, xfrm))
+		{
+			return -1;
+		}
+	}
+	
     if(SGX_SUCCESS != sgx_read_rand((unsigned char*)&__stack_chk_guard,
                                      sizeof(__stack_chk_guard)))
     {
@@ -136,8 +143,11 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
 int accept_post_remove(const volatile layout_t *layout_start, const volatile layout_t *layout_end, size_t offset);
 #endif
 
-sgx_status_t do_init_enclave(void *ms)
+sgx_status_t do_init_enclave(void *ms, void *tcs)
 {
+#ifdef SE_SIM
+    UNUSED(tcs);
+#endif
     void *enclave_base = get_enclave_base();
     if(ENCLAVE_INIT_NOT_STARTED != lock_enclave())
     {
@@ -149,6 +159,16 @@ sgx_status_t do_init_enclave(void *ms)
     }
 
 #ifndef SE_SIM
+    thread_data_t *thread_data = GET_PTR(thread_data_t, tcs, g_global_data.td_template.self_addr);
+    if (thread_data == NULL)
+    {
+        return SGX_ERROR_UNEXPECTED;
+    }
+
+    do_init_thread(tcs);
+    thread_data->flags = SGX_UTILITY_THREAD;
+    
+
     /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
     if (EDMM_supported)
     {
@@ -161,7 +181,7 @@ sgx_status_t do_init_enclave(void *ms)
     else
 #endif
     {
-        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);	
+        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
     }
 
     g_enclave_state = ENCLAVE_INIT_DONE;

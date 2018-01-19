@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,6 +40,7 @@
 #include "se_cdefs.h"
 #include "sgx_utils.h"
 #include "tSeal_internal.h"
+#include "tseal_migration_attr.h"
 
 extern "C" sgx_status_t sgx_seal_data(const uint32_t additional_MACtext_length,
                                       const uint8_t *p_additional_MACtext, const uint32_t text2encrypt_length,

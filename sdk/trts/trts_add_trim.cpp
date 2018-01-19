@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -221,6 +221,18 @@ int is_dynamic_thread(void *tcs)
 
     return false;
 }
+
+int is_dynamic_thread_exist()
+{
+    if(!EDMM_supported)
+        return false;
+    const volatile layout_t * layout = get_dynamic_layout_by_id(LAYOUT_ID_STACK_DYN_MIN);
+    if (!layout)
+        return false;
+    else
+        return true;
+}
+
 
 uint32_t get_dynamic_stack_max_page()
 {

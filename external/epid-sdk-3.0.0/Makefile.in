@@ -48,7 +48,7 @@ else
 endif
 
 #set c++11 for all c++ compilers
-CXXFLAGS += -std=c++0x
+CXXFLAGS += -std=c++11
 
 #set flags for unit tests executables
 GTEST_FLAGS = --gtest_color=yes \

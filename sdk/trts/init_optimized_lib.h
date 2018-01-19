@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,7 +40,8 @@ extern "C" {
 #endif
 
 
-int init_optimized_libs(const uint64_t feature_bits_array, uint64_t xfrm);
+int init_optimized_libs(const uint64_t feature_bits_array, uint32_t *cpuinfo_table, uint64_t xfrm);
+
 
 #ifdef __cplusplus
 }

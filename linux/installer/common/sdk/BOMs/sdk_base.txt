@@ -161,6 +161,10 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Edger8rSyntax/Types.cpp	<installdir>/package/SampleCode/SampleEnclave/Enclave/Edger8rSyntax/Types.cpp	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Edger8rSyntax/Types.edl	<installdir>/package/SampleCode/SampleEnclave/Enclave/Edger8rSyntax/Types.edl	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave.config.xml	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave.config.xml	0	main	STP
+<deliverydir>/SampleCode/SampleEnclave/Enclave/config.01.xml	<installdir>/package/SampleCode/SampleEnclave/Enclave/config.01.xml	0	main	STP
+<deliverydir>/SampleCode/SampleEnclave/Enclave/config.02.xml	<installdir>/package/SampleCode/SampleEnclave/Enclave/config.02.xml	0	main	STP
+<deliverydir>/SampleCode/SampleEnclave/Enclave/config.03.xml	<installdir>/package/SampleCode/SampleEnclave/Enclave/config.03.xml	0	main	STP
+<deliverydir>/SampleCode/SampleEnclave/Enclave/config.04.xml	<installdir>/package/SampleCode/SampleEnclave/Enclave/config.04.xml	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave.cpp	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave.cpp	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave.edl	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave.edl	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave.h	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave.h	0	main	STP

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -89,7 +89,7 @@ INCLUDE += -I$(SGX_IPP_INC) \
 EDGER8R  := $(LINUX_SDK_DIR)/edger8r/linux/_build/Edger8r.native
 
 
-SQLITECFLAGS := -fpie -Wall -Wno-unused-const-variable -Werror
+SQLITECFLAGS := -fpie -Wall -Werror -Wno-maybe-uninitialized $(call cc-disable-warning,unused-const-variable)
 ifeq ($(CC_BELOW_4_9), 1)
 	SQLITECFLAGS += -fstack-protector
 else
@@ -240,6 +240,8 @@ IPC_SRC  :=  AECloseSessionRequest.cpp    \
              AESGXSwitchExtendedEpidGroupResponse.cpp \
              AEReportAttestationRequest.cpp \
              AEReportAttestationResponse.cpp \
+             AESGXRegisterRequest.cpp \
+             AESGXRegisterResponse.cpp \
              SocketTransporter.cpp \
              AEGetLaunchTokenResponse.cpp  \
              UnixCommunicationSocket.cpp \
@@ -328,8 +330,14 @@ ifndef DEBUG
 	$(OBJCOPY) --add-gnu-debuglink=$(APPNAME_DEBUG) $(APPNAME)
 endif
 
-
-./source/le/LEClass.o: ${AESM_EXTENSION}/launch_enclave_u.c
+ifeq ($(BUILD_REF_LE), 1)
+LE_DEP := ${AESM_EXTENSION}/ref_le_u.c
+LE_EDL :=  ${LINUX_PSW_DIR}/ae/ref_le/ref_le.edl
+else
+LE_DEP := ${AESM_EXTENSION}/launch_enclave_u.c
+LE_EDL := ${LINUX_PSW_DIR}/ae/le/launch_enclave.edl
+endif
+./source/le/LEClass.o: $(LE_DEP)
 ./source/pve/PVEClass.o: ${AESM_EXTENSION}/provision_enclave_u.c
 ./source/qe/QEClass.o: ${AESM_EXTENSION}/quoting_enclave_u.c
 ./source/pse_op/PSEClass.o: ${AESM_EXTENSION}/pse_op_u.c
@@ -346,7 +354,7 @@ else
 	@cd $(RDRAND_LIBDIR);./configure CFLAGS=-fPIC
 endif
 
-${AESM_EXTENSION}/launch_enclave_u.c: ${LINUX_PSW_DIR}/ae/le/launch_enclave.edl
+$(LE_DEP): $(LE_EDL)
 	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $<
 
 ${AESM_EXTENSION}/provision_enclave_u.c: ${LINUX_PSW_DIR}/ae/pve/provision_enclave.edl

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -147,7 +147,7 @@ sample_status_t sample_read_rand(unsigned char *rand, size_t length_in_bytes)
             ? length_in_bytes : sizeof(rand_num);
         if(memcpy_s(rand, size, &rand_num, size))
         {
-            return status;
+            return SAMPLE_ERROR_UNEXPECTED;
         }
 
         rand += size;

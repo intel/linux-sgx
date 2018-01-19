@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -365,6 +365,7 @@ def retrieve_enclave_info(info_addr = 0):
         print ("Error: tcs info address = {0:x}".format(tcs_info_addr))
         return None
 
+    stacksize = 0;
     while tcs_info_addr is not 0:
         tcs_info_str = read_from_memory(tcs_info_addr, 3*SIZE)
         if tcs_info_str == None:
@@ -391,9 +392,10 @@ def retrieve_enclave_info(info_addr = 0):
         #print ("thread_info:%#x, last_sp:%#x, stack_base_addr:%#x, stack_limit_addr:%#x" \
         #     % (td_tuple[0], td_tuple[1], td_tuple[2], td_tuple[3]));
 
-        #stack size = ROUND_TO_PAGE(stack_base_addr - stack_limit_addr) since we have
-        #a static stack whose size is smaller than PAGE_SIZE
-        stacksize = (td_tuple[2] - td_tuple[3] + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)
+        if td_tuple[2] != td_tuple[3]:
+            #stack size = ROUND_TO_PAGE(stack_base_addr - stack_limit_addr) since we have
+            #a static stack whose size is smaller than PAGE_SIZE
+            stacksize = (td_tuple[2] - td_tuple[3] + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)
         stack_addr_list.append(td_tuple[3])     #use stack limit addr as stack base address
         tcs_addr_list.append(tcs_info_tuple[1])
         tcs_info_addr = tcs_info_tuple[0]
