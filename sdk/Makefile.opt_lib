@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -86,22 +86,25 @@ LIBIRC_NAME := libirc.a
 
 $(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp $(LIBM_PATH)/libimf.a $(LIBIRC_PATH)/$(LIBIRC_NAME) $(SVML_PATH)/libsvml.a
 	$(MAKE) -C tlibc/ -j4 2> /dev/null
-	@$(MKDIR) $(BUILD_DIR)/.libimf   $(BUILD_DIR)/.libirc   $(BUILD_DIR)/.libsvml   $(BUILD_DIR)/.tlibc  \
-		$(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp
-	@$(RM) -f $(BUILD_DIR)/.libimf/* $(BUILD_DIR)/.libirc/* $(BUILD_DIR)/.libsvml/* $(BUILD_DIR)/.tlibc/* \
-		$(BUILD_DIR)/.tlibthread/* $(BUILD_DIR)/.tsafecrt/* $(BUILD_DIR)/.tsetjmp/*
-	@cd $(BUILD_DIR)/.libimf     && $(AR) x $(LIBM_PATH)/libimf.a
-	@cd $(BUILD_DIR)/.libirc     && $(AR) x $(LIBIRC_PATH)/$(LIBIRC_NAME)
-	@cd $(BUILD_DIR)/.libsvml    && $(AR) x $(SVML_PATH)/libsvml.a
-	@cd $(BUILD_DIR)/.tlibc      && $(AR) x $(LINUX_SDK_DIR)/tlibc/libtlibc.a
-	@cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
-	@cd $(BUILD_DIR)/.tsafecrt   && $(AR) x $(LINUX_SDK_DIR)/tsafecrt/libsgx_tsafecrt.a
-	@cd $(BUILD_DIR)/.tsetjmp   && $(AR) x $(LINUX_SDK_DIR)/tsetjmp/libsgx_tsetjmp.a
-	$(CP) compiler-rt/libcompiler-rt.a $@
-	$(AR) rsD $@ $(BUILD_DIR)/.libimf/*.o $(BUILD_DIR)/.libirc/*.o $(BUILD_DIR)/.libsvml/*.o $(BUILD_DIR)/.tlibc/*.o \
-		$(BUILD_DIR)/.tlibthread/*.o $(BUILD_DIR)/.tsafecrt/*.o $(BUILD_DIR)/.tsetjmp/*.o
-	@$(RM) -rf   $(BUILD_DIR)/.libimf     $(BUILD_DIR)/.libirc     $(BUILD_DIR)/.libsvml     $(BUILD_DIR)/.tlibc \
-		$(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp
+	$(MKDIR) $(BUILD_DIR)/.libimf   $(BUILD_DIR)/.libirc   $(BUILD_DIR)/.compiler-rt   $(BUILD_DIR)/.tlibc  \
+	        $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp
+	$(RM) -f $(BUILD_DIR)/.libimf/*        && cd $(BUILD_DIR)/.libimf     && $(AR) x $(LIBM_PATH)/libimf.a
+	$(RM) -f $(BUILD_DIR)/.libirc/*        && cd $(BUILD_DIR)/.libirc     && $(AR) x $(LIBIRC_PATH)/$(LIBIRC_NAME)
+	$(RM) -f $(BUILD_DIR)/.compiler-rt/*   && cd $(BUILD_DIR)/.compiler-rt && $(AR) x $(LINUX_SDK_DIR)/compiler-rt/libcompiler-rt.a
+	$(RM) -f $(BUILD_DIR)/.tlibc/*         && cd $(BUILD_DIR)/.tlibc      && $(AR) x $(LINUX_SDK_DIR)/tlibc/libtlibc.a
+	$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
+	$(RM) -f $(BUILD_DIR)/.tsafecrt/*      && cd $(BUILD_DIR)/.tsafecrt   && $(AR) x $(LINUX_SDK_DIR)/tsafecrt/libsgx_tsafecrt.a
+	$(RM) -f $(BUILD_DIR)/.tsetjmp/*       && cd $(BUILD_DIR)/.tsetjmp    && $(AR) x $(LINUX_SDK_DIR)/tsetjmp/libsgx_tsetjmp.a
+	$(CP) $(SVML_PATH)/libsvml.a $@
+	$(AR) qD $@ $(BUILD_DIR)/.libimf/*.o
+	$(AR) qD $@ $(BUILD_DIR)/.libirc/*.o
+	$(AR) qD $@ $(BUILD_DIR)/.compiler-rt/*.o
+	$(AR) qD $@ $(BUILD_DIR)/.tlibc/*.o
+	$(AR) qD $@ $(BUILD_DIR)/.tlibthread/*.o
+	$(AR) qD $@ $(BUILD_DIR)/.tsafecrt/*.o
+	$(AR) qD $@ $(BUILD_DIR)/.tsetjmp/*.o
+	@$(RM) -rf $(BUILD_DIR)/.libimf $(BUILD_DIR)/.libirc $(BUILD_DIR)/.compiler-rt $(BUILD_DIR)/.tlibc
+	@$(RM) -rf $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp
 
 .PHONY: tlibthread
 tlibthread:
@@ -127,12 +130,12 @@ tsetjmp:
 tstdcxx: $(LIBTLIBCXX)
 
 $(LIBTLIBCXX): cpprt tlibstdcxx
-	@$(MKDIR) $(BUILD_DIR)/.cpprt   $(BUILD_DIR)/.tlibstdcxx
-	@$(RM) -f $(BUILD_DIR)/.cpprt/* $(BUILD_DIR)/.tlibstdcxx/*
-	@cd $(BUILD_DIR)/.cpprt      && $(AR) x $(LINUX_SDK_DIR)/cpprt/libcpprt.a
-	@cd $(BUILD_DIR)/.tlibstdcxx && $(AR) x $(LINUX_SDK_DIR)/tlibstdcxx/libtlibstdcxx.a
-	$(AR) rcsD $@ $(BUILD_DIR)/.cpprt/*.o $(BUILD_DIR)/.tlibstdcxx/*.o
-	@$(RM) -rf   $(BUILD_DIR)/.cpprt     $(BUILD_DIR)/.tlibstdcxx
+	@$(MKDIR) $(BUILD_DIR)/.tlibstdcxx
+	@$(RM) -f $(BUILD_DIR)/.tlibstdcxx/*
+	@cd $(BUILD_DIR)/.tlibstdcxx      && $(AR) x $(LINUX_SDK_DIR)/tlibstdcxx/libtlibstdcxx.a
+	$(CP) $(LINUX_SDK_DIR)/cpprt/libcpprt.a $@
+	$(AR) qD $@ $(BUILD_DIR)/.tlibstdcxx/*.o
+	@$(RM) -rf   $(BUILD_DIR)/.tlibstdcxx
 
 .PHONY: cpprt
 cpprt:
@@ -151,12 +154,12 @@ tlibstdcxx: $(BUILD_DIR)
 tcxx: $(LIBTCXX)
 
 $(LIBTCXX): cpprt tlibcxx
-	@$(MKDIR) $(BUILD_DIR)/._cpprt   $(BUILD_DIR)/.tlibcxx
-	@$(RM) -f $(BUILD_DIR)/._cpprt/* $(BUILD_DIR)/.tlibcxx/*
-	@cd $(BUILD_DIR)/._cpprt      && $(AR) x $(LINUX_SDK_DIR)/cpprt/libcpprt.a
-	@cd $(BUILD_DIR)/.tlibcxx    && $(AR) x $(LINUX_SDK_DIR)/tlibcxx/libcxx.a
-	$(AR) rcsD $@ $(BUILD_DIR)/._cpprt/*.o $(BUILD_DIR)/.tlibcxx/*.o
-	@$(RM) -rf   $(BUILD_DIR)/._cpprt     $(BUILD_DIR)/.tlibcxx
+	@$(MKDIR) $(BUILD_DIR)/.tlibcxx
+	@$(RM) -f $(BUILD_DIR)/.tlibcxx/*
+	@cd $(BUILD_DIR)/.tlibcxx      && $(AR) x $(LINUX_SDK_DIR)/tlibcxx/libcxx.a
+	$(CP) $(LINUX_SDK_DIR)/cpprt/libcpprt.a $@
+	$(AR) qD $@ $(BUILD_DIR)/.tlibcxx/*.o
+	@$(RM) -rf   $(BUILD_DIR)/.tlibcxx
 
 .PHONY: tlibcxx
 tlibcxx: $(BUILD_DIR)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -401,6 +401,8 @@ sgx_status_t SGXAPI sgx_report_attestation_status(
     int attestation_status,
     sgx_update_info_bit_t *p_update_info)
 {
+    if (p_update_info == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
     UNUSED(p_platform_info);
     UNUSED(attestation_status);
     memset(p_update_info, 0, sizeof(sgx_update_info_bit_t));
@@ -409,12 +411,16 @@ sgx_status_t SGXAPI sgx_report_attestation_status(
 
 sgx_status_t SGXAPI sgx_get_extended_epid_group_id(uint32_t* p_extended_epid_group_id)
 {
+    if (p_extended_epid_group_id == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
     *p_extended_epid_group_id = 0;
     return SGX_SUCCESS;
 }
 
 sgx_status_t SGXAPI sgx_get_whitelist_size(uint32_t* p_whitelist_size)
 {
+    if (p_whitelist_size == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
     *p_whitelist_size = 0;
     return SGX_SUCCESS;
 }
@@ -429,3 +435,9 @@ sgx_status_t SGXAPI sgx_get_whitelist(uint8_t* p_whitelist, uint32_t whitelist_s
     }
 }
 
+sgx_status_t SGXAPI sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_cert_chain_size)
+{
+    UNUSED(p_wl_cert_chain);
+    UNUSED(wl_cert_chain_size);
+    return SGX_SUCCESS;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +38,7 @@
 
 
 #define USAGE_STRING \
-    "Usage: sgx_sign <commands> [options] file...\n"\
+    "\nUsage: sgx_sign <commands> [options] file...\n"\
     "Commands:\n"\
     "   sign                Sign the enclave using the private key\n"\
     "   gendata             Generate enclave signing material to be signed\n"\
@@ -63,7 +63,13 @@
     "                       text relocations. You can ignore the error and continue signing\n" \
     "                       by providing this option. But it is recommended you eliminate the\n" \
     "                       text relocations instead of bypassing the error with this option.\n\n" \
-    "You can run \"sgx_sign -help\" to get this help and exit.\n"
+    "Run \"sgx_sign -help\" to get this help and exit.\n" \
+    "Run \"sgx_sign -version\" to output version information and exit.\n\n"
+
+
+#define VERSION_STRING \
+    "\nThis is sgx_sign from Intel(R) Software Guard Extensions, version %s for Linux.\n\n%s\n\n" \
+    "BSD License. The License file could be found under the Intel(R) SGX SDK package.\n\n"
 
 // General error message
 #define OVERALL_ERROR                       "Error happened while signing the enclave.\n"

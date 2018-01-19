@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -60,7 +60,8 @@ typedef struct _ocall_context_t
 typedef enum
 {
     SDK_VERSION_1_5,
-    SDK_VERSION_2_0
+    SDK_VERSION_2_0,
+    SDK_VERSION_2_1
 } sdk_version_t;
 
 typedef struct _system_features
@@ -72,6 +73,7 @@ typedef struct _system_features
      * through the array searching for certain features.
     */
     uint64_t system_feature_set[1];
+    uint32_t cpuinfo_table[8][4];
 }system_features_t;
 
 // current system_feature_set only contains one element of type uint64_t, the highest

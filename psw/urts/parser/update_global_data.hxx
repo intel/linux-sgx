@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -59,6 +59,7 @@ namespace {
         thread_data->last_sp = thread_data->stack_base_addr;
         thread_data->xsave_size = create_param->xsave_size;
         thread_data->first_ssa_gpr = (sys_word_t)create_param->ssa_base_addr + metadata->ssa_frame_size * SE_PAGE_SIZE - (uint32_t)sizeof(ssa_gpr_t);
+        thread_data->flags = 0;
         // TD address relative to TCS
         thread_data->tls_addr = (sys_word_t)create_param->tls_addr;
         thread_data->self_addr = (sys_word_t)create_param->td_addr;

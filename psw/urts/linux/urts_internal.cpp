@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,6 +39,7 @@
 #include "file.h"
 #include "se_wrapper.h"
 #include "se_map.h"
+#include "enclave_creator.h"
 
 
 extern sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr);
@@ -76,3 +77,9 @@ extern "C" sgx_status_t sgx_create_le(const char* file_name, const char* prd_css
 
     return ret;
 }
+
+extern "C" bool is_in_kernel_driver()
+{
+    return get_enclave_creator()->is_in_kernel_driver();
+}
+

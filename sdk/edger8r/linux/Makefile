@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,13 +31,22 @@
 
 include ../../../buildenv.mk
 
+OCAML_VERSION_MAJOR=$(shell ocamlopt -version | head -n  1 | cut -d . -f 1)
+OCAML_VERSION_MINOR=$(shell ocamlopt -version | head -n  1 | cut -d . -f 2)
+OCAML_VERSION=$(OCAML_VERSION_MAJOR)$(OCAML_VERSION_MINOR)
+
 .PHONY: all
 all: build | $(BUILD_DIR)
 	@$(CP) $(CUR_DIR)/_build/Edger8r.native $(BUILD_DIR)/sgx_edger8r
 
 .PHONY: build
 build:
-	ocamlbuild -no-links -libs str,unix Edger8r.native
+# ocaml 4.02 - added support for PIC
+ifeq ($(shell test $(OCAML_VERSION) -lt 402 && echo 1), 1)
+	ocamlbuild -lflag -ccopt -lflag "-Wl,-z,now" -no-links -libs str,unix  Edger8r.native
+else
+	ocamlbuild -cflags -ccopt,-fpie -lflags -runtime-variant,_pic,-ccopt,-pie,-ccopt -lflag "-Wl,-z,now"  -no-links -libs str,unix Edger8r.native
+endif
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

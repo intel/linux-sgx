@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -68,6 +68,7 @@ public:
     uint64_t get_symbol_rva(const char* name) const;
 
     bool get_reloc_bitmap(vector<uint8_t> &bitmap);
+    bool has_text_reloc() const;
     uint32_t get_global_data_size();
     bool update_global_data(const metadata_t *const metadata,
                             const create_param_t* const create_param,
@@ -90,6 +91,9 @@ public:
     sgx_status_t modify_info(enclave_diff_info_t *enclave_diff_info);
     sgx_status_t get_info(enclave_diff_info_t *enclave_diff_info);
     void get_executable_sections(vector<const char *>& xsec_names) const;
+
+    bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization);
+    void get_pages_to_protect(uint64_t enclave_base_addr, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const;
 
 private:
     const uint8_t*      m_start_addr;

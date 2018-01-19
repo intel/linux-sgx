@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -265,6 +265,11 @@ bool EnclaveCreatorST::is_EDMM_supported(sgx_enclave_id_t enclave_id)
 bool EnclaveCreatorST::is_driver_compatible()
 {
     return true;
+}
+
+bool EnclaveCreatorST::is_in_kernel_driver()
+{
+    return false;
 }
 
 int EnclaveCreatorST::get_enclave_info(uint8_t *hash, int size, uint64_t *quota)

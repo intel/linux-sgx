@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -518,7 +518,7 @@ sgx_status_t change_protection(void *enclave_base)
             if (phdr->p_flags & PF_X)
                 perms |= SI_FLAG_X;
 
-            if((status = sgx_trts_mprotect(start, end - start, perms)) != SGX_SUCCESS)
+            if((status = trts_mprotect(start, end - start, perms)) != SGX_SUCCESS)
                 return status;
         }
 
@@ -527,7 +527,7 @@ sgx_status_t change_protection(void *enclave_base)
             size_t start = (size_t)enclave_base + (phdr->p_vaddr & (size_t)(~(SE_PAGE_SIZE-1)));
             size_t end = (size_t)enclave_base + ((phdr->p_vaddr + phdr->p_memsz + SE_PAGE_SIZE - 1) & (size_t)(~(SE_PAGE_SIZE-1)));
             if ((start != end) &&
-                    (status = sgx_trts_mprotect(start, end - start, SI_FLAG_R)) != SGX_SUCCESS)
+                    (status = trts_mprotect(start, end - start, SI_FLAG_R)) != SGX_SUCCESS)
                 return status;
         }
     }

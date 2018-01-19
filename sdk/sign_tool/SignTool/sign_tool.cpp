@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,6 +56,7 @@
 
 #include "se_trace.h"
 #include "sgx_error.h"
+#include "se_version.h"
 
 #include "se_map.h"
 #include "loader.h"
@@ -540,7 +541,12 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
          *mode = -1;
          return true;
     }
-
+    if(argc == 2 && !STRCMP(argv[1], "-version"))
+    {
+        se_trace(SE_TRACE_ERROR, VERSION_STRING, STRFILEVER, COPYRIGHT);
+        *mode = -1;
+        return true;
+    }
     enum { PAR_REQUIRED, PAR_OPTIONAL, PAR_INVALID };
     typedef struct _param_struct_{
         const char *name;          //options
@@ -823,8 +829,18 @@ static bool generate_compatible_metadata(metadata_t *metadata)
         se_trace(SE_TRACE_ERROR, NO_MEMORY_ERROR);
         return false;
     }
+
+    // append 2_0 metadata
     memcpy(metadata2, metadata, metadata->size);
-    metadata2->version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION );
+    metadata2->version = META_DATA_MAKE_VERSION(SGX_2_0_MAJOR_VERSION,SGX_2_0_MINOR_VERSION);
+    if (!append_compatible_metadata(metadata2, metadata))
+    {
+        free(metadata2);
+        return false;
+    }
+
+    // append 1_9 metadata
+    metadata2->version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
     layout_t *start = GET_PTR(layout_t, metadata2, metadata2->dirs[DIR_LAYOUT].offset);
     layout_t *end = GET_PTR(layout_t, start, metadata2->dirs[DIR_LAYOUT].size);
     layout_t tmp_layout, *first_dyn_entry = NULL, *first = NULL, *utility_td = NULL;
@@ -875,21 +891,15 @@ static bool generate_compatible_metadata(metadata_t *metadata)
     //We have some static threads
     first = &utility_td[1];
 
-    //utility thread | thread group for min pool
-    if (first == last)
-    {
-        metadata_cleanup(metadata2, size_to_reduce);
-        ret = append_compatible_metadata(metadata2, metadata);
-        free(metadata2);
-        return ret;
-    }
-
     if (first->group.id == LAYOUT_ID_THREAD_GROUP)
     {
-        //utility thread | thread group for min pool | eremove thread | eremove thread group
         if (last->group.id == LAYOUT_ID_THREAD_GROUP)
         {
-            first->group.load_times += last->group.load_times + 1;
+            //utility thread | thread group for min pool | eremove thread | eremove thread group
+            if (first != last)
+                first->group.load_times += last->group.load_times + 1;
+
+            //utility thread | thread group for min pool
         }
         //utility thread | thread group for min pool | eremove thread
         else
@@ -1024,7 +1034,7 @@ int main(int argc, char* argv[])
         se_trace(SE_TRACE_ERROR, USAGE_STRING);
         goto clear_return;
     }
-    if(mode == -1) // User only wants to get the help info
+    if(mode == -1) // User only wants to get the help info or version info
     {
         res = 0;
         goto clear_return;

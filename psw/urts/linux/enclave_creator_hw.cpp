@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,7 +50,9 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <stdlib.h>
- 
+
+#define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
+  
 #define SGX_CPUID   0x12
 
 static EnclaveCreatorHW g_enclave_creator_hw;
@@ -61,7 +63,8 @@ static uint64_t g_eid = 0x1;
 
 EnclaveCreatorHW::EnclaveCreatorHW():
     m_hdevice(-1),
-    m_sig_registered(false)
+    m_sig_registered(false),
+    m_in_kernel_driver(false)
 {
     se_mutex_init(&m_sig_mutex);
 }
@@ -102,6 +105,9 @@ int EnclaveCreatorHW::error_driver2urts(int driver_error)
      case (int)SGX_POWER_LOST_ENCLAVE: // [-Wc++11-narrowing]
          ret = SGX_ERROR_ENCLAVE_LOST;
          break;
+     case (int)SGX_LE_ROLLBACK:
+         ret = SE_ERROR_INVALID_ISVSVNLE;
+         break;
      default:
          SE_TRACE(SE_TRACE_WARNING, "unexpected error %#x from driver, should be uRTS/driver bug\n", driver_error);
          ret = SGX_ERROR_UNEXPECTED;
@@ -134,7 +140,7 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     secs->base = enclave_base;
   
     struct sgx_enclave_create param = {0};
-    param.src = reinterpret_cast<__u64>(secs);
+    param.src = POINTER_TO_U64(secs);
     int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_CREATE, &param);
     if(ret) 
     {
@@ -162,8 +168,8 @@ int EnclaveCreatorHW::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
     struct sgx_enclave_add_page addp = { 0, 0, 0, 0 };
 
     addp.addr = enclave_id + rva;
-    addp.src = reinterpret_cast<__u64>(source);
-    addp.secinfo = reinterpret_cast<__u64>(const_cast<sec_info_t*>(&sinfo));
+    addp.src = POINTER_TO_U64(source);
+    addp.secinfo = POINTER_TO_U64(const_cast<sec_info_t*>(&sinfo));
     if(((1<<DoEEXTEND) & attr))
     addp.mrmask |= 0xFFFF;
     ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_ADD_PAGE, &addp);
@@ -178,14 +184,27 @@ int EnclaveCreatorHW::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
 int EnclaveCreatorHW::try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch)
 {
     int ret = 0;
-    struct sgx_enclave_init initp = { 0, 0, 0 };
-    initp.addr = enclave_id;
-    initp.sigstruct = reinterpret_cast<__u64>(enclave_css);
-    //license should NOT be NULL, because it has been checked in urts_com.h::_create_enclave(...)
-    assert(launch != NULL);
 
-    initp.einittoken = reinterpret_cast<__u64>(launch);
-    ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_INIT, &initp);
+    if (m_in_kernel_driver == false)
+    {
+        struct sgx_enclave_init initp = { 0, 0, 0 };
+        initp.addr = enclave_id;
+        initp.sigstruct = POINTER_TO_U64(enclave_css);
+        //license should NOT be NULL, because it has been checked in urts_com.h::_create_enclave(...)
+        assert(launch != NULL);
+
+        initp.einittoken = POINTER_TO_U64(launch);
+        ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_INIT, &initp);
+    }
+    else
+    {
+        struct sgx_enclave_init_in_kernel initp = { 0, 0 };
+        initp.addr = enclave_id;
+        initp.sigstruct = POINTER_TO_U64(enclave_css);
+
+        ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_INIT_IN_KERNEL, &initp);
+    }
+
     if (ret) {
         SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_INIT failed error = %d\n", ret);
         return error_driver2urts(ret);
@@ -235,8 +254,13 @@ bool EnclaveCreatorHW::open_se_device()
 
     fd = open("/dev/isgx", O_RDWR);
     if (-1 == fd) {
-        SE_TRACE(SE_TRACE_WARNING, "open isgx device failed\n");
-        return false;
+        fd = open("/dev/sgx", O_RDWR);
+        if (-1 == fd) {
+            SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device\n");
+            return false;
+        }
+
+        m_in_kernel_driver = true;
     }
 
     m_hdevice = fd;
@@ -391,6 +415,12 @@ bool EnclaveCreatorHW::is_driver_compatible()
 {
     static bool ret = driver_support_edmm();
     return ret;
+}
+
+bool EnclaveCreatorHW::is_in_kernel_driver()
+{
+    open_se_device();
+    return m_in_kernel_driver;
 }
 
 bool EnclaveCreatorHW::driver_support_edmm()

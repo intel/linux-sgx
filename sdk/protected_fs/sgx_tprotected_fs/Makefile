@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -32,7 +32,8 @@
 TOP_DIR  = ../../..
 include $(TOP_DIR)/buildenv.mk
 
-INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
+INCLUDE += -I. \
+           -I$(COMMON_DIR)/inc/tlibc    \
            -I$(COMMON_DIR)/inc/internal \
            -I$(COMMON_DIR)/inc
 

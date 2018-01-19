@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -44,7 +44,7 @@ ifneq ($(USE_OPT_LIBS), 1)
 
 # Added to build with SgxSSL libraries
 ifeq ($(ARCH), x86_64)
-    OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/package
+    OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/Linux/package
 else
     $(error SGXSSL doesn't support 32bit)
 endif #($(ARCH), x86_64)

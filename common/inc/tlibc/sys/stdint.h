@@ -210,10 +210,6 @@ typedef __uintmax_t     uintmax_t;
 #endif
 
 /* Limits of wchar_t */
-#ifdef _TLIBC_WIN_
-# define WCHAR_MIN      0x0000
-# define WCHAR_MAX      0xffff
-#else
 # ifdef __WCHAR_MAX__
 #  define WCHAR_MAX __WCHAR_MAX__
 # else
@@ -226,7 +222,6 @@ typedef __uintmax_t     uintmax_t;
 # else
 #  define WCHAR_MIN (-WCHAR_MAX - 1)
 # endif
-#endif
 
 /* Limits of wint_t */
 # define WINT_MIN      (0u)

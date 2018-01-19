@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -64,6 +64,9 @@
 
 #include <AESGXSwitchExtendedEpidGroupRequest.h>
 
+#include <AESGXRegisterRequest.h>
+
+#include <AESGXRegisterResponse.h>
 
 IAERequest* ProtobufSerializer::inflateRequest(AEMessage* message) {
     if (message == NULL || message->data == NULL)
@@ -101,6 +104,8 @@ IAERequest* ProtobufSerializer::inflateRequest(AEMessage* message) {
         request = new AESGXGetExtendedEpidGroupIdRequest(reqMsg->sgxgetextendedepidgroupidreq());
     else if(reqMsg->has_sgxswitchextendedepidgroupreq() == true)
         request = new AESGXSwitchExtendedEpidGroupRequest(reqMsg->sgxswitchextendedepidgroupreq());
+    else if(reqMsg->has_sgxregisterreq() == true)
+        request = new AESGXRegisterRequest(reqMsg->sgxregisterreq());
 
     delete reqMsg;
     return request;

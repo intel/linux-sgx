@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -63,6 +63,25 @@
 #endif
 .endm
 
+.macro SET_XSAVE_MASK
+#ifdef SE_SIM
+#if defined(LINUX32)
+    lea     g_xsave_mask_low, %eax
+    lea     g_xsave_mask_high, %edx
+#else
+    mov     g_xsave_mask_low@GOTPCREL(%rip), %rax
+    mov     g_xsave_mask_high@GOTPCREL(%rip), %rdx
+#endif
+    movl    (%xax), %eax
+    movl    (%xdx), %edx
+#else
+    xor     %xax, %xax
+    xor     %xdx, %xdx
+    mov     $0xFFFFFFFF, %eax
+    mov     $0xFFFFFFFF, %edx
+#endif
+.endm
+
 .text
 DECLARE_LOCAL_FUNC restore_xregs
 #if defined(LINUX32)
@@ -75,10 +94,7 @@ DECLARE_LOCAL_FUNC restore_xregs
     movl    (%xax), %eax
     cmpl    $0, %eax
     jz      1f
-    xor     %xax, %xax
-    xor     %xdx, %xdx
-    mov     $0xFFFFFFFF, %eax
-    mov     $0xFFFFFFFF, %edx
+    SET_XSAVE_MASK
     DO_XRSTOR
     jmp     2f
 1:
@@ -98,10 +114,7 @@ DECLARE_LOCAL_FUNC save_xregs
     movl    (%xax), %eax
     cmpl    $0, %eax
     jz      1f
-    xor     %xax, %xax
-    xor     %xdx, %xdx
-    mov     $0xFFFFFFFF, %eax
-    mov     $0xFFFFFFFF, %edx
+    SET_XSAVE_MASK
     DO_XSAVEC
     jmp     2f
 1:

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -65,7 +65,7 @@ public:
     const secs_t& get_secs() const;
     const std::vector<std::pair<tcs_t *, bool>>& get_tcs_list() const;
     void* get_symbol_address(const char* const sym);
-    int set_memory_protection();
+    int set_memory_protection(bool is_after_initialization);
     int post_init_action(layout_t *start, layout_t *end, uint64_t delta);
     int post_init_action_commit(layout_t *start, layout_t *end, uint64_t delta);
 

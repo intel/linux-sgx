@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -197,7 +197,7 @@ int protected_fs_file::seek(int64_t new_offset, int origin)
 		return -1;
 	}
 
-	//if (open_mode.binary == 0 && origin != SEEK_SET)
+	//if (open_mode.binary == 0 && origin != SEEK_SET && new_offset != 0)
 	//{
 	//	last_error = EINVAL;
 	//	sgx_thread_mutex_unlock(&mutex);

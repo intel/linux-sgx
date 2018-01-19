@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -179,6 +179,14 @@ sgx_status_t SGXAPI sgx_report_attestation_status(
     int attestation_status,
     sgx_update_info_bit_t* p_update_info);
 
+/**
+ * Register white list certificate chain
+ *
+ * @param p_wl_cert_chain The white list to be registered.
+ * @param wl_cert_chain_size The size of the white list.
+ * @return If OK, return SGX_SUCCESS
+ */
+sgx_status_t SGXAPI sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_cert_chain_size);
 
 #ifdef  __cplusplus
 }

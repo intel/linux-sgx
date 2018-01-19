@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +38,10 @@
 
  /* version of metadata */
 #define MAJOR_VERSION 2                 //MAJOR_VERSION should not larger than 0ffffffff
-#define MINOR_VERSION 1                 //MINOR_VERSION should not larger than 0ffffffff
+#define MINOR_VERSION 2                 //MINOR_VERSION should not larger than 0ffffffff
+
+#define SGX_2_0_MAJOR_VERSION 2         //MAJOR_VERSION should not larger than 0ffffffff
+#define SGX_2_0_MINOR_VERSION 1         //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_1_9_MAJOR_VERSION 1         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_1_9_MINOR_VERSION 4         //MINOR_VERSION should not larger than 0ffffffff
@@ -48,9 +51,12 @@
 
 
 #define META_DATA_MAKE_VERSION(major, minor) (((uint64_t)major)<<32 | minor)
+#define MAJOR_VERSION_OF_METADATA(version) (((uint64_t)version) >> 32)
+#define MINOR_VERSION_OF_METADATA(version) (((uint64_t)version) & 0xFFFFFFFF)
+
 
 #define METADATA_MAGIC 0x86A80294635D0E4CULL
-#define METADATA_SIZE 0x3000
+#define METADATA_SIZE 0x5000
 #define TCS_TEMPLATE_SIZE 72
 
 /* TCS Policy bit masks */
@@ -165,7 +171,7 @@ typedef struct _metadata_t
     sgx_attributes_t    attributes;            /* XFeatureMask to be set in SECS. */
     enclave_css_t       enclave_css;           /* The enclave signature */
     data_directory_t    dirs[DIR_NUM];
-    uint8_t             data[10400];
+    uint8_t             data[18592];
 }metadata_t;
 
 se_static_assert(sizeof(metadata_t) == METADATA_SIZE);

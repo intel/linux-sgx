@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -54,7 +54,7 @@ def parse_cmd(argc, argv):
 	try:
 		opts, args = getopt.getopt(sys.argv[1:], "", ["bom=", "cleanup=", "deliverydir="])
 	except getopt.GetoptError as err:
-		print str(err)
+		print(str(err))
 		return False
 
 	for option, value in opts:
@@ -86,15 +86,14 @@ def parse_cmd(argc, argv):
 ################################################################################
 def copy_folder_unrecursively(src_dir, dest_dir):
 	if os.path.isdir(src_dir) == True :
-		print "Warning: The src is a folder ......"
+		print ("Warning: The src is a folder ......")
 		return False
 		
-	#print "copy" + src_dir + "->" + dest_dir
 	try:
 		shutil.copy(src_dir, dest_dir)
 		return True
 	except:
-		print "Error !!!: can't find file:" + src_dir
+		print ("Error !!!: can't find file: {}".format(src_dir))
 		return False
 
 ################################################################################
@@ -108,12 +107,11 @@ def copy_folder_recursively(src_dir, dest_dir):
 			os.makedirs(dest_dir)
 
 		for item in os.listdir(src_dir):
-			#print (os.path.join(src_dir, item)).replace("\\", "/")
 			copy_folder_recursively((os.path.join(src_dir, item)).replace("\\", "/"), (os.path.join(dest_dir, item)).replace("\\", "/"))
 			continue
 	else:
 		#copy the file
-		print "copy file from " + src_dir + " to " + dest_dir
+		print ("copy file from {0} to {1}".format(src_dir, dest_dir))
 		shutil.copyfile(src_dir, dest_dir)	
 		
 		
@@ -159,7 +157,6 @@ def copy_txt_files(local_path):
 		else:
 			src = src.replace("<deliverydir>/", deliverydir + "/")
 		dest = dest.replace("<installdir>/", local_path + "/output/")	
-		#print "copy folder from " + src + " to " + dest
 
 		if os.path.exists(src) == True:
 			#check whether the src is a folder or file
@@ -179,17 +176,17 @@ def copy_txt_files(local_path):
 			if os.path.exists(os.path.dirname(dest)) == False:
 				os.makedirs(os.path.dirname(dest))
 			if os.path.isdir(src) == False :
-				print "Error !!!: src file not exist " + src
+				print ("Error !!!: src file not exist {}".format(src))
 			else:
-				print "Error !!!: src folder not exist " + src
+				print ("Error !!!: src folder not exist {}".format(src))
 			exit(1)
 
 
 if __name__ == "__main__":
 	ret = parse_cmd(len(sys.argv), sys.argv)
 	if ret == False:
-		print "Usage:"
-		print "python gen_source.py --bom=PATH_TO_BOM [--cleanup=false] [--deliverydir=DIR_RELATIVE_TO_gen_source.py]"
+		print ("Usage:")
+		print ("python gen_source.py --bom=PATH_TO_BOM [--cleanup=false] [--deliverydir=DIR_RELATIVE_TO_gen_source.py]")
 		exit(1)
 
 	#script locate direction
@@ -200,15 +197,15 @@ if __name__ == "__main__":
 	ret = os.path.exists(local_path + "/output")
 	if ret == True:
 		if cleanup == True:
-			print "clean the dest dir"
+			print ("clean the dest dir")
 			shutil.rmtree(local_path + "/output")
 			os.mkdir(local_path + "/output")
 	else:
-		print "Create the dest dir"
+		print ("Create the dest dir")
 		os.mkdir(local_path + "/output")
 
 	#cpoy the files
 	copy_txt_files(local_path)
 	
-	print "Copy files finished ......"
+	print ("Copy files finished ......")
 	exit(0)

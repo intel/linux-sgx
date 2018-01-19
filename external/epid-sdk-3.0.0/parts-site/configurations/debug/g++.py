@@ -42,6 +42,6 @@ config.VersionRange("3-*",
                                 ],
                         CXXFLAGS=[
                             # modern C++ features support
-                            '-std=c++0x',
+                            '-std=c++11',
                         ],
                     ))

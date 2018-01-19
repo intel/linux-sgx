@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -199,7 +199,7 @@ sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms)
         }
 
         //do sgx_ecall
-        CTrustThread *trust_thread = get_tcs(proc == ECMD_INIT_ENCLAVE);
+        CTrustThread *trust_thread = get_tcs(proc);
         unsigned ret = SGX_ERROR_OUT_OF_TCS;
 
         if(NULL != trust_thread)
@@ -308,9 +308,9 @@ const debug_enclave_info_t* CEnclave::get_debug_info()
 
 
 
-CTrustThread * CEnclave::get_tcs(bool is_initialize_ecall)
+CTrustThread * CEnclave::get_tcs(int ecall_cmd)
 {
-    CTrustThread *trust_thread = m_thread_pool->acquire_thread(is_initialize_ecall);
+    CTrustThread *trust_thread = m_thread_pool->acquire_thread(ecall_cmd);
 
     return trust_thread;
 }

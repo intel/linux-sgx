@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -92,6 +92,8 @@ aesm_thread_t AESMLogic::qe_thread = NULL;
 aesm_thread_t AESMLogic::pse_thread = NULL;
 
 uint32_t AESMLogic::active_extended_epid_group_id;
+
+extern "C" bool is_in_kernel_driver();
 
 static ae_error_t read_global_extended_epid_group_id(uint32_t *xeg_id)
 {
@@ -326,6 +328,12 @@ aesm_error_t AESMLogic::white_list_register(
         AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_WL_UPDATE_FAIL]);
         return AESM_PARAMETER_ERROR;
     }
+    if (is_in_kernel_driver())
+    {
+        AESM_DBG_INFO("InKernel LE loaded");
+        return AESM_SERVICE_UNAVAILABLE;
+    }
+
     ae_error_t ae_ret = CLEClass::instance().load_enclave();
     if (AE_FAILED(ae_ret))
     {
@@ -399,6 +407,12 @@ aesm_error_t AESMLogic::get_launch_token(
         // Sizes are checked in CLEClass::get_launch_token()
         AESM_DBG_TRACE("Invalid parameter");
         return AESM_PARAMETER_ERROR;
+    }
+    if (is_in_kernel_driver())
+    {
+        //Should not be called
+        AESM_LOG_ERROR("InKernel LE loaded");
+        return AESM_SERVICE_UNAVAILABLE;
     }
     ae_error_t ae_ret = CLEClass::instance().load_enclave();
     if(ae_ret == AE_SERVER_NOT_AVAILABLE)
@@ -597,6 +611,13 @@ sgx_status_t AESMLogic::get_launch_token(const enclave_css_t* signature,
 
     ae_error_t ret_le = AE_SUCCESS;
     uint32_t mrsigner_index = UINT32_MAX;
+
+    if (is_in_kernel_driver())
+    {
+        //Should not be called
+        AESM_LOG_ERROR("InKernel LE loaded");
+        return SGX_ERROR_SERVICE_UNAVAILABLE;
+    }
     // load LE to get launch token
     if((ret_le=CLEClass::instance().load_enclave()) != AE_SUCCESS)
     {
@@ -931,6 +952,11 @@ aesm_error_t AESMLogic::get_white_list_size(
     CHECK_SERVICE_STATUS;
     AESMLogicLock lock(_le_mutex);
     CHECK_SERVICE_STATUS;
+   if (is_in_kernel_driver())
+    {
+        AESM_LOG_INFO("InKernel LE loaded");
+        return AESM_SERVICE_UNAVAILABLE;
+    }
     ae_error_t ae_ret = get_white_list_size_without_lock(white_list_cert_size);
     if (AE_SUCCESS == ae_ret)
         return AESM_SUCCESS;
@@ -949,6 +975,11 @@ aesm_error_t AESMLogic::get_white_list(
     CHECK_SERVICE_STATUS;
     AESMLogicLock lock(_le_mutex);
     CHECK_SERVICE_STATUS;
+   if (is_in_kernel_driver())
+    {
+        AESM_LOG_INFO("InKernel LE loaded");
+        return AESM_SERVICE_UNAVAILABLE;
+    }
     ae_error_t ae_ret = get_white_list_size_without_lock(&white_cert_size);
     if (AE_SUCCESS != ae_ret)
         return AESM_UNEXPECTED_ERROR;

@@ -11,6 +11,8 @@ The Linux\* Intel(R) SGX software stack is comprised of the Intel(R) SGX driver,
 
 The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. 
 
+The repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implemenation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
+
 License
 -------
 See [License.txt](License.txt) for details.
@@ -28,34 +30,43 @@ Build and Install the Intel(R) SGX Driver
 -----------------------------------------
 Follow the instructions in the [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project to build and install the Intel(R) SGX driver.
 
-**Note:** **SGX 2.0** feature support in the SDK and PSW depends on processor and driver support for the SGX 2.0 instruction set. Please consult the README in the driver for instructions on building the SGX 2.0 Linux Driver. Upcoming CPU releases will include hardware support for SGX 2.0.
-
 Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
 - Ensure that you have one of the following required operating systems:  
-  * Ubuntu\* Desktop-16.04-LTS 64bits
+  * Ubuntu\* 16.04.3 LTS Desktop 64bits
+  * Ubuntu\* 16.04.3 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * CentOS 7.3.1611 64bits
+  * CentOS 7.4.1708 64bits
+  * SUSE Linux Enterprise Server 12 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
   * On Ubuntu 16.04:
   ```
     $ sudo apt-get install build-essential ocaml automake autoconf libtool wget python
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.3:
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml wget python
+  ```
+  * On SUSE Linux Enterprise Server 12:
+  ```
+    $ sudo zypper install --type pattern devel_basis
+    $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python
   ```
 - Use the following command to install additional required tools to build the Intel(R) SGX PSW:  
   * On Ubuntu 16.04:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.3:
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
+  ```
+  * On SUSE Linux Enterprise Server 12:
+  ```
+    $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
   ```
 - Use the script ``download_prebuilt.sh`` inside source code package to download prebuilt binaries to prebuilt folder  
   You may need set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
@@ -125,18 +136,25 @@ Install the Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
-  * Ubuntu\* Desktop-16.04-LTS 64bits
+  * Ubuntu\* 16.04.3 LTS Desktop 64bits
+  * Ubuntu\* 16.04.3 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * CentOS 7.3.1611 64bits
+  * CentOS 7.4.1708 64bits
+  * SUSE Linux Enterprise Server 12 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 16.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.3:
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python 
+  ```
+  * On SUSE Linux Enterprise Server 12:
+  ```
+     $ sudo zypper install --type pattern devel_basis
+     $ sudo zypper install python 
   ```
 
 ### Install the Intel(R) SGX SDK
@@ -145,10 +163,11 @@ To install the Intel(R) SGX SDK, invoke the installer, as follows:
 $ cd linux/installer/bin
 $ ./sgx_linux_x64_sdk_${version}.bin 
 ```
-NOTE: You need to set up the needed environment variables before compiling your code. To do so, run:
-```
-   $ source ${sgx-sdk-install-path}/environment
-```
+NOTE: You need to set up the needed environment variables before compiling your code. To do so, run:  
+```  
+  $ source ${sgx-sdk-install-path}/environment  
+```  
+
 ### Test the Intel(R) SGX SDK Package with the Code Samples
 - Compile and run each code sample in Simulation mode to make sure the package works well:    
 ```
@@ -175,9 +194,11 @@ Install the Intel(R) SGX PSW
 ----------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
-  * Ubuntu\* Desktop-16.04-LTS 64bits
+  * Ubuntu\* 16.04.3 LTS Desktop 64bits
+  * Ubuntu\* 16.04.3 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * CentOS 7.3.1611 64bits
+  * CentOS 7.4.1708 64bits
+  * SUSE Linux Enterprise Server 12 64bits
 - Ensure that you have a system with the following required hardware:  
   * 6th Generation Intel(R) Core(TM) Processor or newer
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
@@ -187,9 +208,13 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.3:  
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
+  ```
+  * On SUSE Linux Enterprise Server 12:  
+  ```
+    $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
   ```
 - To use Trusted Platform Service functions:  
   Ensure `mei_me` driver is enabled and `/dev/mei0` exists.  
@@ -200,9 +225,13 @@ Install the Intel(R) SGX PSW
     $ sudo alien --scripts iclsClient-1.45.449.12-1.x86_64.rpm
     $ sudo dpkg -i iclsclient_1.45.449.12-2_amd64.deb
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.3:  
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:  
   ```
     $ sudo yum install iclsClient-1.45.449.12-1.x86_64.rpm
+  ```
+  * On SUSE Linux Enterprise Server 12:  
+  ```
+    $ sudo zypper install iclsClient-1.45.449.12-1.x86_64.rpm
   ```
   Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder, build and install the `JHI` service using the following commands:
   * On Ubuntu 16.04:
@@ -210,9 +239,14 @@ Install the Intel(R) SGX PSW
     $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config
     $ cmake .;make;sudo make install;sudo systemctl enable jhi
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.3:  
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:  
   ```
     $ sudo yum install libuuid-devel libxml2-devel cmake pkgconfig
+    $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
+  ```
+  * On SUSE Linux Enterprise Server 12:  
+  ```
+    $ sudo zypper install libuuid-devel libxml2-devel cmake pkg-config
     $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
   ```
 

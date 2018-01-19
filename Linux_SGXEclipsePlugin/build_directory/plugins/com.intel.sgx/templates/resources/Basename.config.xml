@@ -1,9 +1,14 @@
 <EnclaveConfiguration>
   <ProdID>$(ProdID)</ProdID>
   <ISVSVN>$(IsvSvn)</ISVSVN>
-  <StackMaxSize>$(ThreadStackSize)</StackMaxSize>
-  <HeapMaxSize>$(GlobalHeapSize)</HeapMaxSize>
-  <TCSNum>$(TcsNumber)</TCSNum>
+  <StackMinSize>$(StackMinSize)</StackMinSize>
+  <StackMaxSize>$(StackMaxSize)</StackMaxSize>
+  <HeapMinSize>$(HeapMinSize)</HeapMinSize>
+  <HeapInitSize>$(HeapInitSize)</HeapInitSize>
+  <HeapMaxSize>$(HeapMaxSize)</HeapMaxSize>
+  <TCSMaxNum>$(TcsMaxNum)</TCSMaxNum>
+  <TCSNum>$(TcsNum)</TCSNum>
+  <TCSMinPool>$(TcsMinPool)</TCSMinPool>
   <TCSPolicy>$(TcsPolicy)</TCSPolicy>
   <DisableDebug>$(DisableDebug)</DisableDebug>
 </EnclaveConfiguration>

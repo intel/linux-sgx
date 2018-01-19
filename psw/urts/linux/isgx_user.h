@@ -1,5 +1,27 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * This file is provided under a dual BSD/GPLv2 license.  When using or
+ * redistributing this file, you may do so under either license.
+ *
+ * GPL LICENSE SUMMARY
+ *
+ * Copyright(c) 2016 Intel Corporation.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * Contact Information:
+ * Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
+ * Intel Finland Oy - BIC 0357606-4 - Westendinkatu 7, 02160 Espoo
+ *
+ * BSD LICENSE
+ *
+ * Copyright(c) 2016 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,6 +49,12 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
+ * Authors:
+ *
+ * Jarkko Sakkinen <jarkko.sakkinen@linux.intel.com>
+ * Suresh Siddha <suresh.b.siddha@intel.com>
+ * Serge Ayoun <serge.ayoun@intel.com>
+ * Shay Katz-zamir <shay.katz-zamir@intel.com>
  */
 
 #ifndef _UAPI_ASM_X86_SGX_H
@@ -43,6 +71,8 @@
 	_IOW(SGX_MAGIC, 0x01, struct sgx_enclave_add_page)
 #define SGX_IOC_ENCLAVE_INIT \
 	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init)
+#define SGX_IOC_ENCLAVE_INIT_IN_KERNEL \
+	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init_in_kernel)
 #define SGX_IOC_ENCLAVE_EMODPR \
 	_IOW(SGX_MAGIC, 0x09, struct sgx_modification_param)
 #define SGX_IOC_ENCLAVE_MKTCS \
@@ -119,6 +149,17 @@ struct sgx_enclave_init {
 	__u64	sigstruct;
 	__u64	einittoken;
 } __attribute__((packed));
+
+/**
+ * struct sgx_enclave_init_in_kernel - parameter structure for the in-kernel
+ *                           %SGX_IOC_ENCLAVE_INIT ioctl
+ * @addr:	address in the ELRANGE
+ * @sigstruct:	address for the page data
+ */
+struct sgx_enclave_init_in_kernel {
+	__u64	addr;
+	__u64	sigstruct;
+};
 
 struct sgx_enclave_destroy {
 	__u64	addr;

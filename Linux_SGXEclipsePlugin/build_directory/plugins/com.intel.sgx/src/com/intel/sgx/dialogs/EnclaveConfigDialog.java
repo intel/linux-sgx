@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2016 Intel Corporation.				 //
+// Copyright (c) 2018 Intel Corporation.				 //
 // 									 //
 // All rights reserved. This program and the accompanying materials	 //
 // are made available under the terms of the Eclipse Public License v1.0 //
@@ -42,9 +42,14 @@ public class EnclaveConfigDialog extends SGXDialogBase {
 	private Label statusLabel;
 	private Text prodID;
 	private Text isvSvn;
-	private Text threadStackSize;
-	private Text globalHeapSize;
+	private Text stackMinSize;
+	private Text stackMaxSize;
+	private Text heapMinSize;
+	private Text heapInitSize;
+	private Text heapMaxSize;
 	private Text tcsNum;
+	private Text tcsMaxNum;
+	private Text tcsPool;
 	private Combo tcsPolicy;
 	private Button disableDebug;
 	
@@ -119,59 +124,123 @@ public class EnclaveConfigDialog extends SGXDialogBase {
 		});
 		
 		final Label messageLabel2 = new Label(groupLabel2, SWT.NONE);
-		messageLabel2.setText("Thread Stack Size:");
+		messageLabel2.setText("Minimum Stack Size:");
 		messageLabel2.setLayoutData(new GridData(GridData.BEGINNING));
 		
-		threadStackSize = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);
-		threadStackSize.setLayoutData(gridData);
-		threadStackSize.setText(enclaveConfig.threadStackSize);
-		threadStackSize.addModifyListener(new ModifyListener() {
+		stackMinSize = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);
+		stackMinSize.setLayoutData(gridData);
+		stackMinSize.setText(enclaveConfig.stackMinSize);
+		stackMinSize.addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent modifyEvent) {
-				enclaveConfig.threadStackSize = threadStackSize.getText();
-				if(!(threadStackSize.getText().matches("0x[0-9a-fA-F]{1,}000")))
+				enclaveConfig.stackMinSize = stackMinSize.getText();
+
+				if(!(stackMinSize.getText().matches("0x[0-9a-fA-F]{1,}000")))
 				{
-					statusLabel.setText("Error: The Thread Stack Size value must be Page Aligned.");
+					statusLabel.setText("Error: The Minimum Stack Size value must be Page Aligned.");
 				}
 				else
 				{
-					if(!(enclaveConfig.globalHeapSize.matches("0x[0-9a-fA-F]{1,}000")))
-						statusLabel.setText("Error: The Global Heap Size value must be Page Aligned.");
-					else
-						statusLabel.setText("");
+					checkPageAlign(stackMinSize);
 				}
 			}
 		});
-		
+
 		final Label messageLabel3 = new Label(groupLabel2, SWT.NONE);
-		messageLabel3.setText("Global Heap Size:");
+		messageLabel3.setText("Maximum Stack Size:");
 		messageLabel3.setLayoutData(new GridData(GridData.BEGINNING));
 		
-		globalHeapSize = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);
-		globalHeapSize.setLayoutData(gridData);
-		globalHeapSize.setText(enclaveConfig.globalHeapSize);
-		globalHeapSize.addModifyListener(new ModifyListener() {
+		stackMaxSize = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);
+		stackMaxSize.setLayoutData(gridData);
+		stackMaxSize.setText(enclaveConfig.stackMaxSize);
+		stackMaxSize.addModifyListener(new ModifyListener() {
 			@Override
 			public void modifyText(ModifyEvent modifyEvent) {
-				enclaveConfig.globalHeapSize = globalHeapSize.getText();
-				if(!(globalHeapSize.getText().matches("0x[0-9a-fA-F]{1,}000")))
+				enclaveConfig.stackMaxSize = stackMaxSize.getText();
+
+				if(!(stackMaxSize.getText().matches("0x[0-9a-fA-F]{1,}000")))
 				{
-					statusLabel.setText("Error: The Global Heap Size value must be Page Aligned.");
+					statusLabel.setText("Error: The Maximum Stack Size value must be Page Aligned.");
 				}
 				else
 				{
-					if(!(enclaveConfig.threadStackSize.matches("0x[0-9a-fA-F]{1,}000")))
-						statusLabel.setText("Error: The Thread Stack Size value must be Page Aligned.");
-					else
-						statusLabel.setText("");
-					
+					checkPageAlign(stackMaxSize);
+				}
+			}
+		});
+
+		final Label messageLabel4 = new Label(groupLabel2, SWT.NONE);
+		messageLabel4.setText("Minimum Heap Size:");
+		messageLabel4.setLayoutData(new GridData(GridData.BEGINNING));
+		
+		heapMinSize = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);
+		heapMinSize.setLayoutData(gridData);
+		heapMinSize.setText(enclaveConfig.heapMinSize);
+		heapMinSize.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent modifyEvent) {
+				enclaveConfig.heapMinSize = heapMinSize.getText();
+
+				if(!(heapMinSize.getText().matches("0x[0-9a-fA-F]{1,}000")))
+				{
+					statusLabel.setText("Error: The Minimum Heap Size value must be Page Aligned.");
+				}
+				else
+				{
+					checkPageAlign(heapMinSize);
+				}
+			}
+		});
+
+		final Label messageLabel5 = new Label(groupLabel2, SWT.NONE);
+		messageLabel5.setText("Initial Heap Size:");
+		messageLabel5.setLayoutData(new GridData(GridData.BEGINNING));
+		
+		heapInitSize = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);
+		heapInitSize.setLayoutData(gridData);
+		heapInitSize.setText(enclaveConfig.heapInitSize);
+		heapInitSize.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent modifyEvent) {
+				enclaveConfig.heapInitSize = heapInitSize.getText();
+
+				if(!(heapInitSize.getText().matches("0x[0-9a-fA-F]{1,}000")))
+				{
+					statusLabel.setText("Error: The Initial Heap Size value must be Page Aligned.");
+				}
+				else
+				{
+					checkPageAlign(heapInitSize);
 				}
 			}
 		});
 		
-		final Label messageLabel4 = new Label(groupLabel2, SWT.NONE);
-		messageLabel4.setText("TCS Number:");
-		messageLabel4.setLayoutData(new GridData(GridData.BEGINNING));
+		final Label messageLabel6 = new Label(groupLabel2, SWT.NONE);
+		messageLabel6.setText("Maximum Heap Size:");
+		messageLabel6.setLayoutData(new GridData(GridData.BEGINNING));
+		
+		heapMaxSize = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);
+		heapMaxSize.setLayoutData(gridData);
+		heapMaxSize.setText(enclaveConfig.heapMaxSize);
+		heapMaxSize.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent modifyEvent) {
+				enclaveConfig.heapMaxSize = heapMaxSize.getText();
+
+				if(!(heapMaxSize.getText().matches("0x[0-9a-fA-F]{1,}000")))
+				{
+					statusLabel.setText("Error: The Maximum Heap Size value must be Page Aligned.");
+				}
+				else
+				{
+					checkPageAlign(heapMaxSize);
+				}
+			}
+		});
+		
+		final Label messageLabel7 = new Label(groupLabel2, SWT.NONE);
+		messageLabel7.setText("TCS Number:");
+		messageLabel7.setLayoutData(new GridData(GridData.BEGINNING));
 		
 		tcsNum = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);	
 		tcsNum.setLayoutData(gridData);
@@ -184,9 +253,39 @@ public class EnclaveConfigDialog extends SGXDialogBase {
 			}
 		});
 		
-		final Label messageLabel5 = new Label(groupLabel2, SWT.NONE);
-		messageLabel5.setText("TCS Policy:");
-		messageLabel5.setLayoutData(new GridData(GridData.BEGINNING));
+		final Label messageLabel8 = new Label(groupLabel2, SWT.NONE);
+		messageLabel8.setText("Maximum TCS Number:");
+		messageLabel8.setLayoutData(new GridData(GridData.BEGINNING));
+		
+		tcsMaxNum = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);	
+		tcsMaxNum.setLayoutData(gridData);
+		tcsMaxNum.setText(enclaveConfig.tcsMaxNum);
+		tcsMaxNum.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent modifyEvent) {
+				statusLabel.setText("");
+				enclaveConfig.tcsMaxNum = tcsMaxNum.getText();
+			}
+		});
+		
+		final Label messageLabel9 = new Label(groupLabel2, SWT.NONE);
+		messageLabel9.setText("TCS Pool:");
+		messageLabel9.setLayoutData(new GridData(GridData.BEGINNING));
+		
+		tcsPool = new Text(groupLabel2, SWT.SINGLE | SWT.BORDER);	
+		tcsPool.setLayoutData(gridData);
+		tcsPool.setText(enclaveConfig.tcsPool);
+		tcsPool.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent modifyEvent) {
+				statusLabel.setText("");
+				enclaveConfig.tcsPool = tcsPool.getText();
+			}
+		});
+		
+		final Label messageLabel10 = new Label(groupLabel2, SWT.NONE);
+		messageLabel10.setText("TCS Policy:");
+		messageLabel10.setLayoutData(new GridData(GridData.BEGINNING));
 		
 		final String[] items = {"Unbound","Bound"};
 		tcsPolicy = new Combo(groupLabel2, SWT.DROP_DOWN | SWT.READ_ONLY | SWT.BORDER);
@@ -203,9 +302,9 @@ public class EnclaveConfigDialog extends SGXDialogBase {
 		});
 		
 		
-		final Label messageLabel6 = new Label(groupLabel2, SWT.NONE);
-		messageLabel6.setText("Disable Debug:");
-		messageLabel6.setLayoutData(new GridData(GridData.BEGINNING));
+		final Label messageLabel11 = new Label(groupLabel2, SWT.NONE);
+		messageLabel11.setText("Disable Debug:");
+		messageLabel11.setLayoutData(new GridData(GridData.BEGINNING));
 		
 		disableDebug = new Button(groupLabel2,SWT.CHECK);
 		GridData gridData1 = new GridData(GridData.FILL_HORIZONTAL);
@@ -236,7 +335,7 @@ public class EnclaveConfigDialog extends SGXDialogBase {
 	
 	@Override
 	protected Point getInitialSize(){
-		return new Point(450,400);
+		return new Point(450,570);
 	}
 	
 	@Override
@@ -244,14 +343,50 @@ public class EnclaveConfigDialog extends SGXDialogBase {
 	void okPressed(){
 		enclaveConfig.prodId = this.prodID.getText();
 		enclaveConfig.isvSvn = this.isvSvn.getText();
-		enclaveConfig.threadStackSize = this.threadStackSize.getText();
-		enclaveConfig.globalHeapSize = this.globalHeapSize.getText();
+		enclaveConfig.stackMinSize = this.stackMinSize.getText();
+		enclaveConfig.stackMaxSize = this.stackMaxSize.getText();
+		enclaveConfig.heapMinSize = this.heapMinSize.getText();
+		enclaveConfig.heapInitSize = this.heapInitSize.getText();
+		enclaveConfig.heapMaxSize = this.heapMaxSize.getText();
 		enclaveConfig.tcsNum =  this.tcsNum.getText();
+		enclaveConfig.tcsMaxNum =  this.tcsMaxNum.getText();
+		enclaveConfig.tcsPool =  this.tcsPool.getText();
 		enclaveConfig.tcsPolicy = this.tcsPolicy.getSelectionIndex() == 0 ? "0" : "1";
 		enclaveConfig.disableDebug = disableDebug.getSelection()?"1":"0";
 
 		
-		if((statusLabel.getText() == "") && (enclaveConfig.globalHeapSize.matches("0x[0-9a-fA-F]{1,}000")) && (enclaveConfig.threadStackSize.matches("0x[0-9a-fA-F]{1,}000")))
+		if((statusLabel.getText() == "") && (enclaveConfig.stackMinSize.matches("0x[0-9a-fA-F]{1,}000"))
+				&& (enclaveConfig.stackMaxSize.matches("0x[0-9a-fA-F]{1,}000"))
+				&& (enclaveConfig.heapMinSize.matches("0x[0-9a-fA-F]{1,}000"))
+				&& (enclaveConfig.heapInitSize.matches("0x[0-9a-fA-F]{1,}000"))
+				&& (enclaveConfig.heapMaxSize.matches("0x[0-9a-fA-F]{1,}000")))
 			super.okPressed();
+	}
+	
+	private void checkPageAlign(Text txtExcluded) {
+		if(txtExcluded != stackMinSize && !(enclaveConfig.stackMinSize.matches("0x[0-9a-fA-F]{1,}000")))
+		{
+			statusLabel.setText("Error: The Minimum Stack Size value must be Page Aligned.");
+		}
+		else if(txtExcluded != stackMaxSize && !(enclaveConfig.stackMaxSize.matches("0x[0-9a-fA-F]{1,}000")))
+		{
+			statusLabel.setText("Error: The Maximum Stack Size value must be Page Aligned.");
+		}
+		else if(txtExcluded != heapMinSize && !(enclaveConfig.heapMinSize.matches("0x[0-9a-fA-F]{1,}000")))
+		{
+			statusLabel.setText("Error: The Minimum Heap Size value must be Page Aligned.");
+		}
+		else if(txtExcluded != heapInitSize && !(enclaveConfig.heapInitSize.matches("0x[0-9a-fA-F]{1,}000")))
+		{
+			statusLabel.setText("Error: The Initial Heap Size value must be Page Aligned.");
+		}
+		else if(txtExcluded != heapMaxSize && !(enclaveConfig.heapMaxSize.matches("0x[0-9a-fA-F]{1,}000")))
+		{
+			statusLabel.setText("Error: The Maximum Heap Size value must be Page Aligned.");
+		}
+		else
+		{
+			statusLabel.setText("");
+		}
 	}
 }

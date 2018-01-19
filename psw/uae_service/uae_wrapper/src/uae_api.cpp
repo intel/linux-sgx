@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -59,6 +59,9 @@
 
 #include <AESGXSwitchExtendedEpidGroupRequest.h>
 #include <AESGXSwitchExtendedEpidGroupResponse.h>
+
+#include <AESGXRegisterRequest.h>
+#include <AESGXRegisterResponse.h>
 ////////THE COMMON STUFF aka INTEGRATION with Linux API
 #include <sgx_report.h>
 #include <arch.h>
@@ -317,4 +320,25 @@ uae_oal_status_t oal_switch_extended_epid_group(uint32_t x_group_id, uint32_t ti
     });
 }
 
+extern "C"
+uae_oal_status_t oal_register_common(uint8_t* buf, uint32_t buf_size, uint32_t data_type, uint32_t timeout_usec, aesm_error_t *result)
+{
+    TRY_CATCH_BAD_ALLOC({
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
+
+        AESGXRegisterRequest sgxRegisterRequest(buf_size, buf, data_type, timeout_usec / 1000);
+
+        AESGXRegisterResponse sgxRegisterResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&sgxRegisterRequest, &sgxRegisterResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = sgxRegisterResponse.GetValues((uint32_t*)result);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
+}
 

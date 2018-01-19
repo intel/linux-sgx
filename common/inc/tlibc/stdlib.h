@@ -43,19 +43,12 @@
 typedef __size_t    size_t;
 #endif
 
-#ifdef _TLIBC_WIN_
-#if !defined(_WCHAR_T_DEFINED) && !defined (_NATIVE_WCHAR_T_DEFINED)
-#define _WCHAR_T_DEFINED
-typedef unsigned short  wchar_t;
-#endif
-#else
 #if !defined(_WCHAR_T_DEFINED_) && !defined(__cplusplus)
 #define _WCHAR_T_DEFINED_
 #ifndef __WCHAR_TYPE__
 #define __WCHAR_TYPE__ int
 #endif
 typedef __WCHAR_TYPE__ wchar_t;
-#endif
 #endif
 
 #ifndef _DIV_T_DEFINED

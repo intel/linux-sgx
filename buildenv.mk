@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -83,6 +83,14 @@ endif
 
 ifdef SE_SIM
     COMMON_FLAGS += -DSE_SIM
+endif
+
+# Disable ref-LE build by default.
+# Users could enable the ref-LE build 
+# by explicitly specifying 'BUILD_REF_LE=1'
+BUILD_REF_LE ?= 0
+ifeq ($(BUILD_REF_LE), 1)
+    COMMON_FLAGS += -DREF_LE
 endif
 
 COMMON_FLAGS += -ffunction-sections -fdata-sections

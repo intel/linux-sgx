@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2016 Intel Corporation.				 //
+// Copyright (c) 2018 Intel Corporation.				 //
 // 									 //
 // All rights reserved. This program and the accompanying materials	 //
 // are made available under the terms of the Eclipse Public License v1.0 //
@@ -46,9 +46,14 @@ public class EnclaveConfigHandler extends SGXHandler {
 
 	public String prodId;
 	public String isvSvn;
-	public String threadStackSize;
-	public String globalHeapSize;
+	public String stackMinSize;
+	public String stackMaxSize;
+	public String heapMinSize;
+	public String heapInitSize;
+	public String heapMaxSize;
 	public String tcsNum;
+	public String tcsMaxNum;
+	public String tcsPool;
 	public String tcsPolicy;
 	public String disableDebug;
 	private IFile configPath;
@@ -93,9 +98,14 @@ public class EnclaveConfigHandler extends SGXHandler {
 		valueStore.put("configFile", configPath.getProjectRelativePath().toOSString());
 		valueStore.put("ProdID", this.prodId);
 		valueStore.put("IsvSvn", this.isvSvn);
-		valueStore.put("ThreadStackSize", this.threadStackSize);
-		valueStore.put("GlobalHeapSize", this.globalHeapSize);
-		valueStore.put("TcsNumber", this.tcsNum);
+		valueStore.put("StackMinSize", this.stackMinSize);
+		valueStore.put("StackMaxSize", this.stackMaxSize);
+		valueStore.put("HeapMinSize", this.heapMinSize);
+		valueStore.put("HeapInitSize", this.heapInitSize);
+		valueStore.put("HeapMaxSize", this.heapMaxSize);
+		valueStore.put("TcsNum", this.tcsNum);
+		valueStore.put("TcsMaxNum", this.tcsMaxNum);
+		valueStore.put("TcsMinPool", this.tcsPool);
 		valueStore.put("TcsPolicy", this.tcsPolicy);
 		valueStore.put("DisableDebug", this.disableDebug);
 		IStatus[] result = template.executeTemplateProcesses(monitor, true);
@@ -126,11 +136,21 @@ public class EnclaveConfigHandler extends SGXHandler {
 						.getTextContent();
 				this.isvSvn = e.getElementsByTagName("ISVSVN").item(0)
 						.getTextContent();
-				this.threadStackSize = e.getElementsByTagName("StackMaxSize")
+				this.stackMinSize = e.getElementsByTagName("StackMinSize")
 						.item(0).getTextContent();
-				this.globalHeapSize = e.getElementsByTagName("HeapMaxSize")
+				this.stackMaxSize = e.getElementsByTagName("StackMaxSize")
+						.item(0).getTextContent();
+				this.heapMinSize = e.getElementsByTagName("HeapMinSize")
+						.item(0).getTextContent();
+				this.heapInitSize = e.getElementsByTagName("HeapInitSize")
+						.item(0).getTextContent();
+				this.heapMaxSize = e.getElementsByTagName("HeapMaxSize")
 						.item(0).getTextContent();
 				this.tcsNum = e.getElementsByTagName("TCSNum").item(0)
+						.getTextContent();
+				this.tcsMaxNum = e.getElementsByTagName("TCSMaxNum").item(0)
+						.getTextContent();
+				this.tcsPool = e.getElementsByTagName("TCSMinPool").item(0)
 						.getTextContent();
 				this.tcsPolicy = e.getElementsByTagName("TCSPolicy").item(0)
 						.getTextContent();

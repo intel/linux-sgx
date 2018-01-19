@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,7 +53,11 @@ SYNTHETIC_STATE[SYNTHETIC_STATE_SIZE/sizeof(uint32_t)] = {
     0, 0, 0, 0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // XCOMP_BV[63] = 1, compaction mode
 };
 
-int g_xsave_enabled;             // flag to indicate whether xsave is enabled or not
+int g_xsave_enabled = 0;         // flag to indicate whether xsave is enabled or not
+#ifdef SE_SIM
+uint32_t g_xsave_mask_high = 0xFFFFFFFF;
+uint32_t g_xsave_mask_low = 0xFFFFFFFF;
+#endif
 
 // EENTER will set xcr0 with secs.attr.xfrm, 
 // So use the xfeature mask from report instead of calling xgetbv
@@ -66,13 +70,15 @@ int g_xsave_enabled;             // flag to indicate whether xsave is enabled or
 SE_OPTIMIZE_OFF
 uint64_t get_xfeature_state()
 {
-    assert (REPORT_ALIGN_SIZE >= REPORT_DATA_ALIGN_SIZE);
-    assert (REPORT_ALIGN_SIZE >= TARGET_INFO_ALIGN_SIZE);
+    se_static_assert (REPORT_ALIGN_SIZE >= REPORT_DATA_ALIGN_SIZE);
+    se_static_assert (REPORT_ALIGN_SIZE >= TARGET_INFO_ALIGN_SIZE);
+    se_static_assert (sizeof(sgx_target_info_t) >= sizeof(sgx_report_t));
+    se_static_assert (sizeof(sgx_report_t) >= sizeof(sgx_report_data_t));
 
     // target_info and report_data are useless
     // we only need to make sure their alignment and within enclave
-    uint8_t buffer[sizeof(sgx_report_t) + REPORT_ALIGN_SIZE -1];
-    for(size_t i=0; i< sizeof(sgx_report_t) + REPORT_ALIGN_SIZE -1; i++)
+    uint8_t buffer[ROUND_TO(sizeof(sgx_report_t), REPORT_ALIGN_SIZE) + REPORT_ALIGN_SIZE - 1];
+    for(size_t i=0; i< ROUND_TO(sizeof(sgx_report_t), REPORT_ALIGN_SIZE) + REPORT_ALIGN_SIZE - 1; i++)
     {
         buffer[i] = 0;
     }
@@ -85,6 +91,10 @@ uint64_t get_xfeature_state()
 
     g_xsave_enabled = (report->body.attributes.xfrm == SGX_XFRM_LEGACY) ? 0 : 1;
     uint64_t xfrm = report->body.attributes.xfrm;
+#ifdef SE_SIM
+    g_xsave_mask_high = (uint32_t)(xfrm >> 32);
+    g_xsave_mask_low = (uint32_t)(xfrm & 0xFFFFFFFF);
+#endif
 
     // no secrets in target_info, report_data, and report. no need to clear them before return
     // tlibc functions cannot be used before calling init_optimized_libs().

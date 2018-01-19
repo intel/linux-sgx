@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,28 +44,13 @@
 #endif
 
 #ifndef X509_FOR_PSE_PR
-#ifdef WIN_TEST
-#include <crypt_data_gen.h>
-#include "special_defs.h"
-#include <openssl/rsa.h>
-#include <openssl/sha.h>
-#include <openssl/hmac.h>
-#include <openssl/aes.h>
-#include <openssl/pem.h>
-#include <openssl/x509.h>
-#include <openssl/objects.h>
 
-extern HANDLE hConsole;
-#endif
-
-#ifndef WIN_TEST
 #include "MeTypes.h"
 #include "SessMgrCommonDefs.h"
 #include "le2be_macros.h"
 #include "CryptoDefs.h"
 #include "romapi/romapi_rsa.h"
 #include "TimeSrv.h"
-#endif
 #endif  // #ifndef X509_FOR_PSE_PR
 
 #ifdef X509_FOR_PSE_PR
@@ -555,9 +540,6 @@ STATUS ParseCertificateChain(UINT8 *pCertChain,
             CertLevel = leaf;
         }
 
-#ifdef WIN_TEST
-        printf(" \n Max Chain Length %d \n",MaxChainLengthAllowed);
-#endif
 
         // Check Basic Constraints Compliance
         if(MaxChainLengthAllowed <= 0 && CertLevel != leaf){
@@ -730,12 +712,6 @@ STATUS VerifyOcspRevocationStatus(SessMgrCertificateFields* certificateFields,
         break;
     }
 
-#ifdef WIN_TEST
-    if(VerificationStatus == X509_STATUS_SUCCESS)
-        printf("Ocsp revocation check passed ");
-    else
-        printf("\n OCSP revocation check failed ");
-#endif
 
     DBG_ASSERT(VerificationStatus == X509_STATUS_SUCCESS);
 
@@ -749,10 +725,8 @@ STATUS VerifyOcspRevocationStatus(SessMgrCertificateFields* certificateFields,
 This function will accept the algorithm and the keys as a void pointer and will verify the keys accordingly.
 */
 
-#ifndef WIN_TEST
 #define SESSMGR_RSA_WORK_BUFFER_SIZE (ROM_RSA_WIN_EXP_1_BUFFER_SIZE + 2*(RSA_KEY_SIZE_2048_BYTES))
 UINT8 RsaWorkBuffer[SESSMGR_RSA_WORK_BUFFER_SIZE];
-#endif
 #endif  // #ifndef X509_FOR_PSE_PR
 
 
@@ -762,19 +736,11 @@ STATUS VerifySignature(const ISSUER_INFO *IssuerInfo, const SessMgrDataBuffer *M
 #ifdef X509_FOR_PSE_PR
     BOOL VerifRes = FALSE;
 #else
-#ifdef WIN_TEST
-    CdgStatus Cstatus;
-    CdgResult CResult;
-    RSA *RsaKey;
-    UINT8 Hash[32];
-    int HashType;
-#else
     BOOL VerifRes = FALSE;
     SessMgrDataBuffer LocalSignBuffer;
     SessMgrDataBuffer LocalMsgBuffer;
     ROM_RSA_DATA_BUFFER workBuffer;
     ROM_RSA_VERIFY_PARAMS RsaVerifyParams;
-#endif
 
     UINT8 RsaEBuffer[RSA_E_SIZE] = {0, 0 ,0 ,0};
     UINT8 RsaNBuffer[RSA_KEY_SIZE_2048_BYTES] = {0};
@@ -805,7 +771,6 @@ STATUS VerifySignature(const ISSUER_INFO *IssuerInfo, const SessMgrDataBuffer *M
             SESSMGR_MEMCPY_S(EcdsaKey.px, sizeof(EcdsaKey.px), PublicKeyFromCert->px, 32);
             SESSMGR_MEMCPY_S(EcdsaKey.py, sizeof(EcdsaKey.py), PublicKeyFromCert->py, 32);
 
-#ifndef WIN_TEST
 
             // Allocate DWORD aligned local buffers for Signature and Msg.
 
@@ -871,29 +836,6 @@ STATUS VerifySignature(const ISSUER_INFO *IssuerInfo, const SessMgrDataBuffer *M
             SwapEndian_32B(g3point->y);
             SwapEndian_32B((reinterpret_cast<G3Point*>(SignBuffer->buffer))->x);
             SwapEndian_32B((reinterpret_cast<G3Point*>(SignBuffer->buffer))->y);
-#else
-            Cstatus =  MessageVerify( (unsigned char *)&EcdsaKey,
-                sizeof(EcdsaKey),
-                MsgBuffer->buffer,
-                MsgBuffer->length,
-                SignBuffer->buffer,
-                SignBuffer->length,
-                &CResult);
-#ifdef TEMP_DISABLE_ECDSA_CHECK
-            Status = X509_STATUS_SUCCESS;
-#else
-
-            if(CResult != CdgValid) {
-                DBG_ASSERT(0);
-                return X509_INVALID_SIGNATURE;
-            }
-            Status = X509_STATUS_SUCCESS;
-#endif
-
-            SetConsoleTextAttribute(hConsole, 11);
-            printf("\n Signature Verified ");
-            SetConsoleTextAttribute(hConsole, 8);
-#endif
             break;
 
         case X509_sha1withRSAEncryption:
@@ -912,7 +854,6 @@ STATUS VerifySignature(const ISSUER_INFO *IssuerInfo, const SessMgrDataBuffer *M
             RsaKeyFromCert->n.buffer = RsaNBuffer;
             RsaKeyFromCert->n.length = RSA_KEY_SIZE_2048_BYTES;
 
-#ifndef WIN_TEST
             workBuffer.length = SESSMGR_RSA_WORK_BUFFER_SIZE;
             workBuffer.buffer = RsaWorkBuffer;
 
@@ -957,56 +898,6 @@ STATUS VerifySignature(const ISSUER_INFO *IssuerInfo, const SessMgrDataBuffer *M
                 return X509_INVALID_SIGNATURE;
             }
 
-#else
-
-
-            if(IssuerInfo->AlgoType == sha1withRSAEncryption){
-                HashType = NID_sha1;
-                hashSize = 20;
-            }
-            else if(IssuerInfo->AlgoType == sha256WithRSAEncryption){
-                HashType = NID_sha256;
-                hashSize = 32;
-            }
-            else{
-                DBG_ASSERT(0);
-                return X509_STATUS_UNSUPPORTED_ALGORITHM;
-            }
-
-            if(HashType == NID_sha1){
-                SHA1(MsgBuffer->buffer, MsgBuffer->length, Hash);
-            }else if(HashType == NID_sha256){
-                SHA256(MsgBuffer->buffer, MsgBuffer->length, Hash);
-            }else{
-                DBG_ASSERT(0);
-                return X509_STATUS_UNSUPPORTED_ALGORITHM;
-            }
-
-            /* copy key from cert to a local buffer */
-            //       memcpy(RsaKey.Ebuffer, RsaKeyFromCert->e.buffer, RsaKeyFromCert->e.length);
-            //       memcpy(RsaKey.Nbuffer, RsaKeyFromCert->n.buffer, RsaKeyFromCert->n.length);
-
-            //       RsaKeyBuffers.e.buffer = RsaKey.Ebuffer;
-            //       RsaKeyBuffers.e.length = RSA_E_SIZE;
-
-            //       RsaKeyBuffers.n.buffer = RsaKey.Nbuffer;
-            //       RsaKeyBuffers.n.length = RSA_KEY_SIZE_2048_BYTES;
-
-            RsaKey = RSA_new();
-            RsaKey->e= BN_bin2bn((UINT8*)RsaKeyFromCert->e.buffer,RsaKeyFromCert->e.length,RsaKey->e);
-            RsaKey->n= BN_bin2bn((UINT8*)RsaKeyFromCert->n.buffer,RsaKeyFromCert->n.length, RsaKey->n);
-
-            Status = RSA_verify(HashType,
-                Hash, hashSize,
-                SignBuffer->buffer, SignBuffer->length,
-                RsaKey);
-            if(Status != 1){
-                DBG_ASSERT(0);
-                return X509_INVALID_SIGNATURE;
-            }
-
-            Status = X509_STATUS_SUCCESS;
-#endif
 #endif  // #ifdef X509_FOR_PSE_PR
 
             break;
@@ -1080,7 +971,6 @@ STATUS VerifyOcspResponseAttributes(Uint8* OcspRespBuffer, SessMgrOcspResponseFi
 
         // Verify Nonce only on Signed FW.
 #ifndef _WIN32_DEVPLATFORM
-#ifndef WIN_TEST
 #ifndef X509_FOR_PSE_PR
         if(!(gManifestDataPtr->ManifestHeader.manifestFlags.r.debugManifest)){
 #endif
@@ -1102,7 +992,6 @@ STATUS VerifyOcspResponseAttributes(Uint8* OcspRespBuffer, SessMgrOcspResponseFi
             }
 #ifndef X509_FOR_PSE_PR
         }
-#endif
 #endif
 #endif
 
@@ -1144,7 +1033,6 @@ STATUS VerifyOcspResponseAttributes(Uint8* OcspRespBuffer, SessMgrOcspResponseFi
             }
         }
 
-#ifndef WIN_TEST
         // We have verified the OCSP response. See if we have trusted time. Else provision it.
         if(OcspReqType == NON_CACHED){
             Status = StoreTrustedTime(ocspResponseFields->producedAt);
@@ -1162,7 +1050,6 @@ STATUS VerifyOcspResponseAttributes(Uint8* OcspRespBuffer, SessMgrOcspResponseFi
                 break;
             }
         }
-#endif
 
 #ifdef PRINT
         printf("\nOcsp response signature verified ");
@@ -1207,7 +1094,6 @@ STATUS VerifyBasicCertificateAttributes(const Uint8* certificateDerEncoded, cons
     /* Chicken and Egg problem: we get trusted time from OCSP. How do we check validity of OCSP responder certificate?
     Solution : Intel signs the OCSP responder cert and EPID group certs. its valid for a really long time. So for these
     certs, dont check validity.*/
-#ifndef WIN_TEST
     if((CertType !=  EpidGroupCertificate) && (CertType != OcspResponderCertificate)){
         Status = VerifyValidity(certificateFields->notValidBeforeTime, certificateFields->notValidAfterTime);
         if(Status != X509_STATUS_SUCCESS){
@@ -1215,7 +1101,6 @@ STATUS VerifyBasicCertificateAttributes(const Uint8* certificateDerEncoded, cons
             return X509_STATUS_EXPIRED_CERTIFICATE;
         }
     }
-#endif
 
     Status = VerifySignature(IssuerInfo, &certificateFields->messageBuffer, &certificateFields->signatureBuffer, UseFacsimileEpid);
     if(Status != X509_STATUS_SUCCESS){
@@ -1442,7 +1327,6 @@ static BOOL VerifySha1Hash(SessMgrDataBuffer *HashData, UINT8 *Expectedhash, UIN
 
 #ifndef X509_FOR_PSE_PR  //NRG: not validating time in enclave
 
-#ifndef WIN_TEST
 STATUS VerifyValidity(SessMgrDateTime notValidBeforeTime, SessMgrDateTime NotValidAfterTime)
 {
 
@@ -1538,7 +1422,6 @@ STATUS VerifyOcspCachedResponseValidity(SessMgrOcspResponseFields *OcspResponseF
     return X509_STATUS_SUCCESS;
 }
 
-#endif
 
 #endif // #ifndef X509_FOR_PSE_PR
 
@@ -1794,11 +1677,6 @@ STATUS sessMgrParseOcspResponse
     UINT8 EncodingBytes;
     UINT32 padding;
 
-#ifdef WIN_TEST
-    SetConsoleTextAttribute(hConsole, 4);
-    printf("\n \n *************** Parsing OCSP response ***************** \n \n");
-    SetConsoleTextAttribute(hConsole, 8);
-#endif
 
     /* Ocsp response is a SEQ { responseStatus, response bytes }*/
     do{
@@ -3634,7 +3512,6 @@ static STATUS ParseIdAndLength(UINT8 **ppCurrent, UINT8 *pEnd, UINT8 ExpectedId,
 }
 
 #ifndef X509_FOR_PSE_PR
-#ifndef WIN_TEST
 /*
 * This function expects the trusted time to be available from the OCSP parsing and stored in the SessMgrCtx.
 * This call is protected by the Mutex we acquire when we get the ProcessS2GetS3 call.
@@ -3719,6 +3596,5 @@ STATUS ConvertTimeToNtp(SessMgrDateTime Time, NTP_TIMESTAMP *NtpTime)
 
     return STATUS_SUCCESS;
 }
-#endif
 #endif  // #ifndef X509_FOR_PSE_PR
 

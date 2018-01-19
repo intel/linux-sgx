@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,13 +29,47 @@
  *
  */
 
-
-
 #include "se_cpu_feature_defs.h"
 #include "se_types.h"
 #include "cpu_features.h"
 
-void get_cpu_features(uint64_t *__intel_cpu_feature_indicator)
+
+// Initialize cpuid leaves for FIPS capable OpenSSL
+//-------------------------------------------------
+extern void init_cpuinfo(uint32_t *cpuinfo_table)
+{
+	// Leaf 0
+	sgx_cpuid(0, 
+    		cpuinfo_table,
+		cpuinfo_table + 1,
+		cpuinfo_table + 2,
+		cpuinfo_table + 3);
+
+	// Leaf 1
+	sgx_cpuid(1,
+		cpuinfo_table + 4,
+		cpuinfo_table + 4 + 1,
+		cpuinfo_table + 4 + 2,
+		cpuinfo_table + 4 + 3);
+
+	// Leaf 4
+	sgx_cpuid(4,
+       		cpuinfo_table + 4*4,
+		cpuinfo_table + 4*4 + 1,
+		cpuinfo_table + 4*4 + 2,
+		cpuinfo_table + 4*4 + 3);
+
+	// Leaf 7
+	sgx_cpuid(7,
+       		cpuinfo_table + 4*7,
+		cpuinfo_table + 4*7 + 1,
+		cpuinfo_table + 4*7 + 2,
+		cpuinfo_table + 4*7 + 3);
+
+	return;
+}
+
+void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo_table)
 {
     unsigned int cpuid0_eax, cpuid0_ebx, cpuid0_ecx, cpuid0_edx;
     unsigned int cpuid1_eax, cpuid1_ebx, cpuid1_ecx, cpuid1_edx;
@@ -50,6 +84,8 @@ void get_cpu_features(uint64_t *__intel_cpu_feature_indicator)
               cpuid0_ecx == CPU_NTEL_VAL))
     {
         *__intel_cpu_feature_indicator = cpu_feature_indicator;
+        // sgxssl cpuid initiation
+        init_cpuinfo(cpuinfo_table);
         return;
     }
 
@@ -170,4 +206,6 @@ void get_cpu_features(uint64_t *__intel_cpu_feature_indicator)
     
 
     *__intel_cpu_feature_indicator = cpu_feature_indicator;
+    // sgxssl cpuid initiation
+    init_cpuinfo(cpuinfo_table);
 }

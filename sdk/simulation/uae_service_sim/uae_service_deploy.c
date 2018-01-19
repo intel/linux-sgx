@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,3 +44,4 @@ void invoke_service_ocall(){}
 void sgx_report_attestation_status(){}
 void sgx_get_ps_cap(){}
 void sgx_calc_quote_size(){}
+void sgx_register_wl_cert_chain(){}
