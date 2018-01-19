@@ -588,7 +588,7 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
             break;
         }
         FILE* OUTPUT = stdout;
-        fprintf(OUTPUT, "\n\n\tAtestation Report:");
+        fprintf(OUTPUT, "\n\n\tAttestation Report:");
         fprintf(OUTPUT, "\n\tid: 0x%0x.", attestation_report.id);
         fprintf(OUTPUT, "\n\tstatus: %d.", attestation_report.status);
         fprintf(OUTPUT, "\n\trevocation_reason: %u.",
