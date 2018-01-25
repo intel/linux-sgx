@@ -53,6 +53,7 @@
 #include "parse_key_file.h"
 #include "enclave_creator_sign.h"
 #include "util_st.h"
+#include "openssl_compat.h"
 
 #include "se_trace.h"
 #include "sgx_error.h"
@@ -245,8 +246,11 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
     //if rsa is not NULL, fill the public key part
     if(rsa)
     {
-        int exponent_size = BN_num_bytes(rsa->e);
-        int modulus_size = BN_num_bytes(rsa->n);
+        const BIGNUM *n = NULL, *e = NULL;
+
+        RSA_get0_key(rsa, &n, &e, NULL);
+        int exponent_size = BN_num_bytes(e);
+        int modulus_size = BN_num_bytes(n);
         
         if(modulus_size > SE_KEY_SIZE)
             return false;
@@ -260,12 +264,12 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
         exponent_size = (uint32_t)(ROUND_TO(exponent_size, sizeof(uint32_t)) / sizeof(uint32_t));
         modulus_size = (uint32_t)(ROUND_TO(modulus_size, sizeof(uint32_t)) / sizeof(uint32_t));
         
-        if(BN_bn2bin(rsa->n, modulus) != SE_KEY_SIZE)
+        if(BN_bn2bin(n, modulus) != SE_KEY_SIZE)
         {
             free(modulus);
             return false;
         }
-        if(BN_bn2bin(rsa->e, (unsigned char *)&css->key.exponent) != 1)
+        if(BN_bn2bin(e, (unsigned char *)&css->key.exponent) != 1)
         {
             free(modulus);
             return false;
@@ -275,6 +279,7 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
             css->key.modulus[i] = modulus[SE_KEY_SIZE -i - 1];
         }
         free(modulus);
+
         assert(css->key.exponent[0] == 0x03);
         assert(exponent_size == 0x1);
         assert(modulus_size == 0x60);
@@ -1126,7 +1131,9 @@ clear_return:
     
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
-    ERR_remove_thread_state(NULL);
+    #if OPENSSL_VERSION_NUMBER < 0x10100000L
+        ERR_remove_thread_state(NULL);
+    #endif
     ERR_free_strings();
     
     return res;
