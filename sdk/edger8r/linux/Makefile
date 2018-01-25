@@ -45,7 +45,7 @@ build:
 ifeq ($(shell test $(OCAML_VERSION) -lt 402 && echo 1), 1)
 	ocamlbuild -lflag -ccopt -lflag "-Wl,-z,now" -no-links -libs str,unix  Edger8r.native
 else
-	ocamlbuild -cflags -ccopt,-fpie -lflags -runtime-variant,_pic,-ccopt,-pie,-ccopt -lflag "-Wl,-z,now"  -no-links -libs str,unix Edger8r.native
+	ocamlbuild -cflags -ccopt,-fpie,-unsafe-string -lflags -runtime-variant,_pic,-ccopt,-pie,-ccopt -lflag "-Wl,-z,now"  -no-links -libs str,unix Edger8r.native
 endif
 
 $(BUILD_DIR):
