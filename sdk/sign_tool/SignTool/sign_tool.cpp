@@ -47,6 +47,7 @@
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/crypto.h>
 
 #include "metadata.h"
 #include "manage_metadata.h"
@@ -245,8 +246,10 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
     //if rsa is not NULL, fill the public key part
     if(rsa)
     {
-        int exponent_size = BN_num_bytes(rsa->e);
-        int modulus_size = BN_num_bytes(rsa->n);
+        const BIGNUM *e = NULL, *n = NULL;
+        RSA_get0_key(rsa, &n, &e, NULL);
+        int exponent_size = BN_num_bytes(e);
+        int modulus_size = BN_num_bytes(n);
         
         if(modulus_size > SE_KEY_SIZE)
             return false;
@@ -260,12 +263,12 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
         exponent_size = (uint32_t)(ROUND_TO(exponent_size, sizeof(uint32_t)) / sizeof(uint32_t));
         modulus_size = (uint32_t)(ROUND_TO(modulus_size, sizeof(uint32_t)) / sizeof(uint32_t));
         
-        if(BN_bn2bin(rsa->n, modulus) != SE_KEY_SIZE)
+        if(BN_bn2bin(n, modulus) != SE_KEY_SIZE)
         {
             free(modulus);
             return false;
         }
-        if(BN_bn2bin(rsa->e, (unsigned char *)&css->key.exponent) != 1)
+        if(BN_bn2bin(e, (unsigned char *)&css->key.exponent) != 1)
         {
             free(modulus);
             return false;
@@ -1024,8 +1027,12 @@ int main(int argc, char* argv[])
     RSA *rsa = NULL;
     memset(&metadata_raw, 0, sizeof(metadata_raw));
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
+#else
+    OPENSSL_init_crypto(0, NULL);
+#endif
 
 
     //Parse command line
@@ -1124,10 +1131,11 @@ clear_return:
     if(res == -1 && path[DUMPFILE])
         remove(path[DUMPFILE]);
     
+#if OPENSSL_VERSION_NUMBER < 0x10100000L    
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
     ERR_remove_thread_state(NULL);
     ERR_free_strings();
-    
+#endif
     return res;
 }
