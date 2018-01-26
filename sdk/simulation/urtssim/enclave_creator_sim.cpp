@@ -61,7 +61,9 @@ static void cleanup_openssl(void)
 {
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
-    ERR_remove_thread_state(NULL);
+    #if OPENSSL_VERSION_NUMBER < 0x10100000L
+        ERR_remove_thread_state(NULL);
+    #endif
     ERR_free_strings();
 }
 

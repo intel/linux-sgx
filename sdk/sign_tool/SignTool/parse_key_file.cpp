@@ -40,6 +40,7 @@
 #include "parse_key_file.h"
 #include "se_trace.h"
 #include "util_st.h"
+#include "openssl_compat.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,14 +100,17 @@ bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type)
         return false;
     }
 
+    const BIGNUM *e = NULL, *n = NULL;
+    RSA_get0_key(rsa, &n, &e, NULL);
+
     // Check the key size and exponent
-    if(BN_num_bytes(rsa->n) != N_SIZE_IN_BYTES)
+    if(BN_num_bytes(n) != N_SIZE_IN_BYTES)
     {
         se_trace(SE_TRACE_ERROR, INVALID_KEYSIZE_ERROR);
         RSA_free(rsa);
         return false;
     }
-    char *p = BN_bn2dec(rsa->e);
+    char *p = BN_bn2dec(e);
     if(memcmp(p, "3", 2))
     {
         se_trace(SE_TRACE_ERROR, INVALID_EXPONENT_ERROR);
