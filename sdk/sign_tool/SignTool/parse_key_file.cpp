@@ -47,6 +47,22 @@
 #include <assert.h>
 #include <openssl/pem.h>
 
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+void RSA_get0_key(const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
+{
+    assert(rsa != NULL);
+
+    if(n != NULL)
+        *n = rsa->n;
+    if(e != NULL)
+        *e = rsa->e;
+    if(d != NULL)
+        *d = rsa->d;
+}
+#endif
+
+
 //parse_key_file():
 //       parse the RSA key file
 //Return Value:
@@ -100,13 +116,15 @@ bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type)
     }
 
     // Check the key size and exponent
-    if(BN_num_bytes(rsa->n) != N_SIZE_IN_BYTES)
+    const BIGNUM *n = NULL, *e = NULL;
+    RSA_get0_key(rsa, &n, &e, NULL);
+    if(BN_num_bytes(n) != N_SIZE_IN_BYTES)
     {
         se_trace(SE_TRACE_ERROR, INVALID_KEYSIZE_ERROR);
         RSA_free(rsa);
         return false;
     }
-    char *p = BN_bn2dec(rsa->e);
+    char *p = BN_bn2dec(e);
     if(memcmp(p, "3", 2))
     {
         se_trace(SE_TRACE_ERROR, INVALID_EXPONENT_ERROR);

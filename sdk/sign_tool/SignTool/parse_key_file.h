@@ -34,6 +34,7 @@
 #ifndef _PARSE_KEY_FILE_H_
 #define _PARSE_KEY_FILE_H_
 
+#include <openssl/rsa.h>
 
 #define N_SIZE_IN_BYTES    384
 #define E_SIZE_IN_BYTES    4
@@ -47,7 +48,9 @@ typedef enum _key_type_t
     PUBLIC_KEY 
 } key_type_t;
 
-#include <openssl/rsa.h>
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+void RSA_get0_key(const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
+#endif
 
 bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type);
 
