@@ -395,6 +395,8 @@ extern "C" sgx_status_t sgx_ra_get_msg3_trusted(
 
     if (!sgx_is_outside_enclave(emp_msg3, msg3_size))
         return SGX_ERROR_INVALID_PARAMETER;
+    //fence after boundary check
+    __builtin_ia32_lfence();
 
     sgx_status_t se_ret = SGX_ERROR_UNEXPECTED;
 

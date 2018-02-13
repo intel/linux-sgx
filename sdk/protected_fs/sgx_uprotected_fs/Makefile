@@ -50,16 +50,17 @@ LIBNAME := libsgx_uprotected_fs.a
 all: $(LIBNAME) | $(BUILD_DIR)
 	$(CP) $< $|
 
-$(LIBNAME): sgx_tprotected_fs_u.h $(OBJ)
+$(LIBNAME): $(OBJ)
 	$(AR) rcsD $@ $(OBJ)
 	
 sgx_tprotected_fs_u.h: $(EDGER8R)
 	$(EDGER8R) --header-only --untrusted $(COMMON_DIR)/inc/sgx_tprotected_fs.edl --search-path $(COMMON_DIR)/inc
 
-$(OBJ): %.o :%.cpp sgx_tprotected_fs_u.h
-	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
 $(EDGER8R):
 	$(MAKE) -C $(EDGER8R_DIR)
+
+$(OBJ): %.o :%.cpp sgx_tprotected_fs_u.h
+	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

@@ -54,7 +54,7 @@ LIBNAME := libsgx_tprotected_fs.a
 all: $(LIBNAME) | $(BUILD_DIR)
 	@$(CP) $< $|
 
-$(LIBNAME): sgx_tprotected_fs_t.h $(OBJ)
+$(LIBNAME): $(OBJ)
 	$(AR) rcsD $@ $(OBJ)
 	
 sgx_tprotected_fs_t.h: $(EDGER8R)

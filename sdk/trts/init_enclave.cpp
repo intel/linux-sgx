@@ -95,6 +95,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         return -1;
     }
+    __builtin_ia32_lfence();
 
     const system_features_t sys_features = *info;
     g_sdk_version = sys_features.version;

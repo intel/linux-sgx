@@ -101,6 +101,10 @@ errno_t vector_get(const simple_vector* v, uint32_t index, void** data)
 {
     if (!v || index >= v->size || !data)
         return 1;
+        
+    //fence after boundary check 
+    __builtin_ia32_lfence();
+
     *data = v->data[index];
     return 0;
 }

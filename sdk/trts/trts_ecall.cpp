@@ -55,6 +55,9 @@ static sgx_status_t is_ecall_allowed(uint32_t ordinal)
         return SGX_ERROR_INVALID_FUNCTION;
     }
     thread_data_t *thread_data = get_thread_data();
+
+    __builtin_ia32_lfence();
+
     if(thread_data->last_sp == thread_data->stack_base_addr)
     {
         // root ECALL, check the priv bits.
@@ -241,6 +244,9 @@ static sgx_status_t trts_ecall(uint32_t ordinal, void *ms)
     if(status == SGX_SUCCESS)
     {
         ecall_func_t func = (ecall_func_t)addr;
+
+        __builtin_ia32_lfence();
+
         status = func(ms);
     }
     

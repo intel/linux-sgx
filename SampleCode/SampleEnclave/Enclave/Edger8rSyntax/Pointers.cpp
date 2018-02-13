@@ -69,6 +69,9 @@ size_t ecall_pointer_user_check(void *val, size_t sz)
     if (sgx_is_outside_enclave(val, sz) != 1)
         abort();
 
+    /*fence after sgx_is_outside_enclave check*/
+    __builtin_ia32_lfence();
+
     char tmp[100] = {0};
     size_t len = sz>100?100:sz;
     

@@ -934,7 +934,8 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
 \t\tif (%s%s(%s) != %s) {\n\
 \t\t\tstatus = SGX_ERROR_INVALID_PARAMETER;\n\
 \t\t\tgoto err;\n\
-\t\t}" (mk_len_count v) fn in_ptr_name len_var
+\t\t}\n\n\
+\t\t//\n\t\t// fence after final sizefunc check\n\t\t//\n\t\t__builtin_ia32_lfence();\n\n" (mk_len_count v) fn in_ptr_name len_var
     in
     let malloc_and_copy pre_indent =
       match attr.Ast.pa_direction with
@@ -1148,13 +1149,14 @@ let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
       in
         sprintf "%s%s%s\t%s\n\t%s\n%s" func_open local_vars dummy_var check_pms invoke_func func_close
     else
-      sprintf "%s%s\t%s\n%s\n%s%s\n%s\t%s\n%s\n%s\n%s"
+      sprintf "%s%s\t%s\n%s\n%s%s\n%s\n%s\n\t%s\n%s\n%s\n%s"
         func_open
         (mk_check_pms fd.Ast.fname)
         declare_ms_ptr
         local_vars
         (gen_check_tbridge_length_overflow fd.Ast.plist)
         (gen_check_tbridge_ptr_parms fd.Ast.plist)
+        "\n\t//\n\t// fence after pointer checks\n\t//\n\t__builtin_ia32_lfence();\n"
         (gen_parm_ptr_direction_pre fd.Ast.plist)
         (if fd.Ast.rtype <> Ast.Void then update_retval else invoke_func)
         (gen_err_mark fd.Ast.plist)
@@ -1175,7 +1177,6 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) =
             sprintf "\n#pragma message(\"Pointer array `%s' in trusted proxy `\"\
                __FUNCTION__ \"' is dangerous. No code generated.\")\n" name
           else
-            let in_ptr_dst_name = mk_in_ptr_dst_name attr.Ast.pa_rdonly parm_accessor in
               if not attr.Ast.pa_chkptr (* [user_check] specified *)
               then sprintf "%s = SGX_CAST(%s, %s);" parm_accessor tystr name
               else
@@ -1184,8 +1185,24 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) =
                     let code_template =
                       [sprintf "if (%s != NULL && sgx_is_within_enclave(%s, %s)) {" name name len_var;
                        sprintf "\t%s = (%s)__tmp;" parm_accessor tystr;
+                       sprintf "\t__tmp_%s = __tmp;" name;
+                       sprintf "\tmemset(__tmp_%s, 0, %s);" name len_var;
                        sprintf "\t__tmp = (void *)((size_t)__tmp + %s);" len_var;
-                       sprintf "\tmemset(%s, 0, %s);" in_ptr_dst_name len_var;
+                       sprintf "} else if (%s == NULL) {" name;
+                       sprintf "\t%s = NULL;" parm_accessor;
+                       "} else {";
+                       "\tsgx_ocfree();";
+                       "\treturn SGX_ERROR_INVALID_PARAMETER;";
+                       "}"
+                      ]
+                    in List.fold_left (fun acc s -> acc ^ s ^ "\n\t") "" code_template
+                | Ast.PtrInOut ->
+                    let code_template =
+                      [sprintf "if (%s != NULL && sgx_is_within_enclave(%s, %s)) {" name name len_var;
+                       sprintf "\t%s = (%s)__tmp;" parm_accessor tystr;
+                       sprintf "\t__tmp_%s = __tmp;" name;
+                       sprintf "\tmemcpy(__tmp_%s, %s, %s);" name name len_var;
+                       sprintf "\t__tmp = (void *)((size_t)__tmp + %s);" len_var;
                        sprintf "} else if (%s == NULL) {" name;
                        sprintf "\t%s = NULL;" parm_accessor;
                        "} else {";
@@ -1198,8 +1215,8 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) =
                     let code_template =
               [sprintf "if (%s != NULL && sgx_is_within_enclave(%s, %s)) {" name name len_var;
                sprintf "\t%s = (%s)__tmp;" parm_accessor tystr;
+               sprintf "\tmemcpy(__tmp, %s, %s);" name len_var;
                sprintf "\t__tmp = (void *)((size_t)__tmp + %s);" len_var;
-               sprintf "\tmemcpy(%s, %s, %s);" in_ptr_dst_name name len_var;
                sprintf "} else if (%s == NULL) {" name;
                sprintf "\t%s = NULL;" parm_accessor;
                "} else {";
@@ -1230,6 +1247,19 @@ let gen_tproxy_local_vars (plist: Ast.pdecl list) =
 let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) =
   let ms_struct_name = mk_ms_struct_name fname in
   let local_vars_block = sprintf "%s* %s = NULL;\n\tsize_t ocalloc_size = sizeof(%s);\n\tvoid *__tmp = NULL;\n\n" ms_struct_name ms_struct_val ms_struct_name in
+  let local_var (attr: Ast.ptr_attr) (name: string) =
+    if not attr.Ast.pa_chkptr then ""
+    else
+      match attr.Ast.pa_direction with
+        Ast.PtrOut | Ast.PtrInOut -> sprintf "\tvoid *__tmp_%s = NULL;\n" name
+      | _ -> ""
+  in
+  let do_local_var (pd: Ast.pdecl) =
+    let (pty, declr) = pd in
+      match pty with
+        Ast.PTVal _         -> ""
+      | Ast.PTPtr (_, attr) -> local_var attr declr.Ast.identifier
+  in
   let count_ocalloc_size (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
     if not attr.Ast.pa_chkptr then ""
     else sprintf "\tocalloc_size += (%s != NULL && sgx_is_within_enclave(%s, %s)) ? %s : 0;\n" name name (mk_len_var name) (mk_len_var name)
@@ -1252,8 +1282,9 @@ let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) =
   in
   let new_param_list = List.map conv_array_to_ptr plist
   in
-  let s1 = List.fold_left (fun acc pd -> acc ^ do_count_ocalloc_size pd) local_vars_block new_param_list in
-     List.fold_left (fun acc s -> acc ^ s) s1 do_gen_ocalloc_block
+  let s1 = List.fold_left (fun acc pd -> acc ^ do_local_var pd) local_vars_block new_param_list in
+  let s2 = List.fold_left (fun acc pd -> acc ^ do_count_ocalloc_size pd) s1 new_param_list in
+     List.fold_left (fun acc s -> acc ^ s) s2 do_gen_ocalloc_block
   
 (* Generate trusted proxy code for a given untrusted function. *)
 let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
@@ -1270,7 +1301,7 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
       let name = declr.Ast.identifier in
         match attr.Ast.pa_direction with
             Ast.PtrInOut | Ast.PtrOut ->
-              sprintf "\tif (%s) memcpy((void*)%s, %s, %s);\n" name name (mk_parm_accessor name) (mk_len_var name)
+              sprintf "\tif (%s) memcpy((void*)%s, __tmp_%s, %s);\n" name name name (mk_len_var name)
           | _ -> ""
     in List.fold_left (fun acc (pty, declr) ->
              match pty with
