@@ -943,6 +943,13 @@ uint32_t get_quote(
        quote buffer outside enclave. */
     if(!sgx_is_outside_enclave(emp_sig_rl, sig_rl_size))
         return QE_PARAMETER_ERROR;
+
+    //
+    // for user_check SigRL input
+    // based on quote_size input parameter
+    //
+    __builtin_ia32_lfence();
+
     if(!sgx_is_outside_enclave(emp_quote, quote_size))
         return QE_PARAMETER_ERROR;
 
@@ -1072,6 +1079,12 @@ uint32_t get_quote(
         ret = QE_PARAMETER_ERROR;
         goto CLEANUP;
     }
+
+    //
+    // for user_check SigRL input
+    // based on n2 field in SigRL
+    //
+    __builtin_ia32_lfence();
 
     /* Copy the data in the report into quote body. */
     memset(emp_quote, 0, quote_size);

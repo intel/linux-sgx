@@ -243,6 +243,13 @@ pve_status_t proc_prov_msg2_data(const proc_prov_msg2_blob_input_t *msg2_blob_in
         if(NULL!=emp_sigrl){
             //process sigrl_header for hash value generation (used by ECDSA signature)
             ret = prov_msg2_proc_sigrl_header( emp_sigrl, sigrl_size, &msg3_parm);
+
+            //
+            // for user_check SigRL input
+            // based on n2 field in SigRL
+            //
+            __builtin_ia32_lfence();
+
             if( PVEC_SUCCESS!=ret )
                 goto ret_point;
         }

@@ -946,7 +946,6 @@ bool ElfParser::set_memory_protection(uint64_t enclave_base_addr, bool is_after_
     for (int idx = 0; idx < elf_hdr->e_phnum; idx++, prg_hdr++)
     {
        if(prg_hdr->p_type == PT_DYNAMIC ||
-          prg_hdr->p_type == PT_GNU_EH_FRAME || 
           prg_hdr->p_type == PT_GNU_RELRO)
        {
            rva = TRIM_TO_PAGE(enclave_base_addr + prg_hdr->p_vaddr);

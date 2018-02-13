@@ -137,6 +137,12 @@ uint32_t proc_prov_msg2_data_wrapper(
         goto ret_point;
     }
 
+    //
+    // for user_check SigRL input
+    // based on sigrl_size input parameter
+    //
+    __builtin_ia32_lfence();
+
     if((sigrl==NULL&&sigrl_size!=0)||
         (sigrl!=NULL&&sigrl_size==0)){
         status = PVEC_PARAMETER_ERROR;
