@@ -675,7 +675,7 @@ sgx_status_t sgx_ra_init_ex(
     //if there is a empty slot, use it
     if (first_empty >= 0)
     {
-        errno_t vret = vector_set(&g_ra_db, first_empty, new_item);
+        int vret = vector_set(&g_ra_db, first_empty, new_item);
         UNUSED(vret);
         assert(vret == 0);
         *p_context = first_empty;

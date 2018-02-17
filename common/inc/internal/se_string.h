@@ -35,20 +35,14 @@
 #include "se_memcpy.h"
 #include <string.h>
 
-
-#ifndef _ERRNO_T_DEFINED
-#define _ERRNO_T_DEFINED
-typedef int errno_t;
-#endif
-
-static inline errno_t strcat_s(char *dst, size_t max_size, const char *src)
+static inline int strcat_s(char *dst, size_t max_size, const char *src)
 {
     if(strlen(dst)+strlen(src)+1>max_size)return -1;
     strcat(dst, src);
     return 0;
 }
 
-static inline errno_t strcpy_s(char *dst, size_t max_size, const char *src)
+static inline int strcpy_s(char *dst, size_t max_size, const char *src)
 {
     if(strnlen(src, max_size)+1>max_size)return -1;
     strcpy(dst, src);
@@ -56,7 +50,7 @@ static inline errno_t strcpy_s(char *dst, size_t max_size, const char *src)
 }
 
 #define _strnicmp strncasecmp
-static inline errno_t strncat_s(char *dst, size_t max_size, const char *src, size_t max_count)
+static inline int strncat_s(char *dst, size_t max_size, const char *src, size_t max_count)
 {
     size_t len = strnlen(src,max_count);
     len+=strnlen(dst, max_size)+1;

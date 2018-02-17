@@ -409,17 +409,14 @@ void XMLUtil::ConvertUTF32ToUTF8( unsigned long input, char* output, int* length
             --output;
             *output = (char)((input | BYTE_MARK) & BYTE_MASK);
             input >>= 6;
-            /* fallthrough */
         case 3:
             --output;
             *output = (char)((input | BYTE_MARK) & BYTE_MASK);
             input >>= 6;
-            /* fallthrough */
         case 2:
             --output;
             *output = (char)((input | BYTE_MARK) & BYTE_MASK);
             input >>= 6;
-            /* fallthrough */
         case 1:
             --output;
             *output = (char)(input | FIRST_BYTE_MARK[*length]);
@@ -1937,7 +1934,7 @@ static FILE* callfopen( const char* filepath, const char* mode )
     TIXMLASSERT( mode );
 #if defined(_MSC_VER) && (_MSC_VER >= 1400 ) && (!defined WINCE)
     FILE* fp = 0;
-    errno_t err = fopen_s( &fp, filepath, mode );
+    int err = fopen_s( &fp, filepath, mode );
     if ( err ) {
         return 0;
     }

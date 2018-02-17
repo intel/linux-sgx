@@ -43,11 +43,6 @@ typedef __size_t    size_t;
 #define _SIZE_T_DEFINED_
 #endif
 
-#ifndef _ERRNO_T_DEFINED
-#define _ERRNO_T_DEFINED
-typedef int errno_t;
-#endif
-
 #ifndef NULL
 #ifdef __cplusplus
 #define NULL    0
@@ -79,7 +74,7 @@ char * _TLIBC_CDECL_ strstr(const char *, const char *);
 char * _TLIBC_CDECL_ strtok(char *, const char *);
 size_t _TLIBC_CDECL_ strxfrm(char *, const char *, size_t);
 size_t _TLIBC_CDECL_ strlcpy(char *, const char *, size_t);
-errno_t _TLIBC_CDECL_ memset_s(void *s, size_t smax, int c, size_t n);
+int _TLIBC_CDECL_ memset_s(void *s, size_t smax, int c, size_t n);
 
 /*
  * Deprecated C99.
