@@ -61,12 +61,7 @@ typedef uint8_t sample_ec_key_128bit_t[16];
 extern "C" {
 #endif
 
-
-#ifndef _ERRNO_T_DEFINED
-#define _ERRNO_T_DEFINED
-typedef int errno_t;
-#endif
-errno_t memcpy_s(void *dest, size_t numberOfElements, const void *src,
+int memcpy_s(void *dest, size_t numberOfElements, const void *src,
                  size_t count);
 
 
@@ -111,4 +106,3 @@ bool verify_cmac128(
 #endif
 
 #endif
-
