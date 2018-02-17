@@ -136,7 +136,7 @@ unsigned
 random_device::operator()()
 {
     unsigned r;
-    errno_t err = rand_s(&r);
+    int err = rand_s(&r);
     if (err)
         __throw_system_error(err, "random_device rand_s failed.");
     return r;

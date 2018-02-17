@@ -164,7 +164,7 @@ int __cdecl _vsnprintf_s (
         )
 {
     int retvalue = -1;
-    errno_t save_errno = 0;
+    int save_errno = 0;
 
     /* validation section */
     _VALIDATE_RETURN(format != NULL, EINVAL, -1);

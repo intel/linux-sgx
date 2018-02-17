@@ -63,7 +63,7 @@ uint32_t vector_size(const simple_vector* v)
 
 //push a pointer to the end of the vector
 //return 0 if success, return 1 if memory malloc failure.
-errno_t vector_push_back(simple_vector* v, const void* data)
+int vector_push_back(simple_vector* v, const void* data)
 {
     if (v)
     {
@@ -97,7 +97,7 @@ errno_t vector_push_back(simple_vector* v, const void* data)
 
 //get the item pointer in the vector
 //return 0 if success, return 1 if index is out of range or data pointer is invalid.
-errno_t vector_get(const simple_vector* v, uint32_t index, void** data)
+int vector_get(const simple_vector* v, uint32_t index, void** data)
 {
     if (!v || index >= v->size || !data)
         return 1;
@@ -111,7 +111,7 @@ errno_t vector_get(const simple_vector* v, uint32_t index, void** data)
 
 //set the pointer in the vector
 //return 0 if success, return 1 if index is out of range.
-errno_t vector_set(simple_vector* v, uint32_t index, const void* data)
+int vector_set(simple_vector* v, uint32_t index, const void* data)
 {
     if (!v || index >= v->size)
         return 1;

@@ -40,7 +40,7 @@
 
 #define MAC_KEY_SIZE       16
 
-errno_t memcpy_s(
+int memcpy_s(
     void *dest,
     size_t numberOfElements,
     const void *src,

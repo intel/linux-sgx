@@ -53,13 +53,13 @@ void vector_init(simple_vector* vector);
 uint32_t vector_size(const simple_vector* vector);
 
 //insert an element to the end of simple_vector, the element can only be pointer
-errno_t vector_push_back(simple_vector* vector, const void* data);
+int vector_push_back(simple_vector* vector, const void* data);
 
 //get an element
-errno_t vector_get(const simple_vector* v, uint32_t index, void** data);
+int vector_get(const simple_vector* v, uint32_t index, void** data);
 
 //set an element content
-errno_t vector_set(simple_vector* v, uint32_t index, const void* data);
+int vector_set(simple_vector* v, uint32_t index, const void* data);
 
 //free the simple_vector allocated memory
 void vector_free(simple_vector* vector);

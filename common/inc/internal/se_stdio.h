@@ -75,9 +75,9 @@ static inline int _snprintf_s(char *dst_buf, size_t size_in_bytes, size_t max_co
     return cnt;
 }
 
-static inline errno_t fopen_s(FILE **f, const char *filename, const char *mode)
+static inline int fopen_s(FILE **f, const char *filename, const char *mode)
 {
-    errno_t err = 0;
+    int err = 0;
     *f = fopen(filename, mode);
     if(*f==NULL){
         err = -1;

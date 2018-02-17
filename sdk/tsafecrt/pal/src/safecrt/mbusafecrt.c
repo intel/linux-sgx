@@ -162,7 +162,7 @@ int _ungetwc_nolock( char16_t inChar, miniFILE* inStream )
 // taken from output.inl
 #define FL_ALTERNATE  0x00080   /* alternate form requested */
 
-errno_t _safecrt_cfltcvt(double *arg, char *buffer, size_t sizeInBytes, int type, int precision, int flags)
+int _safecrt_cfltcvt(double *arg, char *buffer, size_t sizeInBytes, int type, int precision, int flags)
 {
     char format[FORMATSIZE];
     size_t formatlen = 0;

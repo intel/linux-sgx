@@ -37,12 +37,7 @@
 
 /* memcpy_s always return 0 under Linux */
 
-#ifndef _ERRNO_T_DEFINED
-#define _ERRNO_T_DEFINED
-typedef int errno_t;
-#endif
-
-static inline errno_t memcpy_s(void *dest, size_t numberOfElements, const void *src, size_t count)
+static inline int memcpy_s(void *dest, size_t numberOfElements, const void *src, size_t count)
 {
     if(numberOfElements<count)
         return -1;

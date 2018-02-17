@@ -48,7 +48,7 @@ size_t __cdecl wcsnlen(const char16_t *wcs, size_t maxsize)
     size_t n;
 
     /* Note that we do not check if s == NULL, because we do not
-     * return errno_t...
+     * return errno_t;...
      */
 
     for (n = 0; n < maxsize && *wcs; n++, wcs++)

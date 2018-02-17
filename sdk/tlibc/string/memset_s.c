@@ -33,7 +33,6 @@
 
 #include <sys/cdefs.h>
 
-#define __STDC_WANT_LIB_EXT1__ 1
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
@@ -47,10 +46,10 @@ static void * (* const volatile __memset_vp)(void *, int, size_t)
 
 #undef memset_s /* in case it was defined as a macro */
 
-errno_t
+int
 memset_s(void *s, size_t smax, int c, size_t n)
 {
-    errno_t err = 0;
+    int err = 0;
 
     if (s == NULL) {
         err = EINVAL;

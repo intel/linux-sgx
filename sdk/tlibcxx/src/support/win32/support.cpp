@@ -121,8 +121,8 @@ size_t wcsnrtombs( char *__restrict dst, const wchar_t **__restrict src,
     size_t dest_converted = 0;
     size_t dest_remaining = dst_size_bytes;
     size_t char_size = 0;
-    const errno_t no_error = ( errno_t) 0;
-    errno_t result = ( errno_t ) 0;
+    const int no_error = ( int) 0;
+    int result = ( int ) 0;
     bool have_result = false;
     bool terminator_found = false;
 

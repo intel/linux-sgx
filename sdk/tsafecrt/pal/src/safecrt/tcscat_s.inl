@@ -14,7 +14,7 @@
 ****/
 
 _FUNC_PROLOGUE
-errno_t __cdecl _FUNC_NAME(_CHAR *_DEST, size_t _SIZE, const _CHAR *_SRC)
+int __cdecl _FUNC_NAME(_CHAR *_DEST, size_t _SIZE, const _CHAR *_SRC)
 {
     _CHAR *p;
     size_t available;

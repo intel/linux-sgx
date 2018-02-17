@@ -60,7 +60,7 @@
 *
 *Exit:
 *       Fills in space pointed to by buf with string result.
-*       Returns the errno_t: err != 0 means that something went wrong, and
+*       Returns the int: err != 0 means that something went wrong, and
 *       an empty string (buf[0] = 0) is returned.
 *
 *Exceptions:
@@ -71,7 +71,7 @@
 
 /* helper routine that does the main job. */
 #ifdef _SECURE_ITOA
-errno_t __stdcall xtox_s
+int __stdcall xtox_s
         (
         unsigned long val,
         TCHAR *buf,
@@ -161,14 +161,14 @@ void __stdcall xtox
    and return pointer to buffer. */
 
 #ifdef _SECURE_ITOA
-errno_t __cdecl _itox_s (
+int __cdecl _itox_s (
         int val,
         TCHAR *buf,
         size_t sizeInTChars,
         int radix
         )
 {
-        errno_t e = 0;
+        int e = 0;
 
         if (radix == 10 && val < 0)
             e = xtox_s((unsigned long)val, buf, sizeInTChars, (unsigned)radix, 1);
@@ -178,7 +178,7 @@ errno_t __cdecl _itox_s (
         return e;
 }
 
-errno_t __cdecl _ltox_s (
+int __cdecl _ltox_s (
         long val,
         TCHAR *buf,
         size_t sizeInTChars,
@@ -188,7 +188,7 @@ errno_t __cdecl _ltox_s (
         return xtox_s((unsigned long)val, buf, sizeInTChars, (unsigned)radix, (radix == 10 && val < 0));
 }
 
-errno_t __cdecl _ultox_s (
+int __cdecl _ultox_s (
         unsigned long val,
         TCHAR *buf,
         size_t sizeInTChars,
@@ -277,7 +277,7 @@ TCHAR * __cdecl _ultox (
 *
 *Exit:
 *       Fills in space pointed to by buf with string result.
-*       Returns the errno_t: err != 0 means that something went wrong, and
+*       Returns the int: err != 0 means that something went wrong, and
 *       an empty string (buf[0] = 0) is returned.
 *
 *Exceptions:
@@ -287,7 +287,7 @@ TCHAR * __cdecl _ultox (
 *******************************************************************************/
 
 #ifdef _SECURE_ITOA
-errno_t __fastcall x64tox_s
+int __fastcall x64tox_s
         (/* stdcall is faster and smaller... Might as well use it for the helper. */
         unsigned __int64 val,
         TCHAR *buf,
@@ -379,7 +379,7 @@ void __fastcall x64tox
 /* Actual functions just call conversion helper with neg flag set correctly,
    and return pointer to buffer. */
 
-errno_t __cdecl _i64tox_s (
+int __cdecl _i64tox_s (
         long long val,
         TCHAR *buf,
         size_t sizeInTChars,
@@ -389,7 +389,7 @@ errno_t __cdecl _i64tox_s (
         return x64tox_s((unsigned __int64)val, buf, sizeInTChars, (unsigned)radix, (radix == 10 && val < 0));
 }
 
-errno_t __cdecl _ui64tox_s (
+int __cdecl _ui64tox_s (
         unsigned long long val,
         TCHAR *buf,
         size_t sizeInTChars,
