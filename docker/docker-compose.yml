@@ -1,0 +1,43 @@
+version: '3.4'
+
+services:
+  aesm:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+      target: aesm
+    image: sgx_aesm
+    devices:
+      - /dev/isgx
+    volumes:
+      - /tmp/aesmd:/var/run/aesmd
+    stdin_open: true
+    tty: true
+    environment:
+      - http_proxy
+      - https_proxy
+
+  sample:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+      args:
+        - http_proxy
+        - https_proxy
+      target: sample
+    image: sgx_sample
+    depends_on:
+      - aesm
+    devices:
+      - /dev/isgx
+    volumes:
+      - /tmp/aesmd:/var/run/aesmd
+    stdin_open: true
+    tty: true
+    environment:
+      - http_proxy
+      - https_proxy
+
