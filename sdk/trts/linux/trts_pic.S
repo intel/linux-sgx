@@ -553,7 +553,6 @@ DECLARE_LOCAL_FUNC continue_execution
     mov     SE_WORDSIZE*1(%xcx), %xax
     push    %xax                       # push xcx
     mov     SE_WORDSIZE*4(%xcx), %xax
-    sub     $(SE_WORDSIZE), %xax       # xax: xsp
 
 # restore registers except xax, xcx, xsp
     mov     SE_WORDSIZE*2(%xcx), %xdx
@@ -585,8 +584,14 @@ DECLARE_LOCAL_FUNC continue_execution
 
 # do not setup the new stack until info is not needed any more
 # otherwise, info will be overwritten
-    mov     %xcx, (%xax)               # save xip to the new stack
+# Offset the stack to avoid the red zone, which interrupts are allowed to
+# write into. Using the __attribute__((interrupt)) on internal_handle_exception
+# is hostile to older compilers.
+    mov     %xcx, -128(%xax)           # save xip to the new stack
     pop     %xcx                       # restore xcx
     pop     %xsp                       # xsp: xax
     xchg    %xax, %xsp
-    ret
+
+# The desired xip was stashed further up in the stack; retrieve it and jump
+# there to resume execution.
+    jmp     *-128(%xsp)
