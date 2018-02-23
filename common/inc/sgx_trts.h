@@ -74,6 +74,13 @@ int SGXAPI sgx_is_outside_enclave(const void *addr, size_t size);
 */
 sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
 
+/* sgx_is_enclave_crashed()
+ * Return Value:
+ *      1 - The global enclave state is crashed.
+ *      0 - The global enclave state is not crashed.
+ */
+int SGXAPI sgx_is_enclave_crashed(void);
+
 #ifdef __cplusplus
 }
 #endif

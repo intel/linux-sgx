@@ -73,7 +73,7 @@ static void init_stack_guard(void *tcs)
 
 extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
 {
-    if(get_enclave_state() == ENCLAVE_CRASHED)
+    if(sgx_is_enclave_crashed())
     {
         return SGX_ERROR_ENCLAVE_CRASHED;
     }
