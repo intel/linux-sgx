@@ -564,7 +564,6 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-review_enclave", NULL, PAR_INVALID},
         {"-dumpfile", NULL, PAR_OPTIONAL}};
     param_struct_t params_gendata[] = {
         {"-enclave", NULL, PAR_REQUIRED},
@@ -573,7 +572,6 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-review_enclave", NULL, PAR_INVALID},
         {"-dumpfile", NULL, PAR_INVALID}};
     param_struct_t params_catsig[] = {
         {"-enclave", NULL, PAR_REQUIRED},
@@ -582,7 +580,6 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_REQUIRED},
         {"-unsigned", NULL, PAR_REQUIRED},
-        {"-review_enclave", NULL, PAR_INVALID},
         {"-dumpfile", NULL, PAR_OPTIONAL}};
     param_struct_t params_dump[] = {
         {"-enclave", NULL, PAR_REQUIRED},
@@ -591,7 +588,6 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_INVALID},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-review_enclave", NULL, PAR_INVALID},
         {"-dumpfile", NULL, PAR_REQUIRED}};
 
 
