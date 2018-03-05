@@ -32,6 +32,7 @@
 #ifndef _SE_ATOMIC_H_
 #define _SE_ATOMIC_H_
 
+#include <stdint.h>
 
 inline uint32_t se_atomic_inc(volatile uint32_t *mem)
 {

@@ -33,6 +33,7 @@
 #define _PLATFORM_INFO_BLOB_H_
 
 #include <stdint.h>
+#include "aeerror.h"
 #include "epid_pve_type.h"
 #include "sgx_tcrypto.h"
 
