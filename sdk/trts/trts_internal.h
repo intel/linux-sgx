@@ -41,6 +41,7 @@
 typedef struct {
     const void     *ecall_addr;
     uint8_t         is_priv;
+    uint8_t         is_exception;
 } ecall_addr_t;
 
 typedef struct {

@@ -79,7 +79,16 @@ extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
     }
 
     sgx_status_t error = SGX_ERROR_UNEXPECTED;
-    if(cssa == 0)
+    // Check whether the incoming ecall is a user exception. If index is within
+    // range of the ecall table size, the is_exception field will be true for
+    // user exceptions.
+    uint8_t is_user_exception =
+        (index >= 0 && index < int(g_ecall_table.nr_ecall)) &&
+        g_ecall_table.ecall_table[index].is_exception;
+    // For a user exception, call |do_ecall| to enter enclave and handle the
+    // signal, in this case cssa could be 0 or 1 (which is likely to be 1 when
+    // an enclave is interrupted by an exception).
+    if(cssa == 0 || (is_user_exception && cssa == 1))
     {
         if(index >= 0)
         {
