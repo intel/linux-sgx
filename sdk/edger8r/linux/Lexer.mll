@@ -79,6 +79,7 @@ rule tokenize = parse
   | "struct"     { Tstruct }
   | "union"      { Tunion }
   | "enum"       { Tenum }
+  | "exception_handler" { Texception_handler }
 
   (* specifier *)
   | "enclave"    { Tenclave }

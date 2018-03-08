@@ -159,6 +159,7 @@ type func_decl = {
 type trusted_func = {
   tf_fdecl   : func_decl;
   tf_is_priv : bool;
+  tf_is_exception_handler : bool;
 }
 
 type untrusted_func = {

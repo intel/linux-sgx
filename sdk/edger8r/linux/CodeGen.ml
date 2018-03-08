@@ -70,6 +70,9 @@ let get_tf_fname (tf: Ast.trusted_func) =
 let is_priv_ecall (tf: Ast.trusted_func) =
   tf.Ast.tf_is_priv
 
+let is_exception_ecall (tf: Ast.trusted_func) =
+  tf.Ast.tf_is_exception_handler
+
 let get_uf_fname (uf: Ast.untrusted_func) =
   uf.Ast.uf_fdecl.Ast.fname
 
@@ -84,6 +87,9 @@ let tf_list_to_fd_list (tfs: Ast.trusted_func list) =
 
 let tf_list_to_priv_list (tfs: Ast.trusted_func list) =
   List.map is_priv_ecall tfs
+
+let tf_list_to_exception_list (tfs: Ast.trusted_func list) =
+  List.map is_exception_ecall tfs
 
 (* Get a list of names of all private ECALLs *)
 let get_priv_ecall_names (tfs: Ast.trusted_func list) =
@@ -362,15 +368,23 @@ let gen_parm_retval (rt: Ast.atype) =
 
 (* ---------------------------------------------------------------------- *)
 
+let fold_left3 f arg a b c =
+  let rec loop arg = function
+    | x::xs, y::ys, z::zs -> loop(f arg x y z) (xs, ys, zs)
+    | [], [], [] -> arg
+  in
+  loop arg (a, b, c)
+
 (* `gen_ecall_table' is used to generate ECALL table with the following form:
     SGX_EXTERNC const struct {
        size_t nr_ecall;    /* number of ECALLs */
        struct {
            void   *ecall_addr;
            uint8_t is_priv;
+           uint8_t is_exception;
        } ecall_table [nr_ecall];
    } g_ecall_table = {
-       2, { {sgx_foo, 1}, {sgx_bar, 0} }
+       2, { {sgx_foo, 1, 0}, {sgx_bar, 0, 1} }
    };
 *)
 let gen_ecall_table (tfs: Ast.trusted_func list) =
@@ -378,18 +392,19 @@ let gen_ecall_table (tfs: Ast.trusted_func list) =
   let ecall_table_size = List.length tfs in
   let trusted_fds = tf_list_to_fd_list tfs in
   let priv_bits = tf_list_to_priv_list tfs in
+  let exception_bits = tf_list_to_exception_list tfs in
   let tbridge_names = List.map (fun (fd: Ast.func_decl) ->
                                   mk_tbridge_name fd.Ast.fname) trusted_fds in
   let ecall_table =
     let bool_to_int b = if b then 1 else 0 in
     let inner_table =
-      List.fold_left2 (fun acc s b ->
-        sprintf "%s\t\t{(void*)(uintptr_t)%s, %d},\n" acc s (bool_to_int b)) "" tbridge_names priv_bits
+      fold_left3 (fun acc s is_priv is_exception_handler ->
+        sprintf "%s\t\t{(void*)(uintptr_t)%s, %d, %d},\n" acc s (bool_to_int is_priv) (bool_to_int is_exception_handler)) "" tbridge_names priv_bits exception_bits
     in "\t{\n" ^ inner_table ^ "\t}\n"
   in
     sprintf "SGX_EXTERNC const struct {\n\
 \tsize_t nr_ecall;\n\
-\tstruct {void* ecall_addr; uint8_t is_priv;} ecall_table[%d];\n\
+\tstruct {void* ecall_addr; uint8_t is_priv; uint8_t is_exception} ecall_table[%d];\n\
 } %s = {\n\
 \t%d,\n\
 %s};\n" ecall_table_size
@@ -1513,9 +1528,10 @@ let report_orphaned_priv_ecall (ec: enclave_content) =
     List.iter check_ecall priv_ecall_names
 
 (* Check that there is at least one public ECALL function. *)
-let check_priv_funcs (ec: enclave_content) =
+let check_priv_and_exception_funcs (ec: enclave_content) =
   let priv_bits = tf_list_to_priv_list ec.tfunc_decls in
-  if List.for_all (fun is_priv -> is_priv) priv_bits
+  let exception_bits = tf_list_to_exception_list ec.tfunc_decls in
+  if List.for_all2 (fun is_priv is_exception_handler -> is_priv || is_exception_handler) priv_bits exception_bits
   then failwithf "the enclave `%s' contains no public root ECALL.\n" ec.file_shortnm
   else report_orphaned_priv_ecall ec
 
@@ -1623,6 +1639,6 @@ let gen_enclave_code (e: Ast.enclave) (ep: edger8r_params) =
     create_dir ep.trusted_dir;
     check_duplication ec;
     check_allow_list ec;
-    (if not ep.header_only then check_priv_funcs ec);
+    (if not ep.header_only then check_priv_and_exception_funcs ec);
     (if ep.gen_untrusted then (gen_untrusted_header ec; if not ep.header_only then gen_untrusted_source ec));
     (if ep.gen_trusted then (gen_trusted_header ec; if not ep.header_only then gen_trusted_source ec))
