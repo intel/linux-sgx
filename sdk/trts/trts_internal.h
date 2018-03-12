@@ -33,7 +33,7 @@
 
 #include "util.h"
 
-#define STATIC_STACK_SIZE   688
+#define STATIC_STACK_SIZE   (8 * 1024)
 
 #define TD2TCS(td) ((const void *)(((thread_data_t*)(td))->stack_base_addr + (size_t)STATIC_STACK_SIZE + (size_t)SE_GUARD_PAGE_SIZE))
 #define TCS2CANARY(addr)    ((size_t *)((size_t)(addr)-(size_t)SE_GUARD_PAGE_SIZE-(size_t)STATIC_STACK_SIZE+sizeof(size_t)))
