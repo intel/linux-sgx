@@ -48,6 +48,8 @@
 #include "trts_inst.h"
 #include "util.h"
 #include "trts_util.h"
+#include "trts_shared_constants.h"
+
 
 typedef struct _handler_node_t
 {
@@ -337,10 +339,9 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     }
 
     size = 0;
-#ifdef SE_GNU64
-    size += 128; // x86_64 requires a 128-bytes red zone, which begins directly
-                 // after the return addr and includes func's arguments
-#endif
+    // x86_64 requires a 128-bytes red zone, which begins directly
+    // after the return addr and includes func's arguments
+    size += RED_ZONE_SIZE;
 
     // decrease the stack to give space for info
     size += sizeof(sgx_exception_info_t);
