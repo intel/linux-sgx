@@ -295,7 +295,7 @@ ae_error_t tGenM7
         AESM_DBG_INFO("start gen M7 ...");
         // Call to get size required of output buffers
         seStatus = ecall_tGenM7(_enclaveID, &retval, pS1, 
-            (const EPID11_SIG_RL*)pSigRL, pOcspResp, nOcspResp, 
+            (const EPID11_SIG_RL*)pSigRL, sigRL.getSize(), pOcspResp, nOcspResp,
             pVCert, nVCert, (pairing_blob_t*)pPairingBlob,
             nS2, pS2, &nS2);
         BREAK_IF_TRUE( (SGX_ERROR_ENCLAVE_LOST == seStatus), retval, PSE_PR_ENCLAVE_LOST_ERROR);
@@ -346,7 +346,7 @@ ae_error_t tVerifyM8
 
         // Call to get size required of output buffers
         seStatus = ecall_tVerifyM8(_enclaveID, &retval, pS3, nS3,
-            (EPID11_PRIV_RL*)pPrivRL, pPairingBlob, &uNewPairing);
+       (const EPID11_PRIV_RL*)pPrivRL, privRL.getSize(), pPairingBlob, &uNewPairing);
         BREAK_IF_TRUE( (SGX_ERROR_ENCLAVE_LOST == seStatus), retval, PSE_PR_ENCLAVE_LOST_ERROR);
         BREAK_IF_TRUE( (SGX_SUCCESS != seStatus), retval, PSE_PR_ENCLAVE_BRIDGE_ERROR);
 

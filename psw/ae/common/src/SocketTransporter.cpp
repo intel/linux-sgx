@@ -137,9 +137,14 @@ IAERequest* SocketTransporter::receiveRequest(ICommunicationSocket* sock) {
     return request;
 }
 
-uae_oal_status_t SocketTransporter::sendResponse(IAEResponse* response, ICommunicationSocket* sock) {
+void SocketTransporter::sendResponse(IAEResponse* response, ICommunicationSocket* sock) {
+    if (response == NULL)
+        return;
     AEMessage * message = response->serialize();
-    uae_oal_status_t retVal = sendMessage(message, sock);
+    if (sendMessage(message, sock) != UAE_OAL_SUCCESS)
+    {
+        //server can't do anything, ignore status
+    }
     delete message;
-    return retVal;
+    return;
 }

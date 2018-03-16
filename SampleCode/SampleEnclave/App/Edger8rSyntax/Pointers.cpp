@@ -104,14 +104,6 @@ void edger8r_pointer_attributes(void)
     for (int i = 0; i < 10; i++)
         assert(arr[i] == (9 - i));
     
-    memset(arr, 0x0, sizeof(arr));
-    ret = ecall_pointer_sizefunc(global_eid, (char *)arr);
-    if (ret != SGX_SUCCESS)
-        abort();
-
-    for (int i = 0; i < 10; i++)
-        assert(arr[i] == i);
-    
     return;
 }
 

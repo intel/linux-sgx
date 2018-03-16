@@ -33,6 +33,7 @@
 #include "sgx_tkey_exchange.h"
 #include "sgx_trts.h"
 #include "sgx_utils.h"
+#include "sgx_lfence.h"
 #include "ecp_interface.h"
 #include "util.h"
 #include "string.h"
@@ -395,8 +396,14 @@ extern "C" sgx_status_t sgx_ra_get_msg3_trusted(
 
     if (!sgx_is_outside_enclave(emp_msg3, msg3_size))
         return SGX_ERROR_INVALID_PARAMETER;
-    //fence after boundary check
-    __builtin_ia32_lfence();
+    //
+    // fence after boundary check 
+    // this also stops speculation in case of 
+    // branch associated 
+    // with sizeof(sgx_ra_msg3_t) + quote_size != msg3_size
+    // mispredicting
+    //
+    sgx_lfence();
 
     sgx_status_t se_ret = SGX_ERROR_UNEXPECTED;
 

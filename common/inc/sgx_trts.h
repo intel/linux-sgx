@@ -63,6 +63,14 @@ int SGXAPI sgx_is_within_enclave(const void *addr, size_t size);
 int SGXAPI sgx_is_outside_enclave(const void *addr, size_t size);
 
 
+/* sgx_is_enclave_crashed()
+ * Return Value:
+ *      1 - the enclave state is crashed.
+ *      0 - the enclave state is not crashed.
+ */
+int SGXAPI sgx_is_enclave_crashed(void);
+
+
 /* sgx_read_rand()
  * Parameters:
  *      rand - the buffer to receive the random number
@@ -73,13 +81,6 @@ int SGXAPI sgx_is_outside_enclave(const void *addr, size_t size);
  *      SGX_ERROR_UNEXPECTED - HW failure of RDRAND instruction
 */
 sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
-
-/* sgx_is_enclave_crashed()
- * Return Value:
- *      1 - The global enclave state is crashed.
- *      0 - The global enclave state is not crashed.
- */
-int SGXAPI sgx_is_enclave_crashed(void);
 
 #ifdef __cplusplus
 }

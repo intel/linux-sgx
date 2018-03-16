@@ -34,6 +34,7 @@
 #include "sgx_trts.h"
 #include "sgx_utils.h"
 #include "sgx_tseal.h"
+#include "sgx_lfence.h"
 
 #include "t_long_term_pairing.h"
 #include "prepare_hash_sha256.h"
@@ -241,6 +242,7 @@ ae_error_t TEpidSigma11Verifier::GenM7
     (
     /*in */ const SIGMA_S1_MESSAGE*      pS1,
     /*in */ const EPID11_SIG_RL*         pSigRL,
+    /*in */ uint32_t  nTotalLen_SigRL, 
     /*in */ const UINT8*                 pOcspResp,
     /*in */ UINT32 nLen_OcspResp,
     /*in */ const UINT8*                 pVerifierCert,
@@ -262,6 +264,17 @@ ae_error_t TEpidSigma11Verifier::GenM7
 
     do
     {
+        if (pSigRL != NULL)
+        {
+            BREAK_IF_TRUE((nTotalLen_SigRL < sizeof(EPID11_SIG_RL)), status, PSE_PR_PARAMETER_ERROR);
+        }
+
+		//
+		// stop speculation in case undersized SigRL (where
+		// access of header would overflow)
+		//
+		sgx_lfence();
+
         ae_error_t tmp_status;
 
         // sigRL_size allows for the sigRL header, array of RL entries, and signature at the end
@@ -269,7 +282,13 @@ ae_error_t TEpidSigma11Verifier::GenM7
         uint32_t sigRL_size = 0;
         bResult = TEpidSigma11Verifier::get_sigRL_info(pSigRL, sigRL_entries, sigRL_size);
         BREAK_IF_FALSE((bResult), status, PSE_PR_BAD_POINTER_ERROR);
+        BREAK_IF_TRUE((nTotalLen_SigRL < sigRL_size), status, PSE_PR_PARAMETER_ERROR);
 
+	// sigRL_size is based on number of entries, which is basically
+	// an input to the enclave
+	//
+	sgx_lfence();
+	
         BREAK_IF_TRUE((STATE_GENM7 != m_nextState), status, PSE_PR_CALL_ORDER_ERROR);
 
 
@@ -515,6 +534,7 @@ ae_error_t TEpidSigma11Verifier::VerifyM8
     /*in */ const SIGMA_S3_MESSAGE*      pS3,
     /*in */ UINT32 nLen_S3,
     /*in */ const EPID11_PRIV_RL*        pPrivRL,
+    /*in */ uint32_t  nTotalLen_PrivRL, 
     /*in, out*/ pairing_blob_t* pPairingBlob,
     /*out*/ bool* pbNewPairing
     )
@@ -526,8 +546,8 @@ ae_error_t TEpidSigma11Verifier::VerifyM8
 
     //
     // This is misleading, PR_PSE_T isn't part of SIGMA, S3, it's part of our (sgx) m8.
-    // Also, min_s3 is a very low lower bound. m8 message (not s3) is hmac || taskinfo || g**a || group cert || epid sig || sig-rl || pr_pse.
-    // Group cert, EPID sig and SigRL are variable-length, but they have fixed length parts so lengths of the fixed
+    // Also, min_s3 is a very low lower bound. m8 message (not s3) is hmac || taskinfo || g**a || group cert || epid sig || pr_pse.
+    // Group cert and EPID sig are variable-length, but they have fixed length parts so lengths of the fixed
     // length parts could be included here.
     //
     const size_t min_s3 = sizeof(SIGMA_S3_MESSAGE) + sizeof(PR_PSE_T);
@@ -537,6 +557,17 @@ ae_error_t TEpidSigma11Verifier::VerifyM8
 
     do
     {
+        if (pPrivRL != NULL)
+        {
+            BREAK_IF_TRUE((nTotalLen_PrivRL < sizeof(EPID11_PRIV_RL)), status, PSE_PR_PARAMETER_ERROR);
+        }
+
+		//
+		// stop speculation in case undersized PrivRL (where
+		// access of header would overflow)
+		//
+		sgx_lfence();
+
         ae_error_t tmp_status;
 
         // privRL_size allows for the privRL header, array of RL entries, and signature at the end
@@ -544,6 +575,13 @@ ae_error_t TEpidSigma11Verifier::VerifyM8
         uint32_t privRL_size = 0;
         bResult = TEpidSigma11Verifier::get_privRL_info(pPrivRL, privRL_entries, privRL_size);
         BREAK_IF_FALSE((bResult), status, PSE_PR_BAD_POINTER_ERROR);
+        BREAK_IF_TRUE((nTotalLen_PrivRL < privRL_size), status, PSE_PR_PARAMETER_ERROR);
+
+		//
+	// privRL_size is based on number of entries, which is basically
+	// an input to the enclave
+	//
+	sgx_lfence();
 
         BREAK_IF_TRUE( (STATE_VERIFYM8 != m_nextState), status, PSE_PR_CALL_ORDER_ERROR);
 
@@ -551,6 +589,12 @@ ae_error_t TEpidSigma11Verifier::VerifyM8
         // Validate pointers and sizes
         //*********************************************************************
         BREAK_IF_TRUE((NULL == pS3 || nLen_S3 < min_s3), status, PSE_PR_BAD_POINTER_ERROR);
+
+		//
+		// stop speculation so code below doesn't go past end of 
+		// undersized S3
+		//
+		sgx_lfence();
 
         // pPrivRL is allowed to be NULL and will be checked in ValidatePrivRL()
 
@@ -831,15 +875,31 @@ ae_error_t TEpidSigma11Verifier::ValidateS3DataBlock(const SIGMA_S3_MESSAGE* pS3
 
     pX = (X509_GROUP_CERTIFICATE_VLR *)(((uint8_t*)pS3) + data_offset);
 
+	//
+	// if above mispredicts and we end up here, then below
+	// can overflow
+	//
+	sgx_lfence();
+
     // Make sure epid signature VLR is within bounds of S3 message allocated in trusted memory
     if ((data_offset + sizeof(EPID_SIGNATURE_VLR) + pX->VlrHeader.Length) >= nLen_S3)
         return PSE_PR_S3_DATA_ERROR;
+
+	//
+	// attacker can control pX->VlrHeader.Length
+	//
+	sgx_lfence();
 
     pE = (EPID_SIGNATURE_VLR*)((UINT8*)(pX) + pX->VlrHeader.Length);
 
     // Make sure epid signature data is within bounds of S3 message allocated in trusted memory
     if ((data_offset + pX->VlrHeader.Length + pE->VlrHeader.Length) >= nLen_S3)
         return PSE_PR_S3_DATA_ERROR;
+
+	//
+	// attacker can control pE->VlrHeader.Length
+	//
+	sgx_lfence();
 
     *X509GroupCertVlr = pX;
     *EpidSigVlr = pE;

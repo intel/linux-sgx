@@ -38,7 +38,7 @@ enclave {
      * Following keywords/attributes are supported for pointers in Edger8r: 
      *      in, out, user_check, 
      *      string, wstring,
-     *      const, size, count, sizefunc, isptr, readonly
+     *      const, size, count, isptr, readonly
      */
 
     trusted {
@@ -122,16 +122,6 @@ enclave {
         
         public void ecall_pointer_isptr_readonly([in, isptr, readonly, size=len] buffer_t buf, size_t len);
         
-        /*
-         * [sizefunc]:
-         *      call a function to decide the size/length of the parameter; 
-         * Note:
-         *      User need to define and implement `get_buf_len' as:
-         *      size_t get_buf_len(const char* buf); 
-         */
-
-        public void ecall_pointer_sizefunc([sizefunc = get_buffer_len, in, out] char *buf);
-
     };
 
     /*

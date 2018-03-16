@@ -31,6 +31,7 @@
 
 
 #include "X509Cert.h"
+#include "sgx_lfence.h"
 #include <cstddef>
 #include <assert.h>
 
@@ -521,6 +522,12 @@ STATUS ParseCertificateChain(UINT8 *pCertChain,
 
     while(pCert < pCertChainEnd)
     {
+		//
+		// very, very doubtful we get here speculatively
+		// with NULL pCert, but between that and possibility
+		// of looping too many times, add lfence
+		//
+		sgx_lfence();
 
         /* certificate always starts with a sequence followed by length at offset 1. */
         CHECK_ID(*pCert, DER_ENCODING_SEQUENCE_ID);
@@ -1503,6 +1510,13 @@ static STATUS sessMgrParseDerCert
             return X509_INVALID_SIGNATURE;
         }
 
+		//
+		// if signature verifies, then length values in cert
+		// are ok wrt Spectre
+		//
+		sgx_lfence();
+
+
         /**** End Early Signature Verification *****/
 
         //  Next Field : Version (Optional field with explicit tagging)
@@ -2079,6 +2093,12 @@ static STATUS ParseInteger(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrDataBuffer* Da
         return X509_STATUS_ENCODING_ERROR;
 
     // MSB must be zero for positive integer. Error if MSB is not zero and we expect positive
+
+	//
+	// current_ptr could be out of bounds (speculatively)
+	//
+	sgx_lfence();
+
     if(MustBePositive && (*current_ptr & 0x80))
         return X509_STATUS_ENCODING_ERROR;
 
@@ -2828,6 +2848,13 @@ static STATUS ParseOID(UINT8 **ppCurrent, UINT8 *pEnd, UINT32 *EnumVal, const UI
         /* We have a encoded list of hard coded OIDs that we support in an array. Just compare the OID with that array. */
         for(i = 0;i< Max_Entries; i++)
         {
+			//
+			// current_ptr could be out of bounds (speculatively)
+			// and looping one too many times (also speculatively)
+			// would be bad
+			//
+			sgx_lfence();
+
             if(memcmp(current_ptr, OidList, length) == 0){
                 /* We found a match. i is the algorithm number that  the caller is looking for */
                 *EnumVal= i;
@@ -2873,6 +2900,11 @@ static STATUS ParseSignatureValue(UINT8 **ppCurrent, UINT8 *pEnd, UINT8 **pworkb
             break;
 
         /* Next Byte is the number of padded. Because this is a signature, we expect the resulting value to be a multiple of 8 bits meaning no padding will be necessery    */
+
+		//
+		// current_ptr could be out of bounds (speculatively)
+		//
+		sgx_lfence();
 
         if(*current_ptr != 0){
             Status = X509_STATUS_ENCODING_ERROR;
@@ -3387,15 +3419,30 @@ static STATUS ParseTime(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrDateTime* DateTim
 */
 static STATUS DecodeLength(UINT8* Buffer, UINT8* BufferEnd, UINT32* Length, UINT8* EncodingBytes)
 {
+	//
+	// some spectre vulnerabilities in here
+	//
+	// stop speculation here to make sure Buffer[0] is in bounds
+	// before reading
+	//
+	sgx_lfence();
     if(Buffer[0] < 0x81){
         /* length is only one byte */
         *Length = Buffer[0];
         *EncodingBytes = 1;
     } else if ((Buffer[0] == 0x81) && (&Buffer[1] < BufferEnd)) {
+		//
+		// lfence for Buffer[1]
+		//
+		sgx_lfence();
         /* length is two bytes */
         *Length = Buffer[1];
         *EncodingBytes = 2;
     } else if ((Buffer[0] == 0x82) && (&Buffer[2] < BufferEnd)) {
+		//
+		// lfence for Buffer[2]
+		//
+		sgx_lfence();
         /* length is 3 bytes */
         *Length = (Buffer[1] << 8) + Buffer[2];
         *EncodingBytes = 3;
@@ -3411,6 +3458,11 @@ static STATUS DecodeLength(UINT8* Buffer, UINT8* BufferEnd, UINT32* Length, UINT
         if ((Buffer + tempLength) > BufferEnd) {
             return X509_STATUS_ENCODING_ERROR;
         }
+		//
+		// X.509 cert includes length fields that
+		// an attacker can control
+		//
+		sgx_lfence();
     }
     else {
         return X509_STATUS_ENCODING_ERROR;
@@ -3484,6 +3536,12 @@ static STATUS ParseIdAndLength(UINT8 **ppCurrent, UINT8 *pEnd, UINT8 ExpectedId,
 {
     UINT8*  current_ptr = *ppCurrent;
     STATUS  Status;
+
+	//
+	// could be here speculatively and
+	// current_ptr be out of bounds
+	//
+	sgx_lfence();
 
     if(*current_ptr != ExpectedId){
         if(Optional)

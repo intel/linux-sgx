@@ -45,6 +45,7 @@
 #include "provision_msg.h"
 #include "provision_enclave_t.c"
 #include "sgx_utils.h"
+#include "sgx_lfence.h"
 #include "aeerror.h"
 
 ae_error_t pve_error_2_ae_error(pve_status_t pve_error)
@@ -141,7 +142,7 @@ uint32_t proc_prov_msg2_data_wrapper(
     // for user_check SigRL input
     // based on sigrl_size input parameter
     //
-    __builtin_ia32_lfence();
+    sgx_lfence();
 
     if((sigrl==NULL&&sigrl_size!=0)||
         (sigrl!=NULL&&sigrl_size==0)){

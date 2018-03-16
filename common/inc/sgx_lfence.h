@@ -29,32 +29,20 @@
  *
  */
 
-#ifndef _SE_ATOMIC_H_
-#define _SE_ATOMIC_H_
+#ifndef _SGX_LFENCE_H_
+#define _SGX_LFENCE_H_
 
-#include <stdint.h>
+#define sgx_lfence  __builtin_ia32_lfence
 
-
-inline uint32_t se_atomic_inc(volatile uint32_t *mem)
-{
-    return __sync_add_and_fetch(mem, 1);
-}
-
-inline uint32_t se_atomic_dec(uint32_t volatile *mem)
-{
-    return __sync_sub_and_fetch(mem, 1);
-}
-
-inline uint64_t se_atomic_inc64(volatile uint64_t *mem)
-{
-    return __sync_add_and_fetch(mem, 1);
-}
-
-inline uint64_t se_atomic_dec64(uint64_t volatile *mem)
-{
-    return __sync_sub_and_fetch(mem, 1);
-}
-
-
-
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+extern void __builtin_ia32_lfence(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* !_SGX_LFENCE_H_ */
+

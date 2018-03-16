@@ -79,6 +79,9 @@ void AESMQueueManager::enqueue(RequestData* requestData)
                 AESM_LOG_ERROR("Malformed request received (May be forged for attack)");
         }
 
+    }else {
+        delete requestData;
+        AESM_LOG_ERROR("Malformed request received (May be forged for attack)");
     }
 }
 

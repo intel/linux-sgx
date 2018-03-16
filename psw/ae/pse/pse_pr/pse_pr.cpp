@@ -51,33 +51,6 @@
 
 static TEpidSigma11Verifier*  s_pVerifier = NULL;
 
-//length to copy into enclave
-size_t get_sigRL_size(const EPID11_SIG_RL* pSigRL)
-{
-    uint32_t nEntries = 0;
-    uint32_t nSize = 0;
-
-    if (TEpidSigma11Verifier::get_sigRL_info(pSigRL, nEntries, nSize))
-        return nSize;
-    else
-        //invalid sigRL
-        return sizeof(EPID11_SIG_RL);
-}
-
-//length to copy into enclave
-size_t get_privRL_size(const EPID11_PRIV_RL* pPrivRL)
-{
-    uint32_t nEntries = 0;
-    uint32_t nSize = 0;
-
-    if (TEpidSigma11Verifier::get_privRL_info(pPrivRL, nEntries, nSize))
-        return nSize;
-    else
-        //invalid privRL
-        return sizeof(EPID11_PRIV_RL);
-}
-
-
 ae_error_t ecall_tPrepareForCertificateProvisioning
 (
     /*in */ UINT64  nonce64,
@@ -103,6 +76,7 @@ ae_error_t ecall_tGenM7
 (
     /*in */ const SIGMA_S1_MESSAGE*      pS1,
     /*in */ const EPID11_SIG_RL*         pSigRL, 
+    /*in */ uint32_t  nTotalLen_SigRL,
     /*in */ const uint8_t*               pOcspResp, 
     /*in */ uint32_t  nLen_OcspResp,
     /*in */ const uint8_t*               pVerifierCert,
@@ -125,6 +99,7 @@ ae_error_t ecall_tGenM7
         status = s_pVerifier->GenM7(
             pS1, 
             pSigRL, 
+            nTotalLen_SigRL,
             pOcspResp, nLen_OcspResp, 
             pVerifierCert, nLen_VerifierCert,
             pPairingBlob,
@@ -145,6 +120,7 @@ ae_error_t ecall_tVerifyM8
     /*in */ const SIGMA_S3_MESSAGE*      pS3,
     /*in */ uint32_t  nLen_S3,
     /*in */ const EPID11_PRIV_RL*        pPrivRL,
+    /*in */ uint32_t  nTotalLen_PrivRL,
     /*out*/       pairing_blob_t* pPairingBlob,
     /*out*/ uint8_t*  puNewPairing
 )
@@ -157,7 +133,9 @@ ae_error_t ecall_tVerifyM8
 
         status = s_pVerifier->VerifyM8(
             pS3, nLen_S3, 
-            pPrivRL, pPairingBlob,
+            pPrivRL, 
+            nTotalLen_PrivRL,
+            pPairingBlob,
             (bool*)puNewPairing);
         BREAK_IF_FAILED(status);
 

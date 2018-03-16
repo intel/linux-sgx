@@ -43,7 +43,7 @@ class UnixCommunicationSocket : public ICommunicationSocket{
 
         virtual bool init();
         virtual ssize_t writeRaw(const char* data, ssize_t length);
-        virtual char* readRaw(ssize_t length);// throw(SockDisconnectedException);
+        virtual char* readRaw(ssize_t length);
 
         void disconnect();
         virtual int getSockDescriptor();

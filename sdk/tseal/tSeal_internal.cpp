@@ -33,6 +33,7 @@
 
 
 #include "sgx_tseal.h"
+#include "sgx_lfence.h"
 #include "tSeal_internal.h"
 #include "sgx_utils.h"
 #include <string.h>
@@ -144,7 +145,7 @@ sgx_status_t sgx_unseal_data_helper(const sgx_sealed_data_t *p_sealed_data, uint
     // know what crypto code does and if plain_text_offset-related 
     // checks mispredict the crypto code could operate on unintended data
     //
-    __builtin_ia32_lfence();
+    sgx_lfence();
 
     err = sgx_rijndael128GCM_decrypt(&seal_key, const_cast<uint8_t *>(p_sealed_data->aes_data.payload),
         decrypted_text_length, p_decrypted_text, &payload_iv[0], SGX_SEAL_IV_SIZE,

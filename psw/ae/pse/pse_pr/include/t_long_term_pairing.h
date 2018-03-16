@@ -61,7 +61,8 @@ public:
     ae_error_t GenM7
     (
         /*in */ const SIGMA_S1_MESSAGE*      pS1,
-        /*in */ const EPID11_SIG_RL*         pSigRL, 
+        /*in */ const EPID11_SIG_RL*           pSigRL,
+        /*in */ uint32_t  nTotalLen_SigRL, 
         /*in */ const uint8_t*               pOcspResp, 
         /*in */ uint32_t  nLen_OcspResp, 
         /*in */ const uint8_t*               pVerifierCert,
@@ -76,7 +77,8 @@ public:
     (
         /*in */ const SIGMA_S3_MESSAGE*      pS3, 
         /*in */ uint32_t  nLen_S3,
-        /*in */ const EPID11_PRIV_RL*        pPrivRL,
+        /*in */ const EPID11_PRIV_RL*          pPrivRL,
+        /*in */ uint32_t  nTotalLen_PrivRL, 
         /*i/o*/ pairing_blob_t* pPairingBlob,
         /*out*/ bool*     pbNewPairing
     );

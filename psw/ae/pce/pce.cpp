@@ -33,6 +33,7 @@
 #include "pce_t.c"
 #include "aeerror.h"
 #include "sgx_utils.h"
+#include "sgx_lfence.h"
 #include "ipp_wrapper.h"
 #include "byte_order.h"
 #include "pve_qe_common.h"
@@ -91,6 +92,12 @@ uint32_t get_pc_info(const sgx_report_t* report,
     {
         return AE_INVALID_PARAMETER;
     }
+
+	//
+	// if this mispredicts, we might go past end of 
+	// public_key below
+	//
+    sgx_lfence();
 
     *encrypted_ppid_out_size = RSA_MOD_SIZE;//output size is same as public key module size
     if (encrypted_ppid_buf_size < RSA_MOD_SIZE){

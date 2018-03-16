@@ -287,13 +287,28 @@ let mk_member_decl (ty: Ast.atype) (declr: Ast.declarator) =
  * in the marshaling data structure to keep the pass-by-address scheme
  * as in the C programming language.
 *)
-let mk_ms_member_decl (pt: Ast.parameter_type) (declr: Ast.declarator) =
+let mk_ms_member_decl (pt: Ast.parameter_type) (declr: Ast.declarator) (isecall: bool) =
   let aty = Ast.get_param_atype pt in
   let tystr = Ast.get_tystr aty in
   let ptr = if is_foreign_array pt then "* " else "" in
   let field = mk_ms_member_name declr.Ast.identifier in
+  (* String attribute is available for in/inout both ecall and ocall.
+   * For ocall ,strlen is called in trusted proxy ocde, so no need to defense it.
+   *)
+  let need_str_len_var (pt: Ast.parameter_type) =
+    match pt with
+    Ast.PTVal _        -> false
+    | Ast.PTPtr(_, pa) ->
+    if pa.Ast.pa_isstr || pa.Ast.pa_iswstr then
+        match pa.Ast.pa_direction with
+        Ast.PtrInOut | Ast.PtrIn ->  if isecall then true else false
+        | _ -> false
+    else false
+  in
+  let str_len = if need_str_len_var pt then sprintf "\tsize_t %s_len;\n" field else ""
+  in
   let dmstr = get_array_dims declr.Ast.array_dims in
-    sprintf "\t%s%s %s%s;\n" tystr ptr field dmstr
+    sprintf "\t%s%s %s%s;\n%s" tystr ptr field dmstr str_len
 
 (* Generate data structure definition *)
 let gen_comp_def (st: Ast.composite_type) =
@@ -315,26 +330,26 @@ let get_param_tystr (pt: Ast.parameter_type) =
   Ast.get_tystr (Ast.get_param_atype pt)
 
 (* Generate marshaling structure definition *)
-let gen_marshal_struct (fd: Ast.func_decl) (errno: string) =
+let gen_marshal_struct (fd: Ast.func_decl) (errno: string) (isecall: bool) =
     let member_list_str = errno ^
     let new_param_list = List.map conv_array_to_ptr fd.Ast.plist in
     List.fold_left (fun acc (pt, declr) ->
-            acc ^ mk_ms_member_decl pt declr) "" new_param_list in
+            acc ^ mk_ms_member_decl pt declr isecall) "" new_param_list in
   let struct_name = mk_ms_struct_name fd.Ast.fname in
     match fd.Ast.rtype with
         (* A function w/o return value and parameters doesn't need
            a marshaling struct. *)
         Ast.Void -> if fd.Ast.plist = [] && errno = "" then ""
                     else mk_struct_decl member_list_str struct_name
-      | _ -> let rv_str = mk_ms_member_decl (Ast.PTVal fd.Ast.rtype) retval_declr
+      | _ -> let rv_str = mk_ms_member_decl (Ast.PTVal fd.Ast.rtype) retval_declr isecall
              in mk_struct_decl (rv_str ^ member_list_str) struct_name
 
 let gen_ecall_marshal_struct (tf: Ast.trusted_func) =
-    gen_marshal_struct tf.Ast.tf_fdecl ""
+    gen_marshal_struct tf.Ast.tf_fdecl "" true
 
 let gen_ocall_marshal_struct (uf: Ast.untrusted_func) =
     let errno_decl = if uf.Ast.uf_propagate_errno then "\tint ocall_errno;\n" else "" in
-    gen_marshal_struct uf.Ast.uf_fdecl errno_decl
+    gen_marshal_struct uf.Ast.uf_fdecl errno_decl false
 
 (* Check whether given parameter is `const' specified. *)
 let is_const_ptr (pt: Ast.parameter_type) =
@@ -576,42 +591,6 @@ let gen_theader_preemble (guard: string) (inclist: string) =
 #include \"sgx_edger8r.h\" /* for sgx_ocall etc. */\n\n" in
     grd_hdr ^ inc_exp ^ inclist ^ "\n" ^ common_macros
 
-
-(* Generate function prototype for functions used by `sizefunc' attribute. *)
-let gen_sizefunc_proto out_chan (ec: enclave_content) =
-  let tfunc_decls = tf_list_to_fd_list ec.tfunc_decls in
-  let ufunc_decls = uf_list_to_fd_list ec.ufunc_decls in
-
-  let dict = Hashtbl.create 4 in
-  let get_sizefunc_proto s =
-    let (pt, ns) = Hashtbl.find dict s in
-    let tmpdeclr = { Ast.identifier = "val"; Ast.array_dims = ns; } in
-      sprintf "size_t %s(const %s);\n" s (get_typed_declr_str pt tmpdeclr)
-  in
-
-  let add_item (fname: string) (ty: Ast.atype * int list) =
-    try
-      let v = Hashtbl.find dict fname
-      in
-        if v <> ty then
-          failwithf "`%s' requires different parameter types" fname
-    with Not_found -> Hashtbl.add dict fname ty
-  in
-  let fill_dict (pd: Ast.pdecl) =
-    let (pt, declr) = pd in
-      match pt with
-          Ast.PTVal _           -> ()
-        | Ast.PTPtr(aty, pattr) ->
-            match pattr.Ast.pa_size.Ast.ps_sizefunc with
-                Some s -> add_item s (aty, declr.Ast.array_dims)
-              | _ -> ()
-  in
-    List.iter (fun (fd: Ast.func_decl) ->
-                 List.iter fill_dict fd.Ast.plist) (tfunc_decls @ ufunc_decls);
-    Hashtbl.iter (fun x y ->
-                    output_string out_chan (get_sizefunc_proto x)) dict;
-    output_string out_chan "\n"
-
 (* Generate trusted header for enclave *)
 let gen_trusted_header (ec: enclave_content) =
   let header_fname = get_theader_name ec.file_shortnm in
@@ -626,7 +605,6 @@ let gen_trusted_header (ec: enclave_content) =
   let out_chan = open_out header_fname in
     output_string out_chan (guard_code ^ "\n");
     List.iter (fun s -> output_string out_chan (s ^ "\n")) comp_def_list;
-    gen_sizefunc_proto out_chan ec;
     List.iter (fun s -> output_string out_chan (s ^ ";\n")) func_proto_list;
     output_string out_chan "\n";
     List.iter (fun s -> output_string out_chan (s ^ ";\n")) func_tproxy_list;
@@ -636,11 +614,13 @@ let gen_trusted_header (ec: enclave_content) =
 (* It generates function invocation expression. *)
 let mk_parm_name_raw (pt: Ast.parameter_type) (declr: Ast.declarator) =
   let cast_expr =
+    let tystr = get_param_tystr pt in
     if Ast.is_array declr && List.length declr.Ast.array_dims > 1
     then
-      let tystr = get_param_tystr pt in
       let dims = get_array_dims (List.tl declr.Ast.array_dims) in
         sprintf "(%s (*)%s)"  tystr dims
+    else if is_const_ptr pt then
+        sprintf "(const %s)" tystr
     else ""
   in
     cast_expr ^ mk_parm_accessor declr.Ast.identifier
@@ -672,19 +652,14 @@ let mk_parm_name_ext (pt: Ast.parameter_type) (declr: Ast.declarator) =
 
 let gen_func_invoking (fd: Ast.func_decl)
                       (mk_parm_name: Ast.parameter_type -> Ast.declarator -> string) =
-  let gen_parm_str pt declr =
-    let parm_name = mk_parm_name pt declr in
-    let tystr = get_param_tystr pt in
-      if is_const_ptr pt then sprintf "(const %s)%s" tystr parm_name else parm_name
-  in
     match fd.Ast.plist with
       [] -> sprintf "%s();" fd.Ast.fname
     | (pt, (declr : Ast.declarator)) :: ps ->
         sprintf "%s(%s);"
           fd.Ast.fname
-          (let p0 = gen_parm_str pt declr in
+          (let p0 = mk_parm_name pt declr in
              List.fold_left (fun acc (pty, dlr) ->
-                               acc ^ ", " ^ gen_parm_str pty dlr) p0 ps)
+                               acc ^ ", " ^ mk_parm_name pty dlr) p0 ps)
 
 (* Generate untrusted bridge code for a given untrusted function. *)
 let gen_func_ubridge (file_shortnm: string) (ufunc: Ast.untrusted_func) =
@@ -726,12 +701,24 @@ let fill_ms_field (isptr: bool) (pd: Ast.pdecl) =
     sprintf "%s%s%s = (%s *)&%s[0];"
       ms_struct_val accessor ms_member_name (Ast.get_tystr aty) param_name
   in
+  let gen_setup_foreign_str aty =
+    sprintf "%s%s%s_len = %s ? strlen(%s) + 1 : 0;"
+      ms_struct_val accessor ms_member_name param_name param_name
+  in
+  let gen_setup_foreign_wstr aty =
+    sprintf "%s%s%s_len = %s ? (wcslen(%s) + 1) * sizeof(wchar_t) : 0;"
+      ms_struct_val accessor ms_member_name param_name param_name
+  in
     if declr.Ast.array_dims = [] then
       match pt with
           Ast.PTVal(aty)        -> assignment_str false aty
         | Ast.PTPtr(aty, pattr) ->
             if pattr.Ast.pa_isary
             then gen_setup_foreign_array aty
+            else if pattr.Ast.pa_isstr
+            then assignment_str true aty ^ "\n\t" ^ gen_setup_foreign_str aty
+            else if pattr.Ast.pa_iswstr
+            then assignment_str true aty ^ "\n\t" ^ gen_setup_foreign_wstr aty
             else
               if pattr.Ast.pa_rdonly then assignment_str true aty
               else assignment_str false aty
@@ -785,7 +772,8 @@ let mk_check_ptr (name: string) (lenvar: string) =
 (* Pointer to marshaling structure should never be NULL. *)
 let mk_check_pms (fname: string) =
   let lenvar = sprintf "sizeof(%s)" (mk_ms_struct_name fname)
-  in sprintf "\t%s(%s, %s);\n" "CHECK_REF_POINTER" ms_ptr_name lenvar
+  in sprintf "\t%s(%s, %s);%s" "CHECK_REF_POINTER" ms_ptr_name lenvar
+        "\n\t//\n\t// fence after pointer checks\n\t//\n\tsgx_lfence();\n"
 
 (* Generate code to get the size of the pointer. *)
 let gen_ptr_size (ty: Ast.atype) (pattr: Ast.ptr_attr) (name: string) (get_parm: string -> string) =
@@ -802,37 +790,32 @@ let gen_ptr_size (ty: Ast.atype) (pattr: Ast.ptr_attr) (name: string) (get_parm:
         Ast.AString s -> sprintf "%s * %s" (get_parm s) size_str
       | Ast.ANumber n -> sprintf "%d * %s" n size_str in
 
-  let mk_len_sizefunc s = sprintf "((%s) ? %s(%s) : 0)" parm_name s parm_name in
-
-  (* Note, during the parsing stage, we already eliminated the case that
-   * user specified both 'size' and 'sizefunc' attribute.
-   *)
-  let do_attribute (pattr: Ast.ptr_attr) =
-    let do_ps_attribute (sattr: Ast.ptr_size) =
-      let size_str =
-        match sattr.Ast.ps_size with
+  let do_ps_attribute (sattr: Ast.ptr_size) =
+    let size_str =
+      match sattr.Ast.ps_size with
           Some a -> mk_len_size a
-        | None   ->
-          match sattr.Ast.ps_sizefunc with
-            None   -> sprintf "sizeof(*%s)" parm_name
-          | Some a -> mk_len_sizefunc a
+        | None   -> sprintf "sizeof(*%s)" parm_name
       in
-        match sattr.Ast.ps_count with
-          None   -> size_str
-        | Some a -> mk_len_count a size_str
+      match sattr.Ast.ps_count with
+        None   -> size_str
+      | Some a -> mk_len_count a size_str
     in
-      if pattr.Ast.pa_isstr then
-        sprintf "%s ? strlen(%s) + 1 : 0" parm_name parm_name
-      else if pattr.Ast.pa_iswstr then
-        sprintf "%s ? (wcslen(%s) + 1) * sizeof(wchar_t) : 0" parm_name parm_name
-      else
-        do_ps_attribute pattr.Ast.pa_size
-  in
     sprintf "size_t %s = %s;\n"
-      len_var
-      (if pattr.Ast.pa_isary
-       then sprintf "sizeof(%s)" (Ast.get_tystr ty)
-       else do_attribute pattr)
+          len_var
+          (if pattr.Ast.pa_isary then
+             sprintf "sizeof(%s)" (Ast.get_tystr ty)
+           else
+             (* genrerate ms_parm_len only for ecall with string/wstring in _t.c.*)
+             if (pattr.Ast.pa_isstr || pattr.Ast.pa_iswstr) && parm_name <> name then
+                 sprintf "%s_len " (mk_parm_accessor name)
+               else
+                 (* genrerate strlen(param)/wcslen(param) only for ocall with string/wstring in _t.c.*)
+                 if pattr.Ast.pa_isstr then
+                   sprintf "%s ? strlen(%s) + 1 : 0" parm_name parm_name
+                 else 
+                   if pattr.Ast.pa_iswstr then
+                     sprintf "%s ? (wcslen(%s) + 1) * sizeof(wchar_t) : 0" parm_name parm_name
+                   else do_ps_attribute pattr.Ast.pa_size)
 
 (* Find the data type of a parameter. *)
 let find_param_type (name: string) (plist: Ast.pdecl list) =
@@ -855,23 +838,18 @@ let gen_check_tbridge_length_overflow (plist: Ast.pdecl list) =
         Ast.AString s -> mk_tmp_var s
       | Ast.ANumber n -> sprintf "%d" n in
 
-    let mk_len_sizefunc s = sprintf "((%s) ? %s(%s) : 0)" tmp_ptr_name s tmp_ptr_name in
-
     let gen_check_overflow cnt size_str =
       let if_statement =
         match cnt with
             Ast.AString s -> sprintf "\tif (%s != 0 &&\n\t\t(size_t)%s > (SIZE_MAX / %s)) {\n" size_str (mk_tmp_var s) size_str
           | Ast.ANumber n -> sprintf "\tif (%s != 0 &&\n\t\t%d > (SIZE_MAX / %s)) {\n" size_str n size_str
       in
-        sprintf "%s\t\tstatus = SGX_ERROR_INVALID_PARAMETER;\n\t\tgoto err;\n\t}" if_statement
+        sprintf "%s\t\treturn SGX_ERROR_INVALID_PARAMETER;\n\t}" if_statement
     in
       let size_str =
         match attr.Ast.pa_size.Ast.ps_size with
           Some a -> mk_len_size a
-        | None   ->
-          match attr.Ast.pa_size.Ast.ps_sizefunc with
-            None   -> sprintf "sizeof(*%s)" tmp_ptr_name
-          | Some a -> mk_len_sizefunc a
+        | None   -> sprintf "sizeof(*%s)" tmp_ptr_name
       in
         match attr.Ast.pa_size.Ast.ps_count with
           None   -> ""
@@ -897,11 +875,16 @@ let gen_check_tbridge_ptr_parms (plist: Ast.pdecl list) =
   in
   let new_param_list = List.map conv_array_to_ptr plist
   in
+  let pointer_checkings =
     List.fold_left
       (fun acc (pty, declr) ->
          match pty with
              Ast.PTVal _         -> acc
            | Ast.PTPtr(ty, attr) -> acc ^ gen_check_ptr ty attr declr) "" new_param_list
+  in
+  if pointer_checkings = "" then ""
+  else pointer_checkings ^ "\n\t//\n\t// fence after pointer checks\n\t//\n\tsgx_lfence();\n"
+
 
 (* If a foreign type is a readonly pointer, we cast it to 'void*' for memcpy() and free() *)
 let mk_in_ptr_dst_name (rdonly: bool) (ptr_name: string) =
@@ -920,28 +903,24 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
     let len_var     = mk_len_var name in
     let in_ptr_dst_name = mk_in_ptr_dst_name attr.Ast.pa_rdonly in_ptr_name in
     let tmp_ptr_name= mk_tmp_var name in
-
-    let mk_len_count v  =
-      match v with
-        None -> ""
-        |Some a ->
-          match a with
-            Ast.AString s -> sprintf "_tmp_%s * " s
-            | Ast.ANumber n -> sprintf "%d * " n
-    in
-    let check_sizefunc_with_cnt_ptr v fn =
-      sprintf "\t\t/* check whether the pointer is modified. */\n\
-\t\tif (%s%s(%s) != %s) {\n\
-\t\t\tstatus = SGX_ERROR_INVALID_PARAMETER;\n\
-\t\t\tgoto err;\n\
-\t\t}\n\n\
-\t\t//\n\t\t// fence after final sizefunc check\n\t\t//\n\t\t__builtin_ia32_lfence();\n\n" (mk_len_count v) fn in_ptr_name len_var
-    in
     let malloc_and_copy pre_indent =
       match attr.Ast.pa_direction with
           Ast.PtrIn | Ast.PtrInOut ->
+            let wstr_len_check =
+              if attr.Ast.pa_iswstr then
+                let wstr_len_check_template  = [
+                  sprintf "\n\t\tif (%s %% sizeof(wchar_t) != 0)" len_var;
+                  "\t\t{";
+                  "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                  "\t\t\tgoto err;";
+                  "\t\t}";
+                  ]
+                  in
+                  List.fold_left (fun acc s -> acc ^ s ^ "\n") "" wstr_len_check_template
+                else ""
+            in
             let code_template = [
-              sprintf "if (%s != NULL && %s != 0) {" tmp_ptr_name len_var;
+              sprintf "if (%s != NULL && %s != 0) {%s" tmp_ptr_name len_var wstr_len_check;
               sprintf "\t%s = (%s)malloc(%s);" in_ptr_name in_ptr_type len_var;
               sprintf "\tif (%s == NULL) {" in_ptr_name;
               "\t\tstatus = SGX_ERROR_OUT_OF_MEMORY;";
@@ -952,16 +931,30 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
             in
             let s1 = List.fold_left (fun acc s -> acc ^ pre_indent ^ s ^ "\n") "" code_template in
             let s2 =
-              if attr.Ast.pa_isstr
-              then sprintf "%s\t\t%s[%s - 1] = '\\0';\n" s1 in_ptr_name len_var
-              else if attr.Ast.pa_iswstr
-              then sprintf "%s\t\t%s[(%s - sizeof(wchar_t))/sizeof(wchar_t)] = (wchar_t)0;\n" s1 in_ptr_name len_var
+              if attr.Ast.pa_isstr then
+                let code_template2  = [
+                  sprintf "\t%s[%s - 1] = '\\0';" in_ptr_name len_var;
+                  sprintf "\tif (%s != strlen(%s) + 1)" len_var in_ptr_name;
+                  "\t{";
+                  "\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                  "\t\tgoto err;";
+                  "\t}";
+                  ]
+                in
+                s1 ^ List.fold_left (fun acc s -> acc ^ pre_indent ^ s ^ "\n") "" code_template2
+              else if attr.Ast.pa_iswstr then
+                let code_template3  = [
+                  sprintf "\t%s[(%s - sizeof(wchar_t))/sizeof(wchar_t)] = (wchar_t)0;" in_ptr_name len_var;
+                  sprintf "\tif ( %s / sizeof(wchar_t) != wcslen(%s) + 1)" len_var in_ptr_name;
+                  "\t{";
+                  "\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                  "\t\tgoto err;";
+                  "\t}";
+                  ]
+                in
+                s1 ^ List.fold_left (fun acc s -> acc ^ pre_indent ^ s ^ "\n") "" code_template3
               else s1 in
-            let s3 =
-              match attr.Ast.pa_size.Ast.ps_sizefunc with
-                  None   -> s2
-                | Some s -> sprintf "%s\n%s\n" s2 (check_sizefunc_with_cnt_ptr attr.Ast.pa_size.Ast.ps_count s)
-            in sprintf "%s\t}\n" s3
+            sprintf "%s\t}\n" s2
         | Ast.PtrOut ->
             let code_template = [
               sprintf "if (%s != NULL && %s != 0) {" tmp_ptr_name len_var;
@@ -994,12 +987,37 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
       match attr.Ast.pa_direction with
           Ast.PtrIn -> sprintf "\tif (%s) free(%s);\n" in_ptr_name in_ptr_dst_name
         | Ast.PtrInOut | Ast.PtrOut ->
-            sprintf "\tif (%s) {\n\t\tmemcpy(%s, %s, %s);\n\t\tfree(%s);\n\t}\n"
-                    in_ptr_name
-                    (mk_tmp_var name)
-                    in_ptr_name
-                    len_var
-                    in_ptr_name
+          if attr.Ast.pa_isstr then
+                let code_template  = [
+                  sprintf "\tif (%s)" in_ptr_name;
+                  "\t{";
+                  sprintf "\t\t%s[%s - 1] = '\\0';" in_ptr_name len_var;
+                  sprintf "\t\t%s = strlen(%s) + 1;" len_var in_ptr_name;
+                  sprintf "\t\tmemcpy((void*)%s, %s, %s);" (mk_tmp_var name) in_ptr_name len_var;
+                  sprintf "\t\tfree(%s);" in_ptr_name;
+                  "\t}";
+                  ]
+                in
+                List.fold_left (fun acc s -> acc ^ s ^ "\n") "" code_template
+              else if attr.Ast.pa_iswstr then
+                let code_template  = [ 
+                  sprintf "\tif (%s)" in_ptr_name;
+                  "\t{";
+                  sprintf "\t\t%s[(%s - sizeof(wchar_t))/sizeof(wchar_t)] = (wchar_t)0;" in_ptr_name len_var;
+                  sprintf "\t\t%s = (wcslen(%s) + 1) * sizeof(wchar_t);" len_var in_ptr_name;
+                  sprintf "\t\tmemcpy((void*)%s, %s, %s);" (mk_tmp_var name) in_ptr_name len_var;
+                  sprintf "\t\tfree(%s);" in_ptr_name;
+                  "\t}";
+                  ]
+                in  
+                List.fold_left (fun acc s -> acc ^ s ^ "\n") "" code_template
+            else
+              sprintf "\tif (%s) {\n\t\tmemcpy(%s, %s, %s);\n\t\tfree(%s);\n\t}\n"
+                      in_ptr_name
+                      (mk_tmp_var name)
+                      in_ptr_name
+                      len_var
+                      in_ptr_name
         | _ -> ""
   in List.fold_left
        (fun acc (pty, declr) ->
@@ -1068,11 +1086,21 @@ let ptr_has_direction (pt: Ast.parameter_type) =
     | Ast.PTPtr(_, a) -> a.Ast.pa_direction <> Ast.PtrNoDirection
 
 let tbridge_mk_parm_name_ext (pt: Ast.parameter_type) (declr: Ast.declarator) =
+  let cast_expr =
+    let tystr = get_param_tystr pt in
+    if Ast.is_array declr && List.length declr.Ast.array_dims > 1
+    then
+      let dims = get_array_dims (List.tl declr.Ast.array_dims) in
+        sprintf "(%s (*)%s)" tystr dims
+    else if is_const_ptr pt then
+      sprintf "(const %s)" tystr
+    else ""
+  in
   if is_in_param_cache declr.Ast.identifier || (is_ptr pt && (not (is_foreign_array pt)))
   then
     if ptr_has_direction pt
-    then mk_in_var declr.Ast.identifier
-    else mk_tmp_var declr.Ast.identifier
+    then cast_expr ^ mk_in_var declr.Ast.identifier
+    else cast_expr ^ mk_tmp_var declr.Ast.identifier
   else mk_parm_name_ext pt declr
 
 let mk_parm_name_tbridge (pt: Ast.parameter_type) (declr: Ast.declarator) =
@@ -1149,14 +1177,13 @@ let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
       in
         sprintf "%s%s%s\t%s\n\t%s\n%s" func_open local_vars dummy_var check_pms invoke_func func_close
     else
-      sprintf "%s%s\t%s\n%s\n%s%s\n%s\n%s\n\t%s\n%s\n%s\n%s"
+      sprintf "%s%s\t%s\n%s\n%s%s\n%s\n\t%s\n%s\n%s\n%s"
         func_open
         (mk_check_pms fd.Ast.fname)
         declare_ms_ptr
         local_vars
         (gen_check_tbridge_length_overflow fd.Ast.plist)
         (gen_check_tbridge_ptr_parms fd.Ast.plist)
-        "\n\t//\n\t// fence after pointer checks\n\t//\n\t__builtin_ia32_lfence();\n"
         (gen_parm_ptr_direction_pre fd.Ast.plist)
         (if fd.Ast.rtype <> Ast.Void then update_retval else invoke_func)
         (gen_err_mark fd.Ast.plist)
@@ -1171,12 +1198,8 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) =
     match pt with
         Ast.PTVal _ -> fill_ms_field true pd
       | Ast.PTPtr(ty, attr) ->
-        let is_ary = (Ast.is_array declr || attr.Ast.pa_isary) in
-        let tystr = sprintf "%s%s" (get_param_tystr pt) (if is_ary then "*" else "") in
-          if is_ary && is_ptr_type ty then
-            sprintf "\n#pragma message(\"Pointer array `%s' in trusted proxy `\"\
-               __FUNCTION__ \"' is dangerous. No code generated.\")\n" name
-          else
+              let is_ary = (Ast.is_array declr || attr.Ast.pa_isary) in
+              let tystr = sprintf "%s%s" (get_param_tystr pt) (if is_ary then "*" else "") in
               if not attr.Ast.pa_chkptr (* [user_check] specified *)
               then sprintf "%s = SGX_CAST(%s, %s);" parm_accessor tystr name
               else
@@ -1301,7 +1324,35 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
       let name = declr.Ast.identifier in
         match attr.Ast.pa_direction with
             Ast.PtrInOut | Ast.PtrOut ->
-              sprintf "\tif (%s) memcpy((void*)%s, __tmp_%s, %s);\n" name name name (mk_len_var name)
+              if attr.Ast.pa_isstr then
+                let code_template  = [
+                  sprintf "\tif (%s)" name;
+                  "\t{";
+                  sprintf "\t\tsize_t __tmp%s;" (mk_len_var name);
+                  sprintf "\t\tmemcpy((void*)%s, __tmp_%s, %s);"  name name (mk_len_var name);
+                  sprintf "\t\t((char*)%s)[%s - 1] = '\\0';" name (mk_len_var name);
+                  sprintf "\t\t__tmp%s = strlen(%s) + 1;" (mk_len_var name) name;
+                  sprintf "\t\tmemset(%s +__tmp%s - 1, 0, %s -__tmp%s);" name (mk_len_var name) (mk_len_var name) (mk_len_var name);
+                  "\t}";
+                  ]
+                in
+                List.fold_left (fun acc s -> acc ^ s ^ "\n") "" code_template
+              else if attr.Ast.pa_iswstr then
+                let code_template  = [ 
+                  sprintf "\tif (%s)" name;
+                  "\t{";
+                  sprintf "\t\tsize_t __tmp%s;" (mk_len_var name);
+                  sprintf "\t\tmemcpy((void*)%s, __tmp_%s, %s);"  name name (mk_len_var name);
+                  sprintf "\t\t((wchar_t*)%s)[(%s - sizeof(wchar_t))/sizeof(wchar_t)] = (wchar_t)0;" name (mk_len_var name);
+                  sprintf "\t\t__tmp%s = (wcslen(%s) + 1) * sizeof(wchar_t);" (mk_len_var name) name;
+                  sprintf "\t\tmemset(((uint8_t*)%s) + __tmp%s - sizeof(wchar_t), 0, %s -__tmp%s);" name (mk_len_var name) (mk_len_var name) (mk_len_var name);
+                  "\t}";
+                  ]
+                in  
+                List.fold_left (fun acc s -> acc ^ s ^ "\n") "" code_template
+              else
+                sprintf "\tif (%s) memcpy((void*)%s, __tmp_%s, %s);\n" name name name (mk_len_var name)
+
           | _ -> ""
     in List.fold_left (fun acc (pty, declr) ->
              match pty with
@@ -1381,7 +1432,8 @@ let gen_untrusted_source (ec: enclave_content) =
 let gen_trusted_source (ec: enclave_content) =
   let code_fname = get_tsource_name ec.file_shortnm in
   let include_hd = "#include \"" ^ get_theader_short_name ec.file_shortnm ^ "\"\n\n\
-#include \"sgx_trts.h\" /* for sgx_ocalloc, sgx_is_outside_enclave */\n\n\
+#include \"sgx_trts.h\" /* for sgx_ocalloc, sgx_is_outside_enclave */\n\
+#include \"sgx_lfence.h\" /* for sgx_lfence */\n\n\
 #include <errno.h>\n\
 #include <string.h> /* for memcpy etc */\n\
 #include <stdlib.h> /* for malloc/free etc */\n\
