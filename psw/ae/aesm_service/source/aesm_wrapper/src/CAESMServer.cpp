@@ -116,15 +116,9 @@ void CAESMServer::doWork()
         std::list<ICommunicationSocket*>::const_iterator it = socketsWithData.begin();
 
         for (;it != socketsWithData.end(); ++it) {
-            try {
-                IAERequest  *request = m_transporter->receiveRequest(*it);  
-                RequestData *requestData = new RequestData(*it, request);   //deleted by the AESMWorkerThread after response is sent
-
-                m_queueManager->enqueue(requestData);
-
-            } catch (SockDisconnectedException& e) {
-                m_selector->removeSocket(*it);
-            }
+            IAERequest  *request = m_transporter->receiveRequest(*it);  
+            RequestData *requestData = new RequestData(*it, request);   //deleted by the AESMWorkerThread after response is sent
+            m_queueManager->enqueue(requestData);
         }
     }
 

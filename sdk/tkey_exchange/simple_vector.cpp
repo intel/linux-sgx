@@ -33,6 +33,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include "sgx_lfence.h"
 #include "simple_vector.h"
 
 //initial vector capacity when fisrt item is added to vector
@@ -103,7 +104,7 @@ errno_t vector_get(const simple_vector* v, uint32_t index, void** data)
         return 1;
         
     //fence after boundary check 
-    __builtin_ia32_lfence();
+    sgx_lfence();
 
     *data = v->data[index];
     return 0;

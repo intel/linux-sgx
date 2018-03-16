@@ -85,7 +85,8 @@ typedef enum _file_path_t
     OUTPUT,
     SIG,
     UNSIGNED,
-    DUMPFILE
+    DUMPFILE,
+    CSSFILE
 } file_path_t;
 
 
@@ -564,7 +565,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-dumpfile", NULL, PAR_OPTIONAL}};
+        {"-dumpfile", NULL, PAR_OPTIONAL},
+        {"-cssfile", NULL, PAR_OPTIONAL}};
     param_struct_t params_gendata[] = {
         {"-enclave", NULL, PAR_REQUIRED},
         {"-config", NULL, PAR_OPTIONAL},
@@ -572,7 +574,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-dumpfile", NULL, PAR_INVALID}};
+        {"-dumpfile", NULL, PAR_INVALID},
+        {"-cssfile", NULL, PAR_INVALID}};
     param_struct_t params_catsig[] = {
         {"-enclave", NULL, PAR_REQUIRED},
         {"-config", NULL, PAR_OPTIONAL},
@@ -580,7 +583,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_REQUIRED},
         {"-sig", NULL, PAR_REQUIRED},
         {"-unsigned", NULL, PAR_REQUIRED},
-        {"-dumpfile", NULL, PAR_OPTIONAL}};
+        {"-dumpfile", NULL, PAR_OPTIONAL},
+        {"-cssfile", NULL, PAR_OPTIONAL}};
     param_struct_t params_dump[] = {
         {"-enclave", NULL, PAR_REQUIRED},
         {"-config", NULL, PAR_INVALID},
@@ -588,7 +592,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-out", NULL, PAR_INVALID},
         {"-sig", NULL, PAR_INVALID},
         {"-unsigned", NULL, PAR_INVALID},
-        {"-dumpfile", NULL, PAR_REQUIRED}};
+        {"-dumpfile", NULL, PAR_REQUIRED},
+        {"-cssfile", NULL, PAR_OPTIONAL}};
 
 
     const char *mode_m[] ={"sign", "gendata","catsig", "dump"};
@@ -939,7 +944,7 @@ static bool generate_compatible_metadata(metadata_t *metadata)
     return ret;
 }
 
-static bool dump_enclave_metadata(const char *enclave_path, const char *dumpfile_path)
+static bool dump_enclave_metadata(const char *enclave_path, const char *dumpfile_path, const char *cssfile)
 {
     assert(enclave_path != NULL && dumpfile_path != NULL);
     
@@ -982,9 +987,17 @@ static bool dump_enclave_metadata(const char *enclave_path, const char *dumpfile
     if(print_metadata(dumpfile_path, metadata) == false)
     {
         close_handle(fh);
-        remove(dumpfile_path);
         return false;
     }
+    if(cssfile != NULL)
+    {
+        if (write_data_to_file(cssfile, std::ios::binary | std::ios::out,
+            (uint8_t *)&(metadata->enclave_css), sizeof(enclave_css_t)) == false)
+        {
+            close_handle(fh);
+            return false;
+        }
+    } 
 
     close_handle(fh);
     return true;
@@ -1045,17 +1058,14 @@ int main(int argc, char* argv[])
     else if(mode == DUMP)
     {
         // dump metadata info
-        if(dump_enclave_metadata(path[DLL], path[DUMPFILE]) == false)
+        if(dump_enclave_metadata(path[DLL], path[DUMPFILE], path[CSSFILE]) == false)
         {
             se_trace(SE_TRACE_ERROR, DUMP_METADATA_ERROR, path[DUMPFILE]);
             goto clear_return;
         }
-        else
-        {
-            se_trace(SE_TRACE_ERROR, SUCCESS_EXIT);
-            res = 0;
-            goto clear_return;
-        }
+        se_trace(SE_TRACE_ERROR, SUCCESS_EXIT);
+        res = 0;
+        goto clear_return;
     }
     
     //Other modes
@@ -1116,6 +1126,13 @@ int main(int argc, char* argv[])
             goto clear_return;
         }
     }
+    if (path[CSSFILE] != NULL)
+    {
+        if (write_data_to_file(path[CSSFILE], std::ios::binary | std::ios::out,
+            (uint8_t *)&(metadata->enclave_css), sizeof(enclave_css_t)) == false)
+            goto clear_return;
+    }
+
     se_trace(SE_TRACE_ERROR, SUCCESS_EXIT);
     res = 0;
 
@@ -1126,7 +1143,8 @@ clear_return:
         remove(path[OUTPUT]);
     if(res == -1 && path[DUMPFILE])
         remove(path[DUMPFILE]);
-    
+    if(res == -1 && path[CSSFILE])
+        remove(path[CSSFILE]);    
 #if OPENSSL_VERSION_NUMBER < 0x10100000L    
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();

@@ -293,7 +293,7 @@ sgx_status_t sgx_read_rand(unsigned char *rand, size_t length_in_bytes)
 
 int sgx_is_enclave_crashed()
 {
-  return get_enclave_state() == ENCLAVE_CRASHED;
+    return get_enclave_state() == ENCLAVE_CRASHED;
 }
 
 extern uintptr_t __stack_chk_guard;
@@ -306,3 +306,4 @@ int check_static_stack_canary(void *tcs)
     }
     return 0;
 }
+

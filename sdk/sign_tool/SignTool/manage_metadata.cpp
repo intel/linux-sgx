@@ -45,6 +45,7 @@
 #include "section.h"
 #include "se_page_attr.h"
 #include "elf_util.h"
+#include "crypto_wrapper.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -990,20 +991,9 @@ bool update_metadata(const char *path, const metadata_t *metadata, uint64_t meta
 
 #define CONCAT(name, num) name##num
 #define A(num)     CONCAT(metadata, num)
-
-bool print_metadata(const char *path, const metadata_t *metadata)
+static void print_metadata_internal(std::ofstream &meta_ofs, const metadata_t *metadata)
 {
-    assert(path != NULL && metadata != NULL);
-
-    std::ofstream meta_ofs(path, std::ofstream::out | std::ofstream::trunc);
-    if (!meta_ofs.good())
-    {
-        se_trace(SE_TRACE_ERROR, OPEN_FILE_ERROR, path);
-        return false;
-    }
-    
-    meta_ofs << "The metadata information:" << std::endl
-	<< "=========================" << std::endl;
+    assert(metadata != NULL);
     PRINT_ELEMENT(meta_ofs, metadata, magic_num);
     PRINT_ELEMENT(meta_ofs, metadata, version);
     PRINT_ELEMENT(meta_ofs, metadata, size);
@@ -1042,54 +1032,74 @@ bool print_metadata(const char *path, const metadata_t *metadata)
     // css.buffer
     PRINT_ARRAY(meta_ofs, metadata, enclave_css.buffer.q1, SE_KEY_SIZE); 
     PRINT_ARRAY(meta_ofs, metadata, enclave_css.buffer.q2, SE_KEY_SIZE);
+}
 
-    metadata_t *metadata2 = GET_PTR(metadata_t, metadata, metadata->size);
-    if (metadata2->version == META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION, SGX_1_9_MINOR_VERSION) &&
-        metadata2->magic_num == METADATA_MAGIC)
+bool print_metadata(const char *path, const metadata_t *metadata)
+{
+    assert(path != NULL && metadata != NULL);
+
+    std::ofstream meta_ofs(path, std::ofstream::out | std::ofstream::trunc);
+    if (!meta_ofs.good())
     {
-        // Print the compatible metadata info
-        meta_ofs << std::endl << std::endl
-            << "The compatible metadata information: " << std::endl
-            << "====================================" << std::endl;
-        PRINT_ELEMENT(meta_ofs, metadata2, magic_num);
-        PRINT_ELEMENT(meta_ofs, metadata2, version);
-        PRINT_ELEMENT(meta_ofs, metadata2, size);
-        PRINT_ELEMENT(meta_ofs, metadata2, tcs_policy);
-        PRINT_ELEMENT(meta_ofs, metadata2, ssa_frame_size);
-        PRINT_ELEMENT(meta_ofs, metadata2, max_save_buffer_size);
-        PRINT_ELEMENT(meta_ofs, metadata2, desired_misc_select);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_size);
-        PRINT_ELEMENT(meta_ofs, metadata2, attributes.flags);
-        PRINT_ELEMENT(meta_ofs, metadata2, attributes.xfrm);
-    
-        // css.header
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.header.header, 12);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.header.type);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.header.module_vendor);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.header.date);
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.header.header2, 16);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.header.hw_version);
-    
-        // css.key
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.key.modulus, SE_KEY_SIZE);
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.key.exponent, SE_EXPONENT_SIZE);
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.key.signature, SE_KEY_SIZE);
-        
-        // css.body
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.misc_select);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.misc_mask);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.attributes.flags);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.attributes.xfrm);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.attribute_mask.flags);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.attribute_mask.xfrm);
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.body.enclave_hash.m, SGX_HASH_SIZE);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.isv_prod_id);
-        PRINT_ELEMENT(meta_ofs, metadata2, enclave_css.body.isv_svn);
-    
-        // css.buffer
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.buffer.q1, SE_KEY_SIZE); 
-        PRINT_ARRAY(meta_ofs, metadata2, enclave_css.buffer.q2, SE_KEY_SIZE);
+        se_trace(SE_TRACE_ERROR, OPEN_FILE_ERROR, path);
+        return false;
+     }
+
+    meta_ofs << "=============================" << std::endl
+        << "The metadata information:" << std::endl
+        << "=============================" << std::endl;
+    print_metadata_internal(meta_ofs, metadata);
+
+    // Print the compatible metadata info
+    size_t compat_meta_count = 0;
+    do {
+        metadata_t *compatible_metadata = GET_PTR(metadata_t, metadata, metadata->size);
+        if(compatible_metadata == NULL || (compatible_metadata->magic_num == METADATA_MAGIC && compatible_metadata->size == 0))
+        {
+            meta_ofs.close();
+            return false;
+        }
+        if(compatible_metadata->magic_num != METADATA_MAGIC)
+            break;
+
+        compat_meta_count++;
+
+        if(compat_meta_count == 1)
+        {
+            meta_ofs << std::endl << std::endl << std::endl
+                << "====================================" << std::endl
+                << "The compatible metadata information: " << std::endl
+                << "====================================" << std::endl;
+        }
+        meta_ofs << std::endl <<  "Compatible metadata number "
+            << compat_meta_count << ":" << std::endl
+            << "------------------------------" << std::endl;
+        print_metadata_internal(meta_ofs, compatible_metadata);
+
+        metadata = compatible_metadata;
+
+    }while(1);
+
+    typedef struct _mrsigner_t
+    {
+      uint8_t value[SGX_HASH_SIZE];
+    } mrsigner_t;
+    mrsigner_t ms;
+    memset(&ms, 0, sizeof(mrsigner_t));
+    mrsigner_t *mrsigner = &ms;
+    unsigned int signer_len = SGX_HASH_SIZE;
+
+    if(sgx_EVP_Digest(EVP_sha256(), metadata->enclave_css.key.modulus, SE_KEY_SIZE, ms.value, &signer_len) != SGX_SUCCESS)
+    {
+        se_trace(SE_TRACE_ERROR, "ERROR: failed to calculate the mrsigner.\n");
+        meta_ofs.close();
+        return false;
     }
+    meta_ofs << std::endl << std::endl
+        << "===================" << std::endl
+        << "The mrsigner value:" << std::endl
+        << "===================" << std::endl;
+    PRINT_ARRAY(meta_ofs, mrsigner, value, SGX_HASH_SIZE);    
 
     meta_ofs.close();
     return true;

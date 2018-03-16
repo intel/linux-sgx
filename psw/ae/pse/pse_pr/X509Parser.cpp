@@ -31,6 +31,7 @@
 #include "X509Parser.h"
 #include <cstddef>
 #include "X509_Parser/X509_Interface.h"
+#include "sgx_lfence.h"
 #include <string.h>
 #include <stdlib.h>
 #include "byte_order.h"
@@ -90,6 +91,12 @@ UINT32 X509Parser::ParseGroupCertificate
                         ) {
                             break;
         }
+
+		//
+		// attacker can control pGroupCertVlr->VlrHeader.Length 
+		//
+		sgx_lfence();
+
         UINT32 X509GroupCertificateSize = static_cast<UINT32>(pGroupCertVlr->VlrHeader.Length -
             sizeof(pGroupCertVlr->VlrHeader) - pGroupCertVlr->VlrHeader.PaddedBytes);
 

@@ -45,6 +45,7 @@
 #include "dh.h"
 #include "pairing_blob.h"
 #include "monotonic_counter_database_sqlite_bin_hash_tree_utility.h"
+#include "sgx_lfence.h"
 
 #define BREAK_ON_MALLOC_FAIL(ptr,ret_val)           if (!(ptr)) {ret_val=PSE_OP_INTERNAL_ERROR;break;}
 
@@ -179,18 +180,39 @@ ae_error_t invoke_service_wrapper (
         return PSE_OP_PARAMETER_ERROR;
     }
 
-    if (req_msg_size < sizeof(pse_message_t)            // make sure the header is inside enclave
-        || pse_req_msg->payload_size > UINT32_MAX - sizeof(pse_message_t)   // check potential overflow
+	//
+	// make sure the header is inside enclave
+	//
+	if (req_msg_size < sizeof(pse_message_t))
+	{
+		return PSE_OP_PARAMETER_ERROR;
+	}
+
+	//
+	// if this mispredicts, we might overflow below
+	//
+	sgx_lfence();
+
+	if (pse_req_msg->payload_size > UINT32_MAX - sizeof(pse_message_t)   // check potential overflow
         || req_msg_size != sizeof(pse_message_t) + pse_req_msg->payload_size)
     {
         return PSE_OP_PARAMETER_ERROR;
     }
+
     if (resp_msg_size < sizeof(pse_message_t)           // make sure the header is inside enclave
         || pse_req_msg->exp_resp_size > UINT32_MAX - sizeof(pse_message_t)   // check potential overflow
         || resp_msg_size < sizeof(pse_message_t) + pse_req_msg->exp_resp_size)
     {
         return PSE_OP_PARAMETER_ERROR;
     }
+
+	//
+	// put LFENCE here mostly for pse_req_msg->payload_size 
+	// check above. I don't think we use 
+	// pse_req_msg->exp_resp_size to calculate 
+	// any pointers.
+	//
+	sgx_lfence();
 
     pse_session_t* session = sid2session(pse_req_msg->session_id);
 
@@ -242,6 +264,11 @@ ae_error_t invoke_service_wrapper (
         int service_count = static_cast<int>(sizeof(service_handler) / sizeof(service_handler_t));
         for (i = 0; i < service_count; i++)
         {
+			//
+			// might mispredict the end of the loop
+			//
+			sgx_lfence();
+
             if (req_hdr->service_id == service_handler[i].service_id &&
                 req_hdr->service_cmd == service_handler[i].service_cmd)
             {
@@ -257,6 +284,14 @@ ae_error_t invoke_service_wrapper (
                     ae_ret = PSE_OP_INTERNAL_ERROR;
                     goto clean_up;
                 }
+
+				//
+				// in case payload_size, req_size comparisons
+				// mispredict
+				//
+				sgx_lfence();
+
+
                 // serve the request
                 op_ret = service_handler[i].srv_pfn(session->isv_attributes, req, resp);
                 if(op_ret != OP_SUCCESS)

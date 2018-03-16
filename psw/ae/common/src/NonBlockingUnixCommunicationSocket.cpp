@@ -229,17 +229,22 @@ char* NonBlockingUnixCommunicationSocket::readRaw(ssize_t length)
         memset((char*)mEvents, 0, MAX_EVENTS * sizeof(struct epoll_event));
 
     }while (total_read < length);
-
-    event.data.fd = mSocket;
-    event.events = EPOLLET;
-    registerSocket = epoll_ctl (mEpoll, EPOLL_CTL_MOD, mSocket, &event);
-    if (registerSocket != 0)
+    if(mSocket!=-1)
     {
-        disconnect();
+        event.data.fd = mSocket;
+        event.events = EPOLLET;
+        registerSocket = epoll_ctl (mEpoll, EPOLL_CTL_MOD, mSocket, &event);
+        if (registerSocket != 0)
+        {
+            disconnect();
 
-        if (NULL != recBuf)
-            delete [] recBuf;
-        return NULL;
+            if (NULL != recBuf)
+                delete [] recBuf;
+            return NULL;
+        }
+    }else
+    {
+    // disconnected, recBuf is set NULL when disconnect() is called.
     }
 
     return recBuf;
@@ -407,11 +412,16 @@ ssize_t  NonBlockingUnixCommunicationSocket::writeRaw(const char* data, ssize_t 
     }
     while(total_write < length);
 
-    event.data.fd = mSocket;
-    event.events = EPOLLET;
-    registerSocket = epoll_ctl (mEpoll, EPOLL_CTL_MOD, mSocket, &event);
-    if (registerSocket != 0)
-    {
+    if(mSocket!=-1){
+        event.data.fd = mSocket;
+        event.events = EPOLLET;
+        registerSocket = epoll_ctl (mEpoll, EPOLL_CTL_MOD, mSocket, &event);
+        if (registerSocket != 0)
+        {
+            return -1;
+        }
+    }else
+    {//disconneded due to error.
         return -1;
     }
 

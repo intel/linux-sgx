@@ -37,6 +37,7 @@
 #include "util.h"
 #include "xsave.h"
 #include "sgx_trts.h"
+#include "sgx_lfence.h"
 #include "sgx_spinlock.h"
 #include "global_init.h"
 #include "trts_internal.h"
@@ -56,7 +57,7 @@ static sgx_status_t is_ecall_allowed(uint32_t ordinal)
     }
     thread_data_t *thread_data = get_thread_data();
 
-    __builtin_ia32_lfence();
+    sgx_lfence();
 
     if(thread_data->last_sp == thread_data->stack_base_addr)
     {
@@ -245,7 +246,7 @@ static sgx_status_t trts_ecall(uint32_t ordinal, void *ms)
     {
         ecall_func_t func = (ecall_func_t)addr;
 
-        __builtin_ia32_lfence();
+        sgx_lfence();
 
         status = func(ms);
     }

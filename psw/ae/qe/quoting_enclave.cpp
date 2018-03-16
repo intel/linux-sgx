@@ -42,6 +42,7 @@
 #include "sgx_quote.h"
 #include "aeerror.h"
 #include "sgx_tseal.h"
+#include "sgx_lfence.h"
 #include "epid_pve_type.h"
 #include "sgx_utils.h"
 #include "ipp_wrapper.h"
@@ -180,7 +181,8 @@ static ae_error_t verify_blob_internal(
         memset(&secret_epid_data.member_precomp_data, 0, sizeof(secret_epid_data.member_precomp_data));
         is_old_format = 1;
         //PrivKey of secret_epid_data are both in offset 0 so that we need not move it
-    }else{//SDK version format
+	}
+	else{//SDK version format
         memcpy(&plaintext_epid_data, &plaintext_old_format, sizeof(plaintext_epid_data));
     }
 
@@ -305,6 +307,12 @@ uint32_t verify_blob(
     
     if(SGX_TRUSTED_EPID_BLOB_SIZE_SDK != blob_size)
         return QE_PARAMETER_ERROR;
+
+	//
+	// if we mispredict here and blob_size is too
+	// small, we might overflow
+	//
+	sgx_lfence();
 
     if(!sgx_is_within_enclave(p_blob, blob_size))
         return QE_PARAMETER_ERROR;
@@ -927,10 +935,24 @@ uint32_t get_quote(
        || (!quote_size)
        || ((NULL != emp_sig_rl) && (sig_rl_size < sizeof(se_sig_rl_t)
                                                   + 2 * SE_ECDSA_SIGN_SIZE))
+
+		//
+		// this size check could mispredict and cause us to
+		// overflow, but we have an lfence below
+		// that's safe to use for this case
+		//
+
        || ((NULL == emp_sig_rl) && (sig_rl_size != 0)))
         return QE_PARAMETER_ERROR;
     if(SGX_TRUSTED_EPID_BLOB_SIZE_SDK != blob_size)
         return QE_PARAMETER_ERROR;
+
+	//
+	// this could mispredict and cause us to
+	// overflow, but we have an lfence below
+	// that's safe to use for this case
+	//
+
     if(SGX_LINKABLE_SIGNATURE != quote_type
        && SGX_UNLINKABLE_SIGNATURE != quote_type)
         return QE_PARAMETER_ERROR;
@@ -948,7 +970,7 @@ uint32_t get_quote(
     // for user_check SigRL input
     // based on quote_size input parameter
     //
-    __builtin_ia32_lfence();
+    sgx_lfence();
 
     if(!sgx_is_outside_enclave(emp_quote, quote_size))
         return QE_PARAMETER_ERROR;
@@ -1084,7 +1106,7 @@ uint32_t get_quote(
     // for user_check SigRL input
     // based on n2 field in SigRL
     //
-    __builtin_ia32_lfence();
+    sgx_lfence();
 
     /* Copy the data in the report into quote body. */
     memset(emp_quote, 0, quote_size);

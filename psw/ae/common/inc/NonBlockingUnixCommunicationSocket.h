@@ -44,7 +44,7 @@ public:
     ~NonBlockingUnixCommunicationSocket();
 
     bool  init();
-    char* readRaw(ssize_t length); //throw(SockDisconnectedException) = 0;
+    char* readRaw(ssize_t length);
     ssize_t  writeRaw(const char* data, ssize_t length);
     int   getSockDescriptor();
     bool wasTimeoutDetected();
