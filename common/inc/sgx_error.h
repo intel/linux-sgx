@@ -103,6 +103,8 @@ typedef enum _status_t
     SGX_ERROR_FILE_FLUSH_FAILED             = SGX_MK_ERROR(0x7008),	/* fflush operation (to disk) failed (only used when no EXXX is returned) */
     SGX_ERROR_FILE_CLOSE_FAILED             = SGX_MK_ERROR(0x7009),	/* fclose operation (to disk) failed (only used when no EXXX is returned) */
 
+    SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED = SGX_MK_ERROR(0xF001), /* The ioctl for enclave_create unexpectedly failed with EINTR. */
+
 } sgx_status_t;
 
 #endif

@@ -144,6 +144,9 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_CREATE, &param);
     if(ret) 
     {
+        if(ret == -1 && errno == EINTR) {
+            return SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED;  // Allow the user to retry.
+        }
         SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_CREATE failed: errno = %d\n", errno);
         return error_driver2urts(ret);
     }
