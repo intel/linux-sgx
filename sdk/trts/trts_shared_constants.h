@@ -28,52 +28,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef TRTS_INTERNAL_H
-#define TRTS_INTERNAL_H
 
-#include "util.h"
-#include "trts_shared_constants.h"
+/*
+ * trts_shared_constants.h:
+ *    Defines constants shared in C/C++ code and assembly code.
+ */
 
-#define TD2TCS(td) ((const void *)(((thread_data_t*)(td))->stack_base_addr + (size_t)STATIC_STACK_SIZE + (size_t)SE_GUARD_PAGE_SIZE))
-#define TCS2CANARY(addr)    ((size_t *)((size_t)(addr)-(size_t)SE_GUARD_PAGE_SIZE-(size_t)STATIC_STACK_SIZE+sizeof(size_t)))
-
-typedef struct {
-    const void     *ecall_addr;
-    uint8_t         is_priv;
-} ecall_addr_t;
-
-typedef struct {
-    size_t          nr_ecall;
-    ecall_addr_t    ecall_table[1];
-} ecall_table_t;
-
-typedef struct {
-    size_t  nr_ocall;
-    uint8_t entry_table[1];
-} entry_table_t;
+#ifndef _TRTS_SHARED_CONSTANTS_H_
+#define _TRTS_SHARED_CONSTANTS_H_
 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-extern ecall_table_t g_ecall_table;
-extern entry_table_t g_dyn_entry_table;
 
-int lock_enclave();
-void *get_enclave_base();
-int get_enclave_state();
-void set_enclave_state(int state);
-
-sgx_status_t do_init_thread(void *tcs);
-sgx_status_t do_init_enclave(void *ms, void *tcs);
-sgx_status_t do_ecall(int index, void *ms, void *tcs);
-sgx_status_t do_oret(void *ms);
-sgx_status_t trts_handle_exception(void *tcs);
-sgx_status_t do_ecall_add_thread(void *ms, void *tcs);
-sgx_status_t do_uninit_enclave(void *tcs);
-int check_static_stack_canary(void *tcs);
-#ifdef __cplusplus
-}
+#if defined(__x86_64) || defined(__x86_64__)
+#define RED_ZONE_SIZE   128
+#else
+#define RED_ZONE_SIZE   0
 #endif
 
+
+#define STATIC_STACK_SIZE   688
+
+
 #endif
+

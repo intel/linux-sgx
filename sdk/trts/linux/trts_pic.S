@@ -552,8 +552,10 @@ DECLARE_LOCAL_FUNC continue_execution
     push    %xax                       # push xax
     mov     SE_WORDSIZE*1(%xcx), %xax
     push    %xax                       # push xcx
-    mov     SE_WORDSIZE*4(%xcx), %xax
-    sub     $(SE_WORDSIZE), %xax       # xax: xsp
+    mov     SE_WORDSIZE*4(%xcx), %xax  # xax: xsp 
+# x86_64 requires a 128-bytes red zone. We need to allocate buffer to avoid touching the red zone.
+    sub     $(SE_WORDSIZE + RED_ZONE_SIZE), %xax  # allocate buffer to skip the red zone (if any) and save the xip
+                                                  # RED_ZONE_SIZE: 0(i386), 128-bytes(x86_64) 
 
 # restore registers except xax, xcx, xsp
     mov     SE_WORDSIZE*2(%xcx), %xdx
@@ -589,4 +591,4 @@ DECLARE_LOCAL_FUNC continue_execution
     pop     %xcx                       # restore xcx
     pop     %xsp                       # xsp: xax
     xchg    %xax, %xsp
-    ret
+    ret     $(RED_ZONE_SIZE)           # pop xip and red zone (if any)
