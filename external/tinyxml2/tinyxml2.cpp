@@ -431,7 +431,7 @@ void XMLUtil::ConvertUTF32ToUTF8( unsigned long input, char* output, int* length
             *output = (char)((input | BYTE_MARK) & BYTE_MASK);
             input >>= 6;
             TINYXML_FALLTHROUGH_INTENDED;
-         case 1:
+        case 1:
             --output;
             *output = (char)(input | FIRST_BYTE_MARK[*length]);
             break;
