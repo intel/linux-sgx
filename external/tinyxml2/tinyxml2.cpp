@@ -32,6 +32,17 @@ distribution.
 #   include <cstdarg>
 #endif
 
+#if defined(__clang__) && defined(__has_warning)
+#if __has_feature(cxx_attributes) && __has_warning("-Wimplicit-fallthrough")
+#define TINYXML_FALLTHROUGH_INTENDED [[clang::fallthrough]]
+#endif
+#elif defined(__GNUC__) && __GNUC__ >= 7
+#define TINYXML_FALLTHROUGH_INTENDED [[gnu::fallthrough]]
+#endif
+#ifndef TINYXML_FALLTHROUGH_INTENDED
+#define TINYXML_FALLTHROUGH_INTENDED do { } while(0)
+#endif
+
 #if defined(_MSC_VER) && (_MSC_VER >= 1400 ) && (!defined WINCE)
 	// Microsoft Visual Studio, version 2005 and higher. Not WinCE.
 	/*int _snprintf_s(
@@ -409,17 +420,17 @@ void XMLUtil::ConvertUTF32ToUTF8( unsigned long input, char* output, int* length
             --output;
             *output = (char)((input | BYTE_MARK) & BYTE_MASK);
             input >>= 6;
-            /* fallthrough */
+            TINYXML_FALLTHROUGH_INTENDED;
         case 3:
             --output;
             *output = (char)((input | BYTE_MARK) & BYTE_MASK);
             input >>= 6;
-            /* fallthrough */
+            TINYXML_FALLTHROUGH_INTENDED;
         case 2:
             --output;
             *output = (char)((input | BYTE_MARK) & BYTE_MASK);
             input >>= 6;
-            /* fallthrough */
+            TINYXML_FALLTHROUGH_INTENDED;
         case 1:
             --output;
             *output = (char)(input | FIRST_BYTE_MARK[*length]);
