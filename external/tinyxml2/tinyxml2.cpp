@@ -39,6 +39,9 @@ distribution.
 #elif defined(__GNUC__) && __GNUC__ >= 7
 #define TINYXML_FALLTHROUGH_INTENDED [[gnu::fallthrough]]
 #endif
+#ifndef TINYXML_FALLTHROUGH_INTENDED
+#define TINYXML_FALLTHROUGH_INTENDED do { } while(0)
+#endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1400 ) && (!defined WINCE)
 	// Microsoft Visual Studio, version 2005 and higher. Not WinCE.
