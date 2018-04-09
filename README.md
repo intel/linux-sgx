@@ -38,6 +38,8 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 16.04.3 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
   * CentOS 7.4.1708 64bits
+  * Fedora 27 Server 64bits
+  * Fedora 27 Workstation 64bits
   * SUSE Linux Enterprise Server 12 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
@@ -50,6 +52,11 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml wget python
   ```
+  * On Fedora 27:
+  ```
+    $ sudo yum groupinstall 'C Development Tools and Libraries'
+    $ sudo yum install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget python
+  ```
   * On SUSE Linux Enterprise Server 12:
   ```
     $ sudo zypper install --type pattern devel_basis
@@ -60,7 +67,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -140,6 +147,8 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 16.04.3 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
   * CentOS 7.4.1708 64bits
+  * Fedora 27 Server 64bits
+  * Fedora 27 Workstation 64bits
   * SUSE Linux Enterprise Server 12 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 16.04:
@@ -150,6 +159,10 @@ Install the Intel(R) SGX SDK
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python 
+  ```
+  * On Fedora 27:
+  ```
+     $ sudo yum groupinstall 'C Development Tools and Libraries'
   ```
   * On SUSE Linux Enterprise Server 12:
   ```
@@ -198,6 +211,8 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 16.04.3 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
   * CentOS 7.4.1708 64bits
+  * Fedora 27 Server 64bits
+  * Fedora 27 Workstation 64bits
   * SUSE Linux Enterprise Server 12 64bits
 - Ensure that you have a system with the following required hardware:  
   * 6th Generation Intel(R) Core(TM) Processor or newer
@@ -208,7 +223,7 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:  
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -225,7 +240,7 @@ Install the Intel(R) SGX PSW
     $ sudo alien --scripts iclsClient-1.45.449.12-1.x86_64.rpm
     $ sudo dpkg -i iclsclient_1.45.449.12-2_amd64.deb
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:  
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:  
   ```
     $ sudo yum install iclsClient-1.45.449.12-1.x86_64.rpm
   ```
@@ -239,7 +254,7 @@ Install the Intel(R) SGX PSW
     $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config
     $ cmake .;make;sudo make install;sudo systemctl enable jhi
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:  
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:  
   ```
     $ sudo yum install libuuid-devel libxml2-devel cmake pkgconfig
     $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
