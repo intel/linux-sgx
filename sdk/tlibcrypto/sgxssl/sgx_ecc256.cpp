@@ -136,12 +136,12 @@ sgx_status_t sgx_ecc256_create_key_pair(sgx_ec256_private_t *p_private,
 		// get public and private keys
 		//
 		public_k = EC_KEY_get0_public_key(ec_key);
-		if (NULL == ec_key) {
+		if (NULL == public_k) {
 			break;
 		}
 
 		private_k = EC_KEY_get0_private_key(ec_key);
-		if (NULL == ec_key) {
+		if (NULL == private_k) {
 			break;
 		}
 

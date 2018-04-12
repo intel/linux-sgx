@@ -42,6 +42,7 @@
 
 #include "sgx.h"
 #include "sgx_defs.h"
+#include "stdlib.h"
 
 #define SGX_SHA256_HASH_SIZE            32
 #define SGX_ECP256_KEY_SIZE             32
@@ -137,6 +138,41 @@ typedef enum {
 
 	SGX_RSA_INVALID_SIGNATURE    /* invalid signature */
 } sgx_rsa_result_t;
+
+typedef enum {
+    SGX_RSA_PRIVATE_KEY,               /* RSA private key state     */
+
+    SGX_RSA_PUBLIC_KEY    /* RSA public key state */
+} sgx_rsa_key_type_t;
+
+#define N_SIZE_IN_BYTES    384
+#define E_SIZE_IN_BYTES    4
+#define D_SIZE_IN_BYTES    384
+#define P_SIZE_IN_BYTES    192
+#define Q_SIZE_IN_BYTES    192
+#define DMP1_SIZE_IN_BYTES 192
+#define DMQ1_SIZE_IN_BYTES 192
+#define IQMP_SIZE_IN_BYTES 192
+
+#define N_SIZE_IN_UINT     N_SIZE_IN_BYTES/sizeof(unsigned int)
+#define E_SIZE_IN_UINT     E_SIZE_IN_BYTES/sizeof(unsigned int)
+#define D_SIZE_IN_UINT     D_SIZE_IN_BYTES/sizeof(unsigned int)
+#define P_SIZE_IN_UINT     P_SIZE_IN_BYTES/sizeof(unsigned int)
+#define Q_SIZE_IN_UINT     Q_SIZE_IN_BYTES/sizeof(unsigned int)
+#define DMP1_SIZE_IN_UINT  DMP1_SIZE_IN_BYTES/sizeof(unsigned int)
+#define DMQ1_SIZE_IN_UINT  DMQ1_SIZE_IN_BYTES/sizeof(unsigned int)
+#define IQMP_SIZE_IN_UINT  IQMP_SIZE_IN_BYTES/sizeof(unsigned int)
+
+typedef struct _rsa_params_t {
+	unsigned int n[N_SIZE_IN_UINT];
+	unsigned int e[E_SIZE_IN_UINT];
+	unsigned int d[D_SIZE_IN_UINT];
+	unsigned int p[P_SIZE_IN_UINT];
+	unsigned int q[Q_SIZE_IN_UINT];
+	unsigned int dmp1[DMP1_SIZE_IN_UINT];
+	unsigned int dmq1[DMQ1_SIZE_IN_UINT];
+	unsigned int iqmp[IQMP_SIZE_IN_UINT];
+}rsa_params_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -656,8 +692,127 @@ extern "C" {
         const sgx_rsa3072_signature_t *p_signature,
 		sgx_rsa_result_t *p_result);
 
+    /** Create RSA key pair with <n_byte_size> key size and <e_byte_size> public exponent.
+    *
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: p_e [In/Out] Pointer to the public exponent e.
+    *           n_byte_size [In] Size in bytes of the key modulus.
+    *           e_byte_size	[In] Size in bytes of the key public exponent.
+    *   Output: p_*			[Out] Pointer to the matching key parameter/factor buffer.
+    */
+    sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned char *p_n, unsigned char *p_d, unsigned char *p_e,
+        unsigned char *p_p, unsigned char *p_q, unsigned char *p_dmp1,
+        unsigned char *p_dmq1, unsigned char *p_iqmp);
+
+    /** Decrypt ciphertext [pin_data] using RSA private key, with OAEP SHA-256
+    *
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: rsa_key	- Pointer to the EVP_PKEY struct containting RSA private key.
+    *           pin_data - Pointer to the input ciphertext buffer.
+    *           pin_len - Ciphertext buffer size.
+    *   Output: pout_data - Pointer to the output buffer.
+    *           pout_len - Pointer to amount of data written.
+    *
+    */
+    sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data, const size_t pin_len);
+
+    /** Encrypt input data [pin_data] using RSA public key, with OAEP SHA-256
+    *
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: rsa_key - Pointer to the EVP_PKEY struct containting RSA public key.
+    *           pin_data - Pointer to the input data buffer.
+    *           pin_len - Input buffer size.
+    *   Output: pout_data - Pointer to the output buffer.
+    *           pout_len - Pointer to amount of data (ciphertext) written.
+    *
+    */
+    sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data, const size_t pin_len);
+
+    /** Create RSA private key using input buffer factors in little endian.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: prime_size - Pointer to the modulus size.
+    *           exp_size - Pointer to the public exponent e size.
+    *           g_rsa_key_e	- Pointer to the public exponent e buffer.
+    *           g_rsa_key_p	- Pointer to the prime number p.
+    *           g_rsa_key_q	- Pointer to the prime number q.
+    *           g_rsa_key_dmp1 - Pointer to dmp1 [d mod (p-1)].
+    *           g_rsa_key_dmq1 - Pointer to dmq1 [d mod (q-1)].
+    *           g_rsa_key_iqmp - Pointer to iqmp [q^-1 mod p].
+    *   Output: new_pri_key2 - Pointer to the generated private key.
+    *
+    */
+    sgx_status_t sgx_create_rsa_priv2_key(int prime_size, int exp_size, const unsigned char *g_rsa_key_e, const unsigned char *g_rsa_key_p, const unsigned char *g_rsa_key_q,
+        const unsigned char *g_rsa_key_dmp1, const unsigned char *g_rsa_key_dmq1, const unsigned char *g_rsa_key_iqmp,
+        void **new_pri_key2);
+
+    /** Create RSA private key using input buffer factors in little endian.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: n_byte_size	- Pointer to the modulus size.
+    *           e_byte_size	- Pointer to the public exponent e size.
+    *           d_byte_size	- Pointer to the private exponent d size.
+    *           le_e - Pointer to the public exponent e buffer.
+    *           le_n - Pointer to the modulus n.
+    *           le_d - Pointer to the private exponent d.
+    *   Output: new_pri_key1 - Pointer to the generated private key.
+    *
+    */
+    sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_byte_size, const unsigned char *le_n, const unsigned char *le_e,
+        const unsigned char *le_d, void **new_pri_key1);
+
+    /** Create RSA public key using input buffer factors in little endian.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: prime_size		- Pointer to the modulus size.
+    *           exp_size		- Pointer to the public exponent e size.
+    *           le_n			- Pointer to the modulus n buffer.
+    *           le_e - Pointer to the public exponent e buffer.
+    *   Output: new_pub_key1 - Pointer to the generated public key.
+    *
+    */
+    sgx_status_t sgx_create_rsa_pub1_key(int prime_size, int exp_size, const unsigned char *le_n, const unsigned char *le_e, void **new_pub_key1);
+
+    /** Clear and free RSA key which was generated by one of the Tcrypto "sgx_create_rsa_*" APIs.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: p_rsa_key		- Pointer to the RSA key.
+    *           (Note: All input parameters below are relevant only when using IPP based tcrypto library)
+    *           key_type		- key state type, relevant only when using IPP based tcrypto library.
+    *                             Possible options {SGX_RSA_PRIVATE_KEY, SGX_RSA_PUBLIC_KEY}
+    *           mod_size		- RSA key modulus size.
+    *           exp_size		- RSA key public exponent size.
+    *   Output:
+    *
+    */
+    sgx_status_t sgx_free_rsa_key(void *p_rsa_key, sgx_rsa_key_type_t key_type, int mod_size, int exp_size);
+
+    /** Create an ECDSA private key based on input random seed.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: hash_drg - Input seed
+    *           hash_drg_len - Seed len
+    *           sgx_nistp256_r_m1 -
+    *           sgx_nistp256_r_m1_len - nistp256 len
+    *   Output: out_key - ECDSA private key
+    *           out_key_len - ECDSA private key length
+    *
+    */
+    sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int hash_drg_len,
+        const unsigned char* sgx_nistp256_r_m1, int sgx_nistp256_r_m1_len,
+        unsigned char* out_key, int out_key_len);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+

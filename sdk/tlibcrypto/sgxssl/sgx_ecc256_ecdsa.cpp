@@ -34,6 +34,8 @@
 #include <openssl/ec.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
+#include "ssl_wrapper.h"
+#include "se_memcpy.h"
 #include "sgx_tcrypto.h"
 
 /* Computes signature for data based on private key
@@ -336,4 +338,68 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
 		BN_clear_free(bn_s);
 
 	return retval;
+}
+
+
+sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int hash_drg_len,
+	const unsigned char* sgx_nistp256_r_m1, int sgx_nistp256_r_m1_len,
+	unsigned char* out_key, int out_key_len) {
+
+	if (out_key == NULL || hash_drg_len <= 0 || sgx_nistp256_r_m1_len <= 0 ||
+		out_key_len <= 0 || hash_drg == NULL || sgx_nistp256_r_m1 == NULL) {
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
+
+	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
+	int result_len = 0;
+	BIGNUM* bn_d = NULL;
+	BIGNUM* bn_m = NULL;
+	BIGNUM* bn_o = NULL;
+	BN_CTX* tmp_ctx = NULL;
+
+	do {
+
+		bn_o = BN_new();
+		NULL_BREAK(bn_o);
+
+		bn_d = BN_lebin2bn(hash_drg, hash_drg_len, bn_d);
+		BN_CHECK_BREAK(bn_d);
+
+		bn_m = BN_lebin2bn(sgx_nistp256_r_m1, sgx_nistp256_r_m1_len, bn_m);
+		BN_CHECK_BREAK(bn_m);
+
+		tmp_ctx = BN_CTX_new();
+		NULL_BREAK(tmp_ctx);
+
+		if (!BN_mod(bn_o, bn_d, bn_m, tmp_ctx)) {
+			break;
+		}
+
+		if (!BN_add_word(bn_o, 1)) {
+			break;
+		}
+
+		result_len = BN_num_bytes(bn_o);
+		if ((result_len < 0) || (out_key_len < result_len)) {
+			break;
+		}
+		if (BN_bn2bin(bn_o, out_key) != result_len) {
+			break;
+		}
+
+		ret_code = SGX_SUCCESS;
+	} while (0);
+
+	//clear and free used structs
+	//
+	BN_CTX_free(tmp_ctx);
+	BN_clear_free(bn_d);
+	BN_clear_free(bn_m);
+	BN_clear_free(bn_o);
+
+	if (ret_code != SGX_SUCCESS) {
+		(void)memset_s(out_key, out_key_len, 0, out_key_len);
+	}
+
+	return ret_code;
 }
