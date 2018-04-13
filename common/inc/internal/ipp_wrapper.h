@@ -34,6 +34,17 @@
 
 #include "ippcp.h"
 
+#ifndef CLEAR_FREE_MEM
+#define CLEAR_FREE_MEM(address, size) {            \
+	if (address != NULL) {                          \
+		if (size > 0) {                             \
+			(void)memset_s(address, size, 0, size); \
+		}                                           \
+		free(address);                              \
+	}				                                \
+}
+#endif
+
 #ifndef SAFE_FREE_MM
 #define SAFE_FREE_MM(ptr) {\
     if(ptr != NULL)     \
@@ -55,7 +66,8 @@ extern "C" {
 #endif
 
 IppStatus newBN(const Ipp32u *data, int size_in_bytes, IppsBigNumState **p_new_BN);
-
+IppStatus newPrimeGen(int nMaxBits, IppsPrimeState ** pPrimeG);
+IppStatus newPRNG(IppsPRNGState **pRandGen);
 IppStatus create_rsa_priv1_key(int n_byte_size, int d_byte_size, const Ipp32u *n, const Ipp32u *d, IppsRSAPrivateKeyState **new_pri_key1);
 
 IppStatus create_rsa_priv2_key(int p_byte_size, const Ipp32u *p, const Ipp32u *q,

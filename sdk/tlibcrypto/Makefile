@@ -37,7 +37,7 @@ CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
 
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-exceptions -fno-rtti
 
-OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_aes_gcm.o sgx_cmac128.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o
+OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_rsa_encryption.o sgx_aes_gcm.o sgx_cmac128.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o
 SHARED_OBJ = tcrypto_version.o
 
 ifneq ($(USE_OPT_LIBS), 1)
@@ -50,14 +50,14 @@ else
 endif #($(ARCH), x86_64)
 
 ifdef DEBUG
+    SGX_COMMON_CFLAGS += -O0
     OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/debug
 else
     OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/release
 endif
 
-SGXSSL_Library_Name := sgx_tsgxssl
 OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
-
+SGXSSL_Library_Name := sgx_tsgxssl
 PREPARE_SGXSSL := $(LINUX_EXTERNAL_DIR)/sgxssl/prepare_sgxssl.sh
 PREPRARE_SGX_SSL:
 	chmod 755 $(PREPARE_SGXSSL)
@@ -72,7 +72,7 @@ LIB_NAME := libsgx_tcrypto_sgxssl.a
 else
 
 CPPFLAGS += -I$(SGX_IPP_INC)
-OBJ += sgx_ecc256_common.o
+OBJ += sgx_ecc256_common.o sgx_rsa_internal.o
 SRCDIR := ipp
 
 LIB_NAME := libsgx_tcrypto_ipp.a
