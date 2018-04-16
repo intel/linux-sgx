@@ -57,7 +57,7 @@ static void copy_reversed_byte_array(uint8_t *dst, const uint8_t *src, size_t si
 }
 
 // calculate the white list expected size based on entry count
-size_t ref_le_get_white_list_size(const ref_le_white_list_t* val)
+static size_t ref_le_get_white_list_size(const ref_le_white_list_t* val)
 {
     if (val == NULL) {
         return 0;
@@ -79,7 +79,7 @@ int ref_le_init_white_list(const ref_le_white_list_t* p_ref_le_white_list, uint3
 {
     sgx_status_t sgx_stat = SGX_SUCCESS;
 
-    if (p_ref_le_white_list == NULL || p_ref_le_white_list_signature == NULL)
+    if (p_ref_le_white_list == NULL || ref_le_white_list_size < (uint32_t)sizeof(ref_le_white_list_t) || p_ref_le_white_list_signature == NULL)
     {
         return LE_INVALID_PARAMETER;
     }
