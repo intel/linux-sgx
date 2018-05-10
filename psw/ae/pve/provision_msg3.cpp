@@ -43,6 +43,16 @@
 #include <stdlib.h>
 #include "pek_pub_key.h"
 #include "util.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "epid/common/src/memory.h"
+#include "epid/member/software_member.h"
+#include "epid/member/src/signbasic.h"
+#include "epid/member/src/nrprove.h"
+#ifdef __cplusplus
+}
+#endif
 
  /**
   * File: provision_msg3.cpp 
@@ -56,7 +66,9 @@
 static pve_status_t gen_epid_signature_header(const SigRl *sigrl_header,
                                               EPIDMember *epid_member,
                                               const uint8_t *nonce_challenge,
-                                              EpidSignature *epid_header)
+                                              EpidSignature *epid_header,
+                                              BigNumStr *rnd_bsn)	
+                                              
 {
     if(NULL!=sigrl_header){
         memcpy(&epid_header->n2, &sigrl_header->n2, sizeof(sigrl_header->n2));//copy size into header in BigEndian
@@ -69,7 +81,7 @@ static pve_status_t gen_epid_signature_header(const SigRl *sigrl_header,
     uint32_t msg_len = CHALLENGE_NONCE_SIZE;
     EpidStatus epid_ret = EpidSignBasic(epid_member, 
         const_cast<uint8_t *>(reinterpret_cast<const uint8_t *>(nonce_challenge)), 
-        msg_len, NULL, 0,  &epid_header->sigma0);//generate EpidSignature Header inside EPC memory
+        msg_len, NULL, 0,  &epid_header->sigma0, rnd_bsn);//generate EpidSignature Header inside EPC memory
     if(kEpidNoErr != epid_ret){
         return epid_error_to_pve_error(epid_ret);
     }
@@ -93,7 +105,7 @@ static uint32_t pve_htonl(uint32_t x)
 //     So that we need first copy each SigRl Entry into EPC memory, generate EPIDSigEntry inside EPC memory 
 //            and copy it out after it is generated
 //   The function assumes the size of SigRl has been verfied and it is not checked again here. 
-// Finally it checks whether the hash value is valid according to ECDHA Sign in the end of SigRl to verify data is not modified
+// Finally it checks whether the hash value is valid according to ECDSA Sign in the end of SigRl to verify data is not modified
 // A TLV Header for the EpidSignature should have been prepared in EPC memory signature_tlv_header
 //It is assumed that the parm->sigrl_count>0 when the function is called and the size of sigrl has been checked
 //EpidSignature TLV format: TLVHeader:EpidSignatureHeader:NrProof1:NrProof2:...:NrProofn
@@ -117,6 +129,7 @@ static pve_status_t gen_msg3_signature(const proc_prov_msg2_blob_input_t *msg2_b
     NrProof temp3;
     uint32_t tlv_payload_size = 0;
     const SigRl *sigrl_header = NULL;
+    BigNumStr rnd_bsn = { 0 };
     sgx_status_t sgx_status = SGX_SUCCESS;
 
     memset(sigrl_sign, 0, sizeof(sigrl_sign));
@@ -148,7 +161,7 @@ static pve_status_t gen_msg3_signature(const proc_prov_msg2_blob_input_t *msg2_b
     //overwritten the bigendian size in TLV Header. It is assumed that the size in TLV Header is always 4 bytes//Long format
     memcpy(signature_header_to_encrypt+EPID_SIGNATURE_TLV_SIZE_OFFSET, &tlv_payload_size, sizeof(tlv_payload_size));
 
-    ret = gen_epid_signature_header(sigrl_header, parm->epid_member, msg2_blob_input->challenge_nonce, &parm->signature_header);//Now generate EpidSignatureHeader 
+    ret = gen_epid_signature_header(sigrl_header, parm->epid_member, msg2_blob_input->challenge_nonce, &parm->signature_header, &rnd_bsn);//Now generate EpidSignatureHeader 
     if( PVEC_SUCCESS != ret )
         goto ret_point;
     //Now encrypt the TLV Header and signature header including basic signature while the parm->signature_header is kept since piece-meal processing will use it
@@ -186,6 +199,8 @@ static pve_status_t gen_msg3_signature(const proc_prov_msg2_blob_input_t *msg2_b
         EpidStatus epid_ret = EpidNrProve(parm->epid_member,
             const_cast<uint8_t *>(msg2_blob_input->challenge_nonce),//msg to sign
             CHALLENGE_NONCE_SIZE,
+            &rnd_bsn,
+            sizeof(rnd_bsn),
             &parm->signature_header.sigma0, //B and K in BasicSignature
             &temp1,  //B and K in sigrl entry
             &temp3); //output one NrProof
@@ -271,6 +286,7 @@ static pve_status_t gen_msg3_join_proof_escrow_data(const proc_prov_msg2_blob_in
     JoinRequest *join_r = &join_proof.jr;
     EpidStatus epid_ret  = kEpidNoErr;
     psvn_t psvn;
+    MemberCtx* ctx = NULL;
     memset(&temp_f, 0, sizeof(temp_f));
 
     //randomly generate the private EPID key f, host to network transformation not required since server will not decode it
@@ -282,11 +298,16 @@ static pve_status_t gen_msg3_join_proof_escrow_data(const proc_prov_msg2_blob_in
     memset(join_r, 0, sizeof(JoinRequest));//first clear to 0
     //generate JoinP to fill it in field1_0_0 by EPID library
 
-    epid_ret = EpidRequestJoin(
+    epid_ret = epid_member_create(epid_prng, NULL, f, &ctx);
+    if(kEpidNoErr!=epid_ret){
+        ret = epid_error_to_pve_error(epid_ret);
+        goto ret_point;
+    }
+    
+    epid_ret = EpidCreateJoinRequest(ctx, 
         &msg2_blob_input->group_cert.key, //EPID Group Cert from ProvMsgs2 used
         reinterpret_cast<const IssuerNonce *>(msg2_blob_input->challenge_nonce),
-        f, epid_prng,
-        NULL, kSha256, join_r);
+        join_r);
     if(kEpidNoErr != epid_ret){
         ret = epid_error_to_pve_error(epid_ret);
         goto ret_point;
@@ -323,6 +344,7 @@ ret_point:
     if(PVEC_SUCCESS != ret){
         (void)memset_s(&join_proof, sizeof(join_proof), 0, sizeof(join_proof));
     }
+    epid_member_delete(&ctx);
     return ret;
 }
 

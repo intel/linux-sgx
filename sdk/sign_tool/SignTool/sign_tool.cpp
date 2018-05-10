@@ -76,6 +76,14 @@
 #include <sstream>
 
 #define SIGNATURE_SIZE 384
+#define REL_ERROR_BIT         0x1
+#define INIT_SEC_ERROR_BIT    0x2
+
+#define IGNORE_REL_ERROR(x)        (((x) & REL_ERROR_BIT) != 0)
+#define IGNORE_INIT_SEC_ERROR(x)   (((x) & INIT_SEC_ERROR_BIT) != 0)
+
+
+
 
 typedef enum _file_path_t
 {
@@ -134,7 +142,7 @@ static bool get_enclave_info(BinParser *parser, bin_fmt_t *bf, uint64_t * meta_o
 // measure_enclave():
 //    1. Get the enclave hash by loading enclave
 //    2. Get the enclave info - metadata offset and enclave file format
-static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parameter_t *parameter, bool ignore_rel_error, metadata_t *metadata, uint64_t *meta_offset)
+static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parameter_t *parameter, uint32_t ignore_error_bits, metadata_t *metadata, uint64_t *meta_offset)
 {
     assert(hash && dllpath && metadata && meta_offset);
     bool res = false;
@@ -167,6 +175,12 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
         close_handle(fh);
         return false;
     }
+    if(parser->has_init_section() && IGNORE_INIT_SEC_ERROR(ignore_error_bits) == false)
+    {
+        se_trace(SE_TRACE_ERROR, INIT_SEC_ERROR);
+        close_handle(fh);
+        return false;
+    }
 
     // generate metadata
     CMetadata meta(metadata, parser.get());
@@ -191,7 +205,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     {
         no_rel = ElfHelper<32>::dump_textrels(parser.get());
     }
-    if(no_rel == false && ignore_rel_error == false)
+    if(no_rel == false && (IGNORE_REL_ERROR(ignore_error_bits) == false))
     {
         close_handle(fh);
         se_trace(SE_TRACE_ERROR, TEXT_REL_ERROR);
@@ -531,7 +545,7 @@ static bool gen_enclave_signing_file(const enclave_css_t *enclave_css, const cha
     return true;
 }
 
-static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char **path, bool *ignore_rel_error)
+static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char **path, uint32_t *ignore_error_bits)
 {
     assert(mode!=NULL && path != NULL);
     if(argc<2)
@@ -612,37 +626,42 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         se_trace(SE_TRACE_ERROR, UNREC_CMD_ERROR, argv[1]);
         return false;
     }
-    unsigned int err_idx = 2;
-    for(; err_idx < argc; err_idx++)
-    {
-        if(!STRCMP(argv[err_idx], "-ignore-rel-error"))
-            break;
-    }
-    
-    unsigned int params_count = (unsigned)(sizeof(params_sign)/sizeof(params_sign[0]));
-    unsigned int params_count_min = 0;
-    unsigned int params_count_max =0;
-    for(unsigned int i=0; i< params_count; i++)
-    {
-        params_count_max ++;
-        if(params[tempmode][i].flag == PAR_REQUIRED)
-            params_count_min ++;
-    }
-    unsigned int additional_param = 2;
-    if(err_idx != argc)
-        additional_param++;
-    if(argc<params_count_min * 2 + additional_param)
-        return false;
-    if(argc>params_count_max * 2 + additional_param)
-        return false;
+    uint32_t ie_bits = 0;
 
-    for(unsigned int i=2; i<argc; i=i+2)
+    typedef struct _ignore_error_map_t
     {
-        if(i == err_idx)
+        const char* para_str;
+        int error_flag_bit;
+ 
+    } ignore_error_map_t;
+    ignore_error_map_t iem[] = 
+    {
+        {"-ignore-rel-error", REL_ERROR_BIT},
+        {"-ignore-init-sec-error", INIT_SEC_ERROR_BIT}
+    }; 
+    unsigned int params_count = (unsigned)(sizeof(params_sign)/sizeof(params_sign[0]));
+
+    for(unsigned int i=2; i<argc; i++)
+    {
+        unsigned int idx = 0;
+        for(; idx < sizeof(iem)/sizeof(iem[0]); idx++)
         {
-            i++;
+            if(!STRCMP(argv[i], iem[idx].para_str))
+            {
+                if((ie_bits & iem[idx].error_flag_bit) != 0)
+                {
+                    se_trace(SE_TRACE_ERROR, REPEAT_OPTION_ERROR, argv[i]);
+                    return false;
+                }	
+                ie_bits |= iem[idx].error_flag_bit;
+                break;
+            }
+        }
+        if(idx != sizeof(iem)/sizeof(iem[0]))
+        {
             continue;
         }
+
         unsigned int j=0;
         for(; j<params_count; j++)
         {
@@ -656,6 +675,7 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
                         return false;
                     }
                     params[tempmode][j].value = argv[i+1];
+                    i++;
                     break;
                 }
                 else     //didn't match: 1) no path parameter behind option parameter 2) parameters format error. 
@@ -665,12 +685,13 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
                 }
             }
         }
-        if(j>=params_count_max)
+        if(j == params_count)
         {
+            se_trace(SE_TRACE_ERROR, UNREC_OPTION_ERROR, argv[i]);
             return false;
         }
     }
-    for(unsigned int i = 0; i < params_count; i ++)
+    for(unsigned int i = 0; i < params_count; i++)
     {
         if(params[tempmode][i].flag == PAR_REQUIRED && params[tempmode][i].value == NULL)
         {
@@ -683,13 +704,13 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
             return false;
         }
     }
+    // Set output parameters
     for(unsigned int i = 0; i < params_count; i++)
     {
         path[i] = params[tempmode][i].value;
     }
     *mode = tempmode;
-    if(err_idx != argc)
-       *ignore_rel_error = true; 
+    *ignore_error_bits = ie_bits;
     return true;
 
 }
@@ -773,30 +794,51 @@ static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, co
 #include "se_page_attr.h"
 static void metadata_cleanup(metadata_t *metadata, uint32_t size_to_reduce)
 {
+    layout_t *heap_max = NULL, *heap_init = NULL, *ut_stack_max = NULL;
     metadata->dirs[DIR_LAYOUT].size -= size_to_reduce;
     metadata->size -= size_to_reduce;
 
-    //if there exists LAYOUT_ID_HEAP_MAX, modify it so that it won't be included in the MRENCLAVE
     layout_t *start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
     layout_t *end = GET_PTR(layout_t, start, metadata->dirs[DIR_LAYOUT].size);
     for (layout_t *l = start; l < end; l++)
     {
-        if (l->entry.id == LAYOUT_ID_HEAP_MAX)
-        {
-            l->entry.si_flags = SI_FLAG_NONE;
-            l->entry.attributes &=  (uint16_t)(~PAGE_ATTR_POST_ADD);
+        if (heap_max != NULL && heap_init != NULL && ut_stack_max != NULL)
             break;
+
+        if ((heap_max == NULL) && (l->entry.id == LAYOUT_ID_HEAP_MAX))
+        {
+            heap_max = l;
+            continue;
+        }
+        if ((heap_init == NULL) && (l->entry.id == LAYOUT_ID_HEAP_INIT))
+        {
+            heap_init = l;
+            continue;
+        }
+        if ((ut_stack_max == NULL) && (l->entry.id == LAYOUT_ID_STACK_MAX))
+        {
+            ut_stack_max = l;
+            continue;
         }
     }
-    //remove the PAGE_ATTR_POST_ADD attribute so that dynamic range won't be
-    //created during enclave loading time
-    for (layout_t *l = start; l < end; l++)
+
+    // if there exists LAYOUT_ID_HEAP_MAX, modify it so that it won't be included
+    // in the MRENCLAVE, also remove the PAGE_ATTR_POST_ADD attribute so that
+    // dynamic range won't be created during enclave loading time
+    if (heap_max)
     {
-        if (l->entry.id == LAYOUT_ID_HEAP_INIT)
-        {
-            l->entry.attributes &=  (uint16_t)(~PAGE_ATTR_POST_ADD);
-            break;
-        }
+        heap_max->entry.si_flags = SI_FLAG_NONE;
+        heap_max->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
+    }
+
+    if (heap_init)
+    {
+        heap_init->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
+    }
+
+    if (ut_stack_max)
+    {
+        ut_stack_max->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
     }
 }
 
@@ -825,7 +867,7 @@ static bool append_compatible_metadata(metadata_t *compat_metadata, metadata_t *
     return true;
 }
 
-static bool generate_compatible_metadata(metadata_t *metadata)
+static bool generate_compatible_metadata(metadata_t *metadata, const xml_parameter_t *parameter)
 {
     metadata_t *metadata2 = (metadata_t *)malloc(metadata->size);
     if(!metadata2)
@@ -861,6 +903,7 @@ static bool generate_compatible_metadata(metadata_t *metadata)
         }
     }
 
+    // no dynamic layout, append the metadata directly
     if (first_dyn_entry == NULL)
     {
         ret = append_compatible_metadata(metadata2, metadata);
@@ -892,52 +935,35 @@ static bool generate_compatible_metadata(metadata_t *metadata)
         return ret;
     }
 
-    //We have some static threads
+    layout_t *utility_start = NULL;
+    for (layout_t *l = start; l <= last; l++)
+    {
+        if (l->entry.id == LAYOUT_ID_GUARD)
+        {
+            utility_start = l;
+            break;
+        }
+    }
+    assert(utility_start != NULL);
+
+    // entry/group layout if they all exist:
+    // utility thread | minpool thread | minpool group | eremove thread | eremove group | dyn thread | dyn group
+
+    // build a group layout to represent all the possible minpool/eremoved layouts
     first = &utility_td[1];
+    uint16_t num_of_entries = (uint16_t)(first - utility_start);
 
-    if (first->group.id == LAYOUT_ID_THREAD_GROUP)
+    memset(&tmp_layout, 0, sizeof(tmp_layout));
+    tmp_layout.group.id = LAYOUT_ID_THREAD_GROUP;
+    tmp_layout.group.entry_count = num_of_entries;
+    tmp_layout.group.load_times = (uint32_t)parameter[TCSNUM].value - 1;
+    for (uint32_t i = 0; i < tmp_layout.group.entry_count; i++)
     {
-        if (last->group.id == LAYOUT_ID_THREAD_GROUP)
-        {
-            //utility thread | thread group for min pool | eremove thread | eremove thread group
-            if (first != last)
-                first->group.load_times += last->group.load_times + 1;
-
-            //utility thread | thread group for min pool
-        }
-        //utility thread | thread group for min pool | eremove thread
-        else
-        {
-            first->group.load_times += 1;
-        }
-        size_to_reduce += (uint32_t)((size_t)last - (size_t)first);
+        tmp_layout.group.load_step += (((uint64_t)utility_start[i].entry.page_count) << SE_PAGE_SHIFT);
     }
-    else
-    {
-        memset(&tmp_layout, 0, sizeof(tmp_layout));
-        tmp_layout.group.id = LAYOUT_ID_THREAD_GROUP;
 
-        //utility thread | eremove thread | eremove thread group
-        if (last->group.id == LAYOUT_ID_THREAD_GROUP)
-        {
-            tmp_layout.group.entry_count = (uint16_t)(((size_t)last - (size_t)first) / sizeof(layout_t));
-            tmp_layout.group.load_times = last->group.load_times + 1;
-        }
-        //utility thread | eremove thread
-        else
-        {
-            tmp_layout.group.entry_count = (uint16_t)(((size_t)last - (size_t)first) / sizeof(layout_t) + 1);
-            tmp_layout.group.load_times = 1; 
-        }
-
-        for (uint32_t i = 0; i < tmp_layout.group.entry_count; i++) 
-        {
-            tmp_layout.group.load_step += (((uint64_t)first[i].entry.page_count) << SE_PAGE_SHIFT);
-        }
-        memcpy_s(first, sizeof(layout_t), &tmp_layout, sizeof(layout_t));
-        size_to_reduce += (uint32_t)((size_t)last - (size_t)first);
-    }
-    
+    memcpy_s(first, sizeof(layout_t), &tmp_layout, sizeof(layout_t));
+    size_to_reduce += (uint32_t)((size_t)last - (size_t)first);
     metadata_cleanup(metadata2, size_to_reduce);
     ret = append_compatible_metadata(metadata2, metadata);
     free(metadata2);
@@ -1032,20 +1058,20 @@ int main(int argc, char* argv[])
     int key_type = UNIDENTIFIABLE_KEY; //indicate the type of the input key file
     size_t parameter_count = sizeof(parameter)/sizeof(parameter[0]);
     uint64_t meta_offset = 0;
-    bool ignore_rel_error = false;
+    uint32_t ignore_error_bits = 0;
     RSA *rsa = NULL;
     memset(&metadata_raw, 0, sizeof(metadata_raw));
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L    
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
 #else
     OPENSSL_init_crypto(0, NULL);
 #endif
 
-
     //Parse command line
-    if(cmdline_parse(argc, argv, &mode, path, &ignore_rel_error) == false)
+    if(cmdline_parse(argc, argv, &mode, path, &ignore_error_bits) == false)
     {
         se_trace(SE_TRACE_ERROR, USAGE_STRING);
         goto clear_return;
@@ -1086,8 +1112,7 @@ int main(int argc, char* argv[])
         goto clear_return;
     }
 
-    ignore_rel_error = true;
-    if(measure_enclave(enclave_hash, path[OUTPUT], parameter, ignore_rel_error, metadata, &meta_offset) == false)
+    if(measure_enclave(enclave_hash, path[OUTPUT], parameter, ignore_error_bits, metadata, &meta_offset) == false)
     {
         se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
         goto clear_return;
@@ -1106,7 +1131,7 @@ int main(int argc, char* argv[])
             se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
             goto clear_return;
         }
-        if(false == generate_compatible_metadata(metadata))
+        if(false == generate_compatible_metadata(metadata, parameter))
         {
             se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
             goto clear_return;

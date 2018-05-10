@@ -32,7 +32,7 @@
 TOP_DIR  = ../../..
 include $(TOP_DIR)/buildenv.mk
 
-IPC_COMMON_DIR        := ../common/
+IPC_COMMON_DIR        := ../common
 IPC_COMMON_SRC_DIR    := $(IPC_COMMON_DIR)/src
 IPC_COMMON_INC_DIR    := $(IPC_COMMON_DIR)/inc
 IPC_COMMON_PROTO_DIR  := source/protobuf
@@ -75,7 +75,7 @@ INCLUDE += -I$(LINUX_PSW_DIR)/ae/inc                        \
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/pve                        \
            -I$(LINUX_PSW_DIR)/ae/pse/pse_op
 
-INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0                  \
+INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk                        \
            -I$(LINUX_EXTERNAL_DIR)/sqlite/src                      \
            -I$(LINUX_EXTERNAL_DIR)/DALSdk/JHI/linux
 

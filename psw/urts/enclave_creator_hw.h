@@ -56,7 +56,6 @@ public:
     int initialize(sgx_enclave_id_t enclave_id);
     bool use_se_hw() const;
     bool is_EDMM_supported(sgx_enclave_id_t enclave_id);
-    bool is_cpu_edmm() const;
     bool is_driver_compatible();
     bool is_in_kernel_driver();
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
@@ -69,7 +68,6 @@ public:
 private:
     virtual bool open_se_device();
     virtual void close_se_device();
-    bool driver_support_edmm();
     int try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch);
     int error_driver2urts(int driver_error);
     se_file_handle_t    m_hdevice;

@@ -41,7 +41,7 @@
 //FXRSTOR only cares about the first 512 bytes, while
 //XRSTOR in compacted mode will ignore the first 512 bytes.
 extern "C" SE_DECLSPEC_ALIGN(XSAVE_ALIGN_SIZE) const uint32_t
-SYNTHETIC_STATE[SYNTHETIC_STATE_SIZE/sizeof(uint32_t)] = {
+SYNTHETIC_STATE[SYNTHETIC_STATE_SIZE/sizeof(uint32_t)] __attribute__((section(".niprod"))) = {
     0x037F, 0, 0, 0, 0, 0, 0x1F80, 0xFFFF, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -53,10 +53,10 @@ SYNTHETIC_STATE[SYNTHETIC_STATE_SIZE/sizeof(uint32_t)] = {
     0, 0, 0, 0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // XCOMP_BV[63] = 1, compaction mode
 };
 
-int g_xsave_enabled = 0;         // flag to indicate whether xsave is enabled or not
+int g_xsave_enabled __attribute__((section(".nipd"))) = 0;         // flag to indicate whether xsave is enabled or not
 #ifdef SE_SIM
-uint32_t g_xsave_mask_high = 0xFFFFFFFF;
-uint32_t g_xsave_mask_low = 0xFFFFFFFF;
+uint32_t g_xsave_mask_high __attribute__((section(".nipd"))) = 0xFFFFFFFF;
+uint32_t g_xsave_mask_low __attribute__((section(".nipd"))) = 0xFFFFFFFF;
 #endif
 
 // EENTER will set xcr0 with secs.attr.xfrm, 

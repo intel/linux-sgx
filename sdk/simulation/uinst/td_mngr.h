@@ -64,7 +64,7 @@ extern "C" {
 #include "gnu_tls.h"
 extern uint8_t __ImageBase;
 int td_mngr_set_td(void *enclave_base, tcs_t *tcs);
-int td_mngr_restore_td(tcs_t *tcs);
+int td_mngr_restore_td(tcs_t *tcs)  __attribute__((section (".nipx")));
 
 #ifdef __cplusplus
 }

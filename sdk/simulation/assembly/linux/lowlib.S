@@ -34,7 +34,7 @@
 
     .file "lowlib.S"
 
-    .text
+.section .nipx,"ax",@progbits
 
 DECLARE_LOCAL_FUNC get_bp
     mov %xbp, %xax

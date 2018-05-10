@@ -36,7 +36,7 @@ CXXFLAGS  += -Werror
 CFLAGS	  += -Werror 
 AENAME = provision_enclave
 
-EPID_SDK_DIR := $(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0/
+EPID_SDK_DIR := $(LINUX_EXTERNAL_DIR)/epid-sdk/
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux 
 
 INCLUDE += -I$(COMMON_DIR)/inc/tlibc                      \
@@ -52,7 +52,6 @@ EPID_LIBDIR	   := $(EPID_SDK_DIR)
 
 EXTERNAL_LIB += -L$(EPID_LIBDIR)/epid/member -lmember \
 				-L$(EPID_LIBDIR)/epid/common -lcommon \
-				-L$(EPID_LIBDIR)/ext/ipp/sources/ippcpepid/src -lippcpepid \
 				-L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
 
 SRC := $(wildcard *.cpp)

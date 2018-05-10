@@ -41,8 +41,14 @@
 #include "le2be_macros.h"
 #include "prepare_hmac_sha256.h"
 #include "prepare_hash_sha256.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "epid/verifier/1.1/api.h"
 #include "epid/common/1.1/types.h"
+#ifdef __cplusplus
+}
+#endif
 #include "sgx_trts.h"
 #include "ae_ipp.h"
 #include "util.h"

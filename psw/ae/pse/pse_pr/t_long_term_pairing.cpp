@@ -578,10 +578,10 @@ ae_error_t TEpidSigma11Verifier::VerifyM8
         BREAK_IF_TRUE((nTotalLen_PrivRL < privRL_size), status, PSE_PR_PARAMETER_ERROR);
 
 		//
-	// privRL_size is based on number of entries, which is basically
-	// an input to the enclave
-	//
-	sgx_lfence();
+		// privRL_size is based on number of entries, which is basically
+		// an input to the enclave
+		//
+		sgx_lfence();
 
         BREAK_IF_TRUE( (STATE_VERIFYM8 != m_nextState), status, PSE_PR_CALL_ORDER_ERROR);
 

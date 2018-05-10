@@ -89,7 +89,8 @@ OBJ2 := urts.o               \
         get_thread_id.o      \
         prd_css_util.o       \
         urts_emodpr.o        \
-        urts_trim.o        
+        urts_trim.o          \
+        edmm_utility.o
 
 OBJ3 := enter_enclave.o \
         xsave_gnu.o

@@ -22,6 +22,8 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/libsgx_capable.so	<installdir>/package/lib64/libsgx_capable.so	0	main	STP
 <deliverydir>/build/linux/libsgx_uprotected_fs.a	<installdir>/package/lib64/libsgx_uprotected_fs.a	0	main	STP
 <deliverydir>/build/linux/libsgx_tprotected_fs.a	<installdir>/package/lib64/libsgx_tprotected_fs.a	0	main	STP
+<deliverydir>/build/linux/libsgx_pcl.a	<installdir>/package/lib64/libsgx_pcl.a	0	main	STP
+<deliverydir>/build/linux/libsgx_pclsim.a	<installdir>/package/lib64/libsgx_pclsim.a	0	main	STP
 <deliverydir>/build/linux/libsgx_urts_deploy.so	<installdir>/package/lib64/libsgx_urts.so	0	main	STP
 <deliverydir>/build/linux/libsgx_urts_sim.so	<installdir>/package/lib64/libsgx_urts_sim.so	0	main	STP
 <deliverydir>/build/linux/STLport_Changes_SGX.txt	<installdir>/package/lib64/STLport_Changes_SGX.txt	0	main	STP
@@ -29,6 +31,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/sgx_config_cpusvn	<installdir>/package/bin/x64/sgx_config_cpusvn	0	main	STP
 <deliverydir>/build/linux/sgx_edger8r	<installdir>/package/bin/x64/sgx_edger8r	0	main	STP
 <deliverydir>/build/linux/sgx_sign	<installdir>/package/bin/x64/sgx_sign	0	main	STP
+<deliverydir>/build/linux/sgx_encrypt	<installdir>/package/bin/x64/sgx_encrypt	0	main	STP
 <deliverydir>/linux/installer/common/sdk/installConfig.x64	<installdir>/scripts/installConfig	0	main	STP
 <deliverydir>/linux/installer/common/sdk/pkgconfig/x64/libsgx_uae_service_sim.pc	<installdir>/package/pkgconfig/libsgx_uae_service_sim.pc	0	main	STP
 <deliverydir>/linux/installer/common/sdk/pkgconfig/x64/libsgx_urts_sim.pc	<installdir>/package/pkgconfig/libsgx_urts_sim.pc	0	main	STP

@@ -82,7 +82,7 @@
 #endif
 .endm
 
-.text
+.section .nipx,"ax",@progbits
 DECLARE_LOCAL_FUNC restore_xregs
 #if defined(LINUX32)
     mov     SE_WORDSIZE(%esp), %ecx

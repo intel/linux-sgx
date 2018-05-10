@@ -36,6 +36,7 @@
 #include "se_types.h"
 #include "ae_ipp.h"
 #include "sgx_tcrypto.h"
+#include "epid/member/api.h"
 
 #ifdef  __cplusplus
 extern "C" {
@@ -46,10 +47,12 @@ IppStatus new_std_256_ecp(IppsECCPState **pp_new_ecp);
 void secure_free_std_256_ecp(IppsECCPState *p_ecp);
 
 
-int __STDCALL epid_random_func(
+int IPP_STDCALL epid_random_func(
  unsigned int *p_random_data,
  int bits,
  void* p_user_data);
+EpidStatus epid_member_create(BitSupplier rnd_func, void* rnd_param, FpElemStr* f, MemberCtx** ctx);
+void epid_member_delete(MemberCtx** ctx);
 
 
 #ifdef __cplusplus

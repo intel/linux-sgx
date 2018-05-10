@@ -33,11 +33,9 @@
 #ifndef __linux__
 #include "targetver.h"
 #endif
-// Exclude rarely-used stuff from Windows headers
-//#define WIN32_LEAN_AND_MEAN
-// Windows Header Files:
-//#include <windows.h>
 
+
+#include "ae_ipp.h"
 #include "se_types.h"
 #include "sgx_quote.h"
 #include "aeerror.h"
@@ -46,9 +44,6 @@
 #include "epid_pve_type.h"
 #include "sgx_utils.h"
 #include "ipp_wrapper.h"
-#include "epid/common/errors.h"
-#include "ae_ipp.h"
-#include "epid/member/api.h"
 #include "quoting_enclave_t.c"
 #include "sgx_tcrypto.h"
 #include "se_sig_rl.h"
@@ -59,6 +54,17 @@
 #include "util.h"
 #include "qsdk_pub.hh"
 #include "isk_pub.hh"
+#include "epid/member/api.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "epid/member/software_member.h"
+#include "epid/member/src/write_precomp.h"
+#include "epid/member/src/signbasic.h"
+#include "epid/member/src/nrprove.h"
+#ifdef __cplusplus
+}
+#endif
 
 #if !defined(SWAP_4BYTES)
 #define SWAP_4BYTES(u32)                                                    \
@@ -99,6 +105,7 @@ static ae_error_t verify_blob_internal(
     se_plaintext_epid_data_sdk_t& plaintext_epid_data,
     MemberCtx **pp_epid_context)
 {
+    ae_error_t ret = QE_UNEXPECTED_ERROR;
     sgx_status_t se_ret = SGX_SUCCESS;
     uint8_t resealed= FALSE;
     se_secret_epid_data_sdk_t secret_epid_data;
@@ -111,177 +118,142 @@ static ae_error_t verify_blob_internal(
                             + sizeof(secret_epid_data)
                             + sizeof(plaintext_epid_data)]
                             = {0};
-    // We will use plaintext_old_format as buffer to hold the output of sgx_unseal_data.
-    // It can be se_plaintext_epid_data_sik_t or se_plaintext_epid_data_sdk_t.
-    // We use the static assert to reassure plaintext_old_format is big enough.
-    // If someone changed the definition of these 2 structures and break current assumption,
-    // it will report error in compile time.
-    se_static_assert(sizeof(plaintext_old_format)>=sizeof(plaintext_epid_data));
 
-    if (sgx_get_encrypt_txt_len(p_epid_blob) != sizeof(se_secret_epid_data_sdk_t)&&
-        sgx_get_encrypt_txt_len(p_epid_blob) != sizeof(se_secret_epid_data_sik_t)){
-        return QE_EPIDBLOB_ERROR;
-    }
-    plaintext_length = sgx_get_add_mac_txt_len(p_epid_blob);
-    if(plaintext_length != sizeof(se_plaintext_epid_data_sik_t)&&
-       plaintext_length != sizeof(se_plaintext_epid_data_sdk_t))
-    {
-        return QE_EPIDBLOB_ERROR;
-    }
+    do {
+        // We will use plaintext_old_format as buffer to hold the output of sgx_unseal_data.
+        // It can be se_plaintext_epid_data_sik_t or se_plaintext_epid_data_sdk_t.
+        // We use the static assert to reassure plaintext_old_format is big enough.
+        // If someone changed the definition of these 2 structures and break current assumption,
+        // it will report error in compile time.
+        se_static_assert(sizeof(plaintext_old_format) >= sizeof(plaintext_epid_data));
 
-    memset(&secret_epid_data, 0, sizeof(secret_epid_data));
-    memset(&plaintext_epid_data, 0, sizeof(plaintext_epid_data));
-    memset(&plaintext_old_format, 0, sizeof(plaintext_old_format));
-
-    se_ret = sgx_unseal_data(p_epid_blob,
-        (uint8_t *)&plaintext_old_format, // The unsealed plaintext can be old or new format, the buffer is defined as old format because it is bigger
-        &plaintext_length,
-        (uint8_t *)&secret_epid_data,
-        &decryptedtext_length);
-    if(SGX_SUCCESS != se_ret)
-    {
-        memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-                 sizeof(secret_epid_data));
-        return QE_EPIDBLOB_ERROR;
-    }
-
-    //QE will support both epid blob with/without member precomputation
-    //If the epid blob without member precomputation is used, QE will generate member precomputation and reseal epid blob 
-    if((plaintext_old_format.seal_blob_type != PVE_SEAL_EPID_KEY_BLOB)
-       || (plaintext_old_format.epid_key_version != EPID_KEY_BLOB_VERSION_SDK&&
-           plaintext_old_format.epid_key_version != EPID_KEY_BLOB_VERSION_SIK )) //blob_type and key_version are always first two fields of plaintext in both format
-    {
-        memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-            sizeof(secret_epid_data));
-        return QE_EPIDBLOB_ERROR;
-    }
-
-    // Only 2 combinations are legitimate for the tuple epid_key_version|decryptedtext_length|plaintext_length:
-    // EPID_KEY_BLOB_VERSION_SIK|sizeof(se_secret_epid_data_sik_t)|sizeof(se_plaintext_epid_data_sik_t)
-    // EPID_KEY_BLOB_VERSION_SDK|sizeof(se_secret_epid_data_sdk_t)|sizeof(se_plaintext_epid_data_sdk_t) 
-    if((plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SIK && 
-        (decryptedtext_length!=sizeof(se_secret_epid_data_sik_t)||plaintext_length!=sizeof(se_plaintext_epid_data_sik_t)))||
-       (plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SDK &&
-        (decryptedtext_length!=sizeof(se_secret_epid_data_sdk_t)||plaintext_length!=sizeof(se_plaintext_epid_data_sdk_t)))){
-        memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-            sizeof(secret_epid_data));
-        return QE_EPIDBLOB_ERROR;
-    }
-    // If the input epid blob is in sik format, we will upgrade it to sdk version
-    if(plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SIK){
-        plaintext_epid_data.seal_blob_type = PVE_SEAL_EPID_KEY_BLOB;
-        plaintext_epid_data.epid_key_version = EPID_KEY_BLOB_VERSION_SDK;
-        memcpy(&plaintext_epid_data.equiv_cpu_svn, &plaintext_old_format.equiv_cpu_svn, sizeof(plaintext_old_format.equiv_cpu_svn));
-        memcpy(&plaintext_epid_data.equiv_pve_isv_svn, &plaintext_old_format.equiv_pve_isv_svn, sizeof(plaintext_old_format.equiv_pve_isv_svn));
-        memcpy(&plaintext_epid_data.epid_group_cert, &plaintext_old_format.epid_group_cert, sizeof(plaintext_old_format.epid_group_cert));
-        memcpy(&plaintext_epid_data.qsdk_exp, &plaintext_old_format.qsdk_exp, sizeof(plaintext_old_format.qsdk_exp));
-        memcpy(&plaintext_epid_data.qsdk_mod, &plaintext_old_format.qsdk_mod, sizeof(plaintext_old_format.qsdk_mod));
-        memcpy(&plaintext_epid_data.epid_sk, &plaintext_old_format.epid_sk, sizeof(plaintext_old_format.epid_sk));
-        plaintext_epid_data.xeid = plaintext_old_format.xeid;
-        memset(&secret_epid_data.member_precomp_data, 0, sizeof(secret_epid_data.member_precomp_data));
-        is_old_format = 1;
-        //PrivKey of secret_epid_data are both in offset 0 so that we need not move it
-	}
-	else{//SDK version format
-        memcpy(&plaintext_epid_data, &plaintext_old_format, sizeof(plaintext_epid_data));
-    }
-
-    /* Create report to get current cpu_svn and isv_svn. */
-    sgx_report_t report;
-    memset(&report, 0, sizeof(report));
-    se_ret = sgx_create_report(NULL, NULL, &report);
-    if(SGX_SUCCESS != se_ret)
-    {
-        memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-                 sizeof(secret_epid_data));
-        return QE_UNEXPECTED_ERROR;
-    }
-
-    /* Get the random function pointer. */
-    BitSupplier rand_func = epid_random_func;
-
-    /* Create EPID member context if required. PvE is responsible for verifying
-       the Cert signature before storing them in the EPID blob. */
-    if(create_context)
-    {
-        EpidStatus epid_ret = kEpidNoErr;
-        epid_ret = EpidMemberCreate(
-            &(plaintext_epid_data.epid_group_cert),
-            (PrivKey*)&(secret_epid_data.epid_private_key),
-            is_old_format?NULL:&secret_epid_data.member_precomp_data,
-            rand_func,
-            NULL,
-            pp_epid_context);
-        if(kEpidNoErr != epid_ret)
-        {
-            memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-                     sizeof(secret_epid_data));
-            // Make sure the pointer is not pointered to garbage. And according
-            // to EPID SDK 2.0 API document of EpidMemberCreate, it will not return
-            // error with memory allocated. So set the pointer to NULL will not
-            // cause memory leak here.
-            *pp_epid_context = NULL;
-            return QE_UNEXPECTED_ERROR;
+        if (sgx_get_encrypt_txt_len(p_epid_blob) != sizeof(se_secret_epid_data_sdk_t) &&
+            sgx_get_encrypt_txt_len(p_epid_blob) != sizeof(se_secret_epid_data_sik_t)) {
+            return QE_EPIDBLOB_ERROR;
         }
-        epid_ret = EpidMemberSetHashAlg(*pp_epid_context, kSha256);
-        if(kEpidNoErr != epid_ret)
+        plaintext_length = sgx_get_add_mac_txt_len(p_epid_blob);
+        if (plaintext_length != sizeof(se_plaintext_epid_data_sik_t) &&
+            plaintext_length != sizeof(se_plaintext_epid_data_sdk_t))
         {
-            EpidMemberDelete(pp_epid_context);
-            memset_s(&secret_epid_data, sizeof(secret_epid_data), 0 ,
-                    sizeof(secret_epid_data));
-            *pp_epid_context = NULL;
-            return QE_UNEXPECTED_ERROR;
+            return QE_EPIDBLOB_ERROR;
         }
-        if(is_old_format)
-        {
-            epid_ret = EpidMemberWritePrecomp(*pp_epid_context, &secret_epid_data.member_precomp_data);
-            if(kEpidNoErr != epid_ret)
-            {
-                EpidMemberDelete(pp_epid_context);
-                memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-                        sizeof(secret_epid_data));
-                *pp_epid_context = NULL;
-                return QE_UNEXPECTED_ERROR;
-            }
-        }
-    }
 
-     /* Update the Key Blob using the SEAL Key for the current TCB if the TCB is
-        upgraded after the Key Blob is generated. Here memcmp cpu_svns might be 
-        different even though they're actually same, but for defense in depth we
-        will keep this comparison here. And we will also upgrade old format EPID
-        blob to new format here. */
-    if((memcmp(&report.body.cpu_svn, &p_epid_blob->key_request.cpu_svn,
-              sizeof(report.body.cpu_svn)))
-    || (report.body.isv_svn != p_epid_blob->key_request.isv_svn)
-    || plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SIK)
-    {
-        se_ret = sgx_seal_data(sizeof(plaintext_epid_data),
-            (uint8_t *)&plaintext_epid_data,
-            sizeof(secret_epid_data),
+        memset(&secret_epid_data, 0, sizeof(secret_epid_data));
+        memset(&plaintext_epid_data, 0, sizeof(plaintext_epid_data));
+        memset(&plaintext_old_format, 0, sizeof(plaintext_old_format));
+
+        se_ret = sgx_unseal_data(p_epid_blob,
+            (uint8_t *)&plaintext_old_format, // The unsealed plaintext can be old or new format, the buffer is defined as old format because it is bigger
+            &plaintext_length,
             (uint8_t *)&secret_epid_data,
-            SGX_TRUSTED_EPID_BLOB_SIZE_SDK,
-            (sgx_sealed_data_t *)local_epid_blob);
-        if(SGX_SUCCESS != se_ret)
-        {
-            // Clear the output buffer to make sure nothing leaks.
-            memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-                     sizeof(secret_epid_data));
-            // *pp_epid_context contains pointers, so we cannot simply clear it.
-            if(pp_epid_context)
-            {
-                EpidMemberDelete(pp_epid_context);
-                *pp_epid_context = NULL;
-            }
-            return QE_UNEXPECTED_ERROR;
+            &decryptedtext_length);
+        BREAK_IF_TRUE(SGX_SUCCESS != se_ret, ret, QE_EPIDBLOB_ERROR);
+
+        //QE will support both epid blob with/without member precomputation
+        //If the epid blob without member precomputation is used, QE will generate member precomputation and reseal epid blob 
+        //blob_type and key_version are always first two fields of plaintext in both format
+        BREAK_IF_TRUE((plaintext_old_format.seal_blob_type != PVE_SEAL_EPID_KEY_BLOB)
+            || (plaintext_old_format.epid_key_version != EPID_KEY_BLOB_VERSION_SDK&&
+                plaintext_old_format.epid_key_version != EPID_KEY_BLOB_VERSION_SIK), 
+            ret, QE_EPIDBLOB_ERROR); 
+
+        // Only 2 combinations are legitimate for the tuple epid_key_version|decryptedtext_length|plaintext_length:
+        // EPID_KEY_BLOB_VERSION_SIK|sizeof(se_secret_epid_data_sik_t)|sizeof(se_plaintext_epid_data_sik_t)
+        // EPID_KEY_BLOB_VERSION_SDK|sizeof(se_secret_epid_data_sdk_t)|sizeof(se_plaintext_epid_data_sdk_t) 
+        BREAK_IF_TRUE((plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SIK &&
+            (decryptedtext_length != sizeof(se_secret_epid_data_sik_t) || plaintext_length != sizeof(se_plaintext_epid_data_sik_t))) ||
+            (plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SDK &&
+            (decryptedtext_length != sizeof(se_secret_epid_data_sdk_t) || plaintext_length != sizeof(se_plaintext_epid_data_sdk_t))),
+            ret, QE_EPIDBLOB_ERROR);
+
+        // If the input epid blob is in sik format, we will upgrade it to sdk version
+        if (plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SIK) {
+            plaintext_epid_data.seal_blob_type = PVE_SEAL_EPID_KEY_BLOB;
+            plaintext_epid_data.epid_key_version = EPID_KEY_BLOB_VERSION_SDK;
+            memcpy(&plaintext_epid_data.equiv_cpu_svn, &plaintext_old_format.equiv_cpu_svn, sizeof(plaintext_old_format.equiv_cpu_svn));
+            memcpy(&plaintext_epid_data.equiv_pve_isv_svn, &plaintext_old_format.equiv_pve_isv_svn, sizeof(plaintext_old_format.equiv_pve_isv_svn));
+            memcpy(&plaintext_epid_data.epid_group_cert, &plaintext_old_format.epid_group_cert, sizeof(plaintext_old_format.epid_group_cert));
+            memcpy(&plaintext_epid_data.qsdk_exp, &plaintext_old_format.qsdk_exp, sizeof(plaintext_old_format.qsdk_exp));
+            memcpy(&plaintext_epid_data.qsdk_mod, &plaintext_old_format.qsdk_mod, sizeof(plaintext_old_format.qsdk_mod));
+            memcpy(&plaintext_epid_data.epid_sk, &plaintext_old_format.epid_sk, sizeof(plaintext_old_format.epid_sk));
+            plaintext_epid_data.xeid = plaintext_old_format.xeid;
+            memset(&secret_epid_data.member_precomp_data, 0, sizeof(secret_epid_data.member_precomp_data));
+            is_old_format = 1;
+            //PrivKey of secret_epid_data are both in offset 0 so that we need not move it
         }
-        memcpy(p_epid_blob, local_epid_blob, blob_size);
-        resealed = TRUE;
+        else {//SDK version format
+            memcpy(&plaintext_epid_data, &plaintext_old_format, sizeof(plaintext_epid_data));
+        }
+
+        /* Create report to get current cpu_svn and isv_svn. */
+        sgx_report_t report;
+        memset(&report, 0, sizeof(report));
+        se_ret = sgx_create_report(NULL, NULL, &report);
+        BREAK_IF_TRUE(SGX_SUCCESS != se_ret, ret, QE_UNEXPECTED_ERROR);
+
+        /* Get the random function pointer. */
+        BitSupplier rand_func = epid_random_func;
+
+        /* Create EPID member context if required. PvE is responsible for verifying
+        the Cert signature before storing them in the EPID blob. */
+        if (create_context)
+        {
+            EpidStatus epid_ret = kEpidNoErr;
+            epid_ret = epid_member_create(rand_func, NULL, NULL, pp_epid_context);
+            BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
+
+            epid_ret = EpidProvisionKey(*pp_epid_context,
+                &(plaintext_epid_data.epid_group_cert),
+                (PrivKey*)&(secret_epid_data.epid_private_key),
+                is_old_format ? NULL : &secret_epid_data.member_precomp_data);
+            BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
+
+            // start member
+            epid_ret = EpidMemberStartup(*pp_epid_context);
+            BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
+
+            if (is_old_format)
+            {
+                epid_ret = EpidMemberWritePrecomp(*pp_epid_context, &secret_epid_data.member_precomp_data);
+                BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
+            }
+        }
+
+        /* Update the Key Blob using the SEAL Key for the current TCB if the TCB is
+           upgraded after the Key Blob is generated. Here memcmp cpu_svns might be
+           different even though they're actually same, but for defense in depth we
+           will keep this comparison here. And we will also upgrade old format EPID
+           blob to new format here. */
+        if ((memcmp(&report.body.cpu_svn, &p_epid_blob->key_request.cpu_svn,
+            sizeof(report.body.cpu_svn)))
+            || (report.body.isv_svn != p_epid_blob->key_request.isv_svn)
+            || plaintext_old_format.epid_key_version == EPID_KEY_BLOB_VERSION_SIK)
+        {
+            se_ret = sgx_seal_data(sizeof(plaintext_epid_data),
+                (uint8_t *)&plaintext_epid_data,
+                sizeof(secret_epid_data),
+                (uint8_t *)&secret_epid_data,
+                SGX_TRUSTED_EPID_BLOB_SIZE_SDK,
+                (sgx_sealed_data_t *)local_epid_blob);
+            BREAK_IF_TRUE(SGX_SUCCESS != se_ret, ret, QE_UNEXPECTED_ERROR);
+
+            memcpy(p_epid_blob, local_epid_blob, blob_size);
+            resealed = TRUE;
+        }
+        *p_is_resealed = resealed;
+        ret = AE_SUCCESS;
     }
+    while (false);
+
+    // Clear the output buffer to make sure nothing leaks.
     memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-            sizeof(secret_epid_data));
-    *p_is_resealed = resealed;
-    return AE_SUCCESS;
+        sizeof(secret_epid_data));
+    if (ret != AE_SUCCESS)
+    {
+        epid_member_delete(pp_epid_context);
+    }
+
+    return ret;
 }
 
 /*
@@ -377,7 +349,7 @@ static ae_error_t qe_epid_sign(
     Ipp8u seeds[QE_OAEP_SEED_SIZE] = {0};
     sgx_report_data_t qe_report_data = {{0}};
     sgx_target_info_t report_target;
-    sgx_ec256_public_t ec_pub_key;
+    sgx_ec256_public_t ec_pub_key; // little endian
     se_ae_ecdsa_hash_t sig_rl_hash = {{0}};
     IppECResult ec_result = ippECValid ;
 
@@ -408,7 +380,8 @@ static ae_error_t qe_epid_sign(
                (uint32_t)QE_QUOTE_BODY_SIZE,
                (uint8_t *)const_cast<sgx_basename_t *>(p_basename),
                sizeof(*p_basename),
-               &basic_sig);
+               &basic_sig,
+               NULL);
     if(kEpidNoErr != epid_ret)
     {
         ret = QE_UNEXPECTED_ERROR;
@@ -693,6 +666,8 @@ static ae_error_t qe_epid_sign(
             epid_ret = EpidNrProve(p_epid_context,
                 (uint8_t *)const_cast<sgx_quote_t *>(p_quote_body),
                 (uint32_t)QE_QUOTE_BODY_SIZE,
+                (uint8_t *)const_cast<sgx_basename_t *>(p_basename),
+                sizeof(*p_basename),
                 &basic_sig, // Basic signature with 'b' and 'k' in it
                 &entry, //Single entry in SigRl composed of 'b' and 'k'
                 &temp_nr); // The generated non-revoked proof
@@ -718,7 +693,7 @@ static ae_error_t qe_epid_sign(
 
             ipp_ret = ippsAES_GCMEncrypt((Ipp8u *)&temp_nr,
                                                 (Ipp8u *)&encrypted_temp_nr,
-                                                sizeof(NrProof),
+                                                sizeof(encrypted_temp_nr),
                                                 aes_context);
             if(ipp_ret != ippStsNoErr)
             {
@@ -865,7 +840,8 @@ CLEANUP:
     if(aes_context)
         free(aes_context);
     if(pub_key)
-        secure_free_rsa_pub_key(sizeof(g_qsdk_pub_key_n), sizeof(g_qsdk_pub_key_e), pub_key);
+        secure_free_rsa_pub_key(sizeof(plaintext.qsdk_mod),
+                                sizeof(plaintext.qsdk_exp), pub_key);
     if(pub_key_buffer)
         free(pub_key_buffer);
     secure_free_std_256_ecp(p_ecp);
@@ -1085,7 +1061,7 @@ uint32_t get_quote(
         }
     }
 
-    epid_ret = EpidRegisterBaseName(p_epid_context, (uint8_t *)&basename,
+    epid_ret = EpidRegisterBasename(p_epid_context, (uint8_t *)&basename,
         sizeof(basename));
     if(kEpidNoErr != epid_ret)
     {
@@ -1114,7 +1090,7 @@ uint32_t get_quote(
     quote_body.sign_type = (uint16_t)quote_type;
     quote_body.pce_svn = pce_isvsvn; // Both are little endian
     quote_body.xeid = plaintext.xeid; // Both are little endian
-    se_static_assert(sizeof(plaintext.epid_group_cert.gid) == sizeof(uint32_t));
+    se_static_assert(sizeof(plaintext.epid_group_cert.gid) == sizeof(OctStr32));
     se_static_assert(sizeof(quote_body.epid_group_id) == sizeof(uint32_t));
     ((uint8_t *)(&quote_body.epid_group_id))[0] = plaintext.epid_group_cert.gid.data[3];
     ((uint8_t *)(&quote_body.epid_group_id))[1] = plaintext.epid_group_cert.gid.data[2];
@@ -1170,7 +1146,7 @@ uint32_t get_quote(
 
 CLEANUP:
     if(p_epid_context)
-        EpidMemberDelete(&p_epid_context);
+		epid_member_delete(&p_epid_context);
     return ret;
 }
 

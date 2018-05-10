@@ -37,7 +37,7 @@ CFLAGS    += -Werror
 
 AENAME = pce
 
-LINUX_EPID := $(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0/
+LINUX_EPID := $(LINUX_EXTERNAL_DIR)/epid-sdk/
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux 
 
 INCLUDE += -I$(COMMON_DIR)/inc/tlibc                      \

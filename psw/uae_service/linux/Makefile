@@ -51,7 +51,7 @@ INCLUDE += -I$(LINUX_PSW_DIR)/ae/common \
            -I$(LINUX_PSW_DIR)/ae/inc/internal    \
            -I$(LINUX_SDK_DIR)/tseal
 
-INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0    \
+INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk    \
            -I$(IPC_COMMON_INC_DIR) \
            -I$(UAE_INC_DIR) \
            -I$(IPC_COMMON_PROTO_DIR) \

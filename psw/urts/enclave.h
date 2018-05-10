@@ -80,6 +80,8 @@ public:
     bool update_debug_flag(uint8_t);
     sgx_status_t fill_tcs_mini_pool();
     sgx_status_t fill_tcs_mini_pool_fn();
+    uint8_t* get_sealed_key();
+    void set_sealed_key(uint8_t *sealed_key);
 private:
     CTrustThread * get_tcs(int ecall_cmd);
     void put_tcs(CTrustThread *trust_thread);
@@ -102,6 +104,7 @@ private:
     pthread_t               m_pthread_tid;
     bool                    m_pthread_is_valid;
     se_handle_t             m_new_thread_event;
+    uint8_t                 *m_sealed_key;
 };
 
 class CEnclavePool: private Uncopyable

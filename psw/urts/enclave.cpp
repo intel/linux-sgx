@@ -64,6 +64,7 @@ CEnclave::CEnclave(CLoader &ldr)
     , m_ocall_table(NULL)
     , m_pthread_is_valid(false)
     , m_new_thread_event(NULL)
+    , m_sealed_key(NULL)
 {
     memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
     se_init_rwlock(&m_rwlock);
@@ -168,6 +169,16 @@ size_t CEnclave::get_dynamic_tcs_list_size()
         }
     }
     return count;
+}
+
+uint8_t *CEnclave::get_sealed_key()
+{
+    return m_sealed_key;
+}
+
+void CEnclave::set_sealed_key(uint8_t *sealed_key)
+{
+    m_sealed_key = sealed_key;
 }
 
 sgx_status_t CEnclave::error_trts2urts(unsigned int trts_error)

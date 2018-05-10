@@ -70,3 +70,59 @@ extern "C" sgx_status_t sgx_create_enclave(const char *file_name, const int debu
 
     return ret;
 }
+
+
+extern "C" sgx_status_t
+sgx_create_encrypted_enclave(
+    const char *file_name,
+    const int debug,
+    sgx_launch_token_t *launch_token,
+    int *launch_token_updated,
+    sgx_enclave_id_t *enclave_id,
+    sgx_misc_attribute_t *misc_attr,
+    uint8_t* sealed_key)
+{
+    sgx_status_t ret = SGX_SUCCESS;
+
+    //Only true or false is valid
+    if(TRUE != debug &&  FALSE != debug)
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    if(NULL == sealed_key)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    int fd = open(file_name, O_RDONLY);
+    if(-1 == fd)
+    {
+        SE_TRACE(SE_TRACE_ERROR, "Couldn't open the enclave file, error = %d\n", errno);
+        return SGX_ERROR_ENCLAVE_FILE_ACCESS;
+    }
+    se_file_t file = {NULL, 0, false};
+    char resolved_path[PATH_MAX];
+    file.name = realpath(file_name, resolved_path);
+    file.name_len = (uint32_t)strlen(resolved_path);
+
+    ret = _create_enclave(
+            !!debug,
+            fd,
+            file,
+            NULL,
+            launch_token,
+            launch_token_updated,
+            enclave_id,
+            misc_attr,
+            sealed_key);
+    if(SGX_SUCCESS != ret && misc_attr)
+    {
+        sgx_misc_attribute_t plat_cap;
+        memset(&plat_cap, 0, sizeof(plat_cap));
+        get_enclave_creator()->get_plat_cap(&plat_cap);
+        memcpy_s(misc_attr, sizeof(sgx_misc_attribute_t), &plat_cap, sizeof(sgx_misc_attribute_t));
+    }
+
+    close(fd);
+
+    return ret;
+}

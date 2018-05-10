@@ -32,7 +32,7 @@
 
 
 
-#include "sgx_ecc256_common.h"
+#include "sgx_tcrypto_common.h"
 #include "sgx_ecc256_internal.h"
 
 
@@ -96,7 +96,7 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
 
         if (ipp_result != ippECValid )
         {
-            ipp_ret = ippStsIvalidPublicKey;
+            ipp_ret = ippStsPointAtInfinity;
             break;
         }
 
@@ -125,7 +125,7 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
 
         if (ipp_result != ippECValid)
         {
-            ipp_ret = ippStsIvalidPublicKey;
+            ipp_ret = ippStsPointAtInfinity;
             break;
         }
 

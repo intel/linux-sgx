@@ -35,7 +35,7 @@ include ../../buildenv.mk
 CFLAGS   += -Werror
 #CXXFLAGS += -Werror
 
-EPID_SDK_DIR := $(TOP_DIR)/external/epid-sdk-3.0.0/
+EPID_SDK_DIR := $(TOP_DIR)/external/epid-sdk/
 
 INCLUDE += -I.                                   \
            -I./include                           \
@@ -50,8 +50,7 @@ INCLUDE += -I.                                   \
 
 EXTERNAL_LIB += -lsgx_tstdcxx -lsgx_tcrypto                \
                 -L$(EPID_SDK_DIR)/epid/verifier -lverifier \
-                -L$(EPID_SDK_DIR)/epid/common -lcommon     \
-                -L$(EPID_SDK_DIR)/ext/ipp/sources/ippcpepid/src -lippcpepid
+                -L$(EPID_SDK_DIR)/epid/common -lcommon 
 
 SRC := $(wildcard *.cpp) $(wildcard ./X509_Parser/*.cpp)
 SRC += pse_pr_common.cpp   \

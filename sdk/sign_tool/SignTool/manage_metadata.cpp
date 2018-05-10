@@ -512,9 +512,8 @@ bool CMetadata::build_layout_table()
     memset(&guard_page, 0, sizeof(guard_page));
     guard_page.entry.id = LAYOUT_ID_GUARD;
     guard_page.entry.page_count = SE_GUARD_PAGE_SIZE >> SE_PAGE_SHIFT;
-    
-    size_t thread_start;
-    size_t thread_end;
+
+    vector<layout_t> thread_layouts;
     // heap
     layout.entry.id = LAYOUT_ID_HEAP_MIN;
     layout.entry.page_count = (uint32_t)(m_create_param.heap_min_size >> SE_PAGE_SHIFT);
@@ -540,33 +539,32 @@ bool CMetadata::build_layout_table()
         m_layouts.push_back(layout);
     }
 
-
     // thread context memory layout
-    // guard page | stack | TCS | SSA | guard page | TLS
-    thread_start = m_layouts.size();
-    //ulitity tcs
+    // guard page | stack | guard page | TCS | SSA | guard page | TLS
+
+    // vector 'thread_layouts' serves as a template for thread context
     // guard page
-    m_layouts.push_back(guard_page);
+    thread_layouts.push_back(guard_page);
 
     // stack
     if(m_create_param.stack_max_size > m_create_param.stack_min_size)
     {
         layout.entry.id = LAYOUT_ID_STACK_MAX;
         layout.entry.page_count = (uint32_t)((m_create_param.stack_max_size - m_create_param.stack_min_size) >> SE_PAGE_SHIFT);
-        layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND | PAGE_DIR_GROW_DOWN; // | PAGE_ATTR_POST_ADD | PAGE_ATTR_POST_REMOVE;
+        layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND | PAGE_DIR_GROW_DOWN;
         layout.entry.si_flags = SI_FLAGS_RW;
         layout.entry.content_size = 0xCCCCCCCC;
-        m_layouts.push_back(layout);
+        thread_layouts.push_back(layout);
     }
     layout.entry.id = LAYOUT_ID_STACK_MIN;
     layout.entry.page_count = (uint32_t)(m_create_param.stack_min_size >> SE_PAGE_SHIFT);
     layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND;
     layout.entry.si_flags = SI_FLAGS_RW;
     layout.entry.content_size = 0xCCCCCCCC;
-    m_layouts.push_back(layout);
+    thread_layouts.push_back(layout);
 
     // guard page
-    m_layouts.push_back(guard_page);
+    thread_layouts.push_back(guard_page);
 
     // tcs
     layout.entry.id = LAYOUT_ID_TCS;
@@ -576,23 +574,23 @@ bool CMetadata::build_layout_table()
     tcs_t *tcs_template = (tcs_t *) alloc_buffer_from_metadata(TCS_TEMPLATE_SIZE);
     if(tcs_template == NULL)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
         return false;
     }
-    layout.entry.content_offset = (uint32_t)PTR_DIFF(tcs_template, m_metadata), 
+    layout.entry.content_offset = (uint32_t)PTR_DIFF(tcs_template, m_metadata),
     layout.entry.content_size = TCS_TEMPLATE_SIZE;
-    m_layouts.push_back(layout);
+    thread_layouts.push_back(layout);
     memset(&layout, 0, sizeof(layout));
 
-    // ssa 
+    // ssa
     layout.entry.id = LAYOUT_ID_SSA;
     layout.entry.page_count = SSA_FRAME_SIZE * SSA_NUM;
     layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND;
     layout.entry.si_flags = SI_FLAGS_RW;
-    m_layouts.push_back(layout);
+    thread_layouts.push_back(layout);
 
     // guard page
-    m_layouts.push_back(guard_page);
+    thread_layouts.push_back(guard_page);
 
     // td
     layout.entry.id = LAYOUT_ID_TD;
@@ -604,10 +602,16 @@ bool CMetadata::build_layout_table()
     }
     layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND;
     layout.entry.si_flags = SI_FLAGS_RW;
-    m_layouts.push_back(layout);
+    thread_layouts.push_back(layout);
 
-    thread_end = m_layouts.size();
-    
+    // adding utility thread context, part of its stack can be added and removed dynamically
+    for (auto l : thread_layouts)
+    {
+        if (l.entry.id == LAYOUT_ID_STACK_MAX)
+            l.entry.attributes |= PAGE_ATTR_POST_ADD | PAGE_ATTR_POST_REMOVE;
+        m_layouts.push_back(l);
+    }
+
     uint32_t tcs_min_pool = 0;
     uint32_t tcs_eremove = 0;
     if(m_create_param.tcs_min_pool > m_create_param.tcs_num - 1)
@@ -621,66 +625,67 @@ bool CMetadata::build_layout_table()
         tcs_eremove = m_create_param.tcs_num -1 - m_create_param.tcs_min_pool;
     }
 
-    //tcs to fill the tcs mini pool
+    // adding thread contexts corresponding to tcs_min_pool
     if (tcs_min_pool > 0)
     {
-        // group for static thread contexts
-        memset(&layout, 0, sizeof(layout));
-        layout.group.id = LAYOUT_ID_THREAD_GROUP;
-        layout.group.entry_count = (uint16_t)(thread_end - thread_start);
-        layout.group.load_times = tcs_min_pool;
-        m_layouts.push_back(layout);
+        auto end = m_layouts.end();
+        m_layouts.insert(end, thread_layouts.begin(), thread_layouts.end());
+
+        if (tcs_min_pool > 1)
+        {
+            // group for tcs min pool
+            memset(&layout, 0, sizeof(layout));
+            layout.group.id = LAYOUT_ID_THREAD_GROUP;
+            layout.group.entry_count = (uint16_t)(thread_layouts.size());
+            layout.group.load_times = tcs_min_pool - 1;
+            m_layouts.push_back(layout);
+        }
     }
-    
-    //tcs will be eremoved
+    // adding thread contexts corresponding to tcs_eremove
     if (tcs_eremove > 0)
     {
-        for(size_t i = thread_start; i < thread_end; i++)
-        {            
-            layout = m_layouts[i];
-            if(layout.entry.id != LAYOUT_ID_GUARD)
+        for(auto l : thread_layouts)
+        {
+            if(l.entry.id != LAYOUT_ID_GUARD)
             {
-                layout.entry.attributes |= PAGE_ATTR_EREMOVE;
+                l.entry.attributes |= PAGE_ATTR_EREMOVE;
             }
-            m_layouts.push_back(layout);
+            m_layouts.push_back(l);
         }
 
         if (tcs_eremove > 1)
         {
             memset(&layout, 0, sizeof(layout));
             layout.group.id = LAYOUT_ID_THREAD_GROUP;
-            layout.group.entry_count = (uint16_t)(thread_end - thread_start);
-            layout.group.load_times = tcs_eremove-1;
+            layout.group.entry_count = (uint16_t)(thread_layouts.size());
+            layout.group.load_times = tcs_eremove - 1;
             m_layouts.push_back(layout);
         }
     }
-    // dynamic thread contexts 
+    // dynamic thread contexts
     if (m_create_param.tcs_max_num > tcs_min_pool + 1)
     {
-        for(size_t i = thread_start; i < thread_end; i++)
+        for(auto l : thread_layouts)
         {
-            layout = m_layouts[i];
-            if(layout.entry.id == LAYOUT_ID_STACK_MAX)
+            if(l.entry.id == LAYOUT_ID_STACK_MAX)
             {
-                layout.entry.id = (uint16_t)(LAYOUT_ID_HEAP_DYN_MIN - LAYOUT_ID_HEAP_MIN + layout.entry.id);
-                layout.entry.attributes = PAGE_ATTR_POST_ADD | PAGE_DIR_GROW_DOWN;
+                l.entry.id = (uint16_t)(LAYOUT_ID_HEAP_DYN_MIN - LAYOUT_ID_HEAP_MIN + l.entry.id);
+                l.entry.attributes = PAGE_ATTR_POST_ADD | PAGE_DIR_GROW_DOWN;
             }
-            else if(layout.entry.id != LAYOUT_ID_GUARD)
+            else if(l.entry.id != LAYOUT_ID_GUARD)
             {
-                layout.entry.id = (uint16_t)(LAYOUT_ID_HEAP_DYN_MIN - LAYOUT_ID_HEAP_MIN + layout.entry.id);
-                layout.entry.attributes = PAGE_ATTR_POST_ADD | PAGE_ATTR_DYN_THREAD;
+                l.entry.id = (uint16_t)(LAYOUT_ID_HEAP_DYN_MIN - LAYOUT_ID_HEAP_MIN + l.entry.id);
+                l.entry.attributes = PAGE_ATTR_POST_ADD | PAGE_ATTR_DYN_THREAD;
             }
-            m_layouts.push_back(layout);
+            m_layouts.push_back(l);
         }
+
         // dynamic thread group
-        if (m_create_param.tcs_max_num > m_create_param.tcs_min_pool)
-        {
-            memset(&layout, 0, sizeof(layout));
-            layout.group.id = LAYOUT_ID_THREAD_GROUP_DYN;
-            layout.group.entry_count = (uint16_t)(thread_end - thread_start);
-            layout.group.load_times = m_create_param.tcs_max_num - tcs_min_pool - 1;
-            m_layouts.push_back(layout);
-        }
+        memset(&layout, 0, sizeof(layout));
+        layout.group.id = LAYOUT_ID_THREAD_GROUP_DYN;
+        layout.group.entry_count = (uint16_t)(thread_layouts.size());
+        layout.group.load_times = m_create_param.tcs_max_num - tcs_min_pool - 1;
+        m_layouts.push_back(layout);
     }
 
     // update layout entries

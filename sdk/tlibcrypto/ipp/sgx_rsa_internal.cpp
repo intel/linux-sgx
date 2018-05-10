@@ -29,77 +29,9 @@
  *
  */
 
-/**
-* File:
-*     sgx_rsa_encryption.cpp
-* Description:
-*     Wrapper for rsa operation functions
-*
-*/
-#include "util.h"
-#include <assert.h>
-#include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "sgx_error.h"
-#include "sgx_tcrypto.h"
 #include "ipp_wrapper.h"
-#include "sgx_trts.h"
-
-#define RSA_SEED_SIZE_SHA256 32
-
-extern "C" IppStatus newPrimeGen(int nMaxBits, IppsPrimeState ** pPrimeG)
-{
-    if (pPrimeG == NULL || nMaxBits <= 0) {
-        return ippStsBadArgErr;
-    }
-    int ctxSize = 0;
-    IppStatus error_code = ippsPrimeGetSize(nMaxBits, &ctxSize);
-    if (error_code != ippStsNoErr) {
-        return error_code;
-    }
-    IppsPrimeState* pCtx = (IppsPrimeState *)malloc(ctxSize);
-    if (pCtx == NULL) {
-        return ippStsMemAllocErr;
-    }
-
-    error_code = ippsPrimeInit(nMaxBits, pCtx);
-    if (error_code != ippStsNoErr) {
-        free(pCtx);
-        return error_code;
-    }
-
-    *pPrimeG = pCtx;
-    return error_code;
-}
-
-extern "C" IppStatus newPRNG(IppsPRNGState **pRandGen)
-{
-    if (pRandGen == NULL) {
-        return ippStsBadArgErr;
-    }
-    int ctxSize = 0;
-    IppStatus error_code = ippsPRNGGetSize(&ctxSize);
-    if (error_code != ippStsNoErr) {
-        return error_code;
-    }
-
-    IppsPRNGState* pCtx = (IppsPRNGState *)malloc(ctxSize);
-    if (pCtx == NULL) {
-        return ippStsMemAllocErr;
-    }
-
-    error_code = ippsPRNGInit(160, pCtx);
-    if (error_code != ippStsNoErr) {
-        free(pCtx);
-        return error_code;
-    }
-
-    *pRandGen = pCtx;
-    return error_code;
-}
-
 
 extern "C" IppStatus newBN(const Ipp32u *data, int size_in_bytes, IppsBigNumState **p_new_BN)
 {
@@ -141,43 +73,6 @@ extern "C" IppStatus newBN(const Ipp32u *data, int size_in_bytes, IppsBigNumStat
 
 }
 
-extern "C" void secure_free_rsa_pri1_key(int n_byte_size, int d_byte_size, IppsRSAPrivateKeyState *pri_key1)
-{
-    if (n_byte_size <= 0 || d_byte_size <= 0 || pri_key1 == NULL) {
-        if (pri_key1)
-            free(pri_key1);
-        return;
-    }
-
-    int rsa1_size = 0;
-    if (ippsRSA_GetSizePrivateKeyType1(n_byte_size * 8, d_byte_size * 8, &rsa1_size) != ippStsNoErr) {
-        free(pri_key1);
-        return;
-    }
-    /* Clear the buffer before free. */
-    memset_s(pri_key1, rsa1_size, 0, rsa1_size);
-    free(pri_key1);
-    return;
-}
-
-extern "C" void secure_free_rsa_pri2_key(int p_byte_size, IppsRSAPrivateKeyState *pri_key2)
-{
-    if (p_byte_size <= 0 || pri_key2 == NULL) {
-        if (pri_key2)
-            free(pri_key2);
-        return;
-    }
-
-    int rsa2_size = 0;
-    if (ippsRSA_GetSizePrivateKeyType2(p_byte_size / 2 * 8, p_byte_size / 2 * 8, &rsa2_size) != ippStsNoErr) {
-        free(pri_key2);
-        return;
-    }
-    /* Clear the buffer before free. */
-    memset_s(pri_key2, rsa2_size, 0, rsa2_size);
-    free(pri_key2);
-    return;
-}
 
 extern "C" void secure_free_BN(IppsBigNumState *pBN, int size_in_bytes)
 {
@@ -204,6 +99,24 @@ extern "C" void secure_free_BN(IppsBigNumState *pBN, int size_in_bytes)
     return;
 }
 
+extern "C" void secure_free_rsa_pri2_key(int p_byte_size, IppsRSAPrivateKeyState *pri_key2)
+{
+    if (p_byte_size <= 0 || pri_key2 == NULL) {
+        if (pri_key2)
+            free(pri_key2);
+        return;
+    }
+
+    int rsa2_size = 0;
+    if (ippsRSA_GetSizePrivateKeyType2(p_byte_size / 2 * 8, p_byte_size / 2 * 8, &rsa2_size) != ippStsNoErr) {
+        free(pri_key2);
+        return;
+    }
+    /* Clear the buffer before free. */
+    memset_s(pri_key2, rsa2_size, 0, rsa2_size);
+    free(pri_key2);
+    return;
+}
 
 extern "C" void secure_free_rsa_pub_key(int n_byte_size, int e_byte_size, IppsRSAPublicKeyState *pub_key)
 {

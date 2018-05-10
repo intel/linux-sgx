@@ -91,9 +91,12 @@ public:
     sgx_status_t modify_info(enclave_diff_info_t *enclave_diff_info);
     sgx_status_t get_info(enclave_diff_info_t *enclave_diff_info);
     void get_executable_sections(vector<const char *>& xsec_names) const;
+    bool is_enclave_encrypted() const;
 
     bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization);
     void get_pages_to_protect(uint64_t enclave_base_addr, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const;
+
+    bool has_init_section() const;
 
 private:
     const uint8_t*      m_start_addr;

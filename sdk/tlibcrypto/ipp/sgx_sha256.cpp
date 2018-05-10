@@ -29,9 +29,8 @@
  *
  */
 
-
-#include "sgx_tcrypto.h"
 #include "ippcp.h"
+#include "sgx_tcrypto.h"
 #include "stdlib.h"
 
 #ifndef SAFE_FREE
@@ -46,19 +45,19 @@
 sgx_status_t sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle)
 {
     IppStatus ipp_ret = ippStsNoErr;
-    IppsHashState* p_temp_state = NULL;
+    IppsHashState_rmf* p_temp_state = NULL;
 
     if (p_sha_handle == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
 
     int ctx_size = 0;
-    ipp_ret = ippsHashGetSize(&ctx_size);
+    ipp_ret = ippsHashGetSize_rmf(&ctx_size);
     if (ipp_ret != ippStsNoErr)
         return SGX_ERROR_UNEXPECTED;
-    p_temp_state = (IppsHashState*)(malloc(ctx_size));
+    p_temp_state = (IppsHashState_rmf*)(malloc(ctx_size));
     if (p_temp_state == NULL)
         return SGX_ERROR_OUT_OF_MEMORY;
-    ipp_ret = ippsHashInit(p_temp_state, IPP_ALG_HASH_SHA256);
+    ipp_ret = ippsHashInit_rmf(p_temp_state, ippsHashMethod_SHA256_TT());
     if (ipp_ret != ippStsNoErr)
     {
         SAFE_FREE(p_temp_state);
@@ -88,7 +87,7 @@ sgx_status_t sgx_sha256_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_s
         return SGX_ERROR_INVALID_PARAMETER;
     }
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashUpdate(p_src, src_len, (IppsHashState*)sha_handle);
+    ipp_ret = ippsHashUpdate_rmf(p_src, src_len, (IppsHashState_rmf*)sha_handle);
     switch (ipp_ret)
     {
     case ippStsNoErr: return SGX_SUCCESS;
@@ -110,7 +109,7 @@ sgx_status_t sgx_sha256_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha256_h
         return SGX_ERROR_INVALID_PARAMETER;
     }
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashGetTag((Ipp8u*)p_hash, SGX_SHA256_HASH_SIZE, (IppsHashState*)sha_handle);
+    ipp_ret = ippsHashGetTag_rmf((Ipp8u*)p_hash, SGX_SHA256_HASH_SIZE, (IppsHashState_rmf*)sha_handle);
     switch (ipp_ret)
     {
     case ippStsNoErr: return SGX_SUCCESS;

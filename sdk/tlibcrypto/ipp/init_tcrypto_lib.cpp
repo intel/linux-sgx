@@ -32,7 +32,6 @@
 
 #include "sgx_tcrypto.h"
 #include "ippcp.h"
-#include "ippcore.h"
 #include "se_cpu_feature.h"
 #include "se_cdefs.h"
 
@@ -121,8 +120,8 @@ extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator, uint
     }
 
     // Call SetCpuFeatures() to set the IPP library with the collected CPU features
-    ippCpuFeatures |= ippCPUID_NOCHECK; /* Force ippSetCpuFeatures to set CPU features without check */
-    error_code = ippSetCpuFeatures(ippCpuFeatures);
+    ippCpuFeatures |= ippCPUID_NOCHECK; /* Force ippcpSetCpuFeatures to set CPU features without check */
+    error_code = ippcpSetCpuFeatures(ippCpuFeatures);
     if (error_code != ippStsNoErr)
     {
         return SGX_ERROR_INVALID_PARAMETER;

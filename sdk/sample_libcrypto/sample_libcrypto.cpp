@@ -228,7 +228,7 @@ static void sample_ipp_secure_free_BN(IppsBigNumState *pBN, int size_in_bytes)
     return;
 }
 
-IppStatus __STDCALL sample_ipp_DRNGen(Ipp32u* pRandBNU, int nBits, void* pCtx_unused)
+IppStatus IPP_STDCALL sample_ipp_DRNGen(Ipp32u* pRandBNU, int nBits, void* pCtx_unused)
 {
     sample_status_t sample_ret;
     UNUSED(pCtx_unused);

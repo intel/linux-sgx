@@ -32,6 +32,7 @@
   
 #include "enclave.h"
 #include "enclave_creator_hw.h"
+#include "edmm_utility.h"
 #include "se_trace.h"
 #include "se_page_attr.h"
 #include "isgx_user.h"
@@ -43,9 +44,6 @@
 #include "cpuid.h"
 #include "rts.h"
 #include <assert.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <sys/mman.h>
@@ -53,8 +51,6 @@
 
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
   
-#define SGX_CPUID   0x12
-
 static EnclaveCreatorHW g_enclave_creator_hw;
 
 EnclaveCreator* g_enclave_creator = &g_enclave_creator_hw;
@@ -144,8 +140,9 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_CREATE, &param);
     if(ret) 
     {
-        if(ret == -1 && errno == EINTR) {
-            return SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED;  // Allow the user to retry.
+        if(ret == -1 && errno == EINTR)
+        {
+            return SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED; // Allow users to retry
         }
         SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_CREATE failed: errno = %d\n", errno);
         return error_driver2urts(ret);
@@ -244,42 +241,23 @@ bool EnclaveCreatorHW::get_plat_cap(sgx_misc_attribute_t *misc_attr)
     // need to update code to support HyperV ECO
     return get_plat_cap_by_cpuid(misc_attr);
 }
- 
+
 bool EnclaveCreatorHW::open_se_device()
 {
     LockGuard lock(&m_dev_mutex);
-    int fd = -1;
 
     if(-1 != m_hdevice)
-    {
         return true;
-    }
 
-    fd = open("/dev/isgx", O_RDWR);
-    if (-1 == fd) {
-        fd = open("/dev/sgx", O_RDWR);
-        if (-1 == fd) {
-            SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device\n");
-            return false;
-        }
-
-        m_in_kernel_driver = true;
-    }
-
-    m_hdevice = fd;
-
-    return true;
+    return ::open_se_device(&m_hdevice, &m_in_kernel_driver);
 }
  
 void EnclaveCreatorHW::close_se_device()
 {
     LockGuard lock(&m_dev_mutex);
 
-    if (m_hdevice != -1)
-    {
-        close(m_hdevice);
-        m_hdevice = -1;
-    }
+    ::close_se_device(&m_hdevice);
+    m_hdevice = -1;
 }
 
 int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
@@ -387,7 +365,7 @@ bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
     if (enclave == NULL)
         return false;
 
-    cpu_edmm = is_cpu_edmm();
+    cpu_edmm = is_cpu_support_edmm();
     driver_supported = is_driver_compatible();
 
     //return value of get_enclave_version() considers the version of uRTS and enclave metadata
@@ -396,56 +374,14 @@ bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
     return supported;
 }
 
-bool EnclaveCreatorHW::is_cpu_edmm() const
-{
-    bool cpu_edmm = false;
-    int a[4] = {0,0,0,0};
-
-    //Check CPU EDMM capability by CPUID
-    __cpuid(a, 0);
-    if (a[0] < SGX_CPUID)
-        return false;
-
-    __cpuidex(a, SGX_CPUID, 0);
-    if (!(a[0] & 1))
-        return false;
-
-    cpu_edmm = (a[0] & 2) != 0;
-    return cpu_edmm;
-}
-
 bool EnclaveCreatorHW::is_driver_compatible()
 {
-    static bool ret = driver_support_edmm();
-    return ret;
+    open_se_device();
+    return is_driver_support_edmm(m_hdevice);
 }
 
 bool EnclaveCreatorHW::is_in_kernel_driver()
 {
     open_se_device();
     return m_in_kernel_driver;
-}
-
-bool EnclaveCreatorHW::driver_support_edmm()
-{
-    int ret;
-    sgx_modification_param p;
-    p.flags = 0;
-    p.range.start_addr = 0;
-    p.range.nr_pages = 0;
-
-    if (false == open_se_device())
-    {
-        return false;
-    }
-
-    ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_EMODPR, &p);
-    if ((ret == -1) && (errno == ENOTTY))
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
 }

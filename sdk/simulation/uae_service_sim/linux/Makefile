@@ -38,7 +38,7 @@ INCLUDES := -I..                                            \
             -I$(LINUX_SDK_DIR)/tseal                        \
             -I$(LINUX_SDK_DIR)/simulation/tinst             \
             -I$(LINUX_SDK_DIR)/simulation/urtssim           \
-            -I$(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0          \
+            -I$(LINUX_EXTERNAL_DIR)/epid-sdk                \
             -I$(LINUX_EXTERNAL_DIR)/rdrand/                 \
             -I$(LINUX_PSW_DIR)/ae/inc     \
             -I$(LINUX_PSW_DIR)/ae/inc/internal \

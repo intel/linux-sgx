@@ -35,6 +35,8 @@
 #include "se_types.h"
 #include "rts_cmd.h"
 
+#pragma pack(push, 1)
+
 typedef struct _ocall_context_t
 {
     uintptr_t shadow0;
@@ -61,7 +63,8 @@ typedef enum
 {
     SDK_VERSION_1_5,
     SDK_VERSION_2_0,
-    SDK_VERSION_2_1
+    SDK_VERSION_2_1,
+    SDK_VERSION_2_2
 } sdk_version_t;
 
 typedef struct _system_features
@@ -74,6 +77,7 @@ typedef struct _system_features
     */
     uint64_t system_feature_set[1];
     uint32_t cpuinfo_table[8][4];
+    uint8_t* sealed_key;
 }system_features_t;
 
 // current system_feature_set only contains one element of type uint64_t, the highest
@@ -89,5 +93,6 @@ typedef enum
     EDMM_MODPR = -4,
 }edmm_ocall_t;
 
+#pragma pack(pop)
 
 #endif

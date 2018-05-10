@@ -38,10 +38,17 @@ CXXFLAGS += -Werror -fno-rtti -fno-exceptions -fPIC
 CPPFLAGS := -isystem $(SGX_IPP_INC) \
             -I$(COMMON_DIR)/inc/internal/           
 
+CFLAGS +=  -fPIC -Werror -fno-exceptions -I$(SGX_IPP_INC)
+
 LDFLAGS := -Bdynamic -L$(IPP_LIBS_DIR) $(LD_IPP) 
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script,sample_libcrypto.lds -Wl,--gc-sections
 
 OBJS := sample_libcrypto.o
+
+IPPDISP_DIR := $(LINUX_SDK_DIR)/tlibcrypto/ipp/ipp_disp
+C_SRC := $(wildcard $(IPPDISP_DIR)/*.c)
+C_OBJS  := $(patsubst $(IPPDISP_DIR)/%.c, %.o, $(C_SRC))
+C_OBJS  := $(sort $(C_OBJS))
 
 LIBSAMPLECRYPTO := libsample_libcrypto.so
 
@@ -52,15 +59,18 @@ $(BUILD_DIR):
 all: $(LIBSAMPLECRYPTO) | $(BUILD_DIR)
 	@$(CP) $< $|
 
-$(LIBSAMPLECRYPTO): $(OBJS)
+$(LIBSAMPLECRYPTO): $(OBJS) $(C_OBJS)
 	$(CXX) $(CXXFLAGS) -shared -Wl,-soname,$(LIBSAMPLECRYPTO) $< -o $@ $(LDFLAGS)	
+
+$(C_OBJS): %.o: $(IPPDISP_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
 $(OBJS): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
-	@$(RM) $(OBJS) $(LIBSAMPLECRYPTO) $(BUILD_DIR)/$(LIBSAMPLECRYPTO)
+	@$(RM) $(OBJS) $(C_OBJS) $(LIBSAMPLECRYPTO) $(BUILD_DIR)/$(LIBSAMPLECRYPTO)
 
 .PHONY: rebuild
 rebuild:

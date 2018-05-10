@@ -49,7 +49,6 @@ typedef enum _ra_key_type_t
 {
     SGX_RA_KEY_SK = 1,
     SGX_RA_KEY_MK,
-    SGX_RA_KEY_VK,
 } sgx_ra_key_type_t;
 
 typedef struct _ra_msg1_t

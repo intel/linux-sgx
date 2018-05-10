@@ -55,9 +55,9 @@ uint64_t g_cpu_feature_indicator = 0;
 int EDMM_supported = 0;
 sdk_version_t g_sdk_version = SDK_VERSION_1_5;
 
-const volatile global_data_t g_global_data = {1, 2, 3, 4,  
+const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
-uint32_t g_enclave_state = ENCLAVE_INIT_NOT_STARTED;
+uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 
 extern "C" {
 uintptr_t __stack_chk_guard = 0;
@@ -66,6 +66,9 @@ uintptr_t __stack_chk_guard = 0;
         __STRING(alias) " = " __STRING(sym))
 __weak_alias(__intel_security_cookie, __stack_chk_guard);
 }
+
+extern sgx_status_t pcl_entry(void* enclave_base,void* ms) __attribute__((weak));
+extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section(".nipx")));
 
 // init_enclave()
 //      Initialize enclave.
@@ -81,6 +84,22 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     if(enclave_base == NULL || ms == NULL)
     {
         return -1;
+    }
+
+    if(NULL != pcl_entry)
+    {
+        // LFENCE before pcl_entry
+        sgx_lfence();
+        system_features_t * csi = (system_features_t *)ms;
+        if(NULL == csi->sealed_key)
+        {
+            return -1;
+        }
+        sgx_status_t ret = pcl_entry(enclave_base, csi->sealed_key);
+        if(SGX_SUCCESS != ret)
+        {
+            return -1;
+        }
     }
 
     // relocation
@@ -161,15 +180,10 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
     }
 
 #ifndef SE_SIM
-    thread_data_t *thread_data = GET_PTR(thread_data_t, tcs, g_global_data.td_template.self_addr);
-    if (thread_data == NULL)
+    if (SGX_SUCCESS != do_init_thread(tcs, true))
     {
         return SGX_ERROR_UNEXPECTED;
     }
-
-    do_init_thread(tcs);
-    thread_data->flags = SGX_UTILITY_THREAD;
-    
 
     /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
     if (EDMM_supported)

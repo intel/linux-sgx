@@ -33,7 +33,6 @@
 #ifndef _AE_IPP_H
 #define _AE_IPP_H
 
-#include "ippcore.h"
 #include "ippcp.h"
 
 #endif

@@ -34,23 +34,20 @@ open Printf
 
 open Util
 
-(* for compat of OCaml before version 4.02.0 *)
-module Bytes = String
-
 (* Run a command and return its results as a process_status*string. *)
 let read_process (command : string) : Unix.process_status * string =
-  let buffer_size = 2048 in
+  let buffer_size = 16 in
   let buffer = Buffer.create buffer_size in
-  let str = Bytes.create buffer_size in
   let in_channel = Unix.open_process_in command in
-  let chars_read = ref 1 in
-  while !chars_read <> 0 do
-    chars_read := input in_channel str 0 buffer_size;
-    Buffer.add_substring buffer str 0 !chars_read
-  done;
-  let status = Unix.close_process_in in_channel in
-  let output = Buffer.contents buffer in
-  ( status, output )
+  let rec read_to_end() =
+      Buffer.add_channel buffer in_channel 1;read_to_end() in
+  try
+    read_to_end()
+  with
+    End_of_file -> (
+      let status = Unix.close_process_in in_channel in
+      let output = Buffer.contents buffer in
+      ( status, output ))
 
 (*Return None if gcc not found, caller should handle it*)
 let processor_macro ( full_path : string) : string option=

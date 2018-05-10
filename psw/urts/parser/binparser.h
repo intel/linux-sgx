@@ -110,6 +110,7 @@ public:
     virtual void get_executable_sections(vector<const char *>& xsec_names) const = 0;
     virtual bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization) = 0;
     virtual void get_pages_to_protect(uint64_t, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const = 0;
+    virtual bool has_init_section() const = 0;
 };
 
 #endif

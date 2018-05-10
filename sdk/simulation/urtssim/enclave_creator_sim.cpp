@@ -245,6 +245,7 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
     info.cpu_features = 0;
     get_cpu_features(&info.cpu_features, (unsigned int*)info.cpuinfo_table);
     info.version = SDK_VERSION_1_5;
+    info.sealed_key = enclave->get_sealed_key();
     status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
     //free the tcs used by initialization;
     enclave->get_thread_pool()->reset();

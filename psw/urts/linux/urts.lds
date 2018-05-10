@@ -8,6 +8,7 @@
         sgx_thread_setwait_untrusted_events_ocall;
         sgx_thread_set_multiple_untrusted_events_ocall;
         sgx_oc_cpuidex;
+        sgx_create_encrypted_enclave;
     local:
         *;
 };

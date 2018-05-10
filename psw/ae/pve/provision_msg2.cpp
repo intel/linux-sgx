@@ -171,21 +171,27 @@ static pve_status_t prepare_epid_member(const proc_prov_msg2_blob_input_t *msg2_
         goto ret_point;
     }
     //start preparing epid state for EPID signature generation
-    epid_ret = EpidMemberCreate(
-        &epid_cert.epid_group_cert,//group cert from old epid blob
-        &epid_data.epid_private_key,//group private key from old epid blob
-        &epid_data.member_precomp_data,
-        epid_prng,
-        NULL,
-        &msg3_parm->epid_member);
+    epid_ret = epid_member_create(epid_prng, NULL, NULL, &msg3_parm->epid_member);
     if(kEpidNoErr != epid_ret){
         ret_status = epid_error_to_pve_error(epid_ret);
         goto ret_point;
+    }  
+
+    epid_ret = EpidProvisionKey(msg3_parm->epid_member, 
+        &epid_cert.epid_group_cert,//group cert from old epid blob 
+        &epid_data.epid_private_key,//group private key from old epid blob 
+        &epid_data.member_precomp_data);
+    if (kEpidNoErr != epid_ret) {
+        ret_status = epid_error_to_pve_error(epid_ret);
+        goto ret_point;
     }
-    epid_ret = EpidMemberSetHashAlg(msg3_parm->epid_member, kSha256);
-    if(kEpidNoErr != epid_ret){
+
+    // start member
+    epid_ret = EpidMemberStartup(msg3_parm->epid_member);
+    if (kEpidNoErr != epid_ret) {
         ret_status = epid_error_to_pve_error(epid_ret);
     }
+
 ret_point:
     (void)memset_s(&epid_data, sizeof(epid_data), 0, sizeof(epid_data));//clear secret data from stack
     return ret_status;

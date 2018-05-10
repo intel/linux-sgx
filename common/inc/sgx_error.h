@@ -91,6 +91,12 @@ typedef enum _status_t
 
     SGX_ERROR_NO_PRIVILEGE              = SGX_MK_ERROR(0x5002),   /* Not enough privilege to perform the operation */
 
+    /* SGX Protected Code Loader Error codes*/
+    SGX_ERROR_PCL_ENCRYPTED             = SGX_MK_ERROR(0x6001),   /* trying to encrypt an already encrypted enclave */
+    SGX_ERROR_PCL_NOT_ENCRYPTED         = SGX_MK_ERROR(0x6002),   /* trying to load a plain enclave using sgx_create_encrypted_enclave */
+    SGX_ERROR_PCL_MAC_MISMATCH          = SGX_MK_ERROR(0x6003),   /* section mac result does not match build time mac */
+    SGX_ERROR_PCL_SHA_MISMATCH          = SGX_MK_ERROR(0x6004),   /* Unsealed key MAC does not match MAC of key hardcoded in enclave binary */
+    SGX_ERROR_PCL_GUID_MISMATCH         = SGX_MK_ERROR(0x6005),   /* GUID in sealed blob does not match GUID hardcoded in enclave binary */
     
     /* SGX errors are only used in the file API when there is no appropriate EXXX (EINVAL, EIO etc.) error code */
     SGX_ERROR_FILE_BAD_STATUS               = SGX_MK_ERROR(0x7001),	/* The file is in bad status, run sgx_clearerr to try and fix it */
@@ -103,7 +109,8 @@ typedef enum _status_t
     SGX_ERROR_FILE_FLUSH_FAILED             = SGX_MK_ERROR(0x7008),	/* fflush operation (to disk) failed (only used when no EXXX is returned) */
     SGX_ERROR_FILE_CLOSE_FAILED             = SGX_MK_ERROR(0x7009),	/* fclose operation (to disk) failed (only used when no EXXX is returned) */
 
-    SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED = SGX_MK_ERROR(0xF001), /* The ioctl for enclave_create unexpectedly failed with EINTR. */
+
+    SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED = SGX_MK_ERROR(0xF001), /* The ioctl for enclave_create unexpectedly failed with EINTR. */ 
 
 } sgx_status_t;
 

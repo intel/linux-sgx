@@ -35,14 +35,13 @@ include ../buildenv.mk
 CXXFLAGS  += -Werror
 CFLAGS	+= -Werror 
 
-EPID_SDK_DIR = $(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0
+EPID_SDK_DIR = $(LINUX_EXTERNAL_DIR)/epid-sdk
 EXTERNAL_LIB += -L$(EPID_SDK_DIR)/epid/member -lmember \
-				-L$(EPID_SDK_DIR)/epid/common -lcommon \
-				-L$(EPID_SDK_DIR)/ext/ipp/sources/ippcpepid/src -lippcpepid
+				-L$(EPID_SDK_DIR)/epid/common -lcommon
 
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux \
 		   -I$(SGX_IPP_INC)/                          \
-		   -I$(LINUX_EXTERNAL_DIR)/epid-sdk-3.0.0     \
+		   -I$(LINUX_EXTERNAL_DIR)/epid-sdk           \
 		   -I$(LINUX_PSW_DIR)/ae/common               \
 		   -I$(COMMON_DIR)/inc/tlibc                  \
 		   -I$(LINUX_PSW_DIR)/ae/inc/internal

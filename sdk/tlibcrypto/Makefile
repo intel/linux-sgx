@@ -72,8 +72,14 @@ LIB_NAME := libsgx_tcrypto_sgxssl.a
 else
 
 CPPFLAGS += -I$(SGX_IPP_INC)
-OBJ += sgx_ecc256_common.o sgx_rsa_internal.o
+CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -Werror -fno-exceptions -fPIC
+
+OBJ += sgx_tcrypto_common.o sgx_rsa_internal.o
 SRCDIR := ipp
+
+C_Files := $(wildcard $(SRCDIR)/ipp_disp/*.c)
+C_OBJS  := $(C_Files:.c=.o)
+C_OBJS  := $(sort $(C_OBJS))
 
 LIB_NAME := libsgx_tcrypto_ipp.a
 
@@ -98,14 +104,10 @@ $(TARGET): PREPRARE_SGX_SSL
 	$(RM) -r $(BUILD_DIR)/.libs 
 else
 
-$(TARGET): $(OBJ) $(SHARED_OBJ)
-	$(MKDIR) $(BUILD_DIR)/.libippcore
-	$(RM) $(BUILD_DIR)/.libippcore/*
-	cd $(BUILD_DIR)/.libippcore && $(AR) x $(IPP_LIBS_DIR)/libippcore.a
+$(TARGET): $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 	@$(CP) $(IPP_LIBS_DIR)/libippcp.a $(LIB_NAME)
-	$(AR) rsD $(LIB_NAME) $(OBJ) $(SHARED_OBJ) $(BUILD_DIR)/.libippcore/*.o
+	$(AR) rsD $(LIB_NAME) $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 	$(CP) $(LIB_NAME) $@
-	$(RM) -r $(BUILD_DIR)/.libippcore
 
 endif #!($(USE_OPT_LIBS), 1)
 
@@ -124,7 +126,7 @@ all: $(TARGET) | $(BUILD_DIR)
 
 .PHONY: clean
 clean:
-	@$(RM) *.o ipp/*.o sgxssl/*.o $(TARGET) $(BUILD_DIR)/$(TARGET) $(LIB_NAME)
+	@$(RM) *.o ipp/*.o ipp/ipp_disp/*.o sgxssl/*.o $(TARGET) $(BUILD_DIR)/$(TARGET) $(LIB_NAME)
 
 .PHONY: rebuild
 rebuild:

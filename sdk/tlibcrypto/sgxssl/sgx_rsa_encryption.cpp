@@ -124,13 +124,13 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
 	return ret_code;
 }
 
-sgx_status_t sgx_create_rsa_priv2_key(int prime_size, int exp_size, const unsigned char *g_rsa_key_e, const unsigned char *g_rsa_key_p, const unsigned char *g_rsa_key_q,
-	const unsigned char *g_rsa_key_dmp1, const unsigned char *g_rsa_key_dmq1, const unsigned char *g_rsa_key_iqmp,
+sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned char *p_rsa_key_e, const unsigned char *p_rsa_key_p, const unsigned char *p_rsa_key_q,
+	const unsigned char *p_rsa_key_dmp1, const unsigned char *p_rsa_key_dmq1, const unsigned char *p_rsa_key_iqmp,
 	void **new_pri_key2)
 {
-	if (prime_size <= 0 || exp_size <= 0 || new_pri_key2 == NULL ||
-		g_rsa_key_e == NULL || g_rsa_key_p == NULL || g_rsa_key_q == NULL || g_rsa_key_dmp1 == NULL ||
-		g_rsa_key_dmq1 == NULL || g_rsa_key_iqmp == NULL) {
+	if (mod_size <= 0 || exp_size <= 0 || new_pri_key2 == NULL ||
+		p_rsa_key_e == NULL || p_rsa_key_p == NULL || p_rsa_key_q == NULL || p_rsa_key_dmp1 == NULL ||
+		p_rsa_key_dmq1 == NULL || p_rsa_key_iqmp == NULL) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
@@ -156,17 +156,17 @@ sgx_status_t sgx_create_rsa_priv2_key(int prime_size, int exp_size, const unsign
 
 		// convert RSA params, factors to BNs
 		//
-		p = BN_lebin2bn(g_rsa_key_p, (prime_size / 2), p);
+		p = BN_lebin2bn(p_rsa_key_p, (mod_size / 2), p);
 		BN_CHECK_BREAK(p);
-		q = BN_lebin2bn(g_rsa_key_q, (prime_size / 2), q);
+		q = BN_lebin2bn(p_rsa_key_q, (mod_size / 2), q);
 		BN_CHECK_BREAK(q);
-		dmp1 = BN_lebin2bn(g_rsa_key_dmp1, (prime_size / 2), dmp1);
+		dmp1 = BN_lebin2bn(p_rsa_key_dmp1, (mod_size / 2), dmp1);
 		BN_CHECK_BREAK(dmp1);
-		dmq1 = BN_lebin2bn(g_rsa_key_dmq1, (prime_size / 2), dmq1);
+		dmq1 = BN_lebin2bn(p_rsa_key_dmq1, (mod_size / 2), dmq1);
 		BN_CHECK_BREAK(dmq1);
-		iqmp = BN_lebin2bn(g_rsa_key_iqmp, (prime_size / 2), iqmp);
+		iqmp = BN_lebin2bn(p_rsa_key_iqmp, (mod_size / 2), iqmp);
 		BN_CHECK_BREAK(iqmp);
-		e = BN_lebin2bn(g_rsa_key_e, (exp_size), e);
+		e = BN_lebin2bn(p_rsa_key_e, (exp_size), e);
 		BN_CHECK_BREAK(e);
 
 		// calculate n value
@@ -248,9 +248,9 @@ sgx_status_t sgx_create_rsa_priv2_key(int prime_size, int exp_size, const unsign
 	return ret_code;
 }
 
-sgx_status_t sgx_create_rsa_pub1_key(int prime_size, int exp_size, const unsigned char *le_n, const unsigned char *le_e, void **new_pub_key1)
+sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned char *le_n, const unsigned char *le_e, void **new_pub_key1)
 {
-	if (new_pub_key1 == NULL || prime_size <= 0 || exp_size <= 0 || le_n == NULL || le_e == NULL) {
+	if (new_pub_key1 == NULL || mod_size <= 0 || exp_size <= 0 || le_n == NULL || le_e == NULL) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
@@ -263,7 +263,7 @@ sgx_status_t sgx_create_rsa_pub1_key(int prime_size, int exp_size, const unsigne
 	do {
 		//convert input buffers to BNs
 		//
-		n = BN_lebin2bn(le_n, prime_size, n);
+		n = BN_lebin2bn(le_n, mod_size, n);
 		BN_CHECK_BREAK(n);
 		e = BN_lebin2bn(le_e, exp_size, e);
 		BN_CHECK_BREAK(e);
@@ -365,64 +365,6 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data
 	} while (0);
 
 	EVP_PKEY_CTX_free(ctx);
-
-	return ret_code;
-}
-
-sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_byte_size, const unsigned char *le_n, const unsigned char *le_e,
-	const unsigned char *le_d, void **new_pri_key1)
-{
-	if (n_byte_size <= 0 || e_byte_size <= 0 || d_byte_size <= 0 || new_pri_key1 == NULL ||
-		le_n == NULL || le_e == NULL || le_d == NULL) {
-		return SGX_ERROR_INVALID_PARAMETER;
-	}
-
-	EVP_PKEY *rsa_key = NULL;
-	RSA *rsa_ctx = NULL;
-	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
-	BIGNUM* n = NULL;
-	BIGNUM* e = NULL;
-	BIGNUM* d = NULL;
-
-	do {
-		//convert input buffers to BNs
-		//
-		n = BN_lebin2bn(le_n, n_byte_size, n);
-		BN_CHECK_BREAK(n);
-		e = BN_lebin2bn(le_e, e_byte_size, e);
-		BN_CHECK_BREAK(e);
-		d = BN_lebin2bn(le_d, d_byte_size, d);
-		BN_CHECK_BREAK(d);
-
-		// allocates and initializes an RSA key structure
-		//
-		rsa_ctx = RSA_new();
-		rsa_key = EVP_PKEY_new();
-
-		if (rsa_ctx == NULL || rsa_key == NULL || !EVP_PKEY_assign_RSA(rsa_key, rsa_ctx)) {
-			RSA_free(rsa_ctx);
-			rsa_ctx = NULL;
-			break;
-		}
-
-		//set n, e values of RSA key
-		//Calling set functions transfers the memory management of input BNs to the RSA object,
-		//and therefore the values that have been passed in should not be freed by the caller after these functions has been called.
-		//
-		if (!RSA_set0_key(rsa_ctx, n, e, d)) {
-			break;
-		}
-
-		*new_pri_key1 = rsa_key;
-		ret_code = SGX_SUCCESS;
-	} while (0);
-
-	if (ret_code != SGX_SUCCESS) {
-		EVP_PKEY_free(rsa_key);
-		BN_clear_free(n);
-		BN_clear_free(e);
-		BN_clear_free(d);
-	}
 
 	return ret_code;
 }

@@ -1336,7 +1336,7 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
                   "\t}";
                   ]
                 in
-                List.fold_left (fun acc s -> acc ^ s ^ "\n") "" code_template
+                List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") "" code_template
               else if attr.Ast.pa_iswstr then
                 let code_template  = [ 
                   sprintf "\tif (%s)" name;
@@ -1349,9 +1349,9 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
                   "\t}";
                   ]
                 in  
-                List.fold_left (fun acc s -> acc ^ s ^ "\n") "" code_template
+                List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") "" code_template
               else
-                sprintf "\tif (%s) memcpy((void*)%s, __tmp_%s, %s);\n" name name name (mk_len_var name)
+                sprintf "\t\tif (%s) memcpy((void*)%s, __tmp_%s, %s);\n" name name name (mk_len_var name)
 
           | _ -> ""
     in List.fold_left (fun acc (pty, declr) ->
@@ -1359,26 +1359,28 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
                              Ast.PTVal _ -> acc
                | Ast.PTPtr(ty, attr) -> acc ^ copy_memory attr declr) "" plist in
 
-  let set_errno = if propagate_errno then "\terrno = ms->ocall_errno;" else "" in
-  let func_close = sprintf "%s%s\n%s%s\n"
+  let set_errno = if propagate_errno then "\t\terrno = ms->ocall_errno;" else "" in
+  let func_close = sprintf "%s%s%s\n%s%s\n"
                            (handle_out_ptr fd.Ast.plist)
                            set_errno
+                           "\t}"
                            (gen_ocfree fd.Ast.rtype fd.Ast.plist)
                            "\treturn status;\n}" in
   let ocall_null = sprintf "status = sgx_ocall(%d, NULL);\n" idx in
   let ocall_with_ms = sprintf "status = sgx_ocall(%d, %s);\n"
                               idx ms_struct_val in
-  let update_retval = sprintf "if (%s) *%s = %s;"
+  let update_retval = sprintf "\tif (%s) *%s = %s;"
                               retval_name retval_name (mk_parm_accessor retval_name) in
   let func_body = ref [] in
     if (is_naked_func fd) && (propagate_errno = false) then
-        sprintf "%s\t%s\t%s%s" func_open local_vars ocall_null func_close
+        sprintf "%s\t%s\t%s%s" func_open local_vars ocall_null "\n\treturn status;\n}"
     else
       begin
         func_body := local_vars :: !func_body;
         func_body := ocalloc_ms_struct:: !func_body;
         List.iter (fun pd -> func_body := tproxy_fill_ms_field pd :: !func_body) fd.Ast.plist;
         func_body := ocall_with_ms :: !func_body;
+        func_body := "if (status == SGX_SUCCESS) {" :: !func_body;
         if fd.Ast.rtype <> Ast.Void then func_body := update_retval :: !func_body;
         List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") func_open (List.rev !func_body) ^ func_close
       end

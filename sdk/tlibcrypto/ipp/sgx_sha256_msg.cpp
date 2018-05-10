@@ -53,7 +53,7 @@ sgx_status_t sgx_sha256_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha256_h
     }
 
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashMessage((const Ipp8u *) p_src, src_len, (Ipp8u *)p_hash, IPP_ALG_HASH_SHA256);
+    ipp_ret = ippsHashMessage_rmf((const Ipp8u *) p_src, src_len, (Ipp8u *)p_hash, ippsHashMethod_SHA256_TT());
     switch (ipp_ret)
     {
     case ippStsNoErr: return SGX_SUCCESS;

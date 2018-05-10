@@ -106,8 +106,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
     if(SGX_SUCCESS != sgx_verify_report(report)){
         return PCE_INVALID_REPORT;
     }
-    if((report->body.attributes.flags & SGX_FLAGS_PROVISION_KEY) != SGX_FLAGS_PROVISION_KEY ||
-        (report->body.attributes.flags & SGX_FLAGS_DEBUG) != 0){
+    if((report->body.attributes.flags & SGX_FLAGS_PROVISION_KEY) != SGX_FLAGS_PROVISION_KEY){
         return PCE_INVALID_PRIVILEGE;
     }
     uint8_t hash_buf[SGX_REPORT_DATA_SIZE];//hash value only use 32 bytes but data in report has 64 bytes size
@@ -251,8 +250,7 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
         return PCE_INVALID_REPORT;
     }
     //only PvE could use the interface which has flag SGX_FLAGS_PROVISION_KEY
-    if((report->body.attributes.flags & SGX_FLAGS_PROVISION_KEY) != SGX_FLAGS_PROVISION_KEY ||
-        (report->body.attributes.flags & SGX_FLAGS_DEBUG) != 0){
+    if((report->body.attributes.flags & SGX_FLAGS_PROVISION_KEY) != SGX_FLAGS_PROVISION_KEY){
         return PCE_INVALID_PRIVILEGE;
     }
     ae_ret = get_pce_priv_key(cert_psvn, &ec_prv_key);

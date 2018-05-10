@@ -30,7 +30,7 @@
  */
 
 
-#include "sgx_ecc256_common.h"
+#include "sgx_tcrypto_common.h"
 
 
 sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,

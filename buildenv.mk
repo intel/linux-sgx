@@ -57,6 +57,9 @@ CP    := /bin/cp -f
 MKDIR := mkdir -p
 STRIP := strip
 OBJCOPY := objcopy
+NIPX := .nipx
+NIPD := .nipd
+NIPRODT := .niprod
 
 # clean the content of 'INCLUDE' - this variable will be set by vcvars32.bat
 # thus it will cause build error when this variable is used by our Makefile,
@@ -188,5 +191,5 @@ endif
 SGX_IPP_DIR     := $(ROOT_DIR)/external/ippcp_internal
 SGX_IPP_INC     := $(SGX_IPP_DIR)/inc
 IPP_LIBS_DIR    := $(SGX_IPP_DIR)/lib/linux/$(IPP_SUBDIR)
-LD_IPP          := -lippcp -lippcore
+LD_IPP          := -lippcp
 

@@ -38,7 +38,10 @@
 
  /* version of metadata */
 #define MAJOR_VERSION 2                 //MAJOR_VERSION should not larger than 0ffffffff
-#define MINOR_VERSION 2                 //MINOR_VERSION should not larger than 0ffffffff
+#define MINOR_VERSION 3                 //MINOR_VERSION should not larger than 0ffffffff
+
+#define SGX_2_1_MAJOR_VERSION 2         //MAJOR_VERSION should not larger than 0ffffffff
+#define SGX_2_1_MINOR_VERSION 2         //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_2_0_MAJOR_VERSION 2         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_2_0_MINOR_VERSION 1         //MINOR_VERSION should not larger than 0ffffffff

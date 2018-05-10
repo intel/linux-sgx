@@ -40,7 +40,8 @@
 
 #include "trts_pic.h"
 
-    .text
+    /* .text */
+    .section .nipx,"ax",@progbits
 
 DECLARE_LOCAL_FUNC get_enclave_base
     lea_pic __ImageBase, %xax
@@ -114,9 +115,25 @@ DECLARE_GLOBAL_FUNC enclave_entry
  * ----------------------------------------------------------------------
  */
     .cfi_startproc
+
+    /* Clear unused general registers */
+    xor     %xdx, %xdx
+    add     %xdx, %xdx          /* OF = SF = AF = CF = 0; ZF = PF = 1 */
+#if defined(LINUX64)
+    xor     %r8, %r8
+    xor     %r9, %r9
+    xor     %r10, %r10
+    xor     %r11, %r11
+    xor     %r12, %r12
+    xor     %r13, %r13
+    xor     %r14, %r14
+    xor     %r15, %r15
+#endif
+
+    /* switch to trusted stack */
     cmp     $0, %xax
     jne     .Ldo_handler                /* handle exception state */
-    xor     %xdx, %xdx
+    /* xor     %xdx, %xdx                  xdx is cssa, make sure it is 0 */
     READ_TD_DATA last_sp
     cmp     $0, %xax
     jne .Lswitch_stack
@@ -549,15 +566,14 @@ DECLARE_LOCAL_FUNC continue_execution
     mov     %xdi, %xcx
 #endif
     mov     SE_WORDSIZE*0(%xcx), %xax
-    push    %xax                       # push xax
+    push    %xax                       /* push xax */
     mov     SE_WORDSIZE*1(%xcx), %xax
-    push    %xax                       # push xcx
-    mov     SE_WORDSIZE*4(%xcx), %xax  # xax: xsp 
-# x86_64 requires a 128-bytes red zone. We need to allocate buffer to avoid touching the red zone.
-    sub     $(SE_WORDSIZE + RED_ZONE_SIZE), %xax  # allocate buffer to skip the red zone (if any) and save the xip
-                                                  # RED_ZONE_SIZE: 0(i386), 128-bytes(x86_64) 
+    push    %xax                       /* push xcx */
+    mov     SE_WORDSIZE*4(%xcx), %xax  /* xax: xsp */
+/* x86_64 requires a 128-bytes red zone. We need to allocate buffer to avoid touching the red zone. */
+    sub     $(SE_WORDSIZE + RED_ZONE_SIZE), %xax   /* allocate buffer to skip red zone and save xip */
 
-# restore registers except xax, xcx, xsp
+/* restore registers except xax, xcx, xsp */
     mov     SE_WORDSIZE*2(%xcx), %xdx
     mov     SE_WORDSIZE*3(%xcx), %xbx
     mov     SE_WORDSIZE*5(%xcx), %xbp
@@ -573,7 +589,7 @@ DECLARE_LOCAL_FUNC continue_execution
     mov     SE_WORDSIZE*14(%xcx), %r14
     mov     SE_WORDSIZE*15(%xcx), %r15
     push    SE_WORDSIZE*16(%xcx)
-    popf    # make sure the following instructions do not affect flags
+    popf    /* make sure the following instructions do not affect flags */
 #else
     push    SE_WORDSIZE*8(%xcx)
     popf
@@ -582,13 +598,14 @@ DECLARE_LOCAL_FUNC continue_execution
 #ifdef LINUX64
     mov     SE_WORDSIZE*17(%xcx), %xcx
 #else
-    mov     SE_WORDSIZE*9(%xcx), %xcx  # xcx: xip
+    mov     SE_WORDSIZE*9(%xcx), %xcx  /* xcx: xip */
 #endif
 
-# do not setup the new stack until info is not needed any more
-# otherwise, info will be overwritten
-    mov     %xcx, (%xax)               # save xip to the new stack
-    pop     %xcx                       # restore xcx
-    pop     %xsp                       # xsp: xax
+/* do not setup the new stack until info is not needed any more
+ * otherwise, info will be overwritten
+ */
+    mov     %xcx, (%xax)               /* save xip to the new stack */
+    pop     %xcx                       /* restore xcx */
+    pop     %xsp                       /* xsp: xax */
     xchg    %xax, %xsp
-    ret     $(RED_ZONE_SIZE)           # pop xip and red zone (if any)
+    ret     $(RED_ZONE_SIZE)           /* pop xip and red zone (if any) */

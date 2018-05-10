@@ -71,6 +71,8 @@ static void init_stack_guard(void *tcs)
     thread_data->stack_guard = tmp_stack_guard;
 }
 
+extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa) __attribute__((section(".nipx")));
+
 extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
 {
     if(sgx_is_enclave_crashed())
@@ -97,9 +99,7 @@ extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
         }
         else if(index == ECMD_MKTCS)
         {
-            // Initialize stack guard if necessary
-            init_stack_guard(tcs);
-            error = do_ecall_add_thread(ms, tcs);
+            error = do_ecall_add_thread(ms);
         }
         else if(index == ECMD_UNINIT_ENCLAVE)
         {

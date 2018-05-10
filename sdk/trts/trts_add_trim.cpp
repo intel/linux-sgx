@@ -135,9 +135,32 @@ int accept_post_remove(const volatile layout_t *layout_start, const volatile lay
     return 0;
 }
 
+static int check_heap_dyn_range(void *addr, size_t page_count, struct dynamic_flags_attributes *fa)
+{
+    size_t heap_dyn_start, heap_dyn_size;
+
+    heap_dyn_start = (size_t)get_heap_base() + get_heap_min_size();
+    heap_dyn_size = get_heap_size() - get_heap_min_size();
+
+    if ((size_t)addr >= heap_dyn_start
+            && (size_t)addr + (page_count << SE_PAGE_SHIFT) <= heap_dyn_start + heap_dyn_size)
+    {
+        if (fa != NULL)
+        {
+            fa->si_flags = SI_FLAGS_RW;
+            fa->attributes = PAGE_ATTR_POST_ADD;
+        }
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
 static int check_dynamic_entry_range(void *addr, size_t page_count, uint16_t entry_id, size_t entry_offset, struct dynamic_flags_attributes *fa)
 {
-    const volatile layout_t *layout = NULL, *heap_max_layout;
+    const volatile layout_t *layout = NULL;
     size_t entry_start_addr;
     uint32_t entry_page_count;
 
@@ -150,14 +173,6 @@ static int check_dynamic_entry_range(void *addr, size_t page_count, uint16_t ent
 
     entry_start_addr = (size_t)get_enclave_base() + (size_t)layout->entry.rva + entry_offset;
     entry_page_count = layout->entry.page_count;
-
-    // if there exists LAYOUT_ID_HEAP_MAX, we should include it as well
-    if ((entry_id == LAYOUT_ID_HEAP_INIT)
-        && (heap_max_layout = get_dynamic_layout_by_id(LAYOUT_ID_HEAP_MAX)))
-    {
-        entry_page_count += heap_max_layout->entry.page_count;
-    }
-
     if ((size_t)addr >= entry_start_addr
             && (size_t)addr + (page_count << SE_PAGE_SHIFT) <= entry_start_addr + ((size_t)entry_page_count << SE_PAGE_SHIFT))
     {
@@ -174,15 +189,28 @@ static int check_dynamic_entry_range(void *addr, size_t page_count, uint16_t ent
     }
 }
 
+static int check_utility_thread_dynamic_stack(void *addr, size_t page_count, struct dynamic_flags_attributes *fa)
+{
+    return check_dynamic_entry_range(addr, page_count, LAYOUT_ID_STACK_MAX, 0, fa);
+}
+
 // Verify if the range specified belongs to a dynamic range recorded in metadata.
 static int check_dynamic_range(void *addr, size_t page_count, size_t *offset, struct dynamic_flags_attributes *fa)
 {
     const volatile layout_t *dt_layout = NULL;
 
-    // check heap range
-    if (0 == check_dynamic_entry_range(addr, page_count, LAYOUT_ID_HEAP_INIT, 0, fa))
+    // check for integer overflow
+    if ((size_t)addr > SIZE_MAX - (page_count << SE_PAGE_SHIFT))
+        return -1;
+
+    // check heap dynamic range
+    if (0 == check_heap_dyn_range(addr, page_count, fa))
         return 0;
-    
+
+    // check dynamic stack within utility thread
+    if (0 == check_utility_thread_dynamic_stack(addr, page_count, fa))
+        return 0;
+
     // check dynamic thread entries range
     if (NULL != (dt_layout = get_dynamic_layout_by_id(LAYOUT_ID_THREAD_GROUP_DYN)))
     {
@@ -236,7 +264,7 @@ int is_dynamic_thread_exist()
 
 uint32_t get_dynamic_stack_max_page()
 {
-    const volatile layout_t * layout = get_dynamic_layout_by_id(LAYOUT_ID_STACK_DYN_MAX);
+    const volatile layout_t * layout = get_dynamic_layout_by_id(LAYOUT_ID_STACK_MAX);
     if (!layout)
         return 0;
     else

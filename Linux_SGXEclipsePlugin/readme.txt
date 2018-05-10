@@ -6,8 +6,8 @@ $DELETE_CURRENT_ECLIPSE - Delete current eclipse or not. Generally this variable
 
 The following plugins are pre-requisites to be installed in Eclipse before trying to build the plugin.
 
-1. Eclipse IDE for C/C++ Developers  4.5.1.20150917-1200 (tested_version)
-2. Eclipse PDE Plug-in Developer Resources   3.11.1.v20150904-0345 (tested_version)
+1. Eclipse IDE for C/C++ Developers  4.7.3.20180308-1800 (tested_version)
+2. Eclipse PDE Plug-in Developer Resources   3.13.3.v20180301-11 (tested_version)
 
 run ./build.sh from command line under current directory.
 Once the build script is run, the folder build_directory/updatesite/sgx-eclipse-plugin contains the update site. This is the path that needs to be provided to the eclipse while doing installation.

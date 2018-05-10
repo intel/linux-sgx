@@ -44,7 +44,7 @@ vpath %.cpp $(COMMON_DIR)/src
 
 vpath %.c $(TOP_DIR)/common/src
 
-CXXFLAGS += -fPIC -fno-rtti $(INCLUDE)
+CXXFLAGS += -fPIC -fno-exceptions -fno-rtti $(INCLUDE)
 CFLAGS += -fPIC $(INCLUDE)
 
 OBJ := ukey_exchange.o se_thread.o ukey_exchange_version.o 

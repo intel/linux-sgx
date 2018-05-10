@@ -368,7 +368,7 @@ int CLEClass::get_launch_token(
         return LE_INVALID_PARAMETER;
     //set mrsigner based on the hash of isv pub key from enclave signature
     IppStatus ipperrorCode = ippStsNoErr;
-    ipperrorCode = ippsHashMessage(reinterpret_cast<const Ipp8u *>(public_key), public_key_size, reinterpret_cast<Ipp8u *>(&mrsigner), IPP_ALG_HASH_SHA256);
+    ipperrorCode = ippsHashMessage_rmf(reinterpret_cast<const Ipp8u *>(public_key), public_key_size, reinterpret_cast<Ipp8u *>(&mrsigner), ippsHashMethod_SHA256_TT());
     if( ipperrorCode != ippStsNoErr){
         return AE_FAILURE;
     }

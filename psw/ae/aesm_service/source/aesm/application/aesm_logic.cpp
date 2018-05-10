@@ -62,11 +62,8 @@
 #include "se_wrapper.h"
 #include "PSDAService.h"
 #include "ippcp.h"
-#include "ippcore.h"
 #include <time.h>
 #include <string>
-#include "ippcp.h"
-#include "ippcore.h"
 #include "prof_fun.h"
 #include "upse/helper.h"
 #include "aesm_long_lived_thread.h"
@@ -215,7 +212,7 @@ ae_error_t AESMLogic::service_start()
 
     AESM_LOG_INIT();
 #ifdef SGX_USE_OPT_LIB
-    ippInit();
+    ippcpInit();
 #endif
     AESM_DBG_INFO("aesm service is starting");
     // Try to read active extended epid group id from data file

@@ -284,6 +284,9 @@ static void _EREPORT(const sgx_target_info_t* ti, const sgx_report_data_t* rd, s
 
 
 static void
+_EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xdi) __attribute__((section(".nipx")));
+
+static void
 _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xdi)
 {
     // By simulator convention, XDX contains XBP and XCX contains XSP.

@@ -69,7 +69,8 @@ $ sudo ./sgx_linux_x64_psw_${version}.bin
 $ sudo cp ${top_dir}/build/linux/libsgx_ref_le.signed.so /opt/intel/sgxpsw/aesm/
 $ sudo cp ${top_dir}/build/linux/ref_white_list.bin /var/opt/aesmd/data
 ```
-See the later topic, *Generating a White List*, for information on how to generate a white list file.
+See the later topic, *Generating a White List*, for information on how to generate a white list file.   
+
 4. Restart aesmd service with root privilege:
 ```
 $ sudo service aesmd restart

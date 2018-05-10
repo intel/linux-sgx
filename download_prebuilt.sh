@@ -33,13 +33,13 @@
 
 top_dir=`dirname $0`
 out_dir=$top_dir
-optlib_name=optimized_libs-2.1.2.tar
-ae_file_name=prebuilt-ae-2.1.2.tar
-server_url_path=https://download.01.org/intel-sgx/linux-2.1.2/
+optlib_name=optimized_libs-2.1.3.tar
+ae_file_name=prebuilt-ae-2.1.3.tar
+server_url_path=https://download.01.org/intel-sgx/linux-2.1.3/
 server_optlib_url=$server_url_path/$optlib_name
 server_ae_url=$server_url_path/$ae_file_name
-optlib_sha256=239cae39f87934d56c4eb919a4702c6ac82c19957b9a8d56c02b10eb4e27f573
-ae_sha256=55ebe53b724d66f045c4c05020610d0fc7771d5dc58aaff270ccaee82b5d0d65
+optlib_sha256=b8091d8ad9ea91949610468944b2604c858833f70099c7d369234acd3d62c774
+ae_sha256=022fadd5a72234282176c09695c08b755defcffb82ea47b7dd9337c2f43b8378
 rm -rf $out_dir/$optlib_name
 wget $server_optlib_url -P $out_dir 
 if [ $? -ne 0 ]; then

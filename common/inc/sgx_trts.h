@@ -68,7 +68,7 @@ int SGXAPI sgx_is_outside_enclave(const void *addr, size_t size);
  *      1 - the enclave state is crashed.
  *      0 - the enclave state is not crashed.
  */
-int SGXAPI sgx_is_enclave_crashed(void);
+int SGXAPI sgx_is_enclave_crashed(void) __attribute__((section(".nipx")));
 
 
 /* sgx_read_rand()

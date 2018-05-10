@@ -990,3 +990,19 @@ void ElfParser::get_pages_to_protect(uint64_t enclave_base_addr, std::vector<std
         }
     }
 }
+
+bool ElfParser::is_enclave_encrypted() const
+{
+    // if enclave is encrypted, enclave must contain section .pcltbl
+    const char* sec_name = ".pcltbl";
+    const ElfW(Ehdr) *ehdr = (const ElfW(Ehdr) *)m_start_addr;
+    return (NULL != get_section_by_name(ehdr, sec_name));
+}
+
+
+bool ElfParser::has_init_section() const
+{
+    const char * sec_name = ".init";
+    const ElfW(Ehdr) *elf_hdr = (const ElfW(Ehdr) *)m_start_addr;
+    return (NULL != get_section_by_name(elf_hdr, sec_name)); 
+}

@@ -36,8 +36,6 @@
 #include "network_encoding_wrapper.h"
 #include "ipp_wrapper.h"
 #include "sgx_tcrypto.h"
-#include "ippcp.h"
-#include "ippcore.h"
 #include "aesm_xegd_blob.h"
 #include "peksk_pub.hh"
 #include "sgx_read_rand.h"

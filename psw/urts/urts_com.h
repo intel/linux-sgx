@@ -50,6 +50,7 @@
 #include "se_detect.h"
 #include "rts.h"
 #include "enclave_creator_hw.h"
+#include "edmm_utility.h"
 #include <sys/mman.h>
 #ifndef PARSER
 #include "elfparser.h"
@@ -108,7 +109,7 @@ static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t 
 
 #ifndef SE_SIM
     EnclaveCreatorHW *enclave_creator = static_cast<EnclaveCreatorHW *>(get_enclave_creator());
-    if (!(enclave_creator->is_cpu_edmm()) || !(enclave_creator->is_driver_compatible()))
+    if (!is_cpu_support_edmm() || !(enclave_creator->is_driver_compatible()))
     {
         // cannot support EDMM, adjust the possibly highest metadata version supported
         urts_version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
@@ -182,7 +183,7 @@ static bool is_SGX_DBG_OPTIN_variable_set()
 }
 
 
-static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadata_t *metadata, se_file_t& file, const bool debug, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr)
+static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadata_t *metadata, se_file_t& file, const bool debug, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr, uint8_t *sealed_key)
 {
     // The "parser" will be registered into "loader" and "loader" will be registered into "enclave".
     // After enclave is created, "parser" and "loader" are not needed any more.
@@ -203,7 +204,7 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
     if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
         MINOR_VERSION_OF_METADATA(metadata->version) >= MINOR_VERSION_OF_METADATA(urts_version))
     {
-        enclave_version = SDK_VERSION_2_1;
+        enclave_version = SDK_VERSION_2_2;
     }
     else if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
              MINOR_VERSION_OF_METADATA(metadata->version) < MINOR_VERSION_OF_METADATA(urts_version))
@@ -227,6 +228,10 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
         return ret;
     }
 
+    if(sealed_key != NULL)
+    {
+        enclave->set_sealed_key(sealed_key);
+    }
 
     // It is accurate to get debug flag from secs
     enclave->set_dbg_flag(!!(loader.get_secs().attributes.flags & SGX_FLAGS_DEBUG));
@@ -291,7 +296,7 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
                 uint64_t enclave_end_addr;
                 const char* enclave_path;
                 enclave_start_addr = (uint64_t) loader.get_start_addr();
-                enclave_end_addr = enclave_start_addr + (uint64_t) metadata->enclave_size;
+                enclave_end_addr = enclave_start_addr + (uint64_t) metadata->enclave_size -1;
 
                 SE_TRACE(SE_TRACE_DEBUG, "Invoking VTune's module mapping API __itt_module_load \n");
                 SE_TRACE(SE_TRACE_DEBUG, "Enclave_start_addr==0x%llx\n", enclave_start_addr);
@@ -384,7 +389,7 @@ fail:
 }
 
 
-sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr)
+sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr, uint8_t* sealed_key = NULL)
 {
     unsigned int ret = SGX_SUCCESS;
     sgx_status_t lt_result = SGX_SUCCESS;
@@ -420,6 +425,17 @@ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t
         goto clean_return;
     }
 
+    if(NULL != sealed_key && true != parser.is_enclave_encrypted())
+    {
+        ret = SGX_ERROR_PCL_NOT_ENCRYPTED;
+        goto clean_return;
+    }
+    if(NULL == sealed_key && false != parser.is_enclave_encrypted())
+    {
+        ret = SGX_ERROR_PCL_ENCRYPTED;
+        goto clean_return;
+    }
+
     if(SGX_SUCCESS != (ret = get_metadata(&parser, debug,  &metadata, &sgx_misc_attr)))
     {
         goto clean_return;
@@ -450,7 +466,7 @@ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t
     //Need to set the whole misc_attr instead of just secs_attr.
     do {
         ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id,
-                               misc_attr);
+                               misc_attr, sealed_key);
         //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
     } while(SGX_ERROR_ENCLAVE_LOST == ret);
 

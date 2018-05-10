@@ -184,20 +184,12 @@ DECLARE_GLOBAL_FUNC longjmp
     cmpl    $0, %eax
     jz      .crash
     addl    $(2*SE_WORDSIZE), %esp
-    /* restore xbp and xsp, push them to stack */
+    /* restore xsp */
     movl    (SE_WORDSIZE + 8*SE_WORDSIZE)(%esp), %eax
     movl    (_JB_ESP * SE_WORDSIZE)(%eax), %ebx
-    movl    (_JB_EBP * SE_WORDSIZE)(%eax), %ecx
     call    get_stack_guard
     xorl    %eax, %ebx
-    xorl    %eax, %ecx
     pushl   %ebx
-    pushl   %ecx
-    /* check restored ebp is on current statck */
-    call    is_valid_sp
-    cmpl    $0, %eax     
-    jz      .crash
-    popl    %ecx
     /* check restored esp is on current statck */
     call    is_valid_sp
     cmpl    $0, %eax
@@ -240,19 +232,11 @@ DECLARE_GLOBAL_FUNC longjmp
     cmpl    $0, %eax
     jz      .crash
     popq     %rdi
-    /* restore xbp and xsp, push them to stack */
-    movq    (_JB_RBP * SE_WORDSIZE)(%rdi),%rcx
+    /* restore xsp*/
     movq    (_JB_RSP * SE_WORDSIZE)(%rdi),%rdx
     call    get_stack_guard
-    xorq    %rax, %rcx
     xorq    %rax, %rdx
     pushq   %rdx
-    pushq   %rcx
-    /* check restored rbp is on current statck */
-    popq    %rdi
-    call    is_valid_sp
-    cmpl    $0, %eax
-    jz      .crash
     /* check restored rsp is on current statck */
     popq    %rdi
     call    is_valid_sp

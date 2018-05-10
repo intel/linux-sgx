@@ -32,13 +32,14 @@
 
 top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
-openssl_ver_name=openssl-1.1.0f
+openssl_ver_name=openssl-1.1.0h
 sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_ver_name=sdk_2.0_integ
-sgxssl_ver=sdk_2.0_integ
+sgxssl_ver_name=sdk_2.1_integ
+sgxssl_ver=sdk_2.1_integ
 build_script=$top_dir/Linux/build_sgxssl.sh
-server_url_path=https://www.openssl.org/source/old/1.1.0
+server_url_path=https://www.openssl.org/source/
 full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
+full_openssl_url_old=$server_url_path/old/1.1.0/$openssl_ver_name.tar.gz
 
 if [ ! -f $build_script ]; then
 	wget $sgxssl_github_archive/$sgxssl_ver_name.zip -P $top_dir --no-check-certificate || exit 1
@@ -49,7 +50,7 @@ if [ ! -f $build_script ]; then
 fi
 
 if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
-	wget $full_openssl_url -P $openssl_out_dir --no-check-certificate || exit 1
+	wget $full_openssl_url_old -P $openssl_out_dir --no-check-certificate || wget $full_openssl_url -P $openssl_out_dir --no-check-certificate || exit 1
 fi
 chmod +x $build_script
 $build_script no-clean linux-sgx || exit 1

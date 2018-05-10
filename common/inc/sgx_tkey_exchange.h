@@ -147,8 +147,7 @@ sgx_status_t SGXAPI sgx_ra_init_ex(
  * protocol message 3 produced by sgx_ra_proc_msg2.
  *
  * @param context   Context returned by sgx_ra_init.
- * @param type      The specifier of keys, can be SGX_RA_KEY_MK, SGX_RA_KEY_SK
- *                  and SGX_RA_VK.
+ * @param type      The specifier of keys, can be SGX_RA_KEY_MK, SGX_RA_KEY_SK.
  * @param p_key     The key returned.
  * @return sgx_status_t SGX_SUCCESS                     Indicates success.
  *                      SGX_ERROR_INVALID_PARAMETER     Indicates an error that

@@ -114,15 +114,15 @@ This Agreement is governed by the laws of the State of New York and the intellec
    </url>
 
    <requires>
-      <import plugin="org.eclipse.cdt.ui" version="5.11.0" match="compatible"/>
-      <import plugin="org.eclipse.core.expressions" version="3.5.0" match="compatible"/>
-      <import plugin="org.eclipse.ui.ide" version="3.11.0" match="compatible"/>
-      <import plugin="org.eclipse.cdt.core" version="5.11.0" match="compatible"/>
-      <import plugin="org.eclipse.core.runtime" version="3.11.1" match="compatible"/>
-      <import plugin="org.eclipse.ui" version="3.107.0" match="compatible"/>
-      <import plugin="org.eclipse.cdt.managedbuilder.ui" version="8.2.2" match="compatible"/>
-      <import plugin="org.eclipse.cdt.managedbuilder.core" version="8.3.0" match="compatible"/>
-      <import plugin="org.eclipse.core.resources" version="3.10.1" match="compatible"/>
+      <import plugin="org.eclipse.cdt.ui" version="5.11.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.expressions" version="3.5.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.ui.ide" version="3.11.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.cdt.core" version="5.11.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.runtime" version="3.11.1" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.ui" version="3.107.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.cdt.managedbuilder.ui" version="8.2.2" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.cdt.managedbuilder.core" version="8.3.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.resources" version="3.10.1" match="greaterOrEqual"/>
    </requires>
 
    <plugin

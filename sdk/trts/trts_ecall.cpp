@@ -104,6 +104,16 @@ static sgx_status_t get_func_addr(uint32_t ordinal, void **addr)
     return SGX_SUCCESS;
 }
 
+static bool is_utility_thread()
+{
+    thread_data_t *thread_data = get_thread_data();
+    if ((thread_data != NULL) && (thread_data->flags & SGX_UTILITY_THREAD))
+    {
+        return true;
+    }
+    return false;
+}
+
 typedef struct _tcs_node_t
 {
     uintptr_t tcs;
@@ -111,8 +121,6 @@ typedef struct _tcs_node_t
 } tcs_node_t;
 
 static tcs_node_t *g_tcs_node = NULL;
-static sgx_spinlock_t g_tcs_node_lock = SGX_SPINLOCK_INITIALIZER;
-
 static uintptr_t g_tcs_cookie = 0;
 #define ENC_TCS_POINTER(x)  (uintptr_t)(x) ^ g_tcs_cookie
 #define DEC_TCS_POINTER(x)  (void *)((x) ^ g_tcs_cookie)
@@ -127,6 +135,9 @@ static uintptr_t g_tcs_cookie = 0;
 //
 static sgx_status_t do_save_tcs(void *ptcs)
 {
+    if(!is_utility_thread())
+        return SGX_ERROR_UNEXPECTED;
+
     if(unlikely(g_tcs_cookie == 0))
     {
         uintptr_t rand = 0;
@@ -138,12 +149,10 @@ static sgx_status_t do_save_tcs(void *ptcs)
             }
         } while(rand == 0);
 
-        sgx_spin_lock(&g_tcs_node_lock);
         if(g_tcs_cookie == 0)
         {
             g_tcs_cookie = rand;
         }
-        sgx_spin_unlock(&g_tcs_node_lock);
     }
 
     tcs_node_t *tcs_node = (tcs_node_t *)malloc(sizeof(tcs_node_t));
@@ -154,10 +163,8 @@ static sgx_status_t do_save_tcs(void *ptcs)
 
     tcs_node->tcs = ENC_TCS_POINTER(ptcs);
 
-    sgx_spin_lock(&g_tcs_node_lock);
     tcs_node->next = g_tcs_node;
     g_tcs_node = tcs_node;
-    sgx_spin_unlock(&g_tcs_node_lock);
 
     return SGX_SUCCESS;
 }
@@ -171,7 +178,9 @@ static sgx_status_t do_save_tcs(void *ptcs)
 //
 static void do_del_tcs(void *ptcs)
 {
-    sgx_spin_lock(&g_tcs_node_lock);
+    if(!is_utility_thread())
+        return;
+
     if (g_tcs_node != NULL)
     {
         if (DEC_TCS_POINTER(g_tcs_node->tcs) == ptcs)
@@ -198,7 +207,6 @@ static void do_del_tcs(void *ptcs)
             }
         }
     }
-    sgx_spin_unlock(&g_tcs_node_lock);
 }
 
 static volatile bool           g_is_first_ecall = true;
@@ -261,24 +269,11 @@ static void init_static_stack_canary(void *tcs)
     *canary = (size_t)__stack_chk_guard;
 }
 
-static bool is_utility_thread()
-{
-    thread_data_t *thread_data = get_thread_data();
-    if ((thread_data != NULL) && (thread_data->flags & SGX_UTILITY_THREAD))
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-sgx_status_t do_init_thread(void *tcs)
+sgx_status_t do_init_thread(void *tcs, bool enclave_init)
 {
     thread_data_t *thread_data = GET_PTR(thread_data_t, tcs, g_global_data.td_template.self_addr);
 #ifndef SE_SIM
-    size_t saved_stack_commit_addr = thread_data->stack_commit_addr; 
+    size_t saved_stack_commit_addr = thread_data->stack_commit_addr;
     bool thread_first_init = (saved_stack_commit_addr == 0) ? true : false;
 #endif
     size_t stack_guard = thread_data->stack_guard;
@@ -292,25 +287,28 @@ sgx_status_t do_init_thread(void *tcs)
     thread_data->first_ssa_gpr += (size_t)tcs;
     thread_data->tls_array += (size_t)tcs;
     thread_data->tls_addr += (size_t)tcs;
-
     thread_data->last_sp -= (size_t)STATIC_STACK_SIZE;
     thread_data->stack_base_addr -= (size_t)STATIC_STACK_SIZE;
     thread_data->stack_guard = stack_guard;
     thread_data->flags = thread_flags;
     init_static_stack_canary(tcs);
 
-#ifndef SE_SIM
-    if (EDMM_supported && is_dynamic_thread(tcs))
+    if (enclave_init)
     {
-        if (thread_first_init)
-        {   
+        thread_data->flags = SGX_UTILITY_THREAD;
+    }
+#ifndef SE_SIM
+    if (thread_first_init)
+    {
+        if (EDMM_supported && (enclave_init || is_dynamic_thread(tcs)))
+        {
             uint32_t page_count = get_dynamic_stack_max_page();
             thread_data->stack_commit_addr += ((sys_word_t)page_count << SE_PAGE_SHIFT);
         }
-        else
-        {   
-            thread_data->stack_commit_addr = saved_stack_commit_addr;
-        }
+    }
+    else
+    {
+        thread_data->stack_commit_addr = saved_stack_commit_addr;
     }
 #endif
 
@@ -340,7 +338,7 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
     thread_data_t *thread_data = get_thread_data();
     if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
     {
-        status = do_init_thread(tcs);
+        status = do_init_thread(tcs, false);
         if(0 != status)
         {
             return status;
@@ -350,35 +348,32 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
     return status;
 }
 
-sgx_status_t do_ecall_add_thread(void *ms, void *tcs)
+sgx_status_t do_ecall_add_thread(void *ms)
 {
     sgx_status_t status = SGX_ERROR_UNEXPECTED;
 
     if(!is_utility_thread())
         return status;
 
-    struct ms_tcs *ms_tcs = (struct ms_tcs*)ms;
-    if (ms_tcs == NULL)
+    struct ms_tcs *tcs = (struct ms_tcs*)ms;
+    if (tcs == NULL)
     {
         return status;
     }
 
-    if (!sgx_is_outside_enclave(ms_tcs, sizeof(struct ms_tcs)))
+    if (!sgx_is_outside_enclave(tcs, sizeof(struct ms_tcs)))
     {
         abort();
     }
 
-    void* ptcs = ms_tcs->ptcs;
+    const struct ms_tcs mtcs = *tcs;
+    void* ptcs = mtcs.ptcs;
     if (ptcs == NULL)
     {
         return status;
     }
 
-    status = do_init_thread(tcs);
-    if(SGX_SUCCESS != status)
-    {
-        return status;
-    }
+    __builtin_ia32_lfence();
 
     status = do_save_tcs(ptcs);
     if(SGX_SUCCESS != status)
@@ -409,12 +404,9 @@ sgx_status_t do_uninit_enclave(void *tcs)
 #ifndef SE_SIM
     if(is_dynamic_thread_exist() && !is_utility_thread())
         return SGX_ERROR_UNEXPECTED;
-#endif        
-    sgx_spin_lock(&g_tcs_node_lock);
+#endif
     tcs_node_t *tcs_node = g_tcs_node;
     g_tcs_node = NULL;
-    sgx_spin_unlock(&g_tcs_node_lock);
-
     while (tcs_node != NULL)
     {
         if (DEC_TCS_POINTER(tcs_node->tcs) == tcs)

@@ -30,7 +30,7 @@
  */
 
 
-#include "sgx_ecc256_common.h"
+#include "sgx_tcrypto_common.h"
 
 
 /*
@@ -62,7 +62,7 @@ sgx_status_t sgx_ecc256_open_context(sgx_ecc_state_handle_t* p_ecc_handle)
         *p_ecc_handle = NULL;
         return SGX_ERROR_UNEXPECTED;
     }
-    ipp_ret = ippsECCPSetStd(IppECCPStd256r1, p_ecc_state);
+    ipp_ret = ippsECCPSetStd256r1(p_ecc_state);
     if (ipp_ret != ippStsNoErr)
     {
         SAFE_FREE(p_ecc_state);
