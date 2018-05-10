@@ -23,10 +23,6 @@ Pupose of this code sample:
 --------------------------
 Enclave writers should compare SampleEnclave and SampleEnclavePCL. This demonstrates how the Intel(R) SGX PCL is to be integrated into the project of the enclave writer.  
 
-Documentation
--------------
-See more elaborate documentation at [Intel(R) SGX Protected Code Loader for Linux User Guide](https://github.com/intel/linux-sgx-pcl/blob/master/Intel(R)%20SGX%20Protected%20Code%20Loader%20for%20Linux%20User%20Guide.pdf).
-
 Build and test the Intel(R) SGX PCL with the sample code
 --------------------------------------------------------
 
