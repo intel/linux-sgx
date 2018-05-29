@@ -425,7 +425,7 @@ file_data_node_t* protected_fs_file::append_data_node()
 	try {
 		new_file_data_node = new file_data_node_t;
 	}
-	catch (std::bad_alloc e) {
+	catch (std::bad_alloc& e) {
 		(void)e; // remove warning
 		last_error = ENOMEM;
 		return NULL;
@@ -471,7 +471,7 @@ file_data_node_t* protected_fs_file::read_data_node()
 	try {
 		file_data_node = new file_data_node_t;
 	}
-	catch (std::bad_alloc e) {
+	catch (std::bad_alloc& e) {
 		(void)e; // remove warning
 		last_error = ENOMEM;
 		return NULL;
@@ -563,7 +563,7 @@ file_mht_node_t* protected_fs_file::append_mht_node(uint64_t mht_node_number)
 	try {
 		new_file_mht_node = new file_mht_node_t;
 	}
-	catch (std::bad_alloc e) {
+	catch (std::bad_alloc& e) {
 		(void)e; // remove warning
 		last_error = ENOMEM;
 		return NULL;
@@ -609,7 +609,7 @@ file_mht_node_t* protected_fs_file::read_mht_node(uint64_t mht_node_number)
 	try {
 		file_mht_node = new file_mht_node_t;
 	}
-	catch (std::bad_alloc e) {
+	catch (std::bad_alloc& e) {
 		(void)e; // remove warning
 		last_error = ENOMEM;
 		return NULL;

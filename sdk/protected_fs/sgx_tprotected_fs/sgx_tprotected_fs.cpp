@@ -49,7 +49,7 @@ static SGX_FILE* sgx_fopen_internal(const char* filename, const char* mode, cons
 	try {
 		file = new protected_fs_file(filename, mode, auto_key, kdk_key);
 	}
-	catch (std::bad_alloc e) {
+	catch (std::bad_alloc& e) {
 		(void)e; // remove warning
 		errno = ENOMEM;
 		return NULL;
