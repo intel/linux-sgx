@@ -61,10 +61,10 @@ ifeq ($(INSTALLER_FORM),BIN)
 else
 	@sed -i "s#\(libdir=\).*#\1/usr/lib#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
 	@sed -i "s#\(libdir=\).*#\1/usr/lib#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
-	mv $(SDK_LIB_PATH)/libsgx_uae_service_sim.so $(DESTDIR)/usr/lib
-	mv $(SDK_LIB_PATH)/libsgx_urts_sim.so $(DESTDIR)/usr/lib
 	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc $(DESTDIR)/usr/lib/pkgconfig
 	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc $(DESTDIR)/usr/lib/pkgconfig
 	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc $(DESTDIR)/usr/lib/pkgconfig
 	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts.pc $(DESTDIR)/usr/lib/pkgconfig
 endif
+	mv $(SDK_LIB_PATH)/libsgx_uae_service_sim.so $(DESTDIR)/usr/lib
+	mv $(SDK_LIB_PATH)/libsgx_urts_sim.so $(DESTDIR)/usr/lib
