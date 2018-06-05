@@ -140,12 +140,12 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
 
     // optimized libs
     if (SDK_VERSION_2_0 < g_sdk_version) {
-		if(0 != init_optimized_libs((const uint64_t)sys_features.cpu_features, (uint32_t*)sys_features.cpuinfo_table, xfrm))
+		if (0 != init_optimized_libs(sys_features.cpu_features, (uint32_t*)sys_features.cpuinfo_table, xfrm))
 		{
 			return -1;
 		}
 	} else {
-		if(0 != init_optimized_libs((const uint64_t)sys_features.cpu_features, NULL, xfrm))
+		if (0 != init_optimized_libs(sys_features.cpu_features, NULL, xfrm))
 		{
 			return -1;
 		}

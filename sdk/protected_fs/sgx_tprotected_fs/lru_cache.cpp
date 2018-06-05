@@ -76,7 +76,7 @@ bool lru_cache::add(uint64_t key, void* data)
 		map_node = new map_node_t();
 		list_node = new list_node_t();
 	}
-	catch (std::bad_alloc e) {
+	catch (std::bad_alloc& e) {
 		(void)e; // remove warning
 		return false;
 	}
@@ -131,7 +131,7 @@ void* lru_cache::get(uint64_t key)
 			list_node = new list_node_t();
 			list_node->key = map_it->first;
 		}
-		catch (std::bad_alloc e) {
+		catch (std::bad_alloc& e) {
 			(void)e; // remove warning
 			return NULL;
 		}
