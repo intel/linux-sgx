@@ -59,7 +59,6 @@ DECLARE_LOCAL_FUNC load_regs
     mov	reg_xdi(%xdx), %xdi
     mov	reg_xbp(%xdx), %xbp
     mov	reg_xsp(%xdx), %xsp
-    mov	reg_xax(%xdx), %xax
     push reg_xip(%xdx)
     mov reg_xdx(%xdx), %xdx
     ret
