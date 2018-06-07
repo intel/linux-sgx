@@ -33,7 +33,7 @@
 
 top_dir=`dirname $0`
 out_dir=$top_dir
-optlib_name=optimized_libs-2.1.3.tar
+optlib_name=optimized_libs-2.1.3_with_license.tar
 ae_file_name=prebuilt-ae-2.1.3.tar
 server_url_path=https://download.01.org/intel-sgx/linux-2.1.3/
 server_optlib_url=$server_url_path/$optlib_name
