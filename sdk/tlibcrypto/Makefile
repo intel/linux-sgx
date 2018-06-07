@@ -49,14 +49,16 @@ else
     $(error SGXSSL doesn't support 32bit)
 endif #($(ARCH), x86_64)
 
+OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/
 ifdef DEBUG
     SGX_COMMON_CFLAGS += -O0
-    OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/debug
+    OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
+    SGXSSL_Library_Name := sgx_tsgxssld
 else
-    OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/release
+    OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
+    SGXSSL_Library_Name := sgx_tsgxssl
 endif
 
-OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
 SGXSSL_Library_Name := sgx_tsgxssl
 PREPARE_SGXSSL := $(LINUX_EXTERNAL_DIR)/sgxssl/prepare_sgxssl.sh
 PREPRARE_SGX_SSL:
