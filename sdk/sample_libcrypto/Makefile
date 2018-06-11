@@ -60,7 +60,7 @@ all: $(LIBSAMPLECRYPTO) | $(BUILD_DIR)
 	@$(CP) $< $|
 
 $(LIBSAMPLECRYPTO): $(OBJS) $(C_OBJS)
-	$(CXX) $(CXXFLAGS) -shared -Wl,-soname,$(LIBSAMPLECRYPTO) $< -o $@ $(LDFLAGS)	
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname,$(LIBSAMPLECRYPTO) $^ -o $@ $(LDFLAGS)	
 
 $(C_OBJS): %.o: $(IPPDISP_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
