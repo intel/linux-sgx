@@ -304,7 +304,7 @@ let check_ptr_attr (fd: Ast.func_decl) range =
 %token Tchar Tshort Tunsigned Tint Tfloat Tdouble
        Tint8 Tint16 Tint32 Tint64
        Tuint8 Tuint16 Tuint32 Tuint64
-       Tsizet Twchar Tvoid Tlong Tstruct Tunion Tenum
+       Tsizet Twchar Tvoid Tlong Tstruct Tunion Tenum Texception_handler
 %token Tenclave Tfrom Timport Ttrusted Tuntrusted Tallow Tpropagate_errno
 
 %start start_parsing
@@ -585,10 +585,15 @@ access_modifier: /* nothing */ { true }
   | Tpublic                    { false  }
   ;
 
+/* is exception_handler? Default to false. */
+exception_handler: /* nothing */ { false }
+  | Texception_handler           { true }
+  ;
+
 trusted_functions: /* nothing */          { [] }
-  | trusted_functions access_modifier func_def TSemicolon {
-      check_ptr_attr $3 (symbol_start_pos(), symbol_end_pos());
-      Ast.Trusted { Ast.tf_fdecl = $3; Ast.tf_is_priv = $2 } :: $1
+  | trusted_functions exception_handler access_modifier func_def TSemicolon {
+      check_ptr_attr $4 (symbol_start_pos(), symbol_end_pos());
+      Ast.Trusted { Ast.tf_fdecl = $4; Ast.tf_is_priv = $3; Ast.tf_is_exception_handler = $2 } :: $1
     }
   ;
 
