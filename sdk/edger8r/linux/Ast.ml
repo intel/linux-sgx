@@ -157,6 +157,7 @@ type func_decl = {
 type trusted_func = {
   tf_fdecl   : func_decl;
   tf_is_priv : bool;
+  tf_is_switchless : bool;
 }
 
 type untrusted_func = {
@@ -164,6 +165,7 @@ type untrusted_func = {
   uf_fattr      : func_attr;
   uf_allow_list : string list;
   uf_propagate_errno : bool;
+  uf_is_switchless    : bool;
 }
 
 type enclave_func =

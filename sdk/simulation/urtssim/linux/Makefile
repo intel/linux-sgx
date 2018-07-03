@@ -62,6 +62,9 @@ DIR4 := ../
 DIR5 := $(LINUX_PSW_DIR)/../common/src/linux
 DIR6 := $(LINUX_PSW_DIR)/../common/src
 
+# uswitchless DIR
+DIR7 := $(LINUX_PSW_DIR)/uswitchless/
+
 LDFLAGS += -L$(COMMON_DIR)/se_wrapper \
            -L$(SIM_DIR)/uae_service_sim/linux
 LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify/ -littnotify -ldl
@@ -104,11 +107,24 @@ OBJ6 := $(SIM_DIR)/driver_api/driver_api.o \
         $(SIM_DIR)/uinst/linux/set_tls.o   \
         $(SIM_DIR)/uinst/linux/restore_tls.o
 
+# uswitchless objects taken from psw\uswitchless (DIR7) and from common\src (DIR6)
+OBJ7 := sgx_ecall_switchless_untrusted.o \
+		sl_fcall_mngr_untrusted.o \
+		sl_siglines_untrusted.o \
+		sl_workers_untrusted.o \
+		sl_uswitchless_untrusted.o \
+		sl_fcall_mngr_common.o \
+		sl_memlog_common.o \
+		sl_once_common.o \
+		sl_siglines_common.o
+		
 CPP_OBJ := $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ5)
-OBJ     := $(CPP_OBJ) $(OBJ4)
+C_OBJ 	:= $(OBJ7)
+OBJ     := $(CPP_OBJ) $(C_OBJ) $(OBJ4)
 
 vpath %.cpp .:$(DIR1):$(DIR2):$(DIR3):$(DIR4):$(DIR6)
 vpath %.S   .:$(DIR2):$(DIR5)
+vpath %.c .:$(DIR7):$(DIR6)
 
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script=$(LINUX_PSW_DIR)/urts/linux/urts.lds
 
@@ -145,6 +161,9 @@ $(OBJ4): %.o: %.S
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
 $(CPP_OBJ): %.o: %.cpp
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
+
+$(C_OBJ): %.o: %.c
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
 .PHONY: wrapper

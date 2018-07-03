@@ -49,6 +49,7 @@ OBJS1 := init_enclave.o  \
         trts_util.o      \
         trts_veh.o       \
         trts_xsave.o     \
+        trts_switchless.o    \
         init_optimized_lib.o \
         trts_version.o \
         trts_trim.o \

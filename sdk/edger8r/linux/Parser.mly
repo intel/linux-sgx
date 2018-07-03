@@ -296,6 +296,7 @@ let check_ptr_attr (fd: Ast.func_decl) range =
 %token TLBrace TRBrace
 %token TLBrack TRBrack
 %token Tpublic
+%token Tswitchless
 %token Tinclude
 %token Tconst
 %token <string>Tidentifier
@@ -585,10 +586,15 @@ access_modifier: /* nothing */ { true }
   | Tpublic                    { false  }
   ;
 
+/* is_switchless? Default to false. */
+switchless_annotation: /* nothing */ { false }
+  | Tswitchless                      { true  }
+  ;
+
 trusted_functions: /* nothing */          { [] }
-  | trusted_functions access_modifier func_def TSemicolon {
+  | trusted_functions access_modifier func_def switchless_annotation TSemicolon {
       check_ptr_attr $3 (symbol_start_pos(), symbol_end_pos());
-      Ast.Trusted { Ast.tf_fdecl = $3; Ast.tf_is_priv = $2 } :: $1
+      Ast.Trusted { Ast.tf_fdecl = $3; Ast.tf_is_priv = $2; Ast.tf_is_switchless = $4 } :: $1
     }
   ;
 
@@ -631,15 +637,15 @@ propagate_errno: /* nothing */ { false }
   | Tpropagate_errno           { true  }
   ;
 
-untrusted_func_def: attr_block func_def allow_list propagate_errno {
+untrusted_func_def: attr_block func_def allow_list propagate_errno switchless_annotation {
       check_ptr_attr $2 (symbol_start_pos(), symbol_end_pos());
       let fattr = get_func_attr $1 in
-      Ast.Untrusted { Ast.uf_fdecl = $2; Ast.uf_fattr = fattr; Ast.uf_allow_list = $3; Ast.uf_propagate_errno = $4 }
+      Ast.Untrusted { Ast.uf_fdecl = $2; Ast.uf_fattr = fattr; Ast.uf_allow_list = $3; Ast.uf_propagate_errno = $4; Ast.uf_is_switchless = $5; }
     }
-  | func_def allow_list propagate_errno {
+  | func_def allow_list propagate_errno switchless_annotation {
       check_ptr_attr $1 (symbol_start_pos(), symbol_end_pos());
       let fattr = get_func_attr [] in
-      Ast.Untrusted { Ast.uf_fdecl = $1; Ast.uf_fattr = fattr; Ast.uf_allow_list = $2; Ast.uf_propagate_errno = $3 }
+      Ast.Untrusted { Ast.uf_fdecl = $1; Ast.uf_fattr = fattr; Ast.uf_allow_list = $2; Ast.uf_propagate_errno = $3; Ast.uf_is_switchless = $4; }
     }
   ;
 

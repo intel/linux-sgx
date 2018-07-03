@@ -86,12 +86,21 @@ typedef struct _system_features
 
 #define OCALL_FLAG        0x4F434944
 
+#define BUILTIN_OCALL_1  -2
+#define BUILTIN_OCALL_2  -3
+#define BUILTIN_OCALL_3  -4
+#define BUILTIN_OCALL_4  -5
+
 typedef enum
 {
-    EDMM_TRIM = -2,
-    EDMM_TRIM_COMMIT = -3,
-    EDMM_MODPR = -4,
+    EDMM_TRIM = BUILTIN_OCALL_1,
+    EDMM_TRIM_COMMIT = BUILTIN_OCALL_2,
+    EDMM_MODPR = BUILTIN_OCALL_3,
 }edmm_ocall_t;
+
+#define SL_WAKE_WORKERS (uint32_t)BUILTIN_OCALL_4
+
+#define is_builtin_ocall(ocall_val) (((int)ocall_val >= BUILTIN_OCALL_4) && ((int)ocall_val <= BUILTIN_OCALL_1))
 
 #pragma pack(pop)
 

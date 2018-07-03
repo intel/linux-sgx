@@ -43,6 +43,7 @@
 #ifdef SE_SIM
 #include "t_instructions.h"    /* for `g_global_data_sim' */
 #include "sgx_spinlock.h"
+#include "se_cpu_feature.h"
 #endif
 
 
@@ -50,7 +51,6 @@
 #ifndef SE_SIM
 
 #include "se_cdefs.h"
-
 // add a version to trts
 SGX_ACCESS_VERSION(trts, 1);
 
@@ -198,6 +198,7 @@ void * sgx_ocalloc(size_t size)
 
     return reinterpret_cast<void *>(addr);
 }
+weak_alias(sgx_ocalloc, sgx_ocalloc_switchless);
 
 // sgx_ocfree()
 // Parameters:
@@ -225,6 +226,7 @@ void sgx_ocfree()
     }
     ssa_gpr->REG(sp_u) = usp;
 }
+weak_alias(sgx_ocfree, sgx_ocfree_switchless);
 
 #ifdef SE_SIM
 static sgx_spinlock_t g_seed_lock = SGX_SPINLOCK_INITIALIZER;
@@ -252,8 +254,17 @@ static sgx_status_t  __do_get_rand32(uint32_t* rand_num)
     if(0 == do_rdrand(rand_num))
         return SGX_ERROR_UNEXPECTED;
 #else
-    /*  use LCG in simulation mode */
-    *rand_num = get_rand_lcg();
+    /* For simulation mode, if the CPU supports RDRAND, use RDRAND. Otherwise, use LCG*/
+    if(TEST_CPU_HAS_RDRAND)
+    {
+        if(0 == do_rdrand(rand_num))
+            return SGX_ERROR_UNEXPECTED;
+    }
+    else
+    {
+        /*  use LCG in simulation mode */
+        *rand_num = get_rand_lcg();
+    }
 #endif
     return SGX_SUCCESS;
 }

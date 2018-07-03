@@ -34,12 +34,15 @@
 #include "routine.h"
 #include "se_error_internal.h"
 #include "xsave.h"
+#include "rts_cmd.h"
 
-extern "C"
-sgx_status_t sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms)
+static
+sgx_status_t _sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, const bool is_switchless)
 {
-    if(proc < 0)
+    if ((proc != ECMD_RUN_SWITCHLESS_TWORKER) &&  (proc < 0))
+    {
         return SGX_ERROR_INVALID_FUNCTION;
+    }
 
     CEnclave* enclave = CEnclavePool::instance()->ref_enclave(enclave_id);
 
@@ -49,7 +52,7 @@ sgx_status_t sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const 
 
     sgx_status_t result = SGX_ERROR_UNEXPECTED;
     {
-        result = enclave->ecall(proc, ocall_table, ms);
+        result = enclave->ecall(proc, ocall_table, ms, is_switchless);
     }
     {
         //This solution seems more readable and easy to validate, but low performace
@@ -57,6 +60,18 @@ sgx_status_t sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const 
     }
 
     return result;
+}
+
+extern "C"
+sgx_status_t sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms)
+{
+    return _sgx_ecall(enclave_id, proc, ocall_table, ms, false);
+}
+
+extern "C"
+sgx_status_t sgx_ecall_switchless(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms)
+{
+    return _sgx_ecall(enclave_id, proc, ocall_table, ms, true);
 }
 
 extern "C"

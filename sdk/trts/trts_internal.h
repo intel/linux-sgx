@@ -72,6 +72,9 @@ sgx_status_t trts_handle_exception(void *tcs);
 sgx_status_t do_ecall_add_thread(void *ms);
 sgx_status_t do_uninit_enclave(void *tcs);
 int check_static_stack_canary(void *tcs);
+sgx_status_t do_init_switchless(void* ms);
+sgx_status_t do_run_switchless_tworker(void* ms);
+
 #ifdef __cplusplus
 }
 #endif

@@ -113,6 +113,12 @@ LIBURTS          := libsgx_urts.so
 LIBURTS_INTERNAL := liburts_internal.a
 LIBURTS_DEBUG    := libsgx_urts.so.debug
 
+# untrusted switchless settings
+USWITCHLESS_NAME := uswitchless
+USWITCHLESS_DIR  := $(LINUX_PSW_DIR)/$(USWITCHLESS_NAME)
+LIBUSWITCHLESS   := $(USWITCHLESS_DIR)/lib$(USWITCHLESS_NAME).a
+LDFLAGS          += -L$(USWITCHLESS_DIR) -l$(USWITCHLESS_NAME)
+
 .PHONY: all
 all: $(LIBURTS) $(LIBURTS_INTERNAL) $(LIBURTS_DEBUG) | $(BUILD_DIR)
 	@$(CP) $(LIBURTS)          $|
@@ -124,6 +130,12 @@ endif
 $(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER)
 	$(CP) $(COMMON_DIR)/se_wrapper/libwrapper.a $@
 	$(AR) rcs $@ $(INTERNAL_OBJ)
+	$(MKDIR) ./.switchless_tmp
+	$(RM) ./.switchless_tmp/*
+	cd ./.switchless_tmp && \
+	$(AR) x $(LIBUSWITCHLESS)
+	$(AR) rcs $@ ./.switchless_tmp/*.o
+	$(RM) -rf ./.switchless_tmp
 
 $(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) uae_service ittnotify
 	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@ $(LIB) -o $@  $(URTS_OBJ) $(LDFLAGS)

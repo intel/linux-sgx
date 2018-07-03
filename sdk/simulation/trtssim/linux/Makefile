@@ -67,6 +67,7 @@ TRTS1_OBJS  := init_enclave.o \
                trts_xsave.o   \
                init_optimized_lib.o \
                trts_emodpr.o  \
+               trts_switchless.o \
                trts_add_trim.o
 TRTS2_OBJS  := trts_nsp.o
 TRTS_OBJS := $(TRTS1_OBJS) $(TRTS2_OBJS)

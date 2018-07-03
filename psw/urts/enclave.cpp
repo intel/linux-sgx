@@ -40,6 +40,7 @@
 #include "se_memory.h"
 #include "urts_trim.h"
 #include "urts_emodpr.h"
+#include "rts_cmd.h"
 #include <assert.h>
 #include "rts.h"
 
@@ -65,14 +66,51 @@ CEnclave::CEnclave(CLoader &ldr)
     , m_pthread_is_valid(false)
     , m_new_thread_event(NULL)
     , m_sealed_key(NULL)
+    , m_uswitchless(NULL)
+    , m_us_has_started(false)
 {
     memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
     se_init_rwlock(&m_rwlock);
 }
 
 
-sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, 
-                                        const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
+sgx_status_t CEnclave::init_uswitchless(const sgx_uswitchless_config_t* config)
+{
+    if(!se_try_rdlock(&m_rwlock)) return SGX_ERROR_ENCLAVE_LOST;
+
+    sgx_status_t status = SGX_ERROR_UNEXPECTED;
+
+    //Maybe the enclave has been destroyed after acquire/release m_rwlock. See CEnclave::destroy()
+    if (m_destroyed) {
+        status = SGX_ERROR_ENCLAVE_LOST;
+        goto on_exit;
+    }
+
+    //Create the per-enclave data object for Switchless SGX
+    status = sl_uswitchless_new(config, m_enclave_id, &m_uswitchless);
+    if (status != SGX_SUCCESS) 
+    {
+        goto on_exit;
+    }
+
+    status = ecall(ECMD_INIT_SWITCHLESS, NULL, m_uswitchless);
+    if (status != SGX_SUCCESS) goto on_exit;
+
+    if (sl_uswitchless_init_workers(m_uswitchless)) {
+        status = SGX_ERROR_UNEXPECTED;
+        goto on_exit;
+    }
+
+on_exit:
+    if (status != SGX_SUCCESS && m_uswitchless != NULL) {
+        sl_uswitchless_free(m_uswitchless);
+        m_uswitchless = NULL;
+    }
+    se_rdunlock(&m_rwlock);
+    return status;
+}
+
+sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
 {
     uint32_t name_len = file.name_len;
     if (file.unicode)
@@ -134,6 +172,11 @@ CEnclave::~CEnclave()
     }
 
     m_ocall_table = NULL;
+	
+    if (m_uswitchless)
+    {
+        sl_uswitchless_free(m_uswitchless);
+    }
 
     destory_debug_info(&m_enclave_info);
     se_fini_rwlock(&m_rwlock);
@@ -198,7 +241,7 @@ sgx_status_t CEnclave::error_trts2urts(unsigned int trts_error)
     return (sgx_status_t)trts_error;
 }
 
-sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms)
+sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, const bool is_switchless)
 {
     if(se_try_rdlock(&m_rwlock))
     {
@@ -209,6 +252,26 @@ sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms)
             return SGX_ERROR_ENCLAVE_LOST;
         }
 
+        //Start the workers of Switchless SGX on the first user-provided ECall
+        if(m_uswitchless != NULL && ocall_table != NULL && m_us_has_started == false) 
+        {
+            sl_uswitchless_start_workers(m_uswitchless, static_cast<const sgx_ocall_table_t*>(ocall_table));
+            m_us_has_started = true;
+        }
+
+        //Do switchless ECall in a switchless way
+        if (m_uswitchless != NULL && is_switchless) 
+        {
+            int need_fallback;
+            sgx_status_t ret = sl_uswitchless_do_switchless_ecall(m_uswitchless, (unsigned int) proc, ms, &need_fallback);
+            if (unlikely(need_fallback)) goto on_fallback;
+            
+            se_rdunlock(&m_rwlock);
+            return ret;
+        }
+
+on_fallback:
+        //Handle normal ECall or fallback'ed switchless ECall
         //do sgx_ecall
         CTrustThread *trust_thread = get_tcs(proc);
         unsigned ret = SGX_ERROR_OUT_OF_TCS;
@@ -273,15 +336,17 @@ int CEnclave::ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_tabl
 {
     int error = SGX_ERROR_UNEXPECTED;
 
-    if ((int)proc == EDMM_TRIM || (int)proc == EDMM_TRIM_COMMIT || (int)proc == EDMM_MODPR)
+    if (is_builtin_ocall(int(proc)))
     {
         se_rdunlock(&m_rwlock);
-        if((int)proc == EDMM_TRIM)
-            error = ocall_trim_range(ms);
-        else if ((int)proc == EDMM_TRIM_COMMIT)
-            error = ocall_trim_accept(ms);
-        else if ((int)proc == EDMM_MODPR)
-            error = ocall_emodpr(ms);
+		if ((int)proc == EDMM_TRIM)
+			error = ocall_trim_range(ms);
+		else if ((int)proc == EDMM_TRIM_COMMIT)
+			error = ocall_trim_accept(ms);
+		else if ((int)proc == EDMM_MODPR)
+			error = ocall_emodpr(ms);
+		else if (proc == SL_WAKE_WORKERS)
+			error = sl_ocall_wake_workers(ms);
     }
     else 
     {
@@ -290,6 +355,12 @@ int CEnclave::ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_tabl
                 (proc >= ocall_table->count))
         {
             return SGX_ERROR_INVALID_FUNCTION;
+        }
+
+		// switchless OCall may fallback to standard OCall
+        if (m_uswitchless)
+        {
+            sl_uswitchless_check_switchless_ocall_fallback(m_uswitchless);
         }
 
         se_rdunlock(&m_rwlock);
@@ -467,6 +538,11 @@ void CEnclave::pop_ocall_frame(CTrustThread *trust_thread)
     trust_thread->pop_ocall_frame();
 }
 
+void CEnclave::destroy_uswitchless(void)
+{
+    if (m_uswitchless) sl_uswitchless_stop_workers(m_uswitchless);
+}
+
 CEnclavePool CEnclavePool::m_instance;
 CEnclavePool::CEnclavePool()
 {
@@ -503,6 +579,11 @@ int CEnclavePool::add_enclave(CEnclave *enclave)
 CEnclave * CEnclavePool::get_enclave(const sgx_enclave_id_t enclave_id)
 {
     se_mutex_lock(&m_enclave_mutex);
+    if(m_enclave_list == NULL)
+    {
+        se_mutex_unlock(&m_enclave_mutex);
+        return NULL;
+    }
     Node<sgx_enclave_id_t, CEnclave*>* it = m_enclave_list->Find(enclave_id);
     if(it != NULL)
     {
@@ -519,6 +600,11 @@ CEnclave * CEnclavePool::get_enclave(const sgx_enclave_id_t enclave_id)
 CEnclave * CEnclavePool::ref_enclave(const sgx_enclave_id_t enclave_id)
 {
     se_mutex_lock(&m_enclave_mutex);
+    if(m_enclave_list == NULL)
+    {
+        se_mutex_unlock(&m_enclave_mutex);
+        return NULL;
+    }
     Node<sgx_enclave_id_t, CEnclave*>* it = m_enclave_list->Find(enclave_id);
     if(it != NULL)
     {

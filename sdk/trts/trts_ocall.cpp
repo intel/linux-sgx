@@ -60,11 +60,8 @@ sgx_status_t sgx_ocall(const unsigned int index, void *ms)
         return SGX_ERROR_OCALL_NOT_ALLOWED;
     }
     // the OCALL index should be within the ocall table range
-    // -2, -3 and -4 should be allowed to test SDK 2.0 features
-    if((index != 0) &&
-            (index != (unsigned int)EDMM_TRIM) &&
-            (index != (unsigned int)EDMM_TRIM_COMMIT) &&
-            (index != (unsigned int)EDMM_MODPR) &&
+    // -2, -3 and -4 -5 should be allowed to test SDK 2.0 features
+    if((index != 0) && !is_builtin_ocall((int)index) &&
             static_cast<size_t>(index) >= g_dyn_entry_table.nr_ocall)
     {
         return SGX_ERROR_INVALID_FUNCTION;
@@ -75,6 +72,7 @@ sgx_status_t sgx_ocall(const unsigned int index, void *ms)
 
     return status;
 }
+weak_alias(sgx_ocall, sgx_ocall_switchless);
 
 extern "C"
 uintptr_t update_ocall_lastsp(ocall_context_t* context)

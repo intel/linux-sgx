@@ -75,15 +75,21 @@ extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa) __attribu
 
 extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
 {
+    sgx_status_t error = SGX_ERROR_UNEXPECTED;
+
     if(sgx_is_enclave_crashed())
     {
         return SGX_ERROR_ENCLAVE_CRASHED;
     }
+    if((ECMD_INIT_ENCLAVE != index) && (ENCLAVE_INIT_DONE != get_enclave_state()))
+    {
+        set_enclave_state(ENCLAVE_CRASHED);
+        return error;
+    }
 
-    sgx_status_t error = SGX_ERROR_UNEXPECTED;
     if(cssa == 0)
     {
-        if(index >= 0)
+        if((index >= 0) || (index == ECMD_INIT_SWITCHLESS) || (index == ECMD_RUN_SWITCHLESS_TWORKER))
         {
             // Initialize stack guard if necessary
             init_stack_guard(tcs);

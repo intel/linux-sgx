@@ -108,7 +108,7 @@ extern "C" void secure_free_rsa_pri2_key(int p_byte_size, IppsRSAPrivateKeyState
     }
 
     int rsa2_size = 0;
-    if (ippsRSA_GetSizePrivateKeyType2(p_byte_size / 2 * 8, p_byte_size / 2 * 8, &rsa2_size) != ippStsNoErr) {
+    if (ippsRSA_GetSizePrivateKeyType2(p_byte_size * 8, p_byte_size * 8, &rsa2_size) != ippStsNoErr) {
         free(pri_key2);
         return;
     }

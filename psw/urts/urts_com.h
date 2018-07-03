@@ -183,7 +183,17 @@ static bool is_SGX_DBG_OPTIN_variable_set()
 }
 
 
-static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadata_t *metadata, se_file_t& file, const bool debug, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr, uint8_t *sealed_key)
+static int __create_enclave(BinParser &parser, 
+                            uint8_t* base_addr, 
+                            const metadata_t *metadata, 
+                            se_file_t& file, 
+                            const bool debug, 
+                            SGXLaunchToken *lc, 
+                            le_prd_css_file_t *prd_css_file, 
+                            sgx_enclave_id_t *enclave_id, 
+                            sgx_misc_attribute_t *misc_attr,
+                            const uint32_t ex_features,
+                            void* ex_features_p[32])
 {
     // The "parser" will be registered into "loader" and "loader" will be registered into "enclave".
     // After enclave is created, "parser" and "loader" are not needed any more.
@@ -228,11 +238,12 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
         return ret;
     }
 
-    if(sealed_key != NULL)
+    if (ex_features & SGX_CREATE_ENCLAVE_EX_PCL)
     {
+        uint8_t* sealed_key = (uint8_t*)ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX];
         enclave->set_sealed_key(sealed_key);
     }
-
+    
     // It is accurate to get debug flag from secs
     enclave->set_dbg_flag(!!(loader.get_secs().attributes.flags & SGX_FLAGS_DEBUG));
 
@@ -379,6 +390,29 @@ static int __create_enclave(BinParser &parser, uint8_t* base_addr, const metadat
         goto fail;
     }
 
+
+    if (ex_features & SGX_CREATE_ENCLAVE_EX_SWITCHLESS)
+    {
+        if ((ex_features_p == NULL) || (ex_features_p[SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX] == NULL))
+        {
+            ret = SGX_ERROR_INVALID_PARAMETER;
+            sgx_status_t status = SGX_SUCCESS;
+            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
+            CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
+            goto fail;
+        }
+
+        sgx_uswitchless_config_t* us_config = (sgx_uswitchless_config_t*)ex_features_p[SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX];
+
+        if (SGX_SUCCESS != (ret = enclave->init_uswitchless(us_config)))
+        {
+            sgx_status_t status = SGX_SUCCESS;
+            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
+            CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
+            goto fail;
+        }
+    }
+
     *enclave_id = loader.get_enclave_id();
     return SGX_SUCCESS;
 
@@ -389,7 +423,9 @@ fail:
 }
 
 
-sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr, uint8_t* sealed_key = NULL)
+sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
+	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
+                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, void* ex_features_p[32])
 {
     unsigned int ret = SGX_SUCCESS;
     sgx_status_t lt_result = SGX_SUCCESS;
@@ -425,15 +461,31 @@ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t
         goto clean_return;
     }
 
-    if(NULL != sealed_key && true != parser.is_enclave_encrypted())
+    if (ex_features & SGX_CREATE_ENCLAVE_EX_PCL)
     {
-        ret = SGX_ERROR_PCL_NOT_ENCRYPTED;
-        goto clean_return;
+        uint8_t* sealed_key = (uint8_t*)ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX];
+
+        if (NULL == sealed_key)
+        {
+            ret = SGX_ERROR_INVALID_PARAMETER;
+            goto clean_return;
+
+        }
+        
+        if (!parser.is_enclave_encrypted())
+        {
+            ret = SGX_ERROR_PCL_NOT_ENCRYPTED;
+            goto clean_return;
+        }
+
     }
-    if(NULL == sealed_key && false != parser.is_enclave_encrypted())
+    else
     {
-        ret = SGX_ERROR_PCL_ENCRYPTED;
-        goto clean_return;
+        if (parser.is_enclave_encrypted())
+        {
+            ret = SGX_ERROR_PCL_ENCRYPTED;
+            goto clean_return;
+        }
     }
 
     if(SGX_SUCCESS != (ret = get_metadata(&parser, debug,  &metadata, &sgx_misc_attr)))
@@ -465,8 +517,7 @@ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t
 
     //Need to set the whole misc_attr instead of just secs_attr.
     do {
-        ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id,
-                               misc_attr, sealed_key);
+        ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
         //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
     } while(SGX_ERROR_ENCLAVE_LOST == ret);
 
@@ -498,6 +549,13 @@ clean_return:
     return (sgx_status_t)ret;
 }
 
+sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
+                             sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr) 
+{
+    return _create_enclave_ex(debug, pfile, file, prd_css_file, launch, launch_updated, enclave_id, misc_attr, 0, NULL);
+}
+
+
 extern "C" sgx_status_t sgx_destroy_enclave(const sgx_enclave_id_t enclave_id)
 {
     {
@@ -507,6 +565,7 @@ extern "C" sgx_status_t sgx_destroy_enclave(const sgx_enclave_id_t enclave_id)
         {
             debug_enclave_info_t *debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
             generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
+			enclave->destroy_uswitchless();
             enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL);
             CEnclavePool::instance()->unref_enclave(enclave);
         }

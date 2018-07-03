@@ -40,6 +40,19 @@
 #include "sgx_defs.h"
 #include "sgx_key.h"
 
+
+#define MAX_EX_FEATURES_COUNT 32
+
+#define SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX           0
+#define SGX_CREATE_ENCLAVE_EX_PCL                  (1 << SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX) // Reserve Bit 0 for the protected code loader
+#define SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX    1
+#define SGX_CREATE_ENCLAVE_EX_SWITCHLESS           (1 << SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX) // Reserve Bit 1 for Switchless Runtime System
+
+//update the following when adding new extended feature
+#define _SGX_LAST_EX_FEATURE_IDX_  SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX 
+
+#define _SGX_EX_FEATURES_MASK_ (((uint32_t)-1) >> (MAX_EX_FEATURES_COUNT - 1  - _SGX_LAST_EX_FEATURE_IDX_))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,7 +66,24 @@ typedef uint8_t sgx_launch_token_t[1024];
 #define SGX_DEBUG_FLAG ((int)0)
 #endif
 
-sgx_status_t SGXAPI sgx_create_enclave(const char *file_name, const int debug, sgx_launch_token_t *launch_token, int *launch_token_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr);
+sgx_status_t SGXAPI sgx_create_enclave(const char *file_name, 
+                                       const int debug, 
+                                       sgx_launch_token_t *launch_token, 
+                                       int *launch_token_updated, 
+                                       sgx_enclave_id_t *enclave_id, 
+                                       sgx_misc_attribute_t *misc_attr);
+
+
+
+sgx_status_t SGXAPI sgx_create_enclave_ex(const char * file_name, 
+                                          const int debug, 
+                                          sgx_launch_token_t * launch_token, 
+                                          int * launch_token_updated, 
+                                          sgx_enclave_id_t * enclave_id, 
+                                          sgx_misc_attribute_t * misc_attr,  
+                                          const uint32_t ex_features, 
+                                          void* ex_features_p[32]);
+
 
 sgx_status_t SGXAPI sgx_create_encrypted_enclave(
                         const char *file_name,

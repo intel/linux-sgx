@@ -32,19 +32,50 @@
 
 #include "sgx_error.h"
 #include "sgx_urts.h"
+#include "sgx_uswitchless.h"
 #include "se_types.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
 
 #include "urts_com.h"
-extern "C" sgx_status_t sgx_create_enclave(const char *file_name, const int debug, sgx_launch_token_t *launch_token, int *launch_token_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr)
+
+static bool inline _check_ex_params_(const uint32_t ex_features, void* ex_features_p[32])
+{
+    //update last feature index if it fails here
+    se_static_assert(_SGX_LAST_EX_FEATURE_IDX_ == SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX);
+
+    if (ex_features_p != NULL)
+    {
+        for (uint32_t i = _SGX_LAST_EX_FEATURE_IDX_ + 1; i < MAX_EX_FEATURES_COUNT; i++)
+        {
+            if (ex_features_p[i] != NULL)
+                return false;
+        }
+    }
+    
+    return ((ex_features | _SGX_EX_FEATURES_MASK_) == _SGX_EX_FEATURES_MASK_);
+}
+
+extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name, 
+                                                const int debug, 
+                                                sgx_launch_token_t *launch_token, 
+                                                int *launch_token_updated, 
+                                                sgx_enclave_id_t *enclave_id, 
+                                                sgx_misc_attribute_t *misc_attr,
+                                                const uint32_t ex_features,
+                                                void* ex_features_p[32])
 {
     sgx_status_t ret = SGX_SUCCESS;
 
     //Only true or false is valid
     if(TRUE != debug &&  FALSE != debug)
         return SGX_ERROR_INVALID_PARAMETER;
+
+    if (!_check_ex_params_(ex_features, ex_features_p))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
 
     int fd = open(file_name, O_RDONLY);
     if(-1 == fd)
@@ -57,7 +88,7 @@ extern "C" sgx_status_t sgx_create_enclave(const char *file_name, const int debu
     file.name = realpath(file_name, resolved_path);
     file.name_len = (uint32_t)strlen(resolved_path);
 
-    ret = _create_enclave(!!debug, fd, file, NULL, launch_token, launch_token_updated, enclave_id, misc_attr);
+    ret = _create_enclave_ex(!!debug, fd, file, NULL, launch_token, launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
     if(SGX_SUCCESS != ret && misc_attr)
     {
         sgx_misc_attribute_t plat_cap;
@@ -71,6 +102,31 @@ extern "C" sgx_status_t sgx_create_enclave(const char *file_name, const int debu
     return ret;
 }
 
+extern "C" sgx_status_t sgx_create_enclave(const char *file_name, 
+                                           const int debug, 
+                                           sgx_launch_token_t *launch_token, 
+                                           int *launch_token_updated, 
+                                           sgx_enclave_id_t *enclave_id, 
+                                           sgx_misc_attribute_t *misc_attr) 
+{
+    return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL);
+}
+
+
+extern "C"  sgx_status_t sgx_create_enclave_ex(const char *file_name,
+                                               const int debug,
+                                               sgx_launch_token_t *launch_token,
+                                               int *launch_token_updated,
+                                               sgx_enclave_id_t *enclave_id,
+                                               sgx_misc_attribute_t *misc_attr,
+                                               const uint32_t ex_features,
+                                               void* ex_features_p[32])
+{
+
+    return __sgx_create_enclave_ex(file_name, debug, launch_token,
+        launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
+}
+
 
 extern "C" sgx_status_t
 sgx_create_encrypted_enclave(
@@ -82,47 +138,10 @@ sgx_create_encrypted_enclave(
     sgx_misc_attribute_t *misc_attr,
     uint8_t* sealed_key)
 {
-    sgx_status_t ret = SGX_SUCCESS;
+    uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_PCL;
+    void* ex_features_p[32] = { 0 };
+    ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX] = (void*)sealed_key;
 
-    //Only true or false is valid
-    if(TRUE != debug &&  FALSE != debug)
-        return SGX_ERROR_INVALID_PARAMETER;
-
-    if(NULL == sealed_key)
-    {
-        return SGX_ERROR_INVALID_PARAMETER;
-    }
-
-    int fd = open(file_name, O_RDONLY);
-    if(-1 == fd)
-    {
-        SE_TRACE(SE_TRACE_ERROR, "Couldn't open the enclave file, error = %d\n", errno);
-        return SGX_ERROR_ENCLAVE_FILE_ACCESS;
-    }
-    se_file_t file = {NULL, 0, false};
-    char resolved_path[PATH_MAX];
-    file.name = realpath(file_name, resolved_path);
-    file.name_len = (uint32_t)strlen(resolved_path);
-
-    ret = _create_enclave(
-            !!debug,
-            fd,
-            file,
-            NULL,
-            launch_token,
-            launch_token_updated,
-            enclave_id,
-            misc_attr,
-            sealed_key);
-    if(SGX_SUCCESS != ret && misc_attr)
-    {
-        sgx_misc_attribute_t plat_cap;
-        memset(&plat_cap, 0, sizeof(plat_cap));
-        get_enclave_creator()->get_plat_cap(&plat_cap);
-        memcpy_s(misc_attr, sizeof(sgx_misc_attribute_t), &plat_cap, sizeof(sgx_misc_attribute_t));
-    }
-
-    close(fd);
-
-    return ret;
+    return __sgx_create_enclave_ex(file_name, debug, launch_token,
+        launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
 }

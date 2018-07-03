@@ -31,7 +31,7 @@
 
 
 #include "sgx_tcrypto_common.h"
-
+#include "ipp_wrapper.h"
 
 sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
     uint32_t data_size,
@@ -47,6 +47,8 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
     IppHashAlgId hash_alg = ippHashAlg_SHA256;
 
     IppsRSAPrivateKeyState* p_rsa_privatekey_ctx = NULL;
+    int private_key_ctx_size = 0;
+    int private_key_buffer_size = 0;
     Ipp8u *temp_buff = NULL;
 
     IppsBigNumState* p_prikey_mod_bn = NULL;
@@ -62,8 +64,6 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
         ERROR_BREAK(ipp_ret);
 
         // allocate private key context
-        int private_key_ctx_size = 0;
-
         ipp_ret = ippsRSA_GetSizePrivateKeyType1(SGX_RSA3072_KEY_SIZE * 8, SGX_RSA3072_PRI_EXP_SIZE * 8,
             &private_key_ctx_size);
         ERROR_BREAK(ipp_ret);
@@ -83,8 +83,6 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
         ERROR_BREAK(ipp_ret);
 
         // allocate temp buffer for RSA calculation
-        int private_key_buffer_size = 0;
-
         ipp_ret = ippsRSA_GetBufferSizePrivateKey(&private_key_buffer_size, p_rsa_privatekey_ctx);
         ERROR_BREAK(ipp_ret);
 
@@ -101,8 +99,8 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
 
     sgx_ipp_secure_free_BN(p_prikey_mod_bn, sizeof(p_key->mod));
     sgx_ipp_secure_free_BN(p_prikey_d_bn, sizeof(p_key->d));
-    SAFE_FREE(p_rsa_privatekey_ctx);
-    SAFE_FREE(temp_buff);
+    CLEAR_FREE_MEM(p_rsa_privatekey_ctx, private_key_ctx_size);
+    CLEAR_FREE_MEM(temp_buff, private_key_buffer_size);
 
     switch (ipp_ret)
     {

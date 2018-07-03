@@ -44,22 +44,20 @@ ifneq ($(USE_OPT_LIBS), 1)
 
 # Added to build with SgxSSL libraries
 ifeq ($(ARCH), x86_64)
-    OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/Linux/package
+	OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/Linux/package
 else
-    $(error SGXSSL doesn't support 32bit)
+	$(error SGXSSL doesn't support 32bit)
 endif #($(ARCH), x86_64)
-
 OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/
 ifdef DEBUG
-    SGX_COMMON_CFLAGS += -O0
-    OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
-    SGXSSL_Library_Name := sgx_tsgxssld
+	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
+	SGXSSL_Library_Name := sgx_tsgxssld
+	SGX_COMMON_CFLAGS += -O0
 else
-    OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
-    SGXSSL_Library_Name := sgx_tsgxssl
+	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
+	SGXSSL_Library_Name := sgx_tsgxssl
 endif
 
-SGXSSL_Library_Name := sgx_tsgxssl
 PREPARE_SGXSSL := $(LINUX_EXTERNAL_DIR)/sgxssl/prepare_sgxssl.sh
 PREPRARE_SGX_SSL:
 	chmod 755 $(PREPARE_SGXSSL)

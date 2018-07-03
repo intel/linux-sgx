@@ -42,6 +42,7 @@
 #include "file.h"
 #include "uncopyable.h"
 #include "node.h"
+#include "uswitchless.h"
 
 class CLoader;
 
@@ -57,7 +58,7 @@ public:
     size_t get_dynamic_tcs_list_size();
     CTrustThreadPool * get_thread_pool() { return m_thread_pool; }
     uint64_t get_size() { return m_size; };
-    sgx_status_t ecall(const int proc, const void *ocall_table, void *ms);
+    sgx_status_t ecall(const int proc, const void *ocall_table, void *ms, const bool is_fast = false);
     int ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_table, void *ms);
     void destroy();
     uint32_t atomic_inc_ref() { return se_atomic_inc(&m_ref); }
@@ -82,6 +83,9 @@ public:
     sgx_status_t fill_tcs_mini_pool_fn();
     uint8_t* get_sealed_key();
     void set_sealed_key(uint8_t *sealed_key);
+    sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
+    void destroy_uswitchless(void);
+	
 private:
     CTrustThread * get_tcs(int ecall_cmd);
     void put_tcs(CTrustThread *trust_thread);
@@ -105,6 +109,9 @@ private:
     bool                    m_pthread_is_valid;
     se_handle_t             m_new_thread_event;
     uint8_t                 *m_sealed_key;
+    struct sl_uswitchless*  m_uswitchless;
+    bool                    m_us_has_started;
+	
 };
 
 class CEnclavePool: private Uncopyable

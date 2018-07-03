@@ -37,6 +37,10 @@
 #define ECMD_MKTCS          -4
 #define ECMD_UNINIT_ENCLAVE -5
 
+/* Built-in ECall command for Switchless SGX */
+#define ECMD_INIT_SWITCHLESS         (-6)
+#define ECMD_RUN_SWITCHLESS_TWORKER  (-7)
+
 /* OCALL command */
 #define OCMD_ERET         -1
 

@@ -45,7 +45,6 @@
 
 #include "sgx_tcrypto_common.h"
 
-
 sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned char *p_n, unsigned char *p_d, unsigned char *p_e,
     unsigned char *p_p, unsigned char *p_q, unsigned char *p_dmp1,
     unsigned char *p_dmq1, unsigned char *p_iqmp)
@@ -56,16 +55,14 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
     }
 
     IppsRSAPrivateKeyState *p_pri_key = NULL;
-    IppsRSAPublicKeyState *p_pub_key = NULL;
     IppStatus error_code = ippStsNoErr;
     sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
     IppsPrimeState *p_prime = NULL;
     Ipp8u * scratch_buffer = NULL;
-    int pri_size = 0;
+    int pri_size = 0, scratch_buffer_size = 0;
     IppsBigNumState *bn_n = NULL, *bn_e = NULL, *bn_d = NULL, *bn_e_s = NULL, *bn_p = NULL, *bn_q = NULL, *bn_dmp1 = NULL, *bn_dmq1 = NULL, *bn_iqmp = NULL;
-    int validate_keys = IPP_IS_INVALID;
-    int size;
-    IppsBigNumSGN sgn;
+    int size = 0;
+    IppsBigNumSGN sgn = IppsBigNumPOS;
 
     do {
 
@@ -79,15 +76,25 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
         error_code = ippsRSA_GetSizePrivateKeyType2(n_byte_size / 2 * 8, n_byte_size / 2 * 8, &pri_size);
         ERROR_BREAK(error_code);
         p_pri_key = (IppsRSAPrivateKeyState *)malloc(pri_size);
-        NULL_BREAK(p_pri_key);
+        if (!p_pri_key)
+        {
+            error_code = ippStsMemAllocErr;
+            break;
+        }
         error_code = ippsRSA_InitPrivateKeyType2(n_byte_size / 2 * 8, n_byte_size / 2 * 8, p_pri_key, pri_size);
         ERROR_BREAK(error_code);
         
         //allocate scratch buffer, to be used as temp buffer
         //
-        scratch_buffer = (Ipp8u *)malloc(pri_size);
-        NULL_BREAK(scratch_buffer);
-        memset(scratch_buffer, 0, pri_size);
+        error_code = ippsRSA_GetBufferSizePrivateKey(&scratch_buffer_size, p_pri_key);
+        ERROR_BREAK(error_code);
+        scratch_buffer = (Ipp8u *)malloc(scratch_buffer_size);
+        if (!scratch_buffer)
+        {
+            error_code = ippStsMemAllocErr;
+            break;
+        }
+        memset(scratch_buffer, 0, scratch_buffer_size);
 
         //allocate and initialize RSA BNs
         //
@@ -112,16 +119,21 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
 
         //generate RSA key components with n_byte_size modulus and p_e public exponent
         //
-        error_code = ippsRSA_GenerateKeys(bn_e_s,
-            bn_n,
-            bn_e,
-            bn_d,
-            p_pri_key,
-            scratch_buffer,
-            1,
-            p_prime,
-            sgx_ipp_DRNGen,
-            NULL);
+        do {
+            // generate keys
+            // ippsRSA_GenerateKeys() may return ippStsInsufficientEntropy. 
+            // In that case, we need to retry the API
+            error_code = ippsRSA_GenerateKeys(bn_e_s,
+                bn_n,
+                bn_e,
+                bn_d,
+                p_pri_key,
+                scratch_buffer,
+                1,
+                p_prime,
+                sgx_ipp_DRNGen,
+                NULL);
+        } while (error_code == ippStsInsufficientEntropy);
         ERROR_BREAK(error_code);
 
         //extract private key components into BNs
@@ -133,24 +145,6 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
             bn_iqmp,
             p_pri_key);
         ERROR_BREAK(error_code);
-
-        //allocate and initialize public key
-        //
-        error_code = ippsRSA_GetSizePublicKey(n_byte_size * 8, e_byte_size * 8, &pri_size);
-        ERROR_BREAK(error_code);
-        p_pub_key = (IppsRSAPublicKeyState *)malloc(pri_size);
-        NULL_BREAK(p_pub_key);
-        error_code = ippsRSA_InitPublicKey(n_byte_size * 8, e_byte_size * 8, p_pub_key, pri_size);
-        ERROR_BREAK(error_code);
-        error_code = ippsRSA_SetPublicKey(bn_n, bn_e, p_pub_key);
-        ERROR_BREAK(error_code);
-        
-        //validate generated keys
-        //
-        ippsRSA_ValidateKeys(&validate_keys, p_pub_key, p_pri_key, NULL, scratch_buffer, 10, p_prime, sgx_ipp_DRNGen, NULL);
-        if (validate_keys != IPP_IS_VALID) {
-            break;
-        }
 
         //extract RSA components from BNs into output buffers
         //
@@ -203,9 +197,10 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
 
     SAFE_FREE_MM(p_prime);
     secure_free_rsa_pri2_key(n_byte_size / 2, p_pri_key);
-    secure_free_rsa_pub_key(n_byte_size, e_byte_size, p_pub_key);
-    SAFE_FREE_MM(scratch_buffer);
+    CLEAR_FREE_MEM(scratch_buffer, scratch_buffer_size);
 
+    if (error_code == ippStsMemAllocErr)
+        ret_code = SGX_ERROR_OUT_OF_MEMORY;
     return ret_code;
 }
 
@@ -244,7 +239,11 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
         error_code = ippsRSA_GetSizePrivateKeyType2(mod_size / 2 * 8, mod_size / 2 * 8, &rsa2_size);
         ERROR_BREAK(error_code);
         p_rsa2 = (IppsRSAPrivateKeyState *)malloc(rsa2_size);
-        NULL_BREAK(p_rsa2);
+        if (!p_rsa2)
+        {
+            error_code = ippStsMemAllocErr;
+            break;
+        }
         error_code = ippsRSA_InitPrivateKeyType2(mod_size / 2 * 8, mod_size / 2 * 8, p_rsa2, rsa2_size);
         ERROR_BREAK(error_code);
         
@@ -263,8 +262,12 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
     sgx_ipp_secure_free_BN(p_dmq1, mod_size / 2);
     sgx_ipp_secure_free_BN(p_iqmp, mod_size / 2);
 
+    if (error_code == ippStsMemAllocErr) {
+        ret_code = SGX_ERROR_OUT_OF_MEMORY;
+    }
+
     if (ret_code != SGX_SUCCESS) {
-        secure_free_rsa_pri2_key(mod_size, p_rsa2);
+        secure_free_rsa_pri2_key(mod_size / 2, p_rsa2);
     }
     return ret_code;
 }
@@ -294,7 +297,11 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
         error_code = ippsRSA_GetSizePublicKey(mod_size * 8, exp_size * 8, &rsa_size);
         ERROR_BREAK(error_code);
         p_pub_key = (IppsRSAPublicKeyState *)malloc(rsa_size);
-        NULL_BREAK(p_pub_key);
+        if (!p_pub_key)
+        {
+            error_code = ippStsMemAllocErr;
+            break;
+        }
         error_code = ippsRSA_InitPublicKey(mod_size * 8, exp_size * 8, p_pub_key, rsa_size);
         ERROR_BREAK(error_code);
 
@@ -309,6 +316,9 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
 
     sgx_ipp_secure_free_BN(p_n, mod_size);
     sgx_ipp_secure_free_BN(p_e, exp_size);
+
+    if (error_code == ippStsMemAllocErr)
+        ret_code = SGX_ERROR_OUT_OF_MEMORY;
 
     if (ret_code != SGX_SUCCESS) {
         secure_free_rsa_pub_key(mod_size, exp_size, p_pub_key);
@@ -339,8 +349,13 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data,
         if (ippsRSA_GetBufferSizePublicKey(&scratch_buff_size, (IppsRSAPublicKeyState*)rsa_key) != ippStsNoErr) {
             break;
         }
-        p_scratch_buffer = (uint8_t *)malloc(8 * scratch_buff_size);
-        NULL_BREAK(p_scratch_buffer);
+        p_scratch_buffer = (uint8_t *)malloc(scratch_buff_size);
+        if(!p_scratch_buffer)
+        {
+            ret_code = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+        memset(p_scratch_buffer, 0, scratch_buff_size);
 
         //get random seed
         //
@@ -359,7 +374,7 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data,
     } while (0);
 
     memset_s(seeds, RSA_SEED_SIZE_SHA256, 0, RSA_SEED_SIZE_SHA256);
-    SAFE_FREE_MM(p_scratch_buffer);
+    CLEAR_FREE_MEM(p_scratch_buffer, scratch_buff_size);
 
     return ret_code;
 }
@@ -384,7 +399,11 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data
             break;
         }
         p_scratch_buffer = (uint8_t *)malloc(scratch_buff_size);
-        NULL_BREAK(p_scratch_buffer);
+        if (!p_scratch_buffer)
+        {
+            ret_code = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
 
         //decrypt input ciphertext using private key rsa_key
         if (ippsRSADecrypt_OAEP(pin_data, NULL, 0, pout_data, (int*)pout_len, (IppsRSAPrivateKeyState*)rsa_key,
@@ -394,7 +413,7 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data
         ret_code = SGX_SUCCESS;
 
     } while (0);
-    SAFE_FREE_MM(p_scratch_buffer);
+    CLEAR_FREE_MEM(p_scratch_buffer, scratch_buff_size);
 
     return ret_code;
 }
@@ -402,7 +421,7 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data
 sgx_status_t sgx_free_rsa_key(void *p_rsa_key, sgx_rsa_key_type_t key_type, int mod_size, int exp_size) {
 	if (key_type == SGX_RSA_PRIVATE_KEY) {
 		(void)(exp_size);
-		secure_free_rsa_pri2_key(mod_size, (IppsRSAPrivateKeyState*)p_rsa_key);
+		secure_free_rsa_pri2_key(mod_size/2, (IppsRSAPrivateKeyState*)p_rsa_key);
 	} else if (key_type == SGX_RSA_PUBLIC_KEY) {
 		secure_free_rsa_pub_key(mod_size, exp_size, (IppsRSAPublicKeyState*)p_rsa_key);
 	}
@@ -471,18 +490,14 @@ sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int has
         ret_code = SGX_SUCCESS;
     } while (0);
 
-    if (NULL != bn_d) {
-        sgx_ipp_secure_free_BN(bn_d, hash_drg_len);
-    }
-    if (NULL != bn_m) {
-        sgx_ipp_secure_free_BN(bn_m, sgx_nistp256_r_m1_len);
-    }
-    if (NULL != bn_o) {
-        sgx_ipp_secure_free_BN(bn_o, sgx_nistp256_r_m1_len);
-    }
-    if (NULL != bn_one) {
-        sgx_ipp_secure_free_BN(bn_one, sizeof(uint32_t));
-    }
+    sgx_ipp_secure_free_BN(bn_d, hash_drg_len);
+    sgx_ipp_secure_free_BN(bn_m, sgx_nistp256_r_m1_len);
+    sgx_ipp_secure_free_BN(bn_o, sgx_nistp256_r_m1_len);
+    sgx_ipp_secure_free_BN(bn_one, sizeof(uint32_t));
+
+    if (ipp_status == ippStsMemAllocErr)
+        ret_code = SGX_ERROR_OUT_OF_MEMORY;
+
     if (ret_code != SGX_SUCCESS) {
         (void)memset_s(out_key, out_key_len, 0, out_key_len);
     }

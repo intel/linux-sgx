@@ -67,6 +67,7 @@ extern "C" {
  *     NULL - fail to allocate
 */
 void* SGXAPI sgx_ocalloc(size_t size);
+void* SGXAPI sgx_ocalloc_switchless(size_t size);
 
 /* sgx_ocfree()
  * Parameters:
@@ -75,6 +76,7 @@ void* SGXAPI sgx_ocalloc(size_t size);
  *      N/A
 */
 void SGXAPI sgx_ocfree(void);
+void SGXAPI sgx_ocfree_switchless(void);
 
 /* sgx_ecall()
  * Parameters:
@@ -89,6 +91,10 @@ sgx_status_t SGXAPI sgx_ecall(const sgx_enclave_id_t eid,
                               const int index,
                               const void* ocall_table,
                               void* ms);
+sgx_status_t SGXAPI sgx_ecall_switchless(const sgx_enclave_id_t eid,
+                              const int index,
+                              const void* ocall_table,
+                              void* ms);
 
 /* sgx_ocall()
  * Parameters:
@@ -98,6 +104,8 @@ sgx_status_t SGXAPI sgx_ecall(const sgx_enclave_id_t eid,
  *     SGX_SUCCESS on success
 */
 sgx_status_t SGXAPI sgx_ocall(const unsigned int index,
+                              void* ms);
+sgx_status_t SGXAPI sgx_ocall_switchless(const unsigned int index,
                               void* ms);
 
 #ifdef __cplusplus

@@ -34,6 +34,17 @@
 
 #include "ippcp.h"
 
+#ifndef CLEAR_FREE_MEM
+#define CLEAR_FREE_MEM(address, size) {             \
+    if (address != NULL) {                          \
+        if (size > 0) {                             \
+            (void)memset_s(address, size, 0, size); \
+        }                                           \
+        free(address);                              \
+     }                                              \
+}
+#endif
+
 #ifndef SAFE_FREE_MM
 #define SAFE_FREE_MM(ptr) {\
     if(ptr != NULL)     \

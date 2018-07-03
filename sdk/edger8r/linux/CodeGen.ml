@@ -50,6 +50,20 @@ type enclave_content = {
   ufunc_decls  : Ast.untrusted_func list;
 }
 
+(* The generated code of ECalls and OCalls depends on some SGX utility
+ * functions, each of which has two versions. The version to be used for an
+ * ECall/OCall is determined by whether the ECAll/OCall is switchless or not.
+ * For example, switchless ECalls use sgx_ecall_switchless() while ordinary ECalls use
+ * sgx_ecall(). *)
+type sgx_fn_id = SGX_ECALL | SGX_OCALL | SGX_OCALLOC | SGX_OCFREE
+let get_sgx_fname fn_id is_switchless =
+    let func_name = match fn_id with
+                        SGX_ECALL -> "sgx_ecall"
+                      | SGX_OCALL -> "sgx_ocall"
+                      | SGX_OCALLOC -> "sgx_ocalloc"
+                      | SGX_OCFREE -> "sgx_ocfree" in
+    sprintf "%s%s" func_name (if is_switchless then "_switchless" else "")
+
 (* Whether to prefix untrusted proxy with Enclave name *)
 let g_use_prefix = ref false
 let g_untrusted_dir = ref "."
@@ -728,7 +742,8 @@ let fill_ms_field (isptr: bool) (pd: Ast.pdecl) =
       sprintf "%s%s%s = (%s)%s;" ms_struct_val accessor ms_member_name tystr param_name
 
 (* Generate untrusted proxy code for a given trusted function. *)
-let gen_func_uproxy (fd: Ast.func_decl) (idx: int) (ec: enclave_content) =
+let gen_func_uproxy (tf: Ast.trusted_func) (idx: int) (ec: enclave_content) =
+  let fd = tf.Ast.tf_fdecl in
   let func_open  =
     gen_uproxy_com_proto fd ec.enclave_name ^
       "\n{\n\tsgx_status_t status;\n"
@@ -739,16 +754,17 @@ let gen_func_uproxy (fd: Ast.func_decl) (idx: int) (ec: enclave_content) =
   let declare_ms_expr = sprintf "%s %s;" ms_struct_name ms_struct_val in
   let ocall_table_ptr =
     sprintf "&%s" ocall_table_name in
+  let sgx_ecall_fn = get_sgx_fname SGX_ECALL tf.Ast.tf_is_switchless in
 
   (* Normal case - do ECALL with marshaling structure*)
-  let ecall_with_ms = sprintf "status = sgx_ecall(%s, %d, %s, &%s);"
-                              eid_name idx ocall_table_ptr ms_struct_val in
+  let ecall_with_ms = sprintf "status = %s(%s, %d, %s, &%s);"
+                              sgx_ecall_fn eid_name idx ocall_table_ptr ms_struct_val in
 
   (* Rare case - the trusted function doesn't have parameter nor return value.
    * In this situation, no marshaling structure is required - passing in NULL.
    *)
-  let ecall_null = sprintf "status = sgx_ecall(%s, %d, %s, NULL);"
-                           eid_name idx ocall_table_ptr
+  let ecall_null = sprintf "status = %s(%s, %d, %s, NULL);"
+                           sgx_ecall_fn eid_name idx ocall_table_ptr
   in
   let update_retval = sprintf "if (status == SGX_SUCCESS && %s) *%s = %s.%s;"
                               retval_name retval_name ms_struct_val ms_retval_name in
@@ -790,11 +806,27 @@ let gen_ptr_size (ty: Ast.atype) (pattr: Ast.ptr_attr) (name: string) (get_parm:
         Ast.AString s -> sprintf "%s * %s" (get_parm s) size_str
       | Ast.ANumber n -> sprintf "%d * %s" n size_str in
 
+  (* size_str:
+             [size = n] -> n
+             int ptr[] -> sizeof(int)
+             int* ptr -> sizeof(int)
+             int **ptr -> sizeof(int* )
+             Mystruct struct -> sizeof(Mystruct)
+             pMystruct ptr -> sizeof( *ptr)
+  *)
   let do_ps_attribute (sattr: Ast.ptr_size) =
     let size_str =
       match sattr.Ast.ps_size with
-          Some a -> mk_len_size a
-        | None   -> sprintf "sizeof(*%s)" parm_name
+        Some a -> mk_len_size a
+      | None   -> 
+        match ty with
+          Ast.Ptr ty  -> 
+            sprintf "sizeof(%s)" (Ast.get_tystr ty)
+        | _ -> 
+          if pattr.pa_isptr then
+            sprintf "sizeof(*%s)" parm_name
+          else
+            sprintf "sizeof(%s)"  (Ast.get_tystr ty)
       in
       match sattr.Ast.ps_count with
         None   -> size_str
@@ -1190,11 +1222,12 @@ let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
         (gen_parm_ptr_direction_post fd.Ast.plist)
         func_close
 
-let tproxy_fill_ms_field (pd: Ast.pdecl) =
+let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
   let (pt, declr)   = pd in
   let name          = declr.Ast.identifier in
   let len_var       = mk_len_var name in
   let parm_accessor = mk_parm_accessor name in
+  let sgx_ocfree_fn = get_sgx_fname SGX_OCFREE is_ocall_switchless in
     match pt with
         Ast.PTVal _ -> fill_ms_field true pd
       | Ast.PTPtr(ty, attr) ->
@@ -1229,7 +1262,7 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) =
                        sprintf "} else if (%s == NULL) {" name;
                        sprintf "\t%s = NULL;" parm_accessor;
                        "} else {";
-                       "\tsgx_ocfree();";
+                       sprintf "\t%s();" sgx_ocfree_fn;
                        "\treturn SGX_ERROR_INVALID_PARAMETER;";
                        "}"
                       ]
@@ -1243,7 +1276,7 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) =
                sprintf "} else if (%s == NULL) {" name;
                sprintf "\t%s = NULL;" parm_accessor;
                "} else {";
-               "\tsgx_ocfree();";
+               sprintf "\t%s();" sgx_ocfree_fn;
                "\treturn SGX_ERROR_INVALID_PARAMETER;";
                "}"
               ]
@@ -1267,7 +1300,7 @@ let gen_tproxy_local_vars (plist: Ast.pdecl list) =
     List.fold_left (fun acc pd -> acc ^ gen_local_var pd) status_var new_param_list
 
 (* Generate only one ocalloc block required for the trusted proxy. *)
-let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) =
+let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) (is_switchless: bool) =
   let ms_struct_name = mk_ms_struct_name fname in
   let local_vars_block = sprintf "%s* %s = NULL;\n\tsize_t ocalloc_size = sizeof(%s);\n\tvoid *__tmp = NULL;\n\n" ms_struct_name ms_struct_val ms_struct_name in
   let local_var (attr: Ast.ptr_attr) (name: string) =
@@ -1293,10 +1326,12 @@ let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) =
         Ast.PTVal _          -> ""
       | Ast.PTPtr (ty, attr) -> count_ocalloc_size ty attr declr.Ast.identifier
   in
+  let sgx_ocalloc_fn = get_sgx_fname SGX_OCALLOC is_switchless in
+  let sgx_ocfree_fn = get_sgx_fname SGX_OCFREE is_switchless in
   let do_gen_ocalloc_block = [
-      "\n\t__tmp = sgx_ocalloc(ocalloc_size);\n";
+      sprintf "\n\t__tmp = %s(ocalloc_size);\n" sgx_ocalloc_fn;
       "\tif (__tmp == NULL) {\n";
-      "\t\tsgx_ocfree();\n";
+      sprintf "\t\t%s();\n" sgx_ocfree_fn;
       "\t\treturn SGX_ERROR_UNEXPECTED;\n";
       "\t}\n";
       sprintf "\t%s = (%s*)__tmp;\n" ms_struct_val ms_struct_name;
@@ -1315,9 +1350,10 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
   let propagate_errno = ufunc.Ast.uf_propagate_errno in
   let func_open = sprintf "%s\n{\n" (gen_tproxy_proto fd) in
   let local_vars = gen_tproxy_local_vars fd.Ast.plist in
-  let ocalloc_ms_struct = gen_ocalloc_block fd.Ast.fname fd.Ast.plist in
+  let ocalloc_ms_struct = gen_ocalloc_block fd.Ast.fname fd.Ast.plist ufunc.Ast.uf_is_switchless in
+  let sgx_ocfree_fn = get_sgx_fname SGX_OCFREE ufunc.Ast.uf_is_switchless in
   let gen_ocfree rtype plist =
-    if rtype = Ast.Void && plist = [] then "" else "\tsgx_ocfree();\n"
+    if rtype = Ast.Void && plist = [] && propagate_errno = false then "" else sprintf "\t%s();\n" sgx_ocfree_fn
   in
   let handle_out_ptr plist =
     let copy_memory (attr: Ast.ptr_attr) (declr: Ast.declarator) =
@@ -1359,16 +1395,16 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
                              Ast.PTVal _ -> acc
                | Ast.PTPtr(ty, attr) -> acc ^ copy_memory attr declr) "" plist in
 
-  let set_errno = if propagate_errno then "\t\terrno = ms->ocall_errno;" else "" in
+  let set_errno = if propagate_errno then "\t\terrno = ms->ocall_errno;\n" else "" in
   let func_close = sprintf "%s%s%s\n%s%s\n"
                            (handle_out_ptr fd.Ast.plist)
                            set_errno
                            "\t}"
                            (gen_ocfree fd.Ast.rtype fd.Ast.plist)
                            "\treturn status;\n}" in
-  let ocall_null = sprintf "status = sgx_ocall(%d, NULL);\n" idx in
-  let ocall_with_ms = sprintf "status = sgx_ocall(%d, %s);\n"
-                              idx ms_struct_val in
+  let sgx_ocall_fn = get_sgx_fname SGX_OCALL ufunc.Ast.uf_is_switchless in
+  let ocall_null = sprintf "status = %s(%d, NULL);\n" sgx_ocall_fn idx in
+  let ocall_with_ms = sprintf "status = %s(%d, %s);\n" sgx_ocall_fn idx ms_struct_val in
   let update_retval = sprintf "\tif (%s) *%s = %s;"
                               retval_name retval_name (mk_parm_accessor retval_name) in
   let func_body = ref [] in
@@ -1378,7 +1414,7 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
       begin
         func_body := local_vars :: !func_body;
         func_body := ocalloc_ms_struct:: !func_body;
-        List.iter (fun pd -> func_body := tproxy_fill_ms_field pd :: !func_body) fd.Ast.plist;
+        List.iter (fun pd -> func_body := tproxy_fill_ms_field pd ufunc.Ast.uf_is_switchless :: !func_body ) fd.Ast.plist;
         func_body := ocall_with_ms :: !func_body;
         func_body := "if (status == SGX_SUCCESS) {" :: !func_body;
         if fd.Ast.rtype <> Ast.Void then func_body := update_retval :: !func_body;
@@ -1415,8 +1451,8 @@ let gen_untrusted_source (ec: enclave_content) =
   let include_hd = "#include \"" ^ get_uheader_short_name ec.file_shortnm ^ "\"\n" in
   let include_errno = "#include <errno.h>\n" in
   let uproxy_list =
-    List.map2 (fun fd ecall_idx -> gen_func_uproxy fd ecall_idx ec)
-      (tf_list_to_fd_list ec.tfunc_decls)
+    List.map2 (fun tf ecall_idx -> gen_func_uproxy tf ecall_idx ec)
+      ec.tfunc_decls
       (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
   in
   let ubridge_list =

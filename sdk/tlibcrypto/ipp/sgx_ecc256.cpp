@@ -31,7 +31,7 @@
 
 
 #include "sgx_tcrypto_common.h"
-
+#include "ipp_wrapper.h"
 
 /*
 * Elliptic Curve Crytpography - Based on GF(p), 256 bit
@@ -58,14 +58,14 @@ sgx_status_t sgx_ecc256_open_context(sgx_ecc_state_handle_t* p_ecc_handle)
     ipp_ret = ippsECCPInit(256, p_ecc_state);
     if (ipp_ret != ippStsNoErr)
     {
-        SAFE_FREE(p_ecc_state);
+        CLEAR_FREE_MEM(p_ecc_state, ctx_size);
         *p_ecc_handle = NULL;
         return SGX_ERROR_UNEXPECTED;
     }
     ipp_ret = ippsECCPSetStd256r1(p_ecc_state);
     if (ipp_ret != ippStsNoErr)
     {
-        SAFE_FREE(p_ecc_state);
+        CLEAR_FREE_MEM(p_ecc_state, ctx_size);
         *p_ecc_handle = NULL;
         return SGX_ERROR_UNEXPECTED;
     }
@@ -91,8 +91,7 @@ sgx_status_t sgx_ecc256_close_context(sgx_ecc_state_handle_t ecc_handle)
         free(p_ecc_state);
         return SGX_SUCCESS;
     }
-    memset_s(p_ecc_state, ctx_size, 0, ctx_size);
-    free(p_ecc_state);
+    CLEAR_FREE_MEM(p_ecc_state, ctx_size);
     return SGX_SUCCESS;
 }
 

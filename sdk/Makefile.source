@@ -64,7 +64,7 @@ LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tstdcxx tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt
+components: tstdc tstdcxx tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless
 
 # ---------------------------------------------------
 #  tstdc
@@ -242,6 +242,13 @@ libcapable:
 	$(MAKE) -C libcapable/linux/
 
 # ---------------------------------------------------
+#  Switchless
+# ---------------------------------------------------
+.PHONY: switchless
+switchless: trts tlibc edger8r
+	$(MAKE) -C switchless/
+
+# ---------------------------------------------------
 #  simualtion libraries and tools
 # ---------------------------------------------------
 .PHONY: simulation
@@ -295,6 +302,7 @@ clean:
 	$(MAKE) -C edger8r/linux                       clean
 	$(MAKE) -C protected_code_loader               clean
 	$(MAKE) -C encrypt_enclave                     clean
+	$(MAKE) -C switchless/                         clean	
 	@$(RM) $(LIBTLIBC) $(LIBTLIBCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/STLport_Changes_SGX.txt
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt

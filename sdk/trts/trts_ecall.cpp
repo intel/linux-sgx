@@ -89,6 +89,17 @@ static sgx_status_t is_ecall_allowed(uint32_t ordinal)
 //
 static sgx_status_t get_func_addr(uint32_t ordinal, void **addr)
 {
+    // Special ECalls for Switchless SGX
+    if (unlikely(ordinal == (uint32_t)ECMD_INIT_SWITCHLESS)) {
+        *addr = (void*) do_init_switchless;
+        return SGX_SUCCESS;
+    }
+    else if (unlikely(ordinal == (uint32_t)ECMD_RUN_SWITCHLESS_TWORKER)) {
+        *addr = (void*) do_run_switchless_tworker;
+        return SGX_SUCCESS;
+    }
+
+    // Normal user-defined ECalls
     sgx_status_t status = is_ecall_allowed(ordinal);
     if(SGX_SUCCESS != status)
     {

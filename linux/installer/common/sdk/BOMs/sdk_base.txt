@@ -31,6 +31,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/common/inc/sgx_ukey_exchange.h	<installdir>/package/include/./sgx_ukey_exchange.h	0	main	STP
 <deliverydir>/common/inc/sgx_urts.h	<installdir>/package/include/./sgx_urts.h	0	main	STP
 <deliverydir>/common/inc/sgx_utils.h	<installdir>/package/include/./sgx_utils.h	0	main	STP
+<deliverydir>/common/inc/sgx_uswitchless.h	<installdir>/package/include/./sgx_uswitchless.h	0	main	STP
 <deliverydir>/common/inc/sgx_tprotected_fs.h	<installdir>/package/include/./sgx_tprotected_fs.h	0	main	STP
 <deliverydir>/common/inc/sgx_tprotected_fs.edl	<installdir>/package/include/./sgx_tprotected_fs.edl	0	main	STP
 <deliverydir>/common/inc/sgx_pcl_guid.h	<installdir>/package/include/./sgx_pcl_guid.h	0	main	STP
