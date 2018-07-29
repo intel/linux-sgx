@@ -62,7 +62,7 @@ bool encode_request(const uint8_t *req, uint32_t req_len, uint8_t *out_buf, uint
 /*Function to decode an response message from Provisioning Server
  *@param input_buf, pointer to the encoded response message
  *@param input_len, length in bytes of the encoded response message
- *@param resp, pointer to a bufer to recieve the decoded message 
+ *@param resp, pointer to a bufer to receive the decoded message 
  *@param out_len, *out_len to pass in the buffer len and return the decoded response message
  *@return true if successful and false if there's any error. No error code provided
  */

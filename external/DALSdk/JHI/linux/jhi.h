@@ -181,7 +181,7 @@ typedef  PVOID   JHI_SESSION_HANDLE;
 // Buffer size limitation is 2MB
 // JHI will not accept any buffer with greater size.
 //
-// Note that this size limitiation does not mark the maximum buffer size an applet can recieve,
+// Note that this size limitiation does not mark the maximum buffer size an applet can receive,
 // applet max buffer size changes from one applet to another.
 //
 // This applies for all JHI API function that use buffers such as: 
