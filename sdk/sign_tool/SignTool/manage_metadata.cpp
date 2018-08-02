@@ -229,7 +229,7 @@ bool CMetadata::get_time(uint32_t *date)
     uint32_t tmp_date = (timeinfo->tm_year+1900)*10000 + (timeinfo->tm_mon+1)*100 + timeinfo->tm_mday;
     stringstream ss;
     ss<<"0x"<<tmp_date;
-    ss>>hex>>tmp_date;
+    ss>>std::hex>>tmp_date;
     *date = tmp_date;
     return true;
 }
