@@ -39,7 +39,7 @@ open Util                               (* for failwithf *)
  *)
 
 (* This record type is used to better organize a value of Ast.enclave *)
-type enclave_content = {
+type enclave_content = Ast.enclave_content = {
   file_shortnm : string; (* the short name of original EDL file *)
   enclave_name : string; (* the normalized C identifier *)
 
@@ -1714,5 +1714,9 @@ let gen_enclave_code (e: Ast.enclave) (ep: edger8r_params) =
     check_duplication ec;
     check_allow_list ec;
     (if not ep.header_only then check_priv_funcs ec);
-    (if ep.gen_untrusted then (gen_untrusted_header ec; if not ep.header_only then gen_untrusted_source ec));
-    (if ep.gen_trusted then (gen_trusted_header ec; if not ep.header_only then gen_trusted_source ec))
+    if Plugin.available() then
+      Plugin.gen_edge_routines ec ep
+    else (
+      (if ep.gen_untrusted then (gen_untrusted_header ec; if not ep.header_only then gen_untrusted_source ec));
+      (if ep.gen_trusted then (gen_trusted_header ec; if not ep.header_only then gen_trusted_source ec))
+    )
