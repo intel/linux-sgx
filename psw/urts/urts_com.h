@@ -193,7 +193,7 @@ static int __create_enclave(BinParser &parser,
                             sgx_enclave_id_t *enclave_id, 
                             sgx_misc_attribute_t *misc_attr,
                             const uint32_t ex_features,
-                            void* ex_features_p[32])
+                            const void* ex_features_p[32])
 {
     // The "parser" will be registered into "loader" and "loader" will be registered into "enclave".
     // After enclave is created, "parser" and "loader" are not needed any more.
@@ -425,7 +425,7 @@ fail:
 
 sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
 	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
-                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, void* ex_features_p[32])
+                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
 {
     unsigned int ret = SGX_SUCCESS;
     sgx_status_t lt_result = SGX_SUCCESS;

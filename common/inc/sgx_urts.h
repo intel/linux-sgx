@@ -82,7 +82,7 @@ sgx_status_t SGXAPI sgx_create_enclave_ex(const char * file_name,
                                           sgx_enclave_id_t * enclave_id, 
                                           sgx_misc_attribute_t * misc_attr,  
                                           const uint32_t ex_features, 
-                                          void* ex_features_p[32]);
+                                          const void* ex_features_p[32]);
 
 
 sgx_status_t SGXAPI sgx_create_encrypted_enclave(

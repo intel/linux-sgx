@@ -40,7 +40,7 @@
 
 #include "urts_com.h"
 
-static bool inline _check_ex_params_(const uint32_t ex_features, void* ex_features_p[32])
+static bool inline _check_ex_params_(const uint32_t ex_features, const void* ex_features_p[32])
 {
     //update last feature index if it fails here
     se_static_assert(_SGX_LAST_EX_FEATURE_IDX_ == SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX);
@@ -64,7 +64,7 @@ extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name,
                                                 sgx_enclave_id_t *enclave_id, 
                                                 sgx_misc_attribute_t *misc_attr,
                                                 const uint32_t ex_features,
-                                                void* ex_features_p[32])
+                                                const void* ex_features_p[32])
 {
     sgx_status_t ret = SGX_SUCCESS;
 
@@ -120,7 +120,7 @@ extern "C"  sgx_status_t sgx_create_enclave_ex(const char *file_name,
                                                sgx_enclave_id_t *enclave_id,
                                                sgx_misc_attribute_t *misc_attr,
                                                const uint32_t ex_features,
-                                               void* ex_features_p[32])
+                                               const void* ex_features_p[32])
 {
 
     return __sgx_create_enclave_ex(file_name, debug, launch_token,
@@ -139,7 +139,7 @@ sgx_create_encrypted_enclave(
     uint8_t* sealed_key)
 {
     uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_PCL;
-    void* ex_features_p[32] = { 0 };
+    const void* ex_features_p[32] = { 0 };
     ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX] = (void*)sealed_key;
 
     return __sgx_create_enclave_ex(file_name, debug, launch_token,
