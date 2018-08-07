@@ -199,7 +199,7 @@ int initialize_enclave(const sgx_uswitchless_config_t* us_config)
     /* Step 2: call sgx_create_enclave to initialize an enclave instance */
     /* Debug Support: set 2nd parameter to 1 */
 
-    void* enclave_ex_p[32] = { 0 };
+    const void* enclave_ex_p[32] = { 0 };
 
     enclave_ex_p[SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX] = (void*)us_config;
 
