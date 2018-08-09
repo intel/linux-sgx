@@ -34,7 +34,7 @@
 static inline void _mm_pause(void) __attribute__((always_inline));
 static inline int _InterlockedExchange(int volatile * dst, int val) __attribute__((always_inline));
 
-static inline void _mm_pause(void)
+static inline void _mm_pause(void)  /* definition requires -ffreestanding */
 {
     __asm __volatile(
         "pause"

@@ -44,7 +44,7 @@ static void dump_textrel(const uint64_t& offset)
     using namespace std;
 
     cerr << "warning: TEXTRELs found at offset: "
-         << hex << showbase     /* show the '0x' prefix */
+         << std::hex << showbase     /* show the '0x' prefix */
          << offset << endl;
 }
 

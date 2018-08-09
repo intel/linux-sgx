@@ -37,7 +37,9 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <pwd.h>
+#ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
+#endif
 #include <inttypes.h>
 
 static Mutex g_pse_sim_lock;
