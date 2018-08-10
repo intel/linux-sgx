@@ -191,6 +191,26 @@ type enclave = {
   eexpr : expr list;        (* expressions inside enclave. *)
 }
 
+(*
+  Plugin.ml operates on an enclave_content instance.
+  CodeGen.ml calls Plugin.ml if a plugin is installed and hence
+  depends on Plugin.ml.
+  To prevent cyclic dependency between Plugin.ml and Codegen.ml,
+  enclave_content is defined here. Additionally, the enclave_content 
+  type in CodeGen.ml is defined to be equivalent to the enclave_content 
+  type defined here.
+*)
+type enclave_content = {
+  file_shortnm : string; (* the short name of original EDL file *)
+  enclave_name : string; (* the normalized C identifier *)
+
+  include_list : string list;
+  import_exprs : import_decl list;
+  comp_defs    : composite_type list;
+  tfunc_decls  : trusted_func   list;
+  ufunc_decls  : untrusted_func list;
+}
+
 (* -------------------------------------------------------------------
  *  Some utility function to manupulate types defined in AST.
  * -------------------------------------------------------------------
