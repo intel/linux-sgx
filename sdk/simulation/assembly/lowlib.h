@@ -40,6 +40,15 @@
 
 #include <stdint.h>
 
+#if defined(__GNUC__) && !defined(__clang__)
+#define LOAD_REGS_ATTRIBUTES \
+  __attribute__((optimize("-O0,-fno-omit-frame-pointer")))
+#elif defined(__clang__)
+#define LOAD_REGS_ATTRIBUTES [[clang::optnone]]
+#else
+#pragma warning "Unsupported compiler for per-function deoptimization"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

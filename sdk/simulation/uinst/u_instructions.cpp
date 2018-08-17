@@ -208,7 +208,8 @@ uintptr_t _EREMOVE(const void *epc_lin_addr)
 
 // Master entry functions
 
-
+// The call to load_regs assumes the existence of a frame pointer.
+LOAD_REGS_ATTRIBUTES
 void _SE3(uintptr_t xax, uintptr_t xbx,
           uintptr_t xcx, uintptr_t xdx,
           uintptr_t xsi, uintptr_t xdi)

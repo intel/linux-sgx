@@ -55,10 +55,6 @@ all: $(LIBSESIMU_T)
 $(LIBSESIMU_T): $(OBJS)
 	$(AR) rcs $@ $^
 
-# Explicitly disable optimization for 't_instructions.cpp',
-# since the '_SE3' function has assumptions on stack layout.
-t_instructions.o: CXXFLAGS += -O0
-
 .PHONY: clean
 clean:
 	@$(RM) $(OBJS) $(LIBSESIMU_T)

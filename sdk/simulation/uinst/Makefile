@@ -63,7 +63,7 @@ enclave_mngr.o: enclave_mngr.cpp
 # since the '_SE3' function has assumptions on stack layout.
 #
 u_instructions.o: u_instructions.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -O0 -Wno-error=cpp -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -Wno-error=cpp -c $< -o $@
 
 $(LIBSESIMU_U): u_instructions.o enclave_mngr.o $(OBJ1)
 	$(AR) rcs $@ $^
