@@ -36,16 +36,14 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 #if defined( _WIN32 ) || defined ( _WIN64 )
   #define __STDCALL  __stdcall
   #define __CDECL    __cdecl
-  #define __INT64    __int64
-  #define __UINT64    unsigned __int64
 #else
   #define __STDCALL
   #define __CDECL
-  #define __INT64    long long
-  #define __UINT64    unsigned long long
 #endif
 
 #define IPP_PI    ( 3.14159265358979323846 )  /* ANSI C does not support M_PI */
@@ -117,8 +115,8 @@ typedef signed char    Ipp8s;
 typedef signed short   Ipp16s;
 typedef signed int     Ipp32s;
 typedef float          Ipp32f;
-typedef __INT64        Ipp64s;
-typedef __UINT64       Ipp64u;
+typedef int64_t        Ipp64s;
+typedef uint64_t       Ipp64u;
 typedef double         Ipp64f;
 typedef Ipp16s         Ipp16f;
 
