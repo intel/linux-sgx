@@ -34,6 +34,8 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
 - Ensure that you have one of the following required operating systems:  
+  * Ubuntu\* 16.04 LTS Desktop 64bits
+  * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
@@ -42,6 +44,10 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * SUSE Linux Enterprise Server 12 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
+  * On Ubuntu 16.04 
+  ```
+    $ sudo apt-get install build-essential ocaml automake autoconf libtool wget python libssl-dev
+  ```
   * On Ubuntu 18.04:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev
@@ -62,7 +68,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel
   ```
 - Use the following command to install additional required tools to build the Intel(R) SGX PSW:  
-  * On Ubuntu 18.04:
+  * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper
   ```
@@ -86,7 +92,7 @@ The following steps describe how to build the Intel(R) SGX SDK and PSW. You can 
 ```
   $ make  
 ```  
-  You can find the tools and libraries generated in the `build/linux` directory.  
+  You can find the tools and libraries generated in the `build/linux` directory.     
   **Note**: You can also go to the `sdk` folder and use the `make` command to build the Intel(R) SGX SDK component only. However, building the PSW component is dependent on the result of building the Intel(R) SGX SDK.  
 
 - This repository supports to build the Intel(R) SGX SDK based on either precompiled optimized IPP/string/math libraries or open sourced version of SGXSSL/string/math libraries. 
@@ -127,13 +133,16 @@ $ make sdk_install_pkg DEBUG=1
 
 ### Build the Intel(R) SGX PSW Installer
 To build the Intel(R) SGX PSW installer, enter the following command:
-- On Ubuntu 18.04:
+- On Ubuntu 16.04 and Ubuntu 18.04:
   ```
   $ make deb_sgx_enclave_common_pkg
   ```
-  You can find the generated Intel(R) SGX PSW installer ``libsgx-enclave-common_${version}-${revision}_${arch}.deb`` located under `linux/installer/deb/libsgx-enclave-common`, where `${version}` refers to the version number and the `${arch}` refers to the platform.
-
-  **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer with debug information kept in the tools and libraries, enter the following command:
+  You can find the generated Intel(R) SGX PSW installer ``libsgx-enclave-common_${version}-${revision}_amd64.deb`` located under `linux/installer/deb/libsgx-enclave-common`, where `${version}` refers to the version number and the `${revision}` refers to the revision number of the package.   
+  **Note**: On Ubuntu 18.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose. On Ubuntu 16.04, if you want to keep debug symbols in the Intel(R) SGX PSW installer, before building the Intel(R) SGX PSW, you need to export an environment variable to ensure the debug symbols not stripped:
+   ```
+   $ export DEB_BUILD_OPTIONS="nostrip"
+   ```
+  **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer without optimization and with full debug information kept in the tools and libraries, enter the following command:
   ```
   $ make deb_sgx_enclave_common_pkg DEBUG=1
   ```
@@ -149,11 +158,19 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make psw_install_pkg DEBUG=1
   ```
+To build the Intel(R) SGX PSW development installer, enter the following command:
+- On Ubuntu 16.04 and Ubuntu 18.04:
+  ```
+  $ make deb_sgx_enclave_common_dev_pkg
+  ```
+  You can find the generated Intel(R) SGX PSW development installer ``libsgx-enclave-common-dev_${version}-${revision}_${arch}.deb`` located under `linux/installer/deb/libsgx-enclave-common-dev`.
 
 Install the Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
+  * Ubuntu\* 16.04 LTS Desktop 64bits
+  * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
@@ -161,7 +178,7 @@ Install the Intel(R) SGX SDK
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
-  * On Ubuntu 18.04:
+  * On Ubuntu 16.04 and Ubuntu 18.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
@@ -217,6 +234,8 @@ Install the Intel(R) SGX PSW
 ----------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
+  * Ubuntu\* 16.04 LTS Desktop 64bits
+  * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
@@ -228,7 +247,7 @@ Install the Intel(R) SGX PSW
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:  
-  * On Ubuntu 18.04:
+  * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
@@ -243,7 +262,7 @@ Install the Intel(R) SGX PSW
 - `iclsClient` and `JHI` are optional prerequisite components and are needed if you need to use Intel(R) SGX Platform Service. To install these components:  
   Ensure `mei_me` driver is enabled and `/dev/mei0` exists.  
   Download [iclsClient](https://software.intel.com/en-us/sgx-sdk/download) and install it using the following commands:  
-  * On Ubuntu 18.04:
+  * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
     $ sudo apt-get install alien
     $ sudo alien --scripts iclsClient-1.45.449.12-1.x86_64.rpm
@@ -258,7 +277,7 @@ Install the Intel(R) SGX PSW
     $ sudo zypper install iclsClient-1.45.449.12-1.x86_64.rpm
   ```
   Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder, build and install the `JHI` service using the following commands:
-  * On Ubuntu 18.04:
+  * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
     $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config
     $ cmake .;make;sudo make install;sudo systemctl enable jhi
@@ -276,15 +295,15 @@ Install the Intel(R) SGX PSW
 
 ### Install the Intel(R) SGX PSW
 To install the Intel(R) SGX PSW, invoke the installer with root privilege: 
-- On Ubuntu 18.04:
+- On Ubuntu 16.04 and Ubuntu 18.04:
   ```
   $ cd linux/installer/deb/libsgx-enclave-common
-  $ sudo dpkg -i ./libsgx-enclave-common_${version}-${revision}_${arch}.deb
+  $ sudo dpkg -i ./libsgx-enclave-common_${version}-${revision}_amd64.deb
   ```
-  To debug with sgx-gdb, enter the following command:
+  **NOTE**: To debug with sgx-gdb on Ubuntu 16.04, you need to ensure the Intel(R) SGX PSW is built under the condition that the environment variable ``DEB_BUILD_OPTIONS="nostrip"`` is set. On Ubuntu 18.04, you need to install the debug package by entering the following command:
   ```
   $ cd linux/installer/deb/libsgx-enclave-common
-  $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_${arch}.ddeb
+  $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb
   ```
 - On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
 - On Fedora 27:
