@@ -110,8 +110,10 @@
 #define SGX_INVALID_KEYNAME		256
 
 /* IOCTL return values */
-#define SGX_POWER_LOST_ENCLAVE		0x40000000
+#define SGX_POWER_LOST_ENCLAVE	0x40000000
 #define SGX_LE_ROLLBACK			0x40000001
+#define SGX_INVALID_PRIVILEGE   0x40000002
+#define SGX_UNEXPECTED_ERROR    0x40000003
 
 /**
  * struct sgx_enclave_create - parameter structure for the

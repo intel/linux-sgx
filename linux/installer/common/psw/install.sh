@@ -164,8 +164,10 @@ rm -fr /var/run/aesmd
 # Removing runtime libraries
 rm -f /usr/\$(get_lib)/libsgx_uae_service.so
 rm -f /usr/\$(get_lib)/libsgx_urts.so
+rm -f /usr/\$(get_lib)/libsgx_enclave_common.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_uae_service.so
 rm -f /usr/lib/i386-linux-gnu/libsgx_urts.so
+rm -f /usr/lib/i386-linux-gnu/libsgx_enclave_common.so*
 
 # Removing AESM user and group
 /usr/sbin/userdel aesmd 2> /dev/null

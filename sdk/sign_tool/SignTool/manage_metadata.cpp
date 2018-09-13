@@ -749,13 +749,13 @@ bool CMetadata::build_patch_table()
     patches.push_back(patch);
 
     // patch the image header
-    uint64_t *zero = (uint64_t *)alloc_buffer_from_metadata(sizeof(*zero));
+    uint32_t size = 0;
+    uint8_t *zero = (uint8_t *)alloc_buffer_from_metadata(0);  // get addr only, size will be determined later
     if(zero == NULL)
     {
         se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
         return false;
     }
-    *zero = 0;
     bin_fmt_t bf = m_parser->get_bin_format();
     if(bf == BF_ELF32)
     {
@@ -764,16 +764,19 @@ bool CMetadata::build_patch_table()
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shnum);
         patches.push_back(patch);
+        if (patch.size > size) size = patch.size;
 
         patch.dst = (uint64_t)PTR_DIFF(&elf_hdr->e_shoff, base_addr);
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shoff);
         patches.push_back(patch);
+        if (patch.size > size) size = patch.size;
 
         patch.dst = (uint64_t)PTR_DIFF(&elf_hdr->e_shstrndx, base_addr);
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shstrndx);
         patches.push_back(patch);
+        if (patch.size > size) size = patch.size;
  
         // Modify GNU_RELRO info to eliminate the impact of enclave measurement.
         Elf32_Phdr *prg_hdr = GET_PTR(Elf32_Phdr, base_addr, elf_hdr->e_phoff);
@@ -785,6 +788,7 @@ bool CMetadata::build_patch_table()
                 patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
                 patch.size = (uint32_t)sizeof(Elf32_Phdr);
                 patches.push_back(patch);
+                if (patch.size > size) size = patch.size;
                 break;
             }
         }
@@ -797,17 +801,28 @@ bool CMetadata::build_patch_table()
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shnum);
         patches.push_back(patch);
+        if (patch.size > size) size = patch.size;
 
         patch.dst = (uint64_t)PTR_DIFF(&elf_hdr->e_shoff, base_addr);
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shoff);
         patches.push_back(patch);
+        if (patch.size > size) size = patch.size;
 
         patch.dst = (uint64_t)PTR_DIFF(&elf_hdr->e_shstrndx, base_addr);
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shstrndx);
         patches.push_back(patch);
+        if (patch.size > size) size = patch.size;
     }
+    zero = (uint8_t *)alloc_buffer_from_metadata(size); // alloc buffer again with the accurate size
+    if(zero == NULL)
+    {
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        return false;
+    }
+    memset(zero, 0, size);
+    
     if(false == build_patch_entries(patches))
     {
         se_trace(SE_TRACE_ERROR, NO_MEMORY_ERROR); 

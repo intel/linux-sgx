@@ -202,26 +202,34 @@ extern "C" sgx_status_t sgx_unseal_data(const sgx_sealed_data_t *p_sealed_data, 
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if (!sgx_is_within_enclave(p_decrypted_text,encrypt_text_length))
+    if (!sgx_is_within_enclave(p_decrypted_text_length, sizeof(p_decrypted_text_length)))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if (!sgx_is_within_enclave(p_decrypted_text_length,sizeof(p_decrypted_text_length)))
+    uint32_t input_decrypted_text_length = *p_decrypted_text_length;
+    if (input_decrypted_text_length < encrypt_text_length)
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    // Ensure aad data does not cross enclave boundary
-    if ((add_text_length > 0) &&
-        (!(sgx_is_within_enclave(p_additional_MACtext,add_text_length) || sgx_is_outside_enclave(p_additional_MACtext, add_text_length))))
+    if (!sgx_is_within_enclave(p_decrypted_text, input_decrypted_text_length))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if ((*p_decrypted_text_length) < encrypt_text_length)
+
+    if((p_additional_MACtext_length != NULL) && 
+       (!(sgx_is_within_enclave(p_additional_MACtext_length, sizeof(p_additional_MACtext_length)) ||
+          sgx_is_outside_enclave(p_additional_MACtext_length, sizeof(p_additional_MACtext_length)))))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
     uint32_t additional_MACtext_length = (NULL != p_additional_MACtext_length) ? *p_additional_MACtext_length : 0;
     if (additional_MACtext_length < add_text_length) {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    // Ensure aad data does not cross enclave boundary
+    if ((add_text_length > 0) &&
+        (!(sgx_is_within_enclave(p_additional_MACtext, additional_MACtext_length) || sgx_is_outside_enclave(p_additional_MACtext, additional_MACtext_length))))
+    {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 

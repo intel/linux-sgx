@@ -31,73 +31,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "ipp_wrapper.h"
-
-extern "C" IppStatus newBN(const Ipp32u *data, int size_in_bytes, IppsBigNumState **p_new_BN)
-{
-    IppsBigNumState *pBN = 0;
-    int bn_size = 0;
-
-    if (p_new_BN == NULL || size_in_bytes <= 0 || size_in_bytes % sizeof(Ipp32u))
-        return ippStsBadArgErr;
-
-    /* Get the size of the IppsBigNumState context in bytes */
-    IppStatus error_code = ippsBigNumGetSize(size_in_bytes / (int)sizeof(Ipp32u), &bn_size);
-    if (error_code != ippStsNoErr) {
-        *p_new_BN = 0;
-        return error_code;
-    }
-    pBN = (IppsBigNumState *)malloc(bn_size);
-    if (!pBN) {
-        error_code = ippStsMemAllocErr;
-        *p_new_BN = 0;
-        return error_code;
-    }
-    /* Initializes context and partitions allocated buffer */
-    error_code = ippsBigNumInit(size_in_bytes / (int)sizeof(Ipp32u), pBN);
-    if (error_code != ippStsNoErr) {
-        SAFE_FREE_MM(pBN);
-        *p_new_BN = 0;
-        return error_code;
-    }
-    if (data) {
-        error_code = ippsSet_BN(IppsBigNumPOS, size_in_bytes / (int)sizeof(Ipp32u), data, pBN);
-        if (error_code != ippStsNoErr) {
-            SAFE_FREE_MM(pBN);
-            *p_new_BN = 0;
-            return error_code;
-        }
-    }
-    *p_new_BN = pBN;
-    return error_code;
-
-}
-
-
-extern "C" void secure_free_BN(IppsBigNumState *pBN, int size_in_bytes)
-{
-    if (pBN == NULL || size_in_bytes <= 0 || size_in_bytes % sizeof(Ipp32u)) {
-        if (pBN) {
-            free(pBN);
-        }
-        return;
-    }
-
-    int bn_size = 0;
-
-    /* Get the size of the IppsBigNumState context in bytes
-    * Since we have checked the size_in_bytes before and the &bn_size is not NULL,
-    * ippsBigNumGetSize never returns failure
-    */
-    if (ippsBigNumGetSize(size_in_bytes / (int)sizeof(Ipp32u), &bn_size) != ippStsNoErr) {
-        free(pBN);
-        return;
-    }
-    /* Clear the buffer before free. */
-    memset_s(pBN, bn_size, 0, bn_size);
-    free(pBN);
-    return;
-}
+#include "ippcp.h"
 
 extern "C" void secure_free_rsa_pri2_key(int p_byte_size, IppsRSAPrivateKeyState *pri_key2)
 {

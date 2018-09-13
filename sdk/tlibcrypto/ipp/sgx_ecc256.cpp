@@ -30,11 +30,12 @@
  */
 
 
-#include "sgx_tcrypto_common.h"
 #include "ipp_wrapper.h"
 
+#define ECC_FIELD_SIZE 256
+
 /*
-* Elliptic Curve Crytpography - Based on GF(p), 256 bit
+* Elliptic Curve Crytpography - Based on GF(p), 256 bits
 */
 /* Allocates and initializes ecc context
 * Parameters:
@@ -49,13 +50,13 @@ sgx_status_t sgx_ecc256_open_context(sgx_ecc_state_handle_t* p_ecc_handle)
 
     if (p_ecc_handle == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
-    ipp_ret = ippsECCPGetSize(256, &ctx_size);
+    ipp_ret = ippsECCPGetSize(ECC_FIELD_SIZE, &ctx_size);
     if (ipp_ret != ippStsNoErr)
         return SGX_ERROR_UNEXPECTED;
     p_ecc_state = (IppsECCPState*)(malloc(ctx_size));
     if (p_ecc_state == NULL)
         return SGX_ERROR_OUT_OF_MEMORY;
-    ipp_ret = ippsECCPInit(256, p_ecc_state);
+    ipp_ret = ippsECCPInit(ECC_FIELD_SIZE, p_ecc_state);
     if (ipp_ret != ippStsNoErr)
     {
         CLEAR_FREE_MEM(p_ecc_state, ctx_size);
@@ -85,7 +86,7 @@ sgx_status_t sgx_ecc256_close_context(sgx_ecc_state_handle_t ecc_handle)
     }
     IppsECCPState* p_ecc_state = (IppsECCPState*)ecc_handle;
     int ctx_size = 0;
-    IppStatus ipp_ret = ippsECCPGetSize(256, &ctx_size);
+    IppStatus ipp_ret = ippsECCPGetSize(ECC_FIELD_SIZE, &ctx_size);
     if (ipp_ret != ippStsNoErr)
     {
         free(p_ecc_state);
@@ -121,7 +122,7 @@ sgx_status_t sgx_ecc256_create_key_pair(sgx_ec256_private_t *p_private,
     do
     {
         //init eccp point
-        ipp_ret = ippsECCPPointGetSize(256, &ecPointSize);
+        ipp_ret = ippsECCPPointGetSize(ECC_FIELD_SIZE, &ecPointSize);
         ERROR_BREAK(ipp_ret);
         point_pub = (IppsECCPPointState*)(malloc(ecPointSize));
         if (!point_pub)
@@ -129,7 +130,7 @@ sgx_status_t sgx_ecc256_create_key_pair(sgx_ec256_private_t *p_private,
             ipp_ret = ippStsNoMemErr;
             break;
         }
-        ipp_ret = ippsECCPPointInit(256, point_pub);
+        ipp_ret = ippsECCPPointInit(ECC_FIELD_SIZE, point_pub);
         ERROR_BREAK(ipp_ret);
 
         ipp_ret = sgx_ipp_newBN(NULL, SGX_ECP256_KEY_SIZE, &dh_priv_BN);
@@ -220,7 +221,7 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
 
     do
     {
-        ipp_ret = ippsECCPPointGetSize(256, &ecPointSize);
+        ipp_ret = ippsECCPPointGetSize(ECC_FIELD_SIZE, &ecPointSize);
         ERROR_BREAK(ipp_ret);
         point2check = (IppsECCPPointState*)malloc(ecPointSize);
         if (!point2check)
@@ -228,7 +229,7 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
             ipp_ret = ippStsNoMemErr;
             break;
         }
-        ipp_ret = ippsECCPPointInit(256, point2check);
+        ipp_ret = ippsECCPPointInit(ECC_FIELD_SIZE, point2check);
         ERROR_BREAK(ipp_ret);
 
         ipp_ret = sgx_ipp_newBN((const Ipp32u *)p_point->gx, sizeof(p_point->gx), &BN_gx);
@@ -306,7 +307,7 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
         ERROR_BREAK(ipp_ret);
         ipp_ret = sgx_ipp_newBN((uint32_t*)p_public_ga->gy, sizeof(p_public_ga->gy), &pubA_gy);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = ippsECCPPointGetSize(256, &ecPointSize);
+        ipp_ret = ippsECCPPointGetSize(ECC_FIELD_SIZE, &ecPointSize);
         ERROR_BREAK(ipp_ret);
         point_pubA = (IppsECCPPointState*)(malloc(ecPointSize));
         if (!point_pubA)
@@ -314,7 +315,7 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
             ipp_ret = ippStsNoMemErr;
             break;
         }
-        ipp_ret = ippsECCPPointInit(256, point_pubA);
+        ipp_ret = ippsECCPPointInit(ECC_FIELD_SIZE, point_pubA);
         ERROR_BREAK(ipp_ret);
         ipp_ret = ippsECCPSetPoint(pubA_gx, pubA_gy, point_pubA, p_ecc_state);
         ERROR_BREAK(ipp_ret);
@@ -370,3 +371,152 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
     }
 }
 
+/** Create an ECC public key based on a given ECC private key.
+*
+* Parameters:
+*   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+*   Input: p_att_priv_key - Input private key
+*   Output: p_att_pub_key - Output public key - LITTLE ENDIAN
+*
+*/
+sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att_priv_key, sgx_ec256_public_t  *p_att_pub_key)
+{
+    if ((p_att_priv_key == NULL) || (p_att_pub_key == NULL)) {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    IppsECCPState* p_ecc_state = NULL;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    int ctx_size = 0;
+    int point_size = 0;
+    IppsECCPPointState* public_key = NULL;
+    IppsBigNumState*    bn_o = NULL;
+    IppsBigNumState*    bn_x = NULL;
+    IppsBigNumState*    bn_y = NULL;
+    sgx_ec256_private_t att_priv_key_be;
+    uint8_t* p_temp;
+    int size = 0;
+    IppsBigNumSGN sgn;
+
+    do {
+        //get the size of the IppsECCPState context
+        //
+        if (ippsECCPGetSize(ECC_FIELD_SIZE, &ctx_size) != ippStsNoErr) {
+            break;
+        }
+
+        //allocate ecc ctx
+        //
+        p_ecc_state = (IppsECCPState*)(malloc(ctx_size));
+        if (NULL == p_ecc_state) {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+
+        //init ecc ctx
+        //
+        if (ippsECCPInit(ECC_FIELD_SIZE, p_ecc_state) != ippStsNoErr) {
+            break;
+        }
+
+        //set up elliptic curve domain parameters over GF(p)
+        //
+        if (ippsECCPSetStd(IppECCPStd256r1, p_ecc_state) != ippStsNoErr) {
+            break;
+        }
+
+        //get point (public key) size
+        //
+        if (ippsECCPPointGetSize(ECC_FIELD_SIZE, &point_size) != ippStsNoErr) {
+            break;
+        }
+
+        //allocate point of point_size size
+        //
+        public_key = (IppsECCPPointState*)(malloc(point_size));
+        if (NULL == public_key) {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+
+        //init point
+        //
+        if (ippsECCPPointInit(ECC_FIELD_SIZE, public_key) != ippStsNoErr) {
+            break;
+        }
+
+        //allocate bn_o, will be used for private key
+        //
+        if (sgx_ipp_newBN(NULL, sizeof(sgx_ec256_private_t), &bn_o) != ippStsNoErr) {
+            break;
+        }
+
+        //convert private key into big endian
+        //
+        p_temp = (uint8_t*)p_att_priv_key;
+        for (uint32_t i = 0; i<sizeof(att_priv_key_be); i++) {
+            att_priv_key_be.r[i] = *(p_temp + sizeof(att_priv_key_be) - 1 - i);
+        }
+
+        //assign private key into bn_o
+        //
+        if (ippsSetOctString_BN(reinterpret_cast<Ipp8u *>(&att_priv_key_be), sizeof(sgx_ec256_private_t), bn_o) != ippStsNoErr) {
+            break;
+        }
+
+        //compute public key from the given private key (bn_o) of the elliptic cryptosystem (p_ecc_state) over GF(p).
+        //
+        if (ippsECCPPublicKey(bn_o, public_key, p_ecc_state) != ippStsNoErr) {
+            break;
+        }
+
+        //allocate BNs
+        //
+        if (sgx_ipp_newBN(NULL, sizeof(sgx_ec256_private_t), &bn_x) != ippStsNoErr) {
+            break;
+        }
+
+        if (sgx_ipp_newBN(NULL, sizeof(sgx_ec256_private_t), &bn_y) != ippStsNoErr) {
+            break;
+        }
+        //assign public key into BNs
+        //
+        if (ippsECCPGetPoint(bn_x, bn_y, public_key, p_ecc_state) != ippStsNoErr) {
+            break;
+        }
+
+        //output key in little endian order
+        //
+        //gx value
+        if (ippsGetSize_BN(bn_x, &size) != ippStsNoErr) {
+            break;
+        }
+        if (ippsGet_BN(&sgn, &size, reinterpret_cast<Ipp32u *>(p_att_pub_key->gx), bn_x) != ippStsNoErr) {
+            break;
+        }
+        //gy value
+        //
+        if (ippsGetSize_BN(bn_y, &size) != ippStsNoErr) {
+            break;
+        }
+        if (ippsGet_BN(&sgn, &size, reinterpret_cast<Ipp32u *>(p_att_pub_key->gy), bn_y) != ippStsNoErr) {
+            break;
+        }
+
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    //in case of failure clear public key
+    //
+    if (ret != SGX_SUCCESS) {
+        (void)memset_s(p_att_pub_key, sizeof(sgx_ec256_public_t), 0, sizeof(sgx_ec256_public_t));
+    }
+
+    CLEAR_FREE_MEM(p_ecc_state, ctx_size);
+    CLEAR_FREE_MEM(public_key, point_size);
+    sgx_ipp_secure_free_BN(bn_o, sizeof(sgx_ec256_private_t));
+    sgx_ipp_secure_free_BN(bn_x, sizeof(sgx_ec256_private_t));
+    sgx_ipp_secure_free_BN(bn_y, sizeof(sgx_ec256_private_t));
+
+    return ret;
+}

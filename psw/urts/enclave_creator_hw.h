@@ -66,15 +66,16 @@ public:
     int trim_accept(uint64_t addr);
     int remove_range(uint64_t fromaddr, uint64_t numpages);
 private:
-    virtual bool open_se_device();
-    virtual void close_se_device();
+    virtual bool open_device();
+    virtual void close_device();
     int try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch);
     int error_driver2urts(int driver_error);
+    int error_api2urts(uint32_t api_error);
     se_file_handle_t    m_hdevice;
     Mutex               m_dev_mutex;
     bool                m_sig_registered;
     se_mutex_t          m_sig_mutex;
-    bool                m_in_kernel_driver;
+    bool                m_is_kernel_driver;
 };
 
 #endif

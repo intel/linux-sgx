@@ -179,8 +179,8 @@ bool derive_key(
     memset(&cmac_key, 0, MAC_KEY_SIZE);
 
     sample_ret = sample_rijndael128_cmac_msg(
-        (sample_cmac_128bit_key_t *)&cmac_key,
-        (uint8_t*)p_shared_key,
+        (const sample_cmac_128bit_key_t *)&cmac_key,
+        (const uint8_t*)p_shared_key,
         sizeof(sample_ec_dh_shared_t),
         (sample_cmac_128bit_tag_t *)&key_derive_key);
     if (sample_ret != SAMPLE_SUCCESS)

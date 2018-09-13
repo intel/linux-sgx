@@ -66,6 +66,7 @@ void waitForKeyPress()
     int temp;
     printf("\n\nHit a key....\n");
     temp = scanf_s("%c", &ch);
+    (void) temp;
 }
 
 uint32_t load_enclaves()
@@ -435,10 +436,7 @@ int _tmain(int argc, _TCHAR* argv[])
             }
         }
 
-#pragma warning (push)
-#pragma warning (disable : 4127)    
     }while(0);
-#pragma warning (pop)
 
     sgx_destroy_enclave(e1_enclave_id);
     sgx_destroy_enclave(e2_enclave_id);

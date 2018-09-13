@@ -204,16 +204,16 @@ ae_error_t get_pce_priv_key(
         goto ret_point; \
     }
 
-    ipp_status = newBN(reinterpret_cast<Ipp32u *>(hash_drg_output), HASH_DRBG_OUT_LEN, &bn_d);
+    ipp_status = sgx_ipp_newBN(reinterpret_cast<Ipp32u *>(hash_drg_output), HASH_DRBG_OUT_LEN, &bn_d);
     IPP_ERROR_TRANS(ipp_status);
-    ipp_status = newBN(reinterpret_cast<const Ipp32u *>(sgx_nistp256_r_m1), sizeof(sgx_nistp256_r_m1), &bn_m);//generate mod to be n-1 where n is order of ECC Group
+    ipp_status = sgx_ipp_newBN(reinterpret_cast<const Ipp32u *>(sgx_nistp256_r_m1), sizeof(sgx_nistp256_r_m1), &bn_m);//generate mod to be n-1 where n is order of ECC Group
     IPP_ERROR_TRANS(ipp_status);
-    ipp_status = newBN(NULL, sizeof(sgx_nistp256_r_m1), &bn_o);//alloc memory for output
+    ipp_status = sgx_ipp_newBN(NULL, sizeof(sgx_nistp256_r_m1), &bn_o);//alloc memory for output
     IPP_ERROR_TRANS(ipp_status);
     ipp_status = ippsMod_BN(bn_d, bn_m, bn_o);
     IPP_ERROR_TRANS(ipp_status);
     i=1;
-    ipp_status = newBN(&i, sizeof(uint32_t), &bn_one);//create big number 1
+    ipp_status = sgx_ipp_newBN(&i, sizeof(uint32_t), &bn_one);//create big number 1
     IPP_ERROR_TRANS(ipp_status);
 
     ipp_status = ippsAdd_BN(bn_o, bn_one, bn_o);//added by 1
@@ -224,16 +224,16 @@ ae_error_t get_pce_priv_key(
     IPP_ERROR_TRANS(ipp_status);
 ret_point:
     if(NULL!=bn_d){
-        secure_free_BN(bn_d, HASH_DRBG_OUT_LEN);
+        sgx_ipp_secure_free_BN(bn_d, HASH_DRBG_OUT_LEN);
     }
     if(NULL!=bn_m){
-        secure_free_BN(bn_m, sizeof(sgx_nistp256_r_m1));
+        sgx_ipp_secure_free_BN(bn_m, sizeof(sgx_nistp256_r_m1));
     }
     if(NULL!=bn_o){
-        secure_free_BN(bn_o, sizeof(sgx_nistp256_r_m1));
+        sgx_ipp_secure_free_BN(bn_o, sizeof(sgx_nistp256_r_m1));
     }
     if(NULL!=bn_one){
-        secure_free_BN(bn_one, sizeof(uint32_t));
+        sgx_ipp_secure_free_BN(bn_one, sizeof(uint32_t));
     }
     (void)memset_s(&key_tmp, sizeof(key_tmp), 0, sizeof(key_tmp));
     (void)memset_s(&hash_drg_output, sizeof(hash_drg_output), 0, sizeof(hash_drg_output));

@@ -47,9 +47,7 @@ INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux \
 		   -I$(LINUX_PSW_DIR)/ae/inc/internal
 
 SRC := $(wildcard *.cpp)
-SRC += ipp_bn.cpp                     \
-	   ipp_rsa_pub_key.cpp            \
-	   se_ecdsa_verify_internal.cpp   \
+SRC += se_ecdsa_verify_internal.cpp   \
 	   se_sig_rl.cpp                  \
 	   pve_qe_common.cpp 
 

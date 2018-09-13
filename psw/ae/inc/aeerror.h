@@ -273,6 +273,10 @@ typedef enum _ae_error_t{
     PSE_OP_ERROR_KDF_MISMATCH                =212,
 
     LE_WHITE_LIST_ALREADY_UPDATED            =213,
+
+    PCE_CRYPTO_ERROR                         =215,
+
+    PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE      =216,
 } ae_error_t;
 
 #define AE_FAILED(x)    (AE_SUCCESS != (x))

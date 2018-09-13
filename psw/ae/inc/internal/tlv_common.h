@@ -144,7 +144,9 @@ enum _se_protocol_response_status_t
     SE_PRS_PROVISIONING_ERROR,
     SE_PRS_INVALID_REQUEST,
     SE_PRS_PROV_ATTEST_KEY_NOT_FOUND,   
-    SE_PRS_INVALID_REPORT   
+    SE_PRS_INVALID_REPORT,
+    SE_PRS_PROV_ATTEST_KEY_REVOKED,
+    SE_PRS_PROV_ATTEST_KEY_TCB_OUT_OF_DATE
 };
 
 typedef uint16_t pse_protocol_response_status_t;

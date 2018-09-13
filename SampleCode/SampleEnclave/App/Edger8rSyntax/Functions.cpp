@@ -43,10 +43,6 @@ void edger8r_function_attributes(void)
 {
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
-    ret = ecall_function_calling_convs(global_eid);
-    if (ret != SGX_SUCCESS)
-        abort();
-    
     ret = ecall_function_public(global_eid);
     if (ret != SGX_SUCCESS)
         abort();

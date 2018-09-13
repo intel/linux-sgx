@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 __attribute__((visibility("default")))
-const char * sgx_ukey_exchange_version = SGX_UKEY_EXCHANGE_VERSION_STR;
+char sgx_ukey_exchange_version[] = SGX_UKEY_EXCHANGE_VERSION_STR;
 
 #ifdef __cplusplus
 }

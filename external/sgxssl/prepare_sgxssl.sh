@@ -43,14 +43,15 @@ full_openssl_url_old=$server_url_path/old/1.1.0/$openssl_ver_name.tar.gz
 
 sgxssl_chksum=e2ad431ef7ef1377d1d91266ac95e1dd2e83b2491e91bbb5460e8b043a169ab7
 openssl_chksum=5835626cde9e99656585fc7aaa2302a73a7e1340bf8c14fd635a62c66802a517
+rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
 	wget $sgxssl_github_archive/$sgxssl_ver_name.zip -P $top_dir || exit 1
 	sha256sum $top_dir/$sgxssl_ver_name.zip > check_sum_sgxssl.txt
 	grep $sgxssl_chksum check_sum_sgxssl.txt
 	if [ $? -ne 0 ]; then 
-		echo "File $top_dir/$sgxssl_ver_name.zip checksum failure"
-		rm -f $top_dir/$sgxssl_ver_name.zip check_sum_sgxssl.txt
-		exit -1
+    	echo "File $top_dir/$sgxssl_ver_name.zip checksum failure"
+        rm -f $top_dir/$sgxssl_ver_name.zip
+    	exit -1
 	fi
 	unzip -qq $top_dir/$sgxssl_ver_name.zip -d $top_dir || exit 1
 	mv $top_dir/intel-sgx-ssl-$sgxssl_ver/* $top_dir || exit 1
@@ -62,13 +63,12 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 	wget $full_openssl_url_old -P $openssl_out_dir || wget $full_openssl_url -P $openssl_out_dir || exit 1
 	sha256sum $openssl_out_dir/$openssl_ver_name.tar.gz > check_sum_openssl.txt
 	grep $openssl_chksum check_sum_openssl.txt
-	if [ $? -ne 0 ]; then
-		echo "File $openssl_out_dir/$openssl_ver_name.tar.gz checksum failure"
-		rm -f $openssl_out_dir/$openssl_ver_name.tar.gz check_sum_openssl.txt
-		exit -1 
+	if [ $? -ne 0 ]; then 
+    	echo "File $openssl_out_dir/$openssl_ver_name.tar.gz checksum failure"
+        rm -f $openssl_out_dir/$openssl_ver_name.tar.gz
+    	exit -1
 	fi
 fi
-rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 
 pushd $top_dir/Linux/
 make clean all LINUX_SGX_BUILD=1

@@ -877,7 +877,7 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     }
 
     // append 2_0 metadata
-    memcpy(metadata2, metadata, metadata->size);
+    memcpy_s(metadata2, metadata->size, metadata, metadata->size);
     metadata2->version = META_DATA_MAKE_VERSION(SGX_2_0_MAJOR_VERSION,SGX_2_0_MINOR_VERSION);
     if (!append_compatible_metadata(metadata2, metadata))
     {
@@ -889,69 +889,46 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     metadata2->version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
     layout_t *start = GET_PTR(layout_t, metadata2, metadata2->dirs[DIR_LAYOUT].offset);
     layout_t *end = GET_PTR(layout_t, start, metadata2->dirs[DIR_LAYOUT].size);
-    layout_t tmp_layout, *first_dyn_entry = NULL, *first = NULL, *utility_td = NULL;
+    layout_t tmp_layout;
+    layout_t *ut_start = NULL, *ut_end = NULL, *after_ut = NULL;
     uint32_t size_to_reduce = 0;
     bool ret = false;
 
+    // locate utility thread start and end entries
     for (layout_t *l = start; l < end; l++)
     {
-        if ((l->entry.id == LAYOUT_ID_STACK_DYN_MAX) ||
-            (l->entry.id == LAYOUT_ID_STACK_DYN_MIN))
-        {
-            first_dyn_entry = l;
+        if (ut_start != NULL && ut_end != NULL)
             break;
+
+        if ((ut_start == NULL) && (l->entry.id == LAYOUT_ID_GUARD))
+        {
+            ut_start = l;
+            continue;
+        }
+        if ((ut_end == NULL) && (l->entry.id == LAYOUT_ID_TD))
+        {
+            ut_end = l;
+            continue;
         }
     }
 
-    // no dynamic layout, append the metadata directly
-    if (first_dyn_entry == NULL)
-    {
-        ret = append_compatible_metadata(metadata2, metadata);
-        free(metadata2);
-        return ret;
-    }
-
-    //sizeof(layout_t) for the guard page before LAYOUT_ID_STACK_DYN_MAX
-    size_to_reduce = (uint32_t)((size_t)end - (size_t)first_dyn_entry + sizeof(layout_t));
-
-    layout_t *last = &first_dyn_entry[-2];
-
-    for (layout_t *l = start; l <= last; l++)
-    {
-        if (l->entry.id == LAYOUT_ID_TD)
-        {
-            utility_td = l;
-            break;
-        }
-    }
-    assert(utility_td != NULL);
-
-    //Besides dynamic threads, there's only a single utility thread
-    if (utility_td == last)
-    {
-        metadata_cleanup(metadata2, size_to_reduce);
-        ret = append_compatible_metadata(metadata2, metadata);
-        free(metadata2);
-        return ret;
-    }
-
-    layout_t *utility_start = NULL;
-    for (layout_t *l = start; l <= last; l++)
-    {
-        if (l->entry.id == LAYOUT_ID_GUARD)
-        {
-            utility_start = l;
-            break;
-        }
-    }
-    assert(utility_start != NULL);
+    assert((ut_start != NULL) && (ut_end != NULL) && ((size_t)ut_end > (size_t)ut_start));
 
     // entry/group layout if they all exist:
     // utility thread | minpool thread | minpool group | eremove thread | eremove group | dyn thread | dyn group
 
+    // there is only an utility thread in layout table
+    if (&ut_end[1] == end)
+    {
+        metadata_cleanup(metadata2, 0);
+        ret = append_compatible_metadata(metadata2, metadata);
+        free(metadata2);
+        return ret;
+    }
+
     // build a group layout to represent all the possible minpool/eremoved layouts
-    first = &utility_td[1];
-    uint16_t num_of_entries = (uint16_t)(first - utility_start);
+    after_ut = &ut_end[1];
+    uint16_t num_of_entries = (uint16_t)(after_ut - ut_start);
 
     memset(&tmp_layout, 0, sizeof(tmp_layout));
     tmp_layout.group.id = LAYOUT_ID_THREAD_GROUP;
@@ -959,11 +936,11 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     tmp_layout.group.load_times = (uint32_t)parameter[TCSNUM].value - 1;
     for (uint32_t i = 0; i < tmp_layout.group.entry_count; i++)
     {
-        tmp_layout.group.load_step += (((uint64_t)utility_start[i].entry.page_count) << SE_PAGE_SHIFT);
+        tmp_layout.group.load_step += (((uint64_t)ut_start[i].entry.page_count) << SE_PAGE_SHIFT);
     }
 
-    memcpy_s(first, sizeof(layout_t), &tmp_layout, sizeof(layout_t));
-    size_to_reduce += (uint32_t)((size_t)last - (size_t)first);
+    memcpy_s(after_ut, sizeof(layout_t), &tmp_layout, sizeof(layout_t));
+    size_to_reduce = (uint32_t)((size_t)end - (size_t)(&after_ut[1]));
     metadata_cleanup(metadata2, size_to_reduce);
     ret = append_compatible_metadata(metadata2, metadata);
     free(metadata2);

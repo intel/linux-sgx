@@ -30,37 +30,19 @@
  */
 
 
-#ifndef _SGX_TCRYPTO_COMMON_H_
-#define _SGX_TCRYPTO_COMMON_H_
+#include "enclave_entry.h"
 
-#include "ippcp.h"
-#include "sgx_trts.h"
-#include "sgx_tcrypto.h"
-#include "util.h"
-#include "stdlib.h"
-#include "string.h"
+.text
+    .global sgx_get_token
+sgx_get_token:
+    EENTER_PROLOG
 
-#ifndef ERROR_BREAK
-#define ERROR_BREAK(x)  if(x != ippStsNoErr){break;}
-#endif
-#ifndef SAFE_FREE
-#define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
-#endif
+    mov $0x2, %rax
+    mov %rsi, %rbx
+    mov frame_arg0, %rdi
+    lea_pic sgx_async_exit, %rcx
+sgx_async_exit:
+    enclu
 
-#define RSA_SEED_SIZE_SHA256 32
-
-IppStatus sgx_ipp_newBN(const Ipp32u *p_data, int size_in_bytes, IppsBigNumState **p_new_BN);
-void sgx_ipp_secure_free_BN(IppsBigNumState *pBN, int size_in_bytes);
-IppStatus IPP_STDCALL sgx_ipp_DRNGen(Ipp32u* pRandBNU, int nBits, void* pCtx);
-
-IppStatus sgx_ipp_newPrimeGen(int nMaxBits, IppsPrimeState ** pPrimeG);
-
-
-static inline IppStatus check_copy_size(size_t target_size, size_t source_size)
-{
-    if(target_size < source_size)
-        return ippStsSizeErr;
-    return ippStsNoErr;
-}
-
-#endif
+    EENTER_EPILOG
+    ret

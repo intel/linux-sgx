@@ -294,11 +294,10 @@ _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xd
     // By simulator convention, XDX contains XBP and XCX contains XSP.
 
     enclu_regs_t regs;
-    // when the code jump back to the ip after EENTER, the simulation code unwind the stack
-    // by adding 6*sizeof(uintptr_t), so we substract it in advance.
-    regs.xsp = xcx - 6 * sizeof(uintptr_t);
-    regs.xbp = xdx;
-    regs.xip = dest;
+    regs.xsp = xcx;   // xcx = xsp = ssa.rsp_u
+    regs.xbp = xdx;   // xdx = xbp = ssa.rbp_u
+    regs.xip = dest;  // dest= xbx = xcx on EENTER = return address
+    // For the value of ssa.rsp_u, ssa.rbp_u, and return address, see _EENTER in u_instruction.cpp
 
     tcs_t *tcs = GET_TCS_PTR(xdx);
     GP_ON(tcs == NULL);
@@ -318,6 +317,14 @@ _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xd
     regs.xdi = xdi;
 
     load_regs(&regs);
+
+    // jump back to the instruction after the call to _SE3
+    // common/inc/internal/linux/linux-regs.h:
+    //    call    _SE3
+    //  ---------------------------> jump here
+    // #   ifdef LINUX32
+    //     add     $(SE_WORDSIZE * 6), %esp
+    // #   endif
 
     // Never returns.....
 }

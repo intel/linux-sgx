@@ -32,7 +32,7 @@
 
 
 
-#include "sgx_tcrypto_common.h"
+#include "ipp_wrapper.h"
 #include "sgx_ecc256_internal.h"
 
 

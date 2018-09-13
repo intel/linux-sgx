@@ -47,6 +47,7 @@ VTUNE_DIR = $(LINUX_EXTERNAL_DIR)/vtune/linux
 INC += -I$(COMMON_DIR)/inc                \
        -I$(COMMON_DIR)/inc/internal       \
        -I$(COMMON_DIR)/inc/internal/linux \
+       -I$(LINUX_PSW_DIR)/enclave_common  \
        -I$(LINUX_PSW_DIR)/urts/           \
        -I$(LINUX_PSW_DIR)/urts/linux      \
        -I$(LINUX_PSW_DIR)/urts/parser     \
@@ -54,7 +55,7 @@ INC += -I$(COMMON_DIR)/inc                \
        -I$(VTUNE_DIR)/sdk/src/ittnotify 
 
 LDFLAGS := -lwrapper
-LDFLAGS += $(COMMON_LDFLAGS) -Wl,-Bdynamic -lsgx_uae_service
+LDFLAGS += $(COMMON_LDFLAGS) -Wl,-Bdynamic -lsgx_enclave_common
 LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
 LDFLAGS += -Wl,--version-script=urts.lds -Wl,--gc-sections
 
@@ -108,10 +109,11 @@ INTERNAL_OBJ := $(OBJ3) $(CPP_OBJ)
 vpath %.cpp $(DIR1):$(DIR2):$(DIR3):$(DIR4)
 vpath %.S   $(DIR1):$(DIR5)
 
-LIBWRAPPER       := libwrapper.a
-LIBURTS          := libsgx_urts.so
-LIBURTS_INTERNAL := liburts_internal.a
-LIBURTS_DEBUG    := libsgx_urts.so.debug
+LIBWRAPPER            := libwrapper.a
+LIBSGX_ENCLAVE_COMMON := libsgx_enclave_common.a
+LIBURTS               := libsgx_urts.so
+LIBURTS_INTERNAL      := liburts_internal.a
+LIBURTS_DEBUG	      := libsgx_urts.so.debug
 
 # untrusted switchless settings
 USWITCHLESS_NAME := uswitchless
@@ -127,17 +129,20 @@ ifndef DEBUG
 	@$(CP) $(LIBURTS_DEBUG)    $|
 endif
 
-$(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER)
+$(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) $(LIBUSWITCHLESS)
 	$(CP) $(COMMON_DIR)/se_wrapper/libwrapper.a $@
-	$(AR) rcs $@ $(INTERNAL_OBJ)
 	$(MKDIR) ./.switchless_tmp
 	$(RM) ./.switchless_tmp/*
 	cd ./.switchless_tmp && \
 	$(AR) x $(LIBUSWITCHLESS)
-	$(AR) rcs $@ ./.switchless_tmp/*.o
-	$(RM) -rf ./.switchless_tmp
+	@$(MKDIR) $(BUILD_DIR)/.sgx_enclave_common
+	@$(RM) -f $(BUILD_DIR)/.sgx_enclave_common/*
+	cd $(BUILD_DIR)/.sgx_enclave_common && $(AR) x $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON)
+	$(AR) rcs $@ $(INTERNAL_OBJ) ./.switchless_tmp/*.o $(BUILD_DIR)/.sgx_enclave_common/*.o
+	@$(RM) -rf ./.switchless_tmp
+	@$(RM) -rf $(BUILD_DIR)/.sgx_enclave_common
 
-$(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) uae_service ittnotify
+$(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) $(LIBUSWITCHLESS) ittnotify
 	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@ $(LIB) -o $@  $(URTS_OBJ) $(LDFLAGS)
 
 $(LIBURTS_DEBUG): $(LIBURTS)
@@ -157,9 +162,11 @@ $(OBJ3): %.o: %.S
 $(LIBWRAPPER):
 	$(MAKE) -C $(COMMON_DIR)/se_wrapper/
 
-.PHONY:uae_service
-uae_service:
-	$(MAKE) -C $(LINUX_PSW_DIR)/uae_service/linux
+$(LIBSGX_ENCLAVE_COMMON):
+	$(MAKE) -C $(LINUX_PSW_DIR)/enclave_common/
+
+$(LIBUSWITCHLESS):
+	$(MAKE) -C $(LINUX_PSW_DIR)/uswitchless/
 
 .PHONY: ittnotify
 ittnotify:
@@ -174,5 +181,6 @@ clean::
 	@$(RM) $(BUILD_DIR)/$(LIBURTS) $(BUILD_DIR)/$(LIBURTS_INTERNAL)
 	@$(RM) $(LIBURTS).orig $(BUILD_DIR)/$(LIBURTS_DEBUG)
 	$(MAKE) -C $(COMMON_DIR)/se_wrapper/                   clean
-	$(MAKE) -C $(LINUX_PSW_DIR)/uae_service/linux/         clean
+	$(MAKE) -C $(LINUX_PSW_DIR)/enclave_common/            clean
+	$(MAKE) -C $(LINUX_PSW_DIR)/uswitchless/               clean
 	$(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify              clean

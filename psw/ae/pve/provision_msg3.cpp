@@ -468,8 +468,8 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
         le_n[i]=pek.n[sizeof(pek.n)/sizeof(pek.n[0])-i-1];
     }
 
-    ipp_status = create_rsa_pub_key(sizeof(pek.n), sizeof(pek.e),
-        reinterpret_cast<const Ipp32u *>(le_n), &le_e, &pub_key);
+    ipp_status = sgx_create_rsa_pub_key(sizeof(pek.n), sizeof(pek.e),
+        reinterpret_cast<const unsigned char *>(le_n), reinterpret_cast<const unsigned char *>(&le_e), reinterpret_cast<void **>(&pub_key));
     if(ippStsNoErr != ipp_status){
         ret = ipp_error_to_pve_error(ipp_status);
         goto ret_point;

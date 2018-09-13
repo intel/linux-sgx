@@ -96,7 +96,7 @@
 
 // error message for fill_enclave_css()
 #define UNSIGNED_FILE_ERROR                 "The unsigned file \"%s\" is not correct.\n"
-#define UNSIGNED_FILE_XML_MISMATCH          "The unsigned file content doesn't match the configuration file.\n"
+#define UNSIGNED_FILE_XML_MISMATCH          "The unsigned file content doesn't match the configuration file (if provided) or the internal configuration defaults.\n"
 
 // error message for create_signature()
 #define SIG_FILE_ERROR                      "The signature file \"%s\" is not correct.\n"

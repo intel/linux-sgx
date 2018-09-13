@@ -88,6 +88,7 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
 
 int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t debug_flag)
 {
+    UNUSED(lc);
     sgx_attributes_t *required_attr = &metadata->attributes;
     enclave_css_t *enclave_css = &metadata->enclave_css;
     sgx_attributes_t *secs_attr = &sgx_misc_attr->secs_attr;
@@ -149,32 +150,6 @@ int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
 
     // try to use maximum ablity of cpu
     sgx_misc_attr->misc_select = se_cap.misc_select & enclave_css->body.misc_select;
-
-    if(lc != NULL)
-    {
-        // Read launch token from lc
-        sgx_launch_token_t token;
-        memset(&token, 0, sizeof(token));
-        if(lc->get_launch_token(&token) != SGX_SUCCESS)
-            return SGX_ERROR_UNEXPECTED;
-        token_t *launch = (token_t *)token;
-        if(1 == launch->body.valid)
-        {
-            //debug launch enclave cannot launch production enclave
-            if( !(secs_attr->flags & SGX_FLAGS_DEBUG)
-                    && (launch->attributes_le.flags & SGX_FLAGS_DEBUG) )
-            {
-                SE_TRACE(SE_TRACE_WARNING, "secs attributes is non-debug, \n");
-                return SE_ERROR_INVALID_LAUNCH_TOKEN;
-            }
-            //verify attributes in lictoken are the same as the enclave
-            if(memcmp(&launch->body.attributes, secs_attr, sizeof(sgx_attributes_t)))
-            {
-                SE_TRACE(SE_TRACE_WARNING, "secs attributes does NOT match launch token attributes\n");
-                return SGX_ERROR_INVALID_ATTRIBUTE;
-            }
-        }
-    }
 
     return SGX_SUCCESS;
 }

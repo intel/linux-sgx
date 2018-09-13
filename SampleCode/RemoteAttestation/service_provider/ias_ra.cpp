@@ -104,7 +104,7 @@ static sample_spid_t g_sim_spid = {"Service X"};
 // @return int
 
 int ias_verify_attestation_evidence(
-    sample_quote_t *p_isv_quote,
+    const sample_quote_t *p_isv_quote,
     uint8_t* pse_manifest,
     ias_att_report_t* p_attestation_verification_report)
 {

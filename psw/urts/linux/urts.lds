@@ -11,7 +11,6 @@
         sgx_thread_set_multiple_untrusted_events_ocall;
         sgx_oc_cpuidex;
         sgx_create_encrypted_enclave;
-        __sgx_create_enclave_ex;
         sl_uswitchless_new;
         sl_uswitchless_free;
         sl_uswitchless_init_workers;

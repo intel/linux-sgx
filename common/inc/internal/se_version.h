@@ -28,6 +28,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#define STRFILEVER    "2.2.100.45311"
+#define STRFILEVER    "2.3.100.46354"
 #define COPYRIGHT      "Copyright (C) 2018 Intel Corporation"
 
+#define URTS_VERSION              "1.0.101.0"
+#define ENCLAVE_COMMON_VERSION    "1.0.101.0"

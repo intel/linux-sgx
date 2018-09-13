@@ -30,7 +30,7 @@
  */
 
 
-#include "sgx_tcrypto_common.h"
+#include "ipp_wrapper.h"
 
 
 const uint32_t sgx_nistp256_r[] = {

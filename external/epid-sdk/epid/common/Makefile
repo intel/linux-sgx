@@ -18,14 +18,14 @@ COMMON_MATH_INCLUDE_DIR = ./math
 COMMON_SRC =  $(wildcard ./src/*.c)
 COMMON_SRC +=  $(wildcard ./math/src/*.c)
 COMMON_SRC +=  $(wildcard ./1.1/src/*.c)
-COMMON_OBJ = $(COMMON_SRC:.c=.o)
+COMMON_OBJ = $(sort $(COMMON_SRC:.c=.o))
 COMMON_LIB = ./libcommon.a
 
 COMMON_UTEST_EXE = ./common-utest$(EXE_EXTENSION)
 COMMON_UTEST_SRC = $(wildcard ./math/unittests/*.cc)
 COMMON_UTEST_SRC += $(wildcard ./unittests/*.cc)
 COMMON_UTEST_SRC += $(wildcard ./1.1/unittests/*.cc)
-COMMON_UTEST_OBJ = $(COMMON_UTEST_SRC:.cc=.o)
+COMMON_UTEST_OBJ = $(sort $(COMMON_UTEST_SRC:.cc=.o))
 LIB_COMMON_DIR = .
 LIB_COMMON_TESTHELPER_DIR = ../common-testhelper
 LIB_IPPCP_DIR = ../../ext/ipp/sources/ippcp/src

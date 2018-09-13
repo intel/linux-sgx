@@ -1,0 +1,8 @@
+ECL_VERSION="1.0"
+TARBALL_NAME=libsgx-enclave-common_1.0.orig.tar.gz
+
+ECL_PACKAGES_PATH=/opt/intel
+ECL_PKG_NAME=libsgx-enclave-common
+
+LIB_DIR=lib
+BIN_DIR="bin/x86"

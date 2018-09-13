@@ -139,7 +139,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
 
     //verify the report data is SHA256(crypto_suite||public_key)||0-padding
     if(memcmp(hash_buf, &report->body.report_data, sizeof(report->body.report_data))!=0){
-        return AE_INVALID_PARAMETER;
+        return PCE_CRYPTO_ERROR;
     }
 
     ppid_t ppid_buf;
@@ -169,16 +169,16 @@ uint32_t get_pc_info(const sgx_report_t* report,
         le_n[i] = *(public_key + RSA_MOD_SIZE - 1 - i);//create little endian n
     }
 
-    ipp_ret = create_rsa_pub_key(RSA_MOD_SIZE, RSA_E_SIZE,
-        reinterpret_cast<const Ipp32u *>(le_n),
-        &little_endian_e,
-        &pub_key);
+    sgx_ret = sgx_create_rsa_pub_key(RSA_MOD_SIZE, RSA_E_SIZE,
+        reinterpret_cast<const unsigned char *>(le_n),
+        reinterpret_cast<const unsigned char *>(&little_endian_e),
+        reinterpret_cast<void **>(&pub_key));
     free(le_n);
-    if (ippStsMemAllocErr == ipp_ret){
+    if (SGX_ERROR_OUT_OF_MEMORY == sgx_ret){
         ae_ret = AE_OUT_OF_MEMORY_ERROR;
         goto RETURN_POINT;
     }
-    else if(ippStsNoErr != ipp_ret){//possible invalid rsa public key
+    else if(SGX_SUCCESS != sgx_ret){//possible invalid rsa public key
         ae_ret = AE_FAILURE;
         goto RETURN_POINT;
     }

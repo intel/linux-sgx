@@ -41,10 +41,10 @@
 SE_DECLSPEC_EXPORT size_t g_peak_heap_used = 0;
 /* Please be aware of: sbrk is not thread safe by default. */
 
-static void *heap_base = NULL;
-static size_t heap_size = 0;
-static int is_edmm_supported = 0;
-static size_t heap_min_size = 0;
+static void *heap_base __attribute__((section(RELRO_SECTION_NAME))) = NULL;
+static size_t heap_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
+static int is_edmm_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
+static size_t heap_min_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 int heap_init(void *_heap_base, size_t _heap_size, size_t _heap_min_size, int _is_edmm_supported)
 {

@@ -184,8 +184,9 @@ void ecall_pointer_size(void *ptr, size_t len)
 /* ecall_pointer_count:
  *   'cnt' needs to be specified to tell Edger8r the number of elements in 'arr'.
  */
-void ecall_pointer_count(int *arr, int cnt)
+void ecall_pointer_count(int *arr, size_t count)
 {
+    int cnt = (int) count;
     for (int i = (cnt - 1); i >= 0; i--)
         arr[i] = (cnt - 1 - i);
 }

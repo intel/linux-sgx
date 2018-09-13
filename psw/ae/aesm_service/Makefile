@@ -155,8 +155,6 @@ COMMON_SRC := ./source/le/LEClass.cpp                  \
               aesm_logic.cpp  \
               ./source/oal/oal_power.cpp \
               aesm_rand.cpp \
-              ipp_bn.cpp       \
-              ipp_rsa_pub_key.cpp \
               ./source/oal/error_report.cpp \
               ./source/oal/internal_log.cpp \
               sgx_memset_s.cpp \
@@ -320,7 +318,7 @@ sqlite3.o :sqlite3.c
 	$(CC) $(SQLITECFLAGS) $(INCLUDE) -c $< -o $@
 
 $(APPNAME): $(OBJ) $(LIBNAME) sgx_tcrypto -lrdrand urts
-	$(CXX) $(CXXFLAGS) $(OBJ) $(LIBNAME) $(LDUFLAGS) $(EXTERNAL_LIB)   -o $@ -ldl
+	$(CXX) $(CXXFLAGS) $(OBJ) $(LIBNAME) $(LDUFLAGS) $(EXTERNAL_LIB) sgx_memset_s.o -o $@ -ldl
 
 $(APPNAME_DEBUG): $(APPNAME)
 ifndef DEBUG

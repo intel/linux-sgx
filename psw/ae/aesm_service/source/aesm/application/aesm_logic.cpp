@@ -270,6 +270,12 @@ void AESMLogic::service_stop()
     }
     (void)aesm_free_thread(pse_thread);//release thread handle to free memory
 
+    ae_ret = aesm_wait_thread(CPSEClass::instance().icls_thread, &thread_ret, AESM_STOP_TIMEOUT);
+    if (ae_ret != AE_SUCCESS || thread_ret != AE_SUCCESS)
+    {
+        AESM_DBG_INFO("aesm_wait_thread failed(icls_thread):(ae %d) (%d)", ae_ret, thread_ret);
+    }
+    (void)aesm_free_thread(CPSEClass::instance().icls_thread);//release thread handle to free memory
     //waiting for pending threads util timeout
     stop_all_long_lived_threads(0);//waiting for pending threads util timeout
     CPVEClass::instance().unload_enclave();
@@ -599,6 +605,22 @@ ae_error_t AESMLogic::set_psvn(uint16_t prod_id, uint16_t isv_svn, sgx_cpu_svn_t
     return AE_SUCCESS;
 }
 
+
+ae_error_t AESMLogic::set_mrenclave(const sgx_measurement_t& mrenclave, uint32_t mrsigner_index, uint16_t isv_prod_id, const sgx_attributes_t* attributes)
+{
+    if(mrsigner_index==PCE_MR_SIGNER){
+        ae_error_t ret = CPCEClass::instance().set_mrenclave(mrenclave);
+        return ret;
+    }
+    else if (isv_prod_id == QE_PROD_ID && (attributes->flags & SGX_FLAGS_PROVISION_KEY) == 0) {
+	// this is QE
+        ae_error_t ret = CQEClass::instance().set_mrenclave(mrenclave);
+        return ret;
+    }
+    //only cache MRENCLAVE of PCE
+    return AE_SUCCESS;
+}
+
 sgx_status_t AESMLogic::get_launch_token(const enclave_css_t* signature,
                                          const sgx_attributes_t* attribute,
                                          sgx_launch_token_t* launch_token)
@@ -676,6 +698,11 @@ sgx_status_t AESMLogic::get_launch_token(const enclave_css_t* signature,
         return SGX_ERROR_UNEXPECTED;
     }
 
+    ret_le = set_mrenclave(signature->body.enclave_hash, mrsigner_index, signature->body.isv_prod_id, attribute);
+    if(AE_SUCCESS != ret_le) {
+        AESM_DBG_ERROR("fail to save mrenclave:(ae%d)", ret_le);
+        return SGX_ERROR_UNEXPECTED;
+    }
     return SGX_SUCCESS;
 }
 
@@ -704,6 +731,9 @@ aesm_error_t AESMLogic::create_session(
     }
     else
         psStatus = PlatformInfoLogic::create_session_pre_internal();
+    if (AE_SUCCESS != psStatus) {
+        AESM_DBG_ERROR("psStatus = 0x%X in create_session", psStatus);
+    }
     if (OAL_THREAD_TIMEOUT_ERROR == psStatus){
         AESM_DBG_INFO("AESM is busy in intializing for pse");
         return AESM_BUSY;
@@ -720,11 +750,28 @@ aesm_error_t AESMLogic::create_session(
         AESM_DBG_INFO("PSW software update required");
         return AESM_UPDATE_AVAILABLE;
     }
-    if(AESM_AE_OUT_OF_EPC == psStatus)
-        return AESM_OUT_OF_EPC;   
+    if (AESM_AE_OUT_OF_EPC == psStatus){
+        AESM_DBG_INFO("AE out of EPC");
+        return AESM_OUT_OF_EPC;
+    }
+    if (OAL_NETWORK_UNAVAILABLE_ERROR == psStatus){
+        AESM_DBG_INFO("Network is unavailable");
+        return AESM_NETWORK_ERROR;
+    }
+    if (AESM_PSDA_PLATFORM_KEYS_REVOKED == psStatus) {
+        AESM_DBG_INFO("This platform was revoked");
+        return AESM_EPID_REVOKED_ERROR;
+    }
+
+    if (PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE == psStatus) {
+        AESM_DBG_INFO("TCB out of date reported by Provisioning backend");
+        return AESM_UPDATE_AVAILABLE;
+    }
+	
     if (AE_SUCCESS != psStatus) {
         AESM_DBG_ERROR("psStatus = 0x%X in create_session", psStatus);
     }
+
     return PSEOPAESMLogic::create_session(session_id, se_dh_msg1, se_dh_msg1_size);
 }
 

@@ -121,13 +121,19 @@ UINT32 X509Parser::ParseGroupCertificate
 
         uint8_t gidArray[sizeof(GroupId)] = {0};
         if (certificateFields->serialNumber.length > sizeof(gidArray))
+        {
+            status = X509_GENERAL_ERROR;
             break;
+        }
 
         int index = static_cast<int>(sizeof(gidArray)-certificateFields->serialNumber.length);
         memcpy(&gidArray[index], certificateFields->serialNumber.buffer, certificateFields->serialNumber.length);
 
         if(certificateFields->algorithmIdentifierForSubjectPublicKey != X509_intel_sigma_epidGroupPublicKey_epid11)//Only Epid Group Public Key Epid1.1 are permitted to be subject key
+        {
+            status = X509_GENERAL_ERROR;
             break;
+        }
 
         SessMgrEpidGroupPublicKey* EpidKey = (SessMgrEpidGroupPublicKey*)certificateFields->subjectPublicKey.buffer;
 

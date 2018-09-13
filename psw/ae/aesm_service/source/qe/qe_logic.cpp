@@ -136,6 +136,17 @@ aesm_error_t QEAESMLogic::init_quote(
             aesm_result = AESM_UNEXPECTED_ERROR;
         goto ret_point;
     }
+    if (epid_data.cur_pi.pve_svn == 4) { // Detect the EPID blob is provisioned by PSW 1.6
+        sgx_sealed_data_t *sealed_epid = reinterpret_cast<sgx_sealed_data_t *>(epid_data.trusted_epid_blob);
+        uint32_t plain_text_offset = sealed_epid->plain_text_offset;
+        se_plaintext_epid_data_sdk_t* plain_text_sdk = reinterpret_cast<se_plaintext_epid_data_sdk_t*>(epid_data.trusted_epid_blob + sizeof(sgx_sealed_data_t) + plain_text_offset);
+        if(plain_text_sdk->epid_key_version == EPID_KEY_BLOB_VERSION_SDK){ // Detect the EPID blob has been converted into SDK format, which is problematic
+            (void)epid_blob.remove();
+            if (AESM_SUCCESS != (aesm_result = try_reprovision_if_not(updated, epid_data))) {
+                goto ret_point;
+            }
+        }
+    }
     se_static_assert(SGX_TRUSTED_EPID_BLOB_SIZE_SDK>=SGX_TRUSTED_EPID_BLOB_SIZE_SIK);
     ae_ret = static_cast<ae_error_t>(CQEClass::instance().verify_blob(epid_data.trusted_epid_blob,
         SGX_TRUSTED_EPID_BLOB_SIZE_SDK,

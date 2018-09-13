@@ -275,6 +275,7 @@ aesm_error_t PvEAESMLogic::pve_error_postprocess(ae_error_t ae_error)
     case AE_OUT_OF_MEMORY_ERROR:
         return AESM_OUT_OF_MEMORY_ERROR;
     case PSW_UPDATE_REQUIRED:
+    case PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE:
         return AESM_UPDATE_AVAILABLE;
     case AESM_AE_OUT_OF_EPC:
         return AESM_OUT_OF_EPC;

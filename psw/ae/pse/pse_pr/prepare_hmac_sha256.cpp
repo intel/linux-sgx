@@ -30,13 +30,13 @@
  */
 
 #include "prepare_hmac_sha256.h"
+#include "sgx_memset_s.h"
 #include <stdlib.h>
 
 
 PrepareHMACSHA256::PrepareHMACSHA256(const Ipp8u* key, size_t keyLength)
-    : m_ippstatus(ippStsNoErr), m_pCtx(0)
+    : m_ippstatus(ippStsNoErr), m_pCtx(0), m_nSizeCtx(0)
 {
-    int size;
 
     do
     {
@@ -46,11 +46,11 @@ PrepareHMACSHA256::PrepareHMACSHA256(const Ipp8u* key, size_t keyLength)
             break;
         }
 
-        m_ippstatus = ippsHMAC_GetSize(&size);
+        m_ippstatus = ippsHMAC_GetSize(&m_nSizeCtx);
         if (m_ippstatus != ippStsNoErr)
             break;
 
-        m_pCtx = (IppsHMACState*) malloc(size);
+        m_pCtx = (IppsHMACState*) malloc(m_nSizeCtx);
         if (NULL == m_pCtx)
         {
             m_ippstatus = ippStsNoMemErr;
@@ -67,6 +67,8 @@ PrepareHMACSHA256::PrepareHMACSHA256(const Ipp8u* key, size_t keyLength)
         m_ippstatus = ippsHMAC_Init(key, (int)keyLength, m_pCtx, IPP_ALG_HASH_SHA256);
         if (m_ippstatus != ippStsNoErr)
         {
+            // clear secret for defense-in-depth
+            memset_s(m_pCtx, m_nSizeCtx, 0, m_nSizeCtx);
             free(m_pCtx);
 			m_pCtx = NULL;
             break;
@@ -77,6 +79,8 @@ PrepareHMACSHA256::PrepareHMACSHA256(const Ipp8u* key, size_t keyLength)
 PrepareHMACSHA256::~PrepareHMACSHA256(void)
 {
     if (m_pCtx) {
+        // clear secret for defense-in-depth
+        memset_s(m_pCtx, m_nSizeCtx, 0, m_nSizeCtx);
         free(m_pCtx);
 		m_pCtx = NULL;
 	}

@@ -51,16 +51,16 @@
 #include "se_memcpy.h"
 
 // The global cpu feature bits from uRTS
-uint64_t g_cpu_feature_indicator = 0;
-int EDMM_supported = 0;
-sdk_version_t g_sdk_version = SDK_VERSION_1_5;
+uint64_t g_cpu_feature_indicator __attribute__((section(RELRO_SECTION_NAME))) = 0;
+int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
+sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
 
 const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 
 extern "C" {
-uintptr_t __stack_chk_guard = 0;
+uintptr_t __stack_chk_guard __attribute__((section(RELRO_SECTION_NAME)))= 0;
 #define __weak_alias(alias,sym)                 \
     __asm__(".weak " __STRING(alias) " ; "      \
         __STRING(alias) " = " __STRING(sym))

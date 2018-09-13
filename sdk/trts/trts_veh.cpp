@@ -309,10 +309,10 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     uintptr_t sp, *new_sp = NULL;
     size_t size = 0;
 
-    if (tcs == NULL) goto default_handler;
+    if ((thread_data == NULL) || (tcs == NULL)) goto default_handler;
     if (check_static_stack_canary(tcs) != 0)
         goto default_handler;
-    
+ 
     if(get_enclave_state() != ENCLAVE_INIT_DONE)
     {
         goto default_handler;

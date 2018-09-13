@@ -468,10 +468,6 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_misc_attribute_t
     if(SGX_SUCCESS == ret)
     {
         SE_TRACE(SE_TRACE_NOTICE, "enclave start address = %p, size = 0x%llx\n", m_start_addr, m_metadata->enclave_size);
-        if(enclave_creator->use_se_hw() == true)
-        {
-            set_memory_protection(false);
-        }
     }
     return ret;
 }
@@ -526,6 +522,10 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
         goto fail;
     }
 
+    if(get_enclave_creator()->use_se_hw() == true)
+    {
+        set_memory_protection(false);
+    }
 
     return SGX_SUCCESS;
 

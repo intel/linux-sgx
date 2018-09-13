@@ -100,6 +100,7 @@ typedef enum {
     SGX_ADMIN_EVENT_EPID_PROV_FAIL_REVOKED,
     SGX_ADMIN_EVENT_PS_RESOURCE_ERROR,
     SGX_ADMIN_EVENT_EPID_PROV_BACKEND_PROTOCOL_ERROR,
+    SGX_ADMIN_EVENT_PLATFORM_REVOKED,
 }sgx_admin_event_string_table_t;
 
 extern const char* g_admin_event_string_table[];

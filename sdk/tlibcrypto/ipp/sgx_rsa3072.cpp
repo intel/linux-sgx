@@ -30,8 +30,8 @@
  */
 
 
-#include "sgx_tcrypto_common.h"
 #include "ipp_wrapper.h"
+
 
 sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
     uint32_t data_size,

@@ -52,8 +52,6 @@ TCRYPTO_LIBDIR := $(LINUX_SDK_DIR)/tlibcrypto
 EXTERNAL_LIB += -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
 
 SRC := $(wildcard *.cpp)
-SRC += ipp_bn.cpp                    \
-       ipp_rsa_pub_key.cpp
 
 OBJ := $(SRC:.cpp=.o)
 OBJS := $(sort $(OBJ) version.o)

@@ -85,16 +85,16 @@ pve_status_t gen_epid_priv_f(
     se_static_assert(sizeof(FpElemStr)%4==0); /*sizeof FpElemStr should be multiple of 4*/
     se_static_assert(PRIV_F_RAND_SIZE%4==0); /*the number of bytes of random number should be multiple of 4*/
     //First create the mod P which is in little endian
-    ipp_status = newBN(NULL, sizeof(FpElemStr), &p_BN);//initialize integer buffer
+    ipp_status = sgx_ipp_newBN(NULL, sizeof(FpElemStr), &p_BN);//initialize integer buffer
     IPP_ERROR_BREAK(ipp_status);
     ipp_status = ippsSetOctString_BN(p_data, sizeof(FpElemStr), p_BN);//Input data in Bigendian format
     IPP_ERROR_BREAK(ipp_status);
-    ipp_status = newBN(NULL, sizeof(FpElemStr), &r_BN);//create buffer to hold temp and output result
+    ipp_status = sgx_ipp_newBN(NULL, sizeof(FpElemStr), &r_BN);//create buffer to hold temp and output result
     IPP_ERROR_BREAK(ipp_status);
     //initialize a lower bound
-    ipp_status = newBN(reinterpret_cast<Ipp32u *>(&lower_bound), sizeof(lower_bound), &h_BN);
+    ipp_status = sgx_ipp_newBN(reinterpret_cast<Ipp32u *>(&lower_bound), sizeof(lower_bound), &h_BN);
     IPP_ERROR_BREAK(ipp_status);
-    ipp_status = newBN(reinterpret_cast<Ipp32u *>(&diff), sizeof(diff), &d_BN);//2*PRIV_F_LOWER_BOUND-1
+    ipp_status = sgx_ipp_newBN(reinterpret_cast<Ipp32u *>(&diff), sizeof(diff), &d_BN);//2*PRIV_F_LOWER_BOUND-1
     IPP_ERROR_BREAK(ipp_status);
     //random generate a number f with 96 bits extra data
     //   to make sure the output result f%(p_data-(2*PRIV_F_LOWER_BOUND-1)) is uniform distributed
@@ -104,7 +104,7 @@ pve_status_t gen_epid_priv_f(
     }
     ipp_status = ippsSub_BN(p_BN, d_BN, r_BN);// r = p_data - (2*PRIV_F_LOWER_BOUND-1)
     IPP_ERROR_BREAK(ipp_status);
-    ipp_status = newBN(reinterpret_cast<Ipp32u*>(f_temp_buf), static_cast<uint32_t>(PRIV_F_RAND_SIZE), &f_BN);//create big number by f
+    ipp_status = sgx_ipp_newBN(reinterpret_cast<Ipp32u*>(f_temp_buf), static_cast<uint32_t>(PRIV_F_RAND_SIZE), &f_BN);//create big number by f
     IPP_ERROR_BREAK(ipp_status);
     ipp_status = ippsMod_BN(f_BN, r_BN, p_BN); //calculate p_BN = f (mod r_BN=(p_data - (2*PRIV_F_LOWER_BOUND-1)))
     IPP_ERROR_BREAK(ipp_status);
@@ -115,11 +115,11 @@ pve_status_t gen_epid_priv_f(
     IPP_ERROR_BREAK(ipp_status);
 ret_point:
     (void)memset_s(f_temp_buf, sizeof(f_temp_buf), 0, sizeof(f_temp_buf));
-    secure_free_BN(h_BN, sizeof(lower_bound));//free big integer securely (The function will also memset_s the buffer)
-    secure_free_BN(f_BN, static_cast<uint32_t>(PRIV_F_RAND_SIZE));
-    secure_free_BN(p_BN, sizeof(FpElemStr));
-    secure_free_BN(r_BN,sizeof(FpElemStr));
-    secure_free_BN(d_BN, sizeof(diff));
+    sgx_ipp_secure_free_BN(h_BN, sizeof(lower_bound));//free big integer securely (The function will also memset_s the buffer)
+    sgx_ipp_secure_free_BN(f_BN, static_cast<uint32_t>(PRIV_F_RAND_SIZE));
+    sgx_ipp_secure_free_BN(p_BN, sizeof(FpElemStr));
+    sgx_ipp_secure_free_BN(r_BN,sizeof(FpElemStr));
+    sgx_ipp_secure_free_BN(d_BN, sizeof(diff));
 
     return ret;
 }

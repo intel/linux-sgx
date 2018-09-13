@@ -32,7 +32,6 @@
 enclave {
     include "sgx_eid.h"
     from "../LocalAttestationCode/LocalAttestationCode.edl" import *;
-    from "sgx_tstdc.edl" import *;
     trusted{
             public uint32_t test_create_session(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);
             public uint32_t test_enclave_to_enclave_call(sgx_enclave_id_t src_enclave_id, sgx_enclave_id_t dest_enclave_id);

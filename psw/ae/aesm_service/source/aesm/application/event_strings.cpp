@@ -108,4 +108,5 @@ const char* g_admin_event_string_table[] = {
     "EPID Provisioning failed. Platform is revoked.",               // SGX_ADMIN_EVENT_EPID_PROV_FAIL_REVOKED
     "Platform Services error, resource limit reached",              // SGX_ADMIN_EVENT_PS_RESOURCE_ERROR
     "EPID Provisioning protocol error reported by Backend",         // SGX_ADMIN_EVENT_EPID_PROV_BACKEND_PROTOCOL_ERROR
+    "The platform keys are revoked.",                               // SGX_ADMIN_EVENT_PLATFORM_REVOKED
 };

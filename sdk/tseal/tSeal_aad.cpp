@@ -196,16 +196,19 @@ extern "C" sgx_status_t sgx_unmac_aadata(const sgx_sealed_data_t *p_sealed_data,
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-
-    // Ensure AAD does not cross enclave boundary
-    if (!(sgx_is_within_enclave(p_additional_MACtext, add_text_length) || 
-        sgx_is_outside_enclave(p_additional_MACtext, add_text_length)))
+    if(!(sgx_is_within_enclave(p_additional_MACtext_length, sizeof(p_additional_MACtext_length)) ||
+        sgx_is_outside_enclave(p_additional_MACtext_length, sizeof(p_additional_MACtext_length))))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-
     uint32_t additional_MACtext_length = *p_additional_MACtext_length;
     if (additional_MACtext_length < add_text_length) {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    // Ensure AAD does not cross enclave boundary
+    if (!(sgx_is_within_enclave(p_additional_MACtext, additional_MACtext_length) ||
+        sgx_is_outside_enclave(p_additional_MACtext, additional_MACtext_length)))
+    {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 

@@ -323,7 +323,7 @@ int sp_ra_proc_msg1_req(const sample_ra_msg1_t *p_msg1,
         }
 #endif
 
-        uint32_t msg2_size = sizeof(sample_ra_msg2_t) + sig_rl_size;
+        uint32_t msg2_size = (uint32_t)sizeof(sample_ra_msg2_t) + sig_rl_size;
         p_msg2_full = (ra_samp_response_header_t*)malloc(msg2_size
                       + sizeof(ra_samp_response_header_t));
         if(!p_msg2_full)
@@ -442,7 +442,7 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
     int ret = 0;
     sample_status_t sample_ret = SAMPLE_SUCCESS;
     const uint8_t *p_msg3_cmaced = NULL;
-    sample_quote_t *p_quote = NULL;
+    const sample_quote_t *p_quote = NULL;
     sample_sha_state_handle_t sha_handle = NULL;
     sample_report_data_t report_data = {0};
     sample_ra_att_result_msg_t *p_att_result_msg = NULL;
@@ -472,7 +472,7 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
             break;
         }
         //Make sure that msg3_size is bigger than sample_mac_t.
-        uint32_t mac_size = msg3_size - sizeof(sample_mac_t);
+        uint32_t mac_size = msg3_size - (uint32_t)sizeof(sample_mac_t);
         p_msg3_cmaced = reinterpret_cast<const uint8_t*>(p_msg3);
         p_msg3_cmaced += sizeof(sample_mac_t);
 
@@ -506,7 +506,7 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
             break;
         }
 
-        p_quote = (sample_quote_t *)p_msg3->quote;
+        p_quote = (const sample_quote_t*)p_msg3->quote;
 
         // Check the quote version if needed. Only check the Quote.version field if the enclave
         // identity fields have changed or the size of the quote has changed.  The version may
@@ -564,7 +564,7 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
             break;
         }
         ret = memcmp((uint8_t *)&report_data,
-                     (uint8_t *)&(p_quote->report_body.report_data),
+                     &(p_quote->report_body.report_data),
                      sizeof(report_data));
         if(ret)
         {
@@ -579,7 +579,8 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
         // Verify quote with attestation server.
         // In the product, an attestation server could use a REST message and JSON formatting to request
         // attestation Quote verification.  The sample only simulates this interface.
-        ias_att_report_t attestation_report = {0};
+        ias_att_report_t attestation_report;
+        memset(&attestation_report, 0, sizeof(attestation_report));
         ret = g_sp_extended_epid_group_id->verify_attestation_evidence(p_quote, NULL,
                                               &attestation_report);
         if(0 != ret)

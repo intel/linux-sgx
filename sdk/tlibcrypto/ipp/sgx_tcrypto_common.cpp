@@ -30,7 +30,7 @@
  */
 
 
-#include "sgx_tcrypto_common.h"
+#include "ipp_wrapper.h"
 
 
 IppStatus sgx_ipp_newBN(const Ipp32u *p_data, int size_in_bytes, IppsBigNumState **p_new_BN)

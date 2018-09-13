@@ -57,11 +57,11 @@ static char USAGE_STRING[] = \
     "Invoke iclsclient to provision CSE Fw. Root privilege is required.\n";
 
 static char MISSING_STRING[] =  \
-    "libiclsclient.so or iclsInit() cannot be found.\n"\
+    "Optional modules libiclsclient.so or iclsInit() cannot be found.\n"\
     "Trusted platform service is unavailable. Refer to README for details.\n";
 
 static char ERR_STRING[] =  \
-    "iclsInit() returned error.\n"\
+    "Optional modules iclsInit() returned error.\n"\
     "Trusted platform service is unavailable. "\
     "Check log in /opt/Intel/iclsClient/log/iclsClient.log.\n";
 

@@ -1,0 +1,5 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/libsgx_uae_service.so	<installdir>/package/lib/libsgx_uae_service.so	0	main	STP
+<deliverydir>/build/linux/libsgx_urts.so	<installdir>/package/lib/libsgx_urts.so	0	main	STP
+<deliverydir>/build/linux/libsgx_enclave_common.so	<installdir>/package/lib/libsgx_enclave_common.so	0	main	STP
+<deliverydir>/linux/installer/common/libsgx-enclave-common/installConfig.x86	<installdir>/scripts/installConfig	0	main	STP

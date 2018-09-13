@@ -44,11 +44,9 @@ CPPFLAGS += -I.                                \
             -I ../trts
 			
 
-LIBLONGJMP_CPP_SRCS := tlongjmp_version.cpp
 LIBLONGJMP_ASM_SRCS := $(wildcard *.S)
 
 LIBLONGJMP_OBJS := $(sort $(LIBLONGJMP_ASM_SRCS:.S=.o))
-LIBLONGJMP_OBJS += $(LIBLONGJMP_CPP_SRCS:.cpp=.o)
 
 LIBLONGJMP_NAME    := libsgx_tsetjmp.a
 
@@ -57,9 +55,6 @@ all: $(LIBLONGJMP_NAME)
 
 $(LIBLONGJMP_NAME): $(LIBLONGJMP_OBJS)
 	$(AR) rcs $@ $^
-
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -c $< -o $@
 
 %.o: %.S
 	$(CC)  $(ASFLAGS)  $(CPPFLAGS) -c $< -o $@

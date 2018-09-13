@@ -118,6 +118,7 @@ static ae_error_t verify_blob_internal(
                             + sizeof(secret_epid_data)
                             + sizeof(plaintext_epid_data)]
                             = {0};
+    MemberCtx *p_ctx = NULL;
 
     do {
         // We will use plaintext_old_format as buffer to hold the output of sgx_unseal_data.
@@ -196,25 +197,25 @@ static ae_error_t verify_blob_internal(
 
         /* Create EPID member context if required. PvE is responsible for verifying
         the Cert signature before storing them in the EPID blob. */
-        if (create_context)
+        if (create_context || is_old_format)
         {
             EpidStatus epid_ret = kEpidNoErr;
-            epid_ret = epid_member_create(rand_func, NULL, NULL, pp_epid_context);
+            epid_ret = epid_member_create(rand_func, NULL, NULL, &p_ctx);
             BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
 
-            epid_ret = EpidProvisionKey(*pp_epid_context,
+            epid_ret = EpidProvisionKey(p_ctx,
                 &(plaintext_epid_data.epid_group_cert),
                 (PrivKey*)&(secret_epid_data.epid_private_key),
                 is_old_format ? NULL : &secret_epid_data.member_precomp_data);
             BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
 
             // start member
-            epid_ret = EpidMemberStartup(*pp_epid_context);
+            epid_ret = EpidMemberStartup(p_ctx);
             BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
 
             if (is_old_format)
             {
-                epid_ret = EpidMemberWritePrecomp(*pp_epid_context, &secret_epid_data.member_precomp_data);
+                epid_ret = EpidMemberWritePrecomp(p_ctx, &secret_epid_data.member_precomp_data);
                 BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
             }
         }
@@ -248,9 +249,16 @@ static ae_error_t verify_blob_internal(
     // Clear the output buffer to make sure nothing leaks.
     memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
         sizeof(secret_epid_data));
-    if (ret != AE_SUCCESS)
-    {
-        epid_member_delete(pp_epid_context);
+    if (AE_SUCCESS != ret) {
+        if (p_ctx)
+            epid_member_delete(&p_ctx);
+    }
+    else if (!create_context) {
+        if (p_ctx)
+            epid_member_delete(&p_ctx);
+    }
+    else {
+        *pp_epid_context = p_ctx;
     }
 
     return ret;
@@ -381,7 +389,7 @@ static ae_error_t qe_epid_sign(
                (uint8_t *)const_cast<sgx_basename_t *>(p_basename),
                sizeof(*p_basename),
                &basic_sig,
-               NULL);
+               NULL); //Random basename, can be NULL if basename is provided
     if(kEpidNoErr != epid_ret)
     {
         ret = QE_UNEXPECTED_ERROR;
@@ -473,12 +481,12 @@ static ae_error_t qe_epid_sign(
     }
 
     //Start encrypt the wrap key by RSA IPP algorithm.
-    ipp_ret = create_rsa_pub_key(sizeof(g_qsdk_pub_key_n),
+    se_ret = sgx_create_rsa_pub_key(sizeof(g_qsdk_pub_key_n),
                                  sizeof(g_qsdk_pub_key_e),
-                                 g_qsdk_pub_key_n,
-                                 g_qsdk_pub_key_e,
-                                 &pub_key);
-    if(ipp_ret != ippStsNoErr)
+                                 (const unsigned char *)g_qsdk_pub_key_n,
+                                 (const unsigned char *)g_qsdk_pub_key_e,
+                                 (void **)&pub_key);
+    if(se_ret != SGX_SUCCESS)
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
@@ -666,7 +674,7 @@ static ae_error_t qe_epid_sign(
             epid_ret = EpidNrProve(p_epid_context,
                 (uint8_t *)const_cast<sgx_quote_t *>(p_quote_body),
                 (uint32_t)QE_QUOTE_BODY_SIZE,
-                (uint8_t *)const_cast<sgx_basename_t *>(p_basename),
+                (uint8_t *)const_cast<sgx_basename_t *>(p_basename), // basename is required, otherwise it will return kEpidBadArgErr
                 sizeof(*p_basename),
                 &basic_sig, // Basic signature with 'b' and 'k' in it
                 &entry, //Single entry in SigRl composed of 'b' and 'k'

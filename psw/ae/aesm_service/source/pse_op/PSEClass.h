@@ -60,6 +60,7 @@ protected:
         m_status = PSE_STATUS_INIT;
         m_ps_cap = PS_CAP_NOT_AVAILABLE;
         m_freq = se_get_tick_count_freq();
+        icls_thread = NULL;
     };
     ~CPSEClass(){
     };
@@ -70,6 +71,7 @@ protected:
     uint64_t m_ps_cap;
     uint64_t m_freq;
 public:
+    aesm_thread_t icls_thread;
     ae_error_t init_ps(void);
 
     ae_error_t create_session(

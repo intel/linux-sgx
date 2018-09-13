@@ -44,10 +44,18 @@ static bool inline _check_ex_params_(const uint32_t ex_features, const void* ex_
 {
     //update last feature index if it fails here
     se_static_assert(_SGX_LAST_EX_FEATURE_IDX_ == SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX);
+    
+    uint32_t i;
 
     if (ex_features_p != NULL)
     {
-        for (uint32_t i = _SGX_LAST_EX_FEATURE_IDX_ + 1; i < MAX_EX_FEATURES_COUNT; i++)
+        for (i = 0; i <= _SGX_LAST_EX_FEATURE_IDX_; i++)
+        {
+            if (((ex_features & (1<<i)) == 0) && (ex_features_p[i] != NULL))
+                return false;
+        }
+
+        for (i = _SGX_LAST_EX_FEATURE_IDX_ + 1; i < MAX_EX_FEATURES_COUNT; i++)
         {
             if (ex_features_p[i] != NULL)
                 return false;

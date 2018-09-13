@@ -43,7 +43,6 @@
 #include "sgx_trts.h"
 #include "ipp_wrapper.h"
 
-#include "sgx_tcrypto_common.h"
 
 sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned char *p_n, unsigned char *p_d, unsigned char *p_e,
     unsigned char *p_p, unsigned char *p_q, unsigned char *p_dmp1,
@@ -355,7 +354,7 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data,
             ret_code = SGX_ERROR_OUT_OF_MEMORY;
             break;
         }
-        memset(p_scratch_buffer, 0, scratch_buff_size);
+	memset(p_scratch_buffer, 0, scratch_buff_size);
 
         //get random seed
         //

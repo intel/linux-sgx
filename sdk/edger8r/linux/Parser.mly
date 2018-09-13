@@ -637,15 +637,19 @@ propagate_errno: /* nothing */ { false }
   | Tpropagate_errno           { true  }
   ;
 
-untrusted_func_def: attr_block func_def allow_list propagate_errno switchless_annotation {
+untrusted_prefixes: /* nothing */ { [] }
+  | attr_block           { $1  }
+  ;
+
+untrusted_postfixes:  /* nothing */  {  (false, false) }
+  | Tpropagate_errno switchless_annotation  { (true, $2) }
+  | Tswitchless propagate_errno  { ($2, true) }
+  ;
+
+untrusted_func_def: untrusted_prefixes func_def allow_list untrusted_postfixes {
       check_ptr_attr $2 (symbol_start_pos(), symbol_end_pos());
       let fattr = get_func_attr $1 in
-      Ast.Untrusted { Ast.uf_fdecl = $2; Ast.uf_fattr = fattr; Ast.uf_allow_list = $3; Ast.uf_propagate_errno = $4; Ast.uf_is_switchless = $5; }
-    }
-  | func_def allow_list propagate_errno switchless_annotation {
-      check_ptr_attr $1 (symbol_start_pos(), symbol_end_pos());
-      let fattr = get_func_attr [] in
-      Ast.Untrusted { Ast.uf_fdecl = $1; Ast.uf_fattr = fattr; Ast.uf_allow_list = $2; Ast.uf_propagate_errno = $3; Ast.uf_is_switchless = $4; }
+      Ast.Untrusted { Ast.uf_fdecl = $2; Ast.uf_fattr = fattr; Ast.uf_allow_list = $3; Ast.uf_propagate_errno = fst $4; Ast.uf_is_switchless = snd $4; }
     }
   ;
 

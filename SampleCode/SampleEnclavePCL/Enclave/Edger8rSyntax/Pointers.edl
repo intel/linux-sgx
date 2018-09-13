@@ -110,7 +110,7 @@ enclave {
          *      the attribute tells Edger8r the number of integers to be copied from 'arr'.
          */
         
-        public void ecall_pointer_count([in, out, count=cnt] int *arr, int cnt);
+        public void ecall_pointer_count([in, out, count=cnt] int *arr, size_t cnt);
 
         /*
          * [isptr]:

@@ -83,20 +83,20 @@ const public_key_t& CertificateProvisioningProtocol::get_intel_pek()
 
 //Function to get the rsa public key of intel backend server for IPP functions
 //The output rsa_pub_key should be released by function free_rsa_key
-static IppStatus get_intel_rsa_pub_key_in_ipp_format(const public_key_t& publicKey, IppsRSAPublicKeyState **rsa_pub_key)
+static sgx_status_t get_intel_rsa_pub_key_in_ipp_format(const public_key_t& publicKey, IppsRSAPublicKeyState **rsa_pub_key)
 {
     if (sizeof(publicKey.n) != RSA_3072_KEY_BYTES)
-        return ippStsSizeErr;
+        return SGX_ERROR_INVALID_PARAMETER;
 
     if (NULL == rsa_pub_key)
-        return ippStsNullPtrErr;
+        return SGX_ERROR_INVALID_PARAMETER;
 
-    IppStatus status = create_rsa_pub_key(
+    sgx_status_t status = sgx_create_rsa_pub_key(
                        sizeof(publicKey.n),
                        sizeof(publicKey.e),
-                       (const Ipp32u*)publicKey.n,
-                       (const Ipp32u*)&publicKey.e,
-                       rsa_pub_key);
+                       (const unsigned char*)publicKey.n,
+                       (const unsigned char*)&publicKey.e,
+                       (void **)rsa_pub_key);
 
     return status;
 }
@@ -266,8 +266,7 @@ ae_error_t CertificateProvisioningProtocol::encryptRSA_OAEP_SHA256(const public_
 
     do
     {
-        ippReturnStatus = get_intel_rsa_pub_key_in_ipp_format(publicKey, &rsa_pub_key);
-        if (ippStsNoErr != ippReturnStatus)
+        if(SGX_SUCCESS != get_intel_rsa_pub_key_in_ipp_format(publicKey, &rsa_pub_key))
             break;
 
         uint8_t seed[IPP_SHA256_DIGEST_BITSIZE / 8];

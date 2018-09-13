@@ -104,6 +104,7 @@ static sgx_status_t dh_generate_message1(sgx_dh_msg1_t *msg1, sgx_internal_dh_se
         return se_ret;
     }
 
+    memset(msg1, 0, sizeof(sgx_dh_msg1_t));
     memcpy(&msg1->target.mr_enclave, 
            &temp_report.body.mr_enclave, 
            sizeof(sgx_measurement_t)); 

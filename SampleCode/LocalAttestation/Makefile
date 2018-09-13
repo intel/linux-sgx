@@ -43,12 +43,12 @@ else ifeq ($(findstring -m32, $(CXXFLAGS)), -m32)
 endif
 
 ifeq ($(SGX_ARCH), x86)
-	SGX_COMMON_CFLAGS := -m32
+	SGX_COMMON_FLAGS := -m32
 	SGX_LIBRARY_PATH := $(SGX_SDK)/lib
 	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
 	SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
 else
-	SGX_COMMON_CFLAGS := -m64
+	SGX_COMMON_FLAGS := -m64
 	SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
 	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
 	SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
@@ -61,25 +61,33 @@ endif
 endif
 
 ifeq ($(SGX_DEBUG), 1)
-	SGX_COMMON_CFLAGS += -O0 -g
+	SGX_COMMON_FLAGS += -O0 -g
 else
-	SGX_COMMON_CFLAGS += -O2
+	SGX_COMMON_FLAGS += -O2
 endif
+
+SGX_COMMON_FLAGS += -v -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
+                    -Waddress -Wsequence-point -Wformat-security \
+                    -Wmissing-include-dirs -Wfloat-equal -Wundef -Wshadow \
+                    -Wcast-align -Wcast-qual -Wconversion -Wredundant-decls
+SGX_COMMON_CFLAGS := $(SGX_COMMON_FLAGS) -Wjump-misses-init -Wstrict-prototypes -Wunsuffixed-float-constants
+SGX_COMMON_CXXFLAGS := $(SGX_COMMON_FLAGS) -Wnon-virtual-dtor -std=c++11
 
 ######## Library Settings ########
 
 Trust_Lib_Name := libLocalAttestation_Trusted.a
 TrustLib_Cpp_Files := $(wildcard LocalAttestationCode/*.cpp)
 TrustLib_Cpp_Objects := $(TrustLib_Cpp_Files:.cpp=.o)
-TrustLib_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -I$(SGX_SDK)/include/epid -I./Include
-TrustLib_Compile_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -fstack-protector  $(TrustLib_Include_Paths)
-TrustLib_Compile_Cxx_Flags :=  -std=c++11 -nostdinc++
+TrustLib_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx -I./Include #-I$(SGX_SDK)/include/epid -I./Include
+TrustLib_C_Flags := -nostdinc -fvisibility=hidden -fpie -fstack-protector  $(TrustLib_Include_Paths)
+TrustLib_Cxx_Flags :=  $(TrustLib_C_Flags) $(SGX_COMMON_CXXFLAGS) -nostdinc++
+TrustLib_C_Flags += $(SGX_COMMON_CFLAGS) 
 
 UnTrustLib_Name := libLocalAttestation_unTrusted.a
 UnTrustLib_Cpp_Files := $(wildcard Untrusted_LocalAttestation/*.cpp)
 UnTrustLib_Cpp_Objects := $(UnTrustLib_Cpp_Files:.cpp=.o)
-UnTrustLib_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/ippcp -I./Include -I./LocalAttestationCode
-UnTrustLib_Compile_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes -std=c++11 $(UnTrustLib_Include_Paths)
+UnTrustLib_Include_Paths := -I$(SGX_SDK)/include -I./Include -I./LocalAttestationCode
+UnTrustLib_Cxx_Flags := $(SGX_COMMON_CXXFLAGS) -fPIC -Wno-attributes $(UnTrustLib_Include_Paths)
 
 ######## App Settings ########
 
@@ -90,22 +98,25 @@ else
 endif
 
 App_Cpp_Files := $(wildcard App/*.cpp)
-App_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/ippcp -I./Include -I./LocalAttestationCode
+App_Include_Paths := -I$(SGX_SDK)/include -I./Include -I./LocalAttestationCode
 
-App_Compile_Flags := $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(App_Include_Paths)
+App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 # Three configuration modes - Debug, prerelease, release
 #   Debug - Macro DEBUG enabled.
 #   Prerelease - Macro NDEBUG and EDEBUG enabled.
 #   Release - Macro NDEBUG enabled.
 ifeq ($(SGX_DEBUG), 1)
-	App_Compile_Flags += -DDEBUG -UNDEBUG -UEDEBUG
+	App_C_Flags += -DDEBUG -UNDEBUG -UEDEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-	App_Compile_Flags += -DNDEBUG -DEDEBUG -UDEBUG
+	App_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
 else
-	App_Compile_Flags += -DNDEBUG -UEDEBUG -UDEBUG
+	App_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
 endif
 
-App_Link_Flags := $(SGX_COMMON_CFLAGS) -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lpthread -lLocalAttestation_unTrusted 
+App_Cxx_Flags := $(App_C_Flags) $(SGX_COMMON_CXXFLAGS)
+App_C_Flags += $(SGX_COMMON_CFLAGS)
+
+App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lpthread -lLocalAttestation_unTrusted 
 
 ifneq ($(SGX_MODE), HW)
 	App_Link_Flags += -lsgx_uae_service_sim
@@ -138,12 +149,14 @@ Enclave_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX
 
 CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
 ifeq ($(CC_BELOW_4_9), 1)
-	Enclave_Compile_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections -fstack-protector
+	Enclave_C_Flags := -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections -fstack-protector
 else
-	Enclave_Compile_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections -fstack-protector-strong
+	Enclave_C_Flags := -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections -fstack-protector-strong
 endif
 
-Enclave_Compile_Flags += $(Enclave_Include_Paths)
+Enclave_C_Flags += $(Enclave_Include_Paths)
+Enclave_Cxx_Flags := $(Enclave_C_Flags) $(SGX_COMMON_CXXFLAGS) -nostdinc++
+Enclave_C_Flasg += $(SGX_COMMON_CFLAGS)
 
 # To generate a proper enclave, it is recommended to follow below guideline to link the trusted libraries:
 #    1. Link sgx_trts with the `--whole-archive' and `--no-whole-archive' options,
@@ -152,7 +165,7 @@ Enclave_Compile_Flags += $(Enclave_Include_Paths)
 #       Use `--start-group' and `--end-group' to link these libraries.
 # Do NOT move the libraries linked with `--start-group' and `--end-group' within `--whole-archive' and `--no-whole-archive' options.
 # Otherwise, you may get some undesirable errors.
-Common_Enclave_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
+Common_Enclave_Link_Flags := -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
 	-Wl,--whole-archive -l$(Trts_Library_Name) -Wl,--no-whole-archive \
 	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(Crypto_Library_Name) -L. -lLocalAttestation_Trusted -l$(Service_Library_Name) -Wl,--end-group \
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
@@ -224,11 +237,11 @@ LocalAttestationCode/LocalAttestationCode_t.c LocalAttestationCode/LocalAttestat
 	@echo "GEN  =>  $@"
 
 LocalAttestationCode/LocalAttestationCode_t.o: LocalAttestationCode/LocalAttestationCode_t.c
-	@$(CC) $(TrustLib_Compile_Flags) -c $< -o $@
+	@$(CC) $(TrustLib_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 LocalAttestationCode/%.o: LocalAttestationCode/%.cpp LocalAttestationCode/LocalAttestationCode_t.h
-	@$(CXX) $(TrustLib_Compile_Flags) $(TrustLib_Compile_Cxx_Flags) -c $< -o $@
+	@$(CXX) $(TrustLib_Cxx_Flags) -c $< -o $@
 	@echo "CC   <= $<"
 
 $(Trust_Lib_Name): LocalAttestationCode/LocalAttestationCode_t.o $(TrustLib_Cpp_Objects)
@@ -236,7 +249,7 @@ $(Trust_Lib_Name): LocalAttestationCode/LocalAttestationCode_t.o $(TrustLib_Cpp_
 	@echo "GEN  =>  $@"
 
 Untrusted_LocalAttestation/%.o: Untrusted_LocalAttestation/%.cpp
-	@$(CXX) $(UnTrustLib_Compile_Flags) -c $< -o $@
+	@$(CXX) $(UnTrustLib_Cxx_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 $(UnTrustLib_Name): $(UnTrustLib_Cpp_Objects)
@@ -249,7 +262,7 @@ Enclave1/Enclave1_u.c Enclave1/Enclave1_u.h: $(SGX_EDGER8R) Enclave1/Enclave1.ed
 	@echo "GEN  =>  $@"
 
 App/Enclave1_u.o: Enclave1/Enclave1_u.c
-	@$(CC) $(App_Compile_Flags) -c $< -o $@
+	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 Enclave2/Enclave2_u.c Enclave2/Enclave2_u.h: $(SGX_EDGER8R) Enclave2/Enclave2.edl
@@ -257,7 +270,7 @@ Enclave2/Enclave2_u.c Enclave2/Enclave2_u.h: $(SGX_EDGER8R) Enclave2/Enclave2.ed
 	@echo "GEN  =>  $@"
 
 App/Enclave2_u.o: Enclave2/Enclave2_u.c
-	@$(CC) $(App_Compile_Flags) -c $< -o $@
+	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 Enclave3/Enclave3_u.c Enclave3/Enclave3_u.h: $(SGX_EDGER8R) Enclave3/Enclave3.edl
@@ -265,11 +278,11 @@ Enclave3/Enclave3_u.c Enclave3/Enclave3_u.h: $(SGX_EDGER8R) Enclave3/Enclave3.ed
 	@echo "GEN  =>  $@"
 
 App/Enclave3_u.o: Enclave3/Enclave3_u.c
-	@$(CC) $(App_Compile_Flags) -c $< -o $@
+	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 App/%.o: App/%.cpp Enclave1/Enclave1_u.h Enclave2/Enclave2_u.h Enclave3/Enclave3_u.h
-	@$(CXX) $(App_Compile_Flags) -c $< -o $@
+	@$(CXX) $(App_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 $(App_Name): App/Enclave1_u.o App/Enclave2_u.o App/Enclave3_u.o $(App_Cpp_Objects) $(UnTrustLib_Name)
@@ -284,11 +297,11 @@ Enclave1/Enclave1_t.c Enclave1/Enclave1_t.h: $(SGX_EDGER8R) Enclave1/Enclave1.ed
 	@echo "GEN  =>  $@"
 
 Enclave1/Enclave1_t.o: Enclave1/Enclave1_t.c
-	@$(CC) $(Enclave_Compile_Flags) -c $< -o $@
+	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 Enclave1/%.o: Enclave1/%.cpp Enclave1/Enclave1_t.h
-	@$(CXX) -std=c++11 -nostdinc++ $(Enclave_Compile_Flags) -c $< -o $@
+	@$(CXX) $(Enclave_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 Enclave1.so: Enclave1/Enclave1_t.o $(Enclave_Cpp_Objects_1) $(Trust_Lib_Name)
@@ -304,11 +317,11 @@ Enclave2/Enclave2_t.c: $(SGX_EDGER8R) Enclave2/Enclave2.edl
 	@echo "GEN  =>  $@"
 
 Enclave2/Enclave2_t.o: Enclave2/Enclave2_t.c
-	@$(CC) $(Enclave_Compile_Flags) -c $< -o $@
+	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 Enclave2/%.o: Enclave2/%.cpp
-	@$(CXX) -std=c++11 -nostdinc++ $(Enclave_Compile_Flags) -c $< -o $@
+	@$(CXX) $(Enclave_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 Enclave2.so: Enclave2/Enclave2_t.o $(Enclave_Cpp_Objects_2) $(Trust_Lib_Name)
@@ -324,11 +337,11 @@ Enclave3/Enclave3_t.c: $(SGX_EDGER8R) Enclave3/Enclave3.edl
 	@echo "GEN  =>  $@"
 
 Enclave3/Enclave3_t.o: Enclave3/Enclave3_t.c
-	@$(CC) $(Enclave_Compile_Flags) -c $< -o $@
+	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 Enclave3/%.o: Enclave3/%.cpp
-	@$(CXX) -std=c++11 -nostdinc++ $(Enclave_Compile_Flags) -c $< -o $@
+	@$(CXX) $(Enclave_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
 Enclave3.so: Enclave3/Enclave3_t.o $(Enclave_Cpp_Objects_3) $(Trust_Lib_Name)
@@ -344,3 +357,4 @@ $(Enclave_Name_3): Enclave3.so
 
 clean:
 	@rm -rf .config_* $(App_Name) *.so *.a App/*.o Enclave1/*.o Enclave1/*_t.* Enclave1/*_u.* Enclave2/*.o Enclave2/*_t.* Enclave2/*_u.* Enclave3/*.o Enclave3/*_t.* Enclave3/*_u.* LocalAttestationCode/*.o Untrusted_LocalAttestation/*.o LocalAttestationCode/*_t.*
+

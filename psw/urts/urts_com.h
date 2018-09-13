@@ -123,7 +123,7 @@ static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t 
     meta_rva = parser->get_metadata_offset();
     do {
         *metadata = GET_PTR(metadata_t, base_addr, meta_rva);
-        if(metadata == NULL)
+        if(*metadata == NULL)
         {
             return SGX_ERROR_INVALID_METADATA;
         }
@@ -463,15 +463,14 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
 
     if (ex_features & SGX_CREATE_ENCLAVE_EX_PCL)
     {
-        uint8_t* sealed_key = (uint8_t*)ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX];
 
-        if (NULL == sealed_key)
+        if ((ex_features_p == NULL) || (ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX] == NULL))
         {
             ret = SGX_ERROR_INVALID_PARAMETER;
             goto clean_return;
 
         }
-        
+       
         if (!parser.is_enclave_encrypted())
         {
             ret = SGX_ERROR_PCL_NOT_ENCRYPTED;
@@ -565,7 +564,7 @@ extern "C" sgx_status_t sgx_destroy_enclave(const sgx_enclave_id_t enclave_id)
         {
             debug_enclave_info_t *debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
             generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
-			enclave->destroy_uswitchless();
+            enclave->destroy_uswitchless();
             enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL);
             CEnclavePool::instance()->unref_enclave(enclave);
         }

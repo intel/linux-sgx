@@ -36,7 +36,6 @@
 #include "EnclaveMessageExchange.h"
 #include "error_codes.h"
 #include "Utility_E1.h"
-#include "sgx_thread.h"
 #include "sgx_dh.h"
 #include <map>
 

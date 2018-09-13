@@ -50,7 +50,7 @@ CPPFLAGS += -I$(ROOT_DIR)/android/ndk-toolchain/sysroot/usr/include
 endif   #ANDROID
 
 CPP_SRCS := $(wildcard src/*.cpp)
-CPP_OBJS := $(CPP_SRCS:.cpp=.o)
+CPP_OBJS := $(sort $(CPP_SRCS:.cpp=.o))
 
 OBJS     := $(CPP_OBJS)
 

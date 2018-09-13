@@ -112,6 +112,7 @@ ae_error_t check_epid_pve_pg_status_after_mac_verification(const  provision_resp
         case SE_PRS_STATUS_INTEGRITY_FAILED:
             return PVE_INTEGRITY_CHECK_ERROR;
         case SE_PRS_PLATFORM_REVOKED:
+        case SE_PRS_PROV_ATTEST_KEY_REVOKED:
             return PVE_REVOKED_ERROR;
         case SE_PRS_PERFORMANCE_REKEY_NOT_SUPPORTED:
             return PVE_PERFORMANCE_REKEY_NOT_SUPPORTED;
@@ -119,6 +120,8 @@ ae_error_t check_epid_pve_pg_status_after_mac_verification(const  provision_resp
             return PVE_PROV_ATTEST_KEY_NOT_FOUND;
         case SE_PRS_INVALID_REPORT:
             return PVE_INVALID_REPORT;
+        case SE_PRS_PROV_ATTEST_KEY_TCB_OUT_OF_DATE:
+            return PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE;
         default:
             return PVE_SERVER_REPORTED_ERROR;
         }

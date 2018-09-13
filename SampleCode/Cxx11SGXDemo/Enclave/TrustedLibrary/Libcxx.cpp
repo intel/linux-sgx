@@ -228,6 +228,7 @@ public:
     Base(const Base &) = delete;
     Base() = default;
     virtual void f_must_be_overrided() {};
+    virtual ~Base() {};
 };
 
 /* Helper class for ecall_virtual_function_control_demo.*/

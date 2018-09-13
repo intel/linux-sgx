@@ -59,7 +59,7 @@
 //the key is received in endpoint selection from Provision Server which is used for rsa-oaep in ProvMsg1
 //secure_free_rsa_pub_key should be called to release the memory on successfully returned rsa_pub_key
 //return PVEC_SUCCESS on success
-IppStatus get_provision_server_rsa_pub_key_in_ipp_format(const signed_pek_t& pek, IppsRSAPublicKeyState **rsa_pub_key);
+sgx_status_t get_provision_server_rsa_pub_key_in_ipp_format(const signed_pek_t& pek, IppsRSAPublicKeyState **rsa_pub_key);
 
 
 //Function to initialize request header for ProvMsg1
@@ -266,9 +266,9 @@ ret_point:
         }
         //transform rsa format PEK public key of Provision Server into IPP library format
         IppsRSAPublicKeyState *rsa_pub_key = NULL;
-        IppStatus ippStatus = get_provision_server_rsa_pub_key_in_ipp_format(pve_data.pek, &rsa_pub_key);
-        if( ippStsNoErr != ippStatus){
-            AESM_DBG_ERROR("Fail to decode PEK:%d",ippStatus);
+        sgx_status = get_provision_server_rsa_pub_key_in_ipp_format(pve_data.pek, &rsa_pub_key);
+        if( SGX_SUCCESS != sgx_status){
+            AESM_DBG_ERROR("Fail to decode PEK:%d",sgx_status);
             return AE_FAILURE;
         }
         uint8_t field0[RSA_3072_KEY_BYTES];

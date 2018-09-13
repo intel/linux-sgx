@@ -61,8 +61,8 @@ uint32_t CQEClass::get_qe_target(
     memcpy_s(&p_qe_target->misc_select, sizeof(p_qe_target->misc_select),
         &m_attributes.misc_select, sizeof(m_attributes.misc_select));
     memcpy_s(&p_qe_target->mr_enclave, sizeof(p_qe_target->mr_enclave),
-        &p_launch->body.mr_enclave,
-        sizeof(p_launch->body.mr_enclave));
+        &m_mrenclave,
+        sizeof(m_mrenclave));
     return AE_SUCCESS;
 }
 

@@ -522,6 +522,9 @@ static const char *get_ae_error_t_string(ae_error_t ae_error)
         CASE_ENUM_RET_STRING(LE_WHITE_LIST_QUERY_BUSY)
         CASE_ENUM_RET_STRING(AESM_AE_NO_DEVICE)
         CASE_ENUM_RET_STRING(EXTENDED_GROUP_NOT_AVAILABLE)
+        CASE_ENUM_RET_STRING(LE_WHITE_LIST_ALREADY_UPDATED)
+        CASE_ENUM_RET_STRING(PCE_CRYPTO_ERROR)
+        CASE_ENUM_RET_STRING(PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE)
     default:
         return "Unknown ae_error_t";
     }

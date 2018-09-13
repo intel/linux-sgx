@@ -65,6 +65,8 @@ python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/psw_${ARCH}.txt --cleanup=false
 python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
 
 # Create the tarball
+ECL_VER=$(awk '/ENCLAVE_COMMON_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 pushd ${INSTALL_PATH} &> /dev/null
+sed -i "s/ECL_VER=.*/ECL_VER=${ECL_VER}/" Makefile
 tar -zcvf ${TARBALL_NAME} *
 popd &> /dev/null

@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
                          msg2_full_size);
 
                 PRINT_BYTE_ARRAY(OUTPUT, p_msg2_full,
-                                 sizeof(ra_samp_response_header_t)
+                                 (uint32_t)sizeof(ra_samp_response_header_t)
                                  + p_msg2_full->size);
             }
             else
@@ -425,7 +425,7 @@ int main(int argc, char* argv[])
             fprintf(OUTPUT, "\nSent MSG1 to remote attestation service "
                             "provider. Received the following MSG2:\n");
             PRINT_BYTE_ARRAY(OUTPUT, p_msg2_full,
-                             sizeof(ra_samp_response_header_t)
+                             (uint32_t)sizeof(ra_samp_response_header_t)
                              + p_msg2_full->size);
 
             fprintf(OUTPUT, "\nA more descriptive representation of MSG2:\n");
@@ -446,7 +446,7 @@ int main(int argc, char* argv[])
                                     "value for MSG2 does NOT match.\n");
                     fprintf(OUTPUT, "\nPrecomputed value for MSG2:\n");
                     PRINT_BYTE_ARRAY(OUTPUT, precomputed_msg2,
-                                     sizeof(ra_samp_response_header_t)
+                                     (uint32_t)sizeof(ra_samp_response_header_t)
                                      + precomputed_msg2->size);
                     fprintf(OUTPUT, "\nA more descriptive representation "
                                     "of precomputed value for MSG2:\n");

@@ -35,7 +35,7 @@
 #include <openssl/ec.h>
 #include <openssl/err.h>
 #include "sgx_tcrypto.h"
-
+#include "ssl_wrapper.h"
 #define POINT_NOT_ON_CURVE 0x1007c06b
 
 /*
@@ -400,4 +400,107 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
 	BN_clear_free(tmp);
 
 	return ret;
+}
+
+/** Create an ECC public key based on a given ECC private key.
+*
+* Parameters:
+*   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+*   Input: p_att_priv_key - Input private key
+*   Output: p_att_pub_key - Output public key - LITTLE ENDIAN
+*
+*/
+sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att_priv_key, sgx_ec256_public_t  *p_att_pub_key)
+{
+    if ((p_att_priv_key == NULL) || (p_att_pub_key == NULL)) {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    EC_GROUP* ec_group = NULL;
+    EC_POINT *pub_ec_point = NULL;
+    BIGNUM *bn_o = NULL;
+    BIGNUM *bn_x = NULL;
+    BIGNUM *bn_y = NULL;
+    BN_CTX *tmp = NULL;
+
+    CLEAR_OPENSSL_ERROR_QUEUE;
+
+    do {
+        //create empty BNs
+        //
+        bn_x = BN_new();
+        if (NULL == bn_x) {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+        bn_y = BN_new();
+        if (NULL == bn_y) {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+        tmp = BN_CTX_new();
+        if (NULL == tmp) {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+
+        //init bn_o with private key value
+        //
+        bn_o = BN_lebin2bn((const unsigned char*)p_att_priv_key, (int)sizeof(sgx_ec256_private_t), bn_o);
+        BN_CHECK_BREAK(bn_o);
+
+        //create a new ecc group and initialize it to NID_X9_62_prime256v1 curve
+        //
+        ec_group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
+        if (ec_group == NULL) {
+            break;
+        }
+
+        //create a new EC point
+        //
+        pub_ec_point = EC_POINT_new(ec_group);
+        if (pub_ec_point == NULL) {
+            break;
+        }
+
+        //calculate public key (point) based on private key. (pub = priv * curve_griup)
+        //
+        if (!EC_POINT_mul(ec_group, pub_ec_point, bn_o, NULL, NULL, tmp)) {
+            break;
+        }
+
+        //retrieve x and y coordinates into BNs
+        //
+        if (!EC_POINT_get_affine_coordinates_GFp(ec_group, pub_ec_point, bn_x, bn_y, tmp)) {
+            break;
+        }
+
+        //convert the absolute value of BNs into little-endian buffers
+        //
+        if (!BN_bn2lebinpad(bn_x, p_att_pub_key->gx, BN_num_bytes(bn_x))) {
+            break;
+        }
+
+        if (!BN_bn2lebinpad(bn_y, p_att_pub_key->gy, BN_num_bytes(bn_y))) {
+            break;
+        }
+
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    //in case of failure clear public key
+    //
+    if (ret != SGX_SUCCESS) {
+        (void)memset_s(p_att_pub_key, sizeof(sgx_ec256_public_t), 0, sizeof(sgx_ec256_public_t));
+    }
+
+    BN_clear_free(bn_o);
+    BN_clear_free(bn_x);
+    BN_clear_free(bn_y);
+    BN_CTX_free(tmp);
+    EC_GROUP_clear_free(ec_group);
+    EC_POINT_clear_free(pub_ec_point);
+
+    return ret;
 }

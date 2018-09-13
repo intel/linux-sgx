@@ -332,6 +332,9 @@ sgx_status_t create_session_ocall(
                 case AESM_OUT_OF_EPC:
                     mapped = SGX_ERROR_OUT_OF_EPC;
                     break;
+                case AESM_EPID_REVOKED_ERROR:
+                    mapped = SGX_ERROR_EPID_MEMBER_REVOKED;
+		    break;
                 case AESM_MSG_ERROR:
                 default:
                     mapped = SGX_ERROR_UNEXPECTED;
@@ -383,6 +386,9 @@ sgx_status_t exchange_report_ocall(
                 case AESM_OUT_OF_EPC:
                     mapped = SGX_ERROR_OUT_OF_EPC;
                     break;
+                case AESM_EPID_REVOKED_ERROR:
+                    mapped = SGX_ERROR_EPID_MEMBER_REVOKED;
+		    break;
                 default:
                     mapped = SGX_ERROR_UNEXPECTED;
             }
@@ -423,6 +429,9 @@ sgx_status_t close_session_ocall(
                 case AESM_OUT_OF_EPC:
                     mapped = SGX_ERROR_OUT_OF_EPC;
                     break;
+                case AESM_EPID_REVOKED_ERROR:
+                    mapped = SGX_ERROR_EPID_MEMBER_REVOKED;
+		    break;
                 default:
                     mapped = SGX_ERROR_UNEXPECTED;
             }       
@@ -469,6 +478,9 @@ sgx_status_t invoke_service_ocall(
                 case AESM_OUT_OF_EPC:
                     mapped = SGX_ERROR_OUT_OF_EPC;
                     break;
+                case AESM_EPID_REVOKED_ERROR:
+                    mapped = SGX_ERROR_EPID_MEMBER_REVOKED;
+		    break;
                 case AESM_MSG_ERROR:
                 default:
                     mapped = SGX_ERROR_UNEXPECTED;

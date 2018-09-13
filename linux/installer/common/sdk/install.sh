@@ -36,7 +36,7 @@ set -e
 SCRIPT_DIR=$(dirname "$0")
 source ${SCRIPT_DIR}/installConfig
 
-# Generate the script to preload Intel(R) SGX ptrace library for gdb
+# Generate the script to preload Intel(R) Software Guard Extensions (Intel(R) SGX) ptrace library for gdb
 SDK_DST_PATH=${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}
 SDK_LIB_PATH=${SDK_DST_PATH}/${LIB_DIR}
 

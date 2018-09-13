@@ -40,6 +40,8 @@ SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
 PSW_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
 USR_LIB_PATH=$(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory)))
 
+ECL_VER=1.0.0
+
 default:
 
 install:
@@ -50,4 +52,9 @@ install:
 	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
 	mv $(PSW_LIB_PATH)/libsgx_uae_service.so $(USR_LIB_PATH)
 	mv $(PSW_LIB_PATH)/libsgx_urts.so $(USR_LIB_PATH)
+	mv $(PSW_LIB_PATH)/libsgx_enclave_common.so $(USR_LIB_PATH)
 	rmdir $(PSW_LIB_PATH)
+	cd $(USR_LIB_PATH) && \
+	mv libsgx_enclave_common.so libsgx_enclave_common.so.$(ECL_VER) && \
+	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') && \
+	ln -fs libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_enclave_common.so

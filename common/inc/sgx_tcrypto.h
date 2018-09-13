@@ -154,14 +154,14 @@ typedef enum {
 #define DMQ1_SIZE_IN_BYTES 192
 #define IQMP_SIZE_IN_BYTES 192
 
-#define N_SIZE_IN_UINT     N_SIZE_IN_BYTES/sizeof(unsigned int)
-#define E_SIZE_IN_UINT     E_SIZE_IN_BYTES/sizeof(unsigned int)
-#define D_SIZE_IN_UINT     D_SIZE_IN_BYTES/sizeof(unsigned int)
-#define P_SIZE_IN_UINT     P_SIZE_IN_BYTES/sizeof(unsigned int)
-#define Q_SIZE_IN_UINT     Q_SIZE_IN_BYTES/sizeof(unsigned int)
-#define DMP1_SIZE_IN_UINT  DMP1_SIZE_IN_BYTES/sizeof(unsigned int)
-#define DMQ1_SIZE_IN_UINT  DMQ1_SIZE_IN_BYTES/sizeof(unsigned int)
-#define IQMP_SIZE_IN_UINT  IQMP_SIZE_IN_BYTES/sizeof(unsigned int)
+#define N_SIZE_IN_UINT     (N_SIZE_IN_BYTES/sizeof(unsigned int))
+#define E_SIZE_IN_UINT     (E_SIZE_IN_BYTES/sizeof(unsigned int))
+#define D_SIZE_IN_UINT     (D_SIZE_IN_BYTES/sizeof(unsigned int))
+#define P_SIZE_IN_UINT     (P_SIZE_IN_BYTES/sizeof(unsigned int))
+#define Q_SIZE_IN_UINT     (Q_SIZE_IN_BYTES/sizeof(unsigned int))
+#define DMP1_SIZE_IN_UINT  (DMP1_SIZE_IN_BYTES/sizeof(unsigned int))
+#define DMQ1_SIZE_IN_UINT  (DMQ1_SIZE_IN_BYTES/sizeof(unsigned int))
+#define IQMP_SIZE_IN_UINT  (IQMP_SIZE_IN_BYTES/sizeof(unsigned int))
 
 typedef struct _rsa_params_t {
 	unsigned int n[N_SIZE_IN_UINT];
@@ -778,21 +778,32 @@ extern "C" {
     */
     sgx_status_t sgx_free_rsa_key(void *p_rsa_key, sgx_rsa_key_type_t key_type, int mod_size, int exp_size);
 
-    /** Create an ECDSA private key based on input random seed.
+    /** Generates an ECDSA private key based on input random seed.
     *
     * Parameters:
     *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
-    *   Inputs: hash_drg - Input seed
-    *           hash_drg_len - Seed len
-    *           sgx_nistp256_r_m1 -
-    *           sgx_nistp256_r_m1_len - nistp256 len
-    *   Output: out_key - ECDSA private key
-    *           out_key_len - ECDSA private key length
+    *   Inputs: hash_drg - Pointer to the input random seed.
+    *           hash_drg_len - Length of the input random seed.
+    *           sgx_nistp256_r_m1 - Pointer to the buffer for n-1 where n is order of the ECC group used.
+    *           sgx_nistp256_r_m1_len - Length for the buffer for nistp256.
+    *   Output: out_key - Pointer to the generated ECDSA private key - BIG ENDIAN
+    *           out_key_len - Length of the prepared buffer for ECDSA private key.
     *
     */
     sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int hash_drg_len,
         const unsigned char* sgx_nistp256_r_m1, int sgx_nistp256_r_m1_len,
         unsigned char* out_key, int out_key_len);
+
+    /** Generates an ECC public key based on a given ECC private key.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Input: p_att_priv_key - Input private key
+    *   Output: p_att_pub_key - Output public key - LITTLE ENDIAN
+    *
+    */
+    sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att_priv_key,
+        sgx_ec256_public_t  *p_att_pub_key);
 
 #ifdef __cplusplus
 }

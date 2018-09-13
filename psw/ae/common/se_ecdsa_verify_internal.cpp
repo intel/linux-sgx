@@ -115,7 +115,7 @@ sgx_status_t se_ecdsa_verify_internal(
 
     const int order_size = sizeof(g_nistp256_r);
 
-    ipp_ret = newBN(g_nistp256_r, order_size, &p_bn_ecp_order);
+    ipp_ret = sgx_ipp_newBN(g_nistp256_r, order_size, &p_bn_ecp_order);
     if(ipp_ret != ippStsNoErr)
     {
         ret = SGX_ERROR_UNEXPECTED;
@@ -124,7 +124,7 @@ sgx_status_t se_ecdsa_verify_internal(
 
     memcpy(sig_rl_hash_le, p_sig_rl_hash->hash, sizeof(sig_rl_hash_le));
     SWAP_ENDIAN_32B(sig_rl_hash_le);
-    ipp_ret = newBN(sig_rl_hash_le, sizeof(sig_rl_hash_le),
+    ipp_ret = sgx_ipp_newBN(sig_rl_hash_le, sizeof(sig_rl_hash_le),
                     &p_bn_sig_rl_hash);
     if(ipp_ret != ippStsNoErr)
     {
@@ -132,7 +132,7 @@ sgx_status_t se_ecdsa_verify_internal(
         goto CLEANUP;
     }
 
-    ipp_ret = newBN(0, order_size, &p_bn_sig_rl_msg);
+    ipp_ret = sgx_ipp_newBN(0, order_size, &p_bn_sig_rl_msg);
     if(ipp_ret != ippStsNoErr)
     {
         ret = SGX_ERROR_UNEXPECTED;
@@ -146,7 +146,7 @@ sgx_status_t se_ecdsa_verify_internal(
         goto CLEANUP;
     }
 
-    ipp_ret = newBN(p_signature->x, order_size, &p_bn_sign_x);
+    ipp_ret = sgx_ipp_newBN(p_signature->x, order_size, &p_bn_sign_x);
     if(ipp_ret != ippStsNoErr)
     {
         ret = SGX_ERROR_UNEXPECTED;
@@ -154,7 +154,7 @@ sgx_status_t se_ecdsa_verify_internal(
     }
 
     // Create a Big Number whose value is zero
-    ipp_ret = newBN(&zero, sizeof(zero), &p_bn_zero);
+    ipp_ret = sgx_ipp_newBN(&zero, sizeof(zero), &p_bn_zero);
     if(ipp_ret != ippStsNoErr)
     {
         ret = SGX_ERROR_UNEXPECTED;
@@ -176,7 +176,7 @@ sgx_status_t se_ecdsa_verify_internal(
         goto CLEANUP;
     }
 
-    ipp_ret = newBN(p_signature->y, order_size, &p_bn_sign_y);
+    ipp_ret = sgx_ipp_newBN(p_signature->y, order_size, &p_bn_sign_y);
     if(ipp_ret != ippStsNoErr)
     {
         ret = SGX_ERROR_UNEXPECTED;
@@ -197,14 +197,14 @@ sgx_status_t se_ecdsa_verify_internal(
         goto CLEANUP;
     }
 
-    ipp_ret = newBN((Ipp32u *)p_pubkey->gx, order_size, &p_bn_p_x);
+    ipp_ret = sgx_ipp_newBN((Ipp32u *)p_pubkey->gx, order_size, &p_bn_p_x);
     if(ipp_ret != ippStsNoErr)
     {
         ret = SGX_ERROR_UNEXPECTED;
         goto CLEANUP;
     }
 
-    ipp_ret = newBN((Ipp32u *)p_pubkey->gy, order_size, &p_bn_p_y);
+    ipp_ret = sgx_ipp_newBN((Ipp32u *)p_pubkey->gy, order_size, &p_bn_p_y);
     if(ipp_ret != ippStsNoErr)
     {
         ret = SGX_ERROR_UNEXPECTED;

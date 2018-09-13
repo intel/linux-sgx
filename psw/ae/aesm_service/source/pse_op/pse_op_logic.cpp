@@ -179,6 +179,7 @@ ae_error_t PSEOPAESMLogic::certificate_provisioning_and_long_term_pairing_func(b
     case AE_SUCCESS:
     case OAL_PROXY_SETTING_ASSIST:
     case AESM_AE_OUT_OF_EPC:
+    case AESM_PSDA_PLATFORM_KEYS_REVOKED:
         return ltpStatus;
     // for below errors need to check cert status
     case AESM_NPC_NO_PSE_CERT:
@@ -213,6 +214,7 @@ ae_error_t PSEOPAESMLogic::certificate_provisioning_and_long_term_pairing_func(b
                     case OAL_PROXY_SETTING_ASSIST:
                     case AESM_AE_OUT_OF_EPC:
                     case OAL_THREAD_TIMEOUT_ERROR:
+                    case AESM_PSDA_PLATFORM_KEYS_REVOKED:
                         psStatus = ltpStatus;
                         break;
 
@@ -266,6 +268,8 @@ static aesm_error_t redo_long_term_pairing(
         return AESM_BUSY;
     case PVE_PROV_ATTEST_KEY_NOT_FOUND:
         return AESM_UNRECOGNIZED_PLATFORM;
+    case PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE:
+        return AESM_UPDATE_AVAILABLE;
     case OAL_PROXY_SETTING_ASSIST:
         return AESM_PROXY_SETTING_ASSIST;
     case PSW_UPDATE_REQUIRED:

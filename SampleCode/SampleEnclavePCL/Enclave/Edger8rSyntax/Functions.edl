@@ -43,8 +43,6 @@ enclave {
 
     trusted {
 
-        public void ecall_function_calling_convs(void);
-        
         /*
          * [public]:
          *      public ECALL can be called directly in App.
@@ -62,17 +60,6 @@ enclave {
     };
 
     untrusted {
-        
-        /*
-         * [cdecl]:
-         *      tells edger8r the calling convention of the OCALLs is 'cdecl'.
-         * [dllimport]:
-         *      indicats the OCALL is provided in DLLs.
-         *
-         * Note: memccpy() is provided by MS system DLL, we don't need to implement it in App side.
-         */
-        
-        [cdecl, dllimport] void *memccpy([in, out, size=len] void *dest, [in, size=len] const void *src, int val, size_t len);
         
         /*
          * [allow]:

@@ -336,7 +336,7 @@ int CEnclave::ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_tabl
 {
     int error = SGX_ERROR_UNEXPECTED;
 
-    if (is_builtin_ocall(int(proc)))
+    if (is_builtin_ocall(proc))
     {
         se_rdunlock(&m_rwlock);
 		if ((int)proc == EDMM_TRIM)

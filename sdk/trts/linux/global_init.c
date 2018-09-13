@@ -120,10 +120,8 @@ int atexit(void (*fun)(void))
 
 static void do_atexit_aux(void)
 {
-    sgx_spin_lock(&g_exit_function_lock);
     exit_function_t *exit_function = g_exit_function;
     g_exit_function = NULL;
-    sgx_spin_unlock(&g_exit_function_lock);
 
     while (exit_function != NULL)
     {

@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 __attribute__((visibility("default")))
-const char * sgx_capable_version = SGX_CAPABLE_VERSION_STR;
+char sgx_capable_version[] = SGX_CAPABLE_VERSION_STR;
 
 #ifdef __cplusplus
 }

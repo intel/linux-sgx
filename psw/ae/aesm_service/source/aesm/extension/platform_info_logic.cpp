@@ -147,6 +147,10 @@ ae_error_t PlatformInfoLogic::check_ltp_thread_func(bool& is_new_pairing)
                 {
                     return AESM_AE_OUT_OF_EPC;
                 }
+            case AESM_PSDA_PLATFORM_KEYS_REVOKED:
+                {
+                    return AESM_PSDA_PLATFORM_KEYS_REVOKED;
+                }
             case AESM_NPC_NO_PSE_CERT:
             case AESM_LTP_PSE_CERT_REVOKED:
             case PSE_PAIRING_BLOB_UNSEALING_ERROR:
@@ -186,6 +190,7 @@ ae_error_t PlatformInfoLogic::check_ltp_thread_func(bool& is_new_pairing)
                             case OAL_PROXY_SETTING_ASSIST:
                             case AESM_AE_OUT_OF_EPC:
                             case OAL_THREAD_TIMEOUT_ERROR:
+                            case AESM_PSDA_PLATFORM_KEYS_REVOKED:
                                 {
                                     AESM_DBG_ERROR("long_term_pairing Return: (ae0x%X)", ltpStatus);
                                     psStatus = ltpStatus;
@@ -300,6 +305,9 @@ ae_error_t PlatformInfoLogic::create_session_pre_internal(void)
     case AESM_AE_OUT_OF_EPC:
         AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL]);
         break;
+    case AESM_PSDA_PLATFORM_KEYS_REVOKED:
+        AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PLATFORM_REVOKED]);
+        break;
     case AESM_PCP_NEED_PSE_UPDATE:
     case AESM_PCP_PSE_CERT_PROVISIONING_ATTESTATION_FAILURE_NEED_EPID_UPDATE:
     case AESM_PCP_PSE_CERT_PROVISIONING_ATTESTATION_FAILURE_MIGHT_NEED_EPID_UPDATE:
@@ -379,6 +387,7 @@ ae_error_t PlatformInfoLogic::update_pse_thread_func(const platform_info_blob_wr
                 case OAL_PROXY_SETTING_ASSIST:
                 case PSW_UPDATE_REQUIRED:
                 case AESM_AE_OUT_OF_EPC:
+                case AESM_PSDA_PLATFORM_KEYS_REVOKED:
                     {
                         AESM_DBG_TRACE("long_term_pairing Return: (ae%d)", ltpStatus);
                         retVal = ltpStatus;
@@ -627,6 +636,8 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
             return AESM_BUSY;
         case PVE_PROV_ATTEST_KEY_NOT_FOUND:
             return AESM_UNRECOGNIZED_PLATFORM;
+        case PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE:
+            return AESM_UPDATE_AVAILABLE;
         case OAL_PROXY_SETTING_ASSIST:
             // don't log an error here
             return AESM_PROXY_SETTING_ASSIST;
@@ -636,6 +647,9 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
         case AESM_AE_OUT_OF_EPC:
             AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);
             return AESM_OUT_OF_EPC;
+        case AESM_PSDA_PLATFORM_KEYS_REVOKED:
+            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PLATFORM_REVOKED]);
+            return AESM_EPID_REVOKED_ERROR;
         case AESM_LTP_SIMPLE_LTP_ERROR:
         default:
             AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);

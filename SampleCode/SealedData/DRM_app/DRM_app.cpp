@@ -286,19 +286,19 @@ uint32_t test_time_based_policy_expiration()
 #define _T(x) x
 int main(int argc, char* argv[])
 {
-    argc; /* unused parameter */
-    argv; /* unused parameter */
-    uint32_t result;
+    (void)argc; /* unused parameter */
+    (void)argv; /* unused parameter */
+
     /* normal operation */
-    result = test_replay_protected_drm_operation();
+    test_replay_protected_drm_operation();
     /* trigger update limitation */
-    result = test_replay_protected_drm_update_limitation();
+    test_replay_protected_drm_update_limitation();
     /* replay attack */
-    result = test_replay_protected_drm_replay_attack_protection();
+    test_replay_protected_drm_replay_attack_protection();
     /* normal operation */
-    result = test_time_based_policy_operation();
+    test_time_based_policy_operation();
     /* trigger expiration */
-    result = test_time_based_policy_expiration();
+    test_time_based_policy_expiration();
     
     printf("Enter a character before exit ...\n");
     getchar();

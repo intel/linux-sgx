@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 
 ARGTABLE_SRC = $(wildcard *.c)
-ARGTABLE_OBJ = $(ARGTABLE_SRC:.c=.o)
+ARGTABLE_OBJ = $(sort $(ARGTABLE_SRC:.c=.o))
 
 ARGTABLE_LIB = libargtable3.a
 

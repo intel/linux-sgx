@@ -34,22 +34,22 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
 - Ensure that you have one of the following required operating systems:  
-  * Ubuntu\* 16.04 LTS Desktop 64bits
-  * Ubuntu\* 16.04 LTS Server 64bits
+  * Ubuntu\* 18.04 LTS Desktop 64bits
+  * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * CentOS 7.4.1708 64bits
+  * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
-  * On Ubuntu 16.04:
+  * On Ubuntu 18.04:
   ```
-    $ sudo apt-get install build-essential ocaml automake autoconf libtool wget python
+    $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
   ```
     $ sudo yum groupinstall 'Development Tools'
-    $ sudo yum install ocaml wget python
+    $ sudo yum install ocaml ocaml-ocamlbuild wget python openssl-devel
   ```
   * On Fedora 27:
   ```
@@ -59,14 +59,14 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * On SUSE Linux Enterprise Server 12:
   ```
     $ sudo zypper install --type pattern devel_basis
-    $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python
+    $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel
   ```
 - Use the following command to install additional required tools to build the Intel(R) SGX PSW:  
-  * On Ubuntu 16.04:
+  * On Ubuntu 18.04:
   ```
-    $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev
+    $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -127,33 +127,45 @@ $ make sdk_install_pkg DEBUG=1
 
 ### Build the Intel(R) SGX PSW Installer
 To build the Intel(R) SGX PSW installer, enter the following command:
-```
-$ make psw_install_pkg
-```
-You can find the generated Intel(R) SGX PSW installer ``sgx_linux_x64_psw_${version}.bin`` located under `linux/installer/bin/`, where `${version}` refers to the version number.
+- On Ubuntu 18.04:
+  ```
+  $ make deb_sgx_enclave_common_pkg
+  ```
+  You can find the generated Intel(R) SGX PSW installer ``libsgx-enclave-common_${version}-${revision}_${arch}.deb`` located under `linux/installer/deb/libsgx-enclave-common`, where `${version}` refers to the version number and the `${arch}` refers to the platform.
 
-**Note**: The above command builds the Intel(R) SGX SDK and PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer with debug information kept in the tools and libraries, enter the following command:
-```
-$ make psw_install_pkg DEBUG=1
-```
+  **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer with debug information kept in the tools and libraries, enter the following command:
+  ```
+  $ make deb_sgx_enclave_common_pkg DEBUG=1
+  ```
+- On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+- On Fedora 27:
+- On SUSE Linux Enterprise Server 12:
+  ```
+  $ make psw_install_pkg
+  ```
+  You can find the generated Intel(R) SGX PSW installer ``sgx_linux_x64_psw_${version}.bin`` located under `linux/installer/bin/`, where `${version}` refers to the version number.
 
+  **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer with debug information kept in the tools and libraries, enter the following command:
+  ```
+  $ make psw_install_pkg DEBUG=1
+  ```
 
 Install the Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
-  * Ubuntu\* 16.04 LTS Desktop 64bits
-  * Ubuntu\* 16.04 LTS Server 64bits
+  * Ubuntu\* 18.04 LTS Desktop 64bits
+  * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * CentOS 7.4.1708 64bits
+  * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
-  * On Ubuntu 16.04:
+  * On Ubuntu 18.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.4:
+  * On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python 
@@ -205,10 +217,10 @@ Install the Intel(R) SGX PSW
 ----------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
-  * Ubuntu\* 16.04 LTS Desktop 64bits
-  * Ubuntu\* 16.04 LTS Server 64bits
+  * Ubuntu\* 18.04 LTS Desktop 64bits
+  * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * CentOS 7.4.1708 64bits
+  * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
 - Ensure that you have a system with the following required hardware:  
@@ -216,11 +228,11 @@ Install the Intel(R) SGX PSW
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:  
-  * On Ubuntu 16.04:
+  * On Ubuntu 18.04:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:  
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -228,16 +240,16 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
   ```
-- To use Trusted Platform Service functions:  
+- `iclsClient` and `JHI` are optional prerequisite components and are needed if you need to use Intel(R) SGX Platform Service. To install these components:  
   Ensure `mei_me` driver is enabled and `/dev/mei0` exists.  
   Download [iclsClient](https://software.intel.com/en-us/sgx-sdk/download) and install it using the following commands:  
-  * On Ubuntu 16.04:
+  * On Ubuntu 18.04:
   ```
     $ sudo apt-get install alien
     $ sudo alien --scripts iclsClient-1.45.449.12-1.x86_64.rpm
     $ sudo dpkg -i iclsclient_1.45.449.12-2_amd64.deb
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:  
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
   ```
     $ sudo yum install iclsClient-1.45.449.12-1.x86_64.rpm
   ```
@@ -246,12 +258,12 @@ Install the Intel(R) SGX PSW
     $ sudo zypper install iclsClient-1.45.449.12-1.x86_64.rpm
   ```
   Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder, build and install the `JHI` service using the following commands:
-  * On Ubuntu 16.04:
+  * On Ubuntu 18.04:
   ```
     $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config
     $ cmake .;make;sudo make install;sudo systemctl enable jhi
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.4 and Fedora 27:  
+  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
   ```
     $ sudo yum install libuuid-devel libxml2-devel cmake pkgconfig
     $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
@@ -263,12 +275,24 @@ Install the Intel(R) SGX PSW
   ```
 
 ### Install the Intel(R) SGX PSW
-To install the Intel(R) SGX PSW, invoke the installer with root privilege:  
-```
-$ cd linux/installer/bin
-$ sudo ./sgx_linux_x64_psw_${version}.bin
-```
-
+To install the Intel(R) SGX PSW, invoke the installer with root privilege: 
+- On Ubuntu 18.04:
+  ```
+  $ cd linux/installer/deb/libsgx-enclave-common
+  $ sudo dpkg -i ./libsgx-enclave-common_${version}-${revision}_${arch}.deb
+  ```
+  To debug with sgx-gdb, enter the following command:
+  ```
+  $ cd linux/installer/deb/libsgx-enclave-common
+  $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_${arch}.ddeb
+  ```
+- On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+- On Fedora 27:
+- On SUSE Linux Enterprise Server 12:
+  ```
+  $ cd linux/installer/bin
+  $ sudo ./sgx_linux_x64_psw_${version}.bin
+  ```
 ### Start or Stop aesmd Service
 The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.  
 To stop the service: `$ sudo service aesmd stop`  

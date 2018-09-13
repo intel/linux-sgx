@@ -54,6 +54,8 @@ private:
     IppStatus m_ippstatus;
 
     IppsHMACState *m_pCtx;
+    int m_nSizeCtx;
+
 
 	// Disable class operations (default constructor, copy constructor, assignment operator, and address-of operator)
 	PrepareHMACSHA256();										// default constructor

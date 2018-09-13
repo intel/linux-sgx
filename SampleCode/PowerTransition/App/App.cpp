@@ -48,13 +48,11 @@
 #include "ErrorSupport.h"
 
 #define ENCLAVE_NAME "libenclave.signed.so"
-#define TOKEN_NAME "Enclave.token"
 
 #define THREAD_NUM 3
 
 // Global data
 sgx_enclave_id_t global_eid = 0;
-sgx_launch_token_t token = {0};
 rwlock_t lock_eid;
 struct sealed_buf_t sealed_buf;
 
@@ -68,9 +66,10 @@ void print(const char *str)
 
 // load_and_initialize_enclave():
 //		To load and initialize the enclave     
-sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_buf_t *sealed_buf)
+sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_buf_t *buf)
 {
     sgx_status_t ret = SGX_SUCCESS;
+    sgx_launch_token_t token = {0};
     int retval = 0;
     int updated = 0;
 
@@ -89,23 +88,11 @@ sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_bu
         if(ret != SGX_SUCCESS)
             return ret;
 
-        // Save the launch token if updated
-        if(updated == 1)
-        {
-            ofstream ofs(TOKEN_NAME, std::ios::binary|std::ios::out);
-            if(!ofs.good())
-            {
-                cout<< "Warning: Failed to save the launch token to \"" <<TOKEN_NAME <<"\""<<endl;
-            }
-            else
-                ofs << token;
-        }
-
         // Step 3: enter the enclave to initialize the enclave
         //      If power transition occurs when the process is inside the enclave, SGX_ERROR_ENCLAVE_LOST will be returned after the system resumes.
         //      Then we can load and intialize the enclave again or just return this error code and exit to handle the power transition.
         //      In this sample, we choose to load and intialize the enclave again.
-        ret = initialize_enclave(*eid, &retval, sealed_buf);
+        ret = initialize_enclave(*eid, &retval, buf);
         if(ret == SGX_ERROR_ENCLAVE_LOST)
         {
             cout<<"Power transition occured in initialize_enclave()" <<endl;
@@ -210,22 +197,6 @@ bool set_global_data()
 {
     // Initialize the read/write lock.
     init_rwlock(&lock_eid);
-
-    // Get the saved launch token.
-    // If error occures, zero the token.
-    ifstream ifs(TOKEN_NAME, std::ios::binary | std::ios::in);
-    if(!ifs.good())
-    {
-        memset(token, 0, sizeof(sgx_launch_token_t));
-    }
-    else
-    {
-        ifs.read(reinterpret_cast<char *>(&token), sizeof(sgx_launch_token_t));
-        if(ifs.fail())
-        {
-            memset(&token, 0, sizeof(sgx_launch_token_t));
-        }
-    }
 
     // Allocate memory to save the sealed data.
     uint32_t sealed_len = sizeof(sgx_sealed_data_t) + sizeof(uint32_t);

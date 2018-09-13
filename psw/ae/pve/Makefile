@@ -55,9 +55,7 @@ EXTERNAL_LIB += -L$(EPID_LIBDIR)/epid/member -lmember \
 				-L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
 
 SRC := $(wildcard *.cpp)
-SRC += ipp_bn.cpp                    \
-	   ipp_rsa_pub_key.cpp           \
-	   se_ecdsa_verify_internal.cpp  \
+SRC += se_ecdsa_verify_internal.cpp  \
 	   pve_qe_common.cpp             \
 	   pve_pub_key.cpp               \
 	   pek_pub_key.cpp

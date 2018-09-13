@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 __attribute__((visibility("default")))
-const char * sgx_tprotectedfs_version = SGX_TPROTECTEDFS_VERSION_STR;
+char sgx_tprotectedfs_version[] = SGX_TPROTECTEDFS_VERSION_STR;
 #ifdef __cplusplus
 }
 #endif

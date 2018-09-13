@@ -374,7 +374,7 @@ sgx_status_t do_ecall_add_thread(void *ms)
 
     if (!sgx_is_outside_enclave(tcs, sizeof(struct ms_tcs)))
     {
-        abort();
+        return status;
     }
 
     const struct ms_tcs mtcs = *tcs;
@@ -384,7 +384,7 @@ sgx_status_t do_ecall_add_thread(void *ms)
         return status;
     }
 
-    __builtin_ia32_lfence();
+    sgx_lfence();
 
     status = do_save_tcs(ptcs);
     if(SGX_SUCCESS != status)
@@ -413,7 +413,7 @@ sgx_status_t do_ecall_add_thread(void *ms)
 sgx_status_t do_uninit_enclave(void *tcs)
 {
 #ifndef SE_SIM
-    if(is_dynamic_thread_exist() && !is_utility_thread())
+    if(EDMM_supported && !is_utility_thread())
         return SGX_ERROR_UNEXPECTED;
 #endif
     tcs_node_t *tcs_node = g_tcs_node;

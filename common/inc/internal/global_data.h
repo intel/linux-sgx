@@ -63,6 +63,8 @@ typedef struct _global_data_t
 #define ENCLAVE_INIT_DONE         2
 #define ENCLAVE_CRASHED           3
 
+#define RELRO_SECTION_NAME ".data.rel.ro"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

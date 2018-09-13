@@ -115,7 +115,7 @@ sgx_status_t ecall_generate_sealed_blob(uint8_t* sealed_blob, size_t sealed_blob
         g_pcl_guid,                        // AAD
         SGX_AESGCM_KEY_SIZE,               // Key len
         key,                               // Key
-        sealed_blob_size,                  // Resulting blob size
+        (uint32_t)sealed_blob_size,                  // Resulting blob size
         (sgx_sealed_data_t*)sealed_blob ); // Resulting blob
 
     memset(key, 0,SGX_AESGCM_KEY_SIZE); 

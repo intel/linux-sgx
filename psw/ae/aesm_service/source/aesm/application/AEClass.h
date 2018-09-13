@@ -32,6 +32,7 @@
 #define _AE_CLASS_H_
 #include "sgx_eid.h"
 #include "sgx_key.h"
+#include "sgx_report.h"
 #include "se_thread.h"
 #include "sgx_urts.h"
 #include "internal/se_stdio.h"
@@ -82,14 +83,18 @@ public:
 
     virtual ae_error_t load_enclave();
     void unload_enclave();
+    ae_error_t set_mrenclave(const sgx_measurement_t& mrenclave);
+    ae_error_t get_mrenclave(sgx_measurement_t& mrenclave);
 protected:
     sgx_enclave_id_t m_enclave_id;
     sgx_launch_token_t m_launch_token;
     sgx_misc_attribute_t m_attributes;
+    sgx_measurement_t m_mrenclave;
     SingletonEnclave():m_enclave_id(0)
     {
         memset(&m_launch_token, 0, sizeof(m_launch_token));
         memset(&m_attributes, 0, sizeof(m_attributes));
+        memset(&m_mrenclave, 0, sizeof(m_mrenclave));
     }
     ~SingletonEnclave(){}
     virtual void before_enclave_load() {}
@@ -149,6 +154,28 @@ void SingletonEnclave<T>::unload_enclave()
     }
 
     return;
+}
+
+template <class T>
+ae_error_t SingletonEnclave<T>::get_mrenclave(sgx_measurement_t& mrenclave)
+{
+    if(0!=memcpy_s(&mrenclave, sizeof(mrenclave), &m_mrenclave, sizeof(m_mrenclave)))
+    {
+        AESM_DBG_ERROR("memcpy failed");
+        return AE_FAILURE;
+    }
+    return AE_SUCCESS;
+}
+
+template <class T>
+ae_error_t SingletonEnclave<T>::set_mrenclave(const sgx_measurement_t& mrenclave)
+{
+    if(0!=memcpy_s(&m_mrenclave, sizeof(m_mrenclave), &mrenclave, sizeof(mrenclave)))
+    {
+        AESM_DBG_ERROR("memcpy failed");
+        return AE_FAILURE;
+    }
+    return AE_SUCCESS;
 }
 
 template<class T>

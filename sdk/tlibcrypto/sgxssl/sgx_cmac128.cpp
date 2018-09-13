@@ -55,8 +55,6 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
 	size_t mactlen;
 	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
-
 	do {
 		//create a new ctx of CMAC
 		//
