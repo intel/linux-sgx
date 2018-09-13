@@ -1,0 +1,5 @@
+ECL_VERSION="1.0"
+ECL_PKG_NAME=libsgx-enclave-common-dev
+
+TARBALL_NAME=libsgx-enclave-common-dev_1.0.orig.tar.gz
+INC_DIR=include

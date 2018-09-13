@@ -1,0 +1,5 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/common/inc/sgx_attributes.h	<installdir>/package/include/sgx_attributes.h	0	main	STP
+<deliverydir>/psw/enclave_common/sgx_enclave_common.h	<installdir>/package/include/sgx_enclave_common.h	0	main	STP
+<deliverydir>/linux/installer/common/libsgx-enclave-common-dev/installConfig	<installdir>/scripts/installConfig	0	main	STP
+<deliverydir>/linux/installer/common/libsgx-enclave-common-dev/Makefile	<installdir>/Makefile	0	main	STP
