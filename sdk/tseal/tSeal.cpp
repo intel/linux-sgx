@@ -202,7 +202,7 @@ extern "C" sgx_status_t sgx_unseal_data(const sgx_sealed_data_t *p_sealed_data, 
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if (!sgx_is_within_enclave(p_decrypted_text_length, sizeof(p_decrypted_text_length)))
+    if (!sgx_is_within_enclave(p_decrypted_text_length, sizeof(*p_decrypted_text_length)))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
