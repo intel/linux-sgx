@@ -112,19 +112,21 @@ on_exit:
 
 sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
 {
-    uint32_t name_len = file.name_len;
-    if (file.unicode)
-        name_len *= (uint32_t)sizeof(wchar_t);
+    if (file.name != NULL) {
+        uint32_t name_len = file.name_len;
+        if (file.unicode)
+            name_len *= (uint32_t)sizeof(wchar_t);
 
-    const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
+        const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
 
-    m_enclave_info.lpFileName = calloc(1, buf_len);
-    if (m_enclave_info.lpFileName == NULL)
-        return SGX_ERROR_OUT_OF_MEMORY;
+        m_enclave_info.lpFileName = calloc(1, buf_len);
+        if (m_enclave_info.lpFileName == NULL)
+            return SGX_ERROR_OUT_OF_MEMORY;
 
-    memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
-    m_enclave_info.unicode = file.unicode?0:1;
-    m_enclave_info.file_name_size = name_len;
+        memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
+        m_enclave_info.unicode = file.unicode?0:1;
+        m_enclave_info.file_name_size = name_len;
+    }
 
     m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
 

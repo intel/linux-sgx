@@ -423,20 +423,19 @@ fail:
 }
 
 
-sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
-	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
-                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
+sgx_status_t _create_enclave_from_buffer_ex(const bool debug, uint8_t *base_addr, uint64_t file_size, se_file_t& file,
+                                            le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch, int *launch_updated,
+                                            sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr,
+                                            const uint32_t ex_features, const void* ex_features_p[32])
 {
     unsigned int ret = SGX_SUCCESS;
     sgx_status_t lt_result = SGX_SUCCESS;
-    uint32_t file_size = 0;
-    map_handle_t* mh = NULL;
     sgx_misc_attribute_t sgx_misc_attr;
     metadata_t *metadata = NULL;
     SGXLaunchToken *lc = NULL;
     memset(&sgx_misc_attr, 0, sizeof(sgx_misc_attribute_t));
 
-    if(NULL == launch || NULL == launch_updated || NULL == enclave_id)
+    if(NULL == base_addr || NULL == launch || NULL == launch_updated || NULL == enclave_id)
         return SGX_ERROR_INVALID_PARAMETER;
 #ifndef SE_SIM
     ret = validate_platform();
@@ -444,11 +443,7 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
         return (sgx_status_t)ret;
 #endif
 
-    mh = map_file(pfile, &file_size);
-    if (!mh)
-        return SGX_ERROR_OUT_OF_MEMORY;
-
-    PARSER parser(const_cast<uint8_t *>(mh->base_addr), (uint64_t)(file_size));
+    PARSER parser(base_addr, file_size);
     if(SGX_SUCCESS != (ret = parser.run_parser()))
     {
         goto clean_return;
@@ -516,7 +511,7 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
 
     //Need to set the whole misc_attr instead of just secs_attr.
     do {
-        ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
+        ret = __create_enclave(parser, base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
         //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
     } while(SGX_ERROR_ENCLAVE_LOST == ret);
 
@@ -541,10 +536,28 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
 
 
 clean_return:
-    if(mh != NULL)
-        unmap_file(mh);
     if(lc != NULL)
         delete lc;
+    return (sgx_status_t)ret;
+}
+
+sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
+	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
+                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
+{
+    unsigned int ret = SGX_SUCCESS;
+    uint32_t file_size = 0;
+    map_handle_t* mh = NULL;
+
+    mh = map_file(pfile, &file_size);
+    if (!mh)
+        return SGX_ERROR_OUT_OF_MEMORY;
+
+    ret = _create_enclave_from_buffer_ex(debug, mh->base_addr, (uint64_t)(file_size), file, prd_css_file, launch,
+                                         launch_updated, enclave_id, misc_attr, ex_features, ex_features_p);
+
+    if(mh != NULL)
+        unmap_file(mh);
     return (sgx_status_t)ret;
 }
 
