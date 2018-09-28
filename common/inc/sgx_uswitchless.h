@@ -72,6 +72,7 @@
 #include "sgx_error.h"
 #include "sgx_eid.h"
 #include "sgx_defs.h"
+#include "sgx_urts.h"
 
 /*
  * A worker can be either trusted (executed inside enclave) or untrusted

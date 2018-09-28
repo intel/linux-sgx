@@ -193,7 +193,6 @@ COMMON_SRC += ./source/qe/QEClass.cpp                  \
               ./source/pse_op/pse_op_psda_ocall.cpp \
               ./source/pse_op/pse_op_vmc_sqlite_ocall.cpp \
               upse.cpp  \
-              upse_iclsInit.cpp \
               helper.cpp \
               sigma_helper.cpp \
               interface_ocsp.cpp \

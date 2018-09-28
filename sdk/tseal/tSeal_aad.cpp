@@ -196,8 +196,8 @@ extern "C" sgx_status_t sgx_unmac_aadata(const sgx_sealed_data_t *p_sealed_data,
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if(!(sgx_is_within_enclave(p_additional_MACtext_length, sizeof(*p_additional_MACtext_length)) ||
-        sgx_is_outside_enclave(p_additional_MACtext_length, sizeof(*p_additional_MACtext_length))))
+    if(!(sgx_is_within_enclave(p_additional_MACtext_length, sizeof(p_additional_MACtext_length)) ||
+        sgx_is_outside_enclave(p_additional_MACtext_length, sizeof(p_additional_MACtext_length))))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
