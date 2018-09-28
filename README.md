@@ -137,10 +137,10 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make deb_sgx_enclave_common_pkg
   ```
-  You can find the generated Intel(R) SGX PSW installer ``libsgx-enclave-common_${version}-${revision}_${arch}.deb`` located under `linux/installer/deb/libsgx-enclave-common`, where `${version}` refers to the version number and the `${arch}` refers to the platform.   
-  **Note**: On Ubuntu 18.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``libsgx-enclave-common-dbgsym_${version}-${revision}_${arch}.ddeb`` for debug purpose. On Ubuntu 16.04, if you want to keep debug symbols in the Intel(R) SGX PSW installer, before building the Intel(R) SGX PSW, you need to export an environment variable to ensure the debug symbols not stripped:
+  You can find the generated Intel(R) SGX PSW installer ``libsgx-enclave-common_${version}-${revision}_amd64.deb`` located under `linux/installer/deb/libsgx-enclave-common`, where `${version}` refers to the version number and the `${revision}` refers to the revision number of the package.   
+  **Note**: On Ubuntu 18.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose. On Ubuntu 16.04, if you want to keep debug symbols in the Intel(R) SGX PSW installer, before building the Intel(R) SGX PSW, you need to export an environment variable to ensure the debug symbols not stripped:
    ```
-   $export DEB_BUILD_OPTIONS="nostrip"
+   $ export DEB_BUILD_OPTIONS="nostrip"
    ```
   **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer without optimization and with full debug information kept in the tools and libraries, enter the following command:
   ```
@@ -158,6 +158,12 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make psw_install_pkg DEBUG=1
   ```
+To build the Intel(R) SGX PSW development installer, enter the following command:
+- On Ubuntu 16.04 and Ubuntu 18.04:
+  ```
+  $ make deb_sgx_enclave_common_dev_pkg
+  ```
+  You can find the generated Intel(R) SGX PSW development installer ``libsgx-enclave-common-dev_${version}-${revision}_${arch}.deb`` located under `linux/installer/deb/libsgx-enclave-common-dev`.
 
 Install the Intel(R) SGX SDK
 ------------------------
@@ -292,12 +298,12 @@ To install the Intel(R) SGX PSW, invoke the installer with root privilege:
 - On Ubuntu 16.04 and Ubuntu 18.04:
   ```
   $ cd linux/installer/deb/libsgx-enclave-common
-  $ sudo dpkg -i ./libsgx-enclave-common_${version}-${revision}_${arch}.deb
+  $ sudo dpkg -i ./libsgx-enclave-common_${version}-${revision}_amd64.deb
   ```
   **NOTE**: To debug with sgx-gdb on Ubuntu 16.04, you need to ensure the Intel(R) SGX PSW is built under the condition that the environment variable ``DEB_BUILD_OPTIONS="nostrip"`` is set. On Ubuntu 18.04, you need to install the debug package by entering the following command:
   ```
   $ cd linux/installer/deb/libsgx-enclave-common
-  $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_${arch}.ddeb
+  $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb
   ```
 - On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
 - On Fedora 27:
