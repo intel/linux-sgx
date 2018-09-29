@@ -1,0 +1,5 @@
+libsgx-enclave-common-dev (1.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- TODO <TODO@TODO.com>  Tue, 09 May 2018 11:47:23 +0300

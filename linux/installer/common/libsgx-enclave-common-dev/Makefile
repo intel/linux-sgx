@@ -32,35 +32,12 @@
 include scripts/installConfig
 
 SOURCE_FOLDER=package
-SCRIPTS_FOLDER=scripts
 
-INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(ECL_PACKAGES_PATH)/$(ECL_PKG_NAME))
-SOURCE_INSTALL_PATH=$(INSTALL_PATH)
-SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
-ECL_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
-USR_LIB_PATH=$(addsuffix /$(shell dpkg-architecture -qDEB_HOST_MULTIARCH), $(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory))))
-
-URTS_VER=1.0.0
-ECL_VER=1.0.0
+ECL_INC_PATH=$(SOURCE_FOLDER)/$(INC_DIR)
+USR_INC_PATH=$(addprefix $(DESTDIR)/usr/, $(INC_DIR))
 
 default:
 
 install:
-	install -d $(SOURCE_INSTALL_PATH)
-	install -d $(SCRIPTS_INSTALL_PATH)
-	install -d $(USR_LIB_PATH)
-	cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
-	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
-	mv $(ECL_LIB_PATH)/libsgx_uae_service.so $(USR_LIB_PATH)
-	mv $(ECL_LIB_PATH)/libsgx_urts.so $(USR_LIB_PATH)
-	mv $(ECL_LIB_PATH)/libsgx_enclave_common.so $(USR_LIB_PATH)
-	rmdir $(ECL_LIB_PATH)
-	cd $(USR_LIB_PATH) && \
-	mv libsgx_uae_service.so libsgx_uae_service.so.$(ECL_VER) && \
-	ln -fs libsgx_uae_service.so.$(ECL_VER) libsgx_uae_service.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') && \
-	ln -fs libsgx_uae_service.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_uae_service.so && \
-	mv libsgx_urts.so libsgx_urts.so.$(ECL_VER) && \
-	ln -fs libsgx_urts.so.$(ECL_VER) libsgx_urts.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') && \
-	ln -fs libsgx_urts.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_urts.so && \
-	mv libsgx_enclave_common.so libsgx_enclave_common.so.$(ECL_VER) && \
-	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}')
+	install -d $(USR_INC_PATH)
+	install $(ECL_INC_PATH)/* $(USR_INC_PATH)

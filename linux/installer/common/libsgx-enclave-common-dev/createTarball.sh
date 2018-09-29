@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
 #
@@ -29,42 +30,30 @@
 #
 #
 
-include buildenv.mk
-.PHONY: all psw sdk clean rebuild sdk_install_pkg psw_install_pkg 
 
-all: sdk psw
+set -e
 
-psw: sdk
-	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
+SCRIPT_DIR=$(dirname "$0")
+ROOT_DIR="${SCRIPT_DIR}/../../../../"
+LINUX_INSTALLER_DIR="${ROOT_DIR}/linux/installer"
+LINUX_INSTALLER_COMMON_DIR="${LINUX_INSTALLER_DIR}/common"
 
-sdk:
-	$(MAKE) -C sdk/ USE_OPT_LIBS=$(USE_OPT_LIBS)
+INSTALL_PATH=${SCRIPT_DIR}/output
 
-# Generate SE SDK Install package
-sdk_install_pkg: sdk
-	./linux/installer/bin/build-installpkg.sh sdk
+# Cleanup
+rm -fr ${INSTALL_PATH}
 
-psw_install_pkg: psw
-	./linux/installer/bin/build-installpkg.sh psw
+# Get the configuration for this package
+source ${SCRIPT_DIR}/installConfig
 
-deb_sgx_enclave_common_pkg: psw
-	./linux/installer/deb/libsgx-enclave-common/build.sh
+# Fetch the gen_source script
+cp ${LINUX_INSTALLER_COMMON_DIR}/gen_source/gen_source.py ${SCRIPT_DIR}
 
-deb_sgx_enclave_common_dev_pkg:
-	./linux/installer/deb/libsgx-enclave-common-dev/build.sh
+# Copy the files according to the BOM
+python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/sgx-enclave-common-dev_base.txt
+python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
 
-clean:
-	@$(MAKE) -C sdk/                                clean
-	@$(MAKE) -C psw/                                clean
-	@$(RM)   -r $(ROOT_DIR)/build
-	@$(RM)   -r linux/installer/bin/sgx_linux*.bin
-	@$(RM)   -rf linux/installer/common/psw/output
-	@$(RM)   -rf linux/installer/common/psw/gen_source.py
-	@$(RM)   -rf linux/installer/common/sdk/output
-	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x64
-	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x86
-	@$(RM)   -rf linux/installer/common/sdk/gen_source.py
-
-rebuild:
-	$(MAKE) clean
-	$(MAKE) all
+# Create the tarball
+pushd ${INSTALL_PATH} &> /dev/null
+tar -zcvf ${TARBALL_NAME} *
+popd &> /dev/null
