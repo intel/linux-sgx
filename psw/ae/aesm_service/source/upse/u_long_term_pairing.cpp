@@ -56,7 +56,6 @@
 
 #endif
 #define PSEPR_LOST_ENCLAVE_RETRY_COUNT        3
-extern uint32_t upse_iclsInit();
 
 
 // FLOW
@@ -106,12 +105,6 @@ ae_error_t create_sigma_long_term_pairing(bool* p_new_pairing)
 
             if(status == AESM_PSDA_NOT_PROVISONED_ERROR)
             {
-                // retry CSE Provision
-                if (upse_iclsInit() == 0)
-                {
-                    rcount--;
-                    continue;
-                }
                 break;
             }
 

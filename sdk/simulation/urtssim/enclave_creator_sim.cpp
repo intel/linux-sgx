@@ -229,7 +229,9 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
     assert(global_data_sim_ptr != NULL);
 
     // Initialize the `seed' to `g_global_data_sim'.
-    global_data_sim_ptr->seed = (uint64_t)time(NULL);
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    global_data_sim_ptr->seed = (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
 
     global_data_sim_ptr->secs_ptr = ce->get_secs();
     sgx_cpu_svn_t temp_cpusvn = {{0}};

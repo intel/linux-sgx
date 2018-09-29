@@ -270,12 +270,6 @@ void AESMLogic::service_stop()
     }
     (void)aesm_free_thread(pse_thread);//release thread handle to free memory
 
-    ae_ret = aesm_wait_thread(CPSEClass::instance().icls_thread, &thread_ret, AESM_STOP_TIMEOUT);
-    if (ae_ret != AE_SUCCESS || thread_ret != AE_SUCCESS)
-    {
-        AESM_DBG_INFO("aesm_wait_thread failed(icls_thread):(ae %d) (%d)", ae_ret, thread_ret);
-    }
-    (void)aesm_free_thread(CPSEClass::instance().icls_thread);//release thread handle to free memory
     //waiting for pending threads util timeout
     stop_all_long_lived_threads(0);//waiting for pending threads util timeout
     CPVEClass::instance().unload_enclave();
