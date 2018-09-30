@@ -34,10 +34,8 @@
 #include <dirent.h>
 #include <vector>
 
-using namespace std;
-
 //get all thread id of current process.
-void get_thread_set(vector<se_thread_id_t> &thread_vector)
+void get_thread_set(std::vector<se_thread_id_t> &thread_vector)
 {
     DIR*   dir = NULL;
     struct dirent* dirent = NULL;

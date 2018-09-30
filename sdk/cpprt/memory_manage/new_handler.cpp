@@ -68,16 +68,14 @@ namespace std{
     }
 };
 
-using namespace std;
-
 //call new_handl function when  new memory failed
 int  call_newh()
 {
     int ret = 0;
-    sgx_spin_lock(&handler_lock);
-    new_handler handler = new_handl;
+    sgx_spin_lock(&std::handler_lock);
+    std::new_handler handler = std::new_handl;
     //unlock the handler here because new_handl may call set_new_handler again, will cause dead lock.
-    sgx_spin_unlock(&handler_lock);
+    sgx_spin_unlock(&std::handler_lock);
 
     // call new handler
     if ( handler != NULL ){

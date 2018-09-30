@@ -49,17 +49,15 @@
 #include <string>
 #include <sstream>
 
-using namespace std;
-
-static void convert_cpusvn_to_string(sgx_cpu_svn_t &cpusvn, string &str)
+static void convert_cpusvn_to_string(sgx_cpu_svn_t &cpusvn, std::string &str)
 {
     uint32_t buffer[4];
     memcpy_s(&buffer, sizeof(uint32_t)*4, &cpusvn, sizeof(sgx_cpu_svn_t));
-    stringstream ss;
+    std::stringstream ss;
     for(int i=0; i<4; i++)
     {
         buffer[i] = __builtin_bswap32(buffer[i]);
-        ss<<hex<<buffer[i];
+        ss<<std::hex<<buffer[i];
     }
     str = ss.str();
     return;
@@ -82,7 +80,7 @@ static bool modify_cpusvn(action_t act, const char* file_path, sgx_cpu_svn_t &cp
     assert(file_path != NULL);
 
     bool ret = false;
-    string cpusvn_str = "";
+    std::string cpusvn_str = "";
     switch(act)
     {
     case ACTION_RESET:

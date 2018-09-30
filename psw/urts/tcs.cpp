@@ -102,13 +102,13 @@ CTrustThreadPool::~CTrustThreadPool()
 {
     LockGuard lock(&m_thread_mutex);
     //destroy free tcs list
-    for(vector<CTrustThread *>::iterator it=m_free_thread_vector.begin(); it!=m_free_thread_vector.end(); it++)
+    for(std::vector<CTrustThread *>::iterator it=m_free_thread_vector.begin(); it!=m_free_thread_vector.end(); it++)
     {
         delete *it;
     }
     m_free_thread_vector.clear();
     //destroy unallocated tcs list
-    for(vector<CTrustThread *>::iterator it=m_unallocated_threads.begin(); it!=m_unallocated_threads.end(); it++)
+    for(std::vector<CTrustThread *>::iterator it=m_unallocated_threads.begin(); it!=m_unallocated_threads.end(); it++)
     {
         delete *it;
     }
@@ -133,10 +133,10 @@ CTrustThreadPool::~CTrustThreadPool()
 
 }
 
-void get_thread_set(vector<se_thread_id_t> &thread_vector);
-inline int CTrustThreadPool::find_thread(vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id)
+void get_thread_set(std::vector<se_thread_id_t> &thread_vector);
+inline int CTrustThreadPool::find_thread(std::vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id)
 {
-    for(vector<se_thread_id_t>::iterator it=thread_vector.begin(); it!=thread_vector.end(); it++)
+    for(std::vector<se_thread_id_t>::iterator it=thread_vector.begin(); it!=thread_vector.end(); it++)
         if(*it == thread_id)
             return TRUE;
     return FALSE;
@@ -252,9 +252,9 @@ std::vector<CTrustThread *> CTrustThreadPool::get_thread_list()
 {
     LockGuard lock(&m_thread_mutex);
 
-    vector<CTrustThread *> threads;
+    std::vector<CTrustThread *> threads;
 
-    for(vector<CTrustThread *>::iterator it = m_free_thread_vector.begin(); it != m_free_thread_vector.end(); it++)
+    for(std::vector<CTrustThread *>::iterator it = m_free_thread_vector.begin(); it != m_free_thread_vector.end(); it++)
     {
         threads.push_back(*it);
     }
@@ -533,7 +533,7 @@ int CThreadPoolBindMode::garbage_collect()
 
     //if free list is NULL, recycle tcs.
     //get thread id set of current process
-    vector<se_thread_id_t> thread_vector;
+    std::vector<se_thread_id_t> thread_vector;
     get_thread_set(thread_vector);
     //walk through thread cache to see if there is any thread that has exited
     Node<se_thread_id_t, CTrustThread*>* it = m_thread_list, *pre = NULL, *tmp = NULL;

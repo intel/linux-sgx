@@ -184,7 +184,7 @@ bool parse_dyn(const ElfW(Ehdr) *elf_hdr, ElfW(Dyn)* dyn_info)
  * We only need to search `.dynsym' for undefined symbols.
  */
 bool check_symbol_table(const ElfW(Ehdr) *elf_hdr, const ElfW(Dyn) *dyn_info,
-                        map<string, uint64_t>& sym_table)
+                        std::map<std::string, uint64_t>& sym_table)
 {
     const ElfW(Shdr) *sh_symtab = get_section_by_addr(elf_hdr, dyn_info[DT_SYMTAB].d_un.d_ptr);
 
@@ -245,7 +245,7 @@ bool check_symbol_table(const ElfW(Ehdr) *elf_hdr, const ElfW(Dyn) *dyn_info,
     // If the enclave if compiled/linked with -fpie/-pie, and setting the
     // enclave entry to `enclave_entry', the `st_name' for `enclave_entry'
     // will be 0 in `.dynsym'.
-    map<string, uint64_t>::const_iterator it = sym_table.find("enclave_entry");
+    std::map<std::string, uint64_t>::const_iterator it = sym_table.find("enclave_entry");
     if (it == sym_table.end())
     {
         sym_table["enclave_entry"] = (uint64_t)elf_hdr->e_entry;
@@ -504,7 +504,7 @@ Section* build_section(const uint8_t* raw_data, uint64_t size, uint64_t virtual_
 }
 
 bool build_regular_sections(const uint8_t* start_addr,
-                            vector<Section *>& sections,
+                            std::vector<Section *>& sections,
                             const Section*& tls_sec,
                             uint64_t& metadata_offset,
                             uint64_t& metadata_block_size)
@@ -565,7 +565,7 @@ bool build_regular_sections(const uint8_t* start_addr,
     return true;
 }
 
-const Section* get_max_rva_section(const vector<Section*> sections)
+const Section* get_max_rva_section(const std::vector<Section*> sections)
 {
     size_t sec_size = sections.size();
 
@@ -672,7 +672,7 @@ const uint8_t* ElfParser::get_start_addr() const
     return m_start_addr;
 }
 
-const vector<Section *>& ElfParser::get_sections() const
+const std::vector<Section *>& ElfParser::get_sections() const
 {
     return m_sections;
 }
@@ -684,7 +684,7 @@ const Section* ElfParser::get_tls_section() const
 
 uint64_t ElfParser::get_symbol_rva(const char* name) const
 {
-    map<string, uint64_t>::const_iterator it = m_sym_table.find(name);
+    std::map<std::string, uint64_t>::const_iterator it = m_sym_table.find(name);
     if (it != m_sym_table.end())
         return it->second;
     else
@@ -700,7 +700,7 @@ bool ElfParser::has_text_reloc() const
     return false;
 }
 
-bool ElfParser::get_reloc_bitmap(vector<uint8_t>& bitmap)
+bool ElfParser::get_reloc_bitmap(std::vector<uint8_t>& bitmap)
 {
     // Clear the `bitmap' so that it is in a known state
     bitmap.clear();
@@ -781,7 +781,7 @@ bool ElfParser::get_reloc_bitmap(vector<uint8_t>& bitmap)
     return true;
 }
 
-void ElfParser::get_reloc_entry_offset(const char* sec_name, vector<uint64_t>& offsets)
+void ElfParser::get_reloc_entry_offset(const char* sec_name, std::vector<uint64_t>& offsets)
 {
     if (sec_name == NULL)
         return;
@@ -859,7 +859,7 @@ sgx_status_t ElfParser::get_info(enclave_diff_info_t *enclave_diff_info)
     return SGX_SUCCESS;
 }
 
-void ElfParser::get_executable_sections(vector<const char *>& xsec_names) const
+void ElfParser::get_executable_sections(std::vector<const char *>& xsec_names) const
 {
     xsec_names.clear();
 

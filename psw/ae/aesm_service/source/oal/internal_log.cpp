@@ -59,7 +59,6 @@ static ae_error_t init_log_file(void)
 }
 
 #include <string>
-using namespace std;
 
 static const char *get_sgx_status_t_string(sgx_status_t status);
 static const char *get_ae_error_t_string(ae_error_t ae_error);

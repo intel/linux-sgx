@@ -77,7 +77,7 @@ private:
     int build_contexts(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
     int build_partial_page(const uint64_t rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
     int build_pages(const uint64_t start_rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
-    bool is_relocation_page(const uint64_t rva, vector<uint8_t> *bitmap);
+  bool is_relocation_page(const uint64_t rva, std::vector<uint8_t> *bitmap);
 
     bool is_ae(const enclave_css_t *enclave_css);
     bool is_metadata_buffer(uint32_t offset, uint32_t size);
@@ -86,7 +86,7 @@ private:
     int validate_patch_table();
     int validate_metadata();
     int get_debug_flag(const token_t * const launch);
-    virtual int build_sections(vector<uint8_t> *bitmap);
+  virtual int build_sections(std::vector<uint8_t> *bitmap);
     int set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
 
     uint8_t             *m_mapped_file_base;

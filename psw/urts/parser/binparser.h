@@ -41,8 +41,6 @@
 #include <stdint.h>
 #include <vector>
 #include <string>
-using std::vector;
-using std::string;
 
 #define ENCLAVE_MAX_SIZE_32 0xffffffff
 #define ENCLAVE_MAX_SIZE_64 0x1fffffffff
@@ -77,17 +75,17 @@ public:
     virtual const uint8_t* get_start_addr() const = 0;
 
     // Get a vector of sections to be loaded
-    virtual const vector<Section *>& get_sections() const = 0;
+    virtual const std::vector<Section *>& get_sections() const = 0;
 
     // Get the TLS section
     virtual const Section* get_tls_section() const = 0;
 
     virtual uint64_t get_symbol_rva(const char* name) const = 0;
 
-    virtual bool get_reloc_bitmap(vector<uint8_t> &bitmap) = 0;
+    virtual bool get_reloc_bitmap(std::vector<uint8_t> &bitmap) = 0;
 
     virtual void get_reloc_entry_offset(const char* sec_name,
-                                        vector<uint64_t>& offsets) = 0;
+                                        std::vector<uint64_t>& offsets) = 0;
 
     // !We need to put this method into BinParser class since
     // !the `global_data_t' is platform-dependent as the parser.
@@ -107,7 +105,7 @@ public:
 
     virtual sgx_status_t get_info(enclave_diff_info_t *enclave_diff_info) = 0;
 
-    virtual void get_executable_sections(vector<const char *>& xsec_names) const = 0;
+    virtual void get_executable_sections(std::vector<const char *>& xsec_names) const = 0;
     virtual bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization) = 0;
     virtual void get_pages_to_protect(uint64_t, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const = 0;
     virtual bool has_init_section() const = 0;
