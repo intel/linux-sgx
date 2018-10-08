@@ -45,7 +45,7 @@
 #define UINT32_MAX 0xFFFFFFFFU
 #endif
 
-static int g_is_rdrand_supported=-1;
+static int g_is_rdrand_supported = -1;
 
 #define RDRAND_MASK     0x40000000
 
@@ -77,19 +77,19 @@ static int rdrand_cpuid()
 
 extern "C" sgx_status_t SGXAPI sgx_read_rand(uint8_t *buf, size_t size)
 {
-    if(buf == NULL || size == 0 || size> UINT32_MAX ){
+    if(buf == NULL || size == 0 || size > UINT32_MAX){
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if(g_is_rdrand_supported==-1){
+    if(g_is_rdrand_supported == -1){
         g_is_rdrand_supported = rdrand_cpuid();
     }
     if(!g_is_rdrand_supported){
         uint32_t i;
-        for(i=0;i<(uint32_t)size;++i){
-            buf[i]=(uint8_t)rand();
+        for(i = 0; i < (uint32_t)size; ++i){
+            buf[i] = (uint8_t)rand();
         }
-    }else{
-        int rd_ret =rdrand_get_bytes((uint32_t)size, buf);
+    } else {
+        int rd_ret = rdrand_get_bytes((uint32_t)size, buf);
         if(rd_ret != RDRAND_SUCCESS){
             rd_ret = rdrand_get_bytes((uint32_t)size, buf);
             if(rd_ret != RDRAND_SUCCESS){
