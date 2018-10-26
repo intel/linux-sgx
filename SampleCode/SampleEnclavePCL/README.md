@@ -19,7 +19,7 @@ Intel(R) SGX PCL provides:
 
 3. **SampleEnclavePCL:** Sample code which demonstrates how the tool and lib need to be integrated into an existing enclave project. 
 
-Pupose of this code sample:
+Purpose of this code sample:
 --------------------------
 Enclave writers should compare SampleEnclave and SampleEnclavePCL. This demonstrates how the Intel(R) SGX PCL is to be integrated into the project of the enclave writer.  
 
