@@ -2,6 +2,7 @@
 SGX_SDK ?= $(SdkPathFromPlugin)
 SGX_MODE ?= SIM
 SGX_ARCH ?= x64
+TRUSTED_DIR=static_trusted
 
 ifeq ($(shell getconf LONG_BIT), 32)
 	SGX_ARCH := x86
@@ -43,7 +44,7 @@ endif
 
 Crypto_Library_Name := sgx_tcrypto
 
-$(EnclaveName)_C_Files := static_trusted/$(enclaveName).c 
+$(EnclaveName)_C_Files := $(TRUSTED_DIR)/$(enclaveName).c 
 $(EnclaveName)_Include_Paths := -IInclude -I$(EnclaveName) -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx
 
 Flags_Just_For_C := -Wno-implicit-function-declaration -std=c11
@@ -75,21 +76,21 @@ all: lib$(enclaveName).sgx.static.lib.a
 
 ######## $(enclaveName) Objects ########
 
-static_trusted/$(enclaveName)_t.h: $(SGX_EDGER8R) ./static_trusted/$(enclaveName).edl
-	@cd ./static_trusted && $(SGX_EDGER8R) --header-only  --trusted ../static_trusted/$(enclaveName).edl --search-path ../static_trusted --search-path $(SGX_SDK)/include
+$(TRUSTED_DIR)/$(enclaveName)_t.h: $(SGX_EDGER8R) ./$(TRUSTED_DIR)/$(enclaveName).edl
+	@cd ./$(TRUSTED_DIR) && $(SGX_EDGER8R) --header-only  --trusted ../$(TRUSTED_DIR)/$(enclaveName).edl --search-path ../$(TRUSTED_DIR) --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
-static_trusted/$(enclaveName)_t.o: ./trusted/$(enclaveName)_t.c
+$(TRUSTED_DIR)/$(enclaveName)_t.o: ./trusted/$(enclaveName)_t.c
 	@$(CC) $($(EnclaveName)_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-static_trusted/%.o: static_trusted/%.c
+$(TRUSTED_DIR)/%.o: $(TRUSTED_DIR)/%.c
 	@$(CC) $($(EnclaveName)_C_Flags) -c $< -o $@
 	@echo "CC  <=  $<"
 
-lib$(enclaveName).sgx.static.lib.a: static_trusted/$(enclaveName)_t.h $($(EnclaveName)_C_Objects)
+lib$(enclaveName).sgx.static.lib.a: $(TRUSTED_DIR)/$(enclaveName)_t.h $($(EnclaveName)_C_Objects)
 	ar rcs lib$(enclaveName).sgx.static.lib.a $($(EnclaveName)_Cpp_Objects) $($(EnclaveName)_C_Objects)  
 	@echo "LINK =>  $@"
 
 clean:
-	@rm -f $(enclaveName).* static_trusted/$(enclaveName)_t.*  $($(EnclaveName)_C_Objects)
+	@rm -f $(enclaveName).* $(TRUSTED_DIR)/$(enclaveName)_t.*  $($(EnclaveName)_C_Objects)
