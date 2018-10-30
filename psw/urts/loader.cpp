@@ -103,7 +103,7 @@ void* CLoader::get_symbol_address(const char * const symbol)
 }
 
 // is_relocation_page returns true if the specified RVA is a writable relocation page based on the bitmap.
-bool CLoader::is_relocation_page(const uint64_t rva, vector<uint8_t> *bitmap)
+bool CLoader::is_relocation_page(const uint64_t rva, std::vector<uint8_t> *bitmap)
 {
     uint64_t page_frame = rva >> SE_PAGE_SHIFT;
     //NOTE:
@@ -181,7 +181,7 @@ int CLoader::build_mem_region(const section_info_t &sec_info)
     return SGX_SUCCESS;
 }
 
-int CLoader::build_sections(vector<uint8_t> *bitmap)
+int CLoader::build_sections(std::vector<uint8_t> *bitmap)
 {
     int ret = SGX_SUCCESS;
     std::vector<Section*> sections = m_parser.get_sections();
@@ -372,7 +372,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
                 ptcs->ogs_base += rva;
                 if(!(attributes & PAGE_ATTR_EREMOVE))
                 {
-                    m_tcs_list.push_back(make_pair(GET_PTR(tcs_t, m_start_addr, rva), false));
+                  m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), false));
                 }
                 sinfo.flags = layout->si_flags;
                 if(SGX_SUCCESS != (ret = build_pages(rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, added_page, sinfo, attributes)))
@@ -417,7 +417,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
 #ifndef SE_SIM
         if(layout->id == LAYOUT_ID_TCS_DYN)
         {
-            m_tcs_list.push_back(make_pair(GET_PTR(tcs_t, m_start_addr, rva), true));
+          m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), true));
         }
 #endif
     }
@@ -486,7 +486,7 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
     // If load_enclave_ex try to load the enclave for the 2nd time,
     // the enclave image is already patched, and parser cannot read the information.
     // For linux, there's no map conflict. We assume load_enclave_ex will not do the retry.
-    vector<uint8_t> bitmap;
+    std::vector<uint8_t> bitmap;
     if(!m_parser.get_reloc_bitmap(bitmap))
         return SGX_ERROR_INVALID_ENCLAVE;
 
@@ -564,12 +564,12 @@ int CLoader::validate_layout_table()
 {
     layout_t *layout_start = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset);
     layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
-    vector<pair<uint64_t, uint64_t>> rva_vector;
+    std::vector<std::pair<uint64_t, uint64_t>> rva_vector;
     for (layout_t *layout = layout_start; layout < layout_end; layout++)
     {
         if(!IS_GROUP_ID(layout->entry.id))  // layout entry
         {
-            rva_vector.push_back(make_pair(layout->entry.rva, ((uint64_t)layout->entry.page_count) << SE_PAGE_SHIFT));
+          rva_vector.push_back(std::make_pair(layout->entry.rva, ((uint64_t)layout->entry.page_count) << SE_PAGE_SHIFT));
             if(layout->entry.content_offset)
             {
                 if(false == is_metadata_buffer(layout->entry.content_offset, layout->entry.content_size))
@@ -598,7 +598,7 @@ int CLoader::validate_layout_table()
                     {
                         return SGX_ERROR_INVALID_METADATA;
                     }
-                    rva_vector.push_back(make_pair(entry->rva + load_step, ((uint64_t)entry->page_count) << SE_PAGE_SHIFT));
+                    rva_vector.push_back(std::make_pair(entry->rva + load_step, ((uint64_t)entry->page_count) << SE_PAGE_SHIFT));
                     // no need to check integer overflow for entry->rva + load_step, because
                     // entry->rva and load_step are less than enclave_size, whose size is no more than 37 bit
                 }
@@ -606,7 +606,7 @@ int CLoader::validate_layout_table()
         }
     }
     sort(rva_vector.begin(), rva_vector.end());
-    for (vector<pair<uint64_t, uint64_t>>::iterator it = rva_vector.begin(); it != rva_vector.end(); it++)
+    for (std::vector<std::pair<uint64_t, uint64_t>>::iterator it = rva_vector.begin(); it != rva_vector.end(); it++)
     {
         if(!IS_PAGE_ALIGNED(it->first))
         {

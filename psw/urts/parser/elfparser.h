@@ -39,9 +39,6 @@
 #include <string>
 #include <map>
 
-using std::map;
-using std::string;
-
 class ElfParser : public BinParser, private Uncopyable {
 public:
     // The `start_addr' cannot be NULL
@@ -63,11 +60,11 @@ public:
 
     // The `section' here is a section in PE's concept.
     // It is in fact a `segment' in ELF's view.
-    const vector<Section *>& get_sections() const;
+    const std::vector<Section *>& get_sections() const;
     const Section* get_tls_section() const;
     uint64_t get_symbol_rva(const char* name) const;
 
-    bool get_reloc_bitmap(vector<uint8_t> &bitmap);
+    bool get_reloc_bitmap(std::vector<uint8_t> &bitmap);
     bool has_text_reloc() const;
     uint32_t get_global_data_size();
     bool update_global_data(const metadata_t *const metadata,
@@ -86,11 +83,11 @@ public:
     // To check whether current enclave has any TEXTREL:
     //   get_reloc_entry_offset(".text", offsets);
     void get_reloc_entry_offset(const char* sec_name,
-                                vector<uint64_t>& offsets);
+                                std::vector<uint64_t>& offsets);
 
     sgx_status_t modify_info(enclave_diff_info_t *enclave_diff_info);
     sgx_status_t get_info(enclave_diff_info_t *enclave_diff_info);
-    void get_executable_sections(vector<const char *>& xsec_names) const;
+    void get_executable_sections(std::vector<const char *>& xsec_names) const;
     bool is_enclave_encrypted() const;
 
     bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization);
@@ -99,18 +96,18 @@ public:
     bool has_init_section() const;
 
 private:
-    const uint8_t*      m_start_addr;
-    uint64_t            m_len;
-    bin_fmt_t           m_bin_fmt;
-    vector<Section *>   m_sections;
-    const Section*      m_tls_section;
-    uint64_t            m_metadata_offset;
-    uint64_t            m_metadata_block_size;/*multiple metadata block size*/
+    const uint8_t*         m_start_addr;
+    uint64_t               m_len;
+    bin_fmt_t              m_bin_fmt;
+    std::vector<Section *> m_sections;
+    const Section*         m_tls_section;
+    uint64_t               m_metadata_offset;
+    uint64_t               m_metadata_block_size;/*multiple metadata block size*/
 
-    ElfW(Dyn)           m_dyn_info[DT_NUM + DT_ADDRNUM];
+    ElfW(Dyn)              m_dyn_info[DT_NUM + DT_ADDRNUM];
 
     // A map from symbol name to its RVA
-    map<string, uint64_t> m_sym_table;
+    std::map<std::string, uint64_t> m_sym_table;
 };
 
 #endif

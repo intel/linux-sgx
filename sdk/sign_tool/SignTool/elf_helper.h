@@ -41,11 +41,9 @@
 
 static void dump_textrel(const uint64_t& offset)
 {
-    using namespace std;
-
-    cerr << "warning: TEXTRELs found at offset: "
-         << std::hex << showbase     /* show the '0x' prefix */
-         << offset << endl;
+    std::cerr << "warning: TEXTRELs found at offset: "
+              << std::hex << std::showbase     /* show the '0x' prefix */
+              << offset << std::endl;
 }
 
 template <int N>
@@ -87,13 +85,13 @@ public:
 
     static bool dump_textrels(BinParser *bp)
     {
-        vector<uint64_t> offsets;
+        std::vector<uint64_t> offsets;
         bool no_rel = true;
         /* The dynamic_cast<> shouldn't fail. */
         elf_parser_t   * p = dynamic_cast<elf_parser_t*>(bp);
         if (p == NULL)
             return no_rel;
-        vector<const char *> sec_names;
+        std::vector<const char *> sec_names;
         p->get_executable_sections(sec_names);
         /* Warn user of TEXTRELs */
         for (unsigned i = 0; i< sec_names.size(); i++)

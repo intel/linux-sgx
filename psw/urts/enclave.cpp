@@ -45,8 +45,6 @@
 #include "rts.h"
 
 
-using namespace std;
-
 int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
 int do_ocall(const bridge_fn_t bridge, void *ms);
 

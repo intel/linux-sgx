@@ -41,8 +41,6 @@
 #include <vector>
 #include "node.h"
 
-using namespace std;
-
 typedef int (*bridge_fn_t)(const void*);
 
 class CEnclave;
@@ -88,15 +86,15 @@ public:
     bool is_dynamic_thread_exist();
 protected:
     virtual int garbage_collect() = 0;
-    inline int find_thread(vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id);
+    inline int find_thread(std::vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id);
     inline CTrustThread * get_free_thread();
     int bind_thread(const se_thread_id_t thread_id, CTrustThread * const trust_thread);
     void unbind_thread(const se_thread_id_t thread_id);
     CTrustThread * get_bound_thread(const se_thread_id_t thread_id);
     void add_to_free_thread_vector(CTrustThread* it);
     
-    vector<CTrustThread *>                  m_free_thread_vector;
-    vector<CTrustThread *>                  m_unallocated_threads; 
+    std::vector<CTrustThread *>                  m_free_thread_vector;
+    std::vector<CTrustThread *>                  m_unallocated_threads; 
     Node<se_thread_id_t, CTrustThread *>    *m_thread_list;
     Mutex                                   m_thread_mutex; //protect thread_cache list. The mutex is recursive.
                                                             //Thread can operate the list when it get the mutex

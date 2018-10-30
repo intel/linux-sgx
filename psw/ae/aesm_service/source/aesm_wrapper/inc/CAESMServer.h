@@ -39,8 +39,6 @@
 #include "AESMQueueManager.h"
 #include <stdexcept>
 
-using namespace std;
-
 /*
  * Encapsulates all AESM server logic
  */

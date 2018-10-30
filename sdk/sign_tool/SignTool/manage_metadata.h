@@ -100,7 +100,7 @@ private:
     bool build_patch_table();
     bool update_layout_entries();
     bool build_layout_entries();
-    bool build_patch_entries(vector<patch_entry_t> &patches);
+    bool build_patch_entries(std::vector<patch_entry_t> &patches);
 
     layout_entry_t *get_entry_by_id(uint16_t id);
     bool build_tcs_template(tcs_t *tcs);
@@ -113,7 +113,7 @@ private:
     metadata_t *m_metadata;
     BinParser *m_parser;
     create_param_t m_create_param;
-    vector <layout_t> m_layouts;
+    std::vector <layout_t> m_layouts;
     uint64_t m_rva;
     uint32_t m_gd_size;
     uint8_t *m_gd_template;

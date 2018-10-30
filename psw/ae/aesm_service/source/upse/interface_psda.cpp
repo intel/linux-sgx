@@ -44,9 +44,6 @@
 #define BREAK_IF_TRUE(x, Sts, ErrCode)  if (x)    { Sts = ErrCode; break; }
 #define BREAK_IF_FALSE(x, Sts, ErrCode) if (!(x)) { Sts = ErrCode; break; }
 
-using namespace std;
-
-
 static JVM_COMM_BUFFER commBuf_s1, commBuf_s3;
 static INT32 responseCode;
 
