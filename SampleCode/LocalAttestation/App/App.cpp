@@ -73,7 +73,7 @@ uint32_t load_enclaves()
 {
     uint32_t enclave_temp_no;
     int ret, launch_token_updated;
-    sgx_launch_token_t launch_token;
+    sgx_launch_token_t launch_token = {0};
 
     enclave_temp_no = 0;
 

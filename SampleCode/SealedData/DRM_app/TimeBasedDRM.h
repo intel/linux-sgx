@@ -54,6 +54,6 @@ public:
 private:
     uint8_t  time_based_policy[time_based_policy_length];
     sgx_enclave_id_t enclave_id;
-    sgx_launch_token_t launch_token;
+    sgx_launch_token_t launch_token = {0};
 };
 
