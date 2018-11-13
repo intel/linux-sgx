@@ -111,7 +111,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
  *      edi == -1 - do_init_enclave
  *      edi == -2 - oret
  * Registers
- *      No need to use any register during the dipatch
+ *      No need to use any register during the dispatch
  * ----------------------------------------------------------------------
  */
     .cfi_startproc
