@@ -102,7 +102,7 @@ endif
 ######## $(enclaveName) Objects ########
 
 $(TRUSTED_DIR)/$(enclaveName)_t.c: $(SGX_EDGER8R) ./$(TRUSTED_DIR)/$(enclaveName).edl
-	@cd ./$(TRUSTED_DIR) && $(SGX_EDGER8R) --$(TRUSTED_DIR) ../$(TRUSTED_DIR)/$(enclaveName).edl --search-path ../$(TRUSTED_DIR) --search-path $(SGX_SDK)/include
+	@cd ./$(TRUSTED_DIR) && $(SGX_EDGER8R) --trusted ../$(TRUSTED_DIR)/$(enclaveName).edl --search-path ../$(TRUSTED_DIR) --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
 $(TRUSTED_DIR)/$(enclaveName)_t.o: ./$(TRUSTED_DIR)/$(enclaveName)_t.c
