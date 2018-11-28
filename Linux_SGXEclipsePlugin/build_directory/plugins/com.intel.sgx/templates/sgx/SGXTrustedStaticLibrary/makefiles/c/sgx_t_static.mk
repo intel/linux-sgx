@@ -57,7 +57,7 @@ $(EnclaveName)_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 \
-	-Wl,--version-script=trusted/$(enclaveName).lds
+	-Wl,--version-script=$(TRUSTED_DIR)/$(enclaveName).lds
 
 $(EnclaveName)_C_Objects := $($(EnclaveName)_C_Files:.c=.o)
 
@@ -80,7 +80,7 @@ $(TRUSTED_DIR)/$(enclaveName)_t.h: $(SGX_EDGER8R) ./$(TRUSTED_DIR)/$(enclaveName
 	@cd ./$(TRUSTED_DIR) && $(SGX_EDGER8R) --header-only  --trusted ../$(TRUSTED_DIR)/$(enclaveName).edl --search-path ../$(TRUSTED_DIR) --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
-$(TRUSTED_DIR)/$(enclaveName)_t.o: ./trusted/$(enclaveName)_t.c
+$(TRUSTED_DIR)/$(enclaveName)_t.o: ./$(TRUSTED_DIR)/$(enclaveName)_t.c
 	@$(CC) $($(EnclaveName)_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
