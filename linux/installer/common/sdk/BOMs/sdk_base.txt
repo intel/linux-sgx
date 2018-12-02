@@ -10,6 +10,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/common/inc/sgx_lfence.h	<installdir>/package/include/./sgx_lfence.h	0	main	STP
 <deliverydir>/common/inc/sgx_eid.h	<installdir>/package/include/./sgx_eid.h	0	main	STP
 <deliverydir>/common/inc/sgx_error.h	<installdir>/package/include/./sgx_error.h	0	main	STP
+<deliverydir>/common/inc/sgx_error_messages.h	<installdir>/package/include/./sgx_error_messages.h	0	main	STP
 <deliverydir>/common/inc/sgx.h	<installdir>/package/include/./sgx.h	0	main	STP
 <deliverydir>/common/inc/sgx_intrin.h	<installdir>/package/include/./sgx_intrin.h	0	main	STP
 <deliverydir>/common/inc/sgx_key_exchange.h	<installdir>/package/include/./sgx_key_exchange.h	0	main	STP
