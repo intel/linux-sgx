@@ -159,6 +159,7 @@ COMMON_SRC := ./source/le/LEClass.cpp                  \
               ./source/oal/internal_log.cpp \
               sgx_memset_s.cpp \
               sgx_read_rand.cpp \
+              sgx_error_messages.cpp \
               sgx_profile.cpp \
               tSeal_util.cpp \
               ./source/oal/aesm_thread.cpp \
