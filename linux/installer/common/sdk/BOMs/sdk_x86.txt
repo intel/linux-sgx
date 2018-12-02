@@ -22,6 +22,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/libsgx_tprotected_fs.a	<installdir>/package/lib/libsgx_tprotected_fs.a	0	main	STP
 <deliverydir>/build/linux/libsgx_urts_deploy.so	<installdir>/package/lib/libsgx_urts.so	0	main	STP
 <deliverydir>/build/linux/libsgx_urts_sim.so	<installdir>/package/lib/libsgx_urts_sim.so	0	main	STP
+<deliverydir>/build/linux/libsgx_error_messages.a	<installdir>/package/lib/libsgx_error_messages.a	0	main	STP
 <deliverydir>/build/linux/STLport_Changes_SGX.txt	<installdir>/package/lib/STLport_Changes_SGX.txt	0	main	STP
 <deliverydir>/build/linux/libc++_Changes_SGX.txt	<installdir>/package/lib/libc++_Changes_SGX.txt	0	main	STP
 <deliverydir>/build/linux/sgx_config_cpusvn	<installdir>/package/bin/x86/sgx_config_cpusvn	0	main	STP
