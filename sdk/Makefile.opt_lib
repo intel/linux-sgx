@@ -32,29 +32,30 @@
 # This Makefile will compile SDK to generate various components
 # including:
 #  - Trusted libraries
-#        - tstdc:         libsgx_tstdc.a
-#        - tstdcxx:       libsgx_tstdcxx.a
-#        - tcxx:          libsgx_tcxx.a
-#        - tservice:      libsgx_tservice.a
-#        - trts:          libsgx_trts.a
-#        - tcrypto:       libsgx_tcrypto.a
-#        - tkey_exchange: libsgx_tkey_exchange.a
-#        - tprotected_fs: libsgx_tprotected_fs.a
-#        - tcmalloc:      libsgx_tcmalloc.a
-#        - sgx_pcl:       libsgx_pcl.a
+#        - tstdc:          libsgx_tstdc.a
+#        - tstdcxx:        libsgx_tstdcxx.a
+#        - tcxx:           libsgx_tcxx.a
+#        - tservice:       libsgx_tservice.a
+#        - trts:           libsgx_trts.a
+#        - tcrypto:        libsgx_tcrypto.a
+#        - tkey_exchange:  libsgx_tkey_exchange.a
+#        - tprotected_fs:  libsgx_tprotected_fs.a
+#        - tcmalloc:       libsgx_tcmalloc.a
+#        - sgx_pcl:        libsgx_pcl.a
 #  - Untrtusted libraries
-#        - ukey_exchange: libsgx_ukey_exchange.a
-#        - uprotected_fs: libsgx_uprotected_fs.a
-#        - sample_crypto: libsample_crypto.so (for sample code use)
-#        - ptrace:        libsgx_ptrace.so, gdb-sgx-plugin
+#        - error_messages: libsgx_error_messages.a 
+#        - ukey_exchange:  libsgx_ukey_exchange.a
+#        - uprotected_fs:  libsgx_uprotected_fs.a
+#        - sample_crypto:  libsample_crypto.so (for sample code use)
+#        - ptrace:         libsgx_ptrace.so, gdb-sgx-plugin
 #  - Standalone, untrusted libraries
-#        - libcapable:    libsgx_capable.a libsgx_capable.so
+#        - libcapable:     libsgx_capable.a libsgx_capable.so
 #  - Tools
-#        - signtool:      sgx_sign
-#        - edger8r:       sgx_edger8r
-#        - sgx_encrypt:  sgx_encrypt
+#        - signtool:       sgx_sign
+#        - edger8r:        sgx_edger8r
+#        - sgx_encrypt:    sgx_encrypt
 #  - Simulation libraries and tools
-#        - simulation:    libsgx_trts_sim.a, libsgx_tservice_sim.a, libsgx_urts_sim.so, libsgx_uae_service_sim.so, sgx_config_cpusvn
+#        - simulation:     libsgx_trts_sim.a, libsgx_tservice_sim.a, libsgx_urts_sim.so, libsgx_uae_service_sim.so, sgx_config_cpusvn
 #
 include ../buildenv.mk
 
@@ -64,7 +65,7 @@ LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tstdcxx tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless
+components: tstdc tstdcxx tcxx tservice trts tcrypto tkey_exchange error_messages ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless
 
 # ---------------------------------------------------
 #  tstdc
@@ -224,6 +225,10 @@ sgx_pcl:
 # ---------------------------------------------------
 #  Untrusted libraries
 # ---------------------------------------------------
+.PHONY: error_messages
+error_messages:
+	$(MAKE) -C error_messages
+
 .PHONY: ukey_exchange
 ukey_exchange:
 	$(MAKE) -C ukey_exchange
