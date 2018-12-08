@@ -421,7 +421,7 @@ bool validate_segment(const ElfW(Ehdr) *elf_hdr, uint64_t len)
     for (int idx = 0; idx < elf_hdr->e_phnum; idx++, prg_hdr++)
     {
         /* Validate the size of the buffer */
-        if (len < (uint64_t)prg_hdr->p_offset + prg_hdr->p_filesz)
+        if (prg_hdr->p_filesz != 0 && len < (uint64_t)prg_hdr->p_offset + prg_hdr->p_filesz)
             return false;
 
         if (PT_LOAD == prg_hdr->p_type)
