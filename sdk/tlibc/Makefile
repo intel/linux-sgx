@@ -33,7 +33,7 @@ include ../../buildenv.mk
 
 CFLAGS   += $(ENCLAVE_CFLAGS)
 ASFLAGS  := $(CFLAGS)
-CFLAGS   += -std=c99
+CFLAGS   += -std=c99 -DUSE_MALLOC_DEPRECATED
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) -fno-exceptions -fno-rtti
 
 CPPFLAGS += -I.                          \
