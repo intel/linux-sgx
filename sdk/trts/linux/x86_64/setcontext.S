@@ -29,7 +29,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #if defined __linux__
 #include <asm/unistd.h>
 #define	SIG_SETMASK   2
-#define	SIGSET_BYTE_SIZE   (64/8)
+#define	SIGSET_BYTE_SIZE   8
 #elif defined __FreeBSD__
 #include <sys/syscall.h>
 #endif
