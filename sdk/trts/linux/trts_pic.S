@@ -490,16 +490,23 @@ DECLARE_LOCAL_FUNC do_egetkey
 
 /* 
  * -------------------------------------------------------------------------
- * extern "C" void do_ereport(sgx_target_info_t *target_info, sgx_report_data_t *report_data, sgx_report_t *report);
+ * extern "C" int do_ereport(sgx_target_info_t *target_info, sgx_report_data_t *report_data, sgx_report_t *report);
  * EREPORT: rbx - the address of TARGETINFO;
  *          rcx - the address of REPORTDATA;
  *          rdx - the address where REPORT is outputted
+ * return value:
+ *          zero: success
+ *          non-zero: failure
  * -------------------------------------------------------------------------
  */
+.global Lereport_inst
 DECLARE_LOCAL_FUNC do_ereport
     SE_PROLOG
     mov       $SE_EREPORT, %xax  /* EREPORT leaf */
+    clc
+Lereport_inst:
     ENCLU
+    setc      %al
     SE_EPILOG
     
 DECLARE_GLOBAL_FUNC do_eaccept

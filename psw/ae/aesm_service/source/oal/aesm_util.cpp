@@ -29,13 +29,10 @@
  *
  */
 
-//#include "memset_s.h"
 #include "persistent_storage_info.h"
 #include "oal/aesm_persistent_storage.h"
 #include "internal/se_stdio.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "se_string.h"
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
@@ -81,7 +78,7 @@ static ae_error_t aesm_get_data_path(
 
     if(strlen(AESM_DATA_FOLDER)+strnlen(p_file_name,buf_size)+sizeof(char)>buf_size)
         return OAL_PATHNAME_BUFFER_OVERFLOW_ERROR;
-    (void)strcpy(p_file_path, AESM_DATA_FOLDER);
+    (void)strcpy_s(p_file_path, buf_size, AESM_DATA_FOLDER);
     (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
     return AE_SUCCESS;
 }
@@ -101,7 +98,7 @@ static ae_error_t aesm_write_file(
             ret = OAL_PATHNAME_BUFFER_OVERFLOW_ERROR;
             goto CLEANUP;
         }
-        (void)strcpy(p_full_path, p_file_name);
+        (void)strcpy_s(p_full_path, sizeof(p_full_path), p_file_name);
     }else{
         if((ret=aesm_get_data_path(p_file_name, p_full_path, MAX_PATH)) != AE_SUCCESS)
             goto CLEANUP;
@@ -138,7 +135,7 @@ static ae_error_t aesm_read_file(
             ret = OAL_PATHNAME_BUFFER_OVERFLOW_ERROR;
             goto CLEANUP;
         }
-        (void)strcpy(p_full_path, p_file_name);
+        (void)strcpy_s(p_full_path, sizeof(p_full_path), p_file_name);
     }else{
         if((ret=aesm_get_data_path(p_file_name, p_full_path, MAX_PATH)) != AE_SUCCESS)
             goto CLEANUP;
@@ -168,7 +165,7 @@ static ae_error_t aesm_remove_file(
             ae_err = OAL_PATHNAME_BUFFER_OVERFLOW_ERROR;
             goto CLEANUP;
         }
-        (void)strcpy(p_full_path, p_file_name);
+        (void)strcpy_s(p_full_path, sizeof(p_full_path), p_file_name);
     }
     else{
         if ((ae_err = aesm_get_data_path(p_file_name, p_full_path, MAX_PATH)) != AE_SUCCESS)

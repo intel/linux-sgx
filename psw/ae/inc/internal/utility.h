@@ -37,7 +37,6 @@
 #include "pse_types.h"
 #include "stdlib.h"
 #include "aeerror.h"
-#include "ae_ipp.h"
 
 #ifndef BREAK_ON_ERROR
 #define BREAK_ON_ERROR(x) if(SGX_SUCCESS != x){break;}

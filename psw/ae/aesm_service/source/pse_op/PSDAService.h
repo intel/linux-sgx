@@ -32,7 +32,10 @@
 #define _PSDA_SERVICE_H_
 #include "AEClass.h"
 #include "jhi.h"
+#include "pse_types.h"
+#include "byte_order.h"
 
+// Definitions of PSDA error codes
 #define PSDA_SUCCESS                    0
 #define PSDA_INVALID_COMMAND            1
 #define PSDA_BAD_PARAMETER              2
@@ -45,6 +48,15 @@
 #define PSDA_PROTOCOL_NOT_SUPPORTED     9
 #define PSDA_PLATFORM_KEYS_REVOKED      10
 #define PSDA_PERSISTENT_DATA_WRITE_THROTTLED 11
+
+// Definitions of PSDA capabilites
+#define PSDA_CAP_PRTC               0x1
+#define PSDA_CAP_PROTECTED_OUTPUT   0x4
+#define PSDA_CAP_RPDATA             0x8
+#define PSDA_CAP_NO_SIGMA11         0x10
+#define PSDA_CAP_SIGMA20            0x20
+#define PSDA_CAP_SEC_MSG            0x40
+
 typedef enum _session_loss_retry_flag_t
 {
     NO_RETRY_ON_SESSION_LOSS = 0,
@@ -60,17 +72,26 @@ public:
     bool start_service();
     void stop_service();
     bool is_session_active();
+    ae_error_t save_psda_capability();
     ae_error_t send_and_recv(
         INT32            nCommandId,
         JVM_COMM_BUFFER* pComm,
         INT32* responseCode,
         session_loss_retry_flag_t flag);
+	bool is_sigma20_supported()
+	{
+        if (psda_cap&PSDA_CAP_SIGMA20)
+            return true;
+        else
+            return false;
+	}
 
     JHI_HANDLE jhi_handle;
     JHI_SESSION_HANDLE psda_session_handle;
 
     UINT32 csme_gid;
     unsigned psda_svn;
+    uint64_t psda_cap;
 private:
     bool install_psda();
     bool start_service_internal();

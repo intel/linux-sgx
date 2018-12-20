@@ -84,6 +84,21 @@ ae_error_t PlatformInfoLogic::get_pse_evaluation_flags(const platform_info_blob_
     }
     return retval;
 }
+
+bool PlatformInfoLogic::sgx_epid_group_revoked(const platform_info_blob_wrapper_t* p_platform_info_blob)
+{
+    uint8_t flags = 0;
+    bool retVal = false;
+    ae_error_t getflagsError = get_sgx_epid_group_flags(p_platform_info_blob, &flags);
+    if (AE_SUCCESS == getflagsError) {
+        retVal = (0 != (QE_EPID_GROUP_REVOKED & flags));
+    }
+    SGX_DBGPRINT_ONE_STRING_TWO_INTS_CREATE_SESSION(__FUNCTION__" returning ", retVal, retVal);
+
+    return retVal;
+}
+
+
 bool PlatformInfoLogic::sgx_gid_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob)
 {
     uint8_t flags = 0;
@@ -253,7 +268,7 @@ bool PlatformInfoLogic::psda_svn_out_of_date(const platform_info_blob_wrapper_t*
 ae_error_t PlatformInfoLogic::need_epid_provisioning(const platform_info_blob_wrapper_t* p_platform_info_blob)
 {
     ae_error_t status = AESM_NEP_DONT_NEED_EPID_PROVISIONING;
-    if (sgx_gid_out_of_date(p_platform_info_blob) &&
+    if ((sgx_gid_out_of_date(p_platform_info_blob) || sgx_epid_group_revoked(p_platform_info_blob)) &&
         !qe_svn_out_of_date(p_platform_info_blob) &&
         !cpu_svn_out_of_date(p_platform_info_blob) &&
         !pce_svn_out_of_date(p_platform_info_blob))
@@ -316,8 +331,7 @@ ae_error_t PlatformInfoLogic::need_long_term_pairing(const platform_info_blob_wr
         uint32_t current_psda_svn = PSDAService::instance().psda_svn;
 
         pse_pr_interface_psda* pPSDA = NULL;
-
-        pPSDA = new(std::nothrow) pse_pr_interface_psda();
+        pPSDA = new(std::nothrow) pse_pr_interface_psda(PSDAService::instance().is_sigma20_supported());
         if (pPSDA == NULL) {
             return AE_OUT_OF_MEMORY_ERROR;
         }

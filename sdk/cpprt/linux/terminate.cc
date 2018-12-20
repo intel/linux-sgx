@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include "se_cdefs.h"
 
-SGX_ACCESS_VERSION(tstdcxx, 6)
+SGX_ACCESS_VERSION(tcxx, 6)
 
 namespace std
 {

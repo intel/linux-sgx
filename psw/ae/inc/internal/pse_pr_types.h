@@ -56,12 +56,7 @@
 #define ECDSA_PUBKEY_LEN        64
 #define ECDSA_SIGNATURE_LEN     64
 
-#define SIGMA_PRIVKEY_LEN       32
-#define SIGMA_PUBKEY_LEN        64
-
 #define EPID_PUBKEY_LEN        328
-
-#define PRIV_RL_ENTRY   32
 
 typedef uint32_t   SHA256_HASH[8];
 typedef uint8_t    SIGMA_HMAC[SIGMA_HMAC_LENGTH];

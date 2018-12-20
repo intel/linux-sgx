@@ -184,9 +184,7 @@ void print_error_message(sgx_status_t ret)
  */
 sgx_status_t  initialize_enclave ( const char *file_name, sgx_enclave_id_t* eid )
 {
-    sgx_launch_token_t token = {0};
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    int updated = 0;
     size_t read_num = 0;
     
     /* Call sgx_create_enclave to initialize an enclave instance */
@@ -222,8 +220,8 @@ sgx_status_t  initialize_enclave ( const char *file_name, sgx_enclave_id_t* eid 
         ret = sgx_create_enclave(
             SEAL_FILENAME, 
             SGX_DEBUG_FLAG, 
-            &token, 
-            &updated, 
+            NULL, 
+            NULL, 
             &seal_eid, 
             NULL);
         if (SGX_SUCCESS != ret) 
@@ -258,10 +256,10 @@ sgx_status_t  initialize_enclave ( const char *file_name, sgx_enclave_id_t* eid 
         }
     }
     // Load the PCL protected Enclave:
-    ret = sgx_create_encrypted_enclave(file_name, SGX_DEBUG_FLAG, &token, &updated, eid, NULL, sealed_blob);
+    ret = sgx_create_encrypted_enclave(file_name, SGX_DEBUG_FLAG, NULL, NULL, eid, NULL, sealed_blob);
     delete sealed_blob;
 #else  // SGX_USE_PCL
-    ret = sgx_create_enclave(file_name, SGX_DEBUG_FLAG, &token, &updated, eid, NULL);
+    ret = sgx_create_enclave(file_name, SGX_DEBUG_FLAG, NULL, NULL, eid, NULL);
 #endif // SGX_USE_PCL
     if (ret != SGX_SUCCESS) {
         print_error_message(ret);

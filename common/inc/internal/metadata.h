@@ -38,7 +38,7 @@
 
  /* version of metadata */
 #define MAJOR_VERSION 2                 //MAJOR_VERSION should not larger than 0ffffffff
-#define MINOR_VERSION 3                 //MINOR_VERSION should not larger than 0ffffffff
+#define MINOR_VERSION 4                 //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_2_1_MAJOR_VERSION 2         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_2_1_MINOR_VERSION 2         //MINOR_VERSION should not larger than 0ffffffff
@@ -72,12 +72,15 @@
 #define SSA_NUM_MIN 2
 #define SSA_FRAME_SIZE_MIN 1
 #define SSA_FRAME_SIZE_MAX 2
-#define STACK_SIZE_MIN 0x1000
+#define STACK_SIZE_MIN 0x2000
 #define STACK_SIZE_MAX 0x40000
 #define HEAP_SIZE_MIN 0x1000
 #define HEAP_SIZE_MAX 0x1000000
 #define DEFAULT_MISC_SELECT 0
 #define DEFAULT_MISC_MASK 0xFFFFFFFF
+#define ISVFAMILYID_MAX   0xFFFFFFFFFFFFFFFFULL
+#define ISVEXTPRODID_MAX  0xFFFFFFFFFFFFFFFFULL
+
 
 typedef struct _data_directory_t
 {

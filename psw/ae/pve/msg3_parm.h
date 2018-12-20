@@ -55,7 +55,7 @@ typedef struct _prov_msg3_parm_t{
     EpidSignature                signature_header;       /*keep a copy of signature_header in ProvMsg3*/
     uint32_t                     sigrl_count;            /*Count of SigRL Entry in the Previous SigRL*/
     EPIDMember                   *epid_member;           /*A handle to Epid Member Ctx in epid library. Save here for piece meal processing*/
-    IppsAES_GCMState             *p_msg3_state;          /*State to encrypt ProvMsg3 in piece meal processing*/
+    sgx_aes_state_handle_t       p_msg3_state;          /*State to encrypt ProvMsg3 in piece meal processing*/
     uint32_t                     msg3_state_size;
     sgx_sha_state_handle_t       sha_state;              /*State to calcuate SHA256 value of PreviousSigRL in ProvMsg2 in piece meal processing*/
 }prov_msg3_parm_t;

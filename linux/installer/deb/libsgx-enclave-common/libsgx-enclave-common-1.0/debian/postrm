@@ -21,7 +21,7 @@ set -e
 
 case "$1" in
     remove)
-        [[ -x /opt/intel/libsgx-enclave-common/uninstall.sh ]] && /opt/intel/libsgx-enclave-common/uninstall.sh
+        [[ -x /opt/intel/libsgx-enclave-common/cleanup.sh ]] && /opt/intel/libsgx-enclave-common/cleanup.sh
     ;;
 
     purge|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)

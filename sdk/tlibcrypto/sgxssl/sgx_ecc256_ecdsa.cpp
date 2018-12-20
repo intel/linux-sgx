@@ -67,7 +67,6 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
 	int sig_size = 0;
 	int max_sig_size = 0;
 	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// converts the r value of private key, represented as positive integer in little-endian into a BIGNUM
@@ -146,10 +145,6 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
 		retval = SGX_SUCCESS;
 	} while(0);
 
-	if (SGX_SUCCESS != retval) {
-		GET_LAST_OPENSSL_ERROR;
-	}
-
 	if (bn_priv)
 		BN_clear_free(bn_priv);
 	if (ecdsa_sig)
@@ -160,25 +155,34 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
 	return retval;
 }
 
-/* Verifies the signature for the given data based on the public key
-*
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
-*   Inputs: sgx_ecc_state_handle_t ecc_handle - Handle to ECC crypto system
-*           sgx_ec256_public_t *p_public - Pointer to the public key - LITTLE ENDIAN
-*           uint8_t *p_data - Pointer to the data to be signed
-*           uint32_t data_size - Size of the data to be signed
-*           sgx_ec256_signature_t *p_signature - Pointer to the signature - LITTLE ENDIAN
-*   Output: uint8_t *p_result - Pointer to the result of verification check  */
 sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
-                              uint32_t data_size,
+    uint32_t data_size,
+    const sgx_ec256_public_t *p_public,
+    sgx_ec256_signature_t *p_signature,
+    uint8_t *p_result,
+    sgx_ecc_state_handle_t ecc_handle)
+{
+    if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||
+        (p_data == NULL) || (data_size < 1) || (p_result == NULL))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    unsigned char digest[SGX_SHA256_HASH_SIZE] = { 0 };
+
+    /* generates digest of p_data */
+    SHA256((const unsigned char *)p_data, data_size, (unsigned char *)digest);
+    return (sgx_ecdsa_verify_hash(digest, p_public, p_signature, p_result, ecc_handle));
+}
+
+
+sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *p_data,
                               const sgx_ec256_public_t *p_public,
                               sgx_ec256_signature_t *p_signature,
                               uint8_t *p_result,
                               sgx_ecc_state_handle_t ecc_handle)
 {
 	if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||
-		(p_data == NULL) || (data_size < 1) || (p_result == NULL))
+		(p_data == NULL) || (p_result == NULL))
 	{
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
@@ -192,13 +196,10 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
 	BIGNUM *prev_bn_s = NULL;
 	EC_POINT *public_point = NULL;
 	ECDSA_SIG *ecdsa_sig = NULL;
-	unsigned char digest[SGX_SHA256_HASH_SIZE] = { 0 };
 	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
 	int valid = 0;
 
 	*p_result = SGX_EC_INVALID_SIGNATURE;
-
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// converts the x value of public key, represented as positive integer in little-endian into a BIGNUM
@@ -269,10 +270,7 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
 			break;
 		}
 
-		/* generates digest of p_data */
-		if (NULL == SHA256((const unsigned char *)p_data, data_size, (unsigned char *)digest)) {
-			break;
-		}
+
 
 		// allocates a new ECDSA_SIG structure (note: this function also allocates the BIGNUMs) and initialize it
 		//
@@ -301,7 +299,7 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
 
 		// verifies that the signature ecdsa_sig is a valid ECDSA signature of the hash value digest of size SGX_SHA256_HASH_SIZE using the public key public_key
 		//
-		valid = ECDSA_do_verify(digest, SGX_SHA256_HASH_SIZE, ecdsa_sig, public_key);
+		valid = ECDSA_do_verify(p_data, SGX_SHA256_HASH_SIZE, ecdsa_sig, public_key);
 		if (-1 == valid) {
 			break;
 		}
@@ -314,10 +312,6 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
 
 		retval = SGX_SUCCESS;
 	} while(0);
-
-	if (SGX_SUCCESS != retval) {
-		GET_LAST_OPENSSL_ERROR;
-	}
 
 	if (bn_pub_x)
 		BN_clear_free(bn_pub_x);

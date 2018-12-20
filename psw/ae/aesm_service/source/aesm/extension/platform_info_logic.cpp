@@ -527,6 +527,28 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
             AESM_DBG_ERROR("read_ltp_blob Return: (ae%d)", readLtpBlobStatus);
         }
     }
+    // check ltp bolb version 
+    // if sigma 2.0 is supported and version is 1.1, trigger re-pairing
+    if (AE_SUCCESS == readLtpBlobStatus)
+    {
+        if (!(Helper::ltpBlobSessionProp(pairing_blob)&SIGMA_VERSION_MASK)
+            && PSDAService::instance().is_sigma20_supported())
+        {
+            // trigger re-pairing
+            bool is_new_pairing = false;
+            ae_error_t ltpStatus = start_long_term_pairing_thread(is_new_pairing);
+            if (ltpStatus == AE_SUCCESS)
+            {
+                readLtpBlobStatus = Helper::read_ltp_blob(pairing_blob);
+                if (AE_FAILED(readLtpBlobStatus))
+                {
+                    AESM_DBG_ERROR("read_ltp_blob Return: (ae%d)", readLtpBlobStatus);
+                }
+            }
+            else
+                return AESM_LONG_TERM_PAIRING_FAILED;
+        }
+    }
     //
     // contents of input platform info can get stale, but not by virtue of anything we do
     // (the latest/current versions can change)
@@ -701,13 +723,6 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
 
         if (cse_gid_out_of_date(&pibw)) {
 
-            pse_pr_interface_psda* pPSDA = NULL;
-
-            pPSDA = new(std::nothrow) pse_pr_interface_psda();
-            if(pPSDA == NULL){
-                 return AESM_OUT_OF_MEMORY_ERROR;
-            }
-            EPID_GID meGid;
 
             //
             // compare current CSME GID to one reported to IAS, in LTP blob
@@ -715,8 +730,8 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
             // if different, assume subsequent attestation will succeed (basically
             // assume CSME GID is now up-to-date)
             //
-            if ((AE_SUCCESS == pPSDA->get_csme_gid(&meGid)) && (AE_SUCCESS == readLtpBlobStatus)) {
-                if (Helper::ltpBlobCseGid(pairing_blob) == meGid) {
+            if (AE_SUCCESS == readLtpBlobStatus) {
+                if (Helper::ltpBlobCseGid(pairing_blob) == PSDAService::instance().csme_gid) {
                     p_update_info->csmeFwUpdate = 1;
                     status = AESM_UPDATE_AVAILABLE;
                 }
@@ -726,8 +741,6 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
                 p_update_info->csmeFwUpdate = 1;
                 status = AESM_UPDATE_AVAILABLE;
             }
-            delete pPSDA;
-            pPSDA = NULL;
         }
         //
         // IAS will provide latest PSDA SVN value => avoid ambiguity like one above

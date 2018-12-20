@@ -33,12 +33,13 @@ include ../../buildenv.mk
 
 CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
             -I$(COMMON_DIR)/inc          \
-            -I$(COMMON_DIR)/inc/tlibc
+            -I$(COMMON_DIR)/inc/tlibc    \
+            -I$(LINUX_EXTERNAL_DIR)/ippcp_internal/inc
 
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-exceptions -fno-rtti
 
-OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_rsa_encryption.o sgx_aes_gcm.o sgx_cmac128.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o
-SHARED_OBJ = tcrypto_version.o
+OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_rsa_encryption.o sgx_aes_gcm.o sgx_cmac128.o sgx_hmac.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha1.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o sgx_internal.o
+SHARED_OBJ = tcrypto_version.o sgx_common_init_ipp.o
 
 ifneq ($(USE_OPT_LIBS), 1)
 
@@ -63,7 +64,7 @@ PREPRARE_SGX_SSL:
 	chmod 755 $(PREPARE_SGXSSL)
 	test -f $(OPENSSL_LIBRARY_PATH)/lib$(SGXSSL_Library_Name).a || $(PREPARE_SGXSSL)
 
-CPPFLAGS += -I$(OPENSSL_PACKAGE)/include
+CPPFLAGS += -I$(OPENSSL_PACKAGE)/include -fPIC
 CXXFLAGS += -DUSE_SGXSSL
 SRCDIR := sgxssl
 
@@ -77,13 +78,15 @@ CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -Werror -fno-except
 OBJ += sgx_tcrypto_common.o sgx_rsa_internal.o
 SRCDIR := ipp
 
-C_Files := $(wildcard $(SRCDIR)/ipp_disp/*.c)
-C_OBJS  := $(C_Files:.c=.o)
-C_OBJS  := $(sort $(C_OBJS))
-
 LIB_NAME := libsgx_tcrypto_ipp.a
 
 endif #!($(USE_OPT_LIBS), 1)
+
+C_Files := $(wildcard ipp/ipp_disp/*.c)
+C_OBJS  := $(C_Files:.c=.o)
+C_OBJS  := $(sort $(C_OBJS))
+
+DISP_LIB_NAME := libsgx_disp.a
 
 OBJ := $(addprefix $(SRCDIR)/, $(OBJ))
 LIB_NAME := $(addprefix $(SRCDIR)/, $(LIB_NAME))
@@ -111,6 +114,9 @@ $(TARGET): $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 
 endif #!($(USE_OPT_LIBS), 1)
 
+$(DISP_LIB_NAME): $(C_OBJS)
+	$(AR) rsD $(DISP_LIB_NAME) $(C_OBJS)
+
 $(SRCDIR)/%.o: $(SRCDIR)/%.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@
 
@@ -121,12 +127,12 @@ $(BUILD_DIR):
 	@$(MKDIR) $@
 
 .PHONY: all
-all: $(TARGET) | $(BUILD_DIR)
-	@$(CP) $< $|
+all: $(TARGET) $(DISP_LIB_NAME) | $(BUILD_DIR)
+	@$(CP) $^ $|
 
 .PHONY: clean
 clean:
-	@$(RM) *.o ipp/*.o ipp/ipp_disp/*.o sgxssl/*.o $(TARGET) $(BUILD_DIR)/$(TARGET) $(LIB_NAME)
+	@$(RM) *.o ipp/*.o ipp/ipp_disp/*.o sgxssl/*.o $(TARGET) $(BUILD_DIR)/$(TARGET) $(LIB_NAME) $(DISP_LIB_NAME) $(BUILD_DIR)/$(DISP_LIB_NAME)
 
 .PHONY: rebuild
 rebuild:

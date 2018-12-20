@@ -60,7 +60,8 @@ public:
     static ae_error_t read_ocsp_response_vlr(upse::Buffer& ocsp_response_vlr);
     static ae_error_t write_ocsp_response_vlr(upse::Buffer& ocsp_response_vlr);
     static ae_error_t delete_ocsp_response_vlr();
-
+    static uint32_t ltpBlobSessionProp(const pairing_blob_t& pairing_blob);
+    static uint8_t* ltpBlobInstanceID(pairing_blob_t& pairing_blob);
     static uint32_t ltpBlobPsdaSvn(const pairing_blob_t& pairing_blob);
     static uint32_t ltpBlobCseGid(const pairing_blob_t& pairing_blob);
 

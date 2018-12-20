@@ -108,7 +108,7 @@ private:
 
     const public_key_t& get_intel_pek();
     int get_intel_pek_cipher_text_size();
-    void free_intel_ipp_rsa_pub_key(_cpRSA_public_key* rsa_pub_key);
+    void free_intel_rsa_pub_key(void* rsa_pub_key);
 
     ae_error_t get_random_value(uint32_t size, upse::Buffer& randomValue);
     ae_error_t check_response_header(const _provision_response_header_t& header, uint8_t msg_type, uint32_t msg_size);

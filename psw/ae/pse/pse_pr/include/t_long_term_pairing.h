@@ -36,16 +36,18 @@
 #include "pse_pr_inc.h"
 #include "pse_pr_types.h"
 #include "sigma_crypto_layer.h"
+#include "sigma_crypto_layer_11.h"
+#include "sigma_crypto_layer_20.h"
 #include "epid/common/types.h"
-#include "Epid11_rl.h"
+#include "Epid_rl.h"
 #include "pairing_blob.h"
 
-class TEpidSigma11Verifier
+class TEpidSigmaVerifier
 {
 
 public:
-    TEpidSigma11Verifier();
-    ~TEpidSigma11Verifier(void);
+    TEpidSigmaVerifier();
+    ~TEpidSigmaVerifier(void);
 
     enum State
     {
@@ -54,14 +56,13 @@ public:
         STATE_DONE,
         STATE_ERROR
     };
-
-    static bool get_sigRL_info(const EPID11_SIG_RL* pSigRL, uint32_t& sigRL_entries, uint32_t& sigRL_size);
-    static bool get_privRL_info(const EPID11_PRIV_RL* pPrivRL, uint32_t& privRL_entries, uint32_t& privRL_size);
+    static bool get_sigRL_info(const EPID_SIG_RL* pSigRL, uint32_t& sigRL_entries, uint32_t& sigRL_size);
+    static bool get_privRL_info(const EPID_PRIV_RL* pPrivRL, uint32_t& privRL_entries, uint32_t& privRL_size);
 
     ae_error_t GenM7
     (
         /*in */ const SIGMA_S1_MESSAGE*      pS1,
-        /*in */ const EPID11_SIG_RL*           pSigRL,
+        /*in */ const EPID_SIG_RL*           pSigRL,
         /*in */ uint32_t  nTotalLen_SigRL, 
         /*in */ const uint8_t*               pOcspResp, 
         /*in */ uint32_t  nLen_OcspResp, 
@@ -77,14 +78,14 @@ public:
     (
         /*in */ const SIGMA_S3_MESSAGE*      pS3, 
         /*in */ uint32_t  nLen_S3,
-        /*in */ const EPID11_PRIV_RL*          pPrivRL,
+        /*in */ const EPID_PRIV_RL*          pPrivRL,
         /*in */ uint32_t  nTotalLen_PrivRL, 
         /*i/o*/ pairing_blob_t* pPairingBlob,
         /*out*/ bool*     pbNewPairing
     );
 
 private:
-    SigmaCryptoLayer m_sigmaAlg;
+    SigmaCryptoLayer* m_sigmaAlg;
     State       m_nextState;
 
     EcDsaPrivKey m_verifierPrivateKey;
@@ -108,22 +109,23 @@ private:
     ae_error_t AddCertificateChain(SIGMA_S2_MESSAGE* pS2, size_t& index, 
             size_t nMaxS2, const UINT8* pCertChain, size_t nCertChain);
     ae_error_t AddRevocationList(SIGMA_S2_MESSAGE* pS2, size_t& index, 
-            size_t nMaxS2, const EPID11_SIG_RL* pRL, uint32_t nSigRL);
+            size_t nMaxS2, const EPID_SIG_RL* pRL, uint32_t nSigRL);
     ae_error_t AddOcspResponses(SIGMA_S2_MESSAGE* pS2, size_t& index, 
             size_t nMaxS2, const uint8_t* pOcspResp, size_t nOcspResp);
 
-    ae_error_t ValidateSigRL(const EPID11_SIG_RL* pSigRL, uint32_t sigRL_entries, uint32_t sigRL_size, uint32_t* pVersion);
+    ae_error_t ValidateSigRL(const EPID_SIG_RL* pSigRL, uint32_t sigRL_entries, uint32_t sigRL_size, uint32_t* pVersion);
 
-	ae_error_t ValidatePrivRL(const EPID11_PRIV_RL* pPrivRL, uint32_t privRL_entries, uint32_t privRL_size, uint32_t* pVersion);
+	ae_error_t ValidatePrivRL(const EPID_PRIV_RL* pPrivRL, uint32_t privRL_entries, uint32_t privRL_size, uint32_t* pVersion);
+
 
 private:
 
     // Disable class operations (default constructor, copy constructor, assignment operator, and address-of operator)
     //TEpidSigma11Verifier(void);                                         // default constructor
-    TEpidSigma11Verifier(const TEpidSigma11Verifier& rhs);              // copy constructor
-    TEpidSigma11Verifier& operator=(const TEpidSigma11Verifier& rhs);   // assignment operator
-    TEpidSigma11Verifier* operator&();                                  // address-of operator
-    const TEpidSigma11Verifier* operator&() const;                      // address-of operator
+    TEpidSigmaVerifier(const TEpidSigmaVerifier& rhs);              // copy constructor
+    TEpidSigmaVerifier& operator=(const TEpidSigmaVerifier& rhs);   // assignment operator
+    TEpidSigmaVerifier* operator&();                                  // address-of operator
+    const TEpidSigmaVerifier* operator&() const;                      // address-of operator
 
 };
 

@@ -32,8 +32,10 @@
 
 #include "sgx_tcrypto.h"
 #include "ippcp.h"
+#include "ipp_wrapper.h"
 #include "stdlib.h"
 #include "string.h"
+#include <limits.h>
 
 /* Rijndael AES-GCM
 * Parameters:
@@ -233,3 +235,93 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     return SGX_SUCCESS;
 }
 
+sgx_status_t sgx_aes_gcm128_enc_init(const uint8_t *key, const uint8_t *iv, uint32_t iv_len, const uint8_t *aad,
+    uint32_t aad_len, sgx_aes_state_handle_t* aes_gcm_state)
+{
+    if ((aad_len >= INT_MAX) || (key == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (aad == NULL))
+        || (iv == NULL) || (aes_gcm_state == NULL))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    int state_size = 0;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    IppStatus status = ippStsNoErr;
+    IppsAES_GCMState *p_state = NULL;
+
+    do {
+        status = ippsAES_GCMGetSize(&state_size);
+        ERROR_BREAK(status);
+
+        p_state = reinterpret_cast<IppsAES_GCMState *>(malloc(state_size));
+        if (p_state == NULL) {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+
+        status = ippsAES_GCMInit(key, 16, p_state, state_size);
+        ERROR_BREAK(status);
+
+        status = ippsAES_GCMStart(iv, iv_len, aad, aad_len, p_state);
+        ERROR_BREAK(status);
+
+        *aes_gcm_state = p_state;
+
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    if (ret != SGX_SUCCESS) {
+        CLEAR_FREE_MEM(p_state, state_size);
+    }
+
+    return ret;
+}
+
+
+sgx_status_t sgx_aes_gcm128_enc_get_mac(uint8_t *mac, sgx_aes_state_handle_t aes_gcm_state)
+{
+    if ((mac == NULL) || (aes_gcm_state == NULL))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    IppStatus status = ippsAES_GCMGetTag(mac, SGX_AESGCM_MAC_SIZE, (IppsAES_GCMState*)aes_gcm_state);
+    if (status == ippStsNoErr) {
+        ret = SGX_SUCCESS;
+    }
+
+    //In case of error, clear output MAC buffer.
+    //
+    if (ret != SGX_SUCCESS)
+        memset_s(mac, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
+
+    return ret;
+}
+
+
+//aes_gcm encryption fini function
+sgx_status_t sgx_aes_gcm_close(sgx_aes_state_handle_t aes_gcm_state)
+{
+    int state_size = 0;
+    if (aes_gcm_state != NULL) {
+        if (ippsAES_GCMGetSize(&state_size) != ippStsNoErr) {
+            return SGX_ERROR_UNEXPECTED;
+        }
+        CLEAR_FREE_MEM(aes_gcm_state, state_size);
+    }
+    return SGX_SUCCESS;
+}
+
+
+sgx_status_t sgx_aes_gcm128_enc_update(uint8_t *p_src, uint32_t src_len,
+    uint8_t *p_dst, sgx_aes_state_handle_t aes_gcm_state)
+{
+    if ((aes_gcm_state == NULL) || (p_src == NULL) || (p_dst == NULL) || (src_len >= INT_MAX) || (src_len == 0))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    if (ippsAES_GCMEncrypt(p_src, p_dst, src_len, (IppsAES_GCMState*)aes_gcm_state) != ippStsNoErr) {
+        CLEAR_FREE_MEM(p_dst, src_len);
+        return SGX_ERROR_UNEXPECTED;
+    }
+    return SGX_SUCCESS;
+}

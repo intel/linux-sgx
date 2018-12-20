@@ -54,16 +54,11 @@ void CPCEClass::before_enclave_load() {
 uint32_t CPCEClass::get_pce_target(
     sgx_target_info_t *p_pce_target)
 {
-    /* We need to make sure the PCE is successfully loaded and then we can use
-    the cached attributes and launch token. */
+    /* We need to make sure the PCE is successfully loaded */
     assert(m_enclave_id);
     memset(p_pce_target, 0, sizeof(sgx_target_info_t));
-    memcpy_s(&p_pce_target->attributes, sizeof(p_pce_target->attributes),
-        &m_attributes.secs_attr, sizeof(m_attributes.secs_attr));
-    memcpy_s(&p_pce_target->misc_select, sizeof(p_pce_target->misc_select),
-        &m_attributes.misc_select, sizeof(m_attributes.misc_select));
-    memcpy_s(&p_pce_target->mr_enclave, sizeof(p_pce_target->mr_enclave),
-        &m_mrenclave, sizeof(m_mrenclave));
+    if(SGX_SUCCESS != sgx_get_target_info(m_enclave_id, p_pce_target))
+        return AE_FAILURE;
     return AE_SUCCESS;
 }
 

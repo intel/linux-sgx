@@ -159,10 +159,10 @@ egetkey_status_t pcl_egetkey(sgx_key_request_t* kr, sgx_key_128bit_t okey)
     }
 
     // Must not use swich else relocations
-    /* PCL UNUSED START *
+    /* PCL UNUSED START
     switch (kr->key_name) {
     case SGX_KEYSELECT_SEAL:
-    /* PCL UNUSED END   */
+       PCL UNUSED END   */
         egetkey_status_t esa = pcl_check_isv_svn(kr, cur_secs);
         if(EGETKEY_SUCCESS != esa)return esa;
         esa = pcl_check_cpu_svn(kr);
@@ -186,11 +186,11 @@ egetkey_status_t pcl_egetkey(sgx_key_request_t* kr, sgx_key_128bit_t okey)
         pcl_memcpy(&dd.ddsk.key_id, &kr->key_id, sizeof(sgx_key_id_t));
 
 
-/* PCL UNUSED START *
+/* PCL UNUSED START
     default:
         return EGETKEY_INVALID_KEYNAME;
     }
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
     pcl_derive_key(&dd, okey);
     return EGETKEY_SUCCESS;
 }

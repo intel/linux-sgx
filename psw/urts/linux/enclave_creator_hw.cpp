@@ -155,6 +155,9 @@ int EnclaveCreatorHW::error_api2urts(uint32_t api_error)
      case ENCLAVE_DEVICE_NO_RESOURCES:
          ret = SGX_ERROR_OUT_OF_MEMORY;
          break;
+     case ENCLAVE_SERVICE_TIMEOUT:
+         ret = SGX_ERROR_SERVICE_TIMEOUT;
+         break;
      default:
          SE_TRACE(SE_TRACE_WARNING, "unexpected error %#x from enclave common api, should be uRTS/driver bug\n", api_error);
          ret = SGX_ERROR_UNEXPECTED;

@@ -33,6 +33,7 @@
 #include <cstddef>
 #include "u_certificate_provisioning.h"
 #include "uecall_bridge.h"
+#include "PSDAService.h"
 
 #include "pse_pr_u.h"
 #include "pse_pr_u.c"
@@ -40,7 +41,7 @@
 #include "pse_pr_common.h"
 
 #include <Buffer.h>
-#include "pse_pr_sigma_1_1_defs.h"
+#include "pse_pr_sigma_defs.h"
 #include "le2be_macros.h"
 
 #include "aeerror.h"
@@ -52,9 +53,15 @@
 
 #include "oal/oal.h"
 
+#define SIGMA11_SVER   0x0001
+#define SIGMA20_SVER   0x0002
+#define SIG_RL_BLOBID  0x000e
+#define PRIV_RL_BLOBID 0x000d 
+
+
 static sgx_enclave_id_t _enclaveID;
 
-static ae_error_t check_sigrl_entries_max(const EPID11_SIG_RL* pSigRL)
+static ae_error_t check_sigrl_entries_max(const EPID_SIG_RL* pSigRL)
 {
     if (NULL != pSigRL)
     {
@@ -67,7 +74,47 @@ static ae_error_t check_sigrl_entries_max(const EPID11_SIG_RL* pSigRL)
     return AE_SUCCESS;
 }
 
-static ae_error_t check_privrl_entries_max(const EPID11_PRIV_RL* pPrivRL)
+static ae_error_t check_sigrl_header(const EPID_SIG_RL* pSigRL)
+{
+    if (NULL != pSigRL)
+    {
+        if (PSDAService::instance().is_sigma20_supported())
+        {
+            if (SIGMA20_SVER != lv_htons(*((uint16_t*)pSigRL->sver)) ||
+                SIG_RL_BLOBID != lv_htons(*((uint16_t*)pSigRL->blob_id)))
+                return AESM_PSE_PR_RL_RESP_HEADER_ERROR;
+        }
+        else
+        {
+            if (SIGMA11_SVER != lv_htons(*((uint16_t*)pSigRL->sver)) ||
+                SIG_RL_BLOBID != lv_htons(*((uint16_t*)pSigRL->blob_id)))
+                return AESM_PSE_PR_RL_RESP_HEADER_ERROR;
+        }
+    }
+    return AE_SUCCESS;
+}
+
+static ae_error_t check_privrl_header(const EPID_PRIV_RL* pPrivRL)
+{
+    if (NULL != pPrivRL)
+    {
+        if (PSDAService::instance().is_sigma20_supported())
+        {
+            if (SIGMA20_SVER != lv_htons(*((uint16_t*)pPrivRL->sver)) ||
+                PRIV_RL_BLOBID != lv_htons(*((uint16_t*)pPrivRL->blob_id)))
+                return AESM_PSE_PR_RL_RESP_HEADER_ERROR;
+        }
+        else
+        {
+            if (SIGMA11_SVER != lv_htons(*((uint16_t*)pPrivRL->sver)) ||
+                PRIV_RL_BLOBID != lv_htons(*((uint16_t*)pPrivRL->blob_id)))
+                return AESM_PSE_PR_RL_RESP_HEADER_ERROR;
+        }
+    }
+    return AE_SUCCESS;
+}
+
+static ae_error_t check_privrl_entries_max(const EPID_PRIV_RL* pPrivRL)
 {
     if (NULL != pPrivRL)
     {
@@ -266,7 +313,9 @@ ae_error_t tGenM7
         const SIGMA_S1_MESSAGE* pS1 = (const SIGMA_S1_MESSAGE*)(s1.getData());
 
         const UINT8* pSigRL = sigRL.getSize() ? const_cast<uint8_t*>(sigRL.getData()) : NULL;
-        retval = check_sigrl_entries_max((const EPID11_SIG_RL*)pSigRL);
+        retval = check_sigrl_entries_max((const EPID_SIG_RL*)pSigRL);
+        BREAK_IF_FAILED(retval);
+        retval = check_sigrl_header((const EPID_SIG_RL*)pSigRL);
         BREAK_IF_FAILED(retval);
 
         const UINT8* pOcspResp = const_cast<uint8_t*>(ocspResp.getData());
@@ -295,7 +344,7 @@ ae_error_t tGenM7
         AESM_DBG_INFO("start gen M7 ...");
         // Call to get size required of output buffers
         seStatus = ecall_tGenM7(_enclaveID, &retval, pS1, 
-            (const EPID11_SIG_RL*)pSigRL, sigRL.getSize(), pOcspResp, nOcspResp,
+            (const EPID_SIG_RL*)pSigRL, sigRL.getSize(), pOcspResp, nOcspResp,
             pVCert, nVCert, (pairing_blob_t*)pPairingBlob,
             nS2, pS2, &nS2);
         BREAK_IF_TRUE( (SGX_ERROR_ENCLAVE_LOST == seStatus), retval, PSE_PR_ENCLAVE_LOST_ERROR);
@@ -332,7 +381,9 @@ ae_error_t tVerifyM8
         const SIGMA_S3_MESSAGE* pS3 = (const SIGMA_S3_MESSAGE*)(s3.getData());
 
         UINT8* pPrivRL = privRL.getSize() ? const_cast<uint8_t*>(privRL.getData()) : NULL;
-        retval = check_privrl_entries_max((const EPID11_PRIV_RL*)pPrivRL);
+        retval = check_privrl_entries_max((const EPID_PRIV_RL*)pPrivRL);
+        BREAK_IF_FAILED(retval);
+        retval = check_privrl_header((const EPID_PRIV_RL*)pPrivRL);
         BREAK_IF_FAILED(retval);
 
         UINT32 nPairingBlob = NeededBytesForPairingBlob();
@@ -346,7 +397,7 @@ ae_error_t tVerifyM8
 
         // Call to get size required of output buffers
         seStatus = ecall_tVerifyM8(_enclaveID, &retval, pS3, nS3,
-       (const EPID11_PRIV_RL*)pPrivRL, privRL.getSize(), pPairingBlob, &uNewPairing);
+       (const EPID_PRIV_RL*)pPrivRL, privRL.getSize(), pPairingBlob, &uNewPairing);
         BREAK_IF_TRUE( (SGX_ERROR_ENCLAVE_LOST == seStatus), retval, PSE_PR_ENCLAVE_LOST_ERROR);
         BREAK_IF_TRUE( (SGX_SUCCESS != seStatus), retval, PSE_PR_ENCLAVE_BRIDGE_ERROR);
 

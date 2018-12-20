@@ -147,6 +147,19 @@ aesm_error_t QEAESMLogic::init_quote(
             }
         }
     }
+
+    ae_ret = get_qe_target(target);
+    if(ae_ret!=AE_SUCCESS){
+        AESM_DBG_ERROR("get qe target failed (ae%d)",ae_ret);
+        if(ae_ret==AESM_AE_OUT_OF_EPC)
+            aesm_result = AESM_OUT_OF_EPC;
+        else
+            aesm_result = AESM_UNEXPECTED_ERROR;
+        goto ret_point;
+    }
+    AESM_DBG_TRACE("get qe_target flags:%llx xfrm:%llx",
+                   target->attributes.flags, target->attributes.xfrm);
+
     se_static_assert(SGX_TRUSTED_EPID_BLOB_SIZE_SDK>=SGX_TRUSTED_EPID_BLOB_SIZE_SIK);
     ae_ret = static_cast<ae_error_t>(CQEClass::instance().verify_blob(epid_data.trusted_epid_blob,
         SGX_TRUSTED_EPID_BLOB_SIZE_SDK,
@@ -172,17 +185,6 @@ aesm_error_t QEAESMLogic::init_quote(
     assert(sizeof(uint32_t) ==  gid_size);
     UNUSED(gid_size);
 
-    ae_ret = get_qe_target(target);
-    if(ae_ret!=AE_SUCCESS){
-        AESM_DBG_ERROR("get qe target failed (ae%d)",ae_ret);
-        if(ae_ret==AESM_AE_OUT_OF_EPC)
-            aesm_result = AESM_OUT_OF_EPC;
-        else
-            aesm_result = AESM_UNEXPECTED_ERROR;
-        goto ret_point;
-    }
-    AESM_DBG_TRACE("get qe_target flags:%llx xfrm:%llx",
-                   target->attributes.flags, target->attributes.xfrm);
     //Any Quoting enclave related code must be before this section to avoid QE/PvE unloading each other
     //do the upgrade reprovision after all Quoting Enclave works
     AESM_DBG_TRACE("qe_isv_svn %d, epid_isv_svn %d",qe_isv_svn, epid_data.cur_pi.pve_svn);

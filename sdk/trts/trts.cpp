@@ -318,3 +318,8 @@ int check_static_stack_canary(void *tcs)
     return 0;
 }
 
+void random_stack_notify_gdb(void *addr, size_t size)
+{
+    UNUSED(addr);
+    UNUSED(size);
+}

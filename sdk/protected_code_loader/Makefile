@@ -84,8 +84,8 @@ PCL_INCLUDE_PATH	:= -I$(COMMON_DIR)/inc \
                        -I$(COMMON_DIR)/inc/internal \
                        -I./crypto \
                        -I./unseal \
-                       -I/usr/include/x86_64-linux-gnu \
                        -I/usr/include \
+                       -I/usr/include/x86_64-linux-gnu \
                        -I./ 
 
 TCFLAGS := $(filter-out -ffunction-sections -fdata-sections, $(CFLAGS))
@@ -126,19 +126,19 @@ $(PCL_SIM_LIB):$(PCL_SIM_CPP_OBJECTS) $(PCL_ASM_OBJECTS) $(PCL_SIM_C_OBJECTS)
 
 %.o: %.s
 	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CXX) $(PCL_LIB_C_FLAGS) -c $< -o $@ 
+	$(VERBOSE)$(CC) $(PCL_LIB_C_FLAGS) -c $< -o $@ 
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
-	@echo "CXX  <=  $<"
+	@echo "CC  <=  $<"
 
 %.o: %.c
 	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CXX) $(PCL_LIB_C_FLAGS) -c $< -o $@
+	$(VERBOSE)$(CC) $(PCL_LIB_C_FLAGS) -c $< -o $@
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
-	@echo "CXX  <=  $<"
+	@echo "CC  <=  $<"
 
 %.o: %.cpp
 	$(VERBOSE)mkdir -p $(@D)
@@ -151,19 +151,19 @@ $(PCL_SIM_LIB):$(PCL_SIM_CPP_OBJECTS) $(PCL_ASM_OBJECTS) $(PCL_SIM_C_OBJECTS)
 # Simulation objects
 $(SIM_OBJ_DIR)%.o: %.s
 	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CXX) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@ 
+	$(VERBOSE)$(CC) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@ 
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
-	@echo "CXX  <=  $<"
+	@echo "CC  <=  $<"
 
 $(SIM_OBJ_DIR)%.o: %.c
 	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CXX) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@
+	$(VERBOSE)$(CC) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
 	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
-	@echo "CXX  <=  $<"
+	@echo "CC  <=  $<"
 
 $(SIM_OBJ_DIR)%.o: %.cpp
 	$(VERBOSE)mkdir -p $(@D)

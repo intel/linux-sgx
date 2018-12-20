@@ -47,10 +47,10 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpxMethod_binom3,(void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpxMethod_binom3,(void) )
+IPPAPI( const IppsGFpMethod*, y8_ippsGFpxMethod_binom3, (void) )
+IPPAPI( const IppsGFpMethod*, l9_ippsGFpxMethod_binom3, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3,(void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
@@ -66,10 +66,10 @@ IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3,(void) )
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpxMethod_binom3,(void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpxMethod_binom3,(void) )
+IPPAPI( const IppsGFpMethod*, p8_ippsGFpxMethod_binom3, (void) )
+IPPAPI( const IppsGFpMethod*, h9_ippsGFpxMethod_binom3, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3,(void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );

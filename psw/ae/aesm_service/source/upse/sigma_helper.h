@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include <list>
 #include "aeerror.h"
-#include "pse_pr_sigma_1_1_defs.h"
+#include "pse_pr_sigma_defs.h"
 #include "pse_pr_sigma_common_defs.h"
 
 typedef uint32_t SAFEID_GID;

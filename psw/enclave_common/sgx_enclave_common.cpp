@@ -150,6 +150,35 @@ static uint32_t error_driver2api(int driver_error)
     return ret;
 }
 
+static uint32_t error_aesm2api(int aesm_error)
+{
+    uint32_t ret = ENCLAVE_UNEXPECTED;
+
+    switch (aesm_error) {
+    case SGX_ERROR_INVALID_PARAMETER:
+        ret = ENCLAVE_INVALID_PARAMETER;
+        break;
+    case SGX_ERROR_SERVICE_UNAVAILABLE:
+    case SGX_ERROR_NO_DEVICE:
+        ret = ENCLAVE_NOT_SUPPORTED;
+        break;
+    case SGX_ERROR_OUT_OF_EPC:
+        ret = ENCLAVE_DEVICE_NO_RESOURCES;
+        break;
+    case SGX_ERROR_SERVICE_INVALID_PRIVILEGE:
+        ret = ENCLAVE_NOT_AUTHORIZED;
+        break;
+    case SGX_ERROR_SERVICE_TIMEOUT:
+        ret = ENCLAVE_SERVICE_TIMEOUT;
+        break;
+    default:
+        ret = ENCLAVE_UNEXPECTED;
+        break;
+    }
+
+    return ret;
+}
+
 /* enclave_create()
  * Parameters:
  *      base_address [in, optional] - An optional preferred base address for the enclave.
@@ -412,9 +441,10 @@ extern "C" bool COMM_API enclave_initialize(
 
         enclave_css_t* enclave_css = (enclave_css_t*)enclave_init_sgx->sigstruct;
         if (0 == enclave_css->header.hw_version) {
-            if (0 != get_launch_token(enclave_css, &it->second, &launch_token)) {
+            sgx_status_t status = get_launch_token(enclave_css, &it->second, &launch_token);
+            if (status != SGX_SUCCESS) {
                 if (enclave_error != NULL)
-                    *enclave_error = ENCLAVE_UNEXPECTED;
+                    *enclave_error = error_aesm2api(status);
                 return false;
             }
         }

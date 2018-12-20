@@ -34,7 +34,8 @@ include ../../../../buildenv.mk
 CPPFLAGS += -I$(COMMON_DIR)/inc/         \
             -I$(COMMON_DIR)/inc/tlibc/   \
             -I$(COMMON_DIR)/inc/internal \
-            -I$(LINUX_SDK_DIR)/trts/
+            -I$(LINUX_SDK_DIR)/trts/     \
+            -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 CFLAGS   += $(ENCLAVE_CFLAGS)
 ASFLAGS  := -DSE_SIM -Werror $(CFLAGS)

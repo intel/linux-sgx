@@ -35,9 +35,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "sgx_tcrypto.h"
 
 
-typedef uint32_t    SHA1_HASH[5];
 
 #define SHA1_HASH_BITS  (160)
 #define SHA1_HASH_LEN   (SHA1_HASH_BITS / 8)
@@ -53,12 +53,12 @@ public:
     bool Update(const void* pData, size_t numBytes);
 
 	// pHash will contain the computed HASH if successful
-	bool Finalize(SHA1_HASH *pHash);
+	bool Finalize(sgx_sha1_hash_t *pHash);
 
 private:
 	bool m_status;
 
-    void *m_pCtx;
+    sgx_sha_state_handle_t m_pCtx;
 
 	// Disable class operations (default constructor, copy constructor, assignment operator, and address-of operator)
 	//PrepareHashSHA1();									// default constructor

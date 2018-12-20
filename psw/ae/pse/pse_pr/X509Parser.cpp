@@ -47,26 +47,42 @@ X509Parser::~X509Parser(void)
 {
 }
 
-
 UINT32 X509Parser::ParseGroupCertificate
     (
     /*in */ const EcDsaPubKey* pSerializedPublicKey,
-    /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr,
-    /*out*/ UINT32* pGID,
-    /*out*/ Epid11GroupPubKey* pGroupPubKey
+    /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr, 
+    /*out*/ UINT32* pGID, 
+    /*out*/ uint8_t*& pCert
     )
 {
+#ifndef PSE_PR_20
+    return ParseEpid11GroupCertificate(pSerializedPublicKey, pGroupCertVlr, pGID, pCert);
+#else
+    return ParseEpid20GroupCertificate(pSerializedPublicKey, pGroupCertVlr, pGID, pCert);
+#endif
+    
+}
+UINT32 X509Parser::ParseEpid11GroupCertificate
+(
+    /*in */ const EcDsaPubKey* pSerializedPublicKey,
+    /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr,
+    /*out*/ UINT32* pGID,
+    /*out*/ uint8_t*& pCert
+)
+{
+    Epid11GroupPubKey pGroupPubKey;
     STATUS status = X509_GENERAL_ERROR;
 
     SessMgrCertificateFields* certificateFields = NULL;
     UINT8*                    certWorkBuffer = NULL;
+
     CertificateType certType = EpidGroupCertificate;
 
     do
     {
         if (NULL == pSerializedPublicKey ||
             NULL == pGroupCertVlr ||
-            NULL == pGID || NULL == pGroupPubKey)
+            NULL == pGID || NULL == pCert)
             break;
 
         certificateFields = (SessMgrCertificateFields*)calloc(1, sizeof(*certificateFields));
@@ -83,7 +99,7 @@ UINT32 X509Parser::ParseGroupCertificate
             //
                 // this is "functional", not buffer overflow check
                     //
-                        (pGroupCertVlr->VlrHeader.PaddedBytes > 3) ||
+                        (pGroupCertVlr->VlrHeader.PaddedBytes > 3) || 
                         //
                         // buffer overflow check: Length can be anything, sizeof is a constant...
                         //
@@ -134,22 +150,140 @@ UINT32 X509Parser::ParseGroupCertificate
             status = X509_GENERAL_ERROR;
             break;
         }
+	
+	SessMgrEpid11GroupPublicKey* EpidKey = (SessMgrEpid11GroupPublicKey    *)certificateFields->subjectPublicKey.buffer;
+        
+        memset(&pGroupPubKey, 0, sizeof(Epid11GroupPubKey));
+        //    pGroupPubKey.sig;
+        memcpy(&pGroupPubKey.gid, gidArray, sizeof(pGroupPubKey.gid));
+        memcpy(&pGroupPubKey.h1.x, EpidKey->h1x, sizeof(pGroupPubKey.h1.x));
+        memcpy(&pGroupPubKey.h1.y, EpidKey->h1y, sizeof(pGroupPubKey.h1.y));
+        memcpy(&pGroupPubKey.h2.x, EpidKey->h2x, sizeof(pGroupPubKey.h2.x));
+        memcpy(&pGroupPubKey.h2.y, EpidKey->h2y, sizeof(pGroupPubKey.h2.y));
+        memcpy(&pGroupPubKey.w.x[0], EpidKey->wx0, sizeof(pGroupPubKey.w.x[0]));
+        memcpy(&pGroupPubKey.w.x[1], EpidKey->wx1, sizeof(pGroupPubKey.w.x[1]));
+        memcpy(&pGroupPubKey.w.x[2], EpidKey->wx2, sizeof(pGroupPubKey.w.x[2]));
+        memcpy(&pGroupPubKey.w.y[0], EpidKey->wy0, sizeof(pGroupPubKey.w.y[0]));
+        memcpy(&pGroupPubKey.w.y[1], EpidKey->wy1, sizeof(pGroupPubKey.w.y[1]));
+        memcpy(&pGroupPubKey.w.y[2], EpidKey->wy2, sizeof(pGroupPubKey.w.y[2]));
+ 
+        *pGID = lv_htonl(gidArray);
+        memcpy(pCert, &pGroupPubKey, sizeof(Epid11GroupPubKey));
+        status = X509_STATUS_SUCCESS;
+    } while (false);
+ 
+    if (NULL != certificateFields)
+        free(certificateFields);
+    if (NULL != certWorkBuffer)
+        free(certWorkBuffer);
 
-        SessMgrEpidGroupPublicKey* EpidKey = (SessMgrEpidGroupPublicKey*)certificateFields->subjectPublicKey.buffer;
+    return status;
+}
 
-        memset(pGroupPubKey, 0, sizeof(Epid11GroupPubKey));
-        memcpy(&pGroupPubKey->gid, gidArray, sizeof(pGroupPubKey->gid));
-        memcpy(&pGroupPubKey->h1.x, EpidKey->h1x, sizeof(pGroupPubKey->h1.x));
-        memcpy(&pGroupPubKey->h1.y, EpidKey->h1y, sizeof(pGroupPubKey->h1.y));
-        memcpy(&pGroupPubKey->h2.x, EpidKey->h2x, sizeof(pGroupPubKey->h2.x));
-        memcpy(&pGroupPubKey->h2.y, EpidKey->h2y, sizeof(pGroupPubKey->h2.y));
-        memcpy(&pGroupPubKey->w.x[0], EpidKey->wx0, sizeof(pGroupPubKey->w.x[0]));
-        memcpy(&pGroupPubKey->w.x[1], EpidKey->wx1, sizeof(pGroupPubKey->w.x[1]));
-        memcpy(&pGroupPubKey->w.x[2], EpidKey->wx2, sizeof(pGroupPubKey->w.x[2]));
-        memcpy(&pGroupPubKey->w.y[0], EpidKey->wy0, sizeof(pGroupPubKey->w.y[0]));
-        memcpy(&pGroupPubKey->w.y[1], EpidKey->wy1, sizeof(pGroupPubKey->w.y[1]));
-        memcpy(&pGroupPubKey->w.y[2], EpidKey->wy2, sizeof(pGroupPubKey->w.y[2]));
+UINT32 X509Parser::ParseEpid20GroupCertificate
+    (
+    /*in */ const EcDsaPubKey* pSerializedPublicKey,
+    /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr, 
+    /*out*/ UINT32* pGID, 
+    /*out*/ uint8_t*& pCert
+    )
+{
+    GroupPubKey pGroupPubKey;
+    STATUS status = X509_GENERAL_ERROR;
 
+    SessMgrCertificateFields* certificateFields = NULL;
+    UINT8*                    certWorkBuffer = NULL;
+    CertificateType certType = EpidGroupCertificate;
+
+    do
+    {
+        if (NULL == pSerializedPublicKey ||
+            NULL == pGroupCertVlr ||
+            NULL == pGID || NULL == pCert)
+            break;
+
+        certificateFields = (SessMgrCertificateFields*)calloc(1, sizeof(*certificateFields));
+        certWorkBuffer = (UINT8*)calloc(1, certWorkBufferLength);
+        if (NULL == certificateFields ||
+            NULL == certWorkBuffer)
+            break;
+
+        // Inject the Public Key to X509_Parser through the global variable SerializedPublicKey
+        SetPublicEcDsaKey(pSerializedPublicKey);
+
+        UINT8* X509GroupCertificate = const_cast<UINT8*>(pGroupCertVlr->X509GroupCertData);
+        if (
+            //
+                // this is "functional", not buffer overflow check
+                    //
+                        (pGroupCertVlr->VlrHeader.PaddedBytes > 3) || 
+                        //
+                        // buffer overflow check: Length can be anything, sizeof is a constant...
+                        //
+                        (pGroupCertVlr->VlrHeader.Length <= (sizeof(pGroupCertVlr->VlrHeader) + pGroupCertVlr->VlrHeader.PaddedBytes))
+                        ) {
+                            break;
+        }
+        //
+        // attacker can control pGroupCertVlr->VlrHeader.Length
+        //
+        sgx_lfence();
+
+        UINT32 X509GroupCertificateSize = static_cast<UINT32>(pGroupCertVlr->VlrHeader.Length -
+            sizeof(pGroupCertVlr->VlrHeader) - pGroupCertVlr->VlrHeader.PaddedBytes);
+
+#ifdef DUMP_OCTETS
+        OutputOctets("X509GroupCertificate", X509GroupCertificate, X509GroupCertificateSize);
+#endif
+
+        //typedef enum{
+        //    EpidGroupCertificate = 0,
+        //    VerifierCertificate,
+        //    OcspResponderCertificate,
+        //    Others, // OMA DRM 
+        //}CertificateType;
+        ISSUER_INFO* pRootPublicKey = NULL;
+
+        status = ParseCertificateChain(
+            X509GroupCertificate, X509GroupCertificateSize, 
+            certificateFields, certWorkBuffer, certWorkBufferLength, pRootPublicKey, 0,
+            NULL, certType, FALSE);
+        if (X509_STATUS_SUCCESS != status)
+            break;
+
+        uint8_t gidArray[sizeof(pGroupPubKey.gid)] = {0};
+        if (certificateFields->serialNumber.length > sizeof(gidArray))
+        {
+            status = X509_GENERAL_ERROR;
+            break;
+        }
+
+        int index = static_cast<int>(sizeof(gidArray)-certificateFields->serialNumber.length);
+        memcpy(&gidArray[index], certificateFields->serialNumber.buffer, certificateFields->serialNumber.length);
+
+        //Only Epid Group Public Key Epid2.0 are permitted to be subject key
+        if(certificateFields->algorithmIdentifierForSubjectPublicKey != X509_intel_sigma_epidGroupPublicKey_epid20)
+        {
+            status = X509_GENERAL_ERROR;
+            break;
+        }
+
+        SessMgrEpid20GroupPublicKey* EpidKey = (SessMgrEpid20GroupPublicKey*)certificateFields->subjectPublicKey.buffer;
+
+        memset(&pGroupPubKey, 0, sizeof(GroupPubKey));
+        //    pGroupPubKey->sig;
+        memcpy(&pGroupPubKey.gid, gidArray, sizeof(pGroupPubKey.gid));
+        memcpy(&pGroupPubKey.h1.x, EpidKey->h1x, sizeof(pGroupPubKey.h1.x));
+        memcpy(&pGroupPubKey.h1.y, EpidKey->h1y, sizeof(pGroupPubKey.h1.y));
+        memcpy(&pGroupPubKey.h2.x, EpidKey->h2x, sizeof(pGroupPubKey.h2.x));
+        memcpy(&pGroupPubKey.h2.y, EpidKey->h2y, sizeof(pGroupPubKey.h2.y));
+        memcpy(&pGroupPubKey.w.x[0], EpidKey->wx0, sizeof(pGroupPubKey.w.x[0]));
+        memcpy(&pGroupPubKey.w.x[1], EpidKey->wx1, sizeof(pGroupPubKey.w.x[1]));
+        memcpy(&pGroupPubKey.w.y[0], EpidKey->wy0, sizeof(pGroupPubKey.w.y[0]));
+        memcpy(&pGroupPubKey.w.y[1], EpidKey->wy1, sizeof(pGroupPubKey.w.y[1]));
+
+        *pGID = lv_ntohl(gidArray);
+        memcpy(pCert, &pGroupPubKey, sizeof(GroupPubKey));
         *pGID = lv_htonl(gidArray);
 
         status = X509_STATUS_SUCCESS;

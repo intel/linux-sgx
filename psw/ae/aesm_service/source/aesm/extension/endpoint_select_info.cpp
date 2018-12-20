@@ -34,11 +34,10 @@
 #include "PVEClass.h"
 #include "prov_msg_size.h"
 #include "network_encoding_wrapper.h"
-#include "ipp_wrapper.h"
-#include "sgx_tcrypto.h"
 #include "aesm_xegd_blob.h"
 #include "peksk_pub.hh"
 #include "sgx_read_rand.h"
+#include "ssl_crypto.h"
 #include <time.h>
 
 
@@ -78,14 +77,6 @@ ae_error_t EndpointSelectionInfo::read_pek(endpoint_selection_infos_t& es_info)
 ae_error_t EndpointSelectionInfo::write_pek(const endpoint_selection_infos_t& es_info)
 {
     return aesm_write_data(FT_PERSISTENT_STORAGE, PROVISION_PEK_BLOB_FID, reinterpret_cast<const uint8_t *>(&es_info), sizeof(es_info));
-}
-
-static ae_error_t ipp_error_to_ae_error(IppStatus ipp_status)
-{
-    if(ipp_status == ippStsNoErr) return AE_SUCCESS;
-    else if(ipp_status == ippStsMemAllocErr||
-        ipp_status == ippStsNoMemErr) return AE_OUT_OF_MEMORY_ERROR;
-    else return AE_FAILURE;//unknown or unexpected ipp error
 }
 
 static bool is_valid_server_url_infos(const aesm_server_url_infos_t& server_urls)
@@ -179,7 +170,7 @@ ae_error_t EndpointSelectionInfo::get_url_info(aesm_server_url_infos_t& server_u
 }
 
 ae_error_t aesm_check_pek_signature(const signed_pek_t& signed_pek, const extended_epid_group_blob_t& xegb);
-sgx_status_t get_provision_server_rsa_pub_key_in_ipp_format(const signed_pek_t& pek, IppsRSAPublicKeyState **rsa_pub_key);
+sgx_status_t get_provision_server_rsa_pub_key(const signed_pek_t& pek, void **rsa_pub_key);
 //The function is to verify the PEK ECDSA Signature and RSA Signature for ES Msg2
 //   When PvE uses PEK, it will re-check the ECDSA Signature
 //The function will only be called after ES protocol is completed. But it will not be called when reading data back from persitent storage
@@ -193,12 +184,9 @@ ae_error_t EndpointSelectionInfo::verify_signature(const endpoint_selection_info
 {
     //Do signature verification here
     ae_error_t ae_err = AE_SUCCESS;
-    IppsRSAPublicKeyState *rsa_pub_key = NULL;
-    Ipp8u *buffer = NULL;
-    int public_key_buffer_size = 0;
-    int vr = 0;
+    void *rsa_pub_key = NULL;
+    sgx_rsa_result_t vr = SGX_RSA_INVALID_SIGNATURE;
     uint16_t ttl=_htons(provision_ttl);
-    IppStatus ipp_status = ippStsNoErr;
     sgx_status_t sgx_status = SGX_SUCCESS;
     uint8_t msg_buf[XID_SIZE + sizeof(ttl) + MAX_PATH];
     uint32_t buf_size = 0;
@@ -224,30 +212,22 @@ ae_error_t EndpointSelectionInfo::verify_signature(const endpoint_selection_info
             goto ret_point;
     }
 
-    sgx_status = get_provision_server_rsa_pub_key_in_ipp_format(es_info.pek, &rsa_pub_key);
+    sgx_status = get_provision_server_rsa_pub_key(es_info.pek, &rsa_pub_key);
     if(SGX_SUCCESS != sgx_status){
         AESM_DBG_ERROR("Fail to load rsa public key from PEK:%d", sgx_status);
         ae_err = sgx_error_to_ae_error(sgx_status);
         goto ret_point;
     }
-    ipp_status = ippsRSA_GetBufferSizePublicKey(&public_key_buffer_size, rsa_pub_key);
-    if(ippStsNoErr != ipp_status){
-        AESM_DBG_ERROR("Fail to get rsa public key size:%s", ipp_status);
-        ae_err = ipp_error_to_ae_error(ipp_status);
-        goto ret_point;
+
+    sgx_status = rsa3072_verify(msg_buf, buf_size, rsa_pub_key,
+		    reinterpret_cast<const sgx_rsa3072_signature_t *>(rsa_signature), &vr);
+    if(sgx_status != SGX_SUCCESS)
+    {
+        AESM_DBG_ERROR("Fail to verify rsa signature:%d", sgx_status);
+        ae_err = sgx_error_to_ae_error(sgx_status);
+        goto ret_point;        
     }
-    buffer = (Ipp8u *)malloc(public_key_buffer_size);
-    if(NULL == buffer){
-        AESM_DBG_ERROR("malloc error");
-        ae_err = AE_OUT_OF_MEMORY_ERROR;
-        goto ret_point;
-    }
-    ipp_status = ippsRSAVerify_PKCS1v15(msg_buf, buf_size, rsa_signature, &vr, rsa_pub_key, ippHashAlg_SHA256, buffer);
-    if(ippStsNoErr != ipp_status){
-        AESM_DBG_ERROR("Fail to verify rsa signature:%d", ipp_status);
-        ae_err = ipp_error_to_ae_error(ipp_status);
-        goto ret_point;
-    }
+
     if(vr == 0){
         AESM_DBG_TRACE("rsa signature verification failed");
         ae_err = PVE_MSG_ERROR;
@@ -258,11 +238,9 @@ ae_error_t EndpointSelectionInfo::verify_signature(const endpoint_selection_info
     }
 ret_point:
     if(NULL != rsa_pub_key){
-        secure_free_rsa_pub_key(RSA_3072_KEY_BYTES, sizeof(uint32_t), rsa_pub_key);
+        sgx_free_rsa_key(rsa_pub_key, SGX_RSA_PUBLIC_KEY, RSA_3072_KEY_BYTES, sizeof(es_info.pek.e));
     }
-    if(NULL != buffer){
-        free(buffer);
-    }
+    
     return ae_err;
 }
 

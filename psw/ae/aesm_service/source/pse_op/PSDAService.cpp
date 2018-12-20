@@ -33,7 +33,7 @@
 #include <limits.h>
 #include "util.h"
 #include "se_string.h"
-
+#define PSDA_CAP_RESULT_MSG_LEN 12
 #define PSDA_FILE_NAME "PSDA.dalp"
 
 static const char* g_psda_id = "cbede6f96ce4439ca1c76e2087786616";
@@ -42,8 +42,9 @@ PSDAService::PSDAService(void)
 {
     jhi_handle = NULL;
     psda_session_handle = NULL;
-    psda_svn = 0;
     csme_gid = 0;
+    psda_svn = 0;
+    psda_cap = 0;
 }
 
 PSDAService::~PSDAService(void)
@@ -149,6 +150,12 @@ bool PSDAService::start_service_internal()
                     AESM_DBG_ERROR("Failed to create session. JHI_CreateSession() returned %d", jhi_ret);
                     break;
                 }
+            }
+
+            if (save_psda_capability())
+            {
+                AESM_DBG_ERROR("Failed to get PSDA Capability.");
+                break;
             }
 
             retVal = true;
@@ -288,27 +295,32 @@ ae_error_t PSDAService::send_and_recv(
 {
     int retry = AESM_RETRY_COUNT;
 
-    while (retry > 0) {
+    while (retry > 0) 
+    {
         JHI_RET ret = JHI_SendAndRecv2(this->jhi_handle,
                             this->psda_session_handle,
                             nCommandId,
                             pComm,
                             responseCode);
-        if (ret != JHI_SUCCESS) {
-            if (ret == JHI_SERVICE_UNAVAILABLE || ret == JHI_INVALID_SESSION_HANDLE) {
-                // session is lost, create session anyway
-                if (!start_service_internal()) {
-                    return AESM_PSDA_NOT_AVAILABLE;
-                }
-                // 
-                if (flag == NO_RETRY_ON_SESSION_LOSS) 
+
+        if (ret != JHI_SUCCESS) 
+        {
+            if (ret == JHI_SERVICE_UNAVAILABLE || ret == JHI_INVALID_SESSION_HANDLE) 
+            {
+                if (flag == NO_RETRY_ON_SESSION_LOSS)
                     return AESM_PSDA_SESSION_LOST;
-                else {
+                else
                     retry--;
-                    continue;
+                // session is lost, create session anyway
+                if (!start_service_internal())
+                {
+                    return AESM_PSDA_INTERNAL_ERROR;
                 }
+                else
+                    continue;
             }
-            else {
+            else 
+            {
                 return AESM_PSDA_INTERNAL_ERROR;
             }
         }
@@ -390,5 +402,57 @@ bool PSDAService::save_current_psda_svn()
     return retVal;
 
 
+}
+ae_error_t PSDAService::save_psda_capability()
+{
+	psda_info_query_msg_t psda_cap_query_msg;
+	psda_cap_query_msg.msg_hdr.msg_type = _htonl(PSDA_MSG_TYPE_CAP_QUERY);
+	psda_cap_query_msg.msg_hdr.msg_len = 0;
+
+	psda_cap_result_msg_t psda_cap_result_msg;
+	memset(&psda_cap_result_msg, 0, sizeof(psda_cap_result_msg_t));
+
+	JVM_COMM_BUFFER commBuf;
+	commBuf.TxBuf->buffer = &psda_cap_query_msg;
+	commBuf.TxBuf->length = sizeof(psda_info_query_msg_t);
+	commBuf.RxBuf->buffer = &psda_cap_result_msg;
+	commBuf.RxBuf->length = sizeof(psda_cap_result_msg_t);
+	int response_code;
+
+	ae_error_t ret;
+	ret = PSDAService::instance().send_and_recv(
+		PSDA_COMMAND_INFO,
+		&commBuf,
+		&response_code,
+        NO_RETRY_ON_SESSION_LOSS);
+	if (ret != AE_SUCCESS)
+	{
+		AESM_DBG_ERROR("JHI_SendAndRecv2 returned (ae%d)", ret);
+		AESM_LOG_ERROR("%s", g_event_string_table[SGX_EVENT_DAL_COMM_FAILURE]);
+		return ret;
+	}
+
+	if (response_code != PSDA_SUCCESS)
+	{
+		AESM_DBG_ERROR("JHI_SendAndRecv2 response_code is %d", response_code);
+		return AE_FAILURE;
+	}
+
+	if (_ntohl(psda_cap_result_msg.msg_hdr.msg_type) != PSDA_MSG_TYPE_CAP_RESULT
+		|| _ntohl(psda_cap_result_msg.msg_hdr.msg_len) != PSDA_CAP_RESULT_MSG_LEN) {
+		AESM_DBG_ERROR("msg_type %d, msg_len %d while expected value type %d, len %d",
+			_ntohl(psda_cap_result_msg.msg_hdr.msg_type), _ntohl(psda_cap_result_msg.msg_hdr.msg_len),
+			PSDA_MSG_TYPE_CAP_RESULT, PSDA_CAP_RESULT_MSG_LEN);
+		return AE_FAILURE;
+	}
+
+	if (_ntohl(psda_cap_result_msg.cap_descriptor_version) != 1)
+	{
+		return AE_FAILURE;
+	}
+
+	psda_cap = _ntohl(psda_cap_result_msg.cap_descriptor0);
+
+	return AE_SUCCESS;
 }
 

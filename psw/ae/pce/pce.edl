@@ -32,6 +32,7 @@
 enclave{
     include "pce_cert.h"
     include "sgx_report.h"
+    from "sgx_tstdc.edl" import *;
     trusted {
         public uint32_t get_pc_info([in]const sgx_report_t *report,
                                     [in, size=key_size]const uint8_t *public_key, uint32_t key_size,

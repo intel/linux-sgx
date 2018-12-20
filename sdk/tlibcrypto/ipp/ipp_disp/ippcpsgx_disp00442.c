@@ -47,38 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECInitStdBN256,(const IppsGFpState* pGF, IppsGFpECState* pEC))
-IPPAPI(IppStatus, l9_ippsGFpECInitStdBN256,(const IppsGFpState* pGF, IppsGFpECState* pEC))
+IPPAPI(IppStatus, y8_ippsGFpECInitStdBN256,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
+IPPAPI(IppStatus, l9_ippsGFpECInitStdBN256,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECInitStdBN256,(const IppsGFpState* pGF, IppsGFpECState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECInitStdBN256,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsGFpECInitStdBN256( pGF, pEC );
+        return l9_ippsGFpECInitStdBN256( pGFp, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsGFpECInitStdBN256( pGF, pEC );
+        return y8_ippsGFpECInitStdBN256( pGFp, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECInitStdBN256,(const IppsGFpState* pGF, IppsGFpECState* pEC))
-IPPAPI(IppStatus, h9_ippsGFpECInitStdBN256,(const IppsGFpState* pGF, IppsGFpECState* pEC))
+IPPAPI(IppStatus, p8_ippsGFpECInitStdBN256,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
+IPPAPI(IppStatus, h9_ippsGFpECInitStdBN256,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECInitStdBN256,(const IppsGFpState* pGF, IppsGFpECState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECInitStdBN256,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsGFpECInitStdBN256( pGF, pEC );
+        return h9_ippsGFpECInitStdBN256( pGFp, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsGFpECInitStdBN256( pGF, pEC );
+        return p8_ippsGFpECInitStdBN256( pGFp, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

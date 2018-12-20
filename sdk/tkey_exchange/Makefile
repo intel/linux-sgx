@@ -46,8 +46,6 @@ INCLUDE += -I$(LINUX_PSW_DIR)/ae/inc    \
 
 INCLUDE += -I$(SGX_IPP_INC)
 
-INCLUDE += -I$(LINUX_SDK_DIR)/tlibstdcxx/stlport
-
 vpath %.cpp $(COMMON_DIR)/src:$(LINUX_PSW_DIR)/ae/common
 vpath %.edl $(COMMON_DIR)/inc
 

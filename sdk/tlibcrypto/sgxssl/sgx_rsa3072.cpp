@@ -58,8 +58,6 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
 	size_t siglen = SGX_RSA3072_KEY_SIZE;
 	int ret = 0;
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
-
 	do {
 		// converts the modulus value of rsa key, represented as positive integer in little-endian into a BIGNUM
 		//
@@ -157,10 +155,6 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
 		retval = SGX_SUCCESS;
 	} while (0);
 
-	if (retval != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
-	}
-
 	if (ctx)
 		EVP_MD_CTX_free(ctx);
 	if (priv_pkey) {
@@ -207,8 +201,6 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
 	BIGNUM *e = NULL;
 	const EVP_MD* sha256_md = NULL;
 	EVP_MD_CTX *ctx = NULL;
-
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// converts the modulus value of rsa key, represented as positive integer in little-endian into a BIGNUM
@@ -296,10 +288,6 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
 
 		retval = SGX_SUCCESS;
 	} while (0);
-
-	if (retval != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
-	}
 
 	if (ctx)
 		EVP_MD_CTX_free(ctx);

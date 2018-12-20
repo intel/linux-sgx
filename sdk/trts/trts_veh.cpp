@@ -294,6 +294,8 @@ static int expand_stack_by_pages(void *start_addr, size_t page_count)
     return ret;
 }
 
+extern "C" const char Lereport_inst;
+
 // trts_handle_exception(void *tcs)
 //      the entry point for the exceptoin handling
 // Parameter
@@ -387,6 +389,13 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
             g_enclave_state = ENCLAVE_CRASHED;
             return SGX_ERROR_STACK_OVERRUN;
         }
+    }
+    if (size_t(&Lereport_inst) == ssa_gpr->REG(ip) && SE_EREPORT == ssa_gpr->REG(ax))
+    {
+        // Handle the exception raised by EREPORT instruction
+        ssa_gpr->REG(ip) += 3;     // Skip ENCLU, which is always a 3-byte instruction
+        ssa_gpr->REG(flags) |= 1;  // Set CF to indicate error condition, see implementation of do_report()
+        return SGX_SUCCESS;
     }
 
     if(ssa_gpr->exit_info.valid != 1)

@@ -48,7 +48,6 @@ sgx_status_t sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle)
     EVP_MD_CTX* evp_ctx = NULL;
     const EVP_MD* sha256_md = NULL;
     sgx_status_t retval = SGX_ERROR_UNEXPECTED;
-    CLEAR_OPENSSL_ERROR_QUEUE;
 
     do {
 	    /* allocates, initializes and returns a digest context */
@@ -74,7 +73,6 @@ sgx_status_t sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle)
     } while(0);
 
     if (SGX_SUCCESS != retval) {
-        GET_LAST_OPENSSL_ERROR;
         if (evp_ctx != NULL) {
             EVP_MD_CTX_free(evp_ctx);
         }
@@ -97,12 +95,10 @@ sgx_status_t sgx_sha256_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_s
     }
 
     sgx_status_t retval = SGX_ERROR_UNEXPECTED;
-    CLEAR_OPENSSL_ERROR_QUEUE;
 
     do {
 	    /* hashes src_len bytes of data at p_src into the digest context sha_handle */
 	    if(EVP_DigestUpdate((EVP_MD_CTX*)sha_handle, p_src, src_len) != 1) {
-		GET_LAST_OPENSSL_ERROR;
 		break;
 	    }
 
@@ -126,12 +122,10 @@ sgx_status_t sgx_sha256_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha256_h
 
     sgx_status_t retval = SGX_ERROR_UNEXPECTED;
     unsigned int hash_len = 0;
-    CLEAR_OPENSSL_ERROR_QUEUE;
 
     do {
 	    /* retrieves the digest value from sha_handle and places it in p_hash */
 	    if (EVP_DigestFinal_ex((EVP_MD_CTX*)sha_handle, (unsigned char *)p_hash, &hash_len) != 1) {
-		GET_LAST_OPENSSL_ERROR;
 		break;
 	    }
 

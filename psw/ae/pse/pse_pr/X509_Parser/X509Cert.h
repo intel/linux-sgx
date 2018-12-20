@@ -41,7 +41,8 @@
 
 #include "typedef.h"
 #include "X509AlgoType.h"
-#include "pse_pr_sigma_1_1_defs.h"
+#include "pse_pr_sigma_defs.h"
+#include "pse_pr_types.h"
 
 typedef UINT32 Uint32 ;
 typedef UINT8  Uint8;
@@ -254,7 +255,7 @@ typedef struct{
    SessMgrDataBuffer e;    
 } SessMgrRsaKey;
 
-/* Definition of EPID group public key */
+/* Definition of EPID 1.1 group public key */
 typedef struct{
    Uint32 groupId;
    Uint8* h1x; /* always 32 bytes */
@@ -267,8 +268,20 @@ typedef struct{
    Uint8* wy0; /* always 32 bytes */ 
    Uint8* wy1; /* always 32 bytes */ 
    Uint8* wy2; /* always 32 bytes */
-} SessMgrEpidGroupPublicKey;
+} SessMgrEpid11GroupPublicKey;
 
+/* Definition of EPID 2.0 group public key */
+typedef struct {
+	Uint32 groupId;
+	Uint8* h1x; /* always 32 bytes */
+	Uint8* h1y; /* always 32 bytes */
+	Uint8* h2x; /* always 32 bytes */
+	Uint8* h2y; /* always 32 bytes */
+	Uint8* wx0; /* always 32 bytes */
+	Uint8* wx1; /* always 32 bytes */
+	Uint8* wy0; /* always 32 bytes */
+	Uint8* wy1; /* always 32 bytes */
+} SessMgrEpid20GroupPublicKey;
 
 
 /* SessMgrKeyUsage */
@@ -310,7 +323,7 @@ typedef struct _RsaPublicKey
    UINT8          Nbuffer[RSA_KEY_SIZE_2048_BYTES];
 } RsaPublicKey;
 
-typedef struct _PseEcdsaPublicKey
+typedef struct _X509EcdsaPublicKey
 {
     /**
     * @brief Buffer for px
@@ -321,7 +334,7 @@ typedef struct _PseEcdsaPublicKey
     */
    UINT8          py[32];
 
-}PseEcdsaPublicKey;
+}X509EcdsaPublicKey;
 
 /* SessMgrProductType */
 typedef enum{
@@ -501,7 +514,7 @@ void PrintValidity(SessMgrDateTime *Time);
 void PrintEcdsaPublicKey(SessMgrEcdsaPublicKey *Key);
 void PrintAlgo(UINT8 *AlgoId);
 void PrintDataBuffer(SessMgrDataBuffer *data);
-void PrintEpidKey(SessMgrEpidGroupPublicKey *Key);
+void PrintEpidKey(SessMgrEpid11GroupPublicKey *Key);
 
 STATUS ParseCertificateChain(UINT8 *pCertChain,
                              UINT32 CertChainLength,

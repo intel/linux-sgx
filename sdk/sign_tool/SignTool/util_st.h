@@ -135,6 +135,7 @@
 #define SET_HW_LE_ERROR                     "Conflicting setting between the 'HW' and 'LaunchKey'.\n"
 #define SET_TCS_MAX_NUM_ERROR               "Maximum number of TCS is not correct.\n"
 #define SET_TCS_MIN_POOL_ERROR              "Minimum number of TCS Pool is not correct.\n"
+#define SET_ENABLE_KSS_ERROR                "KSS must be enabled if ISVEXTPRODID or ISVFAMILYID is set.\n"
 
 
 // error message for parse_key_file()

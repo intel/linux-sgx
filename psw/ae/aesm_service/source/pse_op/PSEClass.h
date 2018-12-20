@@ -39,7 +39,6 @@
 #include "se_wrapper.h"
 
 #define PS_CAP_NOT_AVAILABLE    ((uint64_t)-1)
-#define PSDA_CAP_RESULT_MSG_LEN 12
 
 /* defines PSE service status*/
 typedef enum _pse_status_t
@@ -58,7 +57,6 @@ class CPSEClass: public SingletonEnclave<CPSEClass>
 protected:
     CPSEClass(){
         m_status = PSE_STATUS_INIT;
-        m_ps_cap = PS_CAP_NOT_AVAILABLE;
         m_freq = se_get_tick_count_freq();
     };
     ~CPSEClass(){
@@ -67,7 +65,6 @@ protected:
     virtual void before_enclave_load();
     virtual int get_debug_flag() { return AE_DEBUG_FLAG;}
     pse_status_t m_status;
-    uint64_t m_ps_cap;
     uint64_t m_freq;
 public:
     ae_error_t init_ps(void);

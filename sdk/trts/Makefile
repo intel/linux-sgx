@@ -33,7 +33,8 @@ include ../../buildenv.mk
 
 CPPFLAGS += -I$(COMMON_DIR)/inc          \
             -I$(COMMON_DIR)/inc/internal \
-            -I$(COMMON_DIR)/inc/tlibc
+            -I$(COMMON_DIR)/inc/tlibc    \
+            -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) \
             -Werror         \
@@ -64,6 +65,7 @@ all: $(OBJS) elf_parser
 
 $(OBJS1): %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -fPIC $< -o $@
+	objcopy $@ --set-section-flags .niprod='alloc','readonly'
 
 $(OBJS2): %.o: %.cpp
 	$(CXX) -c $(TCXXFLAGS) $(CPPFLAGS) -fPIC $< -o $@

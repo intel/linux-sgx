@@ -94,7 +94,7 @@ update_changelog_version() {
     INS_VERSION=$(echo $(dpkg-parsechangelog |grep "Version" | cut -d: -f2))
     DEB_VERSION=$(echo $INS_VERSION | cut -d- -f2)
 
-    sed -i "s/${INS_VERSION}/${SGX_VERSION}-${DEB_VERSION}/" debian/changelog
+    sed -i "s/${INS_VERSION}/${SGX_VERSION}-$(lsb_release -cs)${DEB_VERSION}/" debian/changelog
 
     popd
 }

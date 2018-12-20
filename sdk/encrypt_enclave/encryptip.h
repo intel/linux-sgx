@@ -39,8 +39,8 @@
 #define PCL_DATA_SECTION_NAME              ".nipd"
 #define PCL_RODATA_SECTION_NAME            ".niprod"
 
-#define NUM_NON_IP_OR_DEBUG_SEC_NAMES (23)
-#define NUM_NON_IP_SEC_NAMES (12)
+#define NUM_NON_IP_OR_DEBUG_SEC_NAMES (24)
+#define NUM_NON_IP_SEC_NAMES (13)
 
 /*
  * When running CPUID with leaf 0, bit 30 of the output ECX 

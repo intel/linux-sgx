@@ -92,4 +92,4 @@ lib$(enclaveName).sgx.static.lib.a: static_trusted/$(enclaveName)_t.h $($(Enclav
 	@echo "LINK =>  $@"
 
 clean:
-	@rm -f $(enclaveName).* static_trusted/$(enclaveName)_t.*  $($(EnclaveName)_C_Objects)
+	@rm -f lib$(enclaveName).* static_trusted/$(enclaveName)_t.*  $($(EnclaveName)_C_Objects)

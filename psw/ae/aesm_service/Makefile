@@ -42,11 +42,12 @@ AESM_INC_DIR    := $(AESM_WRAPPER_DIR)/inc
 AESM_APPLICATION := $(LINUX_PSW_DIR)/ae/aesm_service/source/aesm/application
 AESM_EXTENSION := $(LINUX_PSW_DIR)/ae/aesm_service/source/aesm/extension
 
-INCLUDE += -I$(COMMON_DIR)/inc \
+INCLUDE += -I$(COMMON_DIR)/inc          \
            -I$(COMMON_DIR)/inc/internal \
-           -I./include         \
-           -I./include/oal     \
-           -I./source/         \
+           -I./include                  \
+           -I./include/oal              \
+           -I./source/                  \
+           -I./source/ssl_wrapper/      \
            -I./source/aesm_wrapper/inc 
 
 INCLUDE += -I$(LINUX_SDK_DIR)/tseal
@@ -79,8 +80,7 @@ INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk                        \
            -I$(LINUX_EXTERNAL_DIR)/sqlite/src                      \
            -I$(LINUX_EXTERNAL_DIR)/DALSdk/JHI/linux
 
-INCLUDE += -I$(SGX_IPP_INC) \
-           -I$(LINUX_EXTERNAL_DIR)/       \
+INCLUDE += -I$(LINUX_EXTERNAL_DIR)/       \
            -I$(LINUX_EXTERNAL_DIR)/rdrand \
            -I$(IPC_COMMON_INC_DIR) \
            -I$(AESM_INC_DIR) \
@@ -126,7 +126,6 @@ URTSLIB := -lurts_internal
 TRTSLIB := -lsgx_trts
 WHITE_LIST_FILE := $(LINUX_PSW_DIR)/ae/data/prebuilt/white_list_cert_to_be_verify.bin
 
-TCRYPTO_LIBDIR  := $(LINUX_SDK_DIR)/tlibcrypto
 VTUNE_LIBDIR := $(LINUX_EXTERNAL_DIR)/vtune/linux/sdk/src/ittnotify
 RDRAND_LIBDIR :=$(LINUX_EXTERNAL_DIR)/rdrand/src
 RDRAND_MAKEFILE := $(RDRAND_LIBDIR)/Makefile
@@ -136,7 +135,6 @@ ifeq ($(ARCH), x86)
 endif
 
 
-EXTERNAL_LIB += -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
 EXTERNAL_LIB += -lprotobuf -lrt
 EXTERNAL_LIB += -lcrypto 
 EXTERNAL_LIB += $(shell curl-config --libs)
@@ -144,7 +142,7 @@ EXTERNAL_LIB += -L$(LINUX_SE_WRAPPER) -lwrapper -lrt
 EXTERNAL_LIB += -L$(RDRAND_LIBDIR) -lrdrand
 EXTERNAL_LIB += -L$(VTUNE_LIBDIR) -littnotify
 
-vpath %.cpp $(COMMON_DIR)/src ./source/epid_provision  ./source/upse ./source/upse/BackendInterface $(LINUX_PSW_DIR)/ae/common  $(AESM_APPLICATION) $(AESM_EXTENSION) $(AESM_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(TOP_DIR)/sdk/tseal $(IPC_COMMON_SRC_DIR) 
+vpath %.cpp $(COMMON_DIR)/src ./source/epid_provision source/ssl_wrapper ./source/upse ./source/pve ./source/upse/BackendInterface $(LINUX_PSW_DIR)/ae/common  $(AESM_APPLICATION) $(AESM_EXTENSION) $(AESM_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(TOP_DIR)/sdk/tseal $(IPC_COMMON_SRC_DIR) 
 vpath %.cc $(IPC_COMMON_PROTO_DIR)
 vpath %.c  $(LINUX_EXTERNAL_DIR)/sqlite/src
 vpath %.c $(TOP_DIR)/sdk/tlibc/string
@@ -209,6 +207,8 @@ COMMON_SRC += ./source/qe/QEClass.cpp                  \
               pse_pr_common.cpp  \
               se_sig_rl.cpp \
               aesm_long_lived_thread.cpp
+
+COMMON_SRC += crypto_ecc.cpp crypto_rsa.cpp crypto_sha256_msg.cpp crypto_aes_gcm.cpp crypto_cmac128.cpp ssl_compat_wrapper.cpp
 
 COMMON_OBJ := $(COMMON_SRC:.cpp=.o) 
 
@@ -296,8 +296,6 @@ copy_data_file:
 	@$(CP) $(LINUX_PSW_DIR)/ae/pse/pse_op/vmc_db_generator/prebuild_pse_vmc.db data
 	@$(CP) $(WHITE_LIST_FILE) data/white_list_cert_to_be_verify.bin
 
-sgx_tcrypto:
-	$(MAKE) -C $(TCRYPTO_LIBDIR)
 
 $(LIBNAME): $(COMMON_OBJ)
 	$(AR) rcs $@ $^
@@ -316,8 +314,8 @@ consttime_memequal.o :consttime_memequal.c
 sqlite3.o :sqlite3.c
 	$(CC) $(SQLITECFLAGS) $(INCLUDE) -c $< -o $@
 
-$(APPNAME): $(OBJ) $(LIBNAME) sgx_tcrypto -lrdrand urts
-	$(CXX) $(CXXFLAGS) $(OBJ) $(LIBNAME) $(LDUFLAGS) $(EXTERNAL_LIB) sgx_memset_s.o -o $@ -ldl
+$(APPNAME): $(OBJ) $(LIBNAME) -lrdrand urts
+	$(CXX) $(CXXFLAGS) $(OBJ) $(LIBNAME) $(LDUFLAGS) $(EXTERNAL_LIB) -o $@ -ldl
 
 $(APPNAME_DEBUG): $(APPNAME)
 ifndef DEBUG
@@ -352,22 +350,22 @@ else
 endif
 
 $(LE_DEP): $(LE_EDL)
-	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $<
+	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $< --search-path $(TOP_DIR)/common/inc
 
 ${AESM_EXTENSION}/provision_enclave_u.c: ${LINUX_PSW_DIR}/ae/pve/provision_enclave.edl
-	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $<
+	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $< --search-path $(TOP_DIR)/common/inc
 
 ${AESM_EXTENSION}/quoting_enclave_u.c: ${LINUX_PSW_DIR}/ae/qe/quoting_enclave.edl
-	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $<
+	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $< --search-path $(TOP_DIR)/common/inc
 
 ${AESM_EXTENSION}/pse_op_u.c: ${LINUX_PSW_DIR}/ae/pse/pse_op/pse_op.edl
-	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $<
+	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $< --search-path $(TOP_DIR)/common/inc
 
 ${AESM_EXTENSION}/pse_pr_u.c:  ${LINUX_PSW_DIR}/ae/pse/pse_pr/pse_pr.edl
-	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $<
+	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $< --search-path $(TOP_DIR)/common/inc
 
 ${AESM_EXTENSION}/pce_u.c:  ${LINUX_PSW_DIR}/ae/pce/pce.edl
-	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $<
+	@$(EDGER8R) --untrusted --untrusted-dir ${AESM_EXTENSION} $< --search-path $(TOP_DIR)/common/inc
 
 $(IPC_COMMON_PROTO_DIR)/messages.pb.cc:
 	$(MAKE) -C $(IPC_COMMON_PROTO_DIR)

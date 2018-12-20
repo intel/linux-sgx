@@ -37,7 +37,6 @@
 #include "pse_types.h"
 #include "stdlib.h"
 #include "sgx_utils.h"
-#include "ae_ipp.h"
 #include "math.h"
 #include "monotonic_counter_database_types.h"
 #include "session_mgr.h"

@@ -58,18 +58,12 @@ BUILD_DIR=${ROOT_DIR}/build/linux
 get_arch()
 {
     local a=$(readelf -h $BUILD_DIR/sgx_sign | sed -n '2p' | awk '{print $6}')
-    test $a = 02 && echo 'x86_64' || echo 'x86'
+    test $a = 01 && echo 'x86' || echo 'x64'
 }
  
 
 ARCH=$(get_arch)
-
-case $ARCH in
-    x86_64)PACKAGE_SUFFIX="x64"
-    ;;
-    x86)PACKAGE_SUFFIX="x86"
-    ;;
-esac
+PACKAGE_SUFFIX="$ARCH"
 
 case "$INSTALLER_TYPE" in
     psw)

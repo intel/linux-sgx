@@ -29,10 +29,9 @@
  *
  */
 
-
 #ifndef _SGX_IPPCP_H_
 #define _SGX_IPPCP_H_
-
+ 
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -509,6 +508,8 @@ extern "C" {
   #define ippsGFpECSetPointHash_rmf sgx_disp_ippsGFpECSetPointHash_rmf
   #define ippsGFpECGetPoint sgx_disp_ippsGFpECGetPoint
   #define ippsGFpECGetPointRegular sgx_disp_ippsGFpECGetPointRegular
+  #define ippsGFpECSetPointOctString sgx_disp_ippsGFpECSetPointOctString
+  #define ippsGFpECGetPointOctString sgx_disp_ippsGFpECGetPointOctString
   #define ippsGFpECTstPoint sgx_disp_ippsGFpECTstPoint
   #define ippsGFpECTstPointInSubgroup sgx_disp_ippsGFpECTstPointInSubgroup
   #define ippsGFpECCpyPoint sgx_disp_ippsGFpECCpyPoint
@@ -527,6 +528,15 @@ extern "C" {
   #define ippsGFpECVerifyNR sgx_disp_ippsGFpECVerifyNR
   #define ippsGFpECSignSM2 sgx_disp_ippsGFpECSignSM2
   #define ippsGFpECVerifySM2 sgx_disp_ippsGFpECVerifySM2
+  #define ippsGFpECESGetSize_SM2 sgx_disp_ippsGFpECESGetSize_SM2
+  #define ippsGFpECESInit_SM2 sgx_disp_ippsGFpECESInit_SM2
+  #define ippsGFpECESSetKey_SM2 sgx_disp_ippsGFpECESSetKey_SM2
+  #define ippsGFpECESStart_SM2 sgx_disp_ippsGFpECESStart_SM2
+  #define ippsGFpECESEncrypt_SM2 sgx_disp_ippsGFpECESEncrypt_SM2
+  #define ippsGFpECESDecrypt_SM2 sgx_disp_ippsGFpECESDecrypt_SM2
+  #define ippsGFpECESFinal_SM2 sgx_disp_ippsGFpECESFinal_SM2
+  #define ippsGFpECESGetBuffersSize_SM2 sgx_disp_ippsGFpECESGetBuffersSize_SM2
+
 
 #ifdef __cplusplus
 }

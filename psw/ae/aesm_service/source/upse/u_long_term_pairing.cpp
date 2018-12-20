@@ -37,7 +37,7 @@
 
 #include "interface_psda.h"
 
-#include "pse_pr_sigma_1_1_defs.h"
+#include "pse_pr_sigma_defs.h"
 #include "sigma_helper.h"
 
 #include "aeerror.h"
@@ -180,7 +180,7 @@ static ae_error_t DoLongTermPairing(bool* p_new_pairing)
 
     do
     {
-        pPSDA = new pse_pr_interface_psda();
+        pPSDA = new pse_pr_interface_psda(PSDAService::instance().is_sigma20_supported())	;
         BREAK_IF_FALSE( (NULL != pPSDA),
             status, AESM_PSE_PR_INSUFFICIENT_MEMORY_ERROR);
 
@@ -207,7 +207,7 @@ static ae_error_t DoLongTermPairing(bool* p_new_pairing)
         // Retrieve S1 from ME/CSE
         //*********************************************************************
 
-        status = pPSDA->GetS1(pairing_blob->plaintext.pse_instance_id, s1);
+        status = pPSDA->GetS1(Helper::ltpBlobInstanceID(*pairing_blob), s1);
         SGX_DBGPRINT_ONE_STRING_ONE_INT_LTP("Function: pPSDA->GetS1(s1), Return Value: ", status);
         BREAK_IF_FAILED(status);
 
@@ -274,7 +274,7 @@ static ae_error_t DoLongTermPairing(bool* p_new_pairing)
         // Send:    s2
         // Receive: s3
         //*********************************************************************
-        status = pPSDA->ExchangeS2AndS3(pairing_blob->plaintext.pse_instance_id, s2, s3);
+        status = pPSDA->ExchangeS2AndS3(Helper::ltpBlobInstanceID(*pairing_blob), s2, s3);
         SGX_DBGPRINT_ONE_STRING_ONE_INT_LTP("Function: pPSDA->ExchangeS2AndS3(s2, s3), Return Value: ", status);
         if (AESM_PSDA_LT_SESSION_INTEGRITY_ERROR == status) {
             AESM_LOG_ERROR("%s", g_event_string_table[SGX_EVENT_SIGMA_S2_INTEGRITY_ERROR]);
@@ -314,17 +314,13 @@ static ae_error_t DoLongTermPairing(bool* p_new_pairing)
         EPIDBlob::instance().get_sgx_gid(&sgxGid);
         SGX_DBGPRINT_ONE_STRING_ONE_INT("get_sgx_gid() returns ", sgxGid);
 
-        uint32_t psdaSvn = 0;
-        psdaSvn = Helper::ltpBlobPsdaSvn(*(pairing_blob_t*)pairingBlob.getData());
+        uint32_t psdaSvn = Helper::ltpBlobPsdaSvn(*pairing_blob);
         SGX_DBGPRINT_ONE_STRING_ONE_INT("ltpBlobPsdaSvn() returns ", psdaSvn);
 
-        unsigned currentPsdaSvn = 0;
-        PSDAService::instance().current_psda_svn(&currentPsdaSvn);
+        unsigned currentPsdaSvn = PSDAService::instance().psda_svn;
         SGX_DBGPRINT_ONE_STRING_ONE_INT("current_psda_svn() returns ", currentPsdaSvn);
 
-        uint32_t cseGid = 0;
-        ae_error_t ltpBlobCseGid(uint32_t* pGid);
-        ltpBlobCseGid(&cseGid);
+        uint32_t cseGid = Helper::ltpBlobCseGid(*pairing_blob);
         SGX_DBGPRINT_ONE_STRING_ONE_INT("ltpBlobCseGid() returns ", cseGid);
 
 #endif
@@ -376,49 +372,5 @@ static ae_error_t DoLongTermPairing(bool* p_new_pairing)
 
     SGX_DBGPRINT_PRINT_FUNCTION_AND_RETURNVAL(__FUNCTION__, status);
     return status;
-}
-
-//
-// ltpBlobCseGid
-//
-// return value of CSE GID from long-term pairing blob
-//
-// inputs
-// pGid: pointer to uint32_t that will hold GID
-//
-// outputs
-// *pGid: CSE GID
-// status
-//
-// different return type?
-//
-ae_error_t ltpBlobCseGid(uint32_t* pGid)
-{
-    upse::Buffer pairing_blob;
-    ae_error_t retVal = AE_SUCCESS;
-
-    if (NULL != pGid) {
-        //
-        // read blob
-        //
-        retVal = upsePersistentStorage::Read(PSE_PR_LT_PAIRING_FID, pairing_blob);
-        if (AE_SUCCESS == retVal) {
-            const pairing_blob_t* pb = (const pairing_blob_t*) pairing_blob.getData();
-            if (NULL != pb) {
-                *pGid = pb->plaintext.cse_sec_prop.ps_hw_gid;
-            }
-            else {
-                retVal = AESM_PSE_PR_INTERNAL_ERROR;
-            }
-        }
-        else {
-            retVal = AESM_PSE_PR_PERSISTENT_STORAGE_READ_ERROR;
-        }
-    }
-    else {
-        retVal = AESM_PSE_PR_BAD_POINTER_ERROR;
-    }
-
-    return retVal;
 }
 

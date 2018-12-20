@@ -54,6 +54,7 @@ typedef enum _aesm_data_id_t{
     PVE_ENCLAVE_FID,
     PSE_OP_ENCLAVE_FID,
     PSE_PR_ENCLAVE_FID,
+    PSE_PR_2_ENCLAVE_FID,
     PCE_ENCLAVE_FID,
     LE_PROD_SIG_STRUCT_FID,
     /*some normal persistent storages*/

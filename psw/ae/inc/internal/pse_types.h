@@ -71,7 +71,8 @@ typedef struct _secu_info{
     uint32_t reserved;       /* MBZ */
     uint32_t psda_id;        /* must be hardcoded value - 1 */
     uint32_t psda_svn;       /* from PSE-CSE pairing blob */
-    uint8_t  reserved2[76];  /* MBZ */
+    uint8_t  reserved2[74];  /* MBZ */
+    uint16_t session_prop;
 }secu_info_t;
 
 typedef struct _pse_dh_msg3_t
@@ -272,10 +273,14 @@ typedef struct _pse_timer_read_resp_t
 #define PSDA_MSG_TYPE_CAP_RESULT    1
 #define PSDA_MSG_TYPE_CERT_INFO_QUERY       2
 #define PSDA_MSG_TYPE_CERT_INFO_RESULT      3
-#define PSDA_MSG_TYPE_LT_M1         0
-#define PSDA_MSG_TYPE_LT_M2         1
-#define PSDA_MSG_TYPE_LT_M7         2
-#define PSDA_MSG_TYPE_LT_M8         3
+#define PSDA_MSG_TYPE_LT_M1_11      0
+#define PSDA_MSG_TYPE_LT_M2_11      1
+#define PSDA_MSG_TYPE_LT_M7_11      2
+#define PSDA_MSG_TYPE_LT_M8_11      3
+#define PSDA_MSG_TYPE_LT_M1_20      4
+#define PSDA_MSG_TYPE_LT_M2_20      5
+#define PSDA_MSG_TYPE_LT_M7_20      6
+#define PSDA_MSG_TYPE_LT_M8_20      7
 #define PSDA_MSG_TYPE_EP_M1         0
 #define PSDA_MSG_TYPE_EP_M2         1
 #define PSDA_MSG_TYPE_EP_M3         2

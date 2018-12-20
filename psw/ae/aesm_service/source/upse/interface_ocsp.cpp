@@ -39,6 +39,7 @@
 #pragma GCC diagnostic pop 
 
 
+#include "interface_ocsp.h"
 #include "oal/oal.h"
 #include "pse_pr_sigma_common_defs.h"
 #include "Buffer.h"

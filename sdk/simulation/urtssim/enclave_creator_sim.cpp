@@ -96,7 +96,11 @@ int EnclaveCreatorSim::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *
     sgx_launch_token_t token;
     memset(token, 0, sizeof(sgx_launch_token_t));
 
-    int ret = lc->get_launch_token(&token);
+    int ret = lc->update_launch_token(false);
+    if(ret != SGX_SUCCESS)
+        return ret;
+
+    ret = lc->get_launch_token(&token);
     if(ret != SGX_SUCCESS)
         return ret;
 
@@ -105,6 +109,7 @@ int EnclaveCreatorSim::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *
 
 int EnclaveCreatorSim::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t debug_flag)
 {
+    UNUSED(lc);
     sgx_attributes_t *required_attr;
     enclave_css_t *enclave_css;
     sgx_attributes_t *secs_attr;
@@ -164,33 +169,7 @@ int EnclaveCreatorSim::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metada
         SE_TRACE(SE_TRACE_WARNING, "secs attributes.flag does NOT match signature attributes.flag\n");
         return SGX_ERROR_INVALID_ATTRIBUTE;
     }
-    
-    if(lc != NULL)
-    {
-        sgx_launch_token_t token;
-        memset(&token, 0, sizeof(token));
-        if(lc->get_launch_token(&token) != SGX_SUCCESS)
-            return SGX_ERROR_UNEXPECTED;
-        token_t *launch = (token_t *)token;
 
-        if( 1 == launch->body.valid)
-        {
-            // Debug launch enclave cannot launch production enclave
-            if( !(secs_attr->flags & SGX_FLAGS_DEBUG)
-                && (launch->attributes_le.flags & SGX_FLAGS_DEBUG) )
-            {
-                SE_TRACE(SE_TRACE_WARNING, "secs attributes is non-debug, \n");
-                return SE_ERROR_INVALID_LAUNCH_TOKEN;
-            }
-
-            // Verify attributes in lictoken are the same as the enclave
-            if(memcmp(&launch->body.attributes, secs_attr, sizeof(sgx_attributes_t)))
-            {
-                SE_TRACE(SE_TRACE_WARNING, "secs attributes does NOT match launch token attributes\n");
-                return SGX_ERROR_INVALID_ATTRIBUTE;
-            }
-        }
-    }
     return SGX_SUCCESS;
 }
 
@@ -231,8 +210,7 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
     // Initialize the `seed' to `g_global_data_sim'.
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    global_data_sim_ptr->seed = (uint64_t)ts.tv_sec * 1000000000ULL + (uint64_t)ts.tv_nsec;
-
+    global_data_sim_ptr->seed = (uint64_t)ts.tv_sec * 1000000000ULL  + (uint64_t)ts.tv_nsec; 
     global_data_sim_ptr->secs_ptr = ce->get_secs();
     sgx_cpu_svn_t temp_cpusvn = {{0}};
 

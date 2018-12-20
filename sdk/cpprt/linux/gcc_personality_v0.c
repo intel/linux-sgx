@@ -15,7 +15,7 @@
 
 #define compilerrt_abort abort
 
-SGX_ACCESS_VERSION(tstdcxx, 2)
+SGX_ACCESS_VERSION(tcxx, 2)
 
 
 /*

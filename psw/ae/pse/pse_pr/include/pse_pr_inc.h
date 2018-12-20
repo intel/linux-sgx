@@ -38,7 +38,6 @@
 
 #include "se_cdefs.h"
 
-#include "ae_ipp.h"
 
 #include "sgx_utils.h"
 #include "aeerror.h"

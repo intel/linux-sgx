@@ -167,8 +167,7 @@ ae_error_t CertificateProvisioningProtocol::msg3_create_header(const upse::Buffe
         uint32_t totalSize = seq2_0_tlv_block_cipher_text_size + seq3_0_tlv_nonce_size + seq4_0_tlv_mac_size;
 
         uint32_t serializedSize = _htonl(totalSize);
-        if (sizeof(serializedSize) != sizeof(header.size))
-            break;
+        se_static_assert(sizeof(serializedSize) == sizeof(header.size));
 
         if (memcpy_s(header.size, sizeof(header.size), &serializedSize, sizeof(serializedSize)) != 0)
             break;

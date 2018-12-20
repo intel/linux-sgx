@@ -49,10 +49,24 @@ public:
         /*in */ const EcDsaPubKey* pSerializedPublicKey,
         /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr, 
         /*out*/ UINT32* pGID, 
-        /*out*/ Epid11GroupPubKey* pGroupPubKey 
+        /*out*/ uint8_t*& pCertBlob
     );
 
 private:
+    static UINT32 ParseEpid11GroupCertificate
+    (
+        /*in */ const EcDsaPubKey* pSerializedPublicKey,
+        /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr,
+        /*out*/ UINT32* pGID,
+        /*out*/ uint8_t*& pCertBlob
+    );
+    static UINT32 ParseEpid20GroupCertificate
+    (
+        /*in */ const EcDsaPubKey* pSerializedPublicKey,
+        /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr,
+        /*out*/ UINT32* pGID,
+        /*out*/ uint8_t*& pCertBlob
+    );
 
     // Disable class operations (default constructor, copy constructor, assignment operator, and address-of operator)
     X509Parser();									// default constructor

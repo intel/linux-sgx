@@ -36,6 +36,7 @@
 #include "util.h"
 #include "global_data.h"
 #include "stdlib.h"
+#include "sgx_utils.h"
 
 #define SYNTHETIC_STATE_SIZE   (512 + 64)  // 512 for legacy regs, 64 for xsave header
 //FXRSTOR only cares about the first 512 bytes, while
@@ -70,25 +71,7 @@ uint32_t g_xsave_mask_low __attribute__((section(".nipd"))) = 0xFFFFFFFF;
 SE_OPTIMIZE_OFF
 uint64_t get_xfeature_state()
 {
-    se_static_assert (REPORT_ALIGN_SIZE >= REPORT_DATA_ALIGN_SIZE);
-    se_static_assert (REPORT_ALIGN_SIZE >= TARGET_INFO_ALIGN_SIZE);
-    se_static_assert (sizeof(sgx_target_info_t) >= sizeof(sgx_report_t));
-    se_static_assert (sizeof(sgx_report_t) >= sizeof(sgx_report_data_t));
-
-    // target_info and report_data are useless
-    // we only need to make sure their alignment and within enclave
-    uint8_t buffer[ROUND_TO(sizeof(sgx_report_t), REPORT_ALIGN_SIZE) + REPORT_ALIGN_SIZE - 1];
-    for(size_t i=0; i< ROUND_TO(sizeof(sgx_report_t), REPORT_ALIGN_SIZE) + REPORT_ALIGN_SIZE - 1; i++)
-    {
-        buffer[i] = 0;
-    }
-    sgx_report_t *report = (sgx_report_t *)ROUND_TO((size_t)buffer, REPORT_ALIGN_SIZE);
-    sgx_target_info_t *target_info = (sgx_target_info_t *)report;
-    sgx_report_data_t *report_data = (sgx_report_data_t *)report;
-
-
-    do_ereport(target_info, report_data, report);
-
+    auto *report = sgx_self_report();
     g_xsave_enabled = (report->body.attributes.xfrm == SGX_XFRM_LEGACY) ? 0 : 1;
     uint64_t xfrm = report->body.attributes.xfrm;
 #ifdef SE_SIM

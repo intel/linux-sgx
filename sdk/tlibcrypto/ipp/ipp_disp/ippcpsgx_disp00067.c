@@ -47,38 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pCtx))
-IPPAPI(IppStatus, l9_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pCtx))
+IPPAPI(IppStatus, y8_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, l9_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsAES_CCMMessageLen( msgLen, pCtx );
+        return l9_ippsAES_CCMMessageLen( msgLen, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsAES_CCMMessageLen( msgLen, pCtx );
+        return y8_ippsAES_CCMMessageLen( msgLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pCtx))
-IPPAPI(IppStatus, h9_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pCtx))
+IPPAPI(IppStatus, p8_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, h9_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsAES_CCMMessageLen( msgLen, pCtx );
+        return h9_ippsAES_CCMMessageLen( msgLen, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsAES_CCMMessageLen( msgLen, pCtx );
+        return p8_ippsAES_CCMMessageLen( msgLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -39,7 +39,8 @@ EPID_SDK_DIR := $(TOP_DIR)/external/epid-sdk/
 
 INCLUDE += -I.                                   \
            -I./include                           \
-           -I$(TOP_DIR)/sdk/tlibstdcxx/stlport   \
+           -I../pse_pr_2/                        \
+           -I$(TOP_DIR)/sdk/tlibcxx/include      \
            -I$(LINUX_PSW_DIR)/ae/common          \
            -I$(SGX_IPP_INC)/                     \
            -I$(LINUX_SDK_DIR)/tseal              \
@@ -48,7 +49,7 @@ INCLUDE += -I.                                   \
            -I$(LINUX_PSW_DIR)/ae/inc/internal    \
            -I$(LINUX_PSW_DIR)/ae/data/constants/linux
 
-EXTERNAL_LIB += -lsgx_tstdcxx -lsgx_tcrypto                \
+EXTERNAL_LIB += -lsgx_tcxx -lsgx_tcrypto                \
                 -L$(EPID_SDK_DIR)/epid/verifier -lverifier \
                 -L$(EPID_SDK_DIR)/epid/common -lcommon 
 
@@ -69,7 +70,7 @@ EPID:
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -lsgx_tstdc -L$(LINUX_EXTERNAL_DIR)/ippcp_internal/lib/linux/intel64/ -lsgx_disp -lippcp
 	$(STRIP)  --strip-unneeded $(SONAME)
 
 $(OBJ): $(AENAME)_t.c

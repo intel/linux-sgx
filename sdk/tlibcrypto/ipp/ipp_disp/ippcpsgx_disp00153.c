@@ -47,38 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pCtx))
-IPPAPI(IppStatus, l9_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pCtx))
+IPPAPI(IppStatus, y8_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pState))
+IPPAPI(IppStatus, l9_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsMD5GetTag( pTag, tagLen, pCtx );
+        return l9_ippsMD5GetTag( pTag, tagLen, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsMD5GetTag( pTag, tagLen, pCtx );
+        return y8_ippsMD5GetTag( pTag, tagLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pCtx))
-IPPAPI(IppStatus, h9_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pCtx))
+IPPAPI(IppStatus, p8_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pState))
+IPPAPI(IppStatus, h9_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsMD5GetTag,(Ipp8u* pTag, Ipp32u tagLen, const IppsMD5State* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsMD5GetTag( pTag, tagLen, pCtx );
+        return h9_ippsMD5GetTag( pTag, tagLen, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsMD5GetTag( pTag, tagLen, pCtx );
+        return p8_ippsMD5GetTag( pTag, tagLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -42,7 +42,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-#define SGX_URTS_CMD "strings /usr/lib/libsgx_urts.so 2> /dev/null | grep SGX_URTS_VERSION_2"
+#define SGX_URTS_CMD "for f in $(find /usr/$(basename $(gcc -print-multi-os-directory)) -name 'libsgx_urts.so' 2> /dev/null); do strings $f|grep 'SGX_URTS_VERSION_2'; done"
 #define SGX_CPUID    0x12
 
 /* is_urts_support_edmm()

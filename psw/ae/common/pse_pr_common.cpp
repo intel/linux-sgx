@@ -36,13 +36,13 @@
  */
 
 #include "pse_pr_common.h"
-#include "pse_pr_sigma_1_1_defs.h"
+#include "pse_pr_sigma_defs.h"
 #include "pse_pr_sigma_common_defs.h"
 #include "sgx_tseal.h"
 #include "sgx_report.h"
 #include "pairing_blob.h"
 
-#include "Epid11_rl.h"
+#include "Epid_rl.h"
 
 #define MAX_CSR_BYTES   1024
 

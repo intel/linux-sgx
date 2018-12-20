@@ -47,7 +47,7 @@ bool verify_hmac_sha256(
     }
 
     // compute HMAC-SHA256 of the message with the specified Key
-    if (ippsHMAC_Message(data_buf, buf_size, mac_key, key_len, data_mac, SGX_SHA256_HASH_SIZE, IPP_ALG_HASH_SHA256) != ippStsNoErr)
+    if (sgx_hmac_sha256_msg(data_buf, buf_size, mac_key, key_len, data_mac, SGX_SHA256_HASH_SIZE) != SGX_SUCCESS)
     {
         return false;
     }

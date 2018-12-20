@@ -37,6 +37,7 @@
 #ifdef SE_SIM
 #include <deriv.h>
 #endif // #ifdef SE_SIM
+#include <sgx_lfence.h>
 #include <pcl_common.h>
 #include <pcl_internal.h>
 #include <pcl_unseal_internal.h>
@@ -62,10 +63,7 @@ sgx_status_t pcl_unseal_data_helper(const sgx_sealed_data_t *p_sealed_data, uint
     pcl_memset(&seal_key, 0, sizeof(sgx_key_128bit_t));
     uint8_t payload_iv[SGX_SEAL_IV_SIZE];
     pcl_memset(&payload_iv, 0, SGX_SEAL_IV_SIZE);
-    const uint8_t* p_aad = NULL;
-    uint32_t res = 0;
-    sgx_aes_gcm_128bit_tag_t mac;
-    //uint8_t mac[16];
+    const uint8_t* p_add = NULL;
 
     if (decrypted_text_length > 0)
         pcl_memset(p_decrypted_text, 0, decrypted_text_length);
@@ -73,8 +71,8 @@ sgx_status_t pcl_unseal_data_helper(const sgx_sealed_data_t *p_sealed_data, uint
     if (additional_MACtext_length > 0)
     {
         // Verify GUID in sealed blob matches GUID in PCL table: 
-        p_aad = const_cast<uint8_t *>(&(p_sealed_data->aes_data.payload[decrypted_text_length]));
-        if (pcl_consttime_memequal(p_aad, p_additional_MACtext, additional_MACtext_length) == 0)
+        p_add = const_cast<uint8_t *>(&(p_sealed_data->aes_data.payload[decrypted_text_length]));
+        if (pcl_consttime_memequal(p_add, p_additional_MACtext, additional_MACtext_length) == 0)
         {
             return SGX_ERROR_PCL_GUID_MISMATCH;
         }
@@ -90,11 +88,20 @@ sgx_status_t pcl_unseal_data_helper(const sgx_sealed_data_t *p_sealed_data, uint
             err = SGX_ERROR_MAC_MISMATCH;
         goto out;
     }
+
+    //
+    // code that calls sgx_unseal_data commonly does some sanity checks
+    // related to plain_text_offset.  We add fence here since we don't 
+    // know what crypto code does and if plain_text_offset-related 
+    // checks mispredict the crypto code could operate on unintended data
+    //
+    sgx_lfence();
+
     err = pcl_gcm_decrypt(
         (uint8_t*)p_decrypted_text,
         (uint8_t*)p_sealed_data->aes_data.payload, 
         decrypted_text_length,
-        (uint8_t*)p_aad, 
+        (uint8_t*)p_add, 
         additional_MACtext_length, 
         (uint8_t*)(&seal_key), 
         (uint8_t*)(&payload_iv[0]), 

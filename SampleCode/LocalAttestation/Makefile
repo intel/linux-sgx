@@ -66,7 +66,7 @@ else
 	SGX_COMMON_FLAGS += -O2
 endif
 
-SGX_COMMON_FLAGS += -v -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
+SGX_COMMON_FLAGS += -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
                     -Waddress -Wsequence-point -Wformat-security \
                     -Wmissing-include-dirs -Wfloat-equal -Wundef -Wshadow \
                     -Wcast-align -Wcast-qual -Wconversion -Wredundant-decls
@@ -201,8 +201,19 @@ else
 endif
 endif
 
+v2 = LAv2
+ifdef $(v2)
+	LAv2_MACRO = 1
+else
+	LAv2_MACRO = 0
+endif	
+
+.PHONY: all target
+all: .config_$(Build_Mode)_$(SGX_ARCH)_$(LAv2_MACRO)
+	@$(MAKE) target
+
 ifeq ($(Build_Mode), HW_RELEASE)
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) Enclave1.so Enclave2.so Enclave3.so $(App_Name)
+target: $(Trust_Lib_Name) $(UnTrustLib_Name) Enclave1.so Enclave2.so Enclave3.so $(App_Name)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the enclaves (Enclave1.so, Enclave2.so, Enclave3.so) first with your signing keys before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclaves use the following commands:"
@@ -212,7 +223,7 @@ all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) Encl
 	@echo "You can also sign the enclaves using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(Trust_Lib_Name) $(UnTrustLib_Name) $(Enclave_Name_1) $(Enclave_Name_2) $(Enclave_Name_3) $(App_Name)
+target: $(Trust_Lib_Name) $(UnTrustLib_Name) $(Enclave_Name_1) $(Enclave_Name_2) $(Enclave_Name_3) $(App_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -226,22 +237,24 @@ else
 endif
 endif
 
-.config_$(Build_Mode)_$(SGX_ARCH):
+.config_$(Build_Mode)_$(SGX_ARCH)_$(LAv2_MACRO):
 	@rm -rf .config_* $(App_Name) *.so *.a App/*.o Enclave1/*.o Enclave1/*_t.* Enclave1/*_u.* Enclave2/*.o Enclave2/*_t.* Enclave2/*_u.* Enclave3/*.o Enclave3/*_t.* Enclave3/*_u.*              LocalAttestationCode/*.o Untrusted_LocalAttestation/*.o LocalAttestationCode/*_t.* 
-	@touch .config_$(Build_Mode)_$(SGX_ARCH)
+	@touch .config_$(Build_Mode)_$(SGX_ARCH)_$(LAv2_MACRO)
 
 ######## Library Objects ########
 
-LocalAttestationCode/LocalAttestationCode_t.c LocalAttestationCode/LocalAttestationCode_t.h : $(SGX_EDGER8R) LocalAttestationCode/LocalAttestationCode.edl
+LocalAttestationCode/LocalAttestationCode_t.h : $(SGX_EDGER8R) LocalAttestationCode/LocalAttestationCode.edl
 	@cd LocalAttestationCode && $(SGX_EDGER8R) --trusted ../LocalAttestationCode/LocalAttestationCode.edl --search-path $(SGX_SDK)/include 
 	@echo "GEN  =>  $@"
+
+LocalAttestationCode/LocalAttestationCode_t.c: LocalAttestationCode/LocalAttestationCode_t.h
 
 LocalAttestationCode/LocalAttestationCode_t.o: LocalAttestationCode/LocalAttestationCode_t.c
 	@$(CC) $(TrustLib_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
 LocalAttestationCode/%.o: LocalAttestationCode/%.cpp LocalAttestationCode/LocalAttestationCode_t.h
-	@$(CXX) $(TrustLib_Cxx_Flags) -c $< -o $@
+	@$(CXX) $(TrustLib_Cxx_Flags) -c $< -o $@ $(if $(LAv2),-DSGX_USE_LAv2_INITIATOR)
 	@echo "CC   <= $<"
 
 $(Trust_Lib_Name): LocalAttestationCode/LocalAttestationCode_t.o $(TrustLib_Cpp_Objects)
@@ -257,25 +270,31 @@ $(UnTrustLib_Name): $(UnTrustLib_Cpp_Objects)
 	@echo "GEN  =>  $@"
 
 ######## App Objects ########
-Enclave1/Enclave1_u.c Enclave1/Enclave1_u.h: $(SGX_EDGER8R) Enclave1/Enclave1.edl
+Enclave1/Enclave1_u.h: $(SGX_EDGER8R) Enclave1/Enclave1.edl
 	@cd Enclave1 && $(SGX_EDGER8R) --use-prefix --untrusted ../Enclave1/Enclave1.edl --search-path $(SGX_SDK)/include 
 	@echo "GEN  =>  $@"
+
+Enclave1/Enclave1_u.c: Enclave1/Enclave1_u.h
 
 App/Enclave1_u.o: Enclave1/Enclave1_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-Enclave2/Enclave2_u.c Enclave2/Enclave2_u.h: $(SGX_EDGER8R) Enclave2/Enclave2.edl
+Enclave2/Enclave2_u.h: $(SGX_EDGER8R) Enclave2/Enclave2.edl
 	@cd Enclave2 && $(SGX_EDGER8R) --use-prefix --untrusted ../Enclave2/Enclave2.edl --search-path $(SGX_SDK)/include 
 	@echo "GEN  =>  $@"
+
+Enclave2/Enclave2_u.c: Enclave2/Enclave2_u.h
 
 App/Enclave2_u.o: Enclave2/Enclave2_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-Enclave3/Enclave3_u.c Enclave3/Enclave3_u.h: $(SGX_EDGER8R) Enclave3/Enclave3.edl
+Enclave3/Enclave3_u.h: $(SGX_EDGER8R) Enclave3/Enclave3.edl
 	@cd Enclave3 && $(SGX_EDGER8R) --use-prefix --untrusted ../Enclave3/Enclave3.edl --search-path $(SGX_SDK)/include 
 	@echo "GEN  =>  $@"
+
+Enclave3/Enclave3_u.c:  Enclave3/Enclave3_u.h
 
 App/Enclave3_u.o: Enclave3/Enclave3_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
@@ -292,9 +311,11 @@ $(App_Name): App/Enclave1_u.o App/Enclave2_u.o App/Enclave3_u.o $(App_Cpp_Object
 
 ######## Enclave Objects ########
 
-Enclave1/Enclave1_t.c Enclave1/Enclave1_t.h: $(SGX_EDGER8R) Enclave1/Enclave1.edl
+Enclave1/Enclave1_t.h: $(SGX_EDGER8R) Enclave1/Enclave1.edl
 	@cd Enclave1 && $(SGX_EDGER8R) --use-prefix --trusted ../Enclave1/Enclave1.edl --search-path $(SGX_SDK)/include 
 	@echo "GEN  =>  $@"
+
+Enclave1/Enclave1_t.c: Enclave1/Enclave1_t.h
 
 Enclave1/Enclave1_t.o: Enclave1/Enclave1_t.c
 	@$(CC) $(Enclave_C_Flags) -c $< -o $@
@@ -312,15 +333,17 @@ $(Enclave_Name_1): Enclave1.so
 	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave1/Enclave1_private.pem -enclave Enclave1.so -out $@ -config Enclave1/Enclave1.config.xml
 	@echo "SIGN =>  $@"
 
-Enclave2/Enclave2_t.c: $(SGX_EDGER8R) Enclave2/Enclave2.edl
+Enclave2/Enclave2_t.h: $(SGX_EDGER8R) Enclave2/Enclave2.edl
 	@cd Enclave2 && $(SGX_EDGER8R)  --use-prefix --trusted ../Enclave2/Enclave2.edl --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
+
+Enclave2/Enclave2_t.c: Enclave2/Enclave2_t.h
 
 Enclave2/Enclave2_t.o: Enclave2/Enclave2_t.c
 	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-Enclave2/%.o: Enclave2/%.cpp
+Enclave2/%.o: Enclave2/%.cpp Enclave2/Enclave2_t.h
 	@$(CXX) $(Enclave_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
@@ -332,15 +355,17 @@ $(Enclave_Name_2): Enclave2.so
 	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave2/Enclave2_private.pem -enclave Enclave2.so -out $@ -config Enclave2/Enclave2.config.xml
 	@echo "SIGN =>  $@"
 
-Enclave3/Enclave3_t.c: $(SGX_EDGER8R) Enclave3/Enclave3.edl
+Enclave3/Enclave3_t.h: $(SGX_EDGER8R) Enclave3/Enclave3.edl
 	@cd Enclave3 && $(SGX_EDGER8R)  --use-prefix --trusted ../Enclave3/Enclave3.edl --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
+
+Enclave3/Enclave3_t.c: Enclave3/Enclave3_t.h
 
 Enclave3/Enclave3_t.o: Enclave3/Enclave3_t.c
 	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-Enclave3/%.o: Enclave3/%.cpp
+Enclave3/%.o: Enclave3/%.cpp Enclave3/Enclave3_t.h
 	@$(CXX) $(Enclave_Cxx_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 

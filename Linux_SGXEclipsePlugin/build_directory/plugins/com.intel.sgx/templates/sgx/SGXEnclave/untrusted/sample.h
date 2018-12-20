@@ -18,7 +18,6 @@
 #endif
 
 
-# define TOKEN_FILENAME   "enclave.token"
 # define $(ENCLAVENAME)_FILENAME "$(enclaveName).signed.so"
 
 extern sgx_enclave_id_t global_eid;    /* global enclave id */

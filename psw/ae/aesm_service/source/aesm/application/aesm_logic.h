@@ -87,7 +87,6 @@ private:
     static bool _is_qe_psvn_set, _is_pse_psvn_set, _is_pce_psvn_set;
     static uint32_t active_extended_epid_group_id;
     static ae_error_t set_psvn(uint16_t prod_id, uint16_t isv_svn, sgx_cpu_svn_t cpu_svn, uint32_t mrsigner_index);
-    static ae_error_t set_mrenclave(const sgx_measurement_t& mrenclave, uint32_t mrsigner_index, uint16_t isv_prod_id, const sgx_attributes_t* attributes);
     static ae_error_t save_unverified_white_list(const uint8_t *white_list_cert, uint32_t white_list_cert_size);
     static ae_error_t get_white_list_size_without_lock(uint32_t *white_list_cert_size);
 public:

@@ -162,8 +162,6 @@ int CLoader::build_mem_region(const section_info_t &sec_info)
         offset += SE_PAGE_SIZE - PAGE_OFFSET(rva);
     }
     
-    assert(IS_PAGE_ALIGNED(sec_info.rva + offset));
-
     // Add any remaining uninitialized data.  We can call build_pages directly
     // even if there are partial pages since the source is null, i.e. everything
     // is filled with '0'.  Uninitialied data cannot be a relocation table, ergo
@@ -171,7 +169,9 @@ int CLoader::build_mem_region(const section_info_t &sec_info)
     if(sec_info.virtual_size > offset)
     {
         uint64_t rva = sec_info.rva + offset;
-        size_t size = (size_t)(ROUND_TO_PAGE(sec_info.virtual_size - offset));
+        size_t size = (size_t)(ROUND_TO_PAGE(sec_info.virtual_size - offset + PAGE_OFFSET(rva)));
+
+        rva = TRIM_TO_PAGE(rva);
 
         sinfo.flags = sec_info.flag;
         if(SGX_SUCCESS != (ret = build_pages(rva, size, 0, sinfo, ADD_EXTEND_PAGE)))
@@ -372,7 +372,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
                 ptcs->ogs_base += rva;
                 if(!(attributes & PAGE_ATTR_EREMOVE))
                 {
-                  m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), false));
+                    m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), false));
                 }
                 sinfo.flags = layout->si_flags;
                 if(SGX_SUCCESS != (ret = build_pages(rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, added_page, sinfo, attributes)))
@@ -417,7 +417,7 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
 #ifndef SE_SIM
         if(layout->id == LAYOUT_ID_TCS_DYN)
         {
-          m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), true));
+            m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), true));
         }
 #endif
     }
@@ -450,7 +450,7 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
     }
     return SGX_SUCCESS;
 }
-int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_misc_attribute_t * const misc_attr)
+int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr)
 {
     memset(&m_secs, 0, sizeof(secs_t)); //should set resvered field of secs as 0.
     //create secs structure.
@@ -458,8 +458,15 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_misc_attribute_t
     m_secs.size = m_metadata->enclave_size;
     m_secs.misc_select = misc_attr->misc_select;
 
-    memcpy_s(&m_secs.attributes,  sizeof(m_secs.attributes), secs_attr, sizeof(m_secs.attributes));
+    if(memcpy_s(&m_secs.attributes,  sizeof(m_secs.attributes), secs_attr, sizeof(m_secs.attributes)))
+        return SGX_ERROR_UNEXPECTED;
     m_secs.ssa_frame_size = m_metadata->ssa_frame_size;
+    if (config_id)
+    {
+        if (memcpy_s(m_secs.config_id, SGX_CONFIGID_SIZE, config_id, SGX_CONFIGID_SIZE))
+            return SGX_ERROR_UNEXPECTED;
+    }
+    m_secs.config_svn = config_svn;
 
     EnclaveCreator *enclave_creator = get_enclave_creator();
     if(NULL == enclave_creator)
@@ -469,14 +476,18 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_misc_attribute_t
     {
         SE_TRACE(SE_TRACE_NOTICE, "enclave start address = %p, size = 0x%llx\n", m_start_addr, m_metadata->enclave_size);
     }
+	// m_secs.mr_enclave value is not set previously
+    if(memcpy_s(&m_secs.mr_enclave, sizeof(sgx_measurement_t), &m_metadata->enclave_css.body.enclave_hash, sizeof(sgx_measurement_t)))
+        return SGX_ERROR_UNEXPECTED;
+
     return ret;
 }
-int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
+int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
 {
     int ret = SGX_SUCCESS;
 
 
-    if(SGX_SUCCESS != (ret = build_secs(secs_attr, misc_attr)))
+    if(SGX_SUCCESS != (ret = build_secs(secs_attr, config_id, config_svn, misc_attr)))
     {
         SE_TRACE(SE_TRACE_WARNING, "build secs failed\n");
         return ret;
@@ -569,7 +580,7 @@ int CLoader::validate_layout_table()
     {
         if(!IS_GROUP_ID(layout->entry.id))  // layout entry
         {
-          rva_vector.push_back(std::make_pair(layout->entry.rva, ((uint64_t)layout->entry.page_count) << SE_PAGE_SHIFT));
+            rva_vector.push_back(std::make_pair(layout->entry.rva, ((uint64_t)layout->entry.page_count) << SE_PAGE_SHIFT));
             if(layout->entry.content_offset)
             {
                 if(false == is_metadata_buffer(layout->entry.content_offset, layout->entry.content_size))
@@ -710,7 +721,7 @@ bool CLoader::is_ae(const enclave_css_t *enclave_css)
     return false;
 }
 
-int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
+int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
 {
     int ret = SGX_SUCCESS;
     sgx_misc_attribute_t sgx_misc_attr;
@@ -730,29 +741,30 @@ int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metad
         return ret;
     }
 
-    ret = build_image(lc, &sgx_misc_attr.secs_attr, prd_css_file, &sgx_misc_attr);
+    ret = build_image(lc, &sgx_misc_attr.secs_attr, config_id, config_svn, prd_css_file, &sgx_misc_attr);
     // Update misc_attr with secs.attr upon success.
     if(SGX_SUCCESS == ret)
     {
+        //When run here EINIT success, so SGX_FLAGS_INITTED should be set by ucode. uRTS align it with EINIT instruction.
+        sgx_misc_attr.secs_attr.flags |= SGX_FLAGS_INITTED;
+        m_secs.attributes = sgx_misc_attr.secs_attr;
         if(misc_attr)
         {
             memcpy_s(misc_attr, sizeof(sgx_misc_attribute_t), &sgx_misc_attr, sizeof(sgx_misc_attribute_t));
-            //When run here EINIT success, so SGX_FLAGS_INITTED should be set by ucode. uRTS align it with EINIT instruction.
-            misc_attr->secs_attr.flags |= SGX_FLAGS_INITTED;
         }
     }
 
     return ret;
 }
 
-int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
+int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
 {
     unsigned int ret = SGX_SUCCESS, map_conflict_count = 3;
     bool retry = true;
 
     while (retry)
     {
-        ret = this->load_enclave(lc, debug, metadata, prd_css_file, misc_attr);
+        ret = this->load_enclave(lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
         switch(ret)
         {
             //If CreateEnclave failed due to power transition, we retry it.

@@ -71,7 +71,9 @@ static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
     }else{
         uint32_t newsize = s->size+static_cast<uint32_t>(size*nmemb);
         if((UINT32_MAX-s->size)/size<nmemb){
-             return 0;//buffer overflow
+            free(s->base);
+            s->base = NULL;
+            return 0;//buffer overflow
         }
         char *p=reinterpret_cast<char *>(malloc(newsize));
         if(p == NULL){

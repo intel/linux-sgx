@@ -93,8 +93,8 @@ protected:
     CTrustThread * get_bound_thread(const se_thread_id_t thread_id);
     void add_to_free_thread_vector(CTrustThread* it);
     
-    std::vector<CTrustThread *>                  m_free_thread_vector;
-    std::vector<CTrustThread *>                  m_unallocated_threads; 
+    std::vector<CTrustThread *>             m_free_thread_vector;
+    std::vector<CTrustThread *>             m_unallocated_threads; 
     Node<se_thread_id_t, CTrustThread *>    *m_thread_list;
     Mutex                                   m_thread_mutex; //protect thread_cache list. The mutex is recursive.
                                                             //Thread can operate the list when it get the mutex

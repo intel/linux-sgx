@@ -43,6 +43,7 @@
 #include "sgx_trts.h"
 #include "ipp_wrapper.h"
 
+#define MAX_IPP_BN_LENGTH 2048
 
 sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned char *p_n, unsigned char *p_d, unsigned char *p_e,
     unsigned char *p_p, unsigned char *p_q, unsigned char *p_dmp1,
@@ -333,28 +334,49 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data,
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
+    IppsBigNumState* p_modulus = NULL;
+    int dataLen = 0;
     uint8_t *p_scratch_buffer = NULL;
     Ipp8u seeds[RSA_SEED_SIZE_SHA256] = { 0 };
     int scratch_buff_size = 0;
     sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
-    if (pout_data == NULL) {
-        return SGX_SUCCESS;
-    }
 
     do {
-        
+        // return required pout_data buffer size
+        //
+        if (pout_data == NULL) {
+            //create a new BN
+            //
+            if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_modulus) != ippStsNoErr) {
+                break;
+            }
+            //get public key modulus
+            //
+            if (ippsRSA_GetPublicKey(p_modulus, NULL, (IppsRSAPublicKeyState*)rsa_key) != ippStsNoErr) {
+                break;
+            }
+            //get modulus length in bits
+            //
+            if (ippsExtGet_BN(0, &dataLen, 0, p_modulus) != ippStsNoErr) {
+                break;
+            }
+            *pout_len = dataLen / 8;
+            ret_code = SGX_SUCCESS;
+            break;
+        }
+
         //get scratch buffer size, to be used as temp buffer, and allocate it
         //
         if (ippsRSA_GetBufferSizePublicKey(&scratch_buff_size, (IppsRSAPublicKeyState*)rsa_key) != ippStsNoErr) {
             break;
         }
         p_scratch_buffer = (uint8_t *)malloc(scratch_buff_size);
-        if(!p_scratch_buffer)
+        if (!p_scratch_buffer)
         {
             ret_code = SGX_ERROR_OUT_OF_MEMORY;
             break;
         }
-	memset(p_scratch_buffer, 0, scratch_buff_size);
+        memset(p_scratch_buffer, 0, scratch_buff_size);
 
         //get random seed
         //
@@ -374,23 +396,45 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data,
 
     memset_s(seeds, RSA_SEED_SIZE_SHA256, 0, RSA_SEED_SIZE_SHA256);
     CLEAR_FREE_MEM(p_scratch_buffer, scratch_buff_size);
-
+    sgx_ipp_secure_free_BN(p_modulus, MAX_IPP_BN_LENGTH);
     return ret_code;
 }
-
 sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
     const size_t pin_len) {
     (void)(pin_len);
     if (rsa_key == NULL || pout_len == NULL || pin_data == NULL) {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    IppsBigNumState* p_modulus = NULL;
+    int dataLen = 0;
     sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
     uint8_t *p_scratch_buffer = NULL;
     int scratch_buff_size = 0;
-    if (pout_data == NULL) {
-        return SGX_SUCCESS;
-    }
+
     do {
+        // return required pout_data buffer size
+        //
+        if (pout_data == NULL) {
+            //create a new BN
+            //
+            if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_modulus) != ippStsNoErr) {
+                break;
+            }
+            //get private key modulus
+            //
+            if (ippsRSA_GetPrivateKeyType1(p_modulus, NULL, (IppsRSAPrivateKeyState*)rsa_key) != ippStsNoErr) {
+                break;
+            }
+            //get modulus length in bits
+            //
+            if (ippsExtGet_BN(0, &dataLen, 0, p_modulus) != ippStsNoErr) {
+                break;
+            }
+            *pout_len = dataLen / 8;
+            ret_code = SGX_SUCCESS;
+            break;
+        }
 
         //get scratch buffer size, to be used as temp buffer, and allocate it
         //
@@ -413,10 +457,10 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data
 
     } while (0);
     CLEAR_FREE_MEM(p_scratch_buffer, scratch_buff_size);
+    sgx_ipp_secure_free_BN(p_modulus, MAX_IPP_BN_LENGTH);
 
     return ret_code;
 }
-
 sgx_status_t sgx_free_rsa_key(void *p_rsa_key, sgx_rsa_key_type_t key_type, int mod_size, int exp_size) {
 	if (key_type == SGX_RSA_PRIVATE_KEY) {
 		(void)(exp_size);

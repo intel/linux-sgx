@@ -447,6 +447,7 @@ pse_op_error_t pse_exchange_report(uint64_t tick,
         psec_info->psda_id = 1;
         psec_info->reserved = 0;
         memset_s(psec_info->reserved2, sizeof(psec_info->reserved2), 0, sizeof(psec_info->reserved2));
+        psec_info->session_prop = g_pairing_data.plaintext.cse_sec_prop.ps_hw_sec_info.session_prop;
 
         sgx_status_t se_ret = sgx_dh_responder_proc_msg2(&dh_msg2,
                                                        (sgx_dh_msg3_t*)&dh_msg3,
@@ -595,9 +596,9 @@ pse_op_error_t ephemeral_session_m2m3(
     // compute HMAC over IDcse||IDpse||Rpse||Rcse
     msg_len = static_cast<uint32_t>(sizeof(pse_cse_msg3.id_cse) + sizeof(pse_cse_msg3.id_pse)
                     + sizeof(pse_cse_msg3.nonce_r_pse) + sizeof(pse_cse_msg3.nonce_r_cse));
-    if (ippsHMAC_Message((uint8_t*)&pse_cse_msg3, msg_len, g_pairing_data.secret_data.mk, sizeof(g_pairing_data.secret_data.mk),
-        pse_cse_msg3.mac, SGX_SHA256_HASH_SIZE, IPP_ALG_HASH_SHA256) != ippStsNoErr)
-    {
+    if (sgx_hmac_sha256_msg((const unsigned char*)&pse_cse_msg3, msg_len, g_pairing_data.secret_data.mk, sizeof(g_pairing_data.secret_data.mk),
+                            pse_cse_msg3.mac, SGX_SHA256_HASH_SIZE) != SGX_SUCCESS)
+    {                
         op_ret = OP_ERROR_INTERNAL;
         goto error;
     }
@@ -665,12 +666,8 @@ pse_op_error_t ephemeral_session_m4(
     memcpy(msg_buf, g_nonce_r_pse, EPH_SESSION_NONCE_SIZE);
     memcpy(msg_buf + EPH_SESSION_NONCE_SIZE, g_nonce_r_cse, EPH_SESSION_NONCE_SIZE);
     // TSK := HMAC-SHA256sk(Rpse || Rcse)
-    if (ippsHMAC_Message(msg_buf,
-            msg_len,
-            g_pairing_data.secret_data.sk,
-            sizeof(g_pairing_data.secret_data.sk),
-            mac_buf,
-            SGX_SHA256_HASH_SIZE, IPP_ALG_HASH_SHA256) != ippStsNoErr)
+    if (sgx_hmac_sha256_msg(msg_buf, msg_len, g_pairing_data.secret_data.sk, sizeof(g_pairing_data.secret_data.sk),
+         mac_buf, SGX_SHA256_HASH_SIZE) != SGX_SUCCESS)
     {
         SAFE_FREE(msg_buf);
         op_ret = OP_ERROR_INTERNAL;

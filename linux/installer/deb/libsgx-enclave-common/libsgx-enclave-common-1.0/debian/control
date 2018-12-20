@@ -4,9 +4,7 @@ Priority: optional
 Maintainer: <xiangquan.liu@intel.com>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
-Homepage: <insert the upstream URL, if relevant>
-#Vcs-Git: git://git.debian.org/collab-maint/libsgx-enclave-common.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/libsgx-enclave-common.git;a=summary
+Homepage: https://github.com/intel/linux-sgx
 
 Package: libsgx-enclave-common
 Architecture: i386 ia64 amd64

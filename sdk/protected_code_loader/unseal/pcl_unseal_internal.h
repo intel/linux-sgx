@@ -64,8 +64,8 @@ typedef enum _egetkey_status_t
     EGETKEY_INVALID_KEYNAME   = BIT_ERROR(8),
 }  egetkey_status_t;
 
-uint32_t pcl_calc_sealed_data_size(const uint32_t aad_mac_txt_size, const uint32_t txt_encrypt_size);
-uint32_t pcl_get_aad_mac_txt_len(const sgx_sealed_data_t* p_sealed_data);
+uint32_t pcl_calc_sealed_data_size(const uint32_t add_mac_txt_size, const uint32_t txt_encrypt_size);
+uint32_t pcl_get_add_mac_txt_len(const sgx_sealed_data_t* p_sealed_data);
 uint32_t pcl_get_encrypt_txt_len(const sgx_sealed_data_t* p_sealed_data);
 
 #ifdef SE_SIM

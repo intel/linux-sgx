@@ -29,6 +29,7 @@
  *
  */
 
+#include <sgx_random_buffers.h>
 #include "msg3_parm.h"
 #include "se_sig_rl.h"
 #include "cipher.h"
@@ -252,7 +253,7 @@ pve_status_t proc_prov_msg2_data(const proc_prov_msg2_blob_input_t *msg2_blob_in
     // we must parse SigRL header to find count of sigrl entries
     if( msg2_blob_input->is_previous_pi_provided ){//We need to generate Basic Signature if sigrl_psvn present even if sigrl is not available
         //Initialize for EPID library function to prepare for piece meal processing
-        ret = prepare_epid_member(msg2_blob_input, &msg3_parm);//old epid data blob is required
+        ret = random_stack_advance(prepare_epid_member, msg2_blob_input, &msg3_parm);//old epid data blob is required
         if( PVEC_SUCCESS!=ret )
             goto ret_point;
         if(NULL!=emp_sigrl){
@@ -273,12 +274,12 @@ pve_status_t proc_prov_msg2_data(const proc_prov_msg2_blob_input_t *msg2_blob_in
         goto ret_point;
     }
     //Now we could generate the ProvMsg3. SigRL of ProvMsg2 will be parsed in this function too if available
-    ret = gen_prov_msg3_data(msg2_blob_input, msg3_parm, performance_rekey_used, msg3_output, emp_epid_sig,
+    ret = random_stack_advance(gen_prov_msg3_data, msg2_blob_input, msg3_parm, performance_rekey_used, msg3_output, emp_epid_sig,
         epid_sig_buffer_size);
 ret_point:
     (void)memset_s(tcb, sizeof(tcb), 0, sizeof(tcb));
     if(NULL!=msg3_parm.p_msg3_state)
-        pve_aes_gcm_encrypt_fini(msg3_parm.p_msg3_state, msg3_parm.msg3_state_size);
+        sgx_aes_gcm_close((sgx_aes_state_handle_t)msg3_parm.p_msg3_state);
     if(NULL!=msg3_parm.sha_state)
         sgx_sha256_close(msg3_parm.sha_state);
     if(NULL!=msg3_parm.epid_member){

@@ -34,7 +34,7 @@ enclave {
 
     include "arch.h"
     include "sgx_report.h"
-
+    from "sgx_tstdc.edl" import *;
     trusted {
         public int le_get_launch_token_wrapper(
             [in]  const sgx_measurement_t *mrenclave,

@@ -68,6 +68,7 @@ CEnclave::CEnclave(CLoader &ldr)
     , m_us_has_started(false)
 {
     memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
+    memset(&m_target_info, 0, sizeof(sgx_target_info_t));
     se_init_rwlock(&m_rwlock);
 }
 
@@ -108,21 +109,24 @@ on_exit:
     return status;
 }
 
-sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
+sgx_status_t CEnclave::initialize(const se_file_t& file, const secs_t& secs, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
 {
-    uint32_t name_len = file.name_len;
-    if (file.unicode)
-        name_len *= (uint32_t)sizeof(wchar_t);
+    if (file.name != NULL)
+    {
+        uint32_t name_len = file.name_len;
+        if (file.unicode)
+            name_len *= (uint32_t)sizeof(wchar_t);
 
-    const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
+        const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
 
-    m_enclave_info.lpFileName = calloc(1, buf_len);
-    if (m_enclave_info.lpFileName == NULL)
-        return SGX_ERROR_OUT_OF_MEMORY;
+        m_enclave_info.lpFileName = calloc(1, buf_len);
+        if (m_enclave_info.lpFileName == NULL)
+            return SGX_ERROR_OUT_OF_MEMORY;
 
-    memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
-    m_enclave_info.unicode = file.unicode?0:1;
-    m_enclave_info.file_name_size = name_len;
+        memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
+        m_enclave_info.unicode = file.unicode?0:1;
+        m_enclave_info.file_name_size = name_len;
+    }
 
     m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
 
@@ -157,7 +161,15 @@ sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t 
         m_enclave_info.lpFileName = NULL;
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    
+
+    if (memcpy_s(&m_target_info.mr_enclave, sizeof(sgx_measurement_t), &secs.mr_enclave, sizeof(sgx_measurement_t)))
+        return SGX_ERROR_UNEXPECTED;
+    m_target_info.attributes = secs.attributes;
+    m_target_info.config_svn = secs.config_svn;
+    m_target_info.misc_select = secs.misc_select;
+    if (memcpy_s(m_target_info.config_id, sizeof(sgx_config_id_t), secs.config_id, sizeof(sgx_config_id_t)))
+        return SGX_ERROR_UNEXPECTED;
+
     return SGX_SUCCESS;
 }
 
@@ -539,6 +551,11 @@ void CEnclave::pop_ocall_frame(CTrustThread *trust_thread)
 void CEnclave::destroy_uswitchless(void)
 {
     if (m_uswitchless) sl_uswitchless_stop_workers(m_uswitchless);
+}
+
+sgx_target_info_t CEnclave::get_target_info()
+{
+    return m_target_info;
 }
 
 CEnclavePool CEnclavePool::m_instance;

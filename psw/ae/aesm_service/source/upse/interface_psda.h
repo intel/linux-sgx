@@ -34,14 +34,14 @@
 
 #include <stdint.h>
 #include "aeerror.h"
-#include "pse_pr_sigma_1_1_defs.h"
+#include "pse_pr_sigma_defs.h"
 
 namespace upse { class Buffer; }
 
 class pse_pr_interface_psda
 {
 public:
-    pse_pr_interface_psda(void);
+    pse_pr_interface_psda(bool is_sigma20);
     ~pse_pr_interface_psda(void);
 
     ae_error_t GetS1
@@ -60,7 +60,7 @@ public:
         );
 
 private:
-
+    bool m_is_sigma20;
     // Disable class operations (default constructor, copy constructor, assignment operator, and address-of operator)
     //pse_pr_cse_interface();										        // default constructor
     pse_pr_interface_psda(const pse_pr_interface_psda& rhs);			    // copy constructor

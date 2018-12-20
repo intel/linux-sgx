@@ -49,23 +49,13 @@ void CQEClass::before_enclave_load() {
 uint32_t CQEClass::get_qe_target(
     sgx_target_info_t *p_qe_target)
 {
-    token_t *p_launch =
-        reinterpret_cast<token_t *>(&m_launch_token);
-
-    /* We need to make sure the QE is successfully loaded and then we can use
-    the cached attributes and launch token. */
+    /* We need to make sure the QE is successfully loaded */
     assert(m_enclave_id);
     memset(p_qe_target, 0, sizeof(sgx_target_info_t));
-    memcpy_s(&p_qe_target->attributes, sizeof(p_qe_target->attributes),
-        &m_attributes.secs_attr, sizeof(m_attributes.secs_attr));
-    memcpy_s(&p_qe_target->misc_select, sizeof(p_qe_target->misc_select),
-        &m_attributes.misc_select, sizeof(m_attributes.misc_select));
-    memcpy_s(&p_qe_target->mr_enclave, sizeof(p_qe_target->mr_enclave),
-        &m_mrenclave,
-        sizeof(m_mrenclave));
-    return AE_SUCCESS;
+    if (SGX_SUCCESS != sgx_get_target_info(m_enclave_id, p_qe_target))
+        return AE_FAILURE;
+	return AE_SUCCESS;
 }
-
 uint32_t CQEClass::verify_blob(
     uint8_t *p_epid_blob,
     uint32_t blob_size,

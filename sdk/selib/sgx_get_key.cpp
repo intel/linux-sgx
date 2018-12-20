@@ -44,6 +44,7 @@
 #include "trts_inst.h"
 #include "sgx_trts.h"
 #include "se_cdefs.h"
+#include "tSeal_internal.h"
 
 // add a version to tservice.
 SGX_ACCESS_VERSION(tservice, 2)
@@ -52,12 +53,12 @@ sgx_status_t sgx_get_key(const sgx_key_request_t *key_request, sgx_key_128bit_t 
 {
     sgx_status_t err = SGX_ERROR_UNEXPECTED;
     void *buffer = NULL;
-    size_t size = 0, buf_ptr =0;
+    size_t size = 0, buf_ptr = 0;
     sgx_key_request_t *tmp_key_request = NULL;
     sgx_key_128bit_t *tmp_key = NULL;
     egetkey_status_t egetkey_status = EGETKEY_SUCCESS;
     int i = 0;
-
+    const sgx_report_t *report = NULL;
     // check parameters
     //
     // key_request must be within the enclave
@@ -89,7 +90,16 @@ sgx_status_t sgx_get_key(const sgx_key_request_t *key_request, sgx_key_128bit_t 
         goto CLEANUP;
     }
     // check key_request->key_policy reserved bits
-    if(key_request->key_policy & ~(SGX_KEYPOLICY_MRENCLAVE | SGX_KEYPOLICY_MRSIGNER))
+    if(key_request->key_policy & ~(SGX_KEYPOLICY_MRENCLAVE | SGX_KEYPOLICY_MRSIGNER | (KEY_POLICY_KSS)))
+    {
+        err = SGX_ERROR_INVALID_PARAMETER;
+        goto CLEANUP;
+    }
+
+    // check if KSS flag is disabled but KSS related policy or config_svn is set
+    report = sgx_self_report();
+    if (!(report->body.attributes.flags & SGX_FLAGS_KSS) &&
+        ((key_request->key_policy & KEY_POLICY_KSS) || key_request->config_svn > 0))
     {
         err = SGX_ERROR_INVALID_PARAMETER;
         goto CLEANUP;

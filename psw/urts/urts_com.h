@@ -66,6 +66,54 @@ extern "C" int __itt_init_ittlib(const char*, __itt_group_id);
 extern "C" __itt_global* __itt_get_ittapi_global();
 
 
+
+#define GET_FEATURE_POINTER(feature_name, ex_features_p)    ex_features_p[feature_name##_BIT_IDX]
+// Get the corresponding feature pointer for the input feature name
+// This function should only be called for the features which have the corresponding feature structs
+// Return value: 
+//    -1 - invalid input
+//    0  - no such feature request
+//    1  - has such feature request
+static int get_ex_feature_pointer(uint32_t feature_name, const uint32_t ex_features, const void *ex_features_p[MAX_EX_FEATURES_COUNT], void **op)
+{
+    bool fbit_set = (feature_name & ex_features) ? true : false;
+    void *pointer = NULL;
+    int ret = -1;
+    switch(feature_name)
+    {
+    case SGX_CREATE_ENCLAVE_EX_PCL:
+        if (ex_features_p != NULL)
+            pointer = const_cast<void *>(GET_FEATURE_POINTER(SGX_CREATE_ENCLAVE_EX_PCL, ex_features_p));
+        if (fbit_set && pointer)
+            ret = 1;
+        else if (!fbit_set && !pointer)
+            ret = 0;
+        break;
+    case SGX_CREATE_ENCLAVE_EX_SWITCHLESS:
+        if (ex_features_p != NULL)
+            pointer = const_cast<void *>(GET_FEATURE_POINTER(SGX_CREATE_ENCLAVE_EX_SWITCHLESS, ex_features_p));
+        if (fbit_set && pointer)
+            ret = 1;
+        else if (!fbit_set && !pointer)
+            ret = 0;
+        break;
+    case SGX_CREATE_ENCLAVE_EX_KSS:
+        if (ex_features_p != NULL)
+            pointer = const_cast<void *>(GET_FEATURE_POINTER(SGX_CREATE_ENCLAVE_EX_KSS, ex_features_p));
+        if (fbit_set && pointer)
+            ret = 1;
+        else if (!fbit_set && !pointer)
+            ret = 0;
+        break;
+    default:
+        break;
+    }
+    if (ret == 1)
+        *op = pointer;
+    return ret;
+}
+
+
 #define HSW_C0  0x306c3
 #define GPR_A0  0x406e0
 #define GPR_B0  0x406e1
@@ -199,9 +247,22 @@ static int __create_enclave(BinParser &parser,
     // After enclave is created, "parser" and "loader" are not needed any more.
     debug_enclave_info_t *debug_info = NULL;
     int ret = SGX_SUCCESS;
+    sgx_config_id_t *config_id = NULL;
+    sgx_config_svn_t config_svn = 0;
+    sgx_kss_config_t *kss_config = NULL;
+    sgx_uswitchless_config_t* us_config = NULL;
+    
     CLoader loader(base_addr, parser);
 
-    ret = loader.load_enclave_ex(lc, debug, metadata, prd_css_file, misc_attr);
+    if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_KSS, ex_features, ex_features_p, (void **)&kss_config) == -1)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (kss_config)
+    {
+        config_id = &(kss_config->config_id);
+        config_svn = kss_config->config_svn;
+    }
+
+    ret = loader.load_enclave_ex(lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
     if (ret != SGX_SUCCESS)
     {
         return ret;
@@ -224,6 +285,7 @@ static int __create_enclave(BinParser &parser,
 
     // initialize the enclave object
     ret = enclave->initialize(file,
+                              loader.get_secs(),
                               loader.get_enclave_id(),
                               const_cast<void*>(loader.get_start_addr()),
                               metadata->enclave_size,
@@ -237,10 +299,17 @@ static int __create_enclave(BinParser &parser,
         delete enclave; // The `enclave' object owns the `loader' object.
         return ret;
     }
-
-    if (ex_features & SGX_CREATE_ENCLAVE_EX_PCL)
+    
+    //set sealed key for encrypted enclave
+    uint8_t *sealed_key = NULL;
+    if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_PCL, ex_features, ex_features_p, (void **)&sealed_key) == -1)
     {
-        uint8_t* sealed_key = (uint8_t*)ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX];
+        loader.destroy_enclave();
+        delete enclave; // The `enclave' object owns the `loader' object.
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    if (sealed_key != NULL)
+    {
         enclave->set_sealed_key(sealed_key);
     }
     
@@ -389,28 +458,26 @@ static int __create_enclave(BinParser &parser,
         CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
         goto fail;
     }
-
-
-    if (ex_features & SGX_CREATE_ENCLAVE_EX_SWITCHLESS)
+    
+    if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_SWITCHLESS, ex_features, ex_features_p, (void **)&us_config) == -1)
     {
-        if ((ex_features_p == NULL) || (ex_features_p[SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX] == NULL))
-        {
-            ret = SGX_ERROR_INVALID_PARAMETER;
-            sgx_status_t status = SGX_SUCCESS;
-            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
-            CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
-            goto fail;
-        }
+        ret = SGX_ERROR_INVALID_PARAMETER;
+        sgx_status_t status = SGX_SUCCESS;
+        generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
+        CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
+        goto fail;
 
-        sgx_uswitchless_config_t* us_config = (sgx_uswitchless_config_t*)ex_features_p[SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX];
-
-        if (SGX_SUCCESS != (ret = enclave->init_uswitchless(us_config)))
+    }
+    if (us_config)
+    {
+         if (SGX_SUCCESS != (ret = enclave->init_uswitchless(us_config)))
         {
             sgx_status_t status = SGX_SUCCESS;
             generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
             CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
             goto fail;
         }
+
     }
 
     *enclave_id = loader.get_enclave_id();
@@ -423,20 +490,24 @@ fail:
 }
 
 
-sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
-	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
-                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
+sgx_status_t _create_enclave_from_buffer_ex(const bool debug, uint8_t *base_addr, uint64_t file_size, se_file_t& file, 
+                                            le_prd_css_file_t *prd_css_file, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr,
+                                            const uint32_t ex_features, const void* ex_features_p[32])
 {
     unsigned int ret = SGX_SUCCESS;
-    sgx_status_t lt_result = SGX_SUCCESS;
-    uint32_t file_size = 0;
-    map_handle_t* mh = NULL;
     sgx_misc_attribute_t sgx_misc_attr;
     metadata_t *metadata = NULL;
     SGXLaunchToken *lc = NULL;
     memset(&sgx_misc_attr, 0, sizeof(sgx_misc_attribute_t));
+    sgx_isvfamily_id_t isvf;
+    sgx_isvext_prod_id_t isvp;
+    memset(&isvf, 0, sizeof(sgx_isvfamily_id_t));
+    memset(&isvp, 0, sizeof(sgx_isvext_prod_id_t));
+    sgx_kss_config_t* kss_config = NULL;
+    void *ex_fp = NULL;
+    int res = 0;
 
-    if(NULL == launch || NULL == launch_updated || NULL == enclave_id)
+    if(NULL == base_addr || NULL == enclave_id)
         return SGX_ERROR_INVALID_PARAMETER;
 #ifndef SE_SIM
     ret = validate_platform();
@@ -444,11 +515,7 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
         return (sgx_status_t)ret;
 #endif
 
-    mh = map_file(pfile, &file_size);
-    if (!mh)
-        return SGX_ERROR_OUT_OF_MEMORY;
-
-    PARSER parser(const_cast<uint8_t *>(mh->base_addr), (uint64_t)(file_size));
+    PARSER parser(base_addr, file_size);
     if(SGX_SUCCESS != (ret = parser.run_parser()))
     {
         goto clean_return;
@@ -460,31 +527,26 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
         ret = SGX_ERROR_MODE_INCOMPATIBLE;
         goto clean_return;
     }
-
-    if (ex_features & SGX_CREATE_ENCLAVE_EX_PCL)
+ 
+    res = get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_PCL, ex_features, ex_features_p, &ex_fp);
+    if (res == -1)
     {
-
-        if ((ex_features_p == NULL) || (ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX] == NULL))
-        {
-            ret = SGX_ERROR_INVALID_PARAMETER;
-            goto clean_return;
-
-        }
-       
-        if (!parser.is_enclave_encrypted())
-        {
-            ret = SGX_ERROR_PCL_NOT_ENCRYPTED;
-            goto clean_return;
-        }
+        ret = SGX_ERROR_INVALID_PARAMETER;
+        goto clean_return;
 
     }
-    else
+    else if (res == 0 && parser.is_enclave_encrypted() != false)
     {
-        if (parser.is_enclave_encrypted())
-        {
-            ret = SGX_ERROR_PCL_ENCRYPTED;
-            goto clean_return;
-        }
+    
+        // If no PCL feature request is input, the enclave should not be encrypted.
+        ret = SGX_ERROR_PCL_ENCRYPTED;
+        goto clean_return;
+    }
+    else if (res == 1 && parser.is_enclave_encrypted() != true)
+    {
+        // If PCL feature is requested, the enclave should be encrypted
+        ret = SGX_ERROR_PCL_NOT_ENCRYPTED;
+        goto clean_return;
     }
 
     if(SGX_SUCCESS != (ret = get_metadata(&parser, debug,  &metadata, &sgx_misc_attr)))
@@ -492,18 +554,33 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
         goto clean_return;
     }
 
-    *launch_updated = FALSE;
-
-    lc = new SGXLaunchToken(&metadata->enclave_css, &sgx_misc_attr.secs_attr, launch);
-    lt_result = lc->update_launch_token(false);
-    if(SGX_SUCCESS != lt_result)
+    // Check KSS
+    if (!(sgx_misc_attr.secs_attr.flags & SGX_FLAGS_KSS))
     {
-        ret = lt_result;
-        goto clean_return;
+        // KSS flag is not set, then we should not configure config_id, config_svn, family_id and ext_prod_id
+        res = get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_KSS, ex_features, ex_features_p, (void **)&kss_config);
+        if (res == -1)
+        {
+            ret = SGX_ERROR_INVALID_PARAMETER;
+            goto clean_return;
+        }
+        else if (res == 1)
+        {
+            ret = SGX_ERROR_FEATURE_NOT_SUPPORTED;
+            goto clean_return;
+        }
+        if (memcmp(metadata->enclave_css.body.isvext_prod_id, &isvp, sizeof(sgx_isvext_prod_id_t)) ||
+            memcmp(metadata->enclave_css.body.isv_family_id, &isvf, sizeof(sgx_isvfamily_id_t))) 
+        {
+            ret = SGX_ERROR_FEATURE_NOT_SUPPORTED;
+            goto clean_return;
+        }
     }
+
+    lc = new SGXLaunchToken(&metadata->enclave_css, &sgx_misc_attr.secs_attr, NULL);
 #ifndef SE_SIM
     // Only LE allows the prd_css_file
-    if(is_le(lc, &metadata->enclave_css) == false && prd_css_file != NULL)
+    if(is_le(&metadata->enclave_css) == false && prd_css_file != NULL)
     {
         ret = SGX_ERROR_INVALID_PARAMETER;
         goto clean_return;
@@ -516,7 +593,7 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
 
     //Need to set the whole misc_attr instead of just secs_attr.
     do {
-        ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
+        ret = __create_enclave(parser, base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
         //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
     } while(SGX_ERROR_ENCLAVE_LOST == ret);
 
@@ -533,18 +610,34 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
 
     if(SGX_SUCCESS != ret)
         goto clean_return;
-    else if(lc->is_launch_updated())
-    {
-        *launch_updated = TRUE;
-        ret = lc->get_launch_token(launch);
-    }
 
 
 clean_return:
-    if(mh != NULL)
-        unmap_file(mh);
     if(lc != NULL)
         delete lc;
+    return (sgx_status_t)ret;
+}
+
+sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file,
+                                sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
+                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
+{
+    UNUSED(launch);
+    UNUSED(launch_updated);
+
+    unsigned int ret = SGX_SUCCESS;
+    uint32_t file_size = 0;
+    map_handle_t* mh = NULL;
+
+    mh = map_file(pfile, &file_size);
+    if (!mh)
+        return SGX_ERROR_OUT_OF_MEMORY;
+
+    ret = _create_enclave_from_buffer_ex(debug, mh->base_addr, (uint64_t)(file_size), file, prd_css_file,
+                                         enclave_id, misc_attr, ex_features, ex_features_p);
+
+    if(mh != NULL)
+        unmap_file(mh);
     return (sgx_status_t)ret;
 }
 

@@ -30,59 +30,19 @@
  */
 
 #include "prepare_hmac_sha256.h"
-#include "sgx_memset_s.h"
 #include <stdlib.h>
 
 
-PrepareHMACSHA256::PrepareHMACSHA256(const Ipp8u* key, size_t keyLength)
-    : m_ippstatus(ippStsNoErr), m_pCtx(0), m_nSizeCtx(0)
+PrepareHMACSHA256::PrepareHMACSHA256(const unsigned char *key, size_t keyLength)
+    : m_sgxstatus(SGX_ERROR_UNEXPECTED), m_pCtx(NULL)
 {
-
-    do
-    {
-        if (NULL == key || keyLength < 1)
-        {
-            m_ippstatus = ippStsBadArgErr;
-            break;
-        }
-
-        m_ippstatus = ippsHMAC_GetSize(&m_nSizeCtx);
-        if (m_ippstatus != ippStsNoErr)
-            break;
-
-        m_pCtx = (IppsHMACState*) malloc(m_nSizeCtx);
-        if (NULL == m_pCtx)
-        {
-            m_ippstatus = ippStsNoMemErr;
-            break;
-        }
-
-        if (keyLength > INT32_MAX)
-        {
-            free(m_pCtx);
-            m_pCtx = NULL;
-            break;
-        }
-
-        m_ippstatus = ippsHMAC_Init(key, (int)keyLength, m_pCtx, IPP_ALG_HASH_SHA256);
-        if (m_ippstatus != ippStsNoErr)
-        {
-            // clear secret for defense-in-depth
-            memset_s(m_pCtx, m_nSizeCtx, 0, m_nSizeCtx);
-            free(m_pCtx);
-			m_pCtx = NULL;
-            break;
-        }
-    } while (0);
+        m_sgxstatus = sgx_hmac256_init(key, (int)keyLength, &m_pCtx);
 }
 
 PrepareHMACSHA256::~PrepareHMACSHA256(void)
 {
     if (m_pCtx) {
-        // clear secret for defense-in-depth
-        memset_s(m_pCtx, m_nSizeCtx, 0, m_nSizeCtx);
-        free(m_pCtx);
-		m_pCtx = NULL;
+        sgx_hmac256_close(m_pCtx);
 	}
 }
 
@@ -90,25 +50,28 @@ ae_error_t PrepareHMACSHA256::Update(const void* pData, size_t numBytes)
 {
     do
     {
-        if (m_ippstatus != ippStsNoErr)
-            break;
-
-        if (NULL == pData || numBytes < 1 || NULL == m_pCtx || numBytes > INT32_MAX)
-        {
-            m_ippstatus = ippStsBadArgErr;
+        //validate calling object has passed initialization
+        //
+        if (m_sgxstatus != SGX_SUCCESS) {
             break;
         }
 
-        m_ippstatus = ippsHMAC_Update((const Ipp8u*)pData, (int)numBytes, m_pCtx);
-        if (m_ippstatus != ippStsNoErr)
+        if (NULL == pData || numBytes < 1 || NULL == m_pCtx || numBytes > INT32_MAX)
+        {
+            m_sgxstatus = SGX_ERROR_INVALID_PARAMETER;
+            break;
+        }
+
+        m_sgxstatus = sgx_hmac256_update((const uint8_t*)pData, (int)numBytes, m_pCtx);
+        if (m_sgxstatus != SGX_SUCCESS)
             break;
 
     } while (0);
 
     ae_error_t ae_status = AE_SUCCESS;
-    if (m_ippstatus != ippStsNoErr)
+    if (m_sgxstatus != SGX_SUCCESS)
     {
-        if (ippStsNoMemErr == m_ippstatus)
+        if (m_sgxstatus == SGX_ERROR_OUT_OF_MEMORY)
             ae_status = PSE_PR_INSUFFICIENT_MEMORY_ERROR;
         else
             ae_status = PSE_PR_HMAC_CALC_ERROR;
@@ -122,25 +85,25 @@ ae_error_t PrepareHMACSHA256::Finalize(SIGMA_HMAC *pHMAC)
 {
     do
     {
-        if (m_ippstatus != ippStsNoErr)
+        if (m_sgxstatus != SGX_SUCCESS)
             break;
 
         if (NULL == m_pCtx || NULL == pHMAC)
         {
-            m_ippstatus = ippStsBadArgErr;
+            m_sgxstatus = SGX_ERROR_INVALID_PARAMETER;
             break;
         }
 
-        m_ippstatus = ippsHMAC_Final((Ipp8u*)pHMAC, sizeof(SIGMA_HMAC), m_pCtx);
-        if (m_ippstatus != ippStsNoErr)
+        m_sgxstatus = sgx_hmac256_final(*pHMAC, SIGMA_HMAC_LENGTH, m_pCtx);
+        if (m_sgxstatus != SGX_SUCCESS)
             break;
 
     } while (0);
 
     ae_error_t ae_status = AE_SUCCESS;
-    if (m_ippstatus != ippStsNoErr)
+    if (m_sgxstatus != SGX_SUCCESS)
     {
-        if (ippStsNoMemErr == m_ippstatus)
+        if (m_sgxstatus == SGX_ERROR_OUT_OF_MEMORY)
             ae_status = PSE_PR_INSUFFICIENT_MEMORY_ERROR;
         else
             ae_status = PSE_PR_HMAC_CALC_ERROR;

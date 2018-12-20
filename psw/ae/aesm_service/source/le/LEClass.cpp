@@ -34,7 +34,6 @@
 #include "LEClass.h"
 #include "aeerror.h"
 #include "arch.h"
-#include "ae_ipp.h"
 #include "util.h"
 #include "service_enclave_mrsigner.hh"
 #include "aesm_long_lived_thread.h"
@@ -366,10 +365,10 @@ int CLEClass::get_launch_token(
         lictoken_size < sizeof(token_t) ||
         lictoken == NULL)
         return LE_INVALID_PARAMETER;
+
     //set mrsigner based on the hash of isv pub key from enclave signature
-    IppStatus ipperrorCode = ippStsNoErr;
-    ipperrorCode = ippsHashMessage_rmf(reinterpret_cast<const Ipp8u *>(public_key), public_key_size, reinterpret_cast<Ipp8u *>(&mrsigner), ippsHashMethod_SHA256_TT());
-    if( ipperrorCode != ippStsNoErr){
+    if(sgx_sha256_msg(reinterpret_cast<const uint8_t *>(public_key), public_key_size, reinterpret_cast<sgx_sha256_hash_t *>(&mrsigner)) != SGX_SUCCESS)
+    {
         return AE_FAILURE;
     }
     if(ae_mrsigner_index!=NULL){

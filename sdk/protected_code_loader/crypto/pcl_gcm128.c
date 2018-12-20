@@ -93,9 +93,9 @@
 #include <pcl_internal.h>
 #include <pcl_crypto_internal.h>
 #include <pcl_modes_lcl.h>
-/* PCL UNUSED START *
+/* PCL UNUSED START
 #if defined(BSWAP4) && defined(STRICT_ALIGNMENT)
-/* redefine, because alignment is ensured * /
+/ * redefine, because alignment is ensured * /
 # undef  GETU32
 # define GETU32(p)       BSWAP4(*(const u32 *)(p))
 # undef  PUTU32
@@ -116,7 +116,7 @@
         } \
 } while(0)
 
-/*-
+/ *-
  * Even though permitted values for TABLE_BITS are 8, 4 and 1, it should
  * never be set to 8. 8 is effectively reserved for testing purposes.
  * TABLE_BITS>1 are lookup-table-driven implementations referred to as
@@ -343,7 +343,7 @@ static void pcl_gcm_init_4bit(u128 Htable[16], u64 H[2])
     Htable[15].hi = V.hi ^ Htable[7].hi, Htable[15].lo = V.lo ^ Htable[7].lo;
  # endif
  # if defined(GHASH_ASM) && (defined(__arm__) || defined(__arm))
-     /*
+     / *
       * ARM assembler expects specific dword order in Htable.
       * /
      {
@@ -447,7 +447,7 @@ static void pcl_gcm_gmult_4bit(u64 Xi[2], const u128 Htable[16])
 }
 
 #  if !defined(OPENSSL_SMALL_FOOTPRINT)
-/*
+/ *
  * Streamed gcm_mult_4bit, see CRYPTO_gcm128_[en|de]crypt for
  * details... Compiler-generated code doesn't seem to give any
  * performance improvement, at least not on x86[_64]. It's here
@@ -508,14 +508,14 @@ static void gcm_ghash_4bit(u64 Xi[2], const u128 Htable[16],
             Z.lo ^= Htable[nlo].lo;
         }
  #   else
-     /*
+     / *
       * Extra 256+16 bytes per-key plus 512 bytes shared tables
       * [should] give ~50% improvement... One could have PACK()-ed
       * the rem_8bit even here, but the priority is to minimize
       * cache footprint...
       * /
-     u128 Hshr4[16];             /* Htable shifted right by 4 bits * /
-     u8 Hshl4[16];               /* Htable shifted left by 4 bits * /
+     u128 Hshr4[16];             / * Htable shifted right by 4 bits * /
+     u8 Hshl4[16];               / * Htable shifted left by 4 bits * /
      static const unsigned short rem_8bit[256] = {
          0x0000, 0x01C2, 0x0384, 0x0246, 0x0708, 0x06CA, 0x048C, 0x054E,
          0x0E10, 0x0FD2, 0x0D94, 0x0C56, 0x0918, 0x08DA, 0x0A9C, 0x0B5E,
@@ -550,7 +550,7 @@ static void gcm_ghash_4bit(u64 Xi[2], const u128 Htable[16],
          0xB5E0, 0xB422, 0xB664, 0xB7A6, 0xB2E8, 0xB32A, 0xB16C, 0xB0AE,
          0xBBF0, 0xBA32, 0xB874, 0xB9B6, 0xBCF8, 0xBD3A, 0xBF7C, 0xBEBE
      };
-     /*
+     / *
       * This pre-processing phase slows down procedure by approximately
       * same time as it makes each loop spin faster. In other words
       * single block performance is approximately same as straightforward
@@ -634,17 +634,17 @@ void gcm_ghash_4bit(u64 Xi[2], const u128 Htable[16], const u8 *inp,
 # define GCM_MUL(ctx,Xi)   gcm_gmult_4bit(ctx->Xi.u,ctx->Htable)
 # if defined(GHASH_ASM) || !defined(OPENSSL_SMALL_FOOTPRINT)
 #  define GHASH(ctx,in,len) gcm_ghash_4bit((ctx)->Xi.u,(ctx)->Htable,in,len)
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 /*
  * GHASH_CHUNK is "stride parameter" missioned to mitigate cache trashing
  * effect. In other words idea is to hash data while it's still in L1 cache
  * after encryption pass...
  */
 #  define GHASH_CHUNK       (3*1024)
-/* PCL UNUSED START *
+/* PCL UNUSED START
 # endif
 
-#else                           /* TABLE_BITS * /
+#else                           / * TABLE_BITS * /
 
 static void gcm_gmult_1bit(u64 Xi[2], const u64 H[2])
 {
@@ -657,7 +657,7 @@ static void gcm_gmult_1bit(u64 Xi[2], const u64 H[2])
         char little;
     } is_endian = { 1 };
 
-    V.hi = H[0];                /* H is in host byte order, no byte swapping * /
+    V.hi = H[0];                / * H is in host byte order, no byte swapping * /
     V.lo = H[1];
 
     for (j = 0; j < 16 / sizeof(long); ++j) {
@@ -789,39 +789,41 @@ void gcm_ghash_p8(u64 Xi[2], const u128 Htable[16], const u8 *inp,
 # define GCM_MUL(ctx,Xi)        (*gcm_gmult_p)(ctx->Xi.u,ctx->Htable)
 # ifdef GHASH
 #  undef  GHASH
-/* PCL UNUSED END   */
-extern "C" void pcl_gcm_init_clmul(u128 Htable[16], u64 H[2]);
-extern "C" void pcl_gcm_gmult_clmul(u64 Xi[2], const u128 Htable[16]);
-extern "C" void pcl_gcm_ghash_clmul(u64 Xi[2], const u128 Htable[16],
+   PCL UNUSED END   */
+
+void pcl_gcm_init_clmul(u128 Htable[16], u64 H[2]);
+void pcl_gcm_gmult_clmul(u64 Xi[2], const u128 Htable[16]);
+void pcl_gcm_ghash_clmul(u64 Xi[2], const u128 Htable[16],
                            const u8 *inp, size_t len);
+
 # define GCM_MUL(ctx,Xi)   pcl_gcm_gmult_clmul(ctx->Xi.u,ctx->Htable)
 #  define GHASH(ctx,in,len)     (*gcm_ghash_p)(ctx->Xi.u,ctx->Htable,in,len)
-/* PCL UNUSED START *
+/* PCL UNUSED START
 # endif
 #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 void pcl_CRYPTO_gcm128_init(GCM128_CONTEXT *ctx, void *key, block128_f block)
 {
-/* PCL UNUSED START *
+/* PCL UNUSED START
      const union {
          long one;
          char little;
      } is_endian = { 1 };
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
     pcl_memset(ctx, 0, sizeof(*ctx));
     ctx->block = block;
     ctx->key = key;
 
     (*block) (ctx->H.c, ctx->H.c, key);
-/* PCL UNUSED START *
+/* PCL UNUSED START
      if (is_endian.little) {
-        /* H is stored in host byte order *
+        / * H is stored in host byte order *
  #ifdef BSWAP8
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	ctx->H.u[0] = BSWAP8(ctx->H.u[0]);
 	ctx->H.u[1] = BSWAP8(ctx->H.u[1]);
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #else
          u8 *p = ctx->H.c;
          u64 hi, lo;
@@ -849,16 +851,16 @@ void pcl_CRYPTO_gcm128_init(GCM128_CONTEXT *ctx, void *key, block128_f block)
              ctx->gmult = gcm_gmult_avx;
              CTX__GHASH(gcm_ghash_avx);
          } else {
-/* PCL UNUSED END   */             
+   PCL UNUSED END   */             
 	pcl_gcm_init_clmul(ctx->Htable, ctx->H.u);
 	ctx->gmult = pcl_gcm_gmult_clmul;
 	ctx->ghash = pcl_gcm_ghash_clmul;
-/* PCL UNUSED START *                          
+/* PCL UNUSED START                          
              CTX__GHASH(gcm_ghash_clmul);
          }
-/* PCL UNUSED END   */                      
+   PCL UNUSED END   */                      
 	return;
-/* PCL UNUSED START *                      
+/* PCL UNUSED START                      
      }
  #  endif
     pcl_gcm_init_4bit(ctx->Htable, ctx->H.u);
@@ -924,26 +926,25 @@ void pcl_CRYPTO_gcm128_init(GCM128_CONTEXT *ctx, void *key, block128_f block)
  # endif
  # undef CTX__GHASH
  #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 }
 
 void pcl_CRYPTO_gcm128_setiv(GCM128_CONTEXT *ctx, const unsigned char *iv,
         size_t len)
 {
-/* PCL UNUSED START *
+	(void)len;
+/* PCL UNUSED START
      const union {
          long one;
          char little;
      } is_endian = { 1 };
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
     unsigned int ctr;
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #ifdef GCM_FUNCREF_4BIT
-/* PCL UNUSED END   */
     void (*gcm_gmult_p) (u64 Xi[2], const u128 Htable[16]) = ctx->gmult;
-/* PCL UNUSED START *
  #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
     ctx->Yi.u[0] = 0;
     ctx->Yi.u[1] = 0;
@@ -953,13 +954,13 @@ void pcl_CRYPTO_gcm128_setiv(GCM128_CONTEXT *ctx, const unsigned char *iv,
     ctx->len.u[1] = 0;          /* message length */
     ctx->ares = 0;
     ctx->mres = 0;
-/* PCL UNUSED START *
+/* PCL UNUSED START
      if (len == 12) {
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	pcl_memcpy(ctx->Yi.c, (void*)iv, 12);
 	ctx->Yi.c[15] = 1;
 	ctr = 1;
-/* PCL UNUSED START *
+/* PCL UNUSED START
      } else {
          size_t i;
          u64 len0 = len;
@@ -1004,22 +1005,22 @@ void pcl_CRYPTO_gcm128_setiv(GCM128_CONTEXT *ctx, const unsigned char *iv,
          else
              ctr = ctx->Yi.d[3];
      }
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
 	(*ctx->block) (ctx->Yi.c, ctx->EK0.c, ctx->key);
 	++ctr;
-/* PCL UNUSED START *
+/* PCL UNUSED START
      if (is_endian.little)
  #ifdef BSWAP4
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	ctx->Yi.d[3] = pcl_bswap32(ctr);
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #else
          PUTU32(ctx->Yi.c + 12, ctr);
  #endif
      else
          ctx->Yi.d[3] = ctr;
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 }
 
 int pcl_CRYPTO_gcm128_aad(
@@ -1030,19 +1031,17 @@ int pcl_CRYPTO_gcm128_aad(
     size_t i;
     unsigned int n;
     u64 alen = ctx->len.u[0];
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #ifdef GCM_FUNCREF_4BIT
-/* PCL UNUSED END   */
 	void (*gcm_gmult_p) (u64 Xi[2], const u128 Htable[16]) = ctx->gmult;
-/* PCL UNUSED START *
  # ifdef GHASH
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	void (*gcm_ghash_p) (u64 Xi[2], const u128 Htable[16],
 		const u8 *inp, size_t len) = ctx->ghash;
-/* PCL UNUSED START *
+/* PCL UNUSED START
  # endif
  #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
 	if (ctx->len.u[1])
 		return -2;
@@ -1066,15 +1065,15 @@ int pcl_CRYPTO_gcm128_aad(
 			return 0;
 		}
 	}
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #ifdef GHASH
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	if ((i = (len & (size_t)-16))) {
 		GHASH(ctx, aad, i);
 		aad += i;
 		len -= i;
 	}
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #else
      while (len >= 16) {
          for (i = 0; i < 16; ++i)
@@ -1084,7 +1083,7 @@ int pcl_CRYPTO_gcm128_aad(
          len -= 16;
      }
  #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	if (len) {
 		n = (unsigned int)len;
 		for (i = 0; i < len; ++i)
@@ -1095,7 +1094,7 @@ int pcl_CRYPTO_gcm128_aad(
 	return 0;
 }
 
-/* PCL UNUSED START *
+/* PCL UNUSED START
 int CRYPTO_gcm128_encrypt(GCM128_CONTEXT *ctx,
                           const unsigned char *in, unsigned char *out,
                           size_t len)
@@ -1123,7 +1122,7 @@ int CRYPTO_gcm128_encrypt(GCM128_CONTEXT *ctx,
     ctx->len.u[1] = mlen;
 
     if (ctx->ares) {
-        /* First call to encrypt finalizes GHASH(AAD) * /
+        / * First call to encrypt finalizes GHASH(AAD) * /
         GCM_MUL(ctx, Xi);
         ctx->ares = 0;
     }
@@ -1139,7 +1138,7 @@ int CRYPTO_gcm128_encrypt(GCM128_CONTEXT *ctx,
 
     n = ctx->mres;
 #if !defined(OPENSSL_SMALL_FOOTPRINT)
-    if (16 % sizeof(size_t) == 0) { /* always true actually * /
+    if (16 % sizeof(size_t) == 0) { / * always true actually * /
         do {
             if (n) {
                 while (n && len) {
@@ -1279,36 +1278,34 @@ int CRYPTO_gcm128_encrypt(GCM128_CONTEXT *ctx,
     ctx->mres = n;
     return 0;
 }
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
 int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
                           const unsigned char *in, unsigned char *out,
                           size_t len)
 {
-/* PCL UNUSED START *
+/* PCL UNUSED START
     const union {
         long one;
         char little;
     } is_endian = { 1 };
-/* PCL UNUSED END  */
+   PCL UNUSED END  */
     unsigned int n, ctr;
     size_t i;
     u64 mlen = ctx->len.u[1];
     block128_f block = ctx->block;
     void *key = ctx->key;
-/* PCL UNUSED START *    
+/* PCL UNUSED START    
 #ifdef GCM_FUNCREF_4BIT
-/* PCL UNUSED END   */
     void (*gcm_gmult_p) (u64 Xi[2], const u128 Htable[16]) = ctx->gmult;
-/* PCL UNUSED START *    
 # if defined(GHASH) && !defined(OPENSSL_SMALL_FOOTPRINT)
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	void (*gcm_ghash_p) (u64 Xi[2], const u128 Htable[16],
 		const u8 *inp, size_t len) = ctx->ghash;
-/* PCL UNUSED START *
+/* PCL UNUSED START
 # endif
 #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	mlen += len;
 	if (mlen > ((U64(1) << 36) - 32) || (sizeof(len) == 8 && mlen < len))
 		return -1;
@@ -1319,24 +1316,24 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 		GCM_MUL(ctx, Xi);
 		ctx->ares = 0;
 	}
-/* PCL UNUSED START *
+/* PCL UNUSED START
     if (is_endian.little)
 #ifdef BSWAP4
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	ctr = pcl_bswap32(ctx->Yi.d[3]);
-/* PCL UNUSED START *
+/* PCL UNUSED START
 #else
         ctr = GETU32(ctx->Yi.c + 12);
 #endif
     else
         ctr = ctx->Yi.d[3];
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	n = ctx->mres;
-/* PCL UNUSED START *    
+/* PCL UNUSED START    
 #if !defined(OPENSSL_SMALL_FOOTPRINT)
-    if (16 % sizeof(size_t) == 0) { /* always true actually * /
+    if (16 % sizeof(size_t) == 0) { / * always true actually * /
         do {
-/* PCL UNUSED END   */        
+   PCL UNUSED END   */        
 	if (n) {
 		while (n && len) {
 			u8 c = *(in++);
@@ -1352,7 +1349,7 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 			return 0;
 		}
 	}
-/* PCL UNUSED START *            
+/* PCL UNUSED START            
 # if defined(STRICT_ALIGNMENT)
             if (((size_t)in | (size_t)out) % sizeof(size_t) != 0)
                 break;
@@ -1360,7 +1357,7 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 
 # if defined(GHASH)
 #  if defined(GHASH_CHUNK)
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	while (len >= GHASH_CHUNK) {
 		size_t j = GHASH_CHUNK;
 
@@ -1371,19 +1368,19 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 
 			(*block) (ctx->Yi.c, ctx->EKi.c, key);
 			++ctr;
-/* PCL UNUSED START *
+/* PCL UNUSED START
                     if (is_endian.little)
 
 #   ifdef BSWAP4
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 			ctx->Yi.d[3] = pcl_bswap32(ctr);
-/* PCL UNUSED START *                        
+/* PCL UNUSED START                        
 #   else
                         PUTU32(ctx->Yi.c + 12, ctr);
 #   endif
                     else
                         ctx->Yi.d[3] = ctr;
-/* PCL UNUSED END   */                        
+   PCL UNUSED END   */                        
 			for (i = 0; i < 16 / sizeof(size_t); ++i)
 				out_t[i] = in_t[i] ^ ctx->EKi.t[i];
 			out += 16;
@@ -1392,9 +1389,9 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 		}
 		len -= GHASH_CHUNK;
 	}
-/* PCL UNUSED START *
+/* PCL UNUSED START
 #  endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	if ((i = (len & (size_t)-16))) {
 		GHASH(ctx, in, i);
 		while (len >= 16) {
@@ -1403,18 +1400,18 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 
 			(*block) (ctx->Yi.c, ctx->EKi.c, key);
 			++ctr;
-/* PCL UNUSED START *                          
+/* PCL UNUSED START                          
                     if (is_endian.little)
 #  ifdef BSWAP4
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 			ctx->Yi.d[3] = pcl_bswap32(ctr);
-/* PCL UNUSED START *                        
+/* PCL UNUSED START                        
 #  else
                         PUTU32(ctx->Yi.c + 12, ctr);
 #  endif
                     else
                         ctx->Yi.d[3] = ctr;
-/* PCL UNUSED END   */                        
+   PCL UNUSED END   */                        
 			for (i = 0; i < 16 / sizeof(size_t); ++i)
 				out_t[i] = in_t[i] ^ ctx->EKi.t[i];
 			out += 16;
@@ -1422,7 +1419,7 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 			len -= 16;
 		}
 	}
-/* PCL UNUSED START *                  
+/* PCL UNUSED START                  
 # else
             while (len >= 16) {
                 size_t *out_t = (size_t *)out;
@@ -1449,22 +1446,22 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
                 len -= 16;
             }
 # endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	if (len) {
 		(*block) (ctx->Yi.c, ctx->EKi.c, key);
 		++ctr;
-/* PCL UNUSED START *      
+/* PCL UNUSED START      
                 if (is_endian.little)
 # ifdef BSWAP4
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 		ctx->Yi.d[3] = pcl_bswap32(ctr);
-/* PCL UNUSED START *                    
+/* PCL UNUSED START                    
 # else
                     PUTU32(ctx->Yi.c + 12, ctr);
 # endif
                 else
                     ctx->Yi.d[3] = ctr;
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 		while (len--) {
 			u8 c = in[n];
 			ctx->Xi.c[n] ^= c;
@@ -1475,7 +1472,7 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 
 	ctx->mres = n;
 	return 0;
-/* PCL UNUSED START *            
+/* PCL UNUSED START            
         } while (0);
     } 
 #endif
@@ -1503,10 +1500,10 @@ int pcl_CRYPTO_gcm128_decrypt(GCM128_CONTEXT *ctx,
 
 	ctx->mres = n;
 	return 0;
-/* PCL UNUSED END   */                
+   PCL UNUSED END   */                
 }
 
-/* PCL UNUSED START *   
+/* PCL UNUSED START   
 int CRYPTO_gcm128_encrypt_ctr32(GCM128_CONTEXT *ctx,
                                 const unsigned char *in, unsigned char *out,
                                 size_t len, ctr128_f stream)
@@ -1536,7 +1533,7 @@ int CRYPTO_gcm128_encrypt_ctr32(GCM128_CONTEXT *ctx,
     ctx->len.u[1] = mlen;
 
     if (ctx->ares) {
-        /* First call to encrypt finalizes GHASH(AAD) * /
+        / * First call to encrypt finalizes GHASH(AAD) * /
         GCM_MUL(ctx, Xi);
         ctx->ares = 0;
     }
@@ -1660,7 +1657,7 @@ int CRYPTO_gcm128_decrypt_ctr32(GCM128_CONTEXT *ctx,
     ctx->len.u[1] = mlen;
 
     if (ctx->ares) {
-        /* First call to decrypt finalizes GHASH(AAD) * /
+        / * First call to decrypt finalizes GHASH(AAD) * /
         GCM_MUL(ctx, Xi);
         ctx->ares = 0;
     }
@@ -1761,36 +1758,34 @@ int CRYPTO_gcm128_decrypt_ctr32(GCM128_CONTEXT *ctx,
     return 0;
 #endif
 }
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
 int pcl_CRYPTO_gcm128_finish(GCM128_CONTEXT *ctx, const unsigned char *tag,
                          size_t len)
 {
-/* PCL UNUSED START *
+/* PCL UNUSED START
      const union {
          long one;
          char little;
      } is_endian = { 1 };
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	u64 alen = ctx->len.u[0] << 3;
 	u64 clen = ctx->len.u[1] << 3;
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #ifdef GCM_FUNCREF_4BIT
-/* PCL UNUSED END   */
 	void (*gcm_gmult_p) (u64 Xi[2], const u128 Htable[16]) = ctx->gmult;
-/* PCL UNUSED START *
  #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
 	if (ctx->mres || ctx->ares)
 		GCM_MUL(ctx, Xi);
-/* PCL UNUSED START *
+/* PCL UNUSED START
      if (is_endian.little) {
  #ifdef BSWAP8
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 	alen = BSWAP8(alen);
 	clen = BSWAP8(clen);
-/* PCL UNUSED START *
+/* PCL UNUSED START
  #else
          u8 *p = ctx->len.c;
  
@@ -1801,7 +1796,7 @@ int pcl_CRYPTO_gcm128_finish(GCM128_CONTEXT *ctx, const unsigned char *tag,
          clen = (u64)GETU32(p + 8) << 32 | GETU32(p + 12);
  #endif
      }
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
 	ctx->Xi.u[0] ^= alen;
 	ctx->Xi.u[1] ^= clen;
@@ -1816,7 +1811,7 @@ int pcl_CRYPTO_gcm128_finish(GCM128_CONTEXT *ctx, const unsigned char *tag,
 		return -1;
 }
 
-/* PCL UNUSED START *
+/* PCL UNUSED START
 void CRYPTO_gcm128_tag(GCM128_CONTEXT *ctx, unsigned char *tag, size_t len)
 {
     CRYPTO_gcm128_finish(ctx, NULL, 0);
@@ -1843,14 +1838,14 @@ void CRYPTO_gcm128_release(GCM128_CONTEXT *ctx)
 # include <stdio.h>
 # include <openssl/aes.h>
 
-/* Test Case 1 * /
+/ * Test Case 1 * /
 static const u8 K1[16], *P1 = NULL, *A1 = NULL, IV1[12], *C1 = NULL;
 static const u8 T1[] = {
     0x58, 0xe2, 0xfc, 0xce, 0xfa, 0x7e, 0x30, 0x61,
     0x36, 0x7f, 0x1d, 0x57, 0xa4, 0xe7, 0x45, 0x5a
 };
 
-/* Test Case 2 * /
+/ * Test Case 2 * /
 # define K2 K1
 # define A2 A1
 # define IV2 IV1
@@ -1865,7 +1860,7 @@ static const u8 T2[] = {
     0xf5, 0x3a, 0x67, 0xb2, 0x12, 0x57, 0xbd, 0xdf
 };
 
-/* Test Case 3 * /
+/ * Test Case 3 * /
 # define A3 A2
 static const u8 K3[] = {
     0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
@@ -1904,7 +1899,7 @@ static const u8 T3[] = {
     0x2c, 0xf3, 0x5a, 0xbd, 0x2b, 0xa6, 0xfa, 0xb4
 };
 
-/* Test Case 4 * /
+/ * Test Case 4 * /
 # define K4 K3
 # define IV4 IV3
 static const u8 P4[] = {
@@ -1940,7 +1935,7 @@ static const u8 T4[] = {
     0x94, 0xfa, 0xe9, 0x5a, 0xe7, 0x12, 0x1a, 0x47
 };
 
-/* Test Case 5 * /
+/ * Test Case 5 * /
 # define K5 K4
 # define P5 P4
 # define A5 A4
@@ -1964,7 +1959,7 @@ static const u8 T5[] = {
     0x56, 0x1b, 0xe1, 0x4a, 0xac, 0xa2, 0xfc, 0xcb
 };
 
-/* Test Case 6 * /
+/ * Test Case 6 * /
 # define K6 K5
 # define P6 P5
 # define A6 A5
@@ -1995,14 +1990,14 @@ static const u8 T6[] = {
     0x46, 0x2a, 0xf4, 0x3c, 0x16, 0x99, 0xd0, 0x50
 };
 
-/* Test Case 7 * /
+/ * Test Case 7 * /
 static const u8 K7[24], *P7 = NULL, *A7 = NULL, IV7[12], *C7 = NULL;
 static const u8 T7[] = {
     0xcd, 0x33, 0xb2, 0x8a, 0xc7, 0x73, 0xf7, 0x4b,
     0xa0, 0x0e, 0xd1, 0xf3, 0x12, 0x57, 0x24, 0x35
 };
 
-/* Test Case 8 * /
+/ * Test Case 8 * /
 # define K8 K7
 # define IV8 IV7
 # define A8 A7
@@ -2017,7 +2012,7 @@ static const u8 T8[] = {
     0x8e, 0xf4, 0xd4, 0x58, 0x75, 0x14, 0xf0, 0xfb
 };
 
-/* Test Case 9 * /
+/ * Test Case 9 * /
 # define A9 A8
 static const u8 K9[] = {
     0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
@@ -2057,7 +2052,7 @@ static const u8 T9[] = {
     0xb1, 0x18, 0x02, 0x4d, 0xb8, 0x67, 0x4a, 0x14
 };
 
-/* Test Case 10 * /
+/ * Test Case 10 * /
 # define K10 K9
 # define IV10 IV9
 static const u8 P10[] = {
@@ -2093,7 +2088,7 @@ static const u8 T10[] = {
     0x37, 0xba, 0x55, 0xbd, 0x6d, 0x27, 0x61, 0x8c
 };
 
-/* Test Case 11 * /
+/ * Test Case 11 * /
 # define K11 K10
 # define P11 P10
 # define A11 A10
@@ -2115,7 +2110,7 @@ static const u8 T11[] = {
     0x09, 0x4f, 0xcc, 0xa4, 0x0d, 0x35, 0x33, 0xf8
 };
 
-/* Test Case 12 * /
+/ * Test Case 12 * /
 # define K12 K11
 # define P12 P11
 # define A12 A11
@@ -2146,14 +2141,14 @@ static const u8 T12[] = {
     0xb8, 0x56, 0x8f, 0xc3, 0xd3, 0x76, 0xa6, 0xd9
 };
 
-/* Test Case 13 * /
+/ * Test Case 13 * /
 static const u8 K13[32], *P13 = NULL, *A13 = NULL, IV13[12], *C13 = NULL;
 static const u8 T13[] = {
     0x53, 0x0f, 0x8a, 0xfb, 0xc7, 0x45, 0x36, 0xb9,
     0xa9, 0x63, 0xb4, 0xf1, 0xc4, 0xcb, 0x73, 0x8b
 };
 
-/* Test Case 14 * /
+/ * Test Case 14 * /
 # define K14 K13
 # define A14 A13
 static const u8 P14[16], IV14[12];
@@ -2167,7 +2162,7 @@ static const u8 T14[] = {
     0x26, 0x5b, 0x98, 0xb5, 0xd4, 0x8a, 0xb9, 0x19
 };
 
-/* Test Case 15 * /
+/ * Test Case 15 * /
 # define A15 A14
 static const u8 K15[] = {
     0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
@@ -2208,7 +2203,7 @@ static const u8 T15[] = {
     0xec, 0x1a, 0x50, 0x22, 0x70, 0xe3, 0xcc, 0x6c
 };
 
-/* Test Case 16 * /
+/ * Test Case 16 * /
 # define K16 K15
 # define IV16 IV15
 static const u8 P16[] = {
@@ -2244,7 +2239,7 @@ static const u8 T16[] = {
     0xcd, 0xdf, 0x88, 0x53, 0xbb, 0x2d, 0x55, 0x1b
 };
 
-/* Test Case 17 * /
+/ * Test Case 17 * /
 # define K17 K16
 # define P17 P16
 # define A17 A16
@@ -2266,7 +2261,7 @@ static const u8 T17[] = {
     0x5e, 0x45, 0x49, 0x13, 0xfe, 0x2e, 0xa8, 0xf2
 };
 
-/* Test Case 18 * /
+/ * Test Case 18 * /
 # define K18 K17
 # define P18 P17
 # define A18 A17
@@ -2297,7 +2292,7 @@ static const u8 T18[] = {
     0xc8, 0xb5, 0xd4, 0xcf, 0x5a, 0xe9, 0xf1, 0x9a
 };
 
-/* Test Case 19 * /
+/ * Test Case 19 * /
 # define K19 K1
 # define P19 P1
 # define IV19 IV1
@@ -2326,10 +2321,10 @@ static const u8 T19[] = {
     0x37, 0xe6, 0x8e, 0x0c, 0xb8, 0xff, 0x94, 0x92
 };
 
-/* Test Case 20 * /
+/ * Test Case 20 * /
 # define K20 K1
 # define A20 A1
-/* this results in 0xff in counter LSB * /
+/ * this results in 0xff in counter LSB * /
 static const u8 IV20[64] = { 0xff, 0xff, 0xff, 0xff };
 
 static const u8 P20[288];
@@ -2474,4 +2469,4 @@ int main()
     return ret;
 }
 #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */

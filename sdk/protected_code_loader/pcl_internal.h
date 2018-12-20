@@ -86,8 +86,6 @@ uint64_t pcl_bswap64(uint64_t val);
 
 sgx_status_t pcl_increment_iv(INOUT uint8_t* iv);
 
-void abort(void) __attribute__((__noreturn__));
-
 int pcl_is_outside_enclave(const void *addr, size_t size);
 int pcl_is_within_enclave(const void *addr, size_t size);
 #ifdef __cplusplus

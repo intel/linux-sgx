@@ -50,13 +50,21 @@ typedef UINT8 SIGMA_SECRET_KEY[16];
 #define PSE_PAIRING_BLOB_VERSION    1
 
 #pragma pack(1)
+
+#define SIGMA_VERSION_MASK 0x1
+#define SIGMA_VERSION_20   0X1 // 1 -- sigma 2.0  0 -- sigma 1.1
+
+#define OCSP_NOT_INCLUDED_MASK 0x2
+#define OCSP_NOT_INCLUDED      0x2 // 1 -- OCSP_NOT_INCLUDEDD 0 -- OCSP_INCLUDED
+
 typedef struct          // for SunrisePoint from TaskInfo of SIGMA1.1 message:
 {
     uint32_t taskId;    // byte[ 0- 3] ME_TASK_INFO.TaskID, for SunrisePoint should be 8
     uint32_t rsvd1;     // byte[ 4- 7] For SKL/GLM time frame, should be 0
     uint32_t psdaId;    // byte[ 8-11] PSDA ID, mapped from the PSDA Applet ID in ME_TASK_INFO. For SKL/GLM timeframe, should be 1
     uint32_t psdaSvn;   // byte[12-15] PSDA SVN from ME_TASK_INFO
-    uint8_t rsvd2[76];  // byte[16-91] Reserved, MBZ
+    uint8_t  rsvd2[74];  // byte[16-89] Reserved, MBZ
+    uint16_t session_prop;
 } PS_HW_SEC_INFO;
 
 typedef struct _cse_security_info_t     // PS_HW_SEC_PROP_DESC

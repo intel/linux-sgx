@@ -37,16 +37,18 @@
 
 #include "pse_pr_inc.h"
 #include "pse_pr_types.h"
-#include "pse_pr_sigma_1_1_defs.h"
+#include "pse_pr_sigma_defs.h"
 #include "sgx_tcrypto.h" 
 #include "pairing_blob.h"
-
+#include "Epid_rl.h"
+#include "t_pairing_blob.h"
+#include "byte_order.h"
 class SigmaCryptoLayer
 {
 public:
 
-    SigmaCryptoLayer();
-    ~SigmaCryptoLayer();
+    SigmaCryptoLayer() {};
+    virtual ~SigmaCryptoLayer();
 
     ae_error_t DeriveSkMk(sgx_ecc_state_handle_t ecc_handle);
 
@@ -58,23 +60,28 @@ public:
                       const SIGMA_S3_MESSAGE* s3,
                       size_t nS3VLDataLen);
 
-    ae_error_t ComputePR(SIGMA_SECRET_KEY* oldSK, Ipp8u byteToAdd, SIGMA_HMAC* hmac);
-    ae_error_t ComputeId(Ipp8u byteToAdd, SHA256_HASH* hmac);
-
-    ae_error_t MsgVerifyPch(Ipp8u* PubKeyPch, int PubKeyPchLen, 
-        Ipp8u* EpidParamsCert,  Ipp8u* Msg, int MsgLen, Ipp8u* Bsn, int BsnLen, 
-        Ipp8u* Signature, int SignatureLen, 
-        Ipp8u* PrivRevList, int PrivRL_Len, Ipp8u* SigRevList, int SigRL_Len, Ipp8u* GrpRevList, int GrpRL_Len);
+    ae_error_t ComputePR(SIGMA_SECRET_KEY* oldSK, uint8_t byteToAdd, SIGMA_HMAC* hmac);
+    ae_error_t ComputeId(uint8_t byteToAdd, SHA256_HASH* hmac);
 
     const uint8_t* get_pub_key_gb_be() { return m_local_public_key_gb_big_endian; }
     const uint8_t* get_remote_pub_key_ga_be() { return m_remote_public_key_ga_big_endian; }
-    void set_prv_key_b_le(Ipp8u* pb) { memcpy(m_local_private_key_b_little_endian, pb, sizeof(m_local_private_key_b_little_endian)); }
-    void set_pub_key_gb_be(Ipp8u* pGb) { memcpy(m_local_public_key_gb_big_endian, pGb, sizeof(m_local_public_key_gb_big_endian)); }
-    void set_remote_pub_key_ga_be(Ipp8u* pGa) { memcpy(m_remote_public_key_ga_big_endian, pGa, sizeof(m_remote_public_key_ga_big_endian)); }
+    void set_prv_key_b_le(uint8_t* pb) { memcpy(m_local_private_key_b_little_endian, pb, sizeof(m_local_private_key_b_little_endian)); }
+    void set_pub_key_gb_be(uint8_t* pGb) { memcpy(m_local_public_key_gb_big_endian, pGb, sizeof(m_local_public_key_gb_big_endian)); }
+    void set_remote_pub_key_ga_be(uint8_t* pGa) { memcpy(m_remote_public_key_ga_big_endian, pGa, sizeof(m_remote_public_key_ga_big_endian)); }
 
     const uint8_t* get_SMK() { return m_SMK; }
     const uint8_t* get_SK() { return m_SK; }
     const uint8_t* get_MK() { return m_MK; }
+
+    virtual ae_error_t MsgVerifyPch(uint8_t* PubKeyPch, int PubKeyPchLen, 
+        uint8_t* EpidParamsCert,  uint8_t* Msg, int MsgLen, uint8_t* Bsn, int BsnLen, 
+        uint8_t* Signature, int SignatureLen, 
+        uint8_t* PrivRevList, int PrivRL_Len, uint8_t* SigRevList, int SigRL_Len, uint8_t* GrpRevList, int GrpRL_Len) = 0;
+    virtual void get_session_pubkey(uint8_t* combined_pubkeys, int combined_pubkeys_length) = 0;
+    virtual void set_sigma_pblob_info(pairing_data_t* pairing_data) = 0;
+    virtual ae_error_t check_sigrl_header(const EPID_SIG_RL* pSigRl) = 0;
+    virtual ae_error_t check_privrl_header(const EPID_PRIV_RL* pPrivRl) = 0;
+    uint8_t* m_PubKeyPch;
 
 private:
     uint8_t m_local_private_key_b_little_endian[SIGMA_SESSION_PRIVKEY_LENGTH];

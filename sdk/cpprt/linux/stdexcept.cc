@@ -31,7 +31,7 @@
 #include <typeinfo>
 #include "se_cdefs.h"
 
-SGX_ACCESS_VERSION(tstdcxx, 5)
+SGX_ACCESS_VERSION(tcxx, 5)
 
 namespace std {
 

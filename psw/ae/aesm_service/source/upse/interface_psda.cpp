@@ -89,8 +89,9 @@ typedef struct _lt_session_m8_t
 #pragma pack()
 
 
-pse_pr_interface_psda::pse_pr_interface_psda(void)
+pse_pr_interface_psda::pse_pr_interface_psda(bool is_sigma20)
 {
+	m_is_sigma20 = is_sigma20;
 }
 
 
@@ -107,9 +108,8 @@ ae_error_t pse_pr_interface_psda::GetS1(/*in*/const uint8_t* pse_instance_id, /*
 
     do
     {
-        // endian-ness doesn't matter for these two; they're 0
         memcpy_s(lt_session_m1.msg_hdr.pse_instance_id, SW_INSTANCE_ID_SIZE, pse_instance_id, SW_INSTANCE_ID_SIZE);
-        lt_session_m1.msg_hdr.msg_type = PSDA_MSG_TYPE_LT_M1;
+        lt_session_m1.msg_hdr.msg_type = _htonl(m_is_sigma20 ? PSDA_MSG_TYPE_LT_M1_20 : PSDA_MSG_TYPE_LT_M1_11);
         lt_session_m1.msg_hdr.msg_len = 0;
 
         memset(&lt_session_m2, 0, sizeof(lt_session_m2));
@@ -140,7 +140,7 @@ ae_error_t pse_pr_interface_psda::GetS1(/*in*/const uint8_t* pse_instance_id, /*
         uint32_t msg_len  = _ntohl(lt_session_m2.msg_hdr.msg_len);
         uint32_t msg_type = _ntohl(lt_session_m2.msg_hdr.msg_type);
 
-        if (responseCode != PSDA_SUCCESS || msg_type != PSDA_MSG_TYPE_LT_M2 || msg_len != sizeof(pse_cse_lt_msg2_t))
+        if (responseCode != PSDA_SUCCESS || msg_type != (uint32_t)(m_is_sigma20 ? PSDA_MSG_TYPE_LT_M2_20 : PSDA_MSG_TYPE_LT_M2_11) || msg_len != sizeof(pse_cse_lt_msg2_t))
         {
             status = AE_FAILURE;
             break;
@@ -189,7 +189,7 @@ ae_error_t pse_pr_interface_psda::ExchangeS2AndS3(/*in*/  const uint8_t* pse_ins
         memset(pLt_session_m8, 0, lt_session_m8_size);
 
         memcpy_s(pLt_session_m7->msg_hdr.pse_instance_id, SW_INSTANCE_ID_SIZE, pse_instance_id, SW_INSTANCE_ID_SIZE);
-        pLt_session_m7->msg_hdr.msg_type = _htonl(PSDA_MSG_TYPE_LT_M7);
+        pLt_session_m7->msg_hdr.msg_type = _htonl(m_is_sigma20? PSDA_MSG_TYPE_LT_M7_20:PSDA_MSG_TYPE_LT_M7_11);
         pLt_session_m7->msg_hdr.msg_len  = _htonl(s2.getSize());
 
         memcpy_s(&pLt_session_m7->msg7, s2.getSize(), s2.getData(), s2.getSize());
@@ -222,7 +222,7 @@ ae_error_t pse_pr_interface_psda::ExchangeS2AndS3(/*in*/  const uint8_t* pse_ins
         uint32_t msg_len  = _ntohl(pLt_session_m8->msg_hdr.msg_len);
         uint32_t msg_type = _ntohl(pLt_session_m8->msg_hdr.msg_type);
 
-        if (msg_type != PSDA_MSG_TYPE_LT_M8)
+        if (msg_type != (uint32_t)(m_is_sigma20? PSDA_MSG_TYPE_LT_M8_20:PSDA_MSG_TYPE_LT_M8_11))
         {
             status = AE_FAILURE;
             break;

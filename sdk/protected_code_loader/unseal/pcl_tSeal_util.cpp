@@ -50,12 +50,12 @@
 //        [IN] txt_encrypt_size - the actual encrypted data (payload)
 // Return Value:
 //      sealedDataSize
-uint32_t pcl_calc_sealed_data_size(const uint32_t aad_mac_txt_size, const uint32_t txt_encrypt_size)
+uint32_t pcl_calc_sealed_data_size(const uint32_t add_mac_txt_size, const uint32_t txt_encrypt_size)
 {
     // code copied from tseal_util.cpp from the tseal library
-    if (aad_mac_txt_size > UINT32_MAX - txt_encrypt_size)
+    if (add_mac_txt_size > UINT32_MAX - txt_encrypt_size)
         return UINT32_MAX;
-    uint32_t payload_size = aad_mac_txt_size + txt_encrypt_size; //Calculate the payload size
+    uint32_t payload_size = add_mac_txt_size + txt_encrypt_size; //Calculate the payload size
 
     if (payload_size > UINT32_MAX - sizeof(sgx_sealed_data_t))
         return UINT32_MAX;
@@ -69,7 +69,7 @@ uint32_t pcl_calc_sealed_data_size(const uint32_t aad_mac_txt_size, const uint32
 //        [IN] p_sealed_data - pointer to the sealed blob
 // Return Value:
 //      additional data size
-uint32_t pcl_get_aad_mac_txt_len(const sgx_sealed_data_t* p_sealed_data)
+uint32_t pcl_get_add_mac_txt_len(const sgx_sealed_data_t* p_sealed_data)
 {
     if (p_sealed_data == NULL)
         return UINT32_MAX;

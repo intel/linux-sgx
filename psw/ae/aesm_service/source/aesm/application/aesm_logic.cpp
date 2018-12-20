@@ -61,7 +61,6 @@
 #include "endpoint_select_info.h"
 #include "se_wrapper.h"
 #include "PSDAService.h"
-#include "ippcp.h"
 #include <time.h>
 #include <string>
 #include "prof_fun.h"
@@ -69,6 +68,7 @@
 #include "aesm_long_lived_thread.h"
 #include "sgx_profile.h"
 #include "service_enclave_mrsigner.hh"
+#include "ssl_compat_wrapper.h"
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
@@ -209,11 +209,11 @@ ae_error_t AESMLogic::service_start()
 {
     AESM_PROFILE_INIT;
     ae_error_t ae_ret = AE_SUCCESS;
+    // Initialize crypto library
+    crypto_initialize();
 
     AESM_LOG_INIT();
-#ifdef SGX_USE_OPT_LIB
-    ippcpInit();
-#endif
+    
     AESM_DBG_INFO("aesm service is starting");
     // Try to read active extended epid group id from data file
     ae_ret = read_global_extended_epid_group_id(&AESMLogic::active_extended_epid_group_id);
@@ -280,6 +280,8 @@ void AESMLogic::service_stop()
     CPSEPRClass::instance().unload_enclave();
     AESM_DBG_INFO("start to stop psda service");
     PSDAService::instance().stop_service();
+    // Crypto library cleanup
+    crypto_cleanup();
     AESM_DBG_INFO("aesm service down");
     AESM_LOG_FINI();
 
@@ -599,22 +601,6 @@ ae_error_t AESMLogic::set_psvn(uint16_t prod_id, uint16_t isv_svn, sgx_cpu_svn_t
     return AE_SUCCESS;
 }
 
-
-ae_error_t AESMLogic::set_mrenclave(const sgx_measurement_t& mrenclave, uint32_t mrsigner_index, uint16_t isv_prod_id, const sgx_attributes_t* attributes)
-{
-    if(mrsigner_index==PCE_MR_SIGNER){
-        ae_error_t ret = CPCEClass::instance().set_mrenclave(mrenclave);
-        return ret;
-    }
-    else if (isv_prod_id == QE_PROD_ID && (attributes->flags & SGX_FLAGS_PROVISION_KEY) == 0) {
-	// this is QE
-        ae_error_t ret = CQEClass::instance().set_mrenclave(mrenclave);
-        return ret;
-    }
-    //only cache MRENCLAVE of PCE
-    return AE_SUCCESS;
-}
-
 sgx_status_t AESMLogic::get_launch_token(const enclave_css_t* signature,
                                          const sgx_attributes_t* attribute,
                                          sgx_launch_token_t* launch_token)
@@ -692,11 +678,6 @@ sgx_status_t AESMLogic::get_launch_token(const enclave_css_t* signature,
         return SGX_ERROR_UNEXPECTED;
     }
 
-    ret_le = set_mrenclave(signature->body.enclave_hash, mrsigner_index, signature->body.isv_prod_id, attribute);
-    if(AE_SUCCESS != ret_le) {
-        AESM_DBG_ERROR("fail to save mrenclave:(ae%d)", ret_le);
-        return SGX_ERROR_UNEXPECTED;
-    }
     return SGX_SUCCESS;
 }
 

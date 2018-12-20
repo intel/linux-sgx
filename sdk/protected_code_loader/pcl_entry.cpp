@@ -41,7 +41,19 @@
  * It is located in its own section (PCLTBL_SECTION_NAME) so that 
  * enclave encryption tool can find it. 
  */
-pcl_table_t g_tbl __attribute__((section(PCLTBL_SECTION_NAME))) = {PCL_PLAIN};
+pcl_table_t g_tbl __attribute__((section(PCLTBL_SECTION_NAME))) = 
+{    
+    .pcl_state           = PCL_PLAIN,
+    .reserved1           = {},
+    .pcl_guid            = {},
+    .sealed_blob_size    = 0 ,
+    .reserved2           = {},
+    .sealed_blob         = {},
+    .decryption_key_hash = {},
+    .num_rvas            = 0 ,
+    .reserved3           = {},
+    .rvas_sizes_tags_ivs = {}
+};
 
 /* 
  * g_pcl_imagebase is set at runtime to ELF base address. 
@@ -68,7 +80,6 @@ sgx_status_t pcl_entry(void* elf_base, void* sealed_blob)
 {
     sgx_status_t ret = SGX_SUCCESS;  
     pcl_table_t* tbl = &g_tbl;
-    unsigned char* iv = NULL;
     int memcmpret = 0;
     sgx_sha256_hash_t hash = {0};
     sgx_aes_gcm_128bit_key_t key = {0};
