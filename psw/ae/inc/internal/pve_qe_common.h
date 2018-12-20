@@ -34,7 +34,6 @@
 #define _PVE_QE_COMMON_H_
 
 #include "se_types.h"
-#include "ae_ipp.h"
 #include "sgx_tcrypto.h"
 #include "epid/member/api.h"
 
@@ -42,12 +41,9 @@
 extern "C" {
 #endif
 
-IppStatus new_std_256_ecp(IppsECCPState **pp_new_ecp);
-
-void secure_free_std_256_ecp(IppsECCPState *p_ecp);
 
 
-int IPP_STDCALL epid_random_func(
+int epid_random_func(
  unsigned int *p_random_data,
  int bits,
  void* p_user_data);

@@ -282,6 +282,32 @@ bool CMetadata::fill_enclave_css(const xml_parameter_t *para)
         m_metadata->enclave_css.body.attributes.flags |= SGX_FLAGS_EINITTOKEN_KEY;
         m_metadata->enclave_css.body.attribute_mask.flags |= SGX_FLAGS_EINITTOKEN_KEY;
     }
+    if (para[ENABLEKSS].value == 1)
+    {
+        m_metadata->enclave_css.body.attributes.flags |= SGX_FLAGS_KSS;
+        m_metadata->enclave_css.body.attribute_mask.flags |= SGX_FLAGS_KSS;
+    }
+    if (memcpy_s(&(m_metadata->enclave_css.body.isvext_prod_id), SGX_ISVEXT_PROD_ID_SIZE, 
+         &(para[ISVEXTPRODID_L].value), sizeof(para[ISVEXTPRODID_L].value)))
+    {
+        return false;
+    }
+    if (memcpy_s((uint8_t *)&(m_metadata->enclave_css.body.isvext_prod_id) + sizeof(para[ISVEXTPRODID_L].value), 
+        SGX_ISVEXT_PROD_ID_SIZE - sizeof(para[ISVEXTPRODID_L].value), &(para[ISVEXTPRODID_H].value), sizeof(para[ISVEXTPRODID_H].value)))
+    {
+        return false;
+    }
+    if (memcpy_s(&(m_metadata->enclave_css.body.isv_family_id), SGX_ISV_FAMILY_ID_SIZE, 
+        &(para[ISVFAMILYID_L].value), sizeof(para[ISVFAMILYID_L].value)))
+    {
+        return false;
+    }
+    if (memcpy_s((uint8_t *)&(m_metadata->enclave_css.body.isv_family_id) + sizeof(para[ISVFAMILYID_L].value), 
+        SGX_ISV_FAMILY_ID_SIZE - sizeof(para[ISVFAMILYID_L].value), &(para[ISVFAMILYID_H].value), sizeof(para[ISVFAMILYID_H].value)))
+    {
+        return false;
+    }
+
     bin_fmt_t bf = m_parser->get_bin_format();
     if(bf == BF_PE64 || bf == BF_ELF64)
     {
@@ -404,6 +430,14 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
                 && (parameter[TCSMINPOOL].value > parameter[TCSNUM].value))
     {
         se_trace(SE_TRACE_ERROR, SET_TCS_MIN_POOL_ERROR);
+        return false;
+    }
+
+    if ((parameter[ISVEXTPRODID_H].value || parameter[ISVEXTPRODID_L].value ||
+        parameter[ISVFAMILYID_H].value || parameter[ISVFAMILYID_L].value) &&
+        parameter[ENABLEKSS].value == 0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ENABLE_KSS_ERROR);
         return false;
     }
 
@@ -768,7 +802,7 @@ bool CMetadata::build_patch_table()
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shnum);
         patches.push_back(patch);
-        if (patch.size > size) size = patch.size;
+        size = patch.size;
 
         patch.dst = (uint64_t)PTR_DIFF(&elf_hdr->e_shoff, base_addr);
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
@@ -805,7 +839,7 @@ bool CMetadata::build_patch_table()
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);
         patch.size = (uint32_t)sizeof(elf_hdr->e_shnum);
         patches.push_back(patch);
-        if (patch.size > size) size = patch.size;
+        size = patch.size;
 
         patch.dst = (uint64_t)PTR_DIFF(&elf_hdr->e_shoff, base_addr);
         patch.src = (uint32_t)PTR_DIFF(zero, m_metadata);

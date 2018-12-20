@@ -156,23 +156,20 @@ int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
 
 int EnclaveCreatorHW::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken * lc, le_prd_css_file_t *prd_css_file)
 {
+    UNUSED(lc);
+
     unsigned int ret = 0;
-    sgx_launch_token_t token;
-    memset(token, 0, sizeof(sgx_launch_token_t));
 
     enclave_css_t css;
-    memcpy_s(&css, sizeof(enclave_css_t),  enclave_css, sizeof(enclave_css_t));
+    memcpy_s(&css, sizeof(enclave_css_t), enclave_css, sizeof(enclave_css_t));
 
     for(int i = 0; i < 2; i++)
     {
-        if(SGX_SUCCESS != (ret = lc->get_launch_token(&token)))
-            return ret;
-
-        ret = try_init_enclave(enclave_id, &css, reinterpret_cast<token_t *>(token));
+        ret = try_init_enclave(enclave_id, &css, NULL);
 
         if(i > 0)
             return ret;
-        if(true == is_le(lc, &css))
+        if(true == is_le(&css))
         {
             // LE is loaded with the interface sgx_create_le.
             // Read the input prd css file and use it to init again.
@@ -190,24 +187,10 @@ int EnclaveCreatorHW::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *e
             // No need to get launch token and retry, so just return error code.
             return ret;
         }
-
-        //If current launch token does NOT match the platform, then update the launch token.
-        //If the hash of signer (public key) in signature does not match launch token, EINIT will return SE_INVALID_MEASUREMENT
-        else if(!lc->is_launch_updated() && (SE_ERROR_INVALID_LAUNCH_TOKEN == ret || SGX_ERROR_INVALID_CPUSVN == ret || SE_ERROR_INVALID_MEASUREMENT == ret || SE_ERROR_INVALID_ISVSVNLE == ret))
-        {
-            if(SGX_SUCCESS != (ret = lc->update_launch_token(true)))
-            {
-                return ret;
-            }
-            else
-            {
-                continue;
-            }
-        }
         else
             break;
     }
-    return ret;
 
+    return ret;
 }
 

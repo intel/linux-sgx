@@ -146,6 +146,16 @@ uint32_t Helper::ltpBlobPsdaSvn(const pairing_blob_t& pairing_blob)
     return retval;
 }
 
+uint32_t Helper::ltpBlobSessionProp(const pairing_blob_t& pairing_blob)
+{
+	return pairing_blob.plaintext.cse_sec_prop.ps_hw_sec_info.session_prop;
+}
+
+uint8_t* Helper::ltpBlobInstanceID(pairing_blob_t& pairing_blob)
+{
+	// The offsets of pse_instance_id in pairing blob v1 and v2 are same
+	return pairing_blob.plaintext.pse_instance_id;
+}
 
 uint32_t Helper::ltpBlobCseGid(const pairing_blob_t& pairing_blob)
 {

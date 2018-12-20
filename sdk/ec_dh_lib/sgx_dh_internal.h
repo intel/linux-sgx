@@ -36,8 +36,13 @@
 #include "sgx.h"
 #include "sgx_defs.h"
 #include "sgx_ecp_types.h"
-#include "sgx_dh.h"
 #include "arch.h"
+
+// Disable SGX_USE_LAv2_INITIATOR to allow compiling both LAv1/2 APIs
+#ifdef  SGX_USE_LAv2_INITIATOR
+#undef  SGX_USE_LAv2_INITIATOR
+#endif
+#include "sgx_dh.h"
 
 #pragma pack(push, 1)
  

@@ -43,6 +43,9 @@ typedef enum _status_t
     SGX_ERROR_OUT_OF_MEMORY      = SGX_MK_ERROR(0x0003),      /* Not enough memory is available to complete this operation */
     SGX_ERROR_ENCLAVE_LOST       = SGX_MK_ERROR(0x0004),      /* Enclave lost after power transition or used in child process created by linux:fork() */
     SGX_ERROR_INVALID_STATE      = SGX_MK_ERROR(0x0005),      /* SGX API is invoked in incorrect order or state */
+    SGX_ERROR_FEATURE_NOT_SUPPORTED = SGX_MK_ERROR(0x0008),   /* Feature is not supported on this platform */
+
+
 
     SGX_ERROR_INVALID_FUNCTION   = SGX_MK_ERROR(0x1001),      /* The ecall/ocall index is invalid */
     SGX_ERROR_OUT_OF_TCS         = SGX_MK_ERROR(0x1003),      /* The enclave is out of TCS */

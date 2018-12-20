@@ -41,57 +41,26 @@
 #include "le2be_macros.h"
 #include "prepare_hmac_sha256.h"
 #include "prepare_hash_sha256.h"
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include "epid/verifier/1.1/api.h"
-#include "epid/common/1.1/types.h"
-#ifdef __cplusplus
-}
-#endif
 #include "sgx_trts.h"
-#include "ae_ipp.h"
 #include "util.h"
 
 #include "Keys.h"
 #include "pairing_blob.h"
 
-static ae_error_t MapEpidResultToAEError(EpidStatus epid_result)
-{
-    ae_error_t status = PSE_PR_PCH_EPID_UNKNOWN_ERROR;
 
-    switch (epid_result)
-    {
-    case kEpidNoErr:                            status = AE_SUCCESS; break;
-    case kEpidSigInvalid:                       status = PSE_PR_PCH_EPID_SIG_INVALID; break;
-    case kEpidSigRevokedInGroupRl:              status = PSE_PR_PCH_EPID_SIG_REVOKED_IN_GROUPRL; break;
-    case kEpidSigRevokedInPrivRl:               status = PSE_PR_PCH_EPID_SIG_REVOKED_IN_PRIVRL; break;
-    case kEpidSigRevokedInSigRl:                status = PSE_PR_PCH_EPID_SIG_REVOKED_IN_SIGRL; break;
-    case kEpidSigRevokedInVerifierRl:           status = PSE_PR_PCH_EPID_SIG_REVOKED_IN_VERIFIERRL; break;
-    case kEpidErr:                              status = PSE_PR_PCH_EPID_UNKNOWN_ERROR; break;
-    case kEpidNotImpl:                          status = PSE_PR_PCH_EPID_NOT_IMPLEMENTED; break;
-    case kEpidBadArgErr:                        status = PSE_PR_PCH_EPID_BAD_ARG_ERR; break;
-    case kEpidNoMemErr:                         status = PSE_PR_PCH_EPID_NO_MEMORY_ERR; break;
-    case kEpidMemAllocErr:                      status = PSE_PR_PCH_EPID_NO_MEMORY_ERR; break;
-    case kEpidMathErr:                          status = PSE_PR_PCH_EPID_MATH_ERR; break;
-    case kEpidDivByZeroErr:                     status = PSE_PR_PCH_EPID_DIVIDED_BY_ZERO_ERR; break;
-    case kEpidUnderflowErr:                     status = PSE_PR_PCH_EPID_UNDERFLOW_ERR; break;
-    case kEpidHashAlgorithmNotSupported:        status = PSE_PR_PCH_EPID_HASH_ALGORITHM_NOT_SUPPORTED; break;
-    case kEpidRandMaxIterErr:                   status = PSE_PR_PCH_EPID_RAND_MAX_ITER_ERR; break;
-    case kEpidDuplicateErr:                     status = PSE_PR_PCH_EPID_DUPLICATE_ERR; break;
-    case kEpidInconsistentBasenameSetErr:       status = PSE_PR_PCH_EPID_INCONSISTENT_BASENAME_SET_ERR; break;
-    case kEpidMathQuadraticNonResidueError:     status = PSE_PR_PCH_EPID_MATH_ERR; break;
-    default:                                    status = PSE_PR_PCH_EPID_UNKNOWN_ERROR; break;
+ae_error_t sgx_error_to_pse_pr_error(sgx_status_t status)
+{
+    switch(status){
+    case SGX_SUCCESS:
+        return AE_SUCCESS;
+    case SGX_ERROR_OUT_OF_MEMORY:
+        return PSE_PR_INSUFFICIENT_MEMORY_ERROR;
+    case SGX_ERROR_INVALID_PARAMETER:
+        return PSE_PR_PARAMETER_ERROR;
+    default:
+        return PSE_PR_ERROR;
     }
-
-    return status;
 }
-
-
-SigmaCryptoLayer::SigmaCryptoLayer()
-{
-}
-
 
 SigmaCryptoLayer::~SigmaCryptoLayer(void)
 {
@@ -105,11 +74,11 @@ SigmaCryptoLayer::~SigmaCryptoLayer(void)
 ae_error_t SigmaCryptoLayer::DeriveSkMk(/* In  */ sgx_ecc_state_handle_t ecc_handle)
 {
     ae_error_t ae_status = PSE_PR_DERIVE_SMK_ERROR;
-    IppStatus    Status;
-    Ipp8u Gab[SGX_ECP256_KEY_SIZE*2] = {0};
-    Ipp8u Gab_Wth_00[SGX_ECP256_KEY_SIZE*2+1] = {0};
-    Ipp8u Gab_Wth_01[SGX_ECP256_KEY_SIZE*2+1] = {0};
-    Ipp8u GabHMACSha256[SGX_SHA256_HASH_SIZE] = { 0 };
+    sgx_status_t    status;
+    uint8_t Gab[SGX_ECP256_KEY_SIZE*2] = {0};
+    uint8_t Gab_Wth_00[SGX_ECP256_KEY_SIZE*2+1] = {0};
+    uint8_t Gab_Wth_01[SGX_ECP256_KEY_SIZE*2+1] = {0};
+    uint8_t GabHMACSha256[SGX_SHA256_HASH_SIZE] = { 0 };
 
     /* convert m_remotePublicKey_ga_big_endian to little endian format */
     uint8_t public_key_little_endian[SIGMA_SESSION_PUBKEY_LENGTH];
@@ -120,7 +89,7 @@ ae_error_t SigmaCryptoLayer::DeriveSkMk(/* In  */ sgx_ecc_state_handle_t ecc_han
     do
     {
         // Watch for null pointers
-        if (ecc_handle == NULL)
+        if (ecc_handle == NULL) 
         {
             ae_status = PSE_PR_PARAMETER_ERROR;
             break;
@@ -143,25 +112,21 @@ ae_error_t SigmaCryptoLayer::DeriveSkMk(/* In  */ sgx_ecc_state_handle_t ecc_han
 
         memcpy(Gab_Wth_01, Gab, sizeof(Gab));
         Gab_Wth_01[sizeof(Gab)] = 1;
-        Ipp8u HMAC_Key[SIGMA_HMAC_LENGTH] = {0};
+        uint8_t HMAC_Key[SIGMA_HMAC_LENGTH] = {0};
 
         //Compute SMK
-        Status = ippsHMAC_Message(Gab_Wth_00, sizeof(Gab_Wth_00), HMAC_Key, sizeof(HMAC_Key),
-                                                m_SMK, sizeof(m_SMK), IPP_ALG_HASH_SHA256);
-        if (Status != ippStsNoErr)
+        status = sgx_hmac_sha256_msg(Gab_Wth_00, sizeof(Gab_Wth_00), HMAC_Key,sizeof(HMAC_Key), m_SMK, sizeof(m_SMK));
+        if (status != SGX_SUCCESS)
         {
-            if (Status == ippStsNoMemErr || Status == ippStsMemAllocErr)
-                ae_status = PSE_PR_INSUFFICIENT_MEMORY_ERROR;
+            ae_status = sgx_error_to_pse_pr_error(status);
             break;
         }
 
         // Compute SK and MK
-        Status = ippsHMAC_Message(Gab_Wth_01, sizeof(Gab_Wth_01), HMAC_Key, sizeof(HMAC_Key),
-                                                GabHMACSha256, sizeof(GabHMACSha256), IPP_ALG_HASH_SHA256);
-        if (Status != ippStsNoErr)
+        status = sgx_hmac_sha256_msg(Gab_Wth_01, sizeof(Gab_Wth_01), HMAC_Key, sizeof(HMAC_Key), GabHMACSha256, sizeof(GabHMACSha256));
+        if (status != SGX_SUCCESS)
         {
-            if (Status == ippStsNoMemErr || Status == ippStsMemAllocErr)
-                ae_status = PSE_PR_INSUFFICIENT_MEMORY_ERROR;
+            ae_status = sgx_error_to_pse_pr_error(status); 
             break;
         }
 
@@ -215,9 +180,9 @@ ae_error_t SigmaCryptoLayer::calc_s3_hmac(
     return p.Finalize(hmac);
 }
 
-ae_error_t SigmaCryptoLayer::ComputePR(SIGMA_SECRET_KEY* oldSK, Ipp8u byteToAdd, SIGMA_HMAC* hmac)
+ae_error_t SigmaCryptoLayer::ComputePR(SIGMA_SECRET_KEY* oldSK, uint8_t byteToAdd, SIGMA_HMAC* hmac)
 {
-    Ipp8u Sk_Wth_Added_Byte[sizeof(SIGMA_SIGN_KEY)+1];
+    uint8_t Sk_Wth_Added_Byte[sizeof(SIGMA_SIGN_KEY)+1];
 
     ae_error_t ae_status = PSE_PR_PR_CALC_ERROR;
 
@@ -229,17 +194,14 @@ ae_error_t SigmaCryptoLayer::ComputePR(SIGMA_SECRET_KEY* oldSK, Ipp8u byteToAdd,
         Sk_Wth_Added_Byte[SIGMA_SK_LENGTH] = byteToAdd;
 
         //Compute hmac
-        IppStatus ippstatus = ippsHMAC_Message(Sk_Wth_Added_Byte,
-            SIGMA_SK_LENGTH+1, (Ipp8u*)m_MK, SIGMA_MK_LENGTH,
-            (Ipp8u*)hmac, SIGMA_HMAC_LENGTH, IPP_ALG_HASH_SHA256);
+        sgx_status_t status = sgx_hmac_sha256_msg(Sk_Wth_Added_Byte, SIGMA_SK_LENGTH+1, m_MK, SIGMA_MK_LENGTH, (uint8_t *)hmac, SIGMA_HMAC_LENGTH);
 
         // defense-in-depth, clear secret data
         memset_s(Sk_Wth_Added_Byte, sizeof(Sk_Wth_Added_Byte), 0, sizeof(Sk_Wth_Added_Byte));
 
-        if (ippStsNoErr != ippstatus)
+        if (SGX_SUCCESS != status)
         {
-            if (ippStsNoMemErr == ippstatus || ippStsMemAllocErr == ippstatus)
-                ae_status = PSE_PR_INSUFFICIENT_MEMORY_ERROR;
+            ae_status = sgx_error_to_pse_pr_error(status); 
             break;
         }
 
@@ -251,7 +213,7 @@ ae_error_t SigmaCryptoLayer::ComputePR(SIGMA_SECRET_KEY* oldSK, Ipp8u byteToAdd,
 }
 
 
-ae_error_t SigmaCryptoLayer::ComputeId(Ipp8u byteToAdd,
+ae_error_t SigmaCryptoLayer::ComputeId(uint8_t byteToAdd,
                                  SHA256_HASH* hash)
 {
     memset(hash, 0, sizeof(*hash));
@@ -260,101 +222,7 @@ ae_error_t SigmaCryptoLayer::ComputeId(Ipp8u byteToAdd,
 
     p.Update(m_SK, sizeof(SIGMA_SIGN_KEY));
     p.Update(m_MK, sizeof(SIGMA_MAC_KEY));
-    p.Update(&byteToAdd, sizeof(Ipp8u));
+    p.Update(&byteToAdd, sizeof(uint8_t));
 
     return p.Finalize(hash);
-}
-
-ae_error_t SigmaCryptoLayer::MsgVerifyPch(Ipp8u* PubKeyPch, int PubKeyPchLen,
-                                    Ipp8u* EpidParamsCert,  Ipp8u* Msg, int MsgLen,
-                                    Ipp8u* Bsn, int BsnLen, Ipp8u* Signature,
-                                    int SignatureLen,
-                                    Ipp8u* PrivRevList, int PrivRL_Len, Ipp8u* SigRevList, int SigRL_Len,
-                                    Ipp8u* GrpRevList, int GrpRL_Len)
-{
-    ae_error_t status = AE_FAILURE;
-    EpidStatus SafeIdRes = kEpidNoErr;
-    Epid11Signature Epid11Sig;
-    Epid11Signature *SigPointer = NULL;
-    memset_s(&Epid11Sig, sizeof(Epid11Sig), 0, sizeof(Epid11Sig));
-
-    UNUSED(EpidParamsCert);
-    UNUSED(Bsn);
-    UNUSED(BsnLen);
-
-    Epid11VerifierCtx* ctx = NULL;
-    do
-    {
-        // Watch for null pointers
-        if ((PubKeyPch == NULL) || (Msg == NULL) || (Signature == NULL))
-        {
-            status = PSE_PR_PARAMETER_ERROR;
-            break;
-        }
-
-        // Verify the length of public key and signature buffers
-        if (((size_t)PubKeyPchLen < (SAFEID_CERT_LEN - ECDSA_SIGNATURE_LEN)) ||
-                                (SignatureLen < SAFEID_SIG_LEN))
-        {
-            status = PSE_PR_PARAMETER_ERROR;
-            break;
-        }
-
-        SafeIdRes = Epid11VerifierCreate(
-                (Epid11GroupPubKey* )(PubKeyPch),
-                NULL, &ctx);
-        status = MapEpidResultToAEError(SafeIdRes);
-        if (AE_FAILED(status)){
-            break;
-        }
-        if(PrivRevList != NULL){
-            SafeIdRes = Epid11VerifierSetPrivRl(ctx, (Epid11PrivRl *)(PrivRevList), PrivRL_Len);
-            status = MapEpidResultToAEError(SafeIdRes);
-            if(AE_FAILED(status)) {break;}
-        }
-        if(SigRevList != NULL){
-            SafeIdRes = Epid11VerifierSetSigRl(ctx, (Epid11SigRl *)(SigRevList), SigRL_Len);
-            status = MapEpidResultToAEError(SafeIdRes);
-            if(AE_FAILED(status)) {break;}
-        }
-
-        if(GrpRevList != NULL){
-            SafeIdRes = Epid11VerifierSetGroupRl(ctx, (Epid11GroupRl *)(GrpRevList), GrpRL_Len);
-            status = MapEpidResultToAEError(SafeIdRes);
-            if(AE_FAILED(status)) {break;}
-        }
-
-        //verify signature with Pub Key in ctx
-        //For epid-sdk-3.0, when the sigRL is null, the signature size includes "rl_ver" and "n2" fields
-        //(See structure definition of Epid11Signature)
-        //So we must use bigger buffer add 8 bytes to the length
-        if(SignatureLen == sizeof(Epid11BasicSignature)){
-            memcpy(&Epid11Sig, Signature, SignatureLen);
-            SignatureLen = static_cast<int>(SignatureLen + sizeof(Epid11Sig.rl_ver) + sizeof(Epid11Sig.n2));
-            SigPointer = &Epid11Sig;
-        }
-        else
-        {
-            SigPointer = (Epid11Signature *)Signature;
-        }
-
-
-        SafeIdRes = Epid11Verify(ctx,
-                SigPointer, SignatureLen,
-                Msg, MsgLen);
-        status = MapEpidResultToAEError(SafeIdRes);
-        if (AE_FAILED(status)){
-            break;
-         }
-
-        status = AE_SUCCESS;
-
-    } while (false);
-
-    if (NULL != ctx)
-    {
-        Epid11VerifierDelete(&ctx);
-    }
-
-    return status;
 }

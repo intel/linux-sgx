@@ -51,7 +51,7 @@ static const uint8_t PCL_BASE_SEAL_KEY[] = {
 static const uint8_t* pcl_get_base_key(uint16_t key_name)
 {
     // Shouldn't use switch else requires relocation
-/* PCL UNUSED START *
+/* PCL UNUSED START
     switch (key_name) {
     case SGX_KEYSELECT_SEAL:
         return BASE_SEAL_KEY;
@@ -64,7 +64,7 @@ static const uint8_t* pcl_get_base_key(uint16_t key_name)
     case SGX_KEYSELECT_PROVISION_SEAL:
         return BASE_PROV_SEAL_KEY;
     }
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
     if (key_name == SGX_KEYSELECT_SEAL) return PCL_BASE_SEAL_KEY;    
 	
     // Should not come here - error should have been reported

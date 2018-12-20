@@ -45,7 +45,7 @@
 
 #include "se_cdefs.h"
 
-SGX_ACCESS_VERSION(tstdcxx, 3)
+SGX_ACCESS_VERSION(tcxx, 3)
 
 #ifdef __arm__
 // ARM ABI - 32-bit guards.

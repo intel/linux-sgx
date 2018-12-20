@@ -31,12 +31,11 @@
 
 #include "CertificateProvisioningProtocol.h"
 #include <cstddef>
-#include "ipp_wrapper.h"
-#include "sgx_tcrypto.h"
+#include "arch.h"
+#include "crypto_wrapper.h"
 
 #include "../../aesm_service/source/aesm/application/aesm_rand.h"
 
-#include <ippcp.h>
 #include "sgx_memset_s.h"
 #include "se_wrapper.h"
 #include "oal/error_report.h"
@@ -81,22 +80,21 @@ const public_key_t& CertificateProvisioningProtocol::get_intel_pek()
 
 
 
-//Function to get the rsa public key of intel backend server for IPP functions
-//The output rsa_pub_key should be released by function free_rsa_key
-static sgx_status_t get_intel_rsa_pub_key_in_ipp_format(const public_key_t& publicKey, IppsRSAPublicKeyState **rsa_pub_key)
+//Function to get the rsa public key of intel backend server
+//The output rsa_pub_key should be released by function sgx_free_rsa_key
+static sgx_status_t get_intel_rsa_pub_key(const public_key_t& publicKey, void **rsa_pub_key)
 {
-    if (sizeof(publicKey.n) != RSA_3072_KEY_BYTES)
-        return SGX_ERROR_INVALID_PARAMETER;
+    se_static_assert(sizeof(publicKey.n) == RSA_3072_KEY_BYTES);
 
     if (NULL == rsa_pub_key)
         return SGX_ERROR_INVALID_PARAMETER;
 
-    sgx_status_t status = sgx_create_rsa_pub_key(
+    sgx_status_t status = sgx_create_rsa_pub1_key(
                        sizeof(publicKey.n),
                        sizeof(publicKey.e),
                        (const unsigned char*)publicKey.n,
                        (const unsigned char*)&publicKey.e,
-                       (void **)rsa_pub_key);
+                       rsa_pub_key);
 
     return status;
 }
@@ -107,12 +105,12 @@ int CertificateProvisioningProtocol::get_intel_pek_cipher_text_size()
     return sizeof(m_publicKey.n);
 }
 
-void CertificateProvisioningProtocol::free_intel_ipp_rsa_pub_key(IppsRSAPublicKeyState* rsa_pub_key)
+void CertificateProvisioningProtocol::free_intel_rsa_pub_key(void* rsa_pub_key)
 {
     if (NULL == rsa_pub_key)
         return;
 
-    secure_free_rsa_pub_key(sizeof(m_publicKey.n), sizeof(m_publicKey.e), rsa_pub_key);
+    sgx_free_rsa_key(rsa_pub_key, SGX_RSA_PUBLIC_KEY, sizeof(m_publicKey.n), sizeof(m_publicKey.e));
 }
 
 
@@ -259,29 +257,15 @@ ae_error_t CertificateProvisioningProtocol::aesCMAC(const upse::Buffer& key, con
 ae_error_t CertificateProvisioningProtocol::encryptRSA_OAEP_SHA256(const public_key_t& publicKey, upse::BufferReader& plainTextReader, upse::Buffer& cipherText)
 {
     ae_error_t status = AE_FAILURE;
-    IppStatus ippReturnStatus;
 
-    IppsRSAPublicKeyState* rsa_pub_key = NULL;
-    uint8_t* pub_key_buffer = NULL;
+    void* rsa_pub_key = NULL;
+    size_t dst_len = 0;
 
     do
     {
-        if(SGX_SUCCESS != get_intel_rsa_pub_key_in_ipp_format(publicKey, &rsa_pub_key))
+        if(SGX_SUCCESS != get_intel_rsa_pub_key(publicKey, &rsa_pub_key))
             break;
-
-        uint8_t seed[IPP_SHA256_DIGEST_BITSIZE / 8];
-        ae_error_t rand_status = aesm_read_rand(seed, sizeof(seed));
-        BREAK_IF_TRUE(AE_FAILED(rand_status), status, AE_FAILURE);
-
-        int pub_key_size;
-        ippReturnStatus = ippsRSA_GetBufferSizePublicKey(&pub_key_size, rsa_pub_key);
-        if (ippStsNoErr != ippReturnStatus)
-            break;
-
-        pub_key_buffer = (uint8_t*)malloc(pub_key_size);
-        if (NULL == pub_key_buffer)
-            break;
-
+	
         int plainTextSize = plainTextReader.getRemainingSize();
         const uint8_t* pPlainText = NULL;
         if (AE_FAILED(plainTextReader.readRaw(&pPlainText)))
@@ -296,23 +280,20 @@ ae_error_t CertificateProvisioningProtocol::encryptRSA_OAEP_SHA256(const public_
         if (AE_FAILED(cipherTextWriter.reserve(cipherText.getSize(), &pCipherText)))
             break;
 
-        ippReturnStatus = ippsRSAEncrypt_OAEP(pPlainText, plainTextSize,
-                                        NULL, 0, seed,
-                                        pCipherText,
-                                        rsa_pub_key, IPP_ALG_HASH_SHA256,
-                                        pub_key_buffer);
-
-        if (ippStsNoErr != ippReturnStatus)
+        // Check the encrypt output length
+        sgx_status_t res = sgx_rsa_pub_encrypt_sha256(rsa_pub_key, NULL, &dst_len, pPlainText, plainTextSize);
+        if(res != SGX_SUCCESS || dst_len != cipherText.getSize())
             break;
 
+        res = sgx_rsa_pub_encrypt_sha256(rsa_pub_key, pCipherText, &dst_len, pPlainText, plainTextSize);
+        if(res != SGX_SUCCESS)
+            break;
+        
         status = AE_SUCCESS;
 
     } while (0);
 
-    if (NULL != pub_key_buffer)
-        free(pub_key_buffer);
-
-    free_intel_ipp_rsa_pub_key(rsa_pub_key);
+    free_intel_rsa_pub_key(rsa_pub_key);
 
     return status;
 }

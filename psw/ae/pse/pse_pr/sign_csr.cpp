@@ -36,10 +36,8 @@
 #include "sgx_trts.h"
 #include <cstring>
 
-#include "ae_ipp.h"
 
 #define BREAK_IF_NULL(a)   { if (NULL     == (a)) break; }
-#define BREAK_IF_IPPERR(a) { if (ippStsNoErr != (a)) break; }
 
 #define LEN_ECDSA_SIG_COMP   32
 
@@ -221,7 +219,7 @@ ae_error_t SignCSR::GetSignedTemplate(
     /*in */ EcDsaPrivKey* pPrivateKey,
     /*in */ EcDsaPubKey* pPublicKey,
     /*in */ sgx_ecc_state_handle_t csr_ecc_handle,
-    /*out*/ Ipp8u* pSignedTemplate,
+    /*out*/ uint8_t* pSignedTemplate,
     /*i/o*/ uint16_t* pnBytes)
 {
     ae_error_t aeStatus = PSE_PR_INSUFFICIENT_MEMORY_ERROR;
@@ -302,8 +300,8 @@ ae_error_t SignCSR::GetSignedTemplate(
             }
         }
 
-        pSignedTemplate[nOffset_SigSize1] = (Ipp8u)(i + 3);
-        pSignedTemplate[nOffset_SigSize2] = (Ipp8u)(i);
+        pSignedTemplate[nOffset_SigSize1] = (uint8_t)(i + 3);
+        pSignedTemplate[nOffset_SigSize2] = (uint8_t)(i);
 
         memcpy(&pSignedTemplate[nOffset_SigX], SigBuffer, i);
 
@@ -311,8 +309,8 @@ ae_error_t SignCSR::GetSignedTemplate(
 
 
         uint16_t csrLength = (uint16_t)(*pnBytes - 4);
-        pSignedTemplate[nOffset_CSRSize+0] = (Ipp8u)(csrLength >> 8);
-        pSignedTemplate[nOffset_CSRSize+1] = (Ipp8u)(csrLength & 0xff);
+        pSignedTemplate[nOffset_CSRSize+0] = (uint8_t)(csrLength >> 8);
+        pSignedTemplate[nOffset_CSRSize+1] = (uint8_t)(csrLength & 0xff);
 
         aeStatus = AE_SUCCESS;
 
@@ -322,8 +320,7 @@ exit:
     // If we weren't successful, don't let any data out
     if (AE_FAILED(aeStatus))
     {
-        if (NULL != pSignedTemplate && NULL != pnBytes)
-            memset_s(pSignedTemplate, *pnBytes, 0, *pnBytes);
+        memset_s(pSignedTemplate, *pnBytes, 0, *pnBytes);
 
         aeStatus = PSE_PR_SIGNING_CSR_ERROR;
     }

@@ -65,8 +65,6 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
 	BIGNUM *BN_dh_shared_x = NULL;
 	BIGNUM *BN_dh_shared_y = NULL;
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
-
 	do {
 		//get BN from public key and private key
 		//
@@ -153,7 +151,6 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
 	} while(0);
 
 	if (ret != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
 		memset_s(p_shared_key->x, sizeof(p_shared_key->x), 0, sizeof(p_shared_key->x));
 		memset_s(p_shared_key->y, sizeof(p_shared_key->y), 0, sizeof(p_shared_key->y));
 	}

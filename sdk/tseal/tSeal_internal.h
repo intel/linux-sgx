@@ -36,6 +36,8 @@
 #include <stdint.h>
 #include "sgx_tseal.h"
 
+#define KEY_POLICY_KSS  (SGX_KEYPOLICY_CONFIGID | SGX_KEYPOLICY_ISVFAMILYID | SGX_KEYPOLICY_ISVEXTPRODID)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

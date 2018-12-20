@@ -52,12 +52,10 @@ sgx_status_t sgx_ecc256_open_context(sgx_ecc_state_handle_t* p_ecc_handle)
 	}
 
 	sgx_status_t retval = SGX_SUCCESS;
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	/* construct a curve p-256 */
 	EC_GROUP* ec_group = EC_GROUP_new_by_curve_name(NID_X9_62_prime256v1);
 	if (NULL == ec_group) {
-		GET_LAST_OPENSSL_ERROR;
 		retval = SGX_ERROR_UNEXPECTED;
 	} else {
 		*p_ecc_handle = (void*)ec_group;
@@ -101,8 +99,6 @@ sgx_status_t sgx_ecc256_create_key_pair(sgx_ec256_private_t *p_private,
 	const EC_POINT *public_k = NULL;
 	const BIGNUM *private_k = NULL;
 	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// create new EC key
@@ -172,7 +168,6 @@ sgx_status_t sgx_ecc256_create_key_pair(sgx_ec256_private_t *p_private,
 	} while(0);
 
 	if (SGX_SUCCESS != ret) {
-		GET_LAST_OPENSSL_ERROR;
 		// in case of error, clear output buffers
 		//
 		memset_s(p_private, sizeof(p_private), 0, sizeof(p_private));
@@ -210,8 +205,6 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
 	int ret_point_on_curve = 0;
 	unsigned long internal_openssl_error = 0;
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
-
 	do {
 		// converts the x value of the point, represented as positive integer in little-endian into a BIGNUM
 		//
@@ -243,10 +236,6 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
 				/* fails if point not on curve */
 				*p_valid = 0;
 				retval = SGX_SUCCESS;
-			} else {
-				#ifdef DEBUG
-				openssl_last_err = internal_openssl_error;
-				#endif /* DEBUG */
 			}
 			break;
 		}
@@ -262,12 +251,6 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
 
 		retval = SGX_SUCCESS;
 	} while(0);
-
-	#ifdef DEBUG
-	if (SGX_SUCCESS != retval && 0 != openssl_last_err) {
-		GET_LAST_OPENSSL_ERROR;
-	}
-	#endif /* DEBUG */
 
 	if (ec_point)
 		EC_POINT_clear_free(ec_point);
@@ -304,8 +287,6 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
 	BIGNUM *pubA_gx = NULL;
 	BIGNUM *pubA_gy = NULL;
 	BIGNUM *tmp = NULL;
-
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// get BN from public key and private key
@@ -386,7 +367,6 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
 	} while(0);
 
 	if (ret != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
 		memset_s(p_shared_key->s, sizeof(p_shared_key->s), 0, sizeof(p_shared_key->s));
 	}
 
@@ -423,8 +403,6 @@ sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att
     BIGNUM *bn_x = NULL;
     BIGNUM *bn_y = NULL;
     BN_CTX *tmp = NULL;
-
-    CLEAR_OPENSSL_ERROR_QUEUE;
 
     do {
         //create empty BNs

@@ -66,7 +66,12 @@ typedef enum _para_type_t
     HEAPMINSIZE,
     HEAPINITSIZE,
     MISCSELECT,
-    MISCMASK
+    MISCMASK,
+    ENABLEKSS,
+    ISVFAMILYID_H,
+    ISVFAMILYID_L,
+    ISVEXTPRODID_H,
+    ISVEXTPRODID_L,
 } para_type_t;
 
 typedef struct _xml_parameter_t

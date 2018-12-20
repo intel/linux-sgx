@@ -32,64 +32,40 @@
 #include "prepare_hash_sha1.h"
 #include <stdlib.h>
 
-#include "ippcp.h"
-
-
 PrepareHashSHA1::PrepareHashSHA1()
     : m_status(false), m_pCtx(0)
 {
-    IppStatus ippstatus;
-    int size;
-
-    do
-    {
-        ippstatus = ippsSHA1GetSize(&size);
-        if (ippstatus != ippStsNoErr)
-            break;
-
-        m_pCtx = (IppsSHA1State*) malloc(size);
-        if (NULL == m_pCtx)
-            break;
-
-        ippstatus = ippsSHA1Init((IppsSHA1State*)m_pCtx);
-        if (ippstatus != ippStsNoErr)
-        {
-            free(m_pCtx);
-			m_pCtx = NULL;
-            break;
-        }
-
+    if (sgx_sha1_init(&m_pCtx) == SGX_SUCCESS) {
         m_status = true;
-
-    } while (0);
+    }
 }
 
 PrepareHashSHA1::~PrepareHashSHA1(void)
 {
-    if (m_pCtx) {
-        free(m_pCtx);
-		m_pCtx = NULL;
-	}
+	sgx_sha1_close(m_pCtx);
 }
 
 bool PrepareHashSHA1::Update(const void* pData, size_t numBytes)
 {
     do
     {
-        if (!m_status)
+        if (!m_status) {
             break;
+	}
 
         m_status = false;
 
-        if (NULL == pData || numBytes < 1 ||
-            NULL == m_pCtx)
+        if (NULL == pData || numBytes < 1 || NULL == m_pCtx) {
             break;
+	}
 
-        if (numBytes > INT32_MAX)
+        if (numBytes > INT32_MAX) {
             break;
+	}
 
-        if (ippStsNoErr != ippsSHA1Update((const Ipp8u*)pData, (int)numBytes, (IppsSHA1State*)m_pCtx))
+        if (sgx_sha1_update((const uint8_t *)pData, numBytes, m_pCtx) != SGX_SUCCESS) {
             break;
+	}
 
         m_status = true;
 
@@ -98,21 +74,24 @@ bool PrepareHashSHA1::Update(const void* pData, size_t numBytes)
     return m_status;
 }
 
-// pCMAC will contain the computed CMAC if SDS_SUCCESS
-bool PrepareHashSHA1::Finalize(SHA1_HASH *pHash)
+// pHash will contain the computed hash if SDS_SUCCESS
+bool PrepareHashSHA1::Finalize(sgx_sha1_hash_t *pHash)
 {
     do
     {
-        if (!m_status)
+        if (!m_status) {
             break;
+	}
 
         m_status = false;
 
-        if (NULL == m_pCtx || NULL == pHash)
+        if (NULL == m_pCtx || NULL == pHash) {
             break;
+	}
 
-        if (ippStsNoErr != ippsSHA1Final((Ipp8u*)pHash, (IppsSHA1State*)m_pCtx))
+        if (sgx_sha1_get_hash(m_pCtx, pHash) != SGX_SUCCESS) {
             break;
+	}
 
         m_status = true;
 

@@ -35,13 +35,12 @@
 
 #include "pse_pr_inc.h"
 #include "pse_pr_types.h"
-#include "ae_ipp.h"
-
+#include <sgx_tcrypto.h>
 
 class PrepareHMACSHA256
 {
 public:
-    PrepareHMACSHA256(const Ipp8u* key, size_t keyLength);
+    PrepareHMACSHA256(const unsigned char *key, size_t keyLength);
     ~PrepareHMACSHA256(void);
 
     // Include pData in the computed HMAC
@@ -51,11 +50,9 @@ public:
 	ae_error_t Finalize(SIGMA_HMAC *pHMAC);
 
 private:
-    IppStatus m_ippstatus;
+    sgx_status_t m_sgxstatus;
 
-    IppsHMACState *m_pCtx;
-    int m_nSizeCtx;
-
+    sgx_hmac_state_handle_t m_pCtx;
 
 	// Disable class operations (default constructor, copy constructor, assignment operator, and address-of operator)
 	PrepareHMACSHA256();										// default constructor

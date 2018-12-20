@@ -47,6 +47,7 @@
 #  include "linux/elf_parser.h"
 #  define GET_TLS_INFO  elf_tls_info
 
+#include "sgx_random_buffers.h"
 // is_ecall_allowed()
 // check the index in the dynamic entry table
 static sgx_status_t is_ecall_allowed(uint32_t ordinal)
@@ -89,15 +90,30 @@ static sgx_status_t is_ecall_allowed(uint32_t ordinal)
 //
 static sgx_status_t get_func_addr(uint32_t ordinal, void **addr)
 {
-    // Special ECalls for Switchless SGX
-    if (unlikely(ordinal == (uint32_t)ECMD_INIT_SWITCHLESS)) {
-        *addr = (void*) do_init_switchless;
-        return SGX_SUCCESS;
-    }
-    else if (unlikely(ordinal == (uint32_t)ECMD_RUN_SWITCHLESS_TWORKER)) {
-        *addr = (void*) do_run_switchless_tworker;
-        return SGX_SUCCESS;
-    }
+	// Special ECalls for Switchless SGX
+	if ((unlikely(ordinal == (uint32_t)ECMD_INIT_SWITCHLESS)) ||
+        (unlikely(ordinal == (uint32_t)ECMD_RUN_SWITCHLESS_TWORKER)))
+	{
+		//check if it is ROOT ECALL
+		thread_data_t *thread_data = get_thread_data();
+        if(thread_data->last_sp != thread_data->stack_base_addr) 
+		{
+			return SGX_ERROR_UNEXPECTED;
+        }
+		
+        if (ordinal == (uint32_t)ECMD_INIT_SWITCHLESS)
+	    {
+            *addr = (void*) do_init_switchless;
+            return SGX_SUCCESS;
+        }
+        else if (ordinal == (uint32_t)ECMD_RUN_SWITCHLESS_TWORKER) 
+	    {
+            *addr = (void*) do_run_switchless_tworker;
+            return SGX_SUCCESS;
+        } 
+			
+	}
+		
 
     // Normal user-defined ECalls
     sgx_status_t status = is_ecall_allowed(ordinal);
@@ -355,7 +371,8 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
             return status;
         }
     }
-    status = trts_ecall(index, ms);
+    thread_data = get_thread_data();
+    status = thread_data->stack_base_addr == thread_data->last_sp ? random_stack_advance<0x800>(trts_ecall, index, ms) : trts_ecall(index, ms);
     return status;
 }
 

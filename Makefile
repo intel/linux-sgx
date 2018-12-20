@@ -47,11 +47,18 @@ sdk_install_pkg: sdk
 psw_install_pkg: psw
 	./linux/installer/bin/build-installpkg.sh psw
 
+deb_sgx_urts_pkg: psw
+	./linux/installer/deb/libsgx-urts/build.sh
+
 deb_sgx_enclave_common_pkg: psw
 	./linux/installer/deb/libsgx-enclave-common/build.sh
 
 deb_sgx_enclave_common_dev_pkg:
 	./linux/installer/deb/libsgx-enclave-common-dev/build.sh
+
+deb_pkg: deb_sgx_urts_pkg deb_sgx_enclave_common_pkg deb_sgx_enclave_common_dev_pkg
+	@$(RM) -f ./linux/installer/deb/*.deb ./linux/installer/deb/*.ddeb
+	cp `find ./linux/installer/deb/ -name "*.deb" -o -name "*.ddeb"` ./linux/installer/deb/
 
 clean:
 	@$(MAKE) -C sdk/                                clean

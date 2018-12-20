@@ -68,7 +68,7 @@ ae_error_t AESMNetworkEncoding::aesm_send_recv_msg_encoding_internal(const char 
     memset(encode_msg, 0, encoding_size);
     if(!encode_request(msg, msg_size, encode_msg, &encoding_size)){
         AESM_DBG_ERROR("message encoding error, msg size %d",msg_size);
-        ae_ret = PVE_UNEXPECTED_ERROR;
+        ae_ret = AE_FAILURE;
         goto ret_point;
     }
     AESM_DBG_TRACE("encoded msg %.*s",encoding_size, encode_msg);
@@ -80,7 +80,7 @@ ae_error_t AESMNetworkEncoding::aesm_send_recv_msg_encoding_internal(const char 
     }
     if(recv_msg == NULL){
         AESM_DBG_ERROR("recv NULL message from backend server");
-        ae_ret = PVE_UNEXPECTED_ERROR;
+        ae_ret = AE_FAILURE;
         goto ret_point;
     }
     AESM_DBG_TRACE("response msg %.*s", recv_size, recv_msg);
@@ -88,7 +88,7 @@ ae_error_t AESMNetworkEncoding::aesm_send_recv_msg_encoding_internal(const char 
 
     if(decode_buffer_size == 0){
         AESM_DBG_ERROR("response 0 length message from backend server:%s",url);
-        ae_ret = PVE_UNEXPECTED_ERROR;
+        ae_ret = AE_FAILURE;
         goto ret_point;
     }
     AESM_DBG_TRACE("Succ recv msg:%.*s", recv_size, recv_msg);
@@ -102,7 +102,7 @@ ae_error_t AESMNetworkEncoding::aesm_send_recv_msg_encoding_internal(const char 
     memset(resp, 0, decode_buffer_size);
     if(!decode_response(recv_msg,recv_size, resp,  &decode_buffer_size)){
         AESM_DBG_WARN("fail to decode message from server");
-        ae_ret = PVE_MSG_ERROR;
+        ae_ret = AE_FAILURE;
         goto ret_point;
     }
 #ifdef DBG_LOG

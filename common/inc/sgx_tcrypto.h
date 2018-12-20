@@ -44,12 +44,15 @@
 #include "sgx_defs.h"
 #include "stdlib.h"
 
+#define SGX_SHA1_HASH_SIZE              20
 #define SGX_SHA256_HASH_SIZE            32
 #define SGX_ECP256_KEY_SIZE             32
 #define SGX_NISTP_ECP256_KEY_SIZE       (SGX_ECP256_KEY_SIZE/sizeof(uint32_t))
 #define SGX_AESGCM_IV_SIZE              12
 #define SGX_AESGCM_KEY_SIZE             16
 #define SGX_AESGCM_MAC_SIZE             16
+#define SGX_HMAC256_KEY_SIZE            32
+#define SGX_HMAC256_MAC_SIZE            32
 #define SGX_CMAC_KEY_SIZE               16
 #define SGX_CMAC_MAC_SIZE               16
 #define SGX_AESCTR_KEY_SIZE             16
@@ -95,13 +98,18 @@ typedef struct _sgx_rsa3072_key_t
 typedef uint8_t sgx_rsa3072_signature_t[SGX_RSA3072_KEY_SIZE];
 
 typedef void* sgx_sha_state_handle_t;
+typedef void* sgx_hmac_state_handle_t;
 typedef void* sgx_cmac_state_handle_t;
 typedef void* sgx_ecc_state_handle_t;
+typedef void* sgx_aes_state_handle_t;
 
+typedef uint8_t sgx_sha1_hash_t[SGX_SHA1_HASH_SIZE];
 typedef uint8_t sgx_sha256_hash_t[SGX_SHA256_HASH_SIZE];
 
 typedef uint8_t sgx_aes_gcm_128bit_key_t[SGX_AESGCM_KEY_SIZE];
 typedef uint8_t sgx_aes_gcm_128bit_tag_t[SGX_AESGCM_MAC_SIZE];
+typedef uint8_t sgx_hmac_256bit_key_t[SGX_HMAC256_KEY_SIZE];
+typedef uint8_t sgx_hmac_256bit_tag_t[SGX_HMAC256_MAC_SIZE];
 typedef uint8_t sgx_cmac_128bit_key_t[SGX_CMAC_KEY_SIZE];
 typedef uint8_t sgx_cmac_128bit_tag_t[SGX_CMAC_MAC_SIZE];
 typedef uint8_t sgx_aes_ctr_128bit_key_t[SGX_AESCTR_KEY_SIZE];
@@ -178,27 +186,27 @@ typedef struct _rsa_params_t {
 extern "C" {
 #endif
 
-   /** SHA Hashing functions - NOTE: ONLY 256-bit is supported.
+   /** SHA Hashing functions - NOTE: ONLY 256/160-bit is supported.
     *
-    * NOTE: Use sgx_sha256_msg if the src pointer contains the complete msg to perform hash (Option 1)
+    * NOTE: Use sgx_sha#_msg if the src pointer contains the complete msg to perform hash (Option 1)
     *       Else use the Init, Update, Update, ..., Final procedure (Option 2)
-    * Option 1: If the complete dataset is available for hashing, sgx_sha256_msg
-    *           is a single API call for generating the 256bit hash for the given dataset.
+    * Option 1: If the complete dataset is available for hashing, sgx_sha#_msg
+    *           is a single API call for generating the 256/160-bit hash for the given dataset.
     *      Return: If source pointer or hash pointer are NULL, SGX_ERROR_INVALID_PARAMETER is returned.
     *              If hash function fails then SGX_ERROR_UNEXPECTED is returned.
     * Option 2: If the hash is to be performed over multiple data sets, then use:
-    *        A. sgx_sha256_init - to create the context - context memory is allocated by this function.
+    *        A. sgx_sha#_init - to create the context - context memory is allocated by this function.
     *      Return: If out of enclave memory, SGX_ERROR_OUT_OF_MEMORY is returned.
     *              If context creation fails then SGX_ERROR_UNEXPECTED is returned.
-    *        B. sgx_sha256_update - updates hash based on input source data
+    *        B. sgx_sha#_update - updates hash based on input source data
     *                 This function should be called for each chunk of data to be
     *                 included in the hash including the 1st and final chunks.
     *      Return: If source pointer or context pointer are NULL, SGX_ERROR_INVALID_PARAMETER is returned.
     *              If hash function fails then SGX_ERROR_UNEXPECTED is returned.
-    *        C. sgx_sha256_get_hash - function obtains the hash value
+    *        C. sgx_sha#_get_hash - function obtains the hash value
     *      Return: If hash pointer or context pointer are NULL, SGX_ERROR_INVALID_PARAMETER is returned.
     *              If the function fails then SGX_ERROR_UNEXPECTED is returned.
-    *        D. sgx_sha256_close - SHOULD BE CALLED to FREE context memory
+    *        D. sgx_sha#_close - SHOULD BE CALLED to FREE context memory
     *              Upon completing the process of computing a hash over a set of data
     *              or sets of data, this function is used to free the context.
     *      Return: If context pointer is NULL, SGX_ERROR_INVALID_PARAMETER is returned.
@@ -207,44 +215,49 @@ extern "C" {
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
     *   Inputs: uint8_t *p_src - Pointer to the input stream to be hashed
     *           uint32_t src_len - Length of the input stream to be hashed
-    *   Output: sgx_sha256_hash_t *p_hash - Resultant hash from operation
+    *   Output: sgx_sha#_hash_t *p_hash - Resultant hash from operation
    */
     sgx_status_t SGXAPI sgx_sha256_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha256_hash_t *p_hash);
+    sgx_status_t SGXAPI sgx_sha1_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha1_hash_t *p_hash);
 
-   /** Allocates and initializes sha256 state
+   /** Allocates and initializes sha state
     *
     * Parameters:
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-    *   Output: sgx_sha_state_handle_t *p_sha_handle - Pointer to the handle of the SHA256 state
+    *   Output: sgx_sha_state_handle_t *p_sha_handle - Pointer to the handle of the SHA state
    */
     sgx_status_t SGXAPI sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle);
+    sgx_status_t SGXAPI sgx_sha1_init(sgx_sha_state_handle_t* p_sha_handle);
 
-   /** Updates sha256 has calculation based on the input message
+   /** Updates sha calculation based on the input message
     *
     * Parameters:
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-    *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state
+    *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA state
     *           uint8_t *p_src - Pointer to the input stream to be hashed
     *           uint32_t src_len - Length of the input stream to be hashed
     */
     sgx_status_t SGXAPI sgx_sha256_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_state_handle_t sha_handle);
+    sgx_status_t SGXAPI sgx_sha1_update(const uint8_t *p_src, size_t src_len, sgx_sha_state_handle_t sha_handle);
 
    /** Returns Hash calculation
     *
     * Parameters:
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-    *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state
-    *   Output: sgx_sha256_hash_t *p_hash - Resultant hash from operation
+    *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA state
+    *   Output: sgx_sha#_hash_t *p_hash - Resultant hash from operation
     */
     sgx_status_t SGXAPI sgx_sha256_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha256_hash_t *p_hash);
+    sgx_status_t SGXAPI sgx_sha1_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha1_hash_t *p_hash);
 
    /** Cleans up SHA state
     *
     * Parameters:
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-    *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state
+    *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA state
     */
     sgx_status_t SGXAPI sgx_sha256_close(sgx_sha_state_handle_t sha_handle);
+    sgx_status_t SGXAPI sgx_sha1_close(sgx_sha_state_handle_t sha_handle);
 
    /**Rijndael AES-GCM - Only 128-bit key AES-GCM Encryption/Decryption is supported
     *
@@ -384,6 +397,55 @@ extern "C" {
     *   Input: sgx_cmac_state_handle_t cmac_handle  - Handle to the CMAC state
     */
     sgx_status_t SGXAPI sgx_cmac128_close(sgx_cmac_state_handle_t cmac_handle);
+
+
+    /* Message Authentication - HMAC 256
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
+    *   Inputs: const unsigned char *p_src - Pointer to input stream to be MACed
+    *           int src_len - Source length
+    *           const unsigned char *p_key - Pointer to key used in message authentication operation
+    *           int key_len - Key length
+    *           int mac_len - Expected output MAC length
+    *   Output: unsigned char *p_mac - Pointer to resultant MAC
+    */
+    sgx_status_t SGXAPI sgx_hmac_sha256_msg(const unsigned char *p_src, int src_len, const unsigned char *p_key, int key_len,
+        unsigned char *p_mac, int mac_len);
+
+    /* Allocates and initializes HMAC state
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: const unsigned char *p_key - Pointer to the key used in message authentication operation
+    *           int key_len - Key length
+    *   Output: sgx_hmac_state_handle_t *p_hmac_handle - Pointer to the initialized HMAC state handle
+    */
+    sgx_status_t SGXAPI sgx_hmac256_init(const unsigned char *p_key, int key_len, sgx_hmac_state_handle_t *p_hmac_handle);
+
+    /* Updates HMAC hash calculation based on the input message
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.
+    *	Input:  uint8_t *p_src - Pointer to the input stream to be hashed
+    *	        int src_len - Length of input stream to be hashed
+    *	        sgx_hmac_state_handle_t hmac_handle - Handle to the HMAC state
+    */
+    sgx_status_t SGXAPI sgx_hmac256_update(const uint8_t *p_src, int src_len, sgx_hmac_state_handle_t hmac_handle);
+
+    /* Returns calculated hash
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+    *	Input:  sgx_hmac_state_handle_t hmac_handle - Handle to the HMAC state
+    *	        int hash_len - Expected MAC length
+    *   Output: unsigned char *p_hash - Resultant hash from HMAC operation
+    */
+    sgx_status_t SGXAPI sgx_hmac256_final(unsigned char *p_hash, int hash_len, sgx_hmac_state_handle_t hmac_handle);
+
+    /* Clean up and free the HMAC state
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS
+    *   Input:  sgx_hmac_state_handle_t hmac_handle  - Handle to the HMAC state
+    */
+    sgx_status_t SGXAPI sgx_hmac256_close(sgx_hmac_state_handle_t hmac_handle);
+
 
    /** AES-CTR 128-bit - Only 128-bit key size is supported.
     *
@@ -616,6 +678,8 @@ extern "C" {
                                     sgx_ecc_state_handle_t ecc_handle);
 
    /** Verifies the signature for the given data based on the public key.
+    * This API verifies the hash of input data `verify(SHA256(p_data))`. First it'll calculate SHA256 hash for given data
+    * and then verify the signature for this hash.
     *
     * A digital signature over a message consists of a pair of large numbers, 256-bits each,
     * which could be created by function: sgx_ecdsa_sign. The scheme used for computing a
@@ -635,13 +699,43 @@ extern "C" {
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
     *   Inputs: sgx_ecc_state_handle_t ecc_handle - Handle to the ECC crypto system
     *           sgx_ec256_public_t *p_public - Pointer to the public key
-    *           uint8_t *p_data - Pointer to the data to be signed
-    *           uint32_t data_size - Size of the data to be signed
+    *           uint8_t *p_data - Pointer to the data to be verified
+    *           uint32_t data_size - Size of the data to be verified
     *           sgx_ec256_signature_t *p_signature - Pointer to the signature
     *   Output: uint8_t *p_result - Pointer to the result of verification check
     */
     sgx_status_t SGXAPI sgx_ecdsa_verify(const uint8_t *p_data,
                                         uint32_t data_size,
+                                        const sgx_ec256_public_t *p_public,
+                                        sgx_ec256_signature_t *p_signature,
+                                        uint8_t *p_result,
+                                        sgx_ecc_state_handle_t ecc_handle);
+
+   /** Directly verify the signature for the given data based on the public key. (Without calculating data's hash) see sgx_ecdsa_verify.
+    *
+    * A digital signature over a message consists of a pair of large numbers, 256-bits each,
+    * which could be created by function: sgx_ecdsa_sign. The scheme used for computing a
+    * digital signature is of the ECDSA scheme, an elliptic curve of the DSA scheme.
+    *
+    * The typical result of the digital signature verification is one of the two values:
+    *     SGX_Generic_ECValid - Digital signature is valid
+    *     SGX_Generic_ECInvalidSignature -  Digital signature is not valid
+    *
+    * The elliptic curve domain parameters must be created by function:
+    *     sgx_ecc256_open_context
+    *
+    * Return: If context, public key, signature, result or data pointer is NULL,
+    *                    SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If the verification process fails then SGX_ERROR_UNEXPECTED is returned.
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: sgx_ecc_state_handle_t ecc_handle - Handle to the ECC crypto system
+    *           sgx_ec256_public_t *p_public - Pointer to the public key
+    *           uint8_t *p_data - Pointer to the data to be verified
+    *           sgx_ec256_signature_t *p_signature - Pointer to the signature
+    *   Output: uint8_t *p_result - Pointer to the result of verification check
+    */
+    sgx_status_t SGXAPI sgx_ecdsa_verify_hash(const uint8_t *p_data,
                                         const sgx_ec256_public_t *p_public,
                                         sgx_ec256_signature_t *p_signature,
                                         uint8_t *p_result,
@@ -805,9 +899,63 @@ extern "C" {
     sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att_priv_key,
         sgx_ec256_public_t  *p_att_pub_key);
 
+    /** Allocate and initialize AES-GCM encryption state.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: p_key - Input private key.
+    *           p_iv - Input initial vector. Encryption of different messages should use different IVs.
+    *           iv_len - Length of initial vector, usually IV_SIZE.
+    *           p_aad - AAD of AES-GCM, it could be NULL.
+    *           aad_len - length of bytes of AAD.
+    *   Output: aes_gcm_state - AES-GCM state pointer.
+    *
+    */
+    sgx_status_t sgx_aes_gcm128_enc_init(
+        const uint8_t *p_key,
+        const uint8_t *p_iv,
+        uint32_t iv_len,
+        const uint8_t *p_aad,
+        uint32_t aad_len,
+        sgx_aes_state_handle_t *aes_gcm_state);
+
+    /** Get authentication tag from the given AES-GCM state.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Input: aes_gcm_state - Pointer to AES-GCM state.
+    *   Output: p_mac - Pointer to SGX_AESGCM_MAC_SIZE buffer to store mac in.
+    *
+    */
+    sgx_status_t sgx_aes_gcm128_enc_get_mac(uint8_t *mac, sgx_aes_state_handle_t aes_gcm_state);
+
+    /** Clear and free AES-GCM state.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Input: aes_gcm_state - Pointer to AES-GCM state.
+    *
+    */
+    sgx_status_t sgx_aes_gcm_close(sgx_aes_state_handle_t aes_gcm_state);
+
+    /** Encrypt plaintext from p_src into p_dst.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: aes_gcm_state - Pointer to AES-GCM state.
+    *           p_src - Pointer to plaintext buffer.
+    *           src_len - Plaintext length.
+    *   Output: p_dst - Pointer to ciphertext buffer.
+    *
+    */
+    sgx_status_t sgx_aes_gcm128_enc_update(
+        uint8_t *p_src,
+        uint32_t src_len,
+        uint8_t *p_dst,
+        sgx_aes_state_handle_t aes_gcm_state);
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-

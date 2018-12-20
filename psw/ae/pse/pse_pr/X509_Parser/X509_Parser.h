@@ -33,15 +33,7 @@
 
 #include "X509Cert.h"
 #include "pse_pr_types.h"
-#include "epid_types.h"
 
-UINT32 ParseX509GroupCertificate
-(
-    /*in */ const EcDsaPubKey* pSerializedPublicKey,
-    /*in */ const X509_GROUP_CERTIFICATE_VLR* pGroupCertVlr, 
-    /*out*/ UINT32* pGID, 
-    /*out*/ EPIDGroupCertificateBlob* pCertBlob 
-);
 
 
 #endif

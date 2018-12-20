@@ -36,7 +36,8 @@ CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-rtti -fno-exceptions
 CPPFLAGS := -I$(COMMON_DIR)/inc/                    \
             -I$(COMMON_DIR)/inc/internal/           \
             -I$(COMMON_DIR)/inc/tlibc               \
-            -I../
+            -I../                                   \
+            -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 OBJ1 := tSeal.o tSeal_aad.o tSeal_internal.o tSeal_util.o
 OBJS := $(OBJ1)

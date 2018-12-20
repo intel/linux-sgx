@@ -124,7 +124,7 @@ int pcl_SHA256_Update(SHA256_CTX *c, void *data_, size_t len)
     c->Nh += (SHA_LONG) (len >> 29); /* might cause compiler warning on
                                        * 16-bit */
     c->Nl = l;
-/* PCL UNUSED START *
+/* PCL UNUSED START 
     n = c->num;
     if (n != 0) {
         p = (unsigned char *)c->data;
@@ -136,20 +136,20 @@ int pcl_SHA256_Update(SHA256_CTX *c, void *data_, size_t len)
             data += n;
             len -= n;
             c->num = 0;
-            /*
+            / *
              * We use memset rather than OPENSSL_cleanse() here deliberately.
              * Using OPENSSL_cleanse() here could be a performance issue. It
              * will get properly cleansed on finalisation so this isn't a
              * security problem.
              * /
-            pcl_memset(p, 0, SHA_CBLOCK); /* keep it zeroed * /
+            pcl_memset(p, 0, SHA_CBLOCK); / * keep it zeroed * /
         } else {
             pcl_memcpy(p + n, data, len);
             c->num += (unsigned int)len;
             return 1;
         }
     }
-/* PCL UNUSED END */
+   PCL UNUSED END */
     n = len / SHA_CBLOCK;
     if (n > 0) {
         pcl_sha256_block_data_order(c, data, n);
@@ -182,30 +182,30 @@ int pcl_SHA256_Final(unsigned char *md, SHA256_CTX *c)
     pcl_memset(p + n, 0, SHA_CBLOCK - 8 - n);
 
     p += SHA_CBLOCK - 8;
-/* PCL UNUSED START *
+/* PCL UNUSED START 
 #if   defined(DATA_ORDER_IS_BIG_ENDIAN)
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
     (void)HOST_l2c(c->Nh, p);
     (void)HOST_l2c(c->Nl, p);
-/* PCL UNUSED START *
+/* PCL UNUSED START 
 #elif defined(DATA_ORDER_IS_LITTLE_ENDIAN)
     (void)HOST_l2c(c->Nl, p);
     (void)HOST_l2c(c->Nh, p);
 #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
     p -= SHA_CBLOCK;
     pcl_sha256_block_data_order(c, p, 1);
     c->num = 0;
     pcl_memset(p, 0, SHA_CBLOCK);
-/* PCL UNUSED START *
+/* PCL UNUSED START 
 #ifndef HASH_MAKE_STRING
 # error "HASH_MAKE_STRING must be defined!"
 #else
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
     HASH_MAKE_STRING(c, md);
-/* PCL UNUSED START *
+/* PCL UNUSED START 
 #endif
-/* PCL UNUSED END   */
+   PCL UNUSED END   */
 
     return 1;
 }

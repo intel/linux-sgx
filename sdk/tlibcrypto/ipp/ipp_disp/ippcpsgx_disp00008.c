@@ -47,38 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int length, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
-IPPAPI(IppStatus, l9_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int length, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
+IPPAPI(IppStatus, y8_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
+IPPAPI(IppStatus, l9_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
 
-IPPFUN(IppStatus,sgx_disp_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int length, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
+IPPFUN(IppStatus,sgx_disp_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsTDESDecryptCBC( pSrc, pDst, length, pCtx1, pCtx2, pCtx3, pIV, padding );
+        return l9_ippsTDESDecryptCBC( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pIV, padding );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsTDESDecryptCBC( pSrc, pDst, length, pCtx1, pCtx2, pCtx3, pIV, padding );
+        return y8_ippsTDESDecryptCBC( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pIV, padding );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int length, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
-IPPAPI(IppStatus, h9_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int length, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
+IPPAPI(IppStatus, p8_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
+IPPAPI(IppStatus, h9_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
 
-IPPFUN(IppStatus,sgx_disp_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int length, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
+IPPFUN(IppStatus,sgx_disp_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsTDESDecryptCBC( pSrc, pDst, length, pCtx1, pCtx2, pCtx3, pIV, padding );
+        return h9_ippsTDESDecryptCBC( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pIV, padding );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsTDESDecryptCBC( pSrc, pDst, length, pCtx1, pCtx2, pCtx3, pIV, padding );
+        return p8_ippsTDESDecryptCBC( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pIV, padding );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -47,7 +47,7 @@ CPPFLAGS += -I$(LINUX_SDK_DIR)/trts       \
 
 CPP_SRCS := $(wildcard memory_manage/new*.cpp) \
             $(wildcard memory_manage/delete*.cpp)
-CPP_SRCS += tstdcxx_version.cpp
+CPP_SRCS += tcxx_version.cpp
 
 CC_SRCS  := $(wildcard $(LINUXDIR)/*.cc)
 C_SRCS   := $(filter-out $(LINUXDIR)/libelftc_dem_gnu3.c, $(wildcard $(LINUXDIR)/*.c))

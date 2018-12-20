@@ -29,6 +29,7 @@
  *
  */
 
+#include <sgx_random_buffers.h>
 #include "msg3_parm.h"
 #include "se_sig_rl.h"
 #include "cipher.h"
@@ -38,7 +39,7 @@
 #include "pve_hardcoded_tlv_data.h"
 #include "sgx_utils.h"
 #include "byte_order.h"
-#include "ipp_wrapper.h"
+#include <ipp_wrapper.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pek_pub_key.h"
@@ -166,7 +167,7 @@ static pve_status_t gen_msg3_signature(const proc_prov_msg2_blob_input_t *msg2_b
         goto ret_point;
     //Now encrypt the TLV Header and signature header including basic signature while the parm->signature_header is kept since piece-meal processing will use it
     memcpy(signature_header_to_encrypt+EPID_SIGNATURE_TLV_HEADER_SIZE, &parm->signature_header, cur_size-EPID_SIGNATURE_TLV_HEADER_SIZE);
-    ret =pve_aes_gcm_encrypt_inplace_update(parm->p_msg3_state, signature_header_to_encrypt, cur_size);
+    ret = sgx_error_to_pve_error(sgx_aes_gcm128_enc_inplace_update((sgx_aes_state_handle_t*)parm->p_msg3_state, signature_header_to_encrypt, cur_size));
     if( PVEC_SUCCESS != ret )
         goto ret_point;
 
@@ -213,7 +214,7 @@ static pve_status_t gen_msg3_signature(const proc_prov_msg2_blob_input_t *msg2_b
             }
         }
         //encrypt the NrProof in EPC
-        ret = pve_aes_gcm_encrypt_inplace_update(parm->p_msg3_state, reinterpret_cast<uint8_t *>(&temp3), sizeof(temp3));
+        ret = sgx_error_to_pve_error(sgx_aes_gcm128_enc_inplace_update((sgx_aes_state_handle_t*)parm->p_msg3_state, reinterpret_cast<uint8_t *>(&temp3), sizeof(temp3)));
         if(ret != PVEC_SUCCESS){
             goto ret_point;
         }
@@ -262,9 +263,9 @@ static pve_status_t proc_msg3_state_init(prov_msg3_parm_t *parm, const sgx_key_1
     se_static_assert(SK_SIZE==sizeof(sgx_cmac_128bit_tag_t)); /*size of sgx_cmac_128bit_tag_t should same as value of SK_SIZE*/
 
     //initialize state for piece-meal encryption of field of ProvMsg3
-    ret = pve_aes_gcm_encrypt_init((const uint8_t *)pwk2,  parm->iv, IV_SIZE,//pwk2 as the key 
+    ret = sgx_error_to_pve_error(sgx_aes_gcm128_enc_init((const uint8_t *)pwk2,  parm->iv, IV_SIZE,//pwk2 as the key 
         NULL, 0,//no AAD used for the encryption of EpidSignature
-        &parm->p_msg3_state, &parm->msg3_state_size);
+        (sgx_aes_state_handle_t*)&parm->p_msg3_state));
 ret_point:
     return ret;
 }
@@ -290,7 +291,8 @@ static pve_status_t gen_msg3_join_proof_escrow_data(const proc_prov_msg2_blob_in
     memset(&temp_f, 0, sizeof(temp_f));
 
     //randomly generate the private EPID key f, host to network transformation not required since server will not decode it
-    if(PVEC_SUCCESS != (ret=gen_epid_priv_f(f))){
+    ret=sgx_error_to_pve_error(sgx_gen_epid_priv_f((void*)f));
+	if(PVEC_SUCCESS != ret){
         goto ret_point;
     }
 
@@ -365,7 +367,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
                                 uint32_t epid_sig_buffer_size)
 {
     pve_status_t ret = PVEC_SUCCESS;
-    sgx_status_t sgx_status = SGX_SUCCESS;
+    sgx_status_t sgx_status = SGX_ERROR_UNEXPECTED;
     uint8_t temp_buf[JOIN_PROOF_TLV_TOTAL_SIZE];
     uint8_t *data_to_encrypt = NULL;
     uint8_t  size_to_encrypt = 0;
@@ -375,14 +377,11 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
     uint8_t* pdata = &report_data_payload[0];
     sgx_report_data_t report_data = { 0 };
     uint8_t aad[sizeof(GroupId)+sizeof(device_id_t)+CHALLENGE_NONCE_SIZE];
-    IppsRSAPublicKeyState *pub_key = NULL;
-    uint8_t *pub_key_buffer = NULL;
-    IppStatus ipp_status;
-    int pub_key_size;
-    Ipp8u seeds[PVE_RSA_SEED_SIZE]={0};
+    void *pub_key = NULL;
     const signed_pek_t& pek = msg2_blob_input->pek;
     uint32_t le_e;
     int i;
+    size_t output_len = 0;
     uint8_t le_n[sizeof(pek.n)];
     static_assert(sizeof(pek.n)==384, "pek.n should be 384 bytes");
     device_id_t *device_id_in_aad= (device_id_t *)(aad+sizeof(GroupId));
@@ -407,7 +406,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
     if(!performance_rekey_used){
         //the temp_buf used for join_proof_with_escrow tlv
         memcpy(temp_buf, JOIN_PROOF_TLV_HEADER, JOIN_PROOF_TLV_HEADER_SIZE);//first copy in tlv header
-        ret = gen_msg3_join_proof_escrow_data(msg2_blob_input, *join_proof_with_escrow);//generate the tlv payload
+        ret = random_stack_advance(gen_msg3_join_proof_escrow_data, msg2_blob_input, *join_proof_with_escrow);//generate the tlv payload
         if( PVEC_SUCCESS != ret )
             goto ret_point;
         msg3_output->is_join_proof_generated = true;
@@ -427,7 +426,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
     if(PVEC_SUCCESS !=ret){
         goto ret_point;
     }
-    ret = get_pwk2(&device_id_in_aad->psvn, msg3_output->n2, pwk2);
+    ret = random_stack_advance(get_pwk2, &device_id_in_aad->psvn, msg3_output->n2, pwk2);
     if( PVEC_SUCCESS != ret )
         goto ret_point;
 
@@ -456,7 +455,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
         msg3_output->epid_sig_output_size = epid_sig_buffer_size;
         memcpy(msg3_output->epid_sig_iv, msg3_parm.iv, IV_SIZE);
         //generate MAC in EPC
-        ret = pve_aes_gcm_get_mac(msg3_parm.p_msg3_state, msg3_output->epid_sig_mac);
+        ret = sgx_error_to_pve_error(sgx_aes_gcm128_enc_get_mac(msg3_output->epid_sig_mac, (sgx_aes_state_handle_t*)msg3_parm.p_msg3_state));
         if (PVEC_SUCCESS != ret)
             goto ret_point;
     }
@@ -468,31 +467,23 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
         le_n[i]=pek.n[sizeof(pek.n)/sizeof(pek.n[0])-i-1];
     }
 
-    ipp_status = sgx_create_rsa_pub_key(sizeof(pek.n), sizeof(pek.e),
-        reinterpret_cast<const unsigned char *>(le_n), reinterpret_cast<const unsigned char *>(&le_e), reinterpret_cast<void **>(&pub_key));
-    if(ippStsNoErr != ipp_status){
-        ret = ipp_error_to_pve_error(ipp_status);
+    sgx_status = sgx_create_rsa_pub_key(sizeof(pek.n), sizeof(pek.e),
+        reinterpret_cast<const unsigned char *>(le_n), reinterpret_cast<const unsigned char *>(&le_e), &pub_key);
+    if (SGX_SUCCESS != sgx_status) {
+        ret = sgx_error_to_pve_error(sgx_status);
         goto ret_point;
     }
 
-    ipp_status = ippsRSA_GetBufferSizePublicKey(&pub_key_size, pub_key);
-    if(ippStsNoErr != ipp_status){
-        ret = ipp_error_to_pve_error(ipp_status);
+    sgx_status = sgx_rsa_pub_encrypt_sha256(pub_key, NULL, &output_len, reinterpret_cast<const unsigned char*>(pwk2_tlv_buffer),
+        PWK2_TLV_TOTAL_SIZE);
+    if (SGX_SUCCESS != sgx_status) {
+        ret = sgx_error_to_pve_error(sgx_status);
         goto ret_point;
     }
-    if(SGX_SUCCESS != (sgx_status =sgx_read_rand(seeds, PVE_RSA_SEED_SIZE))){
-        ret = se_read_rand_error_to_pve_error(sgx_status);
-        goto ret_point;
-    }
-    pub_key_buffer = (uint8_t *)malloc(pub_key_size);
-    if(NULL ==pub_key_buffer){ 
-        ret = PVEC_INSUFFICIENT_MEMORY_ERROR;
-        goto ret_point;
-    }
-    ipp_status = ippsRSAEncrypt_OAEP(reinterpret_cast<const Ipp8u *>(pwk2_tlv_buffer), PWK2_TLV_TOTAL_SIZE, NULL, 0, seeds, 
-        msg3_output->encrypted_pwk2, pub_key, IPP_ALG_HASH_SHA256, pub_key_buffer);
-    if(ippStsNoErr != ipp_status){
-        ret = ipp_error_to_pve_error(ipp_status);
+    sgx_status = sgx_rsa_pub_encrypt_sha256(pub_key, msg3_output->encrypted_pwk2, &output_len, reinterpret_cast<const unsigned char*>(pwk2_tlv_buffer),
+        PWK2_TLV_TOTAL_SIZE);
+    if (SGX_SUCCESS != sgx_status) {
+        ret = sgx_error_to_pve_error(sgx_status);
         goto ret_point;
     }
 
@@ -525,10 +516,8 @@ ret_point:
     (void)memset_s(temp_buf, sizeof(temp_buf), 0, sizeof(temp_buf));
     (void)memset_s(pwk2_tlv_buffer, sizeof(pwk2_tlv_buffer),0,sizeof(pwk2_tlv_buffer));
     if(pub_key){
-        secure_free_rsa_pub_key(sizeof(pek.n), sizeof(pek.e), pub_key);
+        sgx_free_rsa_key(pub_key, SGX_RSA_PUBLIC_KEY, sizeof(pek.n), sizeof(pek.e));
     }
-    if(pub_key_buffer){
-        free(pub_key_buffer);
-    }
+
     return ret;
 }

@@ -45,19 +45,18 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc                      \
 		   -I$(LINUX_SDK_DIR)/tseal                       \
 		   -I$(LINUX_PSW_DIR)/ae/common                   \
 		   -I$(LINUX_PSW_DIR)/ae/pve                      \
-		   -I$(LINUX_PSW_DIR)/ae/inc/internal
+		   -I$(LINUX_PSW_DIR)/ae/inc/internal             \
+		   -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 TCRYPTO_LIBDIR := $(LINUX_SDK_DIR)/tlibcrypto
 EPID_LIBDIR	   := $(EPID_SDK_DIR)
 
 EXTERNAL_LIB += -L$(EPID_LIBDIR)/epid/member -lmember \
 				-L$(EPID_LIBDIR)/epid/common -lcommon \
-				-L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
+				-L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -L$(LINUX_EXTERNAL_DIR)/ippcp_internal/lib/linux/intel64/ -lsgx_disp -lippcp 
 
 SRC := $(wildcard *.cpp)
-SRC += se_ecdsa_verify_internal.cpp  \
-	   pve_qe_common.cpp             \
-	   pve_pub_key.cpp               \
+SRC += pve_qe_common.cpp             \
 	   pek_pub_key.cpp
 
 OBJ := $(SRC:.cpp=.o)
@@ -84,7 +83,7 @@ provision_enclave.o: $(AENAME)_t.c
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -fno-exceptions -c $< -o $@
 
 $(AENAME)_t.c: $(AENAME).edl
-	@$(EDGER8R) --trusted $<
+	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
 
 .PHONY: clean
 clean:

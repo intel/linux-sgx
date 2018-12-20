@@ -34,6 +34,7 @@ include ../buildenv.mk
 
 CXXFLAGS  += -Werror
 CFLAGS	+= -Werror 
+LDTFLAGS += -L$(IPP_LIBS_DIR) -lsgx_disp -lippcp -lsgx_tcxx -lsgx_tstdc
 
 EPID_SDK_DIR = $(LINUX_EXTERNAL_DIR)/epid-sdk
 EXTERNAL_LIB += -L$(EPID_SDK_DIR)/epid/member -lmember \
@@ -44,11 +45,11 @@ INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux \
 		   -I$(LINUX_EXTERNAL_DIR)/epid-sdk           \
 		   -I$(LINUX_PSW_DIR)/ae/common               \
 		   -I$(COMMON_DIR)/inc/tlibc                  \
-		   -I$(LINUX_PSW_DIR)/ae/inc/internal
+		   -I$(LINUX_PSW_DIR)/ae/inc/internal  \
+		   -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 SRC := $(wildcard *.cpp)
-SRC += se_ecdsa_verify_internal.cpp   \
-	   se_sig_rl.cpp                  \
+SRC += se_sig_rl.cpp                  \
 	   pve_qe_common.cpp 
 
 OBJ := $(SRC:.cpp=.o)
@@ -71,7 +72,7 @@ $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --trusted $<
+	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
 
 .PHONY: clean
 clean:

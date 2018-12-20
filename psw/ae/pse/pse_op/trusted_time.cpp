@@ -29,6 +29,7 @@
  *
  */
 
+#include "trusted_time.h"
 #include "session_mgr.h"
 #include "byte_order.h"
 #include "psda_service.h"

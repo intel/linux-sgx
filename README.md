@@ -135,16 +135,16 @@ $ make sdk_install_pkg DEBUG=1
 To build the Intel(R) SGX PSW installer, enter the following command:
 - On Ubuntu 16.04 and Ubuntu 18.04:
   ```
-  $ make deb_sgx_enclave_common_pkg
+  $ make deb_pkg
   ```
-  You can find the generated Intel(R) SGX PSW installer ``libsgx-enclave-common_${version}-${revision}_amd64.deb`` located under `linux/installer/deb/libsgx-enclave-common`, where `${version}` refers to the version number and the `${revision}` refers to the revision number of the package.   
+  You can find the generated Intel(R) SGX PSW installer ``libsgx-urts_${version}-${revision}_amd64.deb`` and ``libsgx-enclave-common_${version}-${revision}_amd64.deb`` located under `linux/installer/deb`, where `${version}` refers to the version number and the `${revision}` refers to the revision number of the package.   
   **Note**: On Ubuntu 18.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose. On Ubuntu 16.04, if you want to keep debug symbols in the Intel(R) SGX PSW installer, before building the Intel(R) SGX PSW, you need to export an environment variable to ensure the debug symbols not stripped:
    ```
    $ export DEB_BUILD_OPTIONS="nostrip"
    ```
   **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer without optimization and with full debug information kept in the tools and libraries, enter the following command:
   ```
-  $ make deb_sgx_enclave_common_pkg DEBUG=1
+  $ make deb_pkg DEBUG=1
   ```
 - On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
 - On Fedora 27:
@@ -158,7 +158,7 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make psw_install_pkg DEBUG=1
   ```
-To build the Intel(R) SGX PSW development installer, enter the following command:
+To build the Intel(R) SGX PSW development installer separately, enter the following command:
 - On Ubuntu 16.04 and Ubuntu 18.04:
   ```
   $ make deb_sgx_enclave_common_dev_pkg
@@ -279,17 +279,17 @@ Install the Intel(R) SGX PSW
   Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder, build and install the `JHI` service using the following commands:
   * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
-    $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config
+    $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config libsystemd-dev
     $ cmake .;make;sudo make install;sudo systemctl enable jhi
   ```
   * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
   ```
-    $ sudo yum install libuuid-devel libxml2-devel cmake pkgconfig
+    $ sudo yum install libuuid-devel libxml2-devel cmake pkgconfig systemd-devel
     $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
   ```
   * On SUSE Linux Enterprise Server 12:  
   ```
-    $ sudo zypper install libuuid-devel libxml2-devel cmake pkg-config
+    $ sudo zypper install libuuid-devel libxml2-devel cmake pkg-config systemd-devel
     $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
   ```
 
@@ -297,12 +297,12 @@ Install the Intel(R) SGX PSW
 To install the Intel(R) SGX PSW, invoke the installer with root privilege: 
 - On Ubuntu 16.04 and Ubuntu 18.04:
   ```
-  $ cd linux/installer/deb/libsgx-enclave-common
-  $ sudo dpkg -i ./libsgx-enclave-common_${version}-${revision}_amd64.deb
+  $ cd linux/installer/deb
+  $ sudo dpkg -i ./libsgx-urts_${version}-${revision}_amd64.deb ./libsgx-enclave-common_${version}-${revision}_amd64.deb
   ```
   **NOTE**: To debug with sgx-gdb on Ubuntu 16.04, you need to ensure the Intel(R) SGX PSW is built under the condition that the environment variable ``DEB_BUILD_OPTIONS="nostrip"`` is set. On Ubuntu 18.04, you need to install the debug package by entering the following command:
   ```
-  $ cd linux/installer/deb/libsgx-enclave-common
+  $ cd linux/installer/deb
   $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb
   ```
 - On Red Hat Enterprise Linux 7.4 and CentOS 7.5:

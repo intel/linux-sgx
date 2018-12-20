@@ -32,11 +32,10 @@
 #ifndef _CSR_TEMPLATE_DATA_H_
 #define _CSR_TEMPLATE_DATA_H_
 
-#include "ae_ipp.h"
 #include "signing_template_info.h"
 
 //NRG: Note: This template came from the Backend POC and needs to be replaced
-static Ipp8u CertificateSigningRequestTemplate[] =
+static uint8_t CertificateSigningRequestTemplate[] =
 {
     /* Certificate Request Info (to be signed): Offset: 0x04   Length: 249 bytes                               */
     /*                                 ====                                                                    */

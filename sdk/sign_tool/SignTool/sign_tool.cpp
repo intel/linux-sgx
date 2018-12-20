@@ -101,7 +101,7 @@ typedef enum _file_path_t
 static int load_enclave(BinParser *parser, metadata_t *metadata)
 {
     std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
-    return ploader->load_enclave_ex(NULL, 0, metadata, NULL);
+    return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
 }
 
 
@@ -277,7 +277,11 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
         
         exponent_size = (uint32_t)(ROUND_TO(exponent_size, sizeof(uint32_t)) / sizeof(uint32_t));
         modulus_size = (uint32_t)(ROUND_TO(modulus_size, sizeof(uint32_t)) / sizeof(uint32_t));
-        
+        if(exponent_size != 0x1 || modulus_size != 0x60)
+        {
+            free(modulus);
+            return false;
+        }	
         if(BN_bn2bin(n, modulus) != SE_KEY_SIZE)
         {
             free(modulus);
@@ -294,8 +298,6 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
         }
         free(modulus);
         assert(css->key.exponent[0] == 0x03);
-        assert(exponent_size == 0x1);
-        assert(modulus_size == 0x60);
     }
 
     // fill the enclave hash 
@@ -986,6 +988,7 @@ static bool dump_enclave_metadata(const char *enclave_path, const char *dumpfile
         close_handle(fh);
         return false;
     }
+
     const metadata_t *metadata = GET_PTR(metadata_t, mh->base_addr, meta_offset); 
     if(print_metadata(dumpfile_path, metadata) == false)
     {
@@ -1025,7 +1028,12 @@ int main(int argc, char* argv[])
                                    {"HeapMinSize",0x1FFFFFFFFF,0,HEAP_SIZE_MIN,0},
                                    {"HeapInitSize",0x1FFFFFFFFF,0,HEAP_SIZE_MIN,0},
                                    {"MiscSelect", 0xFFFFFFFF, 0, DEFAULT_MISC_SELECT, 0},
-                                   {"MiscMask", 0xFFFFFFFF, 0, DEFAULT_MISC_MASK, 0}};
+                                   {"MiscMask", 0xFFFFFFFF, 0, DEFAULT_MISC_MASK, 0},
+                                   {"EnableKSS", 1, 0, 0, 0},
+                                   {"ISVFAMILYID_H", ISVFAMILYID_MAX, 0, 0, 0},
+                                   {"ISVFAMILYID_L", ISVFAMILYID_MAX , 0, 0, 0},
+                                   {"ISVEXTPRODID_H", ISVEXTPRODID_MAX, 0, 0, 0},
+                                   {"ISVEXTPRODID_L", ISVEXTPRODID_MAX, 0, 0, 0}};
 
     const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};

@@ -60,6 +60,7 @@ public:
 
     static bool cse_gid_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool sgx_gid_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
+    static bool sgx_epid_group_revoked(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool cpu_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool qe_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool pce_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);

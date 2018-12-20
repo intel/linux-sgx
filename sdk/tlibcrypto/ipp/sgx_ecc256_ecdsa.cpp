@@ -71,7 +71,7 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
     Ipp32u *p_sigy = NULL;
     int ecp_size = 0;
     const int order_size = sizeof(sgx_nistp256_r);
-    uint32_t hash[8] = { 0 };
+    uint8_t hash[SGX_SHA256_HASH_SIZE] = { 0 };
 
     do
     {
@@ -173,25 +173,37 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
     }
 }
 
-/* Verifies the signature for the given data based on the public key
-*
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
-*   Inputs: sgx_ecc_state_handle_t ecc_handle - Handle to ECC crypto system
-*           sgx_ec256_public_t *p_public - Pointer to the public key - LITTLE ENDIAN
-*           uint8_t *p_data - Pointer to the data to be signed
-*           uint32_t data_size - Size of the data to be signed
-*           sgx_ec256_signature_t *p_signature - Pointer to the signature - LITTLE ENDIAN
-*   Output: uint8_t *p_result - Pointer to the result of verification check  */
 sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
-                              uint32_t data_size,
+    uint32_t data_size,
+    const sgx_ec256_public_t *p_public,
+    sgx_ec256_signature_t *p_signature,
+    uint8_t *p_result,
+    sgx_ecc_state_handle_t ecc_handle)
+{
+
+    if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||
+        (p_data == NULL) || (data_size < 1) || (p_result == NULL))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    uint8_t hash[SGX_SHA256_HASH_SIZE] = { 0 };
+
+    // Prepare the message used to sign.
+    if(ippStsNoErr != ippsHashMessage_rmf(p_data, data_size, (Ipp8u*)hash, ippsHashMethod_SHA256_TT()))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    return (sgx_ecdsa_verify_hash(hash, p_public, p_signature, p_result, ecc_handle));
+}
+
+sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *hash,
                               const sgx_ec256_public_t *p_public,
                               sgx_ec256_signature_t *p_signature,
                               uint8_t *p_result,
                               sgx_ecc_state_handle_t ecc_handle)
 {
     if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||
-        (p_data == NULL) || (data_size < 1) || (p_result == NULL))
+        (hash == NULL) || (p_result == NULL))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
@@ -210,7 +222,7 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
     IppsBigNumState* p_signx_bn = NULL;
     IppsBigNumState* p_signy_bn = NULL;
     const int order_size = sizeof(sgx_nistp256_r);
-    uint32_t hash[8] = { 0 };
+
     int ecp_size = 0;
 
     do
@@ -218,13 +230,11 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
         ipp_ret = sgx_ipp_newBN(sgx_nistp256_r, order_size, &p_ecp_order);
         ERROR_BREAK(ipp_ret);
 
-        // Prepare the message used to sign.
-        ipp_ret = ippsHashMessage_rmf(p_data, data_size, (Ipp8u*)hash, ippsHashMethod_SHA256_TT());
-        ERROR_BREAK(ipp_ret);
+
         /* Byte swap in creation of Big Number from SHA256 hash output */
-        ipp_ret = sgx_ipp_newBN(NULL, sizeof(hash), &p_hash_bn);
+        ipp_ret = sgx_ipp_newBN(NULL, SGX_SHA256_HASH_SIZE, &p_hash_bn);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = ippsSetOctString_BN((Ipp8u*)hash, sizeof(hash), p_hash_bn);
+        ipp_ret = ippsSetOctString_BN((Ipp8u*)hash, SGX_SHA256_HASH_SIZE, p_hash_bn);
         ERROR_BREAK(ipp_ret);
 
         ipp_ret = sgx_ipp_newBN(NULL, order_size, &p_msg_bn);

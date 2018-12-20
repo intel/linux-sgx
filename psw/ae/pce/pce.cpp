@@ -29,6 +29,7 @@
  *
  */
 
+#include <sgx_random_buffers.h>
 #include "pce_cert.h"
 #include "pce_t.c"
 #include "aeerror.h"
@@ -143,82 +144,87 @@ uint32_t get_pc_info(const sgx_report_t* report,
     }
 
     ppid_t ppid_buf;
-
-    IppsRSAPublicKeyState *pub_key = NULL;
-    int pub_key_size = 0;
-    Ipp8u seeds[PCE_RSA_SEED_SIZE] = { 0 };
-    uint8_t *pub_key_buffer = NULL;
-    IppStatus ipp_ret;
-
     uint32_t little_endian_e = 0;
     uint8_t *le_n = NULL;
+    void *key = NULL;
+    ae_error_t ae_ret = AE_FAILURE;
 
-    ae_error_t ae_ret = get_ppid(&ppid_buf);
-    if(ae_ret!=AE_SUCCESS){
-        goto RETURN_POINT;
-    }
+    do {
+        //get ppid
+        //
+        if (get_ppid(&ppid_buf) != AE_SUCCESS) {
+            break;
+        }
 
-    little_endian_e = lv_ntohl(*(public_key + RSA_MOD_SIZE));
-    le_n = (uint8_t *)malloc(RSA_MOD_SIZE);
-    if (le_n == NULL){
-        ae_ret = AE_OUT_OF_MEMORY_ERROR;
-        goto RETURN_POINT;
-    }
+        //create public exponent value represented in little endian
+        //
+        little_endian_e = lv_ntohl(*(public_key + RSA_MOD_SIZE));
 
-    for (size_t i = 0; i<RSA_MOD_SIZE; i++){
-        le_n[i] = *(public_key + RSA_MOD_SIZE - 1 - i);//create little endian n
-    }
+        le_n = (uint8_t *)malloc(RSA_MOD_SIZE);
+        if (le_n == NULL) {
+            ae_ret = AE_OUT_OF_MEMORY_ERROR;
+            break;
+        }
 
-    sgx_ret = sgx_create_rsa_pub_key(RSA_MOD_SIZE, RSA_E_SIZE,
-        reinterpret_cast<const unsigned char *>(le_n),
-        reinterpret_cast<const unsigned char *>(&little_endian_e),
-        reinterpret_cast<void **>(&pub_key));
-    free(le_n);
-    if (SGX_ERROR_OUT_OF_MEMORY == sgx_ret){
-        ae_ret = AE_OUT_OF_MEMORY_ERROR;
-        goto RETURN_POINT;
-    }
-    else if(SGX_SUCCESS != sgx_ret){//possible invalid rsa public key
-        ae_ret = AE_FAILURE;
-        goto RETURN_POINT;
-    }
-    ipp_ret = ippsRSA_GetBufferSizePublicKey(&pub_key_size, pub_key);
-    if (ipp_ret != ippStsNoErr){
-        ae_ret = AE_FAILURE;
-        goto RETURN_POINT;
-    }
-    if (SGX_SUCCESS != sgx_read_rand(seeds, PCE_RSA_SEED_SIZE)){
-        ae_ret = AE_READ_RAND_ERROR;
-        goto RETURN_POINT;
-    }
+        for (size_t i = 0; i<RSA_MOD_SIZE; i++) {
+            le_n[i] = *(public_key + RSA_MOD_SIZE - 1 - i);//create little endian n
+        }
 
-    pub_key_buffer = (uint8_t *)malloc(pub_key_size);
-    if (pub_key_buffer == NULL){
-        ae_ret = AE_OUT_OF_MEMORY_ERROR;
-        goto RETURN_POINT;
-    }
-    ipp_ret = ippsRSAEncrypt_OAEP(reinterpret_cast<const Ipp8u *>(&ppid_buf), sizeof(ppid_buf), NULL, 0, seeds,
-        encrypted_ppid, pub_key, IPP_ALG_HASH_SHA256, pub_key_buffer);
-    if (ipp_ret != ippStsNoErr){
-        ae_ret = AE_FAILURE;
-        goto RETURN_POINT;
-    }
+        //create RSA public key with le_n modulus and little_endian_e exponent
+        //
+        if (sgx_create_rsa_pub_key(RSA_MOD_SIZE, RSA_E_SIZE, (const unsigned char *)le_n,
+            (const unsigned char *)(&little_endian_e), &key) != SGX_SUCCESS) {
+            ae_ret = AE_FAILURE;
+            break;
+        }
 
-    ae_ret = get_isv_svn(&pce_info->pce_isvn);
-    if (ae_ret != AE_SUCCESS){
-        goto RETURN_POINT;
+        //get expected cipher text length
+        //
+        if (sgx_rsa_pub_encrypt_sha256(key, NULL, (size_t*)encrypted_ppid_out_size,
+            (ppid_buf.ppid), sizeof(ppid_buf.ppid)) != SGX_SUCCESS) {
+            ae_ret = AE_FAILURE;
+            break;
+        }
+
+        //validate out size match RSA_MOD_SIZE
+        //
+        if (*encrypted_ppid_out_size != RSA_MOD_SIZE) {
+            ae_ret = AE_FAILURE;
+            break;
+        }
+
+        //encrypt ppid, using RSA public key into encrypted_ppid buffer
+        //
+        if (sgx_rsa_pub_encrypt_sha256(key, encrypted_ppid, (size_t*)encrypted_ppid_out_size,
+            (ppid_buf.ppid), sizeof(ppid_buf.ppid)) != SGX_SUCCESS) {
+            ae_ret = AE_FAILURE;
+            break;
+        }
+
+        //validate out size match RSA_MOD_SIZE
+        //
+        if (*encrypted_ppid_out_size != RSA_MOD_SIZE) {
+            ae_ret = AE_FAILURE;
+            break;
+        }
+
+        //get ISV and SVN values
+        //
+        if (get_isv_svn(&pce_info->pce_isvn) != AE_SUCCESS) {
+            break;
     }
 
     pce_info->pce_id = CUR_PCE_ID;
     *signature_scheme = NIST_P256_ECDSA_SHA256;
     ae_ret = AE_SUCCESS;
-RETURN_POINT:
-    memset_s(&ppid_buf, sizeof(ppid_buf), 0, sizeof(ppid_t));
-    if(NULL != pub_key)
-        secure_free_rsa_pub_key(RSA_MOD_SIZE, RSA_E_SIZE, pub_key);
-    if (NULL != pub_key_buffer)
-        free(pub_key_buffer);
+    } while (0);
 
+    //free public modulus buffer, clear temporary ppid buffer, clear output buffer in case of any error occured
+    //
+    if (le_n != NULL)
+        free(le_n);
+    sgx_free_rsa_key(key, SGX_RSA_PUBLIC_KEY, RSA_MOD_SIZE, RSA_E_SIZE);
+    memset_s(&ppid_buf, sizeof(ppid_buf), 0, sizeof(ppid_t));
     if (AE_SUCCESS != ae_ret)
         memset_s(encrypted_ppid, encrypted_ppid_buf_size, 0, *encrypted_ppid_out_size);
     return ae_ret;
@@ -243,7 +249,10 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
 
     ae_error_t ae_ret = AE_FAILURE;
     sgx_ecc_state_handle_t handle=NULL;
-    sgx_ec256_private_t ec_prv_key = {0};
+
+    randomly_placed_buffer<sgx_ec256_private_t, sizeof(sgx_ec256_private_t)> ec_prv_key_buf{};
+    auto* pec_prv_key = ec_prv_key_buf.randomize_object();
+
     sgx_status_t sgx_status = SGX_SUCCESS;
 
     if(SGX_SUCCESS != sgx_verify_report(report)){
@@ -253,11 +262,11 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
     if((report->body.attributes.flags & SGX_FLAGS_PROVISION_KEY) != SGX_FLAGS_PROVISION_KEY){
         return PCE_INVALID_PRIVILEGE;
     }
-    ae_ret = get_pce_priv_key(cert_psvn, &ec_prv_key);
+    ae_ret = random_stack_advance(get_pce_priv_key, cert_psvn, pec_prv_key);
     if(AE_SUCCESS!=ae_ret){
         goto ret_point;
     }
-    SWAP_ENDIAN_32B(&ec_prv_key);
+    SWAP_ENDIAN_32B(pec_prv_key);
     sgx_status = sgx_ecc256_open_context(&handle);
     if (SGX_ERROR_OUT_OF_MEMORY == sgx_status)
     {
@@ -270,7 +279,7 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
     }
 
     sgx_status = sgx_ecdsa_sign(reinterpret_cast<const uint8_t *>(&report->body), sizeof(report->body),
-        &ec_prv_key, reinterpret_cast<sgx_ec256_signature_t *>(signature), handle);
+        pec_prv_key, reinterpret_cast<sgx_ec256_signature_t *>(signature), handle);
     if (SGX_ERROR_OUT_OF_MEMORY == sgx_status)
     {
         ae_ret = AE_OUT_OF_MEMORY_ERROR;
@@ -287,7 +296,7 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
     *signature_out_size = sizeof(sgx_ec256_signature_t);
     ae_ret = AE_SUCCESS;
 ret_point:
-    (void)memset_s(&ec_prv_key, sizeof(ec_prv_key),0,sizeof(ec_prv_key));
+    (void)memset_s(pec_prv_key, sizeof(*pec_prv_key),0,sizeof(*pec_prv_key));
     if(handle!=NULL){
         sgx_ecc256_close_context(handle);
     }

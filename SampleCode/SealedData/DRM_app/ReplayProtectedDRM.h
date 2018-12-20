@@ -61,7 +61,6 @@ public:
 private:
     uint8_t  sealed_activity_log[sealed_activity_log_length];
     sgx_enclave_id_t enclave_id;
-    sgx_launch_token_t launch_token;
 
 };
 

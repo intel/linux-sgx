@@ -51,7 +51,7 @@ typedef G1Point G3Point;
 
 
 #include "sgx_tcrypto.h" 
-#include "prepare_hash_sha1.h"
+#include "../prepare_hash_sha1.h"
 #include "typedef.h"
 
 #define STATUS_SUCCESS  (0)
@@ -69,7 +69,7 @@ typedef enum _CRYPTO_STATUS
     CRYPTO_STATUS_SUCCESS = 0,
     CRYPTO_STATUS_INVALID_PARAMS,
     CRYPTO_MEMORY_ERROR,
-    CRYPTO_IPP_ERROR,
+    CRYPTO_TCRYPTO_ERROR,
     CRYPTO_STATUS_INTERNAL_ERROR,
 } crypto_status_t;
 

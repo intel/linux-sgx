@@ -177,10 +177,12 @@ endif
 endif
 
 
-.PHONY: all run
+.PHONY: all run target
+all: .config_$(Build_Mode)_$(SGX_ARCH)
+	@$(MAKE) target
 
 ifeq ($(Build_Mode), HW_RELEASE)
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(App_Name) $(Enclave_Name)
+target: $(App_Name) $(Enclave_Name)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclave use the command:"
@@ -188,7 +190,7 @@ all: .config_$(Build_Mode)_$(SGX_ARCH) $(App_Name) $(Enclave_Name)
 	@echo "You can also sign the enclave using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(App_Name) $(Signed_Enclave_Name)
+target: $(App_Name) $(Signed_Enclave_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -214,15 +216,17 @@ endif
 
 ######## App Objects ########
 
-DRM_app/DRM_enclave_u.c: $(SGX_EDGER8R) DRM_enclave/DRM_enclave.edl
+DRM_app/DRM_enclave_u.h: $(SGX_EDGER8R) DRM_enclave/DRM_enclave.edl
 	@cd DRM_app && $(SGX_EDGER8R) --untrusted ../DRM_enclave/DRM_enclave.edl --search-path ../DRM_enclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
+
+DRM_app/DRM_enclave_u.c: DRM_app/DRM_enclave_u.h
 
 DRM_app/DRM_enclave_u.o: DRM_app/DRM_enclave_u.c
 	@$(CC) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-DRM_app/%.o: DRM_app/%.cpp
+DRM_app/%.o: DRM_app/%.cpp DRM_app/DRM_enclave_u.h
 	@$(CXX) $(App_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
@@ -232,15 +236,17 @@ $(App_Name): DRM_app/DRM_enclave_u.o $(App_Cpp_Objects)
 
 ######## Enclave Objects ########
 
-DRM_enclave/DRM_enclave_t.c: $(SGX_EDGER8R) DRM_enclave/DRM_enclave.edl
+DRM_enclave/DRM_enclave_t.h: $(SGX_EDGER8R) DRM_enclave/DRM_enclave.edl
 	@cd DRM_enclave && $(SGX_EDGER8R) --trusted ../DRM_enclave/DRM_enclave.edl --search-path ../DRM_enclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
+
+DRM_enclave/DRM_enclave_t.c: DRM_enclave/DRM_enclave_t.h
 
 DRM_enclave/DRM_enclave_t.o: DRM_enclave/DRM_enclave_t.c
 	@$(CC) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-DRM_enclave/%.o: DRM_enclave/%.cpp
+DRM_enclave/%.o: DRM_enclave/%.cpp DRM_enclave/DRM_enclave_t.h
 	@$(CXX) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 

@@ -33,6 +33,7 @@
 #define _PSE_PR_CLASS_H_
 #include "AEClass.h"
 #include "aeerror.h"
+#include "PSDAService.h"
 #include "./upse/platform_info_blob.h"
 #include "ae_debug_flag.hh"
 
@@ -42,7 +43,13 @@ class CPSEPRClass: public SingletonEnclave<CPSEPRClass>
 {
     friend class Singleton<CPSEPRClass>;
     friend class SingletonEnclave<CPSEPRClass>;
-    static aesm_enclave_id_t get_enclave_fid(){return PSE_PR_ENCLAVE_FID;}
+    static aesm_enclave_id_t get_enclave_fid()
+    {
+        if (PSDAService::instance().is_sigma20_supported())
+            return PSE_PR_2_ENCLAVE_FID;
+        else
+            return PSE_PR_ENCLAVE_FID;
+    }
 protected:
     CPSEPRClass(){};
     ~CPSEPRClass(){};

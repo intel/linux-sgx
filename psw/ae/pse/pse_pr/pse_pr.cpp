@@ -46,11 +46,11 @@
 #include "le2be_macros.h"
 #include "pse_pr_common.h"
 
-#include "Epid11_rl.h"
+#include "Epid_rl.h"
 
 
-static TEpidSigma11Verifier*  s_pVerifier = NULL;
-
+static TEpidSigmaVerifier*  s_pVerifier = NULL;
+ 
 ae_error_t ecall_tPrepareForCertificateProvisioning
 (
     /*in */ UINT64  nonce64,
@@ -75,7 +75,7 @@ ae_error_t ecall_tPrepareForCertificateProvisioning
 ae_error_t ecall_tGenM7
 (
     /*in */ const SIGMA_S1_MESSAGE*      pS1,
-    /*in */ const EPID11_SIG_RL*         pSigRL, 
+    /*in */ const EPID_SIG_RL*           pSigRL,
     /*in */ uint32_t  nTotalLen_SigRL,
     /*in */ const uint8_t*               pOcspResp, 
     /*in */ uint32_t  nLen_OcspResp,
@@ -93,7 +93,7 @@ ae_error_t ecall_tGenM7
 
     do
     {
-        s_pVerifier = new (std::nothrow) TEpidSigma11Verifier;
+        s_pVerifier = new (std::nothrow) TEpidSigmaVerifier;
         BREAK_IF_TRUE((NULL == s_pVerifier), status, PSE_PR_INSUFFICIENT_MEMORY_ERROR);
 
         status = s_pVerifier->GenM7(
@@ -119,7 +119,7 @@ ae_error_t ecall_tVerifyM8
 (
     /*in */ const SIGMA_S3_MESSAGE*      pS3,
     /*in */ uint32_t  nLen_S3,
-    /*in */ const EPID11_PRIV_RL*        pPrivRL,
+    /*in */ const EPID_PRIV_RL*        pPrivRL,
     /*in */ uint32_t  nTotalLen_PrivRL,
     /*out*/       pairing_blob_t* pPairingBlob,
     /*out*/ uint8_t*  puNewPairing

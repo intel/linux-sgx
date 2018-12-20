@@ -37,6 +37,7 @@
   * Definition for interfaces provided by provision enclave.
   */
 
+#include <sgx_random_buffers.h>
 #include "se_cdefs.h"
 #include "string.h"
 #include "helper.h"
@@ -195,7 +196,7 @@ uint32_t proc_prov_msg4_data_wrapper(
         goto ret_point;
     }
 
-    status = proc_prov_msg4_data( msg4_input, reinterpret_cast<sgx_sealed_data_t*>(data_blob));
+    status = random_stack_advance(proc_prov_msg4_data, msg4_input, reinterpret_cast<sgx_sealed_data_t*>(data_blob));
 
 ret_point:
     return pve_error_2_ae_error(status);

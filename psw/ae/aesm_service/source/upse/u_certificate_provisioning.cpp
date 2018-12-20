@@ -700,21 +700,15 @@ ae_error_t pib_verify_signature(platform_info_blob_wrapper_t& piBlobWrapper)
         //BREAK_IF_TRUE((sizeof(publicKey) != sizeof(s_pib_pub_key_big_endian)), ae_err, AE_FAILURE);
         //BREAK_IF_TRUE((sizeof(signature) != sizeof(piBlobWrapper.platform_info_blob.signature)), ae_err, AE_FAILURE);
 
-        // convert the public key to little endian
         if(0!=memcpy_s(&publicKey, sizeof(publicKey), s_pib_pub_key_big_endian, sizeof(s_pib_pub_key_big_endian))){
             ae_err = AE_FAILURE;
             break;
         }
-        SwapEndian_32B(((uint8_t*)&publicKey) +  0);
-        SwapEndian_32B(((uint8_t*)&publicKey) + 32);
 
-        // convert the signature to little endian
         if(0!=memcpy_s(&signature, sizeof(signature), &piBlobWrapper.platform_info_blob.signature, sizeof(piBlobWrapper.platform_info_blob.signature))){
             ae_err = AE_FAILURE;
             break;
         }
-        SwapEndian_32B(((uint8_t*)&signature) +  0);
-        SwapEndian_32B(((uint8_t*)&signature) + 32);
 
         sgx_status = sgx_ecc256_open_context(&ecc_handle);
         BREAK_IF_TRUE((SGX_SUCCESS != sgx_status), ae_err, AE_FAILURE);

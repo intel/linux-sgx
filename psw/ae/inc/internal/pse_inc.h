@@ -34,7 +34,6 @@
 #define PSE_INC_H_
 
 #include "se_cdefs.h"
-#include "ae_ipp.h"
 #include "sgx_utils.h"
 #include "sgx_trts.h"
 #include "string.h"

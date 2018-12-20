@@ -123,11 +123,6 @@ ae_error_t get_pce_priv_key(
     sgx_status_t sgx_status = SGX_SUCCESS;
     ae_error_t status = AE_SUCCESS;
     sgx_key_128bit_t key_tmp;
-    IppStatus ipp_status = ippStsNoErr;
-    IppsBigNumState *bn_d=NULL;
-    IppsBigNumState *bn_m=NULL;
-    IppsBigNumState *bn_o=NULL;
-    IppsBigNumState *bn_one=NULL;
     uint8_t hash_drg_output[HASH_DRBG_OUT_LEN];
 
     memset(&content, 0, sizeof(content));
@@ -186,55 +181,22 @@ ae_error_t get_pce_priv_key(
     //PAK Seed = most significant 320 bits of (Block 1 || Block 2 || Block 3).
     memcpy(hash_drg_output + 2*sizeof(sgx_cmac_128bit_tag_t), block, HASH_DRBG_OUT_LEN - 2*sizeof(sgx_cmac_128bit_tag_t));
 
-    Ipp32u i;
+    uint32_t i;
     for (i = 0; i<HASH_DRBG_OUT_LEN / 2; i++){//big endian to little endian
         hash_drg_output[i] ^= hash_drg_output[HASH_DRBG_OUT_LEN - 1 - i];
         hash_drg_output[HASH_DRBG_OUT_LEN-1-i] ^= hash_drg_output[i];
         hash_drg_output[i] ^= hash_drg_output[HASH_DRBG_OUT_LEN - 1 - i];
     }
 
-#define IPP_ERROR_TRANS(ipp_status) \
-    if ( ippStsMemAllocErr == ipp_status) \
-    { \
-        status = AE_OUT_OF_MEMORY_ERROR; \
-        goto ret_point; \
-    } \
-    else if(ippStsNoErr != ipp_status){ \
-        status = PCE_UNEXPECTED_ERROR; \
-        goto ret_point; \
-    }
+	se_static_assert(sizeof(sgx_nistp256_r_m1) == sizeof(sgx_ec256_private_t)); /*Unmatched size*/
+																				//calculate pce private key
+	if (sgx_calculate_ecdsa_priv_key((const unsigned char*)hash_drg_output, HASH_DRBG_OUT_LEN,
+		(const unsigned char*)sgx_nistp256_r_m1, sizeof(sgx_nistp256_r_m1),
+		(unsigned char*)wrap_key, sizeof(sgx_ec256_private_t)) != SGX_SUCCESS) {
+		status = AE_FAILURE;
+	}
 
-    ipp_status = sgx_ipp_newBN(reinterpret_cast<Ipp32u *>(hash_drg_output), HASH_DRBG_OUT_LEN, &bn_d);
-    IPP_ERROR_TRANS(ipp_status);
-    ipp_status = sgx_ipp_newBN(reinterpret_cast<const Ipp32u *>(sgx_nistp256_r_m1), sizeof(sgx_nistp256_r_m1), &bn_m);//generate mod to be n-1 where n is order of ECC Group
-    IPP_ERROR_TRANS(ipp_status);
-    ipp_status = sgx_ipp_newBN(NULL, sizeof(sgx_nistp256_r_m1), &bn_o);//alloc memory for output
-    IPP_ERROR_TRANS(ipp_status);
-    ipp_status = ippsMod_BN(bn_d, bn_m, bn_o);
-    IPP_ERROR_TRANS(ipp_status);
-    i=1;
-    ipp_status = sgx_ipp_newBN(&i, sizeof(uint32_t), &bn_one);//create big number 1
-    IPP_ERROR_TRANS(ipp_status);
-
-    ipp_status = ippsAdd_BN(bn_o, bn_one, bn_o);//added by 1
-    IPP_ERROR_TRANS(ipp_status);
-
-    se_static_assert(sizeof(sgx_nistp256_r_m1)==sizeof(sgx_ec256_private_t)); /*Unmatched size*/
-    ipp_status = ippsGetOctString_BN(reinterpret_cast<Ipp8u *>(wrap_key), sizeof(sgx_nistp256_r_m1), bn_o);//output data in bigendian order
-    IPP_ERROR_TRANS(ipp_status);
 ret_point:
-    if(NULL!=bn_d){
-        sgx_ipp_secure_free_BN(bn_d, HASH_DRBG_OUT_LEN);
-    }
-    if(NULL!=bn_m){
-        sgx_ipp_secure_free_BN(bn_m, sizeof(sgx_nistp256_r_m1));
-    }
-    if(NULL!=bn_o){
-        sgx_ipp_secure_free_BN(bn_o, sizeof(sgx_nistp256_r_m1));
-    }
-    if(NULL!=bn_one){
-        sgx_ipp_secure_free_BN(bn_one, sizeof(uint32_t));
-    }
     (void)memset_s(&key_tmp, sizeof(key_tmp), 0, sizeof(key_tmp));
     (void)memset_s(&hash_drg_output, sizeof(hash_drg_output), 0, sizeof(hash_drg_output));
     (void)memset_s(&block, sizeof(block), 0, sizeof(block));

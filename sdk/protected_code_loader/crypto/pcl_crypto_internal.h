@@ -32,8 +32,15 @@
 #ifndef SGX_PCL_CRYPTO_INTERNAL_H
 #define SGX_PCL_CRYPTO_INTERNAL_H
 
+#ifdef __cplusplus
+
 extern "C" 
-{
+{	
+#else // Not C++, must define bool:
+
+typedef unsigned int bool;
+
+#endif // #ifdef __cplusplus
 
 int pcl_SHA256_Update(SHA256_CTX *c, void *data_, size_t len);
 int pcl_SHA256_Final(unsigned char *md, SHA256_CTX *c);
@@ -103,7 +110,9 @@ void pcl_vpaes_cbc_encrypt(
 
 #endif // #ifdef SE_SIM 
 
+#ifdef __cplusplus
 }; // extern "C" 
+#endif // #ifdef __cplusplus
 
 #endif // #ifndef SGX_PCL_CRYPTO_INTERNAL_H
 

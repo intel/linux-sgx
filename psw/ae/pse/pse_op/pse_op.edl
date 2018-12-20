@@ -35,6 +35,7 @@ enclave{
     include "pse_types.h"
     include "sgx_dh.h"
     include "t_pairing_blob.h"
+    from "sgx_tstdc.edl" import *;
     trusted {
         public ae_error_t create_session_wrapper(uint64_t tick,
                                         [out] uint32_t *id,

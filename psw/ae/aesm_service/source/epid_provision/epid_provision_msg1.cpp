@@ -38,7 +38,7 @@
 #include "PCEClass.h"
 #include "aesm_rand.h"
 #include "epid_pve_type.h"
-#include "ipp_wrapper.h"
+#include "crypto_wrapper.h"
 
  /**
   * File: epid_provision_msg1.cpp
@@ -55,11 +55,11 @@
 //#define MSG1_TOP_FIELD_GCM_DATA      msg1_fields[1]
 //#define MSG1_TOP_FIELD_GCM_MAC       msg1_fields[2]
 
-//Function to transform the RSA public key(big endian) into ipp format, the function is defined in pve_pub_key.cpp
+//Function to get the RSA public key(big endian). The function is defined in pve_pub_key.cpp
 //the key is received in endpoint selection from Provision Server which is used for rsa-oaep in ProvMsg1
 //secure_free_rsa_pub_key should be called to release the memory on successfully returned rsa_pub_key
 //return PVEC_SUCCESS on success
-sgx_status_t get_provision_server_rsa_pub_key_in_ipp_format(const signed_pek_t& pek, IppsRSAPublicKeyState **rsa_pub_key);
+extern sgx_status_t get_provision_server_rsa_pub_key(const signed_pek_t& pek, void **rsa_pub_key);
 
 
 //Function to initialize request header for ProvMsg1
@@ -112,46 +112,23 @@ static ae_error_t prov_msg1_gen_header(provision_request_header_t *msg1_header,
 
 //This function will do the rsa oaep encryption with input src[0:src_len] and put the output to buffer dst
 //The function will assume that buffer src_len is no more than PVE_RSAOAEP_ENCRYPT_MAXLEN and the buffer size of dst is at least RSA_3072_KEY_BITS
-static ae_error_t aesm_rsa_oaep_encrypt(const uint8_t *src, uint32_t src_len, const IppsRSAPublicKeyState *rsa, uint8_t dst[RSA_3072_KEY_BYTES])
+static ae_error_t aesm_rsa_oaep_encrypt(const uint8_t *src, uint32_t src_len, const void *rsa, uint8_t dst[RSA_3072_KEY_BYTES])
 {
-    const int hashsize = SHA_SIZE_BIT;
-    Ipp8u seeds[hashsize];
-    IppStatus status = ippStsNoErr;
-    ae_error_t ret = AE_SUCCESS;
-    uint8_t* pub_key_buffer = NULL;
-    int pub_key_size;
-
-    ret = aesm_read_rand(seeds, hashsize);
-    if(AE_SUCCESS!=ret){
-        goto ret_point;
-    }
-
-    if((status = ippsRSA_GetBufferSizePublicKey(&pub_key_size, rsa)) != ippStsNoErr)
+    size_t dst_len = RSA_3072_KEY_BYTES;
+    // Check the encrypt output length
+ 
+    sgx_status_t res = sgx_rsa_pub_encrypt_sha256(const_cast<void *>(rsa), NULL, &dst_len, src, src_len);
+    if(res != SGX_SUCCESS || dst_len != RSA_3072_KEY_BYTES)
     {
-        ret = AE_FAILURE;
-        goto ret_point;
+        return AE_FAILURE;
     }
 
-    //allocate temporary buffer
-    pub_key_buffer = (uint8_t*)malloc(pub_key_size);
-    if(pub_key_buffer == NULL)
+    res = sgx_rsa_pub_encrypt_sha256(const_cast<void *>(rsa), dst, &dst_len, src, src_len);
+    if(res != SGX_SUCCESS)
     {
-        ret = AE_OUT_OF_MEMORY_ERROR;
-        goto ret_point;
+        return AE_FAILURE;
     }
-
-    if((status = ippsRSAEncrypt_OAEP(src, src_len,
-                                        NULL, 0, seeds,
-                                        dst, rsa, IPP_ALG_HASH_SHA256, pub_key_buffer)) != ippStsNoErr)
-    {
-        ret = AE_FAILURE;
-        goto ret_point;
-    }
-
-ret_point:
-    if(pub_key_buffer)
-        free(pub_key_buffer);
-    return ret;
+    return AE_SUCCESS;
 }
 
 
@@ -264,16 +241,28 @@ ret_point:
             AESM_DBG_ERROR("Fail to add PSID TLV ae(%d)",ret);
             return ret;
         }
-        //transform rsa format PEK public key of Provision Server into IPP library format
-        IppsRSAPublicKeyState *rsa_pub_key = NULL;
-        sgx_status = get_provision_server_rsa_pub_key_in_ipp_format(pve_data.pek, &rsa_pub_key);
+        //transform rsa format PEK public key of Provision Server
+        void *rsa_pub_key = NULL;
+        signed_pek_t le_pek{};
+
+        // Change the endian for the PEK public key
+        for(uint32_t i = 0; i< sizeof(le_pek.n); i++)
+        {
+        	le_pek.n[i] = pve_data.pek.n[sizeof(le_pek.n) - i - 1];
+        }
+        for(uint32_t i= 0; i < sizeof(le_pek.e); i++)
+        {
+        	le_pek.e[i] = pve_data.pek.e[sizeof(le_pek.e) - i - 1];
+        }
+
+        sgx_status = get_provision_server_rsa_pub_key(le_pek, &rsa_pub_key);
         if( SGX_SUCCESS != sgx_status){
             AESM_DBG_ERROR("Fail to decode PEK:%d",sgx_status);
             return AE_FAILURE;
         }
         uint8_t field0[RSA_3072_KEY_BYTES];
         ret = aesm_rsa_oaep_encrypt(tlvs_msg1_sub.get_tlv_msg(), tlvs_msg1_sub.get_tlv_msg_size(), rsa_pub_key, field0);
-        secure_free_rsa_pub_key(RSA_3072_KEY_BYTES, sizeof(uint32_t), rsa_pub_key);
+        sgx_free_rsa_key(rsa_pub_key, SGX_RSA_PUBLIC_KEY, RSA_3072_KEY_BYTES, sizeof(le_pek.e));
         if(AE_SUCCESS!=ret){
             AESM_DBG_ERROR("Fail to in RSA_OAEP for ProvMsg1:(ae%d)",ret);
             return ret;

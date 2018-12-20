@@ -43,7 +43,6 @@
 #include "byte_order.h"
 
 #include "LEClass.h"
-#include "ae_ipp.h"
 #include "PSDAService.h"
 #include "se_wrapper.h"
 #include "PSEPRClass.h"
@@ -83,10 +82,21 @@ ae_error_t CPSEClass::init_ps(void)
         return AESM_PSDA_NOT_AVAILABLE;
     }
 
+    //Output the sigma version before starting session with PSDA.
+    if (PSDAService::instance().is_sigma20_supported())
+    {
+        AESM_LOG_INFO_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_SIGMA_20_SESSION]);
+        AESM_LOG_INFO("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_SIGMA_20_SESSION]); 
+    }
+    else
+    {
+        AESM_LOG_INFO_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_SIGMA_11_SESSION]);
+        AESM_LOG_INFO("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_SIGMA_11_SESSION]);
+    }
     //Logic here is that ME FW mode is used(Emulator is not running)
     //provisioning is attempted using iclsclient and the return code is not verified
     //In case of emulator the emulator provisioning tool is used to provision for epid 1.1 and if not long term pairing will return not provisioned error.
-    pse_pr_interface_psda* pPSDA = new(std::nothrow) pse_pr_interface_psda();
+    pse_pr_interface_psda* pPSDA = new(std::nothrow) pse_pr_interface_psda(PSDAService::instance().is_sigma20_supported());
     if (pPSDA == NULL) 
     {
         return AE_OUT_OF_MEMORY_ERROR;
@@ -109,18 +119,6 @@ ae_error_t CPSEClass::init_ps(void)
 
     // Set state to PROVISIONED
     m_status = PSE_STATUS_CSE_PROVISIONED;
-
-    // Get platform service capbility
-    PROFILE_START("get_ps_cap");
-    ret = get_ps_cap(&m_ps_cap);
-    PROFILE_END("get_ps_cap");
-    if (ret != AE_SUCCESS){
-        AESM_LOG_INFO_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_START]);
-        // This is logged as a WARNING here, since the system may not require PS capability
-        AESM_LOG_WARN_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_DAL]);
-        AESM_DBG_ERROR("get_ps_cap failed:%d",ret);
-        return ret;
-    }
 
     // Try to establish ephemeral session
     PROFILE_START("create_ephemeral_session_pse_cse");
@@ -298,67 +296,12 @@ ae_error_t CPSEClass::get_ps_cap(uint64_t* ps_cap)
         return AE_FAILURE;
     }
 
-    if (m_ps_cap != PS_CAP_NOT_AVAILABLE)
-    {
-        AESM_DBG_TRACE("ps_cap is available:%llu", m_ps_cap);
-        *ps_cap = m_ps_cap;
-        return AE_SUCCESS;
-    }
+    uint64_t psda_cap = PSDAService::instance().psda_cap;
+    if (psda_cap & PSDA_CAP_PRTC)
+        *ps_cap |= PS_CAP_TRUSTED_TIME;        // Trusted time service
+    if (psda_cap & PSDA_CAP_RPDATA)            // RPDATA capbility is available
+        *ps_cap |= PS_CAP_MONOTONIC_COUNTER;   // Monotonic counter service
 
-    psda_info_query_msg_t psda_cap_query_msg;
-    psda_cap_query_msg.msg_hdr.msg_type = _htonl(PSDA_MSG_TYPE_CAP_QUERY);
-    psda_cap_query_msg.msg_hdr.msg_len = 0;
-
-    psda_cap_result_msg_t psda_cap_result_msg;
-    memset(&psda_cap_result_msg, 0, sizeof(psda_cap_result_msg_t));
-
-    JVM_COMM_BUFFER commBuf;
-    commBuf.TxBuf->buffer = &psda_cap_query_msg;
-    commBuf.TxBuf->length = sizeof(psda_info_query_msg_t);
-    commBuf.RxBuf->buffer = &psda_cap_result_msg;
-    commBuf.RxBuf->length = sizeof(psda_cap_result_msg_t);
-    int response_code;
-
-    ae_error_t ret;
-    ret = PSDAService::instance().send_and_recv(
-                                PSDA_COMMAND_INFO,
-                                &commBuf,
-                                &response_code,
-                                AUTO_RETRY_ON_SESSION_LOSS);
-    if (ret != AE_SUCCESS)
-    {
-        AESM_DBG_ERROR("JHI_SendAndRecv2 returned (ae%d)",ret);
-        AESM_LOG_ERROR_UNICODE("%s", g_event_string_table[SGX_EVENT_DAL_COMM_FAILURE]);
-        return ret;
-    }
-
-    if (response_code != PSDA_SUCCESS)
-    {
-        AESM_DBG_ERROR("JHI_SendAndRecv2 response_code is %d", response_code);
-        return AE_FAILURE;
-    }
-
-    if (_ntohl(psda_cap_result_msg.msg_hdr.msg_type) != PSDA_MSG_TYPE_CAP_RESULT
-        || _ntohl(psda_cap_result_msg.msg_hdr.msg_len) != PSDA_CAP_RESULT_MSG_LEN) {
-        AESM_DBG_ERROR("msg_type %d, msg_len %d while expected value type %d, len %d",
-        _ntohl(psda_cap_result_msg.msg_hdr.msg_type), _ntohl(psda_cap_result_msg.msg_hdr.msg_len),
-        PSDA_MSG_TYPE_CAP_RESULT, PSDA_CAP_RESULT_MSG_LEN);
-        return AE_FAILURE;
-    }
-
-    if (_ntohl(psda_cap_result_msg.cap_descriptor_version) != 1)
-    {
-        return AE_FAILURE;
-    }
-
-    m_ps_cap = 0;
-    uint32_t psda_cap0 = _ntohl(psda_cap_result_msg.cap_descriptor0);
-    if (psda_cap0 & PSDA_CAP_PRTC)
-        m_ps_cap |= PS_CAP_TRUSTED_TIME;        // Trusted time service
-    if (psda_cap0 & PSDA_CAP_RPDATA)        // RPDATA capbility is available
-        m_ps_cap |= PS_CAP_MONOTONIC_COUNTER;        // Monotonic counter service
-
-    *ps_cap = m_ps_cap;
 
     return AE_SUCCESS;
 }

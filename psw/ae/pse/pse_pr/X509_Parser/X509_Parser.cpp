@@ -29,8 +29,7 @@
  *
  */
 
-
-#include "X509Cert.h"
+#include "X509_Parser.h"
 #include "sgx_lfence.h"
 #include <cstddef>
 #include <assert.h>
@@ -63,7 +62,7 @@ STATUS CreateSha1Hash
 {
     PrepareHashSHA1 hash;
     hash.Update(pSrcBuffer->buffer, pSrcBuffer->length);
-    if (!hash.Finalize((SHA1_HASH*)pDigest->buffer))
+    if (!hash.Finalize((sgx_sha1_hash_t*)pDigest->buffer))
         return X509_GENERAL_ERROR;
 
     return STATUS_SUCCESS;
@@ -156,7 +155,8 @@ static STATUS ParseCertificatePolicy(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrData
 
 static STATUS ParseSubjectPublicKeyInfo(UINT8 **ppCurrent, UINT8 *pEnd, UINT8 **pworkbuffer, SessMgrCertificateFields* certificateFields);
 static STATUS ParseRsaPublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrRsaKey * RsaKey);
-static STATUS ParseEpidPublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEpidGroupPublicKey * EpidKey);
+static STATUS ParseEpid11PublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEpid11GroupPublicKey * EpidKey);
+static STATUS ParseEpid20PublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEpid20GroupPublicKey * EpidKey);
 static STATUS ParseEcdsaPublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEcdsaPublicKey * EcDsaKey, SessMgrEllipticCurveParameter params);
 static STATUS ParseOID(UINT8 **ppCurrent, UINT8 *pEnd, UINT32 *EnumVal, const UINT8 *OidList, UINT32 Max_Entries, UINT32 EntrySize );
 static STATUS ParseSignatureValue(UINT8 **ppCurrent, UINT8 *pEnd, UINT8 **pworkbuffer, UINT32 WorkBufferSize, SessMgrDataBuffer *SignatureValueBuf, UINT8 SignatureAlgoId);
@@ -175,94 +175,98 @@ static int Pow(int num, int exp);
 
 
 /* This list should always be synced up with the SessMgrAlgorithmOid enum */
-const UINT8 HardCodedSignatureAlgorithmOid[][9] =
+/* the first byte of each sub-array is the length */
+const UINT8 HardCodedSignatureAlgorithmOid[][10] =
 {
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x02},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x03},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x04},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x05},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x07},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x08},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x09},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0a},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0b},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0c},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0d},
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0e},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x02},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x03},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x04},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x05},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x07},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x08},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x09},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0a},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0b},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0c},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0d},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0e},
 
-    {0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x01},
-    {0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x02},
+    {0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x01},
+    {0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x04, 0x03, 0x02},
 };
 
-const UINT8 HardCodedPublicKeyAlgorithmOid[][10] =
+/* the first byte of each sub-array is the length */
+const UINT8 HardCodedPublicKeyAlgorithmOid[][11] =
 {
-    {0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01},
-    {0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01},
-    {0x2A, 0x86, 0x48, 0x86, 0xf8, 0x4d, 0x01, 0x09, 0x04, 0x01},
-    {0x2A, 0x86, 0x48, 0x86, 0xf8, 0x4d, 0x01, 0x09, 0x04, 0x02},
-    {0x2A, 0x86, 0x48, 0x86, 0xf8, 0x4d, 0x01, 0x09, 0x04, 0x03},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x01},
+    {0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01},
+    {0x0A, 0x2A, 0x86, 0x48, 0x86, 0xf8, 0x4d, 0x01, 0x09, 0x04, 0x01},
+    {0x0A, 0x2A, 0x86, 0x48, 0x86, 0xf8, 0x4d, 0x01, 0x09, 0x04, 0x02},
+    {0x0A, 0x2A, 0x86, 0x48, 0x86, 0xf8, 0x4d, 0x01, 0x09, 0x04, 0x03},
 };
 
-const UINT8 HashAlgorithmOid[][9] =
+/* the first byte of each sub-array is the length */
+const UINT8 HashAlgorithmOid[][10] =
 {
-    {0x2B, 0x0E, 0x03, 0x02, 0x1A},
-    {0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01},
+    {0x05, 0x2B, 0x0E, 0x03, 0x02, 0x1A},
+    {0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01},
 };
 
 /* This list should always be synced up with the NameStruct enum */
-const UINT8 HardCodedNameOid[][10] =
+const UINT8 HardCodedNameOid[][11] =
 {
-    {0x55, 0x04, 0x03},
-    {0x55, 0x04, 0x0a},
-    {0x55, 0x04, 0x06},
-    {0x55, 0x04, 0x07},
-    {0x55, 0x04, 0x08},
-    {0x55, 0x04, 0x0b},
-    {0x09, 0x92, 0x26, 0x89, 0x93, 0xF2, 0x2C, 0x64, 0x01, 0x01},
+    {0x03, 0x55, 0x04, 0x03},
+    {0x03, 0x55, 0x04, 0x0a},
+    {0x03, 0x55, 0x04, 0x06},
+    {0x03, 0x55, 0x04, 0x07},
+    {0x03, 0x55, 0x04, 0x08},
+    {0x03, 0x55, 0x04, 0x0b},
+    {0x0A, 0x09, 0x92, 0x26, 0x89, 0x93, 0xF2, 0x2C, 0x64, 0x01, 0x01},
 };
 
+/* the first byte of each sub-array is the length */
 #ifndef X509_FOR_PSE_PR
-const UINT8 CertExtensionOid[][9] =
+const UINT8 CertExtensionOid[][10] =
 {
-    {0x55, 0x1d, 0x23},
-    {0x55, 0x1d, 0x0E},
-    {0x55, 0x1d, 0x0F},
-    {0x55, 0x1d, 0x13},
-    {0x55, 0x1d, 0x20},
-    {0x55, 0x1d, 0x25},
-    {0x2A, 0x86, 0x48, 0x86, 0xF8, 0x4D, 0x01, 0x09, 0x02},
+    {0x03, 0x55, 0x1d, 0x23},
+    {0x03, 0x55, 0x1d, 0x0E},
+    {0x03, 0x55, 0x1d, 0x0F},
+    {0x03, 0x55, 0x1d, 0x13},
+    {0x03, 0x55, 0x1d, 0x20},
+    {0x03, 0x55, 0x1d, 0x25},
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF8, 0x4D, 0x01, 0x09, 0x02},
 };
 
-const UINT8 OcspExtensionOid[][9] =
+const UINT8 OcspExtensionOid[][10] =
 {
-    {0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x30, 0x01, 0x02},  // 1.3.6.1.5.5.7.48.1.2
+    {0x09, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x30, 0x01, 0x02},  // length , 1.3.6.1.5.5.7.48.1.2
 };
 #endif
 
-const UINT8 EllipticCurveOid[][8] =
+const UINT8 EllipticCurveOid[][9] =
 {
-    {0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07}
+    {0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07}
 };
 
 #ifndef X509_FOR_PSE_PR
-const UINT8 CertificatePolicyOid[][9] =
+const UINT8 CertificatePolicyOid[][10] =
 {
-    {0x2A, 0x86, 0x48, 0x86, 0xF8, 0x4d, 0x01, 0x09, 0x01}
+    {0x09, 0x2A, 0x86, 0x48, 0x86, 0xF8, 0x4d, 0x01, 0x09, 0x01}    // the first byte is the length
 };
 
-const UINT8 CertificatePolicyQualifierIdOid[][8] =
+const UINT8 CertificatePolicyQualifierIdOid[][9] =
 {
-    {0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x02, 0x01}
+    {0x08, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x02, 0x01}          // the first byte is the length
 };
 
-const UINT8 OcspResponseTypeOid[][9] =
+const UINT8 OcspResponseTypeOid[][10] =
 {
-    {0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x30, 0x01, 0x01}
+    {0x09, 0x2B, 0x06, 0x01, 0x05, 0x05, 0x07, 0x30, 0x01, 0x01}    // the first byte is the length
 };
 
-const UINT8 ExtendedKeyUsageOcspSignOid[][8] =
+const UINT8 ExtendedKeyUsageOcspSignOid[][9] = 
 {
-    0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x09
+    0x08, 0x2b, 0x06, 0x01, 0x05, 0x05, 0x07, 0x03, 0x09            // the first byte is the length
 };
 #endif
 
@@ -754,7 +758,7 @@ STATUS VerifySignature(const ISSUER_INFO *IssuerInfo, const SessMgrDataBuffer *M
 #endif
 
     SessMgrEcdsaPublicKey *PublicKeyFromCert;
-    PseEcdsaPublicKey EcdsaKey;
+    X509EcdsaPublicKey EcdsaKey;
     G3Point* g3point;
 #ifndef X509_FOR_PSE_PR
     UINT32 hashSize = 0;
@@ -2653,13 +2657,20 @@ static STATUS ParseSubjectPublicKeyInfo(UINT8 **ppCurrent, UINT8 *pEnd, UINT8 **
 
         case X509_intel_sigma_epidGroupPublicKey_epid11:
             Key->buffer = workbuffer_ptr;
-            Key->length = sizeof(SessMgrEpidGroupPublicKey);
-            workbuffer_ptr += sizeof(SessMgrEpidGroupPublicKey);
-            Status = ParseEpidPublicKey(&current_ptr, pEnd, (SessMgrEpidGroupPublicKey * )(Key->buffer));
+            Key->length = sizeof(SessMgrEpid11GroupPublicKey);
+            workbuffer_ptr += sizeof(SessMgrEpid11GroupPublicKey);
+            Status = ParseEpid11PublicKey(&current_ptr, pEnd, (SessMgrEpid11GroupPublicKey * )(Key->buffer));
 #ifdef PRINT
             PrintEpidKey((void *)Key->buffer);
 #endif
             break;
+
+		case X509_intel_sigma_epidGroupPublicKey_epid20:
+			Key->buffer = workbuffer_ptr;
+			Key->length = sizeof(SessMgrEpid20GroupPublicKey);
+			workbuffer_ptr += sizeof(SessMgrEpid20GroupPublicKey);
+			Status = ParseEpid20PublicKey(&current_ptr, pEnd, (SessMgrEpid20GroupPublicKey *)(Key->buffer));
+			break;
 
         case X509_rsaPublicKey:
             Key->buffer = workbuffer_ptr;
@@ -2712,7 +2723,7 @@ static STATUS ParseRsaPublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrRsaKey * 
 }
 
 
-static STATUS ParseEpidPublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEpidGroupPublicKey * EpidKey)
+static STATUS ParseEpid11PublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEpid11GroupPublicKey * EpidKey)
 {
     UINT8 *current_ptr = *ppCurrent;
     UINT32 length;
@@ -2793,6 +2804,84 @@ static STATUS ParseEpidPublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEpidGrou
     return Status;
 }
 
+static STATUS ParseEpid20PublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEpid20GroupPublicKey * EpidKey)
+{
+	UINT8 *current_ptr = *ppCurrent;
+	UINT32 length;
+	SessMgrDataBuffer DataBuf;
+	STATUS Status;
+	UINT8 EncodingBytes;
+
+	do {
+
+		/* We are expecting a sequence of {groupId [Integer], h1 [ECPoint], h2 [ECPoint], w [G2ECPoint] */
+		Status = ParseIdAndLength(&current_ptr, pEnd, DER_ENCODING_SEQUENCE_ID, &length, &EncodingBytes, FALSE);
+		if (Status != X509_STATUS_SUCCESS)
+			break;
+
+		/* Parse Integer */
+		Status = ParseInteger(&current_ptr, pEnd, &DataBuf, FALSE, FALSE, NULL);
+		if (Status != X509_STATUS_SUCCESS)
+			break;
+
+		Status = swapendian_memcpy((UINT8 *)&EpidKey->groupId, sizeof(UINT32), DataBuf.buffer, DataBuf.length);
+		if (Status != X509_STATUS_SUCCESS)
+			break;
+
+		// Next Field : h1 [octet string]    This is a ECPoint which is a octet string 
+		Status = ParseIdAndLength(&current_ptr, pEnd, DER_ENCODING_OCTET_STRING_ID, &length, &EncodingBytes, FALSE);
+		if (Status != X509_STATUS_SUCCESS)
+			break;
+
+		/* Make sure it has the first bype as 0x04 indicating key is uncompressed  */
+		if (*current_ptr != 0x04) {
+			Status = X509_STATUS_ENCODING_ERROR;
+			break;
+		}
+		current_ptr++;
+
+		EpidKey->h1x = current_ptr;
+		EpidKey->h1y = current_ptr + 32;
+		current_ptr += 64;
+
+		// Next Field : h2 [octet string]  This is a ECPoint which is a octet string 
+		Status = ParseIdAndLength(&current_ptr, pEnd, DER_ENCODING_OCTET_STRING_ID, &length, &EncodingBytes, FALSE);
+		if (Status != X509_STATUS_SUCCESS)
+			break;
+
+		/* Make sure it has the first bype as 0x04 indicating key is uncompressed  */
+		if (*current_ptr != 0x04) {
+			Status = X509_STATUS_ENCODING_ERROR;
+			break;
+		}
+		current_ptr++;
+
+		EpidKey->h2x = current_ptr;
+		EpidKey->h2y = current_ptr + 32;
+		current_ptr += 64;
+
+		// Next Field : w [octet string]  This is a ECPoint which is a octet string 
+		Status = ParseIdAndLength(&current_ptr, pEnd, DER_ENCODING_OCTET_STRING_ID, &length, &EncodingBytes, FALSE);
+		if (Status != X509_STATUS_SUCCESS)
+			break;
+
+		/* Make sure it has the first bype as 0x04 indicating key is uncompressed  */
+		if (*current_ptr != 0x04) {
+			Status = X509_STATUS_ENCODING_ERROR;
+			break;
+		}
+		current_ptr++;
+
+		EpidKey->wx0 = current_ptr;
+		EpidKey->wx1 = current_ptr + 32;
+		EpidKey->wy0 = current_ptr + 64;
+		EpidKey->wy1 = current_ptr + 96;
+		current_ptr += 128;
+	} while (0);
+
+	*ppCurrent = current_ptr;
+	return Status;
+}
 
 static STATUS ParseEcdsaPublicKey(UINT8 **ppCurrent, UINT8 *pEnd, SessMgrEcdsaPublicKey * EcDsaKey, SessMgrEllipticCurveParameter params)
 {
@@ -2855,7 +2944,7 @@ static STATUS ParseOID(UINT8 **ppCurrent, UINT8 *pEnd, UINT32 *EnumVal, const UI
 			//
 			sgx_lfence();
 
-            if(memcmp(current_ptr, OidList, length) == 0){
+            if(length == OidList[0] && memcmp(current_ptr, &OidList[1], length) == 0){
                 /* We found a match. i is the algorithm number that  the caller is looking for */
                 *EnumVal= i;
                 Status = X509_STATUS_SUCCESS;
@@ -3108,7 +3197,7 @@ static STATUS ParseAlgoParameters(UINT8 **ppCurrent, UINT8 *pEnd, UINT32* param)
         /* This can describe the curve */
         for(i = 0;i< MaxElipticCurveOidSupported; i++)
         {
-            if(memcmp(current_ptr, EllipticCurveOid[i], length) == 0){
+            if(length == EllipticCurveOid[i][0] && memcmp(current_ptr, &EllipticCurveOid[i][1], length) == 0){
 
                 /* We found a match. "i+1" is the algorithm number that  the caller is looking for */
                 *param = i;

@@ -37,7 +37,8 @@ CXXFLAGS += -Werror
 
 INCLUDE += -I$(COMMON_DIR)/inc/tlibc                          \
            -I$(COMMON_DIR)/inc/internal                       \
-           -I$(COMMON_DIR)/inc                                
+           -I$(COMMON_DIR)/inc                                \
+           -I../tlibcxx/include
 
 vpath %.cpp $(COMMON_DIR)/src
 

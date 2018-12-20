@@ -39,22 +39,14 @@ else
     CURL_RESULT :=
 endif
 
-ifneq ($(USE_OPT_LIBS), 1)
-.PHONY: all
-all:
-	$(info ***NOTE***: SDK is not built based on prebuilt optimized libs. SKIP the build for aesm_service.)
-
-else
-
 .PHONY: all
 ifeq ($(BUILD_REF_LE), 1)
 all: $(CURL_RESULT) AESM REF_LE COPY_AES CSE| $(BUILD_DIR)
 else
 all: $(CURL_RESULT) AESM COPY_AES CSE| $(BUILD_DIR)
 endif #($(BUILD_REF_LE), 1)
-endif #!($(USE_OPT_LIBS), 1)
 
-# COPY_AES: currently copy le, qe, pve, pce, pse_op, pse_pr
+# COPY_AES: currently copy le, qe, pve, pce, pse_op, pse_pr, pse_pr_2
 .PHONY: COPY_AES
 COPY_AES: | $(BUILD_DIR)
 	$(CP) data/prebuilt/* $(BUILD_DIR)

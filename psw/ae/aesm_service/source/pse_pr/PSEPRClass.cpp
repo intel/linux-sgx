@@ -32,6 +32,7 @@
 
 #include "PSEPRClass.h"
 #include "PSEClass.h"
+#include "PSDAService.h"
 #include <cstddef>
 
 #include "../upse/upse.h"
@@ -76,7 +77,7 @@ ae_error_t CPSEPRClass::long_term_pairing(bool* p_new_pairing)
     } while (0);
 
     CPSEPRClass::instance().unload_enclave();
-
+    PSDAService::instance().save_psda_capability();
 
     return status;
 }

@@ -42,10 +42,9 @@ using namespace std;
 
 TimeBasedDRM::TimeBasedDRM(void): enclave_id(0)
 {
-    int updated = 0;
     sgx_status_t sgx_ret = SGX_ERROR_UNEXPECTED;
     sgx_ret = sgx_create_enclave(ENCLAVE_NAME, SGX_DEBUG_FLAG,
-        &launch_token, &updated, &enclave_id, NULL);
+        NULL, NULL, &enclave_id, NULL);
     if (sgx_ret)
     {
         cerr<<"cannot create enclave, error code = 0x"<< hex<< sgx_ret <<endl;

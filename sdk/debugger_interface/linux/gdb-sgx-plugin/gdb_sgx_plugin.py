@@ -647,7 +647,26 @@ class GetTCSBreakpoint(gdb.Breakpoint):
             gdb_cmd = "set *(unsigned int *)%#x = %#x" %(tcs_addr + 8, flag)
             gdb.execute(gdb_cmd, False, True)
         return False
-        
+
+class GetRandomStackBreakpoint(gdb.Breakpoint):
+    def __init__(self):
+        gdb.Breakpoint.__init__ (self, spec="random_stack_notify_gdb", internal=1)
+
+    def stop(self):
+        if SIZE == 4:
+            addr_ = gdb.parse_and_eval("$eax")
+            addr = ctypes.c_uint32(addr_).value
+            size_ = gdb.parse_and_eval("$edx")
+            size = ctypes.c_uint32(size_).value
+        elif SIZE == 8:
+            addr_ = gdb.parse_and_eval("$rdi")
+            addr = ctypes.c_uint64(addr_).value
+            size_ = gdb.parse_and_eval("$rsi")
+            size = ctypes.c_uint64(size_).value
+        buf = bytes(size)
+        write_to_memory(addr, buf)
+        return False
+
 def sgx_debugger_init():
     print ("detect urts is loaded, initializing")
     global SIZE
@@ -666,6 +685,7 @@ def sgx_debugger_init():
         LoadEventBreakpoint()
         UnloadEventBreakpoint()
         GetTCSBreakpoint()
+        GetRandomStackBreakpoint()
         gdb.events.exited.connect(exit_handler)
     init_enclaves_debug()
 

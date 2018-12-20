@@ -29,7 +29,7 @@
  *
  */
 
-
+#include <sgx_random_buffers.h>
 #include "provision_msg.h"
 #include <sgx_trts.h>
 #include "protocol.h"
@@ -42,6 +42,7 @@ extern "C" {
 #include "epid/member/src/write_precomp.h"
 #include "epid/member/src/signbasic.h"
 #include "epid/member/src/nrprove.h"
+#include "epid/member/src/validatekey.h"
 #ifdef __cplusplus
 }
 #endif
@@ -168,6 +169,13 @@ static pve_status_t gen_epid_blob(const extended_epid_group_blob_t* pxegb,
         goto ret_point;
     }
 
+    // Verify private key is in group
+    if (0 != memcmp(&pub_key->gid, &prv_key->gid, sizeof(prv_key->gid)) 
+        || !EpidMemberIsKeyValid(p_epid_context, &prv_key->A, &prv_key->x, &pub_key->h1, &pub_key->w)) {
+        ret = PVEC_MSG_ERROR;
+        goto ret_point;
+    }
+
     // start member
     epid_ret = EpidMemberStartup(p_epid_context);
     if (kEpidNoErr != epid_ret) {
@@ -237,7 +245,7 @@ pve_status_t proc_prov_msg4_data(const proc_prov_msg4_input_t *msg4_input,
         goto ret_point;
     }
     //create PWK2
-    ret = get_pwk2(&msg4_input->equivalent_psvn, msg4_input->n2, &pwk2);
+    ret = random_stack_advance(get_pwk2,&msg4_input->equivalent_psvn, msg4_input->n2, &pwk2);
     if (PVEC_SUCCESS != ret){
         goto ret_point;
     }
@@ -270,7 +278,7 @@ pve_status_t proc_prov_msg4_data(const proc_prov_msg4_input_t *msg4_input,
     }
 
     se_static_assert(sizeof(membership_credential_with_escrow_t)+MEMBERSHIP_CREDENTIAL_TLV_HEADER_SIZE==MEMBERSHIP_CREDENTIAL_TLV_TOTAL_SIZE); /*invalid hard-coded value*/
-    ret = proc_prov_msg4_membercredential(mce, msg4_input, prv_key);//decrypt and generate epid private key
+    ret = random_stack_advance(proc_prov_msg4_membercredential, mce, msg4_input, prv_key);//decrypt and generate epid private key
     if(PVEC_SUCCESS!=ret){
         goto ret_point;
     }

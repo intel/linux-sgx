@@ -163,7 +163,7 @@ int main(void)
     memset(&secs, 0, sizeof(secs));
 
     secs.ssaframesize = 1;
-    secs.attributes = SGX_FLAGS_MODE64BIT;
+    secs.attributes = SGX_FLAGS_MODE64BIT | SGX_FLAGS_DEBUG;
     secs.xfrm = 3;
 
     if (false == create_enclave(&secs))

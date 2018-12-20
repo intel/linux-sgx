@@ -48,7 +48,7 @@ rm -fr ${INSTALL_PATH}
 get_arch()
 {
     local a=$(readelf -h $(find ${BUILD_DIR} -name "*.so*" |head -n 1) | sed -n '2p' | awk '{print $6}')
-    test $a = 02 && echo 'x64' || echo 'x86'
+    test $a = 01 && echo 'x86' || echo 'x64'
 }
 
 ARCH=$(get_arch)
@@ -65,9 +65,11 @@ python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/sgx-enclave-common_${ARCH}.txt --c
 python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
 
 # Create the tarball
+UAE_VER=$(awk '/UAE_SERVICE_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 URTS_VER=$(awk '/URTS_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 ECL_VER=$(awk '/ENCLAVE_COMMON_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 pushd ${INSTALL_PATH} &> /dev/null
+sed -i "s/UAE_VER=.*/UAE_VER=${UAE_VER}/" Makefile
 sed -i "s/URTS_VER=.*/URTS_VER=${URTS_VER}/" Makefile
 sed -i "s/ECL_VER=.*/ECL_VER=${ECL_VER}/" Makefile
 tar -zcvf ${TARBALL_NAME} *

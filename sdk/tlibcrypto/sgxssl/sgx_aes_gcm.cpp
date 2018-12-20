@@ -32,10 +32,12 @@
 #include "stdlib.h"
 #include "string.h"
 #include "sgx_tcrypto.h"
+#include "sgx_trts.h"
 #include "se_tcrypto_common.h"
 #include "openssl/aes.h"
 #include "openssl/evp.h"
 #include "openssl/err.h"
+#include "ssl_wrapper.h"
 #define OPENSSL_DEFAULT_IV_LEN 12
 
 /* Rijndael AES-GCM
@@ -56,7 +58,7 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
                                         uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len,
                                         sgx_aes_gcm_128bit_tag_t *p_out_mac)
 {
-	if ((src_len > INT_MAX) || (aad_len > INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
+	if ((src_len >= INT_MAX) || (aad_len >= INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
 		|| (p_out_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL))
 		|| (p_iv == NULL) || ((p_src == NULL) && (p_aad == NULL)))
 	{
@@ -65,8 +67,6 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 	int len = 0;
 	EVP_CIPHER_CTX * pState = NULL;
-
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// Create and init ctx
@@ -89,13 +89,13 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 				break;
 			}
 		}
-
-		// Provide the message to be encrypted, and obtain the encrypted output.
-		//
-		if (1 != EVP_EncryptUpdate(pState, p_dst, &len, p_src, src_len)) {
-			break;
-		}
-
+        if (src_len > 0) {
+            // Provide the message to be encrypted, and obtain the encrypted output.
+            //
+            if (1 != EVP_EncryptUpdate(pState, p_dst, &len, p_src, src_len)) {
+                break;
+            }
+        }
 		// Finalise the encryption
 		//
 		if (1 != EVP_EncryptFinal_ex(pState, p_dst + len, &len)) {
@@ -109,10 +109,6 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 		}
 		ret = SGX_SUCCESS;
 	} while (0);
-
-	if (ret != SGX_SUCCESS) {
-        GET_LAST_OPENSSL_ERROR;
-	}
 
 	// Clean up and return
 	//
@@ -128,7 +124,7 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 {
 	uint8_t l_tag[SGX_AESGCM_MAC_SIZE];
 
-	if ((src_len > INT_MAX) || (aad_len > INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
+	if ((src_len >= INT_MAX) || (aad_len >= INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
 		|| (p_in_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL))
 		|| (p_iv == NULL) || ((p_src == NULL) && (p_aad == NULL)))
 	{
@@ -137,8 +133,6 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 	int len = 0;
 	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 	EVP_CIPHER_CTX * pState = NULL;
-
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	// Autenthication Tag returned by Decrypt to be compared with Tag created during seal
 	//
@@ -183,14 +177,11 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 		// anything else is a failure - the plaintext is not trustworthy.
 		//
 		if (EVP_DecryptFinal_ex(pState, p_dst + len, &len) <= 0) {
+			ret = SGX_ERROR_MAC_MISMATCH;
 			break;
 		}
 		ret = SGX_SUCCESS;
 	} while (0);
-
-	if (ret != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
-	}
 
 	// Clean up and return
 	//
@@ -199,4 +190,132 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 	}
 	memset_s(&l_tag, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
 	return ret;
+}
+
+
+sgx_status_t sgx_aes_gcm128_enc_init(const uint8_t *key, const uint8_t *iv, uint32_t iv_len, const uint8_t *aad,
+    uint32_t aad_len, sgx_aes_state_handle_t* aes_gcm_state)
+{
+    if ((aad_len >= INT_MAX) || (key == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (aad == NULL))
+        || (iv == NULL) || (aes_gcm_state == NULL))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    int len = 0;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    EVP_CIPHER_CTX * pState = NULL;
+
+    do {
+        // Create and initialise the context
+        //
+        if (!(pState = EVP_CIPHER_CTX_new())) {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+
+        // Initialize ctx with AES-128 GCM
+        //
+        if (!EVP_EncryptInit_ex(pState, EVP_aes_128_gcm(), NULL, NULL, NULL)) {
+            break;
+        }
+
+        // Set IV len
+        //
+        if (!EVP_CIPHER_CTX_ctrl(pState, EVP_CTRL_AEAD_SET_IVLEN, iv_len, NULL)) {
+            break;
+        }
+
+        // Initialize encryption key and IV
+        //
+        if (!EVP_EncryptInit_ex(pState, NULL, NULL, (unsigned char*)key, iv)) {
+            break;
+        }
+
+        // Provide AAD data if exist
+        //
+        if (NULL != aad) {
+            if (!EVP_EncryptUpdate(pState, NULL, &len, aad, aad_len)) {
+                break;
+            }
+        }
+
+        *aes_gcm_state = (EVP_CIPHER_CTX*)pState;
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    if (ret != SGX_SUCCESS) {
+        if (pState != NULL) {
+            EVP_CIPHER_CTX_free(pState);
+        }
+    }
+
+    return ret;
+}
+
+
+sgx_status_t sgx_aes_gcm128_enc_get_mac(uint8_t *mac, sgx_aes_state_handle_t aes_gcm_state)
+{
+    if ((mac == NULL) || (aes_gcm_state == NULL))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    int tmp = 0;
+    EVP_CIPHER_CTX *pState = (EVP_CIPHER_CTX*)aes_gcm_state;
+    do {
+        // Finalise the encryption
+        //
+        if (1 != EVP_EncryptFinal_ex(pState, NULL, &tmp)) {
+            break;
+        }
+
+        // Get tag (MAC)
+        //
+        if (!EVP_CIPHER_CTX_ctrl(pState, EVP_CTRL_AEAD_GET_TAG, SGX_AESGCM_MAC_SIZE, mac)) {
+            break;
+        }
+
+        ret = SGX_SUCCESS;
+    } while (1);
+    
+    //In case of error, clear output MAC buffer.
+    //
+    if (ret != SGX_SUCCESS) {
+	    memset_s(mac, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
+    }
+
+    return ret;
+}
+
+
+sgx_status_t sgx_aes_gcm_close(sgx_aes_state_handle_t aes_gcm_state)
+{
+    if (aes_gcm_state != NULL) {
+        EVP_CIPHER_CTX_free((EVP_CIPHER_CTX *)aes_gcm_state);
+    }
+
+    return SGX_SUCCESS;
+}
+
+sgx_status_t sgx_aes_gcm128_enc_update(uint8_t *p_src, uint32_t src_len,
+    uint8_t *p_dst, sgx_aes_state_handle_t aes_gcm_state)
+{
+    if ((aes_gcm_state == NULL) || (p_src == NULL) || (p_dst == NULL) || (src_len >= INT_MAX) || (src_len == 0))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    int len = 0;
+    EVP_CIPHER_CTX * pState = (EVP_CIPHER_CTX*)aes_gcm_state;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    do {
+        // Provide the message to be encrypted, and obtain the encrypted output.
+        //
+        if (1 != EVP_EncryptUpdate(pState, p_dst, &len, p_src, src_len)) {
+            break;
+        }
+
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    return ret;
 }

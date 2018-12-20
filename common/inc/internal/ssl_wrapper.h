@@ -34,13 +34,24 @@
 
 #ifndef BN_CHECK_BREAK
 #define BN_CHECK_BREAK(x)  if((x == NULL) || (BN_is_zero(x))){break;}
-#endif
+#endif //BN_CHECK_BREAK
 
 #ifndef NULL_BREAK
 #define NULL_BREAK(x)   if(!x){break;}
-#endif
+#endif //NULL_BREAK
+
+#ifndef CLEAR_FREE_MEM
+#define CLEAR_FREE_MEM(address, size) {             \
+    if (address != NULL) {                          \
+        if (size > 0) {                             \
+            (void)memset_s(address, size, 0, size); \
+        }                                           \
+        free(address);                              \
+     }                                              \
+}
+#endif //CLEAR_FREE_MEM
 
 
-#endif
+#endif //_SSL_WRAPPER_H
 
 

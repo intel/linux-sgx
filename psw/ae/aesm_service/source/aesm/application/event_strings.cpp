@@ -71,6 +71,8 @@ const char* g_event_string_table[] = {
     "No enough EPC to load",                        // SGX_EVENT_OUT_OF_EPC
     "Fail to read extended epid group blob. We will use default blob with ID==0",
     "Fail to load LE",
+    "Sigma 2.0 session will be established."            // SGX_EVENT_SIGMA_20_SESSION
+    "Sigma 1.1 session will be established."            // SGX_EVENT_SIGMA_11_SESSION
 };
 
 /*
@@ -108,5 +110,7 @@ const char* g_admin_event_string_table[] = {
     "EPID Provisioning failed. Platform is revoked.",               // SGX_ADMIN_EVENT_EPID_PROV_FAIL_REVOKED
     "Platform Services error, resource limit reached",              // SGX_ADMIN_EVENT_PS_RESOURCE_ERROR
     "EPID Provisioning protocol error reported by Backend",         // SGX_ADMIN_EVENT_EPID_PROV_BACKEND_PROTOCOL_ERROR
+    "Sigma 2.0 session will be established.",                           // SGX_ADMIN_EVENT_SIGMA_20_SESSION
+    "Sigma 1.1 session will be established.",                           // SGX_ADMIN_EVENT_SIGMA_11_SESSION
     "The platform keys are revoked.",                               // SGX_ADMIN_EVENT_PLATFORM_REVOKED
 };

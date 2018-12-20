@@ -35,7 +35,6 @@
 
 #include "pse_pr_types.h"
 #include "aeerror.h"
-#include "ippcp.h"
 #include "sgx_tcrypto.h" 
 
 class SignCSR
@@ -51,7 +50,7 @@ public:
         /*in */ EcDsaPrivKey* pPrivateKey,
         /*in */ EcDsaPubKey* pPublicKey,
         /*in */ sgx_ecc_state_handle_t csr_ecc_handle,
-        /*out*/ Ipp8u* pSignedTemplate, 
+        /*out*/ uint8_t* pSignedTemplate, 
         /*i/o*/ uint16_t* pnBytes); 
 
 private:

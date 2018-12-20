@@ -40,7 +40,6 @@
 #ifndef _HELPER_CPP
 #define _HELPER_CPP
 #include "se_cdefs.h"
-#include "ae_ipp.h"
 #include "sgx_tseal.h"
 #include "provision_msg.h"
 #include "epid/common/errors.h"
@@ -78,8 +77,21 @@ void pve_memcpy_in(void *dst, const external_memory_byte_t *src, uint32_t size);
 /*a helper function to transform sgx_read_rand error code into pve error code*/
 pve_status_t se_read_rand_error_to_pve_error(sgx_status_t error);
 /*a helper function to transform ipp error code into pve error code*/
-pve_status_t ipp_error_to_pve_error(IppStatus status);
 pve_status_t sgx_error_to_pve_error(sgx_status_t status);
 pve_status_t epid_error_to_pve_error(EpidStatus epid_result);
+
+/** Encrypt plaintext from buf into buf (in-place encryption).
+*
+* Parameters:
+*   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+*   Inputs: aes_gcm_state - Pointer to AES-GCM state.
+*           buf_len - Input buffer length.
+*   Input/Output: p_buf - Pointer to plaintext buffer, this buffer will be encrypted, ciphertext will be written in same buffer.
+*
+*/
+sgx_status_t sgx_aes_gcm128_enc_inplace_update(
+    sgx_aes_state_handle_t aes_gcm_state,
+    uint8_t *p_buf,
+    uint32_t buf_len);
 
 #endif

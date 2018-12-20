@@ -47,10 +47,10 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPGetSizeStdSM2,(int* pSize))
-IPPAPI(IppStatus, l9_ippsECCPGetSizeStdSM2,(int* pSize))
+IPPAPI(IppStatus, y8_ippsECCPGetSizeStdSM2, (int* pSize))
+IPPAPI(IppStatus, l9_ippsECCPGetSizeStdSM2, (int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStdSM2,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStdSM2, (int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
@@ -66,10 +66,10 @@ IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStdSM2,(int* pSize))
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPGetSizeStdSM2,(int* pSize))
-IPPAPI(IppStatus, h9_ippsECCPGetSizeStdSM2,(int* pSize))
+IPPAPI(IppStatus, p8_ippsECCPGetSizeStdSM2, (int* pSize))
+IPPAPI(IppStatus, h9_ippsECCPGetSizeStdSM2, (int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStdSM2,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStdSM2, (int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );

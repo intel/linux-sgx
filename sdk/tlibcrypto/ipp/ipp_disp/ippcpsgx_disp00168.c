@@ -47,38 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pCtx))
-IPPAPI(IppStatus, l9_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pCtx))
+IPPAPI(IppStatus, y8_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pState))
+IPPAPI(IppStatus, l9_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsHashUnpack( pBuffer, pCtx );
+        return l9_ippsHashUnpack( pBuffer, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsHashUnpack( pBuffer, pCtx );
+        return y8_ippsHashUnpack( pBuffer, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pCtx))
-IPPAPI(IppStatus, h9_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pCtx))
+IPPAPI(IppStatus, p8_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pState))
+IPPAPI(IppStatus, h9_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsHashUnpack,(const Ipp8u* pBuffer, IppsHashState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsHashUnpack( pBuffer, pCtx );
+        return h9_ippsHashUnpack( pBuffer, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsHashUnpack( pBuffer, pCtx );
+        return p8_ippsHashUnpack( pBuffer, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

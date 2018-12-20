@@ -32,11 +32,10 @@
 #ifndef _SIGNING_TEMPLATE_INFO_H_
 #define _SIGNING_TEMPLATE_INFO_H_
 
-#include "ae_ipp.h"
 
 typedef struct _SigningTemplateInfo
 {
-    const Ipp8u*    pTemplate;
+    const uint8_t*    pTemplate;
     size_t          nTemplateBytes;
 
     size_t          nPayloadOffset;

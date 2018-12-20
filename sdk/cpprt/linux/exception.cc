@@ -37,8 +37,8 @@
 #include "thread_data.h"
 #include "se_cdefs.h"
 
-// access the version varible to add a version to tstdcxx lib
-SGX_ACCESS_VERSION(tstdcxx, 1)
+// access the version varible to add a version to tcxx lib
+SGX_ACCESS_VERSION(tcxx, 1)
 
 using namespace ABI_NAMESPACE;
 

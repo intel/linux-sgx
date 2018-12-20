@@ -35,7 +35,6 @@
 
 #include "pse_pr_inc.h"
 #include "pse_pr_types.h"
-#include "ae_ipp.h"
 
 #include "sgx_tcrypto.h"
 

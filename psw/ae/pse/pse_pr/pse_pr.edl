@@ -33,11 +33,11 @@
 enclave
 {
     include "aeerror.h"
-    include "Epid11_rl.h"
+    include "Epid_rl.h"
     include "sgx_report.h"
     include "pairing_blob.h"
-    include "pse_pr_sigma_1_1_defs.h"
-
+    include "pse_pr_sigma_defs.h"
+    from "sgx_tstdc.edl" import *;
     trusted 
     {
         //certificate provisioning section
@@ -56,7 +56,7 @@ enclave
         public ae_error_t ecall_tGenM7
         (
             [in, count=1]                       const SIGMA_S1_MESSAGE*      pS1,
-            [in, size=nTotalLen_SigRL]          const EPID11_SIG_RL*           pSigRL,
+            [in, size=nTotalLen_SigRL]       const EPID_SIG_RL*           pSigRL,
                                                 uint32_t    nTotalLen_SigRL,
             [in, size=nTotalLen_OcspResp]       const uint8_t*               pOcspResp, 
                                                 uint32_t    nTotalLen_OcspResp,
@@ -72,7 +72,7 @@ enclave
         (
             [in, size=nTotalLen_S3]             const SIGMA_S3_MESSAGE*       pS3, 
                                                 uint32_t    nTotalLen_S3,
-            [in, size=nTotalLen_PrivRL]         const EPID11_PRIV_RL*           pPrivRL,
+            [in, size=nTotalLen_PrivRL]      const EPID_PRIV_RL*           pPrivRL,
                                                 uint32_t    nTotalLen_PrivRL,
             [in, out, count=1]                  pairing_blob_t*  pPairingBlob,
             [out, count=1]                      uint8_t*    bNewPairing

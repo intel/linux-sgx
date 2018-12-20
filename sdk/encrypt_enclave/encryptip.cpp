@@ -142,6 +142,7 @@ static inline bool can_modify(IN const char* const sec_name, bool debug)
         ".dynsym",               // Holds content pointed by entreis with index DT_SYMTAB in dyn_info 
         ".dynstr",               // Holds content pointed by entreis with index DT_STRTAB in dyn_info
         ".rela.dyn",             // Holds content pointed by entreis with index DT_REL in dyn_info
+        ".rela.plt",             // Holds content pointed by entreis with index DT_JMPREL in dyn_info
         PCLTBL_SECTION_NAME,     // PCL table 
         PCL_TEXT_SECTION_NAME,   // code use by PCL flow
         PCL_DATA_SECTION_NAME,   // Data used by PCL flow

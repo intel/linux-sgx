@@ -270,15 +270,12 @@ int main(int argc, char* argv[])
     // communication with the server.
     {
         // ISV application creates the ISV enclave.
-        int launch_token_update = 0;
-        sgx_launch_token_t launch_token = {0};
-        memset(&launch_token, 0, sizeof(sgx_launch_token_t));
         do
         {
             ret = sgx_create_enclave(_T(ENCLAVE_PATH),
                                      SGX_DEBUG_FLAG,
-                                     &launch_token,
-                                     &launch_token_update,
+                                     NULL,
+                                     NULL,
                                      &enclave_id, NULL);
             if(SGX_SUCCESS != ret)
             {

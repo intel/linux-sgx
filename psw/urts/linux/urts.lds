@@ -10,15 +10,9 @@
         sgx_thread_setwait_untrusted_events_ocall;
         sgx_thread_set_multiple_untrusted_events_ocall;
         sgx_oc_cpuidex;
+        sgx_get_target_info;
         sgx_create_encrypted_enclave;
-        sl_uswitchless_new;
-        sl_uswitchless_free;
-        sl_uswitchless_init_workers;
-        sl_uswitchless_start_workers;
-        sl_uswitchless_stop_workers;
-        sl_uswitchless_check_switchless_ocall_fallback;
-        sl_uswitchless_do_switchless_ecall;
-        sl_ocall_wake_workers;
+        sgx_create_enclave_from_buffer_ex;
     local:
         *;
 };

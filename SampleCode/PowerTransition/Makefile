@@ -179,8 +179,12 @@ else
 endif
 endif
 
+.PHONY: all target
+all: .config_$(Build_Mode)_$(SGX_ARCH)
+	@$(MAKE) target
+
 ifeq ($(Build_Mode), HW_RELEASE)
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(App_Name) $(Enclave_Name)
+target: $(App_Name) $(Enclave_Name)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclave use the command:"
@@ -188,7 +192,7 @@ all: .config_$(Build_Mode)_$(SGX_ARCH) $(App_Name) $(Enclave_Name)
 	@echo "You can also sign the enclave using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: .config_$(Build_Mode)_$(SGX_ARCH) $(App_Name) $(Signed_Enclave_Name)
+target: $(App_Name) $(Signed_Enclave_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -200,6 +204,7 @@ else ifeq ($(Build_Mode), SIM_PRERELEASE)
 else
 	@echo "The project has been built in release simulation mode."
 endif
+
 endif
 
 .config_$(Build_Mode)_$(SGX_ARCH):
@@ -215,6 +220,8 @@ $(Gen_Untrusted_Source): $(SGX_EDGER8R) Enclave/Enclave.edl
 $(Gen_Untrusted_Object): $(Gen_Untrusted_Source)
 	@$(CC) $(SGX_COMMON_CFLAGS) $(App_Compile_CFlags) -c $< -o $@
 	@echo "CC   <=  $<"
+
+$(App_Objects): $(Gen_Untrusted_Source)
 
 App/%.o: App/%.cpp
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(App_Compile_CXXFlags) -c $< -o $@
@@ -237,6 +244,8 @@ $(Gen_Trusted_Object): $(Gen_Trusted_Source)
 Enclave/%.o: Enclave/%.cpp
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Compile_CXXFlags) -c $< -o $@
 	@echo "CXX  <=  $<"
+
+$(Enclave_Objects): $(Gen_Trusted_Source)
 
 $(Enclave_Name): $(Enclave_Objects)
 	@$(CXX) $^ -o $@ $(Enclave_Link_Flags)

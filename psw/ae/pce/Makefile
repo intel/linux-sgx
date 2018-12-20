@@ -45,11 +45,12 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc                      \
            -I$(LINUX_EPID)/                               \
            -I$(LINUX_SDK_DIR)/tseal                       \
            -I$(LINUX_PSW_DIR)/ae/common                   \
-           -I$(LINUX_PSW_DIR)/ae/inc/internal
+           -I$(LINUX_PSW_DIR)/ae/inc/internal             \
+           -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 TCRYPTO_LIBDIR := $(LINUX_SDK_DIR)/tlibcrypto
 
-EXTERNAL_LIB += -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
+EXTERNAL_LIB += -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx
 
 SRC := $(wildcard *.cpp)
 
@@ -70,7 +71,7 @@ pce.o: $(AENAME)_t.c
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -fno-exceptions -c $< -o $@
 
 $(AENAME)_t.c: $(AENAME).edl
-	@$(EDGER8R) --trusted $<
+	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

@@ -48,7 +48,7 @@ rm -fr ${INSTALL_PATH}
 get_arch()
 {
     local a=$(readelf -h $BUILD_DIR/sgx_sign | sed -n '2p' | awk '{print $6}')
-    test $a = 02 && echo 'x64' || echo 'x86'
+    test $a = 01 && echo 'x86' || echo 'x64'
 }
 
 ARCH=$(get_arch)

@@ -48,11 +48,18 @@ extern "C" {
 #define COMM_OUT_OPT
 #define COMM_IN_OUT
 
+#ifndef ENCLAVE_TYPE_SGX
+#define ENCLAVE_TYPE_SGX            0x00000001    /* An enclave for the Intel Software Guard Extensions (SGX) architecture version 1. */
+#define ENCLAVE_TYPE_SGX2           0x00000002    /* An enclave for the Intel Software Guard Extensions (SGX) architecture version 2. */
+#endif
+#define ENCLAVE_TYPE_SGX1 ENCLAVE_TYPE_SGX
+
+
 #define ENCLAVE_MK_ERROR(x) (0x00000000 | (x))
 
 typedef enum {
     ENCLAVE_ERROR_SUCCESS = ENCLAVE_MK_ERROR(0x0000),       /* No error. */
-    ENCLAVE_NOT_SUPPORTED = ENCLAVE_MK_ERROR(0x0001),       /* Enclave type not supported, SGX not supported, or SGX device not present. */
+    ENCLAVE_NOT_SUPPORTED = ENCLAVE_MK_ERROR(0x0001),       /* Enclave type not supported, Intel® SGX is not supported, the Intel® SGX device is not present, or the AESM Service is not running. */
     ENCLAVE_INVALID_SIG_STRUCT = ENCLAVE_MK_ERROR(0x0002),  /* SGX - SIGSTRUCT contains an invalid value. */
     ENCLAVE_INVALID_SIGNATURE = ENCLAVE_MK_ERROR(0x0003),   /* SGX – invalid Signature or SIGSTRUCT. */
     ENCLAVE_INVALID_ATTRIBUTE = ENCLAVE_MK_ERROR(0x0004),   /* SGX – invalid SECS Attribute. */
@@ -68,13 +75,9 @@ typedef enum {
     ENCLAVE_RETRY = ENCLAVE_MK_ERROR(0x000e),               /* Please retry the operation – there was an unmasked event in EINIT. */
     ENCLAVE_INVALID_SIZE = ENCLAVE_MK_ERROR(0x000f),        /* An invalid size was entered. */
     ENCLAVE_NOT_INITIALIZED = ENCLAVE_MK_ERROR(0x0010),     /* The enclave is not initialized – the operation requires that the enclave be initialized. */
+    ENCLAVE_SERVICE_TIMEOUT = ENCLAVE_MK_ERROR(0x0011),     /* The launch service timed out when attempting to obtain a launch token.  Check to ensure that the AESM service is running and accessible. */
     ENCLAVE_UNEXPECTED = ENCLAVE_MK_ERROR(0x1001),          /* Unexpected error. */
 } enclave_error_t;
-
-typedef enum {
-    ENCLAVE_TYPE_SGX1 = 1, /* An enclave for the Intel Software Guard Extensions (SGX) architecture version 1. */
-    ENCLAVE_TYPE_SGX2,     /* An enclave for the Intel Software Guard Extensions (SGX) architecture version 2. */
-} enclave_type_t;
 
 typedef enum {
     ENCLAVE_PAGE_READ = 1 << 0,           /* Enables read access to the committed region of pages. */

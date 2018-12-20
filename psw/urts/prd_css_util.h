@@ -32,7 +32,6 @@
 #ifndef _PRD_CSS_UTIL_H_
 #define _PRD_CSS_UTIL_H_
 #include "arch.h"
-#include "launch_checker.h"
 #include "file.h"
 #include <stdio.h>
 
@@ -42,7 +41,7 @@
 extern "C" {
 #endif
     int read_prd_css(const prd_css_path_t prd_css_path, enclave_css_t *css);
-    bool is_le(SGXLaunchToken *lc, const enclave_css_t *const css);
+    bool is_le(const enclave_css_t *const css);
 
 #ifdef __cplusplus
 }

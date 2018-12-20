@@ -69,9 +69,7 @@ void print(const char *str)
 sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_buf_t *buf)
 {
     sgx_status_t ret = SGX_SUCCESS;
-    sgx_launch_token_t token = {0};
     int retval = 0;
-    int updated = 0;
 
     for( ; ; )
     {
@@ -84,7 +82,7 @@ sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_bu
 	
         // Step 2: load the enclave
         // Debug: set the 2nd parameter to 1 which indicates the enclave are launched in debug mode
-        ret = sgx_create_enclave(ENCLAVE_NAME, SGX_DEBUG_FLAG, &token, &updated, eid, NULL);
+        ret = sgx_create_enclave(ENCLAVE_NAME, SGX_DEBUG_FLAG, NULL, NULL, eid, NULL);
         if(ret != SGX_SUCCESS)
             return ret;
 

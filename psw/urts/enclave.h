@@ -66,7 +66,7 @@ public:
     uint32_t get_ref() { return m_ref; }
     void mark_zombie()  { m_zombie = true; }
     bool is_zombie() { return m_zombie; }
-    sgx_status_t initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool);
+    sgx_status_t initialize(const se_file_t& file, const secs_t& secs, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool);
     void add_thread(tcs_t * const tcs, bool is_unallocated);
     void add_thread(CTrustThread * const trust_thread);
     const debug_enclave_info_t* get_debug_info();
@@ -85,7 +85,8 @@ public:
     void set_sealed_key(uint8_t *sealed_key);
     sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
     void destroy_uswitchless(void);
-	
+    sgx_target_info_t get_target_info();
+
 private:
     CTrustThread * get_tcs(int ecall_cmd);
     void put_tcs(CTrustThread *trust_thread);
@@ -111,7 +112,7 @@ private:
     uint8_t                 *m_sealed_key;
     struct sl_uswitchless*  m_uswitchless;
     bool                    m_us_has_started;
-	
+    sgx_target_info_t       m_target_info;
 };
 
 class CEnclavePool: private Uncopyable

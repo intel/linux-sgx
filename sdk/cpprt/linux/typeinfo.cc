@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include "se_cdefs.h"
 
-SGX_ACCESS_VERSION(tstdcxx, 4)
+SGX_ACCESS_VERSION(tcxx, 4)
 
 using std::type_info;
 

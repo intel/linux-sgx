@@ -91,12 +91,6 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
 		ret = SGX_SUCCESS;
 	} while (0);
 
-	// in case of error in debug mode, update openssl last error variable.
-	//
-	if (ret != SGX_SUCCESS) {
-        GET_LAST_OPENSSL_ERROR;
-	}
-
 	// we're done, clear and free CMAC ctx
 	//
 	if (pState) {
@@ -120,8 +114,6 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
 	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 	void* pState = NULL;
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
-
 	do {
 		// create CMAC ctx
 		//
@@ -142,12 +134,6 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
 		ret = SGX_SUCCESS;
 	} while (0);
 
-	// in case of error in debug mode, update openssl last error variable.
-	//
-	if (ret != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
-	}
-
 	return ret;
 }
 
@@ -164,10 +150,7 @@ sgx_status_t sgx_cmac128_update(const uint8_t *p_src, uint32_t src_len, sgx_cmac
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
-
 	if (!CMAC_Update((CMAC_CTX *)cmac_handle, p_src, src_len)) {
-        GET_LAST_OPENSSL_ERROR;
 		return SGX_ERROR_UNEXPECTED;
 	}
 	return SGX_SUCCESS;
@@ -188,10 +171,7 @@ sgx_status_t sgx_cmac128_final(sgx_cmac_state_handle_t cmac_handle, sgx_cmac_128
 
 	size_t mactlen;
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
-
 	if (!CMAC_Final((CMAC_CTX*)cmac_handle, (unsigned char*)p_hash, &mactlen)) {
-        GET_LAST_OPENSSL_ERROR;
 		return SGX_ERROR_UNEXPECTED;
 	}
 	return SGX_SUCCESS;

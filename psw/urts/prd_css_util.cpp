@@ -31,10 +31,10 @@
 
 
 #include "arch.h"
-#include "launch_checker.h"
 #include "se_vendor.h"
 #include "prd_css_util.h"
 #include "se_memcpy.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -73,19 +73,13 @@ extern "C" int read_prd_css(const prd_css_path_t prd_css_path, enclave_css_t *cs
     return SGX_SUCCESS;
 }
 
-extern "C" bool is_le(SGXLaunchToken *lc, const enclave_css_t *const css)
+extern "C" bool is_le(const enclave_css_t *const css)
 {
-    assert(NULL != css && NULL != lc);
-    sgx_launch_token_t token;
-
-    lc->get_launch_token(&token);
-
-    token_t *launch = reinterpret_cast<token_t *>(token);
+    assert(NULL != css);
 
     if(INTEL_VENDOR_ID == css->header.module_vendor
             && LE_PROD_ID == css->body.isv_prod_id
-            && 0 != css->header.hw_version
-            && 0 == launch->body.valid)
+            && 0 != css->header.hw_version)
         return true;
 
     return false;

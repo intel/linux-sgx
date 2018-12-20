@@ -235,3 +235,42 @@ pve_status_t sgx_error_to_pve_error(sgx_status_t status)
         return PVEC_SE_ERROR;
     }
 }
+
+#define BLOCK_SIZE 64
+
+sgx_status_t sgx_aes_gcm128_enc_inplace_update( sgx_aes_state_handle_t aes_gcm_state, uint8_t *buf,
+    uint32_t buf_len)
+{
+    if ((buf == NULL) || (aes_gcm_state == NULL) || (buf_len >= INT_MAX) || (buf_len == 0))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    uint32_t off = 0;
+    uint8_t block[BLOCK_SIZE];
+    memset(block, 0, sizeof(block));
+
+    //In PvE, we should only use code with buf_len not too large.
+    //The code in following loop will have integer overflow if buf_len is larger than or equal to 2^32-BLOCK_SIZE. (off+=BLOCK_SIZE)
+    //For defense in depth, we add extra constrain that buf_len should not be too large
+    if (buf_len > (1U << 31)) {
+        return SGX_ERROR_UNEXPECTED;
+    }
+
+    //encrypt input buffer inplace. each round encrypt BLOCK_SIZE bytes
+    //
+    for (off = 0; off < buf_len; off += BLOCK_SIZE) {
+        int enc_len = BLOCK_SIZE;
+        if (off + BLOCK_SIZE > buf_len) {
+            enc_len = buf_len - off;
+        }
+        if ((sgx_aes_gcm128_enc_update(buf + off, enc_len, block, aes_gcm_state)) != SGX_SUCCESS) {
+            (void)memset_s(block, sizeof(block), 0, BLOCK_SIZE);
+            return SGX_ERROR_UNEXPECTED;
+        }
+        memcpy(buf + off, block, enc_len);
+    }
+
+    (void)memset_s(block, sizeof(block), 0, BLOCK_SIZE);
+    return SGX_SUCCESS;
+
+}

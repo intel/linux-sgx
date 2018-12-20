@@ -36,6 +36,7 @@
  *     API for report verification
  */
 
+#include <sgx_random_buffers.h>
 #include "sgx_utils.h"
 #include "util.h"
 #include <stdlib.h>
@@ -52,7 +53,6 @@ sgx_status_t sgx_verify_report(const sgx_report_t *report)
 {
     sgx_mac_t mac;
     sgx_key_request_t key_request;
-    sgx_key_128bit_t key;
     sgx_status_t err = SGX_ERROR_UNEXPECTED;
     //check parameter
     if(!report||!sgx_is_within_enclave(report, sizeof(*report)))
@@ -62,12 +62,13 @@ sgx_status_t sgx_verify_report(const sgx_report_t *report)
 
     memset(&mac, 0, sizeof(sgx_mac_t));
     memset(&key_request, 0, sizeof(sgx_key_request_t));
-    memset(&key, 0, sizeof(sgx_key_128bit_t));
 
     //prepare the key_request
     key_request.key_name = SGX_KEYSELECT_REPORT;
     memcpy_s(&key_request.key_id, sizeof(key_request.key_id), &report->key_id, sizeof(report->key_id));
 
+    randomly_placed_buffer<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0x800> report_key_buf{};
+    auto *report_key = report_key_buf.randomize_object();
     //get the report key
     // Since the key_request is not an input parameter by caller,
     // we suppose sgx_get_key would never return the following error code:
@@ -76,14 +77,14 @@ sgx_status_t sgx_verify_report(const sgx_report_t *report)
     //      SGX_ERROR_INVALID_CPUSVN
     //      SGX_ERROR_INVALID_ISVSVN
     //      SGX_ERROR_INVALID_KEYNAME
-    err = sgx_get_key(&key_request, &key);
+    err = sgx_get_key(&key_request, report_key);
     if(err != SGX_SUCCESS)
     {
         return err; // err must be SGX_ERROR_OUT_OF_MEMORY or SGX_ERROR_UNEXPECTED
     }
     //get the report mac
-    err = sgx_rijndael128_cmac_msg((sgx_cmac_128bit_key_t*)&key, (const uint8_t *)(&report->body), sizeof(sgx_report_body_t), &mac);
-    memset_s (&key, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t));
+    err = sgx_rijndael128_cmac_msg((sgx_cmac_128bit_key_t*)report_key, (const uint8_t *)(&report->body), sizeof(sgx_report_body_t), &mac);
+    memset_s (report_key, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t));
     if (SGX_SUCCESS != err)
     {
         if(err != SGX_ERROR_OUT_OF_MEMORY)

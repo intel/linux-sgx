@@ -53,7 +53,7 @@ OBJS := $(sort $(OBJ) version.o)
 all: $(SONAME) 
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -lsgx_tstdc
 	$(STRIP)  --strip-unneeded $(SONAME)
 
 $(OBJ): $(AENAME)_t.c
@@ -61,7 +61,7 @@ $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --trusted $<
+	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
 
 .PHONY: clean
 clean:

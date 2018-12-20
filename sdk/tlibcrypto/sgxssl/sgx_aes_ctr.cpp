@@ -95,7 +95,6 @@ sgx_status_t sgx_aes_ctr_encrypt(const sgx_aes_ctr_128bit_key_t *p_key, const ui
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// Create and init ctx
@@ -133,10 +132,6 @@ sgx_status_t sgx_aes_ctr_encrypt(const sgx_aes_ctr_128bit_key_t *p_key, const ui
 		ret = SGX_SUCCESS;
 	} while (0);
 
-	if (ret != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
-	}
-
 	//clean up ctx and return
 	//
 	if (ptr_ctx) {
@@ -168,8 +163,6 @@ sgx_status_t sgx_aes_ctr_decrypt(const sgx_aes_ctr_128bit_key_t *p_key, const ui
 	if (ctr_inc_bits != SGXSSL_CTR_BITS) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
-
-	CLEAR_OPENSSL_ERROR_QUEUE;
 
 	do {
 		// Create and initialise the context
@@ -207,10 +200,6 @@ sgx_status_t sgx_aes_ctr_decrypt(const sgx_aes_ctr_128bit_key_t *p_key, const ui
 		}
 		ret = SGX_SUCCESS;
 	} while (0);
-
-	if (ret != SGX_SUCCESS) {
-		GET_LAST_OPENSSL_ERROR;
-	}
 
 	//cleanup ctx, and return
 	//

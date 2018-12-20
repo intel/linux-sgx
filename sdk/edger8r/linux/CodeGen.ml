@@ -916,7 +916,12 @@ let gen_check_tbridge_ptr_parms (plist: Ast.pdecl list) =
 
 
 (* If a foreign type is a readonly pointer, we cast it to 'void*' for memcpy() and free() *)
-let mk_in_ptr_dst_name (rdonly: bool) (ptr_name: string) =
+let mk_in_ptr_dst_name (ty: Ast.atype) (attr: Ast.ptr_attr) (ptr_name: string) =
+  let rdonly = 
+    match ty with
+      Ast.Foreign _ -> attr.Ast.pa_rdonly
+    | _             -> false
+  in
   if rdonly then "(void*)" ^ ptr_name
   else ptr_name
 
@@ -930,7 +935,7 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
     let in_ptr_name = mk_in_var name in
     let in_ptr_type = sprintf "%s%s" (Ast.get_tystr ty) (if is_ary then "*"  else "") in
     let len_var     = mk_len_var name in
-    let in_ptr_dst_name = mk_in_ptr_dst_name attr.Ast.pa_rdonly in_ptr_name in
+    let in_ptr_dst_name = mk_in_ptr_dst_name ty attr in_ptr_name in
     let tmp_ptr_name= mk_tmp_var name in
     let malloc_and_copy pre_indent =
       match attr.Ast.pa_direction with
@@ -1011,11 +1016,11 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
  * which is to be inserted after finishing calling the trusted function.
  *)
 let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
-  let copy_and_free (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+  let copy_and_free (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
     let name        = declr.Ast.identifier in
     let in_ptr_name = mk_in_var name in
     let len_var     = mk_len_var name in
-    let in_ptr_dst_name = mk_in_ptr_dst_name attr.Ast.pa_rdonly in_ptr_name in
+    let in_ptr_dst_name = mk_in_ptr_dst_name ty attr in_ptr_name in
       match attr.Ast.pa_direction with
           Ast.PtrIn -> sprintf "\tif (%s) free(%s);\n" in_ptr_name in_ptr_dst_name
         | Ast.PtrInOut | Ast.PtrOut ->
@@ -1063,7 +1068,7 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
        (fun acc (pty, declr) ->
           match pty with
               Ast.PTVal _          -> acc
-            | Ast.PTPtr (ty, attr) -> acc ^ copy_and_free attr declr) "" plist
+            | Ast.PTPtr (ty, attr) -> acc ^ copy_and_free ty attr declr) "" plist
 
 
 (* Generate an "err:" goto mark if necessary. *)

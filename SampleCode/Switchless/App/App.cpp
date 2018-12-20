@@ -158,9 +158,7 @@ void print_error_message(sgx_status_t ret)
  */
 int initialize_enclave(const sgx_uswitchless_config_t* us_config)
 {
-    sgx_launch_token_t token = {0};
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    int updated = 0;
 
     /* Call sgx_create_enclave to initialize an enclave instance */
     /* Debug Support: set 2nd parameter to 1 */
@@ -169,7 +167,7 @@ int initialize_enclave(const sgx_uswitchless_config_t* us_config)
 
     enclave_ex_p[SGX_CREATE_ENCLAVE_EX_SWITCHLESS_BIT_IDX] = (const void*)us_config;
 
-    ret = sgx_create_enclave_ex(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, &token, &updated, &global_eid, NULL, SGX_CREATE_ENCLAVE_EX_SWITCHLESS, enclave_ex_p);
+    ret = sgx_create_enclave_ex(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, NULL, NULL, &global_eid, NULL, SGX_CREATE_ENCLAVE_EX_SWITCHLESS, enclave_ex_p);
     if (ret != SGX_SUCCESS) {
         print_error_message(ret);
         return -1;

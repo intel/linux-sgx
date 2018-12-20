@@ -48,12 +48,10 @@ sgx_status_t sgx_sha256_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha256_h
     }
 
     sgx_status_t retval = SGX_ERROR_UNEXPECTED;
-    CLEAR_OPENSSL_ERROR_QUEUE;
 
     do {
 	    /* generates digest of p_src */
 	    if (SHA256((const unsigned char *)p_src, src_len, (unsigned char *)p_hash) == NULL) {
-		GET_LAST_OPENSSL_ERROR;
 		break;
 	    }
 

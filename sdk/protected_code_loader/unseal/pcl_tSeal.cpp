@@ -53,7 +53,7 @@
 // Return Value:
 //   SGX_SUCCESS or error codes
 sgx_status_t pcl_unseal_data(const sgx_sealed_data_t *p_sealed_data, uint8_t *p_additional_MACtext,
-    uint32_t *p_additional_MACtext_length, uint8_t *p_decrypted_text, uint32_t *p_decrypted_text_length)
+                                        uint32_t *p_additional_MACtext_length, uint8_t *p_decrypted_text, uint32_t *p_decrypted_text_length)
 {
     sgx_status_t err = SGX_ERROR_UNEXPECTED;
     // Ensure the the sgx_sealed_data_t members are all inside enclave before using them.
@@ -67,12 +67,12 @@ sgx_status_t pcl_unseal_data(const sgx_sealed_data_t *p_sealed_data, uint8_t *p_
     {
         return SGX_ERROR_MAC_MISMATCH; // Return error indicating the blob is corrupted
     }
-    uint32_t aad_text_length = pcl_get_aad_mac_txt_len(p_sealed_data);
-    if (aad_text_length == UINT32_MAX)
+    uint32_t add_text_length = pcl_get_add_mac_txt_len(p_sealed_data);
+    if (add_text_length == UINT32_MAX)
     {
         return SGX_ERROR_MAC_MISMATCH; // Return error indicating the blob is corrupted
     }
-    uint32_t sealedDataSize = pcl_calc_sealed_data_size(aad_text_length, encrypt_text_length);
+    uint32_t sealedDataSize = pcl_calc_sealed_data_size(add_text_length, encrypt_text_length);
     if (sealedDataSize == UINT32_MAX)
     {
         return SGX_ERROR_MAC_MISMATCH; // Return error indicating the blob is corrupted
@@ -86,7 +86,7 @@ sgx_status_t pcl_unseal_data(const sgx_sealed_data_t *p_sealed_data, uint8_t *p_
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if ((aad_text_length > 0) && ((p_additional_MACtext == NULL) || (p_additional_MACtext_length == NULL)))
+    if ((add_text_length > 0) && ((p_additional_MACtext == NULL) || (p_additional_MACtext_length == NULL)))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
@@ -94,36 +94,43 @@ sgx_status_t pcl_unseal_data(const sgx_sealed_data_t *p_sealed_data, uint8_t *p_
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if (!pcl_is_within_enclave(p_decrypted_text,encrypt_text_length))
+    if (!pcl_is_within_enclave(p_decrypted_text_length, sizeof(*p_decrypted_text_length)))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if (!pcl_is_within_enclave(p_decrypted_text_length,sizeof(p_decrypted_text_length)))
+    uint32_t input_decrypted_text_length = *p_decrypted_text_length;
+    if (input_decrypted_text_length < encrypt_text_length)
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    // Ensure aad data does not cross enclave boundary
-    if ((aad_text_length > 0) &&
-        (!(pcl_is_within_enclave(p_additional_MACtext,aad_text_length) || pcl_is_outside_enclave(p_additional_MACtext, aad_text_length))))
+    if (!pcl_is_within_enclave(p_decrypted_text, input_decrypted_text_length))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if ((*p_decrypted_text_length) < encrypt_text_length)
+
+    if((p_additional_MACtext_length != NULL) && 
+       (!(pcl_is_within_enclave(p_additional_MACtext_length, sizeof(*p_additional_MACtext_length)))))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
     uint32_t additional_MACtext_length = (NULL != p_additional_MACtext_length) ? *p_additional_MACtext_length : 0;
-    if (additional_MACtext_length != aad_text_length) {
+    if (additional_MACtext_length != add_text_length) {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    // Ensure add data does not cross enclave boundary
+    if ((add_text_length > 0) &&
+        (!(pcl_is_within_enclave(p_additional_MACtext, additional_MACtext_length))))
+    {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    err = pcl_unseal_data_helper(p_sealed_data, p_additional_MACtext, aad_text_length,
+    err = pcl_unseal_data_helper(p_sealed_data, p_additional_MACtext, add_text_length,
         p_decrypted_text, encrypt_text_length);
     if (err == SGX_SUCCESS)
     {
         *p_decrypted_text_length = encrypt_text_length;
         if (p_additional_MACtext_length != NULL)
-            *p_additional_MACtext_length = aad_text_length;
+            *p_additional_MACtext_length = add_text_length;
     }
     else
     {

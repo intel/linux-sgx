@@ -109,7 +109,7 @@ fi
 echo " done."
 
 
-cat > $ECL_DST_PATH/uninstall.sh <<EOF
+cat > $ECL_DST_PATH/cleanup.sh <<EOF
 #!/usr/bin/env bash
 #
 # Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
@@ -172,7 +172,7 @@ rm -fr /var/run/aesmd
 rm -fr $ECL_DST_PATH
 EOF
 
-chmod +x $ECL_DST_PATH/uninstall.sh
+chmod +x $ECL_DST_PATH/cleanup.sh
 
 $AESM_PATH/cse_provision_tool || true
 rm $AESM_PATH/cse_provision_tool

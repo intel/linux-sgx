@@ -66,7 +66,7 @@ extern "C" {
 #endif
 
 int sgx_accept_forward(si_flags_t sfl, size_t lo, size_t hi);
-void do_ereport(const sgx_target_info_t *target_info, const sgx_report_data_t *report_data, sgx_report_t *report);
+int do_ereport(const sgx_target_info_t *target_info, const sgx_report_data_t *report_data, sgx_report_t *report);
 int do_egetkey(const sgx_key_request_t *key_request, sgx_key_128bit_t *key);
 uint32_t do_rdrand(uint32_t *rand);
 int do_eaccept(const sec_info_t *, size_t);
@@ -79,6 +79,8 @@ sgx_status_t do_add_thread(void *ms);
 int is_dynamic_thread(void *tcs);
 int is_dynamic_thread_exist(void);
 uint32_t get_dynamic_stack_max_page(void);
+void __attribute__((regparm(3),noinline,visibility("default")))
+random_stack_notify_gdb(void *addr, size_t size);
 #ifdef __cplusplus
 }
 #endif

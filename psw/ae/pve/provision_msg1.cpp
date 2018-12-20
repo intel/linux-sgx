@@ -34,7 +34,6 @@
 #include "cipher.h"
 #include "helper.h"
 #include "protocol.h"
-#include "ipp_wrapper.h"
 #include "sgx_tcrypto.h"
 #include "pve_hardcoded_tlv_data.h"
 #include "sgx_utils.h"

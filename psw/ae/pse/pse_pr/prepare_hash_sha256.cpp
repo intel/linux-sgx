@@ -90,12 +90,6 @@ ae_error_t PrepareHashSHA256::Finalize(SHA256_HASH *pHash)
             break;
         }
 
-        if (sizeof(*pHash) != sizeof(sgx_sha256_hash_t))
-        {
-            m_sgx_status = SGX_ERROR_INVALID_PARAMETER;
-            break;
-        }
-
         m_sgx_status = sgx_sha256_get_hash(m_pShaState, (sgx_sha256_hash_t*)pHash);
         if (SGX_SUCCESS != m_sgx_status) {
             break;

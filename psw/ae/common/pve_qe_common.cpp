@@ -47,66 +47,8 @@ extern "C" {
 }
 #endif
 
-/*
-* Function used to get ECP context.
-*
-* @param pp_new_ecp[out] Used to get the pointer of ECP context.
-* @return IppStatus ippStsNoErr or other error cases.
-*/
-IppStatus new_std_256_ecp(IppsECCPState **pp_new_ecp)
-{
-    int ctx_size = 0;
-    IppStatus ipp_ret = ippStsNoErr;
-    IppsECCPState* p_ctx = NULL;
 
-    ipp_ret = ippsECCPGetSize(256, &ctx_size);
-    if(ippStsNoErr != ipp_ret)
-        return ipp_ret;
-
-    p_ctx = (IppsECCPState*)malloc(ctx_size);
-    if(NULL == p_ctx)
-        return ippStsNoMemErr;
-
-    ipp_ret = ippsECCPInit(256, p_ctx);
-    if(ippStsNoErr != ipp_ret)
-    {
-        free(p_ctx);
-        return ipp_ret;
-    }
-
-    ipp_ret = ippsECCPSetStd256r1(p_ctx);
-    if(ippStsNoErr != ipp_ret)
-    {
-        free(p_ctx);
-        return ipp_ret;
-    }
-
-    *pp_new_ecp = p_ctx;
-    return ipp_ret;
-}
-
-/*
-* Function used to free ECP context.
-*
-* @param p_ecp[out] Pointer of ECP context.
-*/
-void secure_free_std_256_ecp(IppsECCPState *p_ecp)
-{
-    int ctx_size = 0;
-    IppStatus ipp_ret = ippStsNoErr;
-
-    if(p_ecp)
-    {
-        ipp_ret = ippsECCPGetSize(256, &ctx_size);
-        if(ippStsNoErr == ipp_ret)
-            memset_s(p_ecp, ctx_size, 0, ctx_size);
-        free(p_ecp);
-    }
-    return;
-}
-
-
-int IPP_STDCALL epid_random_func(
+int epid_random_func(
     unsigned int *p_random_data,
     int bits,
     void* p_user_data)
@@ -116,8 +58,8 @@ int IPP_STDCALL epid_random_func(
 
     if(SGX_SUCCESS != sgx_read_rand((uint8_t *)p_random_data,
                                     ROUND_TO(bits, 8) / 8))
-        return ippStsErr;
-    return ippStsNoErr;
+        return 1;
+    return 0;
 }
 
 EpidStatus epid_member_create(BitSupplier rnd_func, void* rnd_param, FpElemStr* f, MemberCtx** ctx)

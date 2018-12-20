@@ -72,12 +72,11 @@ void waitForKeyPress()
 uint32_t load_enclaves()
 {
     uint32_t enclave_temp_no;
-    int ret, launch_token_updated;
-    sgx_launch_token_t launch_token;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
     enclave_temp_no = 0;
 
-    ret = sgx_create_enclave(ENCLAVE1_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &e1_enclave_id, NULL);
+    ret = sgx_create_enclave(ENCLAVE1_PATH, SGX_DEBUG_FLAG, NULL, NULL, &e1_enclave_id, NULL);
     if (ret != SGX_SUCCESS) {
                 return ret;
     }
@@ -85,7 +84,7 @@ uint32_t load_enclaves()
     enclave_temp_no++;
     g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(e1_enclave_id, enclave_temp_no));
 
-    ret = sgx_create_enclave(ENCLAVE2_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &e2_enclave_id, NULL);
+    ret = sgx_create_enclave(ENCLAVE2_PATH, SGX_DEBUG_FLAG, NULL, NULL, &e2_enclave_id, NULL);
     if (ret != SGX_SUCCESS) {
                 return ret;
     }
@@ -93,7 +92,7 @@ uint32_t load_enclaves()
     enclave_temp_no++;
     g_enclave_id_map.insert(std::pair<sgx_enclave_id_t, uint32_t>(e2_enclave_id, enclave_temp_no));
 
-    ret = sgx_create_enclave(ENCLAVE3_PATH, SGX_DEBUG_FLAG, &launch_token, &launch_token_updated, &e3_enclave_id, NULL);
+    ret = sgx_create_enclave(ENCLAVE3_PATH, SGX_DEBUG_FLAG, NULL, NULL, &e3_enclave_id, NULL);
     if (ret != SGX_SUCCESS) {
                 return ret;
     }

@@ -24,6 +24,9 @@ How to Build/Execute the Sample Code
         $ make SGX_MODE=SIM SGX_PRERELEASE=1 SGX_DEBUG=0
     f. Simulation Mode, Release build:
         $ make SGX_MODE=SIM SGX_DEBUG=0
+    g. Use Local Attestation 2.0 protocol, Hardware Mode, Debug build:
+        $ make LAv2=1
+       Note: Local Attestaion 2.0 protocol will be used if 'LAv2' is defined.
 4. Execute the binary directly:
     $ ./app
 5. Remember to "make clean" before switching build mode

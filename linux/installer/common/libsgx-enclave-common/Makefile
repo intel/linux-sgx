@@ -40,6 +40,7 @@ SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
 ECL_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
 USR_LIB_PATH=$(addsuffix /$(shell dpkg-architecture -qDEB_HOST_MULTIARCH), $(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory))))
 
+UAE_VER=1.0.0
 URTS_VER=1.0.0
 ECL_VER=1.0.0
 
@@ -56,11 +57,11 @@ install:
 	mv $(ECL_LIB_PATH)/libsgx_enclave_common.so $(USR_LIB_PATH)
 	rmdir $(ECL_LIB_PATH)
 	cd $(USR_LIB_PATH) && \
-	mv libsgx_uae_service.so libsgx_uae_service.so.$(ECL_VER) && \
-	ln -fs libsgx_uae_service.so.$(ECL_VER) libsgx_uae_service.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') && \
-	ln -fs libsgx_uae_service.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_uae_service.so && \
-	mv libsgx_urts.so libsgx_urts.so.$(ECL_VER) && \
-	ln -fs libsgx_urts.so.$(ECL_VER) libsgx_urts.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') && \
-	ln -fs libsgx_urts.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_urts.so && \
+	mv libsgx_uae_service.so libsgx_uae_service.so.$(UAE_VER) && \
+	ln -fs libsgx_uae_service.so.$(UAE_VER) libsgx_uae_service.so.$(shell echo $(UAE_VER) |awk -F. '{print $$1}') && \
+	ln -fs libsgx_uae_service.so.$(shell echo $(UAE_VER) |awk -F. '{print $$1}') libsgx_uae_service.so && \
+	mv libsgx_urts.so libsgx_urts.so.$(URTS_VER) && \
+	ln -fs libsgx_urts.so.$(URTS_VER) libsgx_urts.so.$(shell echo $(URTS_VER) |awk -F. '{print $$1}') && \
+	ln -fs libsgx_urts.so.$(shell echo $(URTS_VER) |awk -F. '{print $$1}') libsgx_urts.so && \
 	mv libsgx_enclave_common.so libsgx_enclave_common.so.$(ECL_VER) && \
 	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}')

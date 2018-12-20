@@ -76,7 +76,7 @@ sgx_status_t pcl_gcm_decrypt(
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    AES_KEY wide_key = { 0 };
+    AES_KEY wide_key = {.rd_key={},.rounds=0};
     GCM128_CONTEXT gcm_ctx;
     
     int ret = pcl_vpaes_set_encrypt_key(key, PCL_AES_BLOCK_LEN_BITS, &wide_key);
@@ -179,7 +179,7 @@ int pcl_cmac(
     unsigned char aux[PCL_AES_BLOCK_LEN] = { 0 };
     unsigned char k1[PCL_AES_BLOCK_LEN] = { 0 };
 
-    AES_KEY wide_key;
+    AES_KEY wide_key = {.rd_key={},.rounds=0};
     pcl_vpaes_set_encrypt_key((const unsigned char *)p_key, PCL_AES_BLOCK_LEN_BITS, &wide_key);
     
     // Apply AES-CBC encrypt on input = 0^16 and IV = 0^16: 

@@ -42,14 +42,110 @@
 #include "sgx_trts.h"
 #include "ecp_interface.h"
 #include "sgx_dh_internal.h"
+#include "sgx_lfence.h"
 
 #define NONCE_SIZE              16
 #define MSG_BUF_LEN             (static_cast<uint32_t>(sizeof(sgx_ec256_public_t)*2))
 #define MSG_HASH_SZ             32
 
 #ifndef SAFE_FREE
-#define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
+#define SAFE_FREE(ptr)          {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
 #endif
+
+static bool LAv2_verify_message2(const sgx_dh_msg2_t *, const sgx_key_128bit_t *);
+static sgx_status_t LAv2_generate_message3(const sgx_dh_msg2_t *,
+    const sgx_ec256_public_t *, const sgx_key_128bit_t *, sgx_dh_msg3_t *);
+
+// LAv2 proto_spec
+static const struct
+{
+    char        signature[6];
+    uint8_t     ver, rev;
+    uint16_t    target_spec[28];
+
+    const sgx_report_data_t& cast_to_report_data(void) const
+    {
+        static_assert(sizeof(*this) == sizeof(sgx_report_data_t), "");
+        return *reinterpret_cast<const sgx_report_data_t*>(this);
+    }
+
+    template <class T>
+    auto cast_from(const T& t) const -> decltype(*this)
+    {
+        static_assert(sizeof(*this) == sizeof(t), "");
+        return *reinterpret_cast<decltype(this)>(&t);
+    }
+
+    uint16_t ts_count(void) const
+    {
+        return uint16_t(target_spec[0] >> 8);
+    }
+
+    bool is_valid(void) const
+    {
+        return ver == 2 && rev == 0 && uint8_t(target_spec[0]) == 0 &&
+            ts_count() < sizeof(target_spec) / sizeof(*target_spec);
+    }
+
+    template <class PS>
+    static sgx_status_t make_target_info(
+        const PS& ps, const sgx_report_t& rpt, sgx_target_info_t& ti)
+    {
+        if (!ps.is_valid())
+            return SGX_ERROR_INVALID_PARAMETER;
+
+        memset_s(&ti, sizeof(ti), 0, sizeof(sgx_target_info_t));
+        auto *d = reinterpret_cast<uint8_t*>(&ti);
+
+        // Spectre
+        sgx_lfence();
+
+        for (int i = 1, to = 0; i <= ps.ts_count(); ++i)
+        {
+            int size = 1 << (ps.target_spec[i] & 0xf);
+            to += size - 1;
+            to &= -size;
+            if (to + size > int(sizeof(ti)))
+                return SGX_ERROR_UNEXPECTED;
+
+            int from = int16_t(ps.target_spec[i]) >> 4;
+            if (from >= 0)
+            {
+                if (from + size > int(sizeof(rpt)))
+                    return SGX_ERROR_UNEXPECTED;
+                memcpy(d + to, reinterpret_cast<const uint8_t*>(&rpt) + from, size);
+            } else switch (from)
+            {
+                case -1:
+                    break;
+                default:
+                    return SGX_ERROR_UNEXPECTED;
+            }
+
+            to += size;
+        }
+
+        return SGX_SUCCESS;
+    }
+
+    sgx_status_t make_target_info(
+        const sgx_report_t& rpt, sgx_target_info_t& ti) const
+    {
+        return make_target_info(*this, rpt, ti);
+    }
+} LAv2_proto_spec
+{
+    { 'S', 'G', 'X', ' ', 'L', 'A' },
+    2, 0,
+    {   0x0600, // target_spec count & revision
+        0x0405, // MRENCLAVE
+        0x0304, // ATTRIBUTES
+        0x0140, // CET_ATTRIBUTES
+        0x1041, // CONFIGSVN
+        0x0102, // MISCSELECT
+        0x0C06, // CONFIGID
+    }
+};
 
 static sgx_status_t verify_cmac128(
     const sgx_ec_key_128bit_t mac_key,
@@ -84,8 +180,6 @@ static sgx_status_t verify_cmac128(
 static sgx_status_t dh_generate_message1(sgx_dh_msg1_t *msg1, sgx_internal_dh_session_t *context)
 {
     sgx_report_t temp_report;
-    sgx_report_data_t report_data = {{0}};
-    sgx_target_info_t target;
     sgx_status_t se_ret;
     sgx_ecc_state_handle_t ecc_state = NULL;
 
@@ -94,24 +188,18 @@ static sgx_status_t dh_generate_message1(sgx_dh_msg1_t *msg1, sgx_internal_dh_se
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    memset(&temp_report, 0, sizeof(temp_report));
-    memset(&target,      0, sizeof(target));
-
     //Create Report to get target info which targeted towards the initiator of the session
-    se_ret = sgx_create_report(&target, &report_data,&temp_report);
+    se_ret = sgx_create_report(nullptr, nullptr, &temp_report);
     if(se_ret != SGX_SUCCESS)
     {
         return se_ret;
     }
 
-    memset(msg1, 0, sizeof(sgx_dh_msg1_t));
-    memcpy(&msg1->target.mr_enclave, 
-           &temp_report.body.mr_enclave, 
-           sizeof(sgx_measurement_t)); 
-    memcpy(&msg1->target.attributes, 
-           &temp_report.body.attributes, 
-           sizeof(sgx_attributes_t));
-    msg1->target.misc_select = temp_report.body.misc_select;
+    if (SGX_SUCCESS != (se_ret =
+        LAv2_proto_spec.make_target_info(temp_report, msg1->target)))
+    {
+        return se_ret;
+    }
 
     //Initialize ECC context to prepare for creating key pair
     se_ret = sgx_ecc256_open_context(&ecc_state);
@@ -120,8 +208,8 @@ static sgx_status_t dh_generate_message1(sgx_dh_msg1_t *msg1, sgx_internal_dh_se
         return se_ret;
     }
     //Generate the public key private key pair for Session Responder
-    se_ret = sgx_ecc256_create_key_pair((sgx_ec256_private_t*)&context->responder.prv_key, 
-                                       (sgx_ec256_public_t*)&context->responder.pub_key, 
+    se_ret = sgx_ecc256_create_key_pair((sgx_ec256_private_t*)&context->responder.prv_key,
+                                       (sgx_ec256_public_t*)&context->responder.pub_key,
                                        ecc_state);
     if(se_ret != SGX_SUCCESS)
     {
@@ -130,8 +218,8 @@ static sgx_status_t dh_generate_message1(sgx_dh_msg1_t *msg1, sgx_internal_dh_se
     }
 
     //Copying public key to g^a
-    memcpy(&msg1->g_a, 
-           &context->responder.pub_key, 
+    memcpy(&msg1->g_a,
+           &context->responder.pub_key,
            sizeof(sgx_ec256_public_t));
 
     se_ret = sgx_ecc256_close_context(ecc_state);
@@ -144,12 +232,12 @@ static sgx_status_t dh_generate_message1(sgx_dh_msg1_t *msg1, sgx_internal_dh_se
 }
 
 static sgx_status_t dh_generate_message2(const sgx_dh_msg1_t *msg1,
-                                      const sgx_ec256_public_t *g_b, 
-                                      const sgx_key_128bit_t *dh_smk,
-                                      sgx_dh_msg2_t *msg2)
+                                         const sgx_ec256_public_t *g_b,
+                                         const sgx_key_128bit_t *dh_smk,
+                                         sgx_dh_msg2_t *msg2)
 {
-    sgx_report_t temp_report; 
-    sgx_report_data_t report_data; 
+    sgx_report_t temp_report;
+    sgx_report_data_t report_data;
 
     sgx_status_t se_ret;
 
@@ -164,15 +252,15 @@ static sgx_status_t dh_generate_message2(const sgx_dh_msg1_t *msg1,
     memset(msg2, 0, sizeof(sgx_dh_msg2_t));
     memcpy(&msg2->g_b, g_b, sizeof(sgx_ec256_public_t));
 
-    memcpy(msg_buf, 
-           &msg1->g_a, 
+    memcpy(msg_buf,
+           &msg1->g_a,
            sizeof(sgx_ec256_public_t));
-    memcpy(msg_buf + sizeof(sgx_ec256_public_t), 
-           &msg2->g_b, 
+    memcpy(msg_buf + sizeof(sgx_ec256_public_t),
+           &msg2->g_b,
            sizeof(sgx_ec256_public_t));
 
-    se_ret = sgx_sha256_msg(msg_buf, 
-                            MSG_BUF_LEN, 
+    se_ret = sgx_sha256_msg(msg_buf,
+                            MSG_BUF_LEN,
                             (sgx_sha256_hash_t *)msg_hash);
     if(SGX_SUCCESS != se_ret)
     {
@@ -180,15 +268,15 @@ static sgx_status_t dh_generate_message2(const sgx_dh_msg1_t *msg1,
     }
 
     // Get REPORT with sha256(msg1->g_a | msg2->g_b) || kdf_id as user data
-    // 2-byte little-endian KDF-ID: 0x0001 AES-CMAC Entropy Extraction and Key Derivation 
+    // 2-byte little-endian KDF-ID: 0x0001 AES-CMAC Entropy Extraction and Key Derivation
     memset(&report_data, 0, sizeof(sgx_report_data_t));
-    memcpy(&report_data, &msg_hash, sizeof(msg_hash)); 
+    memcpy(&report_data, &msg_hash, sizeof(msg_hash));
 
     uint16_t *kdf_id = (uint16_t *)&report_data.d[sizeof(msg_hash)];
     *kdf_id = AES_CMAC_KDF_ID;
 
     // Generate Report targeted towards Session Responder
-    se_ret = sgx_create_report(&msg1->target, &report_data, &temp_report); 
+    se_ret = sgx_create_report(&msg1->target, &report_data, &temp_report);
     if(SGX_SUCCESS != se_ret)
     {
         return se_ret;
@@ -197,9 +285,9 @@ static sgx_status_t dh_generate_message2(const sgx_dh_msg1_t *msg1,
     memcpy(&msg2->report, &temp_report, sizeof(sgx_report_t));
 
     //Calculate the MAC for Message 2
-    se_ret = sgx_rijndael128_cmac_msg(dh_smk, 
-                                      (uint8_t *)(&msg2->report), 
-                                      sizeof(sgx_report_t), 
+    se_ret = sgx_rijndael128_cmac_msg(dh_smk,
+                                      (uint8_t *)(&msg2->report),
+                                      sizeof(sgx_report_t),
                                       (sgx_cmac_128bit_tag_t *)msg2->cmac);
     if(SGX_SUCCESS != se_ret)
     {
@@ -209,9 +297,9 @@ static sgx_status_t dh_generate_message2(const sgx_dh_msg1_t *msg1,
     return SGX_SUCCESS;
 }
 
-static sgx_status_t dh_verify_message2(const sgx_dh_msg2_t *msg2, 
-                                    const sgx_ec256_public_t *g_a, 
-                                    const sgx_key_128bit_t *dh_smk)
+static sgx_status_t dh_verify_message2(const sgx_dh_msg2_t *msg2,
+                                       const sgx_ec256_public_t *g_a,
+                                       const sgx_key_128bit_t *dh_smk)
 {
     sgx_report_t temp_report;
     sgx_status_t se_ret;
@@ -236,7 +324,7 @@ static sgx_status_t dh_verify_message2(const sgx_dh_msg2_t *msg2,
 
     //Verify the MAC of message 2 obtained from the Session Initiator
     se_ret = verify_cmac128((const uint8_t*)dh_smk, (const uint8_t*)(&msg2->report), sizeof(sgx_report_t), msg2->cmac);
-    if(SGX_SUCCESS != se_ret) 
+    if(SGX_SUCCESS != se_ret)
     {
         return se_ret;
     }
@@ -253,8 +341,8 @@ static sgx_status_t dh_verify_message2(const sgx_dh_msg2_t *msg2,
     memcpy(msg_buf, g_a, sizeof(sgx_ec256_public_t));
     memcpy(msg_buf + sizeof(sgx_ec256_public_t), &msg2->g_b, sizeof(sgx_ec256_public_t));
 
-    se_ret = sgx_sha256_msg(msg_buf, 
-                            MSG_BUF_LEN, 
+    se_ret = sgx_sha256_msg(msg_buf,
+                            MSG_BUF_LEN,
                            (sgx_sha256_hash_t *)msg_hash);
     if(SGX_SUCCESS != se_ret)
     {
@@ -263,23 +351,23 @@ static sgx_status_t dh_verify_message2(const sgx_dh_msg2_t *msg2,
 
     // report_data = SHA256(g_a || g_b) || kdf_id
     // Verify SHA256(g_a || g_b)
-    if (0 != memcmp(msg_hash, 
-                    &msg2->report.body.report_data, 
+    if (0 != memcmp(msg_hash,
+                    &msg2->report.body.report_data,
                     sizeof(msg_hash)))
     {
-        return SGX_ERROR_MAC_MISMATCH; 
+        return SGX_ERROR_MAC_MISMATCH;
     }
 
     return SGX_SUCCESS;
 }
 
 static sgx_status_t dh_generate_message3(const sgx_dh_msg2_t *msg2,
-                                      const sgx_ec256_public_t *g_a,
-                                      const sgx_key_128bit_t *dh_smk,
-                                      sgx_dh_msg3_t *msg3,
-                                      uint32_t msg3_additional_prop_len)
+                                         const sgx_ec256_public_t *g_a,
+                                         const sgx_key_128bit_t *dh_smk,
+                                         sgx_dh_msg3_t *msg3,
+                                         uint32_t msg3_additional_prop_len)
 {
-    sgx_report_t temp_report; 
+    sgx_report_t temp_report;
     sgx_report_data_t report_data;
     sgx_status_t se_ret = SGX_SUCCESS;
     uint32_t maced_size;
@@ -301,45 +389,41 @@ static sgx_status_t dh_generate_message3(const sgx_dh_msg2_t *msg2,
     memcpy(msg_buf, &msg2->g_b, sizeof(sgx_ec256_public_t));
     memcpy(msg_buf + sizeof(sgx_ec256_public_t), g_a, sizeof(sgx_ec256_public_t));
 
-    se_ret = sgx_sha256_msg(msg_buf, 
-                            MSG_BUF_LEN, 
+    se_ret = sgx_sha256_msg(msg_buf,
+                            MSG_BUF_LEN,
                             (sgx_sha256_hash_t *)msg_hash);
     if(se_ret != SGX_SUCCESS)
     {
         return se_ret;
     }
 
-    memset(&target, 0, sizeof(sgx_target_info_t));
-
     // Get REPORT with SHA256(g_b||g_a) as user data
-    memset(&report_data, 0, sizeof(sgx_report_data_t)); 
-    memcpy(&report_data, &msg_hash, sizeof(msg_hash));  
+    memset(&report_data, 0, sizeof(sgx_report_data_t));
+    memcpy(&report_data, &msg_hash, sizeof(msg_hash));
 
-    memcpy(&target.attributes,
-           &msg2->report.body.attributes,
-           sizeof(sgx_attributes_t));
-    memcpy(&target.mr_enclave,
-           &msg2->report.body.mr_enclave,
-           sizeof(sgx_measurement_t));
-    target.misc_select = msg2->report.body.misc_select;
+    if (SGX_SUCCESS != (se_ret =
+        LAv2_proto_spec.make_target_info(msg2->report, target)))
+    {
+        return se_ret;
+    }
 
     // Generate Report targeted towards Session Initiator
-    se_ret = sgx_create_report(&target, &report_data, &temp_report); 
+    se_ret = sgx_create_report(&target, &report_data, &temp_report);
     if(se_ret != SGX_SUCCESS)
     {
         return se_ret;
     }
 
-    memcpy(&msg3->msg3_body.report, 
-           &temp_report, 
-           sizeof(sgx_report_t)); 
+    memcpy(&msg3->msg3_body.report,
+           &temp_report,
+           sizeof(sgx_report_t));
 
     msg3->msg3_body.additional_prop_length = msg3_additional_prop_len;
 
     //Calculate the MAC for Message 3
-    se_ret = sgx_rijndael128_cmac_msg(dh_smk, 
-                                      (uint8_t *)&msg3->msg3_body, 
-                                      maced_size, 
+    se_ret = sgx_rijndael128_cmac_msg(dh_smk,
+                                      (uint8_t *)&msg3->msg3_body,
+                                      maced_size,
                                       (sgx_cmac_128bit_tag_t *)msg3->cmac);
     if(se_ret != SGX_SUCCESS)
     {
@@ -350,9 +434,9 @@ static sgx_status_t dh_generate_message3(const sgx_dh_msg2_t *msg2,
 }
 
 static sgx_status_t dh_verify_message3(const sgx_dh_msg3_t *msg3,
-                                    const sgx_ec256_public_t *g_a,
-                                    const sgx_ec256_public_t *g_b,
-                                    const sgx_key_128bit_t *dh_smk)
+                                       const sgx_ec256_public_t *g_a,
+                                       const sgx_ec256_public_t *g_b,
+                                       const sgx_key_128bit_t *dh_smk)
 {
     sgx_report_t temp_report;
     uint32_t maced_size;
@@ -384,15 +468,15 @@ static sgx_status_t dh_verify_message3(const sgx_dh_msg3_t *msg3,
         return se_ret;
     }
 
-    memcpy(msg_buf, 
-           g_b, 
+    memcpy(msg_buf,
+           g_b,
            sizeof(sgx_ec256_public_t));
-    memcpy(msg_buf + sizeof(sgx_ec256_public_t), 
-           g_a, 
+    memcpy(msg_buf + sizeof(sgx_ec256_public_t),
+           g_a,
            sizeof(sgx_ec256_public_t));
 
-    se_ret = sgx_sha256_msg(msg_buf, 
-                            MSG_BUF_LEN, 
+    se_ret = sgx_sha256_msg(msg_buf,
+                            MSG_BUF_LEN,
                             (sgx_sha256_hash_t *)msg_hash);
     if(SGX_SUCCESS != se_ret)
     {
@@ -400,18 +484,18 @@ static sgx_status_t dh_verify_message3(const sgx_dh_msg3_t *msg3,
     }
 
     // Verify message 3 report data
-    if (0 != memcmp(msg_hash, 
-                    &msg3->msg3_body.report.body.report_data, 
+    if (0 != memcmp(msg_hash,
+                    &msg3->msg3_body.report.body.report_data,
                     sizeof(msg_hash)))
     {
-        return SGX_ERROR_MAC_MISMATCH; 
+        return SGX_ERROR_MAC_MISMATCH;
     }
 
     return SGX_SUCCESS;
 }
 
 // sgx_status_t sgx_dh_init_session()
-// @role indicates whether the caller is a Initiator (starting the session negotiation) or a Responder (responding to the intial session negotiation request). 
+// @role indicates whether the caller is a Initiator (starting the session negotiation) or a Responder (responding to the intial session negotiation request).
 // @sgx_dh_session is the context of the session.
 sgx_status_t sgx_dh_init_session(sgx_dh_session_role_t role, sgx_dh_session_t* sgx_dh_session)
 {
@@ -451,7 +535,7 @@ sgx_status_t sgx_dh_responder_gen_msg1(sgx_dh_msg1_t* msg1, sgx_dh_session_t* sg
     sgx_internal_dh_session_t* session = (sgx_internal_dh_session_t*)sgx_dh_session;
 
     // validate session
-    if(!session || 
+    if(!session ||
         0 == sgx_is_within_enclave(session, sizeof(sgx_internal_dh_session_t))) // session must be in enclave
     {
         return SGX_ERROR_INVALID_PARAMETER;
@@ -489,8 +573,8 @@ error:
     return se_ret;
 }
 
-//sgx_dh_initiator_proc_msg1 processes M1 message, generates M2 message and makes update to the context of the session.
-sgx_status_t sgx_dh_initiator_proc_msg1(const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t* msg2, sgx_dh_session_t* sgx_dh_session)
+template <decltype(dh_generate_message2) gen_msg2>
+static sgx_status_t dh_initiator_proc_msg1(const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t* msg2, sgx_dh_session_t* sgx_dh_session)
 {
     sgx_status_t se_ret;
 
@@ -502,14 +586,14 @@ sgx_status_t sgx_dh_initiator_proc_msg1(const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t
     sgx_internal_dh_session_t* session = (sgx_internal_dh_session_t*) sgx_dh_session;
 
     // validate session
-    if(!session || 
+    if(!session ||
         0 == sgx_is_within_enclave(session, sizeof(sgx_internal_dh_session_t))) // session must be in enclave
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    if( !msg1 || 
-        !msg2 || 
+    if( !msg1 ||
+        !msg2 ||
         0 == sgx_is_within_enclave(msg1, sizeof(sgx_dh_msg1_t)) ||
         0 == sgx_is_within_enclave(msg2, sizeof(sgx_dh_msg2_t)) ||
         SGX_DH_SESSION_INITIATOR != session->role)
@@ -536,8 +620,8 @@ sgx_status_t sgx_dh_initiator_proc_msg1(const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t
         goto error;
     }
     // generate private key and public key
-    se_ret = sgx_ecc256_create_key_pair((sgx_ec256_private_t*)&priv_key, 
-                                       (sgx_ec256_public_t*)&pub_key, 
+    se_ret = sgx_ecc256_create_key_pair((sgx_ec256_private_t*)&priv_key,
+                                       (sgx_ec256_public_t*)&pub_key,
                                         ecc_state);
     if(SGX_SUCCESS != se_ret)
     {
@@ -546,9 +630,9 @@ sgx_status_t sgx_dh_initiator_proc_msg1(const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t
 
     //generate shared_key
     se_ret = sgx_ecc256_compute_shared_dhkey(
-                                            (sgx_ec256_private_t *)const_cast<sgx_ec256_private_t*>(&priv_key), 
-                                            (sgx_ec256_public_t *)const_cast<sgx_ec256_public_t*>(&msg1->g_a), 
-                                            (sgx_ec256_dh_shared_t *)&shared_key, 
+                                            (sgx_ec256_private_t *)const_cast<sgx_ec256_private_t*>(&priv_key),
+                                            (sgx_ec256_public_t *)const_cast<sgx_ec256_public_t*>(&msg1->g_a),
+                                            (sgx_ec256_dh_shared_t *)&shared_key,
                                              ecc_state);
 
     // clear private key for defense in depth
@@ -565,7 +649,7 @@ sgx_status_t sgx_dh_initiator_proc_msg1(const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t
         goto error;
     }
 
-    se_ret = dh_generate_message2(msg1, &pub_key, &dh_smk, msg2);
+    se_ret = gen_msg2(msg1, &pub_key, &dh_smk, msg2);
     if(SGX_SUCCESS != se_ret)
     {
         goto error;
@@ -581,7 +665,7 @@ sgx_status_t sgx_dh_initiator_proc_msg1(const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t
 
     if(SGX_SUCCESS != sgx_ecc256_close_context(ecc_state))
     {
-        // clear session 
+        // clear session
         memset_s(session, sizeof(sgx_internal_dh_session_t), 0, sizeof(sgx_internal_dh_session_t));
         // set error state
         session->initiator.state = SGX_DH_SESSION_STATE_ERROR;
@@ -607,12 +691,19 @@ error:
     return se_ret;
 }
 
+//sgx_LAv1_initiator_proc_msg1 processes M1 message, generates M2 message and makes update to the context of the session.
+sgx_status_t sgx_LAv1_initiator_proc_msg1(const sgx_dh_msg1_t* msg1,
+    sgx_dh_msg2_t* msg2, sgx_dh_session_t* sgx_dh_session)
+{
+    return dh_initiator_proc_msg1<dh_generate_message2>(msg1, msg2, sgx_dh_session);
+}
+
 //sgx_dh_responder_proc_msg2 processes M2 message, generates M3 message, and returns the session key AEK.
-sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2, 
-                                           sgx_dh_msg3_t* msg3, 
-                                           sgx_dh_session_t* sgx_dh_session, 
-                                           sgx_key_128bit_t* aek,
-                                           sgx_dh_session_enclave_identity_t* initiator_identity)
+sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
+                                        sgx_dh_msg3_t* msg3,
+                                        sgx_dh_session_t* sgx_dh_session,
+                                        sgx_key_128bit_t* aek,
+                                        sgx_dh_session_enclave_identity_t* initiator_identity)
 {
     sgx_status_t se_ret;
 
@@ -620,20 +711,21 @@ sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
     sgx_key_128bit_t dh_smk;
 
     sgx_internal_dh_session_t* session = (sgx_internal_dh_session_t*)sgx_dh_session;
+    bool is_LAv2 = false;
 
     // validate session
-    if(!session || 
+    if(!session ||
         0 == sgx_is_within_enclave(session, sizeof(sgx_internal_dh_session_t))) // session must be in enclave
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    if(!msg3 || 
+    if(!msg3 ||
         msg3->msg3_body.additional_prop_length > (UINT_MAX - sizeof(sgx_dh_msg3_t)) || // check msg3 length overflow
         0 == sgx_is_within_enclave(msg3, (sizeof(sgx_dh_msg3_t)+msg3->msg3_body.additional_prop_length)) || // must be in enclave
-        !msg2 || 
+        !msg2 ||
         0 == sgx_is_within_enclave(msg2, sizeof(sgx_dh_msg2_t)) || // must be in enclave
-        !aek || 
+        !aek ||
         0 == sgx_is_within_enclave(aek, sizeof(sgx_key_128bit_t)) || // must be in enclave
         !initiator_identity ||
         0 == sgx_is_within_enclave(initiator_identity, sizeof(sgx_dh_session_enclave_identity_t)) || // must be in enclave
@@ -661,12 +753,12 @@ sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
     {
         goto error;
     }
-    
+
     //generate shared key, which should be identical with enclave side,
     //from PSE private key and enclave public key
-    se_ret = sgx_ecc256_compute_shared_dhkey((sgx_ec256_private_t *)&session->responder.prv_key, 
-                                            (sgx_ec256_public_t *)const_cast<sgx_ec256_public_t*>(&msg2->g_b), 
-                                            (sgx_ec256_dh_shared_t *)&shared_key, 
+    se_ret = sgx_ecc256_compute_shared_dhkey((sgx_ec256_private_t *)&session->responder.prv_key,
+                                            (sgx_ec256_public_t *)const_cast<sgx_ec256_public_t*>(&msg2->g_b),
+                                            (sgx_ec256_dh_shared_t *)&shared_key,
                                              ecc_state);
 
     // For defense-in-depth purpose, responder clears its private key from its enclave memory, as it's not needed anymore.
@@ -686,7 +778,8 @@ sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
     }
     // Verify message 2 from Session Initiator and also Session Initiator's identity
     se_ret = dh_verify_message2(msg2, &session->responder.pub_key, &dh_smk);
-    if(SGX_SUCCESS != se_ret)
+    if(SGX_SUCCESS != se_ret &&
+       !(is_LAv2 = LAv2_verify_message2(msg2, &dh_smk)))
     {
         goto error;
     }
@@ -698,10 +791,9 @@ sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
     memcpy(&initiator_identity->mr_enclave, &msg2->report.body.mr_enclave, sizeof(sgx_measurement_t));
 
     // Generate message 3 to send back to initiator
-    se_ret = dh_generate_message3(msg2, 
-                               &session->responder.pub_key, 
-                               &dh_smk, 
-                               msg3, 
+    se_ret = is_LAv2 ?
+        LAv2_generate_message3(msg2, &session->responder.pub_key, &dh_smk, msg3) :
+        dh_generate_message3(msg2, &session->responder.pub_key, &dh_smk, msg3,
                                msg3->msg3_body.additional_prop_length);
     if(SGX_SUCCESS != se_ret)
     {
@@ -716,7 +808,7 @@ sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
     }
 
     // clear secret
-    memset_s(&shared_key, sizeof(sgx_ec256_dh_shared_t), 0, sizeof(sgx_ec256_dh_shared_t)); 
+    memset_s(&shared_key, sizeof(sgx_ec256_dh_shared_t), 0, sizeof(sgx_ec256_dh_shared_t));
     memset_s(&dh_smk, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t));
     // clear session
     memset_s(session, sizeof(sgx_internal_dh_session_t), 0, sizeof(sgx_internal_dh_session_t));
@@ -736,8 +828,8 @@ sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
 
 error:
     sgx_ecc256_close_context(ecc_state);
-    // clear secret 
-    memset_s(&shared_key, sizeof(sgx_ec256_dh_shared_t), 0, sizeof(sgx_ec256_dh_shared_t)); 
+    // clear secret
+    memset_s(&shared_key, sizeof(sgx_ec256_dh_shared_t), 0, sizeof(sgx_ec256_dh_shared_t));
     memset_s(&dh_smk, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t));
     memset_s(session, sizeof(sgx_internal_dh_session_t), 0, sizeof(sgx_internal_dh_session_t));
     // set error state
@@ -751,29 +843,28 @@ error:
     return se_ret;
 }
 
-//sgx_dh_initiator_proc_msg3 processes M3 message, and returns the session key AEK.
-sgx_status_t sgx_dh_initiator_proc_msg3(const sgx_dh_msg3_t* msg3, 
-                                       sgx_dh_session_t* sgx_dh_session, 
-                                       sgx_key_128bit_t* aek,
-                                       sgx_dh_session_enclave_identity_t* responder_identity)
+template <decltype(dh_verify_message3) ver_msg3>
+static sgx_status_t dh_initiator_proc_msg3(const sgx_dh_msg3_t* msg3,
+    sgx_dh_session_t* sgx_dh_session, sgx_key_128bit_t* aek,
+    sgx_dh_session_enclave_identity_t* responder_identity)
 {
     sgx_status_t se_ret;
     sgx_internal_dh_session_t* session = (sgx_internal_dh_session_t*)sgx_dh_session;
 
     // validate session
-    if(!session || 
+    if(!session ||
         0 == sgx_is_within_enclave(session, sizeof(sgx_internal_dh_session_t))) // session must be in enclave
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    if(!msg3 || 
+    if(!msg3 ||
         msg3->msg3_body.additional_prop_length > (UINT_MAX - sizeof(sgx_dh_msg3_t)) || // check msg3 length overflow
         0 == sgx_is_within_enclave(msg3, (sizeof(sgx_dh_msg3_t)+msg3->msg3_body.additional_prop_length)) || // msg3 buffer must be in enclave
-        !aek || 
-        0 == sgx_is_within_enclave(aek, sizeof(sgx_key_128bit_t)) || // aek buffer must be in enclave 
+        !aek ||
+        0 == sgx_is_within_enclave(aek, sizeof(sgx_key_128bit_t)) || // aek buffer must be in enclave
         !responder_identity ||
-        0 == sgx_is_within_enclave(responder_identity, sizeof(sgx_dh_session_enclave_identity_t)) || // responder_identity buffer must be in enclave 
+        0 == sgx_is_within_enclave(responder_identity, sizeof(sgx_dh_session_enclave_identity_t)) || // responder_identity buffer must be in enclave
         SGX_DH_SESSION_INITIATOR != session->role) // role must be SGX_DH_SESSION_INITIATOR
     {
         memset_s(session, sizeof(sgx_internal_dh_session_t), 0, sizeof(sgx_internal_dh_session_t));
@@ -788,10 +879,8 @@ sgx_status_t sgx_dh_initiator_proc_msg3(const sgx_dh_msg3_t* msg3,
         return SGX_ERROR_INVALID_STATE;
     }
 
-    se_ret = dh_verify_message3(msg3, 
-                             &session->initiator.peer_pub_key, 
-                             &session->initiator.pub_key, 
-                             &session->initiator.smk_aek);
+    se_ret = ver_msg3(msg3, &session->initiator.peer_pub_key,
+        &session->initiator.pub_key, &session->initiator.smk_aek);
     if(SGX_SUCCESS != se_ret)
     {
         goto error;
@@ -820,3 +909,170 @@ error:
     return se_ret;
 }
 
+//sgx_LAv1_initiator_proc_msg3 processes M3 message, and returns the session key AEK.
+sgx_status_t sgx_LAv1_initiator_proc_msg3(const sgx_dh_msg3_t* msg3,
+    sgx_dh_session_t* sgx_dh_session, sgx_key_128bit_t* aek,
+    sgx_dh_session_enclave_identity_t* responder_identity)
+{
+    return dh_initiator_proc_msg3<dh_verify_message3>(
+        msg3, sgx_dh_session, aek, responder_identity);
+}
+
+//
+// Here on are LAv2 functions
+//
+
+#include <type_traits>
+
+// Helper class for sgx_sha256_msg() API
+template <class T1, class T2>
+struct concatenated_buffers
+{
+    typename std::remove_reference<T1>::type first;
+    typename std::remove_reference<T2>::type second;
+
+    template <class H>
+    sgx_status_t sha256(H *hash) const
+    {
+        static_assert(sizeof(*this) == sizeof(first) + sizeof(second),
+            "Improper size/alignment has led to internal gap");
+
+        static_assert(sizeof(sgx_sha256_hash_t) <= sizeof(H), "");
+
+        return sgx_sha256_msg(reinterpret_cast<const uint8_t*>(this),
+            sizeof(*this), reinterpret_cast<sgx_sha256_hash_t*>(hash));
+    }
+};
+
+template <class T1, class T2>
+static inline concatenated_buffers<T1, T2> bufcat(const T1& a, const T2& b)
+{
+    return concatenated_buffers<T1, T2> { a, b };
+}
+
+static sgx_status_t LAv2_generate_message2(
+    const sgx_dh_msg1_t *msg1, const sgx_ec256_public_t *g_b,
+    const sgx_key_128bit_t *dh_smk, sgx_dh_msg2_t *msg2)
+{
+    // No need to validate input parameters in an internal static function
+    sgx_report_data_t rpt_data =  {{0}};
+    bufcat(LAv2_proto_spec, *g_b).sha256(&rpt_data);
+
+    sgx_target_info_t ti(msg1->target);
+    sgx_report_t rpt;
+    sgx_create_report(&ti, &rpt_data, &rpt);
+
+    // Replace report_data with proto_spec
+    rpt.body.report_data = LAv2_proto_spec.cast_to_report_data();
+
+    // Put together LAv2 Message 2
+    msg2->g_b = *g_b;
+    msg2->report = rpt;
+    return sgx_rijndael128_cmac_msg(dh_smk,
+        reinterpret_cast<const uint8_t*>(&msg2->g_b), sizeof(msg2->g_b), &msg2->cmac);
+}
+
+static bool LAv2_verify_message2(const sgx_dh_msg2_t *msg2, const sgx_key_128bit_t *dh_smk)
+{
+    auto rpt = msg2->report;
+    rpt.body.report_data = {{0}};
+    bufcat(msg2->report.body.report_data, msg2->g_b).sha256(&rpt.body.report_data);
+    if (SGX_SUCCESS != sgx_verify_report(&rpt))
+        return false;
+
+    if (SGX_SUCCESS != verify_cmac128(*dh_smk,
+        reinterpret_cast<const uint8_t*>(&msg2->g_b), sizeof(msg2->g_b), msg2->cmac))
+        return false;
+
+    return memcmp(&msg2->report.body.report_data, &LAv2_proto_spec,
+        offsetof(decltype(LAv2_proto_spec), rev)) == 0;
+}
+
+static sgx_status_t LAv2_generate_message3(const sgx_dh_msg2_t *msg2,
+    const sgx_ec256_public_t *A, const sgx_key_128bit_t *dh_smk, sgx_dh_msg3_t *msg3)
+{
+    sgx_status_t se_ret;
+    auto& ps = LAv2_proto_spec.cast_from(msg2->report.body.report_data);
+
+    sgx_target_info_t ti;
+    if (SGX_SUCCESS != (se_ret =
+        LAv2_proto_spec.make_target_info(ps, msg2->report, ti)))
+        return se_ret;
+
+    sgx_report_data_t rpt_data = {{0}};
+    bufcat(*A, ps).sha256(&rpt_data);
+
+    sgx_report_t rpt;
+    sgx_create_report(&ti, &rpt_data, &rpt);
+    msg3->msg3_body.report = rpt;
+
+    sgx_cmac_state_handle_t cmac;
+    if (SGX_SUCCESS != (se_ret = sgx_cmac128_init(dh_smk, &cmac)))
+        return se_ret;
+
+    sgx_cmac128_update(msg3->msg3_body.additional_prop,
+        msg3->msg3_body.additional_prop_length, cmac);
+    sgx_cmac128_update(reinterpret_cast<const uint8_t*>(A), sizeof(*A), cmac);
+    sgx_cmac128_final(cmac, &msg3->cmac);
+    sgx_cmac128_close(cmac);
+
+    return SGX_SUCCESS;
+}
+
+static sgx_status_t LAv2_verify_message3(const sgx_dh_msg3_t *msg3,
+    const sgx_ec256_public_t *A, const sgx_ec256_public_t *, const sgx_key_128bit_t *dh_smk)
+{
+    auto rpt = msg3->msg3_body.report;
+    rpt.body.report_data = {{0}};
+    bufcat(*A, LAv2_proto_spec).sha256(&rpt.body.report_data);
+    if (memcmp(&msg3->msg3_body.report.body.report_data,
+            &rpt.body.report_data, sizeof(rpt.body.report_data)) ||
+        SGX_SUCCESS != sgx_verify_report(&rpt))
+        return SGX_ERROR_UNEXPECTED;
+
+    sgx_cmac_state_handle_t cmac;
+    if (SGX_SUCCESS != sgx_cmac128_init(dh_smk, &cmac))
+        return SGX_ERROR_OUT_OF_MEMORY;
+
+    sgx_cmac_128bit_tag_t tag;
+    sgx_cmac128_update(msg3->msg3_body.additional_prop,
+        msg3->msg3_body.additional_prop_length, cmac);
+    sgx_cmac128_update(reinterpret_cast<const uint8_t*>(A), sizeof(*A), cmac);
+    sgx_cmac128_final(cmac, &tag);
+    sgx_cmac128_close(cmac);
+
+    return consttime_memequal(&tag, msg3->cmac, sizeof(tag)) ?
+        SGX_SUCCESS : SGX_ERROR_MAC_MISMATCH;
+}
+
+// sgx_LAv2_initiator_proc_msg1() is a drop-in replacement of sgx_dh_initiator_proc_msg1()
+sgx_status_t SGXAPI sgx_LAv2_initiator_proc_msg1(
+    const sgx_dh_msg1_t* msg1, sgx_dh_msg2_t* msg2, sgx_dh_session_t* sgx_dh_session)
+{
+    return dh_initiator_proc_msg1<LAv2_generate_message2>(msg1, msg2, sgx_dh_session);
+}
+
+// sgx_LAv2_initiator_proc_msg3() is a drop-in replacement of sgx_dh_initiator_proc_msg3()
+sgx_status_t sgx_LAv2_initiator_proc_msg3(const sgx_dh_msg3_t* msg3,
+    sgx_dh_session_t* sgx_dh_session, sgx_key_128bit_t* aek,
+    sgx_dh_session_enclave_identity_t* responder_identity)
+{
+    return dh_initiator_proc_msg3<LAv2_verify_message3>(
+        msg3, sgx_dh_session, aek, responder_identity);
+}
+
+extern "C" sgx_status_t sgx_derive_target_from_report(const sgx_report_t *report, sgx_target_info_t *target_info)
+{
+    if(report == NULL || target_info == NULL ||
+        !sgx_is_within_enclave(report, sizeof(*report)) ||
+        !sgx_is_within_enclave(target_info, sizeof(*target_info)))
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    return LAv2_proto_spec.make_target_info(*report, *target_info);
+}
+
+
+sgx_status_t sgx_self_target(sgx_target_info_t *target_info)
+{
+    return sgx_derive_target_from_report(sgx_self_report(), target_info);
+}

@@ -33,7 +33,6 @@
 # including:
 #  - Trusted libraries
 #        - tstdc:         libsgx_tstdc.a
-#        - tstdcxx:       libsgx_tstdcxx.a
 #        - tcxx:          libsgx_tcxx.a
 #        - tservice:      libsgx_tservice.a
 #        - trts:          libsgx_trts.a
@@ -59,12 +58,11 @@
 include ../buildenv.mk
 
 LIBTLIBC   := $(BUILD_DIR)/libsgx_tstdc.a
-LIBTLIBCXX := $(BUILD_DIR)/libsgx_tstdcxx.a
 LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tstdcxx tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless
+components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless
 
 # ---------------------------------------------------
 #  tstdc
@@ -125,30 +123,6 @@ tsetjmp:
 	$(MAKE) -C tsetjmp/
 
 # ---------------------------------------------------
-#  tstdcxx
-#      includes: cpprt, tlibstdcxx
-# ---------------------------------------------------
-.PHONY: tstdcxx
-tstdcxx: $(LIBTLIBCXX)
-
-$(LIBTLIBCXX): cpprt tlibstdcxx
-	@$(MKDIR) $(BUILD_DIR)/.tlibstdcxx
-	@$(RM) -f $(BUILD_DIR)/.tlibstdcxx/*
-	@cd $(BUILD_DIR)/.tlibstdcxx      && $(AR) x $(LINUX_SDK_DIR)/tlibstdcxx/libtlibstdcxx.a
-	$(CP) $(LINUX_SDK_DIR)/cpprt/libcpprt.a $@
-	$(AR) qD $@ $(BUILD_DIR)/.tlibstdcxx/*.o
-	@$(RM) -rf   $(BUILD_DIR)/.tlibstdcxx
-
-.PHONY: cpprt
-cpprt:
-	$(MAKE) -C cpprt 
-
-.PHONY: tlibstdcxx
-tlibstdcxx: $(BUILD_DIR)
-	$(MAKE) -C tlibstdcxx/ 2> /dev/null
-	$(CP) tlibstdcxx/README.sgx $(BUILD_DIR)/STLport_Changes_SGX.txt
-
-# ---------------------------------------------------
 #  tcxx
 #      includes: cpprt, tlibcxx
 # ---------------------------------------------------
@@ -162,6 +136,10 @@ $(LIBTCXX): cpprt tlibcxx
 	$(CP) $(LINUX_SDK_DIR)/cpprt/libcpprt.a $@
 	$(AR) qD $@ $(BUILD_DIR)/.tlibcxx/*.o
 	@$(RM) -rf   $(BUILD_DIR)/.tlibcxx
+
+.PHONY: cpprt
+cpprt:
+	$(MAKE) -C cpprt
 
 .PHONY: tlibcxx
 tlibcxx: $(BUILD_DIR)
@@ -285,7 +263,6 @@ clean:
 	$(MAKE) -C tlibthread/                         clean
 	$(MAKE) -C compiler-rt/                        clean
 	$(MAKE) -C cpprt                               clean
-	$(MAKE) -C tlibstdcxx/                         clean
 	$(MAKE) -C tlibcxx/                            clean
 	$(MAKE) -C tseal/linux/                        clean
 	$(MAKE) -C selib/linux/                        clean
@@ -308,7 +285,6 @@ clean:
 	$(MAKE) -C protected_code_loader               clean
 	$(MAKE) -C encrypt_enclave                     clean
 	$(MAKE) -C switchless/                         clean	
-	@$(RM) $(LIBTLIBC) $(LIBTLIBCXX) $(LIBTSE)
-	@$(RM) $(BUILD_DIR)/STLport_Changes_SGX.txt
+	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt
 

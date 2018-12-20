@@ -42,6 +42,10 @@
 typedef int errno_t;
 #endif
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 static inline errno_t memcpy_s(void *dest, size_t numberOfElements, const void *src, size_t count)
 {
     if(numberOfElements<count)
@@ -49,6 +53,9 @@ static inline errno_t memcpy_s(void *dest, size_t numberOfElements, const void *
     memcpy(dest, src, count);
     return 0;
 }
+#ifdef __cplusplus
+    }
+#endif
 
 
 #endif /* _SE_MEMCPY_H_ */

@@ -92,7 +92,10 @@ SGXLaunchToken::SGXLaunchToken(
     const sgx_launch_token_t *launch)
     :m_css(css), m_secs_attr(secs_attr), m_launch_updated(false)
 {
-    memcpy_s(m_launch, sizeof(m_launch), launch, sizeof(m_launch));
+    if (launch != NULL)
+        memcpy_s(m_launch, sizeof(m_launch), launch, sizeof(m_launch));
+    else
+        memset(&m_launch, 0, sizeof(m_launch));
 }
 
 bool SGXLaunchToken::is_launch_updated() const
@@ -123,7 +126,7 @@ sgx_status_t SGXLaunchToken::update_launch_token(
     if (force_update_tok ||
             SE_ERROR_INVALID_LAUNCH_TOKEN == chk_launch_token(m_css, m_secs_attr, &m_launch))
     {
-        //status = ::get_launch_token(m_css, m_secs_attr, &m_launch);
+        status = ::get_launch_token(m_css, m_secs_attr, &m_launch);
 
         if (status == SGX_SUCCESS)
             m_launch_updated = true;

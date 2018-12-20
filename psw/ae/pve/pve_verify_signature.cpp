@@ -33,17 +33,14 @@
  /**
   * File: pve_verify_signature.cpp
   * Description: Define function to check ISK signed signature at the end of SigRL.
-  * It will use qe/pve shared code in file se_ecdsa_verify_internal
   */
 #include "provision_msg.h"
 #include "epid/common/errors.h"
-#include "ae_ipp.h"
 #include "epid/member/api.h"
 #include <string.h>
 #include "helper.h"
 #include "cipher.h"
 #include "pve_qe_common.h"
-#include "se_ecdsa_verify_internal.h"
 #include "byte_order.h"
 #include "util.h"
 
@@ -63,20 +60,18 @@ static pve_status_t pve_verify_ecdsa_signature(
     const uint8_t public_key_y[SGX_ECP256_KEY_SIZE])
 {
     pve_status_t ret = PVEC_SUCCESS;
-    IppStatus ipp_ret = ippStsNoErr;
-    IppsECCPState* p_ecp = NULL;
     sgx_ec256_public_t ec_pub_key;
-    IppECResult ecc_result = ippECValid;
-    sgx_status_t se_ret = SGX_SUCCESS;
+    uint8_t verification_result = SGX_EC_INVALID_SIGNATURE;
+    sgx_status_t sgx_status = SGX_SUCCESS;
     sgx_ec256_signature_t little_endian_signature;
-
-    memset(&ec_pub_key, 0, sizeof(ec_pub_key));
-    ipp_ret = new_std_256_ecp(&p_ecp);
-    if(ipp_ret != ippStsNoErr)
-    {
-        ret = ipp_error_to_pve_error(ipp_ret);
+    sgx_ecc_state_handle_t ecc_handle;
+    sgx_status = sgx_ecc256_open_context(&ecc_handle);
+    if (sgx_status != SGX_SUCCESS) {
+        ret = sgx_error_to_pve_error(sgx_status);
         goto CLEANUP;
     }
+
+    memset(&ec_pub_key, 0, sizeof(ec_pub_key));
     memcpy(&little_endian_signature.x , p_signature, ECDSA_SIGN_SIZE);
     memcpy(&little_endian_signature.y , p_signature+ECDSA_SIGN_SIZE, ECDSA_SIGN_SIZE);
     SWAP_ENDIAN_32B(little_endian_signature.x);
@@ -84,23 +79,25 @@ static pve_status_t pve_verify_ecdsa_signature(
 
     memcpy(ec_pub_key.gx, public_key_x, sizeof(ec_pub_key.gx));
     memcpy(ec_pub_key.gy, public_key_y, sizeof(ec_pub_key.gy));
-    se_ret = se_ecdsa_verify_internal(p_ecp,
-                                        &ec_pub_key,
-                                        &little_endian_signature,
-                                        p_input_hash,
-                                        &ecc_result);
-    if(se_ret != SGX_SUCCESS){
-        ret = sgx_error_to_pve_error(se_ret);
+
+    sgx_status = sgx_ecdsa_verify_hash(reinterpret_cast<const uint8_t *>(p_input_hash),
+        &ec_pub_key,
+        &little_endian_signature,
+        &verification_result,
+        ecc_handle);
+
+    if(sgx_status != SGX_SUCCESS){
+        ret = sgx_error_to_pve_error(sgx_status);
         goto CLEANUP;
     }
 
-    if(ecc_result != ippECValid){
+    if(verification_result != SGX_EC_VALID){
         ret = PVEC_MSG_ERROR;
         goto CLEANUP;
     }
 
 CLEANUP:
-    secure_free_std_256_ecp(p_ecp);
+    sgx_ecc256_close_context(ecc_handle);
     return ret;
 }
 

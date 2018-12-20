@@ -30,12 +30,11 @@
  */
 
 
+#include <sgx_random_buffers.h>
 #ifndef __linux__
 #include "targetver.h"
 #endif
 
-
-#include "ae_ipp.h"
 #include "se_types.h"
 #include "sgx_quote.h"
 #include "aeerror.h"
@@ -43,7 +42,6 @@
 #include "sgx_lfence.h"
 #include "epid_pve_type.h"
 #include "sgx_utils.h"
-#include "ipp_wrapper.h"
 #include "quoting_enclave_t.c"
 #include "sgx_tcrypto.h"
 #include "se_sig_rl.h"
@@ -107,7 +105,7 @@ static ae_error_t verify_blob_internal(
 {
     ae_error_t ret = QE_UNEXPECTED_ERROR;
     sgx_status_t se_ret = SGX_SUCCESS;
-    uint8_t resealed= FALSE;
+    uint8_t resealed = FALSE;
     se_secret_epid_data_sdk_t secret_epid_data;
     se_plaintext_epid_data_sik_t plaintext_old_format;
     uint32_t plaintext_length;
@@ -297,8 +295,8 @@ uint32_t verify_blob(
     if(!sgx_is_within_enclave(p_blob, blob_size))
         return QE_PARAMETER_ERROR;
 
-    return verify_blob_internal(p_blob, blob_size,
-                                p_is_resealed, FALSE, plain_text, NULL);
+    return random_stack_advance(verify_blob_internal, p_blob, blob_size,
+                                p_is_resealed, FALSE, plain_text, (MemberCtx**) NULL);
 }
 
 
@@ -344,7 +342,6 @@ static ae_error_t qe_epid_sign(
     uint32_t sign_size)
 {
     ae_error_t ret = AE_SUCCESS;
-    IppStatus ipp_ret = ippStsNoErr;
     sgx_status_t se_ret = SGX_SUCCESS;
     EpidStatus epid_ret = kEpidNoErr;
 
@@ -354,21 +351,19 @@ static ae_error_t qe_epid_sign(
     uint8_t aes_iv[QUOTE_IV_SIZE] = {0};
     uint8_t aes_key[QE_AES_KEY_SIZE] = {0};
     uint8_t aes_tag[SGX_SEAL_TAG_SIZE] = {0};
-    Ipp8u seeds[QE_OAEP_SEED_SIZE] = {0};
     sgx_report_data_t qe_report_data = {{0}};
     sgx_target_info_t report_target;
     sgx_ec256_public_t ec_pub_key; // little endian
     se_ae_ecdsa_hash_t sig_rl_hash = {{0}};
-    IppECResult ec_result = ippECValid ;
+    uint8_t ecc_result = SGX_EC_INVALID_SIGNATURE;
 
-    int aes_context_size = 0;
     sgx_sha_state_handle_t sha_context = NULL;
     sgx_sha_state_handle_t sha_quote_context = NULL;
-    IppsAES_GCMState *aes_context = NULL;
-    IppsRSAPublicKeyState *pub_key = NULL;
-    int pub_key_size = 0;
+    sgx_aes_state_handle_t aes_gcm_state = NULL;
+    void *pub_key = NULL;
+    size_t pub_key_size = 0;
     uint8_t* pub_key_buffer = NULL;
-    IppsECCPState *p_ecp = NULL;
+    sgx_ecc_state_handle_t ecc_handle = NULL;
 
     memset(&wrap_key, 0, sizeof(wrap_key));
     memset(&basic_sig, 0, sizeof(basic_sig));
@@ -438,7 +433,7 @@ static ae_error_t qe_epid_sign(
         }
 
         /* Calculate the hash of SIG-RL header. */
-        se_ret = sgx_sha256_update((Ipp8u *)p_sig_rl_header,
+        se_ret = sgx_sha256_update((uint8_t *)p_sig_rl_header,
                                    (uint32_t)(sizeof(se_sig_rl_t) - sizeof(SigRlEntry)),
                                    sha_context);
         if(SGX_SUCCESS != se_ret)
@@ -449,18 +444,6 @@ static ae_error_t qe_epid_sign(
     }
 
     // Start encrypt the signature.
-    ipp_ret = ippsAES_GCMGetSize(&aes_context_size);
-    if(ipp_ret != ippStsNoErr){
-        ret = QE_UNEXPECTED_ERROR;
-        goto CLEANUP;
-    }
-
-    aes_context = (IppsAES_GCMState *)malloc(aes_context_size);
-    if(NULL == aes_context)
-    {
-        ret = QE_UNEXPECTED_ERROR;
-        goto CLEANUP;
-    }
 
     /* Get the random wrap key */
     se_ret = sgx_read_rand(aes_key, sizeof(aes_key));
@@ -480,56 +463,28 @@ static ae_error_t qe_epid_sign(
         goto CLEANUP;
     }
 
-    //Start encrypt the wrap key by RSA IPP algorithm.
-    se_ret = sgx_create_rsa_pub_key(sizeof(g_qsdk_pub_key_n),
+    /* Start encrypt the wrap key by RSA algorithm. */
+    se_ret = sgx_create_rsa_pub1_key(sizeof(g_qsdk_pub_key_n),
                                  sizeof(g_qsdk_pub_key_e),
                                  (const unsigned char *)g_qsdk_pub_key_n,
                                  (const unsigned char *)g_qsdk_pub_key_e,
-                                 (void **)&pub_key);
+                                 &pub_key);
     if(se_ret != SGX_SUCCESS)
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
     }
 
-    se_ret = sgx_read_rand(seeds, sizeof(seeds));
+    /* Get output buffer size */
+    se_ret = sgx_rsa_pub_encrypt_sha256(pub_key, NULL, &pub_key_size, aes_key, sizeof(aes_key));
     if(SGX_SUCCESS != se_ret)
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
     }
 
-    ipp_ret = ippsRSA_GetBufferSizePublicKey(&pub_key_size, pub_key);
-    if (ipp_ret != ippStsNoErr)
-    {
-        ret = QE_UNEXPECTED_ERROR;
-        goto CLEANUP;
-    }
-
-    pub_key_buffer = (uint8_t*)malloc(pub_key_size);
-    if (pub_key_buffer == NULL)
-    {
-        ret = QE_UNEXPECTED_ERROR;
-        goto CLEANUP;
-    }
-
-    ipp_ret = ippsRSAEncrypt_OAEP(aes_key, sizeof(aes_key),
-                                        NULL, 0, seeds,
-                                        wrap_key.encrypted_key,
-                                        pub_key, IPP_ALG_HASH_SHA256,
-                                        pub_key_buffer);
-    if(ipp_ret != ippStsNoErr)
-    {
-        ret = QE_UNEXPECTED_ERROR;
-        goto CLEANUP;
-    }
-
-    ipp_ret = ippsAES_GCMInit(aes_key,
-                              sizeof(aes_key),
-                              aes_context,
-                              aes_context_size);
-    memset_s(aes_key, sizeof(aes_key), 0, sizeof(aes_key));
-    if(ipp_ret != ippStsNoErr)
+    se_ret = sgx_rsa_pub_encrypt_sha256(pub_key, wrap_key.encrypted_key, &pub_key_size, aes_key, sizeof(aes_key));
+    if(SGX_SUCCESS != se_ret)
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
@@ -550,24 +505,34 @@ static ae_error_t qe_epid_sign(
     /* Copy the AES Blob payload size into output buffer. */
     memcpy(&emp_p->payload_size, &sign_size, sizeof(sign_size));
 
-    ipp_ret = ippsAES_GCMStart(aes_iv, sizeof(aes_iv), NULL, 0,
-                                      aes_context);
-    if(ipp_ret != ippStsNoErr)
+    
+    se_ret = sgx_aes_gcm128_enc_init(
+        aes_key,
+        aes_iv, //input initial vector. randomly generated value and encryption of different msg should use different iv
+        sizeof(aes_iv),   //length of initial vector, usually IV_SIZE
+        NULL,//AAD of AES-GCM, it could be NULL
+        0,  //length of bytes of AAD
+        &aes_gcm_state);
+    if(SGX_SUCCESS != se_ret)
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
     }
+    memset_s(aes_key, sizeof(aes_key), 0, sizeof(aes_key));
 
     /* Encrypt the basic signature. */
-    ipp_ret = ippsAES_GCMEncrypt((Ipp8u *)&basic_sig,
-                                        (uint8_t *)&encrypted_basic_sig,
-                                        sizeof(encrypted_basic_sig),
-                                        aes_context);
-    if(ipp_ret != ippStsNoErr)
+    se_ret = sgx_aes_gcm128_enc_update(
+        (uint8_t *)&basic_sig,   //start address to data before/after encryption
+        sizeof(basic_sig),
+        (uint8_t *)&encrypted_basic_sig, //length of data
+        aes_gcm_state); //pointer to a state
+
+    if(SGX_SUCCESS != se_ret)
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
     }
+    
     /* Copy the encrypted basic signature into output buffer. */
     memcpy(&emp_p->basic_sign, &encrypted_basic_sig,
            sizeof(encrypted_basic_sig));
@@ -618,24 +583,28 @@ static ae_error_t qe_epid_sign(
         entry_count = lv_ntohl(p_sig_rl_header->sig_rl.n2);//entry count for big endian to little endian
 
         // Continue encrypt the output
-        ipp_ret = ippsAES_GCMEncrypt((Ipp8u *)&(p_sig_rl_header->sig_rl.version),
-                    (Ipp8u *)&encrypted_rl_ver,
-                    sizeof(encrypted_rl_ver),
-                    aes_context);
-        if(ipp_ret != ippStsNoErr)
+        se_ret = sgx_aes_gcm128_enc_update(
+            (uint8_t *)&(p_sig_rl_header->sig_rl.version),   //start address to data before/after encryption
+            sizeof(p_sig_rl_header->sig_rl.version),
+            (uint8_t *)&encrypted_rl_ver, //length of data
+            aes_gcm_state); //pointer to a state
+        if(SGX_SUCCESS != se_ret)
         {
             ret = QE_UNEXPECTED_ERROR;
             goto CLEANUP;
         }
-        ipp_ret = ippsAES_GCMEncrypt((Ipp8u *)&(p_sig_rl_header->sig_rl.n2),
-                    (Ipp8u *)&encrypted_n2,
-                    sizeof(encrypted_n2),
-                    aes_context);
-        if(ipp_ret != ippStsNoErr)
+
+        se_ret = sgx_aes_gcm128_enc_update(
+            (uint8_t *)&(p_sig_rl_header->sig_rl.n2),   //start address to data before/after encryption
+            sizeof(p_sig_rl_header->sig_rl.n2),
+            (uint8_t *)&encrypted_n2, //length of data
+            aes_gcm_state); //pointer to a state
+        if(SGX_SUCCESS != se_ret)
         {
             ret = QE_UNEXPECTED_ERROR;
             goto CLEANUP;
         }
+        
         memcpy(&(emp_p->rl_ver), &encrypted_rl_ver,
                sizeof(encrypted_rl_ver));
         memcpy(&(emp_p->rl_num), &encrypted_n2,
@@ -691,7 +660,7 @@ static ae_error_t qe_epid_sign(
             }
 
             /* Update the hash of SIG-RL */
-            se_ret = sgx_sha256_update((Ipp8u *)&entry,
+            se_ret = sgx_sha256_update((uint8_t *)&entry,
                                        sizeof(entry), sha_context);
             if(SGX_SUCCESS != se_ret)
             {
@@ -699,15 +668,17 @@ static ae_error_t qe_epid_sign(
                 goto CLEANUP;
             }
 
-            ipp_ret = ippsAES_GCMEncrypt((Ipp8u *)&temp_nr,
-                                                (Ipp8u *)&encrypted_temp_nr,
-                                                sizeof(encrypted_temp_nr),
-                                                aes_context);
-            if(ipp_ret != ippStsNoErr)
+            se_ret = sgx_aes_gcm128_enc_update(
+                (uint8_t *)&temp_nr,   //start address to data before/after encryption
+                sizeof(encrypted_temp_nr),
+                (uint8_t *)&encrypted_temp_nr, //length of data
+                aes_gcm_state); //pointer to a state
+            if(SGX_SUCCESS != se_ret)
             {
                 ret = QE_UNEXPECTED_ERROR;
                 goto CLEANUP;
             }
+            
             memcpy(emp_nr, &encrypted_temp_nr, sizeof(encrypted_temp_nr));
 
             if(p_qe_report)
@@ -732,30 +703,30 @@ static ae_error_t qe_epid_sign(
             goto CLEANUP;
         }
 
-        /* Verify the integraty of SIG-RL by check ECDSA signature. */
-        ipp_ret = new_std_256_ecp(&p_ecp);
-        if(ipp_ret != ippStsNoErr)
-        {
-            ret = QE_UNEXPECTED_ERROR;
-            goto CLEANUP;
-        }
-
+        /* Verify the integrity of SIG-RL by check ECDSA signature. */
         se_static_assert(sizeof(ec_pub_key) == sizeof(plaintext.epid_sk));
         // Both plaintext.epid_sk and ec_pub_key are little endian
         memcpy(&ec_pub_key, plaintext.epid_sk, sizeof(ec_pub_key));
 
-        // se_ecdsa_verify_internal will take ec_pub_key as little endian
-        se_ret = se_ecdsa_verify_internal(p_ecp,
-                                          &ec_pub_key,
-                                          p_sig_rl_signature,
-                                          &sig_rl_hash,
-                                          &ec_result);
+        se_ret = sgx_ecc256_open_context(&ecc_handle);
         if(SGX_SUCCESS != se_ret)
         {
             ret = QE_UNEXPECTED_ERROR;
             goto CLEANUP;
         }
-        else if(ippECValid != ec_result)
+
+        // sgx_ecdsa_verify_hash will take ec_pub_key as little endian
+        se_ret = sgx_ecdsa_verify_hash((uint8_t*)&(sig_rl_hash.hash),
+                            (const sgx_ec256_public_t *)&ec_pub_key,
+                            p_sig_rl_signature,
+                            &ecc_result,
+                            ecc_handle);
+        if(SGX_SUCCESS != se_ret)
+        {
+            ret = QE_UNEXPECTED_ERROR;
+            goto CLEANUP;
+        }
+        else if(SGX_EC_VALID != ecc_result)
         {
             ret = QE_SIGRL_ERROR;
             goto CLEANUP;
@@ -772,11 +743,13 @@ static ae_error_t qe_epid_sign(
         se_static_assert(sizeof(emp_p->rl_num) == sizeof(RLCount));
         uint8_t temp_buf[sizeof(RLver_t) + sizeof(RLCount)] = {0};
         uint8_t encrypted_temp_buf[sizeof(temp_buf)] = {0};
-        ipp_ret = ippsAES_GCMEncrypt(temp_buf,
-                                            (Ipp8u *)&encrypted_temp_buf,
-                                            sizeof(encrypted_temp_buf),
-                                            aes_context);
-        if(ipp_ret != ippStsNoErr)
+
+        se_ret = sgx_aes_gcm128_enc_update(
+            (uint8_t *)&temp_buf,   //start address to data before/after encryption
+            sizeof(encrypted_temp_buf),
+            (uint8_t *)&encrypted_temp_buf, //length of data
+            aes_gcm_state); //pointer to a state
+        if(SGX_SUCCESS != se_ret)
         {
             ret = QE_UNEXPECTED_ERROR;
             goto CLEANUP;
@@ -799,12 +772,13 @@ static ae_error_t qe_epid_sign(
         }
     }
 
-    ipp_ret = ippsAES_GCMGetTag(aes_tag, sizeof(aes_tag), aes_context);
-    if(ipp_ret != ippStsNoErr)
+    se_ret = sgx_aes_gcm128_enc_get_mac(aes_tag, aes_gcm_state);
+    if(SGX_SUCCESS != se_ret)
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
     }
+
     memcpy((uint8_t *)&(emp_p->basic_sign) + sign_size, &aes_tag,
            sizeof(aes_tag));
 
@@ -845,14 +819,15 @@ CLEANUP:
     memset_s(aes_key, sizeof(aes_key), 0, sizeof(aes_key));
     sgx_sha256_close(sha_context);
     sgx_sha256_close(sha_quote_context);
-    if(aes_context)
-        free(aes_context);
-    if(pub_key)
-        secure_free_rsa_pub_key(sizeof(plaintext.qsdk_mod),
-                                sizeof(plaintext.qsdk_exp), pub_key);
-    if(pub_key_buffer)
+    if (aes_gcm_state)
+        sgx_aes_gcm_close(aes_gcm_state);
+    if (pub_key)
+        sgx_free_rsa_key(pub_key, SGX_RSA_PUBLIC_KEY, sizeof(plaintext.qsdk_mod), sizeof(plaintext.qsdk_exp));
+    if (pub_key_buffer)
         free(pub_key_buffer);
-    secure_free_std_256_ecp(p_ecp);
+    if (ecc_handle)
+        sgx_ecc256_close_context(ecc_handle);
+
     return ret;
 }
 
@@ -984,7 +959,7 @@ uint32_t get_quote(
         return QE_PARAMETER_ERROR;
 
     /* Verify EPID p_blob and create the context */
-    ret = verify_blob_internal(p_blob,
+    ret = random_stack_advance(verify_blob_internal, p_blob,
         blob_size,
         &is_resealed,        
         TRUE,

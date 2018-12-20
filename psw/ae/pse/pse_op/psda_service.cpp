@@ -53,7 +53,7 @@ static pse_op_error_t encrypt_psda_msg(psda_service_message_t* psda_service_msg,
     assert(payload_data != NULL);
     assert(tsk != NULL);
 
-    Ipp8u ctr[16];
+    uint8_t ctr[16];
     uint32_t ctr_num_bit_size = 32;
 
     // number of blocks in message should not exceed counter
@@ -101,7 +101,7 @@ static pse_op_error_t decrypt_psda_msg(const psda_service_message_t* psda_servic
     assert(payload_data != NULL);
     assert(tsk != NULL);
 
-    Ipp8u ctr[16];
+    uint8_t ctr[16];
     uint32_t ctr_num_bit_size = 32;
     memcpy(ctr, psda_service_msg->service_message.payload_iv, AES_BLOCK_SIZE);
 
@@ -188,12 +188,8 @@ static pse_op_error_t invoke_psda_service(uint8_t* req,
     }
 
     // sign encrypted payload data with HMAC-SHA256
-    if (ippsHMAC_Message(service_req_message->service_message.payload,
-            req_size,
-            g_eph_session.TMK,
-            sizeof(g_eph_session.TMK),
-            service_req_message->service_message.payload_mac,
-            SGX_SHA256_HASH_SIZE, IPP_ALG_HASH_SHA256) != ippStsNoErr)
+    if (sgx_hmac_sha256_msg(service_req_message->service_message.payload, req_size, g_eph_session.TMK, sizeof(g_eph_session.TMK),  
+               service_req_message->service_message.payload_mac, SGX_SHA256_HASH_SIZE) != SGX_SUCCESS)
     {
         ret = OP_ERROR_INTERNAL;
         goto clean_up;

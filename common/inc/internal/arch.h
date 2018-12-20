@@ -66,13 +66,16 @@ typedef struct _secs_t
 #define SECS_RESERVED2_LENGTH 32
     uint8_t                     reserved2[SECS_RESERVED2_LENGTH];  /* ( 96) reserved */
     sgx_measurement_t           mr_signer;      /* (128) Integrity Reg 1 - Enclave signing key */
-#define SECS_RESERVED3_LENGTH 96
+#define SECS_RESERVED3_LENGTH 32
     uint8_t                     reserved3[SECS_RESERVED3_LENGTH];  /* (160) reserved */
+    sgx_config_id_t             config_id;      /* (192) CONFIGID */
     sgx_prod_id_t               isv_prod_id;    /* (256) product ID of enclave */
     sgx_isv_svn_t               isv_svn;        /* (258) Security Version of the Enclave */
-#define SECS_RESERVED4_LENGTH 3836
-    uint8_t                     reserved4[SECS_RESERVED4_LENGTH];/* (260) reserved */
+    sgx_config_svn_t            config_svn;     /* (260) CONFIGSVN */
+#define SECS_RESERVED4_LENGTH 3834
+    uint8_t                     reserved4[SECS_RESERVED4_LENGTH];/* (262) reserved */
 } secs_t;
+
 
 /*
 TCS
@@ -212,16 +215,18 @@ typedef struct _css_key_t {           /* 772 bytes */
 } css_key_t;
 se_static_assert(sizeof(css_key_t) == 772);
 
-typedef struct _css_body_t {            /* 128 bytes */
-    sgx_misc_select_t   misc_select;    /* (900) The MISCSELECT that must be set */
-    sgx_misc_select_t   misc_mask;      /* (904) Mask of MISCSELECT to enforce */
-    uint8_t             reserved[20];   /* (908) Reserved. Must be 0. */
-    sgx_attributes_t    attributes;     /* (928) Enclave Attributes that must be set */
-    sgx_attributes_t    attribute_mask; /* (944) Mask of Attributes to Enforce */
-    sgx_measurement_t   enclave_hash;   /* (960) MRENCLAVE - (32 bytes) */
-    uint8_t             reserved2[32];  /* (992) Must be 0 */
-    uint16_t            isv_prod_id;    /* (1024) ISV assigned Product ID */
-    uint16_t            isv_svn;        /* (1026) ISV assigned SVN */
+typedef struct _css_body_t {             /* 128 bytes */
+    sgx_misc_select_t    misc_select;    /* (900) The MISCSELECT that must be set */
+    sgx_misc_select_t    misc_mask;      /* (904) Mask of MISCSELECT to enforce */
+    uint8_t              reserved[4];    /* (908) Reserved. Must be 0. */
+    sgx_isvfamily_id_t   isv_family_id;  /* (912) ISV assigned Family ID */
+    sgx_attributes_t     attributes;     /* (928) Enclave Attributes that must be set */
+    sgx_attributes_t     attribute_mask; /* (944) Mask of Attributes to Enforce */
+    sgx_measurement_t    enclave_hash;   /* (960) MRENCLAVE - (32 bytes) */
+    uint8_t              reserved2[16];  /* (992) Must be 0 */
+    sgx_isvext_prod_id_t isvext_prod_id; /* (1008) ISV assigned Extended Product ID */
+    uint16_t             isv_prod_id;    /* (1024) ISV assigned Product ID */
+    uint16_t             isv_svn;        /* (1026) ISV assigned SVN */
 } css_body_t;
 se_static_assert(sizeof(css_body_t) == 128);
 

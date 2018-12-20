@@ -110,8 +110,8 @@ extern "C" void profile_output(const char* filename)
     std::ofstream fs;
     fs.open(filename); /* do not overwritten previous value */
 
-    fs << "freq: " << freq <<endl;
-    fs << "tag" << "," << "start_cycle" << "," << "end_cycle" << endl;
+    fs << "freq: " << freq <<std::endl;
+    fs << "tag" << "," << "start_cycle" << "," << "end_cycle" << std::endl;
 
     for(i=0; i<used_size; i ++)
     {
@@ -125,7 +125,7 @@ extern "C" void profile_output(const char* filename)
                     break;
                 else
                 {
-                    /* cout << "Error: find another start for " << it->str << endl; */
+                    /* std::cout << "Error: find another start for " << it->str << std::endl; */
                     return;
                 }
             }
@@ -133,11 +133,11 @@ extern "C" void profile_output(const char* filename)
 
         if(j == used_size)
         {
-            /* cout << "Error: not find end for " << it->str << endl; */
+            /* std::cout << "Error: not find end for " << it->str << std::endl; */
             return;
         }
 
-        fs << get_prof_fun_name(profile_items[i].str) << "," << profile_items[i].time << "," << profile_items[j].time << endl;
+        fs << get_prof_fun_name(profile_items[i].str) << "," << profile_items[i].time << "," << profile_items[j].time << std::endl;
     }
     profile_items.clear();
     used_size=0;

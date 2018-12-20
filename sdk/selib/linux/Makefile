@@ -36,7 +36,9 @@ CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-rtti -fno-exceptions
 CPPLAGS += -I$(COMMON_DIR)/inc/              \
            -I$(COMMON_DIR)/inc/internal/     \
            -I$(COMMON_DIR)/inc/tlibc         \
-           -I$(LINUX_SDK_DIR)/selib 
+           -I$(LINUX_SDK_DIR)/tseal          \
+           -I$(LINUX_SDK_DIR)/selib          \
+           -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 
 SRC  := $(wildcard ../*.cpp)

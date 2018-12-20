@@ -189,10 +189,12 @@ endif
 endif
 
 
-.PHONY: all run
+.PHONY: all run target
+all: .config_$(Build_Mode)_$(SGX_ARCH)
+	@$(MAKE) target
 
 ifeq ($(Build_Mode), HW_RELEASE)
-all: .config_$(Build_Mode)_$(SGX_ARCH) libservice_provider.so $(App_Name) $(Enclave_Name)
+target: libservice_provider.so $(App_Name) $(Enclave_Name)
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclave use the command:"
@@ -200,7 +202,7 @@ all: .config_$(Build_Mode)_$(SGX_ARCH) libservice_provider.so $(App_Name) $(Encl
 	@echo "You can also sign the enclave using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
 else
-all: .config_$(Build_Mode)_$(SGX_ARCH) libservice_provider.so $(App_Name) $(Signed_Enclave_Name)
+target: libservice_provider.so $(App_Name) $(Signed_Enclave_Name)
 ifeq ($(Build_Mode), HW_DEBUG)
 	@echo "The project has been built in debug hardware mode."
 else ifeq ($(Build_Mode), SIM_DEBUG)
@@ -227,15 +229,17 @@ endif
 
 ######## App Objects ########
 
-isv_app/isv_enclave_u.c: $(SGX_EDGER8R) isv_enclave/isv_enclave.edl
+isv_app/isv_enclave_u.h: $(SGX_EDGER8R) isv_enclave/isv_enclave.edl
 	@cd isv_app && $(SGX_EDGER8R) --untrusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
+
+isv_app/isv_enclave_u.c: isv_app/isv_enclave_u.h
 
 isv_app/isv_enclave_u.o: isv_app/isv_enclave_u.c
 	@$(CC) $(SGX_COMMON_CFLAGS) $(App_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-isv_app/%.o: isv_app/%.cpp
+isv_app/%.o: isv_app/%.cpp isv_app/isv_enclave_u.h
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(App_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
@@ -256,15 +260,17 @@ libservice_provider.so: $(ServiceProvider_Cpp_Objects)
 
 ######## Enclave Objects ########
 
-isv_enclave/isv_enclave_t.c: $(SGX_EDGER8R) isv_enclave/isv_enclave.edl
+isv_enclave/isv_enclave_t.h: $(SGX_EDGER8R) isv_enclave/isv_enclave.edl
 	@cd isv_enclave && $(SGX_EDGER8R) --trusted ../isv_enclave/isv_enclave.edl --search-path ../isv_enclave --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
+
+isv_enclave/isv_enclave_t.c: isv_enclave/isv_enclave_t.h
 
 isv_enclave/isv_enclave_t.o: isv_enclave/isv_enclave_t.c
 	@$(CC) $(SGX_COMMON_CFLAGS) $(Enclave_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-isv_enclave/%.o: isv_enclave/%.cpp
+isv_enclave/%.o: isv_enclave/%.cpp isv_enclave/isv_enclave_t.h
 	@$(CXX) $(SGX_COMMON_CXXFLAGS) $(Enclave_Cpp_Flags) -c $< -o $@
 	@echo "CXX  <=  $<"
 
