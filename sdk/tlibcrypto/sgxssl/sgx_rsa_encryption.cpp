@@ -181,6 +181,12 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
 		//
 		d = BN_dup(n);
 		NULL_BREAK(d);
+        
+		//select algorithms with an execution time independent of the respective numbers, to avoid exposing sensitive information to timing side-channel attacks.
+		//
+		BN_set_flags(d, BN_FLG_CONSTTIME);
+		BN_set_flags(e, BN_FLG_CONSTTIME);
+
 		if (!BN_sub(d, d, p) || !BN_sub(d, d, q) || !BN_add_word(d, 1) || !BN_mod_inverse(d, e, d, tmp_ctx)) {
 			break;
 		}
