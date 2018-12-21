@@ -2,6 +2,7 @@
 SGX_SDK ?= $(SdkPathFromPlugin)
 SGX_MODE ?= SIM
 SGX_ARCH ?= x64
+TRUSTED_DIR=trusted
 
 ifeq ($(shell getconf LONG_BIT), 32)
 	SGX_ARCH := x86
@@ -43,8 +44,8 @@ endif
 
 Crypto_Library_Name := sgx_tcrypto
 
-$(EnclaveName)_C_Files := trusted/$(enclaveName).c 
-$(EnclaveName)_Include_Paths := -IInclude -Itrusted -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx
+$(EnclaveName)_C_Files := $(TRUSTED_DIR)/$(enclaveName).c 
+$(EnclaveName)_Include_Paths := -IInclude -I$(TRUSTED_DIR) -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx
 
 Flags_Just_For_C := -Wno-implicit-function-declaration -std=c11
 Common_C_Cpp_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -fstack-protector $($(EnclaveName)_Include_Paths) -fno-builtin-printf -I.
@@ -56,7 +57,7 @@ $(EnclaveName)_Link_Flags := $(SGX_COMMON_CFLAGS) -Wl,--no-undefined -nostdlib -
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
 	-Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
 	-Wl,--defsym,__ImageBase=0 \
-	-Wl,--version-script=trusted/$(enclaveName).lds
+	-Wl,--version-script=$(TRUSTED_DIR)/$(enclaveName).lds
 
 $(EnclaveName)_C_Objects := $($(EnclaveName)_C_Files:.c=.o)
 
@@ -92,24 +93,24 @@ endif
 
 ######## $(enclaveName) Objects ########
 
-trusted/$(enclaveName)_t.c: $(SGX_EDGER8R) ./trusted/$(enclaveName).edl
-	@cd ./trusted && $(SGX_EDGER8R) --trusted ../trusted/$(enclaveName).edl --search-path ../trusted --search-path $(SGX_SDK)/include
+$(TRUSTED_DIR)/$(enclaveName)_t.c: $(SGX_EDGER8R) ./$(TRUSTED_DIR)/$(enclaveName).edl
+	@cd ./$(TRUSTED_DIR) && $(SGX_EDGER8R) --trusted ../$(TRUSTED_DIR)/$(enclaveName).edl --search-path ../$(TRUSTED_DIR) --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
-trusted/$(enclaveName)_t.o: ./trusted/$(enclaveName)_t.c
+$(TRUSTED_DIR)/$(enclaveName)_t.o: ./$(TRUSTED_DIR)/$(enclaveName)_t.c
 	@$(CC) $($(EnclaveName)_C_Flags) -c $< -o $@
 	@echo "CC   <=  $<"
 
-trusted/%.o: trusted/%.c
+$(TRUSTED_DIR)/%.o: $(TRUSTED_DIR)/%.c
 	@$(CC) $($(EnclaveName)_C_Flags) -c $< -o $@
 	@echo "CC  <=  $<"
 
-$(enclaveName).so: trusted/$(enclaveName)_t.o $($(EnclaveName)_C_Objects)
+$(enclaveName).so: $(TRUSTED_DIR)/$(enclaveName)_t.o $($(EnclaveName)_C_Objects)
 	@$(CXX) $^ -o $@ $($(EnclaveName)_Link_Flags)
 	@echo "LINK =>  $@"
 
 $(enclaveName).signed.so: $(enclaveName).so
-	@$(SGX_ENCLAVE_SIGNER) sign -key trusted/$(enclaveName)_private.pem -enclave $(enclaveName).so -out $@ -config trusted/$(enclaveName).config.xml
+	@$(SGX_ENCLAVE_SIGNER) sign -key $(TRUSTED_DIR)/$(enclaveName)_private.pem -enclave $(enclaveName).so -out $@ -config $(TRUSTED_DIR)/$(enclaveName).config.xml
 	@echo "SIGN =>  $@"
 clean:
-	@rm -f $(enclaveName).* trusted/$(enclaveName)_t.*  $($(EnclaveName)_C_Objects)
+	@rm -f $(enclaveName).* $(TRUSTED_DIR)/$(enclaveName)_t.*  $($(EnclaveName)_C_Objects)

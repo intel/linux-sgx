@@ -3,6 +3,7 @@ SGX_SDK ?= $(SdkPathFromPlugin)
 SGX_MODE ?= SIM
 SGX_ARCH ?= x64
 UNTRUSTED_DIR=untrusted
+TRUSTED_DIR=static_trusted
 
 ifeq ($(shell getconf LONG_BIT), 32)
 	SGX_ARCH := x86
@@ -55,9 +56,9 @@ all: $(UNTRUSTED_DIR)/$(enclaveName)_u.o
 
 ######## App Objects ########
 
-$(UNTRUSTED_DIR)/$(enclaveName)_u.c: $(SGX_EDGER8R) static_trusted/$(enclaveName).edl
+$(UNTRUSTED_DIR)/$(enclaveName)_u.c: $(SGX_EDGER8R) $(TRUSTED_DIR)/$(enclaveName).edl
 	@mkdir -p $(UNTRUSTED_DIR)
-	@cd $(UNTRUSTED_DIR) && $(SGX_EDGER8R) --untrusted ../static_trusted/$(enclaveName).edl --search-path ../static_trusted --search-path $(SGX_SDK)/include
+	@cd $(UNTRUSTED_DIR) && $(SGX_EDGER8R) --untrusted ../$(TRUSTED_DIR)/$(enclaveName).edl --search-path ../$(TRUSTED_DIR) --search-path $(SGX_SDK)/include
 	@echo "GEN  =>  $@"
 
 $(UNTRUSTED_DIR)/$(enclaveName)_u.o: $(UNTRUSTED_DIR)/$(enclaveName)_u.c
