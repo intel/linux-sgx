@@ -71,7 +71,7 @@ $(OBJS2): %.o: %.cpp
 	$(CXX) -c $(TCXXFLAGS) $(CPPFLAGS) -fPIC $< -o $@
 
 .PHONY: elf_parser
-elf_parser:
+elf_parser: $(OBJS)
 	$(MAKE) -C linux
 
 .PHONY: clean
