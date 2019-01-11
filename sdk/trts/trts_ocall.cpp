@@ -52,6 +52,10 @@ extern "C" sgx_status_t __morestack(const unsigned int index, void *ms);
 //
 sgx_status_t sgx_ocall(const unsigned int index, void *ms)
 {
+    // check for crash to prevent any data leakage
+    if(get_enclave_state() == ENCLAVE_CRASHED) {
+        return SGX_ERROR_ENCLAVE_CRASHED;
+    }
     // sgx_ocall is not allowed during exception handling
     thread_data_t *thread_data = get_thread_data();
     
@@ -131,4 +135,3 @@ sgx_status_t do_oret(void *ms)
     // Should not come here
     return SGX_ERROR_UNEXPECTED;
 }
-
