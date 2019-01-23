@@ -57,18 +57,6 @@ bool
 operator!=(const linear_congruential_engine<UIntType, a, c, m>& x,
            const linear_congruential_engine<UIntType, a, c, m>& y);
 
-template <class charT, class traits,
-          class UIntType, UIntType a, UIntType c, UIntType m>
-basic_ostream<charT, traits>&
-operator<<(basic_ostream<charT, traits>& os,
-           const linear_congruential_engine<UIntType, a, c, m>& x);
-
-template <class charT, class traits,
-          class UIntType, UIntType a, UIntType c, UIntType m>
-basic_istream<charT, traits>&
-operator>>(basic_istream<charT, traits>& is,
-           linear_congruential_engine<UIntType, a, c, m>& x);
-
 template <class UIntType, size_t w, size_t n, size_t m, size_t r,
           UIntType a, size_t u, UIntType d, size_t s,
           UIntType b, size_t t, UIntType c, size_t l, UIntType f>
@@ -114,7 +102,7 @@ bool
 operator==(
     const mersenne_twister_engine<UIntType, w, n, m, r, a, u, d, s, b, t, c, l, f>& x,
     const mersenne_twister_engine<UIntType, w, n, m, r, a, u, d, s, b, t, c, l, f>& y);
-
+ 
 template <class UIntType, size_t w, size_t n, size_t m, size_t r,
           UIntType a, size_t u, UIntType d, size_t s,
           UIntType b, size_t t, UIntType c, size_t l, UIntType f>
@@ -122,22 +110,6 @@ bool
 operator!=(
     const mersenne_twister_engine<UIntType, w, n, m, r, a, u, d, s, b, t, c, l, f>& x,
     const mersenne_twister_engine<UIntType, w, n, m, r, a, u, d, s, b, t, c, l, f>& y);
-
-template <class charT, class traits,
-          class UIntType, size_t w, size_t n, size_t m, size_t r,
-          UIntType a, size_t u, UIntType d, size_t s,
-          UIntType b, size_t t, UIntType c, size_t l, UIntType f>
-basic_ostream<charT, traits>&
-operator<<(basic_ostream<charT, traits>& os,
-           const mersenne_twister_engine<UIntType, w, n, m, r, a, u, d, s, b, t, c, l, f>& x);
-
-template <class charT, class traits,
-          class UIntType, size_t w, size_t n, size_t m, size_t r,
-          UIntType a, size_t u, UIntType d, size_t s,
-          UIntType b, size_t t, UIntType c, size_t l, UIntType f>
-basic_istream<charT, traits>&
-operator>>(basic_istream<charT, traits>& is,
-           mersenne_twister_engine<UIntType, w, n, m, r, a, u, d, s, b, t, c, l, f>& x);
 
 template<class UIntType, size_t w, size_t s, size_t r>
 class subtract_with_carry_engine
@@ -176,18 +148,6 @@ bool
 operator!=(
     const subtract_with_carry_engine<UIntType, w, s, r>& x,
     const subtract_with_carry_engine<UIntType, w, s, r>& y);
-
-template <class charT, class traits,
-          class UIntType, size_t w, size_t s, size_t r>
-basic_ostream<charT, traits>&
-operator<<(basic_ostream<charT, traits>& os,
-           const subtract_with_carry_engine<UIntType, w, s, r>& x);
-
-template <class charT, class traits,
-          class UIntType, size_t w, size_t s, size_t r>
-basic_istream<charT, traits>&
-operator>>(basic_istream<charT, traits>& is,
-           subtract_with_carry_engine<UIntType, w, s, r>& x);
 
 template<class Engine, size_t p, size_t r>
 class discard_block_engine
@@ -232,18 +192,6 @@ operator!=(
     const discard_block_engine<Engine, p, r>& x,
     const discard_block_engine<Engine, p, r>& y);
 
-template <class charT, class traits,
-          class Engine, size_t p, size_t r>
-basic_ostream<charT, traits>&
-operator<<(basic_ostream<charT, traits>& os,
-           const discard_block_engine<Engine, p, r>& x);
-
-template <class charT, class traits,
-          class Engine, size_t p, size_t r>
-basic_istream<charT, traits>&
-operator>>(basic_istream<charT, traits>& is,
-           discard_block_engine<Engine, p, r>& x);
-
 template<class Engine, size_t w, class UIntType>
 class independent_bits_engine
 {
@@ -283,18 +231,6 @@ bool
 operator!=(
     const independent_bits_engine<Engine, w, UIntType>& x,
     const independent_bits_engine<Engine, w, UIntType>& y);
-
-template <class charT, class traits,
-          class Engine, size_t w, class UIntType>
-basic_ostream<charT, traits>&
-operator<<(basic_ostream<charT, traits>& os,
-           const independent_bits_engine<Engine, w, UIntType>& x);
-
-template <class charT, class traits,
-          class Engine, size_t w, class UIntType>
-basic_istream<charT, traits>&
-operator>>(basic_istream<charT, traits>& is,
-           independent_bits_engine<Engine, w, UIntType>& x);
 
 template<class Engine, size_t k>
 class shuffle_order_engine
@@ -337,18 +273,6 @@ bool
 operator!=(
     const shuffle_order_engine<Engine, k>& x,
     const shuffle_order_engine<Engine, k>& y);
-
-template <class charT, class traits,
-          class Engine, size_t k>
-basic_ostream<charT, traits>&
-operator<<(basic_ostream<charT, traits>& os,
-           const shuffle_order_engine<Engine, k>& x);
-
-template <class charT, class traits,
-          class Engine, size_t k>
-basic_istream<charT, traits>&
-operator>>(basic_istream<charT, traits>& is,
-           shuffle_order_engine<Engine, k>& x);
 
 typedef linear_congruential_engine<uint_fast32_t, 16807, 0, 2147483647>
                                                                    minstd_rand0;
@@ -479,18 +403,6 @@ public:
                            const uniform_int_distribution& y);
     friend bool operator!=(const uniform_int_distribution& x,
                            const uniform_int_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const uniform_int_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               uniform_int_distribution& x);
 };
 
 template<class RealType = double>
@@ -538,18 +450,6 @@ public:
                            const uniform_real_distribution& y);
     friend bool operator!=(const uniform_real_distribution& x,
                            const uniform_real_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const uniform_real_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               uniform_real_distribution& x);
 };
 
 class bernoulli_distribution
@@ -593,18 +493,6 @@ public:
                            const bernoulli_distribution& y);
     friend bool operator!=(const bernoulli_distribution& x,
                            const bernoulli_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const bernoulli_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               bernoulli_distribution& x);
 };
 
 template<class IntType = int>
@@ -651,18 +539,6 @@ public:
                            const binomial_distribution& y);
     friend bool operator!=(const binomial_distribution& x,
                            const binomial_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const binomial_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               binomial_distribution& x);
 };
 
 template<class IntType = int>
@@ -707,18 +583,6 @@ public:
                            const geometric_distribution& y);
     friend bool operator!=(const geometric_distribution& x,
                            const geometric_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const geometric_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               geometric_distribution& x);
 };
 
 template<class IntType = int>
@@ -765,18 +629,6 @@ public:
                            const negative_binomial_distribution& y);
     friend bool operator!=(const negative_binomial_distribution& x,
                            const negative_binomial_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const negative_binomial_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               negative_binomial_distribution& x);
 };
 
 template<class IntType = int>
@@ -821,18 +673,6 @@ public:
                            const poisson_distribution& y);
     friend bool operator!=(const poisson_distribution& x,
                            const poisson_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const poisson_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               poisson_distribution& x);
 };
 
 template<class RealType = double>
@@ -877,18 +717,6 @@ public:
                            const exponential_distribution& y);
     friend bool operator!=(const exponential_distribution& x,
                            const exponential_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const exponential_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               exponential_distribution& x);
 };
 
 template<class RealType = double>
@@ -935,18 +763,6 @@ public:
                            const gamma_distribution& y);
     friend bool operator!=(const gamma_distribution& x,
                            const gamma_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const gamma_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               gamma_distribution& x);
 };
 
 template<class RealType = double>
@@ -993,18 +809,6 @@ public:
                            const weibull_distribution& y);
     friend bool operator!=(const weibull_distribution& x,
                            const weibull_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const weibull_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               weibull_distribution& x);
 };
 
 template<class RealType = double>
@@ -1051,18 +855,6 @@ public:
                            const extreme_value_distribution& y);
     friend bool operator!=(const extreme_value_distribution& x,
                            const extreme_value_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const extreme_value_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               extreme_value_distribution& x);
 };
 
 template<class RealType = double>
@@ -1109,18 +901,6 @@ public:
                            const normal_distribution& y);
     friend bool operator!=(const normal_distribution& x,
                            const normal_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const normal_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               normal_distribution& x);
 };
 
 template<class RealType = double>
@@ -1167,18 +947,6 @@ public:
                            const lognormal_distribution& y);
     friend bool operator!=(const lognormal_distribution& x,
                            const lognormal_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const lognormal_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               lognormal_distribution& x);
 };
 
 template<class RealType = double>
@@ -1223,18 +991,6 @@ public:
                            const chi_squared_distribution& y);
     friend bool operator!=(const chi_squared_distribution& x,
                            const chi_squared_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const chi_squared_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               chi_squared_distribution& x);
 };
 
 template<class RealType = double>
@@ -1281,18 +1037,6 @@ public:
                            const cauchy_distribution& y);
     friend bool operator!=(const cauchy_distribution& x,
                            const cauchy_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const cauchy_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               cauchy_distribution& x);
 };
 
 template<class RealType = double>
@@ -1339,18 +1083,6 @@ public:
                            const fisher_f_distribution& y);
     friend bool operator!=(const fisher_f_distribution& x,
                            const fisher_f_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const fisher_f_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               fisher_f_distribution& x);
 };
 
 template<class RealType = double>
@@ -1395,18 +1127,6 @@ public:
                            const student_t_distribution& y);
     friend bool operator!=(const student_t_distribution& x,
                            const student_t_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const student_t_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               student_t_distribution& x);
 };
 
 template<class IntType = int>
@@ -1462,18 +1182,6 @@ public:
                            const discrete_distribution& y);
     friend bool operator!=(const discrete_distribution& x,
                            const discrete_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const discrete_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               discrete_distribution& x);
 };
 
 template<class RealType = double>
@@ -1537,18 +1245,6 @@ class piecewise_constant_distribution
                            const piecewise_constant_distribution& y);
     friend bool operator!=(const piecewise_constant_distribution& x,
                            const piecewise_constant_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const piecewise_constant_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               piecewise_constant_distribution& x);
 };
 
 template<class RealType = double>
@@ -1615,26 +1311,12 @@ class piecewise_linear_distribution
                            const piecewise_linear_distribution& y);
     friend bool operator!=(const piecewise_linear_distribution& x,
                            const piecewise_linear_distribution& y);
-
-    template <class charT, class traits>
-    friend
-    basic_ostream<charT, traits>&
-    operator<<(basic_ostream<charT, traits>& os,
-               const piecewise_linear_distribution& x);
-
-    template <class charT, class traits>
-    friend
-    basic_istream<charT, traits>&
-    operator>>(basic_istream<charT, traits>& is,
-               piecewise_linear_distribution& x);
 };
 
 } // std
 */
 
-// Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 
 #include <cstddef>
 #include <cstdint>
@@ -1646,8 +1328,6 @@ class piecewise_linear_distribution
 #include <numeric>
 #include <vector>
 #include <string>
-#include <istream>
-#include <ostream>
 
 #include <__undef_min_max>
 
@@ -1816,22 +1496,6 @@ struct __lce_ta<__a, __c, __m, (unsigned short)(~0), __b>
 };
 
 template <class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
-class _LIBCPP_TYPE_VIS_ONLY linear_congruential_engine;
-
-template <class _CharT, class _Traits,
-          class _Up, _Up _Ap, _Up _Cp, _Up _Np>
-_LIBCPP_INLINE_VISIBILITY
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const linear_congruential_engine<_Up, _Ap, _Cp, _Np>&);
-
-template <class _CharT, class _Traits,
-          class _Up, _Up _Ap, _Up _Cp, _Up _Np>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           linear_congruential_engine<_Up, _Ap, _Cp, _Np>& __x);
-
-template <class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
 class _LIBCPP_TYPE_VIS_ONLY linear_congruential_engine
 {
 public:
@@ -1917,20 +1581,6 @@ private:
         void __seed(_Sseq& __q, integral_constant<unsigned, 1>);
     template<class _Sseq>
         void __seed(_Sseq& __q, integral_constant<unsigned, 2>);
-
-    template <class _CharT, class _Traits,
-              class _Up, _Up _Ap, _Up _Cp, _Up _Np>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const linear_congruential_engine<_Up, _Ap, _Cp, _Np>&);
-
-    template <class _CharT, class _Traits,
-              class _Up, _Up _Ap, _Up _Cp, _Up _Np>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               linear_congruential_engine<_Up, _Ap, _Cp, _Np>& __x);
 };
 
 template <class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
@@ -1976,34 +1626,6 @@ linear_congruential_engine<_UIntType, __a, __c, __m>::__seed(_Sseq& __q,
     __x_ = __c == 0 && __s == 0 ? result_type(1) : __s;
 }
 
-template <class _CharT, class _Traits,
-          class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
-inline _LIBCPP_INLINE_VISIBILITY
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const linear_congruential_engine<_UIntType, __a, __c, __m>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left);
-    __os.fill(__os.widen(' '));
-    return __os << __x.__x_;
-}
-
-template <class _CharT, class _Traits,
-          class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           linear_congruential_engine<_UIntType, __a, __c, __m>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    _UIntType __t;
-    __is >> __t;
-    if (!__is.fail())
-        __x.__x_ = __t;
-    return __is;
-}
-
 typedef linear_congruential_engine<uint_fast32_t, 16807, 0, 2147483647>
                                                                    minstd_rand0;
 typedef linear_congruential_engine<uint_fast32_t, 48271, 0, 2147483647>
@@ -2034,24 +1656,6 @@ operator!=(const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp,
                                          _Bp, _Tp, _Cp, _Lp, _Fp>& __x,
            const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
                                          _Bp, _Tp, _Cp, _Lp, _Fp>& __y);
-
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
-          _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
-          _UI _Bp, size_t _Tp, _UI _Cp, size_t _Lp, _UI _Fp>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
-                                         _Bp, _Tp, _Cp, _Lp, _Fp>& __x);
-
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
-          _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
-          _UI _Bp, size_t _Tp, _UI _Cp, size_t _Lp, _UI _Fp>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
-                                   _Bp, _Tp, _Cp, _Lp, _Fp>& __x);
 
 template <class _UIntType, size_t __w, size_t __n, size_t __m, size_t __r,
           _UIntType __a, size_t __u, _UIntType __d, size_t __s,
@@ -2152,25 +1756,6 @@ public:
                const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
                                              _Bp, _Tp, _Cp, _Lp, _Fp>& __y);
 
-    template <class _CharT, class _Traits,
-              class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
-              _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
-              _UI _Bp, size_t _Tp, _UI _Cp, size_t _Lp, _UI _Fp>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
-                                             _Bp, _Tp, _Cp, _Lp, _Fp>& __x);
-
-    template <class _CharT, class _Traits,
-              class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
-              _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
-              _UI _Bp, size_t _Tp, _UI _Cp, size_t _Lp, _UI _Fp>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
-                                       _Bp, _Tp, _Cp, _Lp, _Fp>& __x);
 private:
 
     template<class _Sseq>
@@ -2444,50 +2029,6 @@ operator!=(const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp,
     return !(__x == __y);
 }
 
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
-          _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
-          _UI _Bp, size_t _Tp, _UI _Cp, size_t _Lp, _UI _Fp>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
-                                         _Bp, _Tp, _Cp, _Lp, _Fp>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.__x_[__x.__i_];
-    for (size_t __j = __x.__i_ + 1; __j < _Np; ++__j)
-        __os << __sp << __x.__x_[__j];
-    for (size_t __j = 0; __j < __x.__i_; ++__j)
-        __os << __sp << __x.__x_[__j];
-    return __os;
-}
-
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
-          _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
-          _UI _Bp, size_t _Tp, _UI _Cp, size_t _Lp, _UI _Fp>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
-                                   _Bp, _Tp, _Cp, _Lp, _Fp>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    _UI __t[_Np];
-    for (size_t __i = 0; __i < _Np; ++__i)
-        __is >> __t[__i];
-    if (!__is.fail())
-    {
-        for (size_t __i = 0; __i < _Np; ++__i)
-            __x.__x_[__i] = __t[__i];
-        __x.__i_ = 0;
-    }
-    return __is;
-}
-
 typedef mersenne_twister_engine<uint_fast32_t, 32, 624, 397, 31,
                                 0x9908b0df, 11, 0xffffffff,
                                 7,  0x9d2c5680,
@@ -2516,18 +2057,6 @@ bool
 operator!=(
     const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x,
     const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __y);
-
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x);
-
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x);
 
 template<class _UIntType, size_t __w, size_t __s, size_t __r>
 class _LIBCPP_TYPE_VIS_ONLY subtract_with_carry_engine
@@ -2602,20 +2131,6 @@ public:
     operator!=(
         const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x,
         const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __y);
-
-    template <class _CharT, class _Traits,
-              class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x);
-
-    template <class _CharT, class _Traits,
-              class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x);
 
 private:
 
@@ -2767,46 +2282,6 @@ operator!=(
     return !(__x == __y);
 }
 
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.__x_[__x.__i_];
-    for (size_t __j = __x.__i_ + 1; __j < _Rp; ++__j)
-        __os << __sp << __x.__x_[__j];
-    for (size_t __j = 0; __j < __x.__i_; ++__j)
-        __os << __sp << __x.__x_[__j];
-    __os << __sp << __x.__c_;
-    return __os;
-}
-
-template <class _CharT, class _Traits,
-          class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    _UI __t[_Rp+1];
-    for (size_t __i = 0; __i < _Rp+1; ++__i)
-        __is >> __t[__i];
-    if (!__is.fail())
-    {
-        for (size_t __i = 0; __i < _Rp; ++__i)
-            __x.__x_[__i] = __t[__i];
-        __x.__c_ = __t[_Rp];
-        __x.__i_ = 0;
-    }
-    return __is;
-}
-
 typedef subtract_with_carry_engine<uint_fast32_t, 24, 10, 24>     ranlux24_base;
 typedef subtract_with_carry_engine<uint_fast64_t, 48,  5, 12>     ranlux48_base;
 
@@ -2895,20 +2370,6 @@ public:
     operator!=(
         const discard_block_engine<_Eng, _Pp, _Rp>& __x,
         const discard_block_engine<_Eng, _Pp, _Rp>& __y);
-
-    template <class _CharT, class _Traits,
-              class _Eng, size_t _Pp, size_t _Rp>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const discard_block_engine<_Eng, _Pp, _Rp>& __x);
-
-    template <class _CharT, class _Traits,
-              class _Eng, size_t _Pp, size_t _Rp>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               discard_block_engine<_Eng, _Pp, _Rp>& __x);
 };
 
 template<class _Engine, size_t __p, size_t __r>
@@ -2946,38 +2407,6 @@ operator!=(const discard_block_engine<_Eng, _Pp, _Rp>& __x,
            const discard_block_engine<_Eng, _Pp, _Rp>& __y)
 {
     return !(__x == __y);
-}
-
-template <class _CharT, class _Traits,
-          class _Eng, size_t _Pp, size_t _Rp>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const discard_block_engine<_Eng, _Pp, _Rp>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    return __os << __x.__e_ << __sp << __x.__n_;
-}
-
-template <class _CharT, class _Traits,
-          class _Eng, size_t _Pp, size_t _Rp>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           discard_block_engine<_Eng, _Pp, _Rp>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    _Eng __e;
-    int __n;
-    __is >> __e >> __n;
-    if (!__is.fail())
-    {
-        __x.__e_ = __e;
-        __x.__n_ = __n;
-    }
-    return __is;
 }
 
 typedef discard_block_engine<ranlux24_base, 223, 23> ranlux24;
@@ -3107,20 +2536,6 @@ public:
         const independent_bits_engine<_Eng, _Wp, _UI>& __x,
         const independent_bits_engine<_Eng, _Wp, _UI>& __y);
 
-    template <class _CharT, class _Traits,
-              class _Eng, size_t _Wp, class _UI>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const independent_bits_engine<_Eng, _Wp, _UI>& __x);
-
-    template <class _CharT, class _Traits,
-              class _Eng, size_t _Wp, class _UI>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               independent_bits_engine<_Eng, _Wp, _UI>& __x);
-
 private:
     _LIBCPP_INLINE_VISIBILITY
     result_type __eval(false_type);
@@ -3199,28 +2614,6 @@ operator!=(
     const independent_bits_engine<_Eng, _Wp, _UI>& __y)
 {
     return !(__x == __y);
-}
-
-template <class _CharT, class _Traits,
-          class _Eng, size_t _Wp, class _UI>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const independent_bits_engine<_Eng, _Wp, _UI>& __x)
-{
-    return __os << __x.base();
-}
-
-template <class _CharT, class _Traits,
-          class _Eng, size_t _Wp, class _UI>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           independent_bits_engine<_Eng, _Wp, _UI>& __x)
-{
-    _Eng __e;
-    __is >> __e;
-    if (!__is.fail())
-        __x.__e_ = __e;
-    return __is;
 }
 
 // shuffle_order_engine
@@ -3338,20 +2731,6 @@ private:
         const shuffle_order_engine<_Eng, _Kp>& __x,
         const shuffle_order_engine<_Eng, _Kp>& __y);
 
-    template <class _CharT, class _Traits,
-              class _Eng, size_t _Kp>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const shuffle_order_engine<_Eng, _Kp>& __x);
-
-    template <class _CharT, class _Traits,
-              class _Eng, size_t _Kp>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               shuffle_order_engine<_Eng, _Kp>& __x);
-
     _LIBCPP_INLINE_VISIBILITY
     void __init()
     {
@@ -3431,46 +2810,6 @@ operator!=(
     const shuffle_order_engine<_Eng, _Kp>& __y)
 {
     return !(__x == __y);
-}
-
-template <class _CharT, class _Traits,
-          class _Eng, size_t _Kp>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const shuffle_order_engine<_Eng, _Kp>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.__e_ << __sp << __x._V_[0];
-    for (size_t __i = 1; __i < _Kp; ++__i)
-        __os << __sp << __x._V_[__i];
-    return __os << __sp << __x._Y_;
-}
-
-template <class _CharT, class _Traits,
-          class _Eng, size_t _Kp>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           shuffle_order_engine<_Eng, _Kp>& __x)
-{
-    typedef typename shuffle_order_engine<_Eng, _Kp>::result_type result_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    _Eng __e;
-    result_type _Vp[_Kp+1];
-    __is >> __e;
-    for (size_t __i = 0; __i < _Kp+1; ++__i)
-        __is >> _Vp[__i];
-    if (!__is.fail())
-    {
-        __x.__e_ = __e;
-        for (size_t __i = 0; __i < _Kp; ++__i)
-            __x._V_[__i] = _Vp[__i];
-        __x._Y_ = _Vp[_Kp];
-    }
-    return __is;
 }
 
 typedef shuffle_order_engine<minstd_rand0, 256>                         knuth_b;
@@ -3656,37 +2995,6 @@ generate_canonical(_URNG& __g)
 // uniform_int_distribution
 
 // in <algorithm>
-
-template <class _CharT, class _Traits, class _IT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const uniform_int_distribution<_IT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    return __os << __x.a() << __sp << __x.b();
-}
-
-template <class _CharT, class _Traits, class _IT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           uniform_int_distribution<_IT>& __x)
-{
-    typedef uniform_int_distribution<_IT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __a;
-    result_type __b;
-    __is >> __a >> __b;
-    if (!__is.fail())
-        __x.param(param_type(__a, __b));
-    return __is;
-}
-
 // uniform_real_distribution
 
 template<class _RealType = double>
@@ -3778,37 +3086,6 @@ uniform_real_distribution<_RealType>::operator()(_URNG& __g, const param_type& _
         + __p.a();
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const uniform_real_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    return __os << __x.a() << __sp << __x.b();
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           uniform_real_distribution<_RT>& __x)
-{
-    typedef uniform_real_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __a;
-    result_type __b;
-    __is >> __a >> __b;
-    if (!__is.fail())
-        __x.param(param_type(__a, __b));
-    return __is;
-}
-
 // bernoulli_distribution
 
 class _LIBCPP_TYPE_VIS_ONLY bernoulli_distribution
@@ -3888,33 +3165,6 @@ bernoulli_distribution::operator()(_URNG& __g, const param_type& __p)
 {
     uniform_real_distribution<double> __gen;
     return __gen(__g) < __p.p();
-}
-
-template <class _CharT, class _Traits>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os, const bernoulli_distribution& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    return __os << __x.p();
-}
-
-template <class _CharT, class _Traits>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is, bernoulli_distribution& __x)
-{
-    typedef bernoulli_distribution _Eng;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    double __p;
-    __is >> __p;
-    if (!__is.fail())
-        __x.param(param_type(__p));
-    return __is;
 }
 
 // binomial_distribution
@@ -4054,37 +3304,6 @@ binomial_distribution<_IntType>::operator()(_URNG& __g, const param_type& __pr)
     }
 }
 
-template <class _CharT, class _Traits, class _IntType>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const binomial_distribution<_IntType>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    return __os << __x.t() << __sp << __x.p();
-}
-
-template <class _CharT, class _Traits, class _IntType>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           binomial_distribution<_IntType>& __x)
-{
-    typedef binomial_distribution<_IntType> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __t;
-    double __p;
-    __is >> __t >> __p;
-    if (!__is.fail())
-        __x.param(param_type(__t, __p));
-    return __is;
-}
-
 // exponential_distribution
 
 template<class _RealType = double>
@@ -4172,34 +3391,6 @@ exponential_distribution<_RealType>::operator()(_URNG& __g, const param_type& __
                   / __p.lambda();
 }
 
-template <class _CharT, class _Traits, class _RealType>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const exponential_distribution<_RealType>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    return __os << __x.lambda();
-}
-
-template <class _CharT, class _Traits, class _RealType>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           exponential_distribution<_RealType>& __x)
-{
-    typedef exponential_distribution<_RealType> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __lambda;
-    __is >> __lambda;
-    if (!__is.fail())
-        __x.param(param_type(__lambda));
-    return __is;
-}
-
 // normal_distribution
 
 template<class _RealType = double>
@@ -4281,18 +3472,6 @@ public:
         bool operator!=(const normal_distribution& __x,
                         const normal_distribution& __y)
         {return !(__x == __y);}
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const normal_distribution<_RT>& __x);
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               normal_distribution<_RT>& __x);
 };
 
 template <class _RealType>
@@ -4326,48 +3505,6 @@ normal_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return _Up * __p.stddev() + __p.mean();
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const normal_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.mean() << __sp << __x.stddev() << __sp << __x._V_hot_;
-    if (__x._V_hot_)
-        __os << __sp << __x._V_;
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           normal_distribution<_RT>& __x)
-{
-    typedef normal_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __mean;
-    result_type __stddev;
-    result_type _Vp = 0;
-    bool _V_hot = false;
-    __is >> __mean >> __stddev >> _V_hot;
-    if (_V_hot)
-        __is >> _Vp;
-    if (!__is.fail())
-    {
-        __x.param(param_type(__mean, __stddev));
-        __x._V_hot_ = _V_hot;
-        __x._V_ = _Vp;
-    }
-    return __is;
-}
-
 // lognormal_distribution
 
 template<class _RealType = double>
@@ -4399,18 +3536,6 @@ public:
             bool operator!=(const param_type& __x, const param_type& __y)
             {return !(__x == __y);}
         friend class lognormal_distribution;
-
-        template <class _CharT, class _Traits, class _RT>
-        friend
-        basic_ostream<_CharT, _Traits>&
-        operator<<(basic_ostream<_CharT, _Traits>& __os,
-                   const lognormal_distribution<_RT>& __x);
-
-        template <class _CharT, class _Traits, class _RT>
-        friend
-        basic_istream<_CharT, _Traits>&
-        operator>>(basic_istream<_CharT, _Traits>& __is,
-                   lognormal_distribution<_RT>& __x);
     };
 
 private:
@@ -4461,37 +3586,7 @@ public:
         bool operator!=(const lognormal_distribution& __x,
                         const lognormal_distribution& __y)
         {return !(__x == __y);}
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const lognormal_distribution<_RT>& __x);
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               lognormal_distribution<_RT>& __x);
 };
-
-template <class _CharT, class _Traits, class _RT>
-inline _LIBCPP_INLINE_VISIBILITY
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const lognormal_distribution<_RT>& __x)
-{
-    return __os << __x.__p_.__nd_;
-}
-
-template <class _CharT, class _Traits, class _RT>
-inline _LIBCPP_INLINE_VISIBILITY
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           lognormal_distribution<_RT>& __x)
-{
-    return __is >> __x.__p_.__nd_;
-}
 
 // poisson_distribution
 
@@ -4697,33 +3792,6 @@ poisson_distribution<_IntType>::operator()(_URNG& __urng, const param_type& __pr
     return __x;
 }
 
-template <class _CharT, class _Traits, class _IntType>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const poisson_distribution<_IntType>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    return __os << __x.mean();
-}
-
-template <class _CharT, class _Traits, class _IntType>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           poisson_distribution<_IntType>& __x)
-{
-    typedef poisson_distribution<_IntType> _Eng;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    double __mean;
-    __is >> __mean;
-    if (!__is.fail())
-        __x.param(param_type(__mean));
-    return __is;
-}
-
 // weibull_distribution
 
 template<class _RealType = double>
@@ -4807,38 +3875,6 @@ public:
                         const weibull_distribution& __y)
         {return !(__x == __y);}
 };
-
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const weibull_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.a() << __sp << __x.b();
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           weibull_distribution<_RT>& __x)
-{
-    typedef weibull_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __a;
-    result_type __b;
-    __is >> __a >> __b;
-    if (!__is.fail())
-        __x.param(param_type(__a, __b));
-    return __is;
-}
 
 template<class _RealType = double>
 class _LIBCPP_TYPE_VIS_ONLY extreme_value_distribution
@@ -4925,38 +3961,6 @@ extreme_value_distribution<_RealType>::operator()(_URNG& __g, const param_type& 
 {
     return __p.a() - __p.b() *
          _VSTD::log(-_VSTD::log(1-uniform_real_distribution<result_type>()(__g)));
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const extreme_value_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.a() << __sp << __x.b();
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           extreme_value_distribution<_RT>& __x)
-{
-    typedef extreme_value_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __a;
-    result_type __b;
-    __is >> __a >> __b;
-    if (!__is.fail())
-        __x.param(param_type(__a, __b));
-    return __is;
 }
 
 // gamma_distribution
@@ -5099,38 +4103,6 @@ gamma_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __x * __p.beta();
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const gamma_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.alpha() << __sp << __x.beta();
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           gamma_distribution<_RT>& __x)
-{
-    typedef gamma_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __alpha;
-    result_type __beta;
-    __is >> __alpha >> __beta;
-    if (!__is.fail())
-        __x.param(param_type(__alpha, __beta));
-    return __is;
-}
-
 // negative_binomial_distribution
 
 template<class _IntType = int>
@@ -5235,37 +4207,6 @@ negative_binomial_distribution<_IntType>::operator()(_URNG& __urng, const param_
                                             (__k, (1-__p)/__p)(__urng))(__urng);
 }
 
-template <class _CharT, class _Traits, class _IntType>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const negative_binomial_distribution<_IntType>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    return __os << __x.k() << __sp << __x.p();
-}
-
-template <class _CharT, class _Traits, class _IntType>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           negative_binomial_distribution<_IntType>& __x)
-{
-    typedef negative_binomial_distribution<_IntType> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __k;
-    double __p;
-    __is >> __k >> __p;
-    if (!__is.fail())
-        __x.param(param_type(__k, __p));
-    return __is;
-}
-
 // geometric_distribution
 
 template<class _IntType = int>
@@ -5340,33 +4281,6 @@ public:
                         const geometric_distribution& __y)
         {return !(__x == __y);}
 };
-
-template <class _CharT, class _Traits, class _IntType>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const geometric_distribution<_IntType>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    return __os << __x.p();
-}
-
-template <class _CharT, class _Traits, class _IntType>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           geometric_distribution<_IntType>& __x)
-{
-    typedef geometric_distribution<_IntType> _Eng;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    double __p;
-    __is >> __p;
-    if (!__is.fail())
-        __x.param(param_type(__p));
-    return __is;
-}
 
 // chi_squared_distribution
 
@@ -5444,35 +4358,6 @@ public:
                         const chi_squared_distribution& __y)
         {return !(__x == __y);}
 };
-
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const chi_squared_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    __os << __x.n();
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           chi_squared_distribution<_RT>& __x)
-{
-    typedef chi_squared_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __n;
-    __is >> __n;
-    if (!__is.fail())
-        __x.param(param_type(__n));
-    return __is;
-}
 
 // cauchy_distribution
 
@@ -5565,38 +4450,6 @@ cauchy_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __p.a() + __p.b() * _VSTD::tan(3.1415926535897932384626433832795 * __gen(__g));
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const cauchy_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.a() << __sp << __x.b();
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           cauchy_distribution<_RT>& __x)
-{
-    typedef cauchy_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __a;
-    result_type __b;
-    __is >> __a >> __b;
-    if (!__is.fail())
-        __x.param(param_type(__a, __b));
-    return __is;
-}
-
 // fisher_f_distribution
 
 template<class _RealType = double>
@@ -5687,38 +4540,6 @@ fisher_f_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __p.n() * __gdm(__g) / (__p.m() * __gdn(__g));
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const fisher_f_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    __os << __x.m() << __sp << __x.n();
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           fisher_f_distribution<_RT>& __x)
-{
-    typedef fisher_f_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __m;
-    result_type __n;
-    __is >> __m >> __n;
-    if (!__is.fail())
-        __x.param(param_type(__m, __n));
-    return __is;
-}
-
 // student_t_distribution
 
 template<class _RealType = double>
@@ -5803,35 +4624,6 @@ student_t_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __nd_(__g) * _VSTD::sqrt(__p.n()/__gd(__g));
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const student_t_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    __os << __x.n();
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           student_t_distribution<_RT>& __x)
-{
-    typedef student_t_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    typedef typename _Eng::param_type param_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    result_type __n;
-    __is >> __n;
-    if (!__is.fail())
-        __x.param(param_type(__n));
-    return __is;
-}
-
 // discrete_distribution
 
 template<class _IntType = int>
@@ -5875,18 +4667,6 @@ public:
         void __init();
 
         friend class discrete_distribution;
-
-        template <class _CharT, class _Traits, class _IT>
-        friend
-        basic_ostream<_CharT, _Traits>&
-        operator<<(basic_ostream<_CharT, _Traits>& __os,
-                   const discrete_distribution<_IT>& __x);
-
-        template <class _CharT, class _Traits, class _IT>
-        friend
-        basic_istream<_CharT, _Traits>&
-        operator>>(basic_istream<_CharT, _Traits>& __is,
-                   discrete_distribution<_IT>& __x);
     };
 
 private:
@@ -5945,18 +4725,6 @@ public:
         bool operator!=(const discrete_distribution& __x,
                         const discrete_distribution& __y)
         {return !(__x == __y);}
-
-    template <class _CharT, class _Traits, class _IT>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const discrete_distribution<_IT>& __x);
-
-    template <class _CharT, class _Traits, class _IT>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               discrete_distribution<_IT>& __x);
 };
 
 template<class _IntType>
@@ -6026,40 +4794,6 @@ discrete_distribution<_IntType>::operator()(_URNG& __g, const param_type& __p)
                                                               __p.__p_.begin());
 }
 
-template <class _CharT, class _Traits, class _IT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const discrete_distribution<_IT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    size_t __n = __x.__p_.__p_.size();
-    __os << __n;
-    for (size_t __i = 0; __i < __n; ++__i)
-        __os << __sp << __x.__p_.__p_[__i];
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _IT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           discrete_distribution<_IT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    size_t __n;
-    __is >> __n;
-    vector<double> __p(__n);
-    for (size_t __i = 0; __i < __n; ++__i)
-        __is >> __p[__i];
-    if (!__is.fail())
-        swap(__x.__p_.__p_, __p);
-    return __is;
-}
-
 // piecewise_constant_distribution
 
 template<class _RealType = double>
@@ -6106,18 +4840,6 @@ public:
         void __init();
 
         friend class piecewise_constant_distribution;
-
-        template <class _CharT, class _Traits, class _RT>
-        friend
-        basic_ostream<_CharT, _Traits>&
-        operator<<(basic_ostream<_CharT, _Traits>& __os,
-                   const piecewise_constant_distribution<_RT>& __x);
-
-        template <class _CharT, class _Traits, class _RT>
-        friend
-        basic_istream<_CharT, _Traits>&
-        operator>>(basic_istream<_CharT, _Traits>& __is,
-                   piecewise_constant_distribution<_RT>& __x);
     };
 
 private:
@@ -6186,18 +4908,6 @@ public:
         bool operator!=(const piecewise_constant_distribution& __x,
                            const piecewise_constant_distribution& __y)
         {return !(__x == __y);}
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const piecewise_constant_distribution<_RT>& __x);
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               piecewise_constant_distribution<_RT>& __x);
 };
 
 template<class _RealType>
@@ -6327,62 +5037,6 @@ piecewise_constant_distribution<_RealType>::operator()(_URNG& __g, const param_t
     return (__u - __p.__areas_[__k]) / __p.__densities_[__k] + __p.__b_[__k];
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const piecewise_constant_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    size_t __n = __x.__p_.__b_.size();
-    __os << __n;
-    for (size_t __i = 0; __i < __n; ++__i)
-        __os << __sp << __x.__p_.__b_[__i];
-    __n = __x.__p_.__densities_.size();
-    __os << __sp << __n;
-    for (size_t __i = 0; __i < __n; ++__i)
-        __os << __sp << __x.__p_.__densities_[__i];
-    __n = __x.__p_.__areas_.size();
-    __os << __sp << __n;
-    for (size_t __i = 0; __i < __n; ++__i)
-        __os << __sp << __x.__p_.__areas_[__i];
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           piecewise_constant_distribution<_RT>& __x)
-{
-    typedef piecewise_constant_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    size_t __n;
-    __is >> __n;
-    vector<result_type> __b(__n);
-    for (size_t __i = 0; __i < __n; ++__i)
-        __is >> __b[__i];
-    __is >> __n;
-    vector<result_type> __densities(__n);
-    for (size_t __i = 0; __i < __n; ++__i)
-        __is >> __densities[__i];
-    __is >> __n;
-    vector<result_type> __areas(__n);
-    for (size_t __i = 0; __i < __n; ++__i)
-        __is >> __areas[__i];
-    if (!__is.fail())
-    {
-        swap(__x.__p_.__b_, __b);
-        swap(__x.__p_.__densities_, __densities);
-        swap(__x.__p_.__areas_, __areas);
-    }
-    return __is;
-}
-
 // piecewise_linear_distribution
 
 template<class _RealType = double>
@@ -6429,18 +5083,6 @@ public:
         void __init();
 
         friend class piecewise_linear_distribution;
-
-        template <class _CharT, class _Traits, class _RT>
-        friend
-        basic_ostream<_CharT, _Traits>&
-        operator<<(basic_ostream<_CharT, _Traits>& __os,
-                   const piecewise_linear_distribution<_RT>& __x);
-
-        template <class _CharT, class _Traits, class _RT>
-        friend
-        basic_istream<_CharT, _Traits>&
-        operator>>(basic_istream<_CharT, _Traits>& __is,
-                   piecewise_linear_distribution<_RT>& __x);
     };
 
 private:
@@ -6509,18 +5151,6 @@ public:
         bool operator!=(const piecewise_linear_distribution& __x,
                         const piecewise_linear_distribution& __y)
         {return !(__x == __y);}
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_ostream<_CharT, _Traits>&
-    operator<<(basic_ostream<_CharT, _Traits>& __os,
-               const piecewise_linear_distribution<_RT>& __x);
-
-    template <class _CharT, class _Traits, class _RT>
-    friend
-    basic_istream<_CharT, _Traits>&
-    operator>>(basic_istream<_CharT, _Traits>& __is,
-               piecewise_linear_distribution<_RT>& __x);
 };
 
 template<class _RealType>
@@ -6666,64 +5296,6 @@ piecewise_linear_distribution<_RealType>::operator()(_URNG& __g, const param_typ
         __deltad;
 }
 
-template <class _CharT, class _Traits, class _RT>
-basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os,
-           const piecewise_linear_distribution<_RT>& __x)
-{
-    __save_flags<_CharT, _Traits> __lx(__os);
-    __os.flags(ios_base::dec | ios_base::left | ios_base::fixed |
-               ios_base::scientific);
-    _CharT __sp = __os.widen(' ');
-    __os.fill(__sp);
-    size_t __n = __x.__p_.__b_.size();
-    __os << __n;
-    for (size_t __i = 0; __i < __n; ++__i)
-        __os << __sp << __x.__p_.__b_[__i];
-    __n = __x.__p_.__densities_.size();
-    __os << __sp << __n;
-    for (size_t __i = 0; __i < __n; ++__i)
-        __os << __sp << __x.__p_.__densities_[__i];
-    __n = __x.__p_.__areas_.size();
-    __os << __sp << __n;
-    for (size_t __i = 0; __i < __n; ++__i)
-        __os << __sp << __x.__p_.__areas_[__i];
-    return __os;
-}
-
-template <class _CharT, class _Traits, class _RT>
-basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is,
-           piecewise_linear_distribution<_RT>& __x)
-{
-    typedef piecewise_linear_distribution<_RT> _Eng;
-    typedef typename _Eng::result_type result_type;
-    __save_flags<_CharT, _Traits> __lx(__is);
-    __is.flags(ios_base::dec | ios_base::skipws);
-    size_t __n;
-    __is >> __n;
-    vector<result_type> __b(__n);
-    for (size_t __i = 0; __i < __n; ++__i)
-        __is >> __b[__i];
-    __is >> __n;
-    vector<result_type> __densities(__n);
-    for (size_t __i = 0; __i < __n; ++__i)
-        __is >> __densities[__i];
-    __is >> __n;
-    vector<result_type> __areas(__n);
-    for (size_t __i = 0; __i < __n; ++__i)
-        __is >> __areas[__i];
-    if (!__is.fail())
-    {
-        swap(__x.__p_.__b_, __b);
-        swap(__x.__p_.__densities_, __densities);
-        swap(__x.__p_.__areas_, __areas);
-    }
-    return __is;
-}
-
 _LIBCPP_END_NAMESPACE_STD
-
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_RANDOM
