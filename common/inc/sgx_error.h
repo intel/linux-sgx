@@ -117,4 +117,200 @@ typedef enum _status_t
 
 } sgx_status_t;
 
+#define PRINT_SGX_STATUS(FILE_STRUCT, STATUS_T) \
+    switch (STATUS_T) {\
+    case SGX_SUCCESS:\
+        fprintf(FILE_STRUCT, "Error: SGX_SUCCESS\n");\
+        break;\
+    case SGX_ERROR_UNEXPECTED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_UNEXPECTED\n");\
+        break;\
+    case SGX_ERROR_INVALID_PARAMETER:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_PARAMETER\n");\
+        break;\
+    case SGX_ERROR_OUT_OF_MEMORY:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_OUT_OF_MEMORY\n");\
+        break;\
+    case SGX_ERROR_ENCLAVE_LOST:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_ENCLAVE_LOST\n");\
+        break;\
+    case SGX_ERROR_INVALID_STATE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_STATE\n");\
+        break;\
+    case SGX_ERROR_FEATURE_NOT_SUPPORTED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FEATURE_NOT_SUPPORTED\n");\
+        break;\
+    case SGX_ERROR_INVALID_FUNCTION:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_FUNCTION\n");\
+        break;\
+    case SGX_ERROR_OUT_OF_TCS:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_OUT_OF_TCS\n");\
+        break;\
+    case SGX_ERROR_ENCLAVE_CRASHED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_ENCLAVE_CRASHED\n");\
+        break;\
+    case SGX_ERROR_ECALL_NOT_ALLOWED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_ECALL_NOT_ALLOWED\n");\
+        break;\
+    case SGX_ERROR_OCALL_NOT_ALLOWED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_OCALL_NOT_ALLOWED\n");\
+        break;\
+    case SGX_ERROR_STACK_OVERRUN:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_STACK_OVERRUN\n");\
+        break;\
+    case SGX_ERROR_UNDEFINED_SYMBOL:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_UNDEFINED_SYMBOL\n");\
+        break;\
+    case SGX_ERROR_INVALID_ENCLAVE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_ENCLAVE\n");\
+        break;\
+    case SGX_ERROR_INVALID_ENCLAVE_ID:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_ENCLAVE_ID\n");\
+        break;\
+    case SGX_ERROR_INVALID_SIGNATURE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_SIGNATURE\n");\
+        break;\
+    case SGX_ERROR_NDEBUG_ENCLAVE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_NDEBUG_ENCLAVE\n");\
+        break;\
+    case SGX_ERROR_OUT_OF_EPC:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_OUT_OF_EPC\n");\
+        break;\
+    case SGX_ERROR_NO_DEVICE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_NO_DEVICE\n");\
+        break;\
+    case SGX_ERROR_MEMORY_MAP_CONFLICT:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_MEMORY_MAP_CONFLICT\n");\
+        break;\
+    case SGX_ERROR_INVALID_METADATA:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_METADATA\n");\
+        break;\
+    case SGX_ERROR_DEVICE_BUSY:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_DEVICE_BUSY\n");\
+        break;\
+    case SGX_ERROR_INVALID_VERSION:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_VERSION\n");\
+        break;\
+    case SGX_ERROR_MODE_INCOMPATIBLE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_MODE_INCOMPATIBLE\n");\
+        break;\
+    case SGX_ERROR_ENCLAVE_FILE_ACCESS:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_ENCLAVE_FILE_ACCESS\n");\
+        break;\
+    case SGX_ERROR_INVALID_MISC:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_MISC\n");\
+        break;\
+    case SGX_ERROR_INVALID_LAUNCH_TOKEN:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_LAUNCH_TOKEN\n");\
+        break;\
+    case SGX_ERROR_MAC_MISMATCH:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_MAC_MISMATCH\n");\
+        break;\
+    case SGX_ERROR_INVALID_ATTRIBUTE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_ATTRIBUTE\n");\
+        break;\
+    case SGX_ERROR_INVALID_CPUSVN:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_CPUSVN\n");\
+        break;\
+    case SGX_ERROR_INVALID_ISVSVN:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_ISVSVN\n");\
+        break;\
+    case SGX_ERROR_INVALID_KEYNAME:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_INVALID_KEYNAME\n");\
+        break;\
+    case SGX_ERROR_SERVICE_UNAVAILABLE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_SERVICE_UNAVAILABLE\n");\
+        break;\
+    case SGX_ERROR_SERVICE_TIMEOUT:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_SERVICE_TIMEOUT\n");\
+        break;\
+    case SGX_ERROR_AE_INVALID_EPIDBLOB:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_AE_INVALID_EPIDBLOB\n");\
+        break;\
+    case SGX_ERROR_SERVICE_INVALID_PRIVILEGE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_SERVICE_INVALID_PRIVILEGE\n");\
+        break;\
+    case SGX_ERROR_EPID_MEMBER_REVOKED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_EPID_MEMBER_REVOKED\n");\
+        break;\
+    case SGX_ERROR_UPDATE_NEEDED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_UPDATE_NEEDED\n");\
+        break;\
+    case SGX_ERROR_NETWORK_FAILURE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_NETWORK_FAILURE\n");\
+        break;\
+    case SGX_ERROR_AE_SESSION_INVALID:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_AE_SESSION_INVALID\n");\
+        break;\
+    case SGX_ERROR_BUSY:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_BUSY\n");\
+        break;\
+    case SGX_ERROR_MC_NOT_FOUND:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_MC_NOT_FOUND\n");\
+        break;\
+    case SGX_ERROR_MC_NO_ACCESS_RIGHT:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_MC_NO_ACCESS_RIGHT\n");\
+        break;\
+    case SGX_ERROR_MC_USED_UP:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_MC_USED_UP\n");\
+        break;\
+    case SGX_ERROR_MC_OVER_QUOTA:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_MC_OVER_QUOTA\n");\
+        break;\
+    case SGX_ERROR_KDF_MISMATCH:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_KDF_MISMATCH\n");\
+        break;\
+    case SGX_ERROR_UNRECOGNIZED_PLATFORM:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_UNRECOGNIZED_PLATFORM\n");\
+        break;\
+    case SGX_ERROR_NO_PRIVILEGE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_NO_PRIVILEGE\n");\
+        break;\
+    case SGX_ERROR_PCL_ENCRYPTED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_PCL_ENCRYPTED\n");\
+        break;\
+    case SGX_ERROR_PCL_NOT_ENCRYPTED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_PCL_NOT_ENCRYPTED\n");\
+        break;\
+    case SGX_ERROR_PCL_MAC_MISMATCH:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_PCL_MAC_MISMATCH\n");\
+        break;\
+    case SGX_ERROR_PCL_SHA_MISMATCH:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_PCL_SHA_MISMATCH\n");\
+        break;\
+    case SGX_ERROR_PCL_GUID_MISMATCH:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_PCL_GUID_MISMATCH\n");\
+        break;\
+    case SGX_ERROR_FILE_BAD_STATUS:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_BAD_STATUS\n");\
+        break;\
+    case SGX_ERROR_FILE_NO_KEY_ID:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_NO_KEY_ID\n");\
+        break;\
+    case SGX_ERROR_FILE_NAME_MISMATCH:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_NAME_MISMATCH\n");\
+        break;\
+    case SGX_ERROR_FILE_NOT_SGX_FILE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_NOT_SGX_FILE\n");\
+        break;\
+    case SGX_ERROR_FILE_CANT_OPEN_RECOVERY_FILE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_CANT_OPEN_RECOVERY_FILE\n");\
+        break;\
+    case SGX_ERROR_FILE_CANT_WRITE_RECOVERY_FILE:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_CANT_WRITE_RECOVERY_FILE\n");\
+        break;\
+    case SGX_ERROR_FILE_RECOVERY_NEEDED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_RECOVERY_NEEDED\n");\
+        break;\
+    case SGX_ERROR_FILE_FLUSH_FAILED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_FLUSH_FAILED\n");\
+        break;\
+    case SGX_ERROR_FILE_CLOSE_FAILED:\
+        fprintf(FILE_STRUCT, "Error: SGX_ERROR_FILE_CLOSE_FAILED\n");\
+        break;\
+    case SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED:\
+        fprintf(FILE_STRUCT, "Error: SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED\n");\
+        break;\
+    }
+
 #endif
