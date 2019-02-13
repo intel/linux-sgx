@@ -35,11 +35,9 @@
 #include "global_data.h"
 #include "util.h"
 
-extern "C" {
-
 struct sl_uswitchless;
 
-static sgx_status_t dummy_init_switchless(void* ms) {
+extern "C" sgx_status_t dummy_init_switchless(void* ms) {
     UNUSED(ms);
     return SGX_ERROR_UNEXPECTED;
 }
@@ -47,11 +45,9 @@ static sgx_status_t dummy_init_switchless(void* ms) {
 weak_alias(dummy_init_switchless, do_init_switchless);
 
 
-static sgx_status_t dummy_run_switchless_tworker(void* ms) {
+extern "C" sgx_status_t dummy_run_switchless_tworker(void* ms) {
     UNUSED(ms);
     return SGX_ERROR_UNEXPECTED;
 }
 /* Switchless SGX provides the real implementation for do_run_switchless_tworker */
 weak_alias(dummy_run_switchless_tworker, do_run_switchless_tworker);
-
-}
