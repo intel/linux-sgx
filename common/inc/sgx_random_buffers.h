@@ -249,9 +249,6 @@ struct alignas(A)randomly_placed_buffer
         free(ptr);
     }
 
-    template <unsigned C = 1>
-    using storage = char[size(C)] alignas(A);
-
 private:
     struct alignas(A)_T_instantiator_
     {
