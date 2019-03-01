@@ -261,7 +261,7 @@ Install the Intel(R) SGX PSW
   ```
 - `iclsClient` and `JHI` are optional prerequisite components and are needed if you need to use Intel(R) SGX Platform Service. To install these components:  
   Ensure `mei_me` driver is enabled and `/dev/mei0` exists.  
-  Query [iclsClient](sgx_program@intel.com) and install it using the following commands:  
+  Get iclsClient via sgx_program@intel.com and install it using the following commands:  
   * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
     $ sudo apt-get install alien
