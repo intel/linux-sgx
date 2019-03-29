@@ -46,6 +46,10 @@ my-dir = $(realpath $(call parent-dir,$(lastword $(MAKEFILE_LIST))))
 
 
 ROOT_DIR              := $(call my-dir)
+ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
+  $(error main directory cannot contain spaces nor colons)
+endif
+
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
 LINUX_PSW_DIR         := $(ROOT_DIR)/psw
