@@ -1,3 +1,3 @@
 [submodule "external/dcap_source"]
 	path = external/dcap_source
-	url = git@github.com:intel/SGXDataCenterAttestationPrimitives.git
+	url = https://github.com/intel/SGXDataCenterAttestationPrimitives.git
