@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -52,13 +52,6 @@ extern "C" sgx_status_t __morestack(const unsigned int index, void *ms);
 //
 sgx_status_t sgx_ocall(const unsigned int index, void *ms)
 {
-    // sgx_ocall is not allowed during exception handling
-    thread_data_t *thread_data = get_thread_data();
-    
-    // we have exceptions being handled
-    if(thread_data->exception_flag != 0) {
-        return SGX_ERROR_OCALL_NOT_ALLOWED;
-    }
     // the OCALL index should be within the ocall table range
     // -2, -3 and -4 -5 should be allowed to test SDK 2.0 features
     if((index != 0) && !is_builtin_ocall((int)index) &&

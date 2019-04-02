@@ -1,3 +1,4 @@
+
 Intel(R) Software Guard Extensions for Linux\* OS
 ================================================
 
@@ -70,15 +71,15 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 - Use the following command to install additional required tools to build the Intel(R) SGX PSW:  
   * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
-    $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper
+    $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake
   ```
   * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:
   ```
-    $ sudo yum install openssl-devel libcurl-devel protobuf-devel
+    $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake
   ```
   * On SUSE Linux Enterprise Server 12:
   ```
-    $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
+    $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake
   ```
 - Use the script ``download_prebuilt.sh`` inside source code package to download prebuilt binaries to prebuilt folder  
   You may need set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
@@ -312,6 +313,15 @@ To install the Intel(R) SGX PSW, invoke the installer with root privilege:
   $ cd linux/installer/bin
   $ sudo ./sgx_linux_x64_psw_${version}.bin
   ```
+### ECDSA attestation
+To enable ECDSA attestation
+- Ensure that you have the following required hardware:
+  * 8th Generation Intel(R) Core(TM) Processor or newer with **Flexible Launch Control** support*
+  * Intel(R) Atom(TM) Processor with **Flexible Launch Control** support*
+- Ensure the PCS caching service is setup correctly by local administrator or data center administrator. Also make sure that if the PCS server is not on local machine, the configure file (/etc/sgx_default_qcnl.conf) needs to be consistent with the real environment, for example: 
+PCS_URL=https://your_pcs_server:8081/sgx/certification/v1/
+- For how to install and configure PCK Caching Service, please go to https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration
+
 ### Start or Stop aesmd Service
 The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.  
 To stop the service: `$ sudo service aesmd stop`  
@@ -323,3 +333,4 @@ The aesmd service uses the HTTP protocol to initialize some services.
 If a proxy is required for the HTTP protocol, you may need to manually set up the proxy for the aesmd service.  
 You should manually edit the file `/etc/aesmd.conf` (refer to the comments in the file) to set the proxy for the aesmd service.  
 After you configure the proxy, you need to restart the service to enable the proxy.
+

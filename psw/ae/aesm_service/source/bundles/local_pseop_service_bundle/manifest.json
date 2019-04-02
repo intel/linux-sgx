@@ -1,0 +1,7 @@
+{
+  "bundle.symbolic_name" : "local_pseop_service_symbolic_name",
+  "bundle.activator" : true,
+  "bundle.name" : "Local PSEOP Service",
+  "bundle.description" : "This bundle provide Local PSEOP Service",
+  "bundle.version" : "1.0.0"
+}

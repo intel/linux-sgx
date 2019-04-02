@@ -8,6 +8,8 @@ User=aesmd
 Type=forking
 Environment=NAME=aesm_service
 Environment=AESM_PATH=@aesm_folder@
+Environment=LD_LIBRARY_PATH=@aesm_folder@
+WorkingDirectory=@aesm_folder@
 PermissionsStartOnly=true
 ExecStartPre=@aesm_folder@/linksgx.sh
 ExecStartPre=/bin/mkdir -p /var/run/aesmd/

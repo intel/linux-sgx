@@ -30,3 +30,11 @@ How to Build/Execute the Sample Code
 4. Execute the binary directly:
     $ ./app
 5. Remember to "make clean" before switching build mode
+
+-------------------------------------------------
+Launch token initialization
+-------------------------------------------------
+If using libsgx-enclave-common or sgxpsw under version 2.4, an initialized variable launch_token needs to be passed as the 3rd parameter of API sgx_create_enclave. For example,
+
+sgx_launch_token_t launch_token = {0};
+sgx_create_enclave(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, launch_token, NULL, &global_eid, NULL);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -63,7 +63,10 @@ static bool is_urts_support_edmm()
 
     char line[1024];
     if (NULL == fgets(line, sizeof(line), pipe))
+    {
+        pclose(pipe);
         return false;
+    }
 
     if (-1 == pclose(pipe))
     {

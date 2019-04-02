@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,12 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
 #ifndef _AESM_ERROR_H_
 #define _AESM_ERROR_H_
-
 /*File to define aesm error code*/
-
 typedef enum _aesm_error_t
 {
     AESM_SUCCESS                                  =  0,
@@ -68,6 +65,24 @@ typedef enum _aesm_error_t
     AESM_OUT_OF_EPC                               = 29,
     AESM_SERVICE_UNAVAILABLE                      = 30,
     AESM_UNRECOGNIZED_PLATFORM                    = 31,
+    AESM_ECDSA_ID_MISMATCH                        = 32,
+    AESM_PATHNAME_BUFFER_OVERFLOW_ERROR           = 33,
+    AESM_ERROR_STORED_KEY                         = 34,
+    AESM_PUB_KEY_ID_MISMATCH                      = 35,
+    AESM_INVALID_PCE_SIG_SCHEME                   = 36,
+    AESM_ATT_KEY_BLOB_ERROR                       = 37,
+    AESM_UNSUPPORTED_ATT_KEY_ID                   = 38,
+    AESM_UNSUPPORTED_LOADING_POLICY               = 39,
+    AESM_INTERFACE_UNAVAILABLE                    = 40,
+    AESM_PLATFORM_LIB_UNAVAILABLE                 = 41,
+    AESM_ATT_KEY_NOT_INITIALIZED                  = 42,
+    AESM_ATT_KEY_CERT_DATA_INVALID                = 43,
+    AESM_NO_PLATFORM_CERT_DATA                    = 44,
+    AESM_ERROR_REPORT                             = 45,
+    AESM_ENCLAVE_LOST                             = 46,
+    AESM_INVALID_REPORT                           = 47,
+    AESM_ENCLAVE_LOAD_ERROR                       = 48,
+    AESM_UNABLE_TO_GENERATE_QE_REPORT             = 49,
+    AESM_KEY_CERTIFICATION_ERROR                   = 50,
 } aesm_error_t;
 #endif
-

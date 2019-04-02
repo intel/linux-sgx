@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -98,6 +98,16 @@ typedef struct _update_info_bit
     int csmeFwUpdate;
     int pswUpdate;
 } sgx_update_info_bit_t;
+
+typedef struct _att_key_id_t {
+    uint8_t     att_key_id[158];
+}sgx_att_key_id_t;
+
+typedef struct _qe_report_info_t {
+    sgx_quote_nonce_t nonce;
+    sgx_target_info_t app_enclave_target_info;
+    sgx_report_t qe_report;
+}sgx_qe_report_info_t;
 
 #pragma pack(pop)
 

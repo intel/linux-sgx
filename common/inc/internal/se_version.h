@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,9 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#define STRFILEVER    "2.4.100.48163"
-#define COPYRIGHT      "Copyright (C) 2018 Intel Corporation"
+#define STRFILEVER    "2.5.100.49891"
+#define COPYRIGHT      "Copyright (C) 2019 Intel Corporation"
 
-#define UAE_SERVICE_VERSION       "1.0.102.0"
-#define URTS_VERSION              "1.0.102.0"
-#define ENCLAVE_COMMON_VERSION    "1.0.102.0"
+#define UAE_SERVICE_VERSION       "1.1.100.0"
+#define URTS_VERSION              "1.1.100.0"
+#define ENCLAVE_COMMON_VERSION    "1.0.103.0"

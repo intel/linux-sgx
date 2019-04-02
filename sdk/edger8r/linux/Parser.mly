@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -127,6 +127,17 @@ let get_ptr_attr (attr_list: (string * Ast.attr_value) list) =
         [] -> res_attr
       | (k,v) :: xs -> do_get_ptr_attr xs (update_attr k v res_attr)
   in
+    do_get_ptr_attr attr_list            { Ast.pa_direction = Ast.PtrNoDirection;
+                                           Ast.pa_size = Ast.empty_ptr_size;
+                                           Ast.pa_isptr = false;
+                                           Ast.pa_isary = false;
+                                           Ast.pa_isstr = false;
+                                           Ast.pa_iswstr = false;
+                                           Ast.pa_rdonly = false;
+                                           Ast.pa_chkptr = true;
+                                         }
+
+let get_param_ptr_attr (attr_list: (string * Ast.attr_value) list) =
   let has_str_attr (pattr: Ast.ptr_attr) =
     if pattr.Ast.pa_isstr && pattr.Ast.pa_iswstr
     then failwith "`string' and `wstring' are mutual exclusive"
@@ -168,19 +179,20 @@ let get_ptr_attr (attr_list: (string * Ast.attr_value) list) =
         then failwith "`isary' cannot be used with `string/wstring' together"
         else failwith "`isary' cannot be used with `isptr' together"
   in
-  let pattr = do_get_ptr_attr attr_list { Ast.pa_direction = Ast.PtrNoDirection;
-                                          Ast.pa_size = Ast.empty_ptr_size;
-                                          Ast.pa_isptr = false;
-                                          Ast.pa_isary = false;
-                                          Ast.pa_isstr = false;
-                                          Ast.pa_iswstr = false;
-                                          Ast.pa_rdonly = false;
-                                          Ast.pa_chkptr = true;
-                                        }
+  let pattr = get_ptr_attr attr_list in
+  if pattr.Ast.pa_isary
+  then check_invalid_ary_attr pattr
+  else check_invalid_ptr_size pattr |> check_ptr_dir
+
+    
+let get_member_ptr_attr (attr_list: (string * Ast.attr_value) list) =
+  let check_invalid_ptr_size (pattr: Ast.ptr_attr) =
+          if pattr.Ast.pa_size = Ast.empty_ptr_size
+          then failwith "size/count attributes must be used"
+          else pattr
   in
-    if pattr.Ast.pa_isary
-    then check_invalid_ary_attr pattr
-    else check_invalid_ptr_size pattr |> check_ptr_dir
+  let pattr = get_ptr_attr attr_list in
+  check_invalid_ptr_size pattr
 
 (* Untrusted functions can have these attributes:
  *
@@ -406,7 +418,7 @@ declarator: Tidentifier    { { Ast.identifier = $1; Ast.array_dims = []; } }
  * to tell whether the identifier is followed by array dimensions.
 */
 param_type: attr_block all_type {
-    let attr = get_ptr_attr $1 in
+    let attr = get_param_ptr_attr $1 in
     (*check the type is build in type or used defined type.*)
     let rec is_foreign s =
       match s with
@@ -430,10 +442,9 @@ param_type: attr_block all_type {
     else if attr.Ast.pa_rdonly && not (attr.Ast.pa_isptr) then
       failwithf "'readonly' attribute is only used with 'isptr' attribute."    else
     match $2 with
-      Ast.Ptr _ -> fun x -> Ast.PTPtr($2, get_ptr_attr $1)
+      Ast.Ptr _ -> fun x -> Ast.PTPtr($2, get_param_ptr_attr $1)
     | _         ->
       if $1 <> [] then
-        let attr = get_ptr_attr $1 in
         match $2 with
           Ast.Foreign s ->
             if attr.Ast.pa_isptr || attr.Ast.pa_isary then fun x -> Ast.PTPtr($2, attr)
@@ -448,8 +459,68 @@ param_type: attr_block all_type {
             else failwithf "unexpected pointer attributes for `%s'" (Ast.get_tystr $2)
       else
         fun is_ary ->
-          if is_ary then Ast.PTPtr($2, get_ptr_attr [])
+          if is_ary then Ast.PTPtr($2, get_param_ptr_attr [])
           else  Ast.PTVal $2
+    }
+  | all_type {
+    match $1 with
+      Ast.Ptr _ -> fun x -> Ast.PTPtr($1, get_param_ptr_attr [])
+    | _         ->
+      fun is_ary ->
+        if is_ary then Ast.PTPtr($1, get_param_ptr_attr [])
+        else  Ast.PTVal $1
+    }
+  | attr_block Tconst type_spec pointer {
+      let attr = get_param_ptr_attr $1
+      in fun x -> Ast.PTPtr($4 $3, { attr with Ast.pa_rdonly = true })
+    }
+  | Tconst type_spec pointer {
+      let attr = get_param_ptr_attr []
+      in fun x -> Ast.PTPtr($3 $2, { attr with Ast.pa_rdonly = true })
+    }
+  ;
+
+
+/* Available types as struct member.
+ *
+ * Instead of returning an value of 'Ast.parameter_type', we return
+ * a lambda which wraps the actual type since so far there is no way
+ * to tell whether the identifier is followed by array dimensions.
+*/
+smember_type: attr_block all_type {
+    let attr = get_member_ptr_attr $1 in
+    (*'isptr', 'isary', 'readonly' not allowed.*)
+    if attr.Ast.pa_direction <> Ast.PtrNoDirection then
+      failwithf "direction attribute is not allowed for structure member."
+    else if attr.Ast.pa_isptr then
+      failwithf "'isptr', attribute is not allowed for structure member."
+    else if attr.Ast.pa_isary then
+      failwithf "'isary', attribute is not allowed for structure member."
+    else if attr.Ast.pa_rdonly then
+      failwithf "'readonly'attribute is not allowed for structure member."
+    else if attr.Ast.pa_isstr then
+      failwithf "'string'attribute is not allowed for structure member."
+    else if attr.Ast.pa_iswstr then
+      failwithf "'wstring' attribute is not allowed for structure member."
+    else
+    match $2 with
+      Ast.Ptr _ -> fun x -> Ast.PTPtr($2, get_member_ptr_attr $1)
+    | _         ->
+      if $1 <> [] then
+        match $2 with
+          Ast.Foreign s ->
+              (* thinking about 'user_defined_type var[4]' *)
+              fun is_ary ->
+                if is_ary then Ast.PTPtr($2, attr)
+                else failwithf "`%s' is considered plain type but decorated with pointer attributes" s
+        | _ ->
+          fun is_ary ->
+            if is_ary then Ast.PTPtr($2, attr)
+            else failwithf "unexpected pointer attributes for `%s'" (Ast.get_tystr $2)
+      else
+        fun is_ary ->
+          if is_ary then Ast.PTPtr($2, get_ptr_attr [])
+          else Ast.PTVal $2
     }
   | all_type {
     match $1 with
@@ -458,17 +529,8 @@ param_type: attr_block all_type {
       fun is_ary ->
         if is_ary then Ast.PTPtr($1, get_ptr_attr [])
         else  Ast.PTVal $1
-    }
-  | attr_block Tconst type_spec pointer {
-      let attr = get_ptr_attr $1
-      in fun x -> Ast.PTPtr($4 $3, { attr with Ast.pa_rdonly = true })
-    }
-  | Tconst type_spec pointer {
-      let attr = get_ptr_attr []
-      in fun x -> Ast.PTPtr($3 $2, { attr with Ast.pa_rdonly = true })
-    }
+  }
   ;
-
 
 attr_block: TLBrack TRBrack       { failwith "no attribute specified." }
   | TLBrack key_val_pairs TRBrack { $2 }
@@ -487,15 +549,15 @@ struct_specifier: Tstruct Tidentifier { Ast.Struct($2) }
 union_specifier:  Tunion  Tidentifier { Ast.Union($2) }
 enum_specifier:   Tenum   Tidentifier { Ast.Enum($2) }
 
-struct_definition: struct_specifier TLBrace member_list TRBrace {
+struct_definition: struct_specifier TLBrace struct_member_list TRBrace {
     let s = { Ast.sname = (match $1 with Ast.Struct s -> s | _ -> "");
-              Ast.mlist = List.rev $3; }
+              Ast.smlist = List.rev $3; }
     in Ast.StructDef(s)
   }
 
-union_definition: union_specifier TLBrace member_list TRBrace {
-    let s = { Ast.sname = (match $1 with Ast.Union s -> s | _ -> "");
-              Ast.mlist = List.rev $3; }
+union_definition: union_specifier TLBrace union_member_list TRBrace {
+    let s = { Ast.uname = (match $1 with Ast.Union s -> s | _ -> "");
+              Ast.umlist = List.rev $3; }
     in Ast.UnionDef(s)
   }
 
@@ -529,11 +591,33 @@ composite_defs: struct_definition     { $1 }
   | enum_definition                   { $1 }
   ;
 
-member_list: member_def TSemicolon    { [$1] }
-  | member_list member_def TSemicolon { $2 :: $1 }
+struct_member_list: struct_member_def TSemicolon    { [$1] }
+  | struct_member_list struct_member_def TSemicolon { $2 :: $1 }
   ;
 
-member_def: all_type declarator { ($1, $2) }
+union_member_list: union_member_def TSemicolon    { [$1] }
+  | union_member_list union_member_def TSemicolon { $2 :: $1 }
+  ;
+
+struct_member_def: smember_type declarator {
+    let pt = $1 (Ast.is_array $2) in
+    let is_void =
+      match pt with
+        Ast.PTVal v -> v = Ast.Void
+      | _           -> false
+    in
+    if is_void then
+      failwithf "parameter `%s' has `void' type." $2.Ast.identifier
+    else
+      (pt, $2)
+}
+
+union_member_def: all_type declarator {
+    if $1 = Ast.Void then
+      failwithf "union member `%s' has `void' type." $2.Ast.identifier
+    else
+      ($1, $2)
+}
 
 /* Importing declarations.
  * ------------------------------------------------------------------------

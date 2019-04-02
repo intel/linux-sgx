@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -62,6 +62,16 @@
 
 #include <AESGXRegisterRequest.h>
 #include <AESGXRegisterResponse.h>
+
+#include <AEInitQuoteExRequest.h>
+#include <AEInitQuoteExResponse.h>
+
+#include <AEGetQuoteSizeExRequest.h>
+#include <AEGetQuoteSizeExResponse.h>
+
+#include <AEGetQuoteExRequest.h>
+#include <AEGetQuoteExResponse.h>
+
 ////////THE COMMON STUFF aka INTEGRATION with Linux API
 #include <sgx_report.h>
 #include <arch.h>
@@ -335,6 +345,91 @@ uae_oal_status_t oal_register_common(uint8_t* buf, uint32_t buf_size, uint32_t d
         if (ret == UAE_OAL_SUCCESS)
         {
             bool valid = sgxRegisterResponse.GetValues((uint32_t*)result);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
+}
+
+
+extern "C"
+uae_oal_status_t oal_init_quote_ex(const sgx_ql_att_key_id_t *att_key_id,
+                uint32_t certification_key_type,
+                sgx_target_info_t *target_info,
+                bool refresh_att_key,
+		size_t *pub_key_id_size, size_t buf_size, uint8_t *pub_key_id,
+                uint32_t timeout_usec, aesm_error_t *result)
+{
+    TRY_CATCH_BAD_ALLOC({
+        AEServices *servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
+
+        AEInitQuoteExRequest initQuoteExRequest(sizeof(sgx_ql_att_key_id_t), (uint8_t*)att_key_id, certification_key_type, refresh_att_key, (pub_key_id != NULL), buf_size, timeout_usec / 1000);
+        AEInitQuoteExResponse initQuoteExResponse;
+        uae_oal_status_t ret  = servicesProvider->InternalInterface(&initQuoteExRequest, &initQuoteExResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = initQuoteExResponse.GetValues((uint32_t*)result, sizeof(sgx_target_info_t), (uint8_t*)target_info, (uint64_t*)pub_key_id_size, buf_size, pub_key_id);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
+
+}
+
+
+extern "C"
+uae_oal_status_t oal_get_quote_size_ex(
+                const sgx_ql_att_key_id_t *att_key_id,
+                uint32_t certification_key_type,
+                uint32_t *quote_size,
+                uint32_t timeout_usec, aesm_error_t *result)
+{
+    TRY_CATCH_BAD_ALLOC({
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
+
+        AEGetQuoteSizeExRequest getQuoteSizeExRequest(sizeof(sgx_ql_att_key_id_t), (uint8_t*)att_key_id,certification_key_type, timeout_usec / 1000);
+
+        AEGetQuoteSizeExResponse getQuoteSizeExResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&getQuoteSizeExRequest, &getQuoteSizeExResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = getQuoteSizeExResponse.GetValues((uint32_t*)result, quote_size);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
+}
+
+extern "C"
+uae_oal_status_t SGXAPI oal_get_quote_ex(
+                const sgx_report_t *p_report,
+                const sgx_ql_att_key_id_t *att_key_id,
+                sgx_ql_qe_report_info_t *qe_report_info,
+                uint32_t quote_size, uint8_t *p_quote,
+    uint32_t timeout_usec, 
+    aesm_error_t *result)
+{
+    TRY_CATCH_BAD_ALLOC({
+        AEServices *servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
+        AEGetQuoteExRequest getQuoteExRequest(sizeof(sgx_report_t), (const uint8_t*)p_report,
+            sizeof(sgx_ql_att_key_id_t), (uint8_t*)att_key_id,
+            sizeof(sgx_ql_qe_report_info_t), (uint8_t*)qe_report_info,
+            quote_size,
+            timeout_usec / 1000);
+        AEGetQuoteExResponse getQuoteExResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&getQuoteExRequest, &getQuoteExResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = getQuoteExResponse.GetValues((uint32_t*)result, quote_size, (uint8_t*)p_quote, sizeof(sgx_ql_qe_report_info_t), (uint8_t*)qe_report_info);
             if (!valid)
                 ret = UAE_OAL_ERROR_UNEXPECTED;
         }

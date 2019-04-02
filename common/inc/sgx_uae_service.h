@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -187,6 +187,173 @@ sgx_status_t SGXAPI sgx_report_attestation_status(
  * @return If OK, return SGX_SUCCESS
  */
 sgx_status_t SGXAPI sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_cert_chain_size);
+
+/** 
+ * Function used to select the attestation key from the list provided by the off-platform Quote verifier.
+ *  
+ * @param p_att_key_id_list [In] List of the supported attestation key IDs provided by the quote verifier. Can not be 
+ *                          NULL. it will use the p_att_key_id_list and compare it with the
+ *                          supported values.
+ * @param att_key_id_list_size The size of attestation key ID list.
+ * @param pp_selected_key_id [In, Out] Pointer to the selected attestation key in the list. This should be used by the 
+ *                           application as input to the quoting and remote attestation APIs.  Must not be NULL.  Note,
+ *                           it will point to one of the entries in the p_att_key_id_list and the application must copy
+ *                           it if the memory for p_att_key_id_list will not persist for future quoting APIs calls.
+ *  
+ * @return SGX_SUCCESS Successfully selected an attestation key.  The pp_selected_key_id will point an entry in the 
+ *         p_att_key_id_list.
+ * @return SGX_ERROR_INVALID_PARAMETER  Invalid parameter if p_att_key_id_list, pp_selected_key_id is NULL,
+ *         list header is incorrect, or the number of key IDs in the list exceed the maximum.
+ * @return SGX_ERROR_UNSUPPORTED_ATT_KEY_ID The platform quoting infrastructure does not support any of the keys in the
+ *         list.  This can be because it doesn't carry the QE that owns the attestation key or the platform is in a
+ *         mode that doesn't allow any of the listed keys; for example, for privacy reasons.
+ * @return SGX_ERROR_UNEXPECTED Unexpected internal error.
+ */
+sgx_status_t SGXAPI sgx_select_att_key_id(const uint8_t *p_att_key_id_list, uint32_t att_key_id_list_size,
+                                                   sgx_att_key_id_t **pp_selected_key_id);
+
+
+
+/**
+ * The application calls this API to request the selected platform's attestation key owner to generate or obtain
+ * the attestation key.  Once called, the QE that owns the attestation key described by the inputted attestation 
+ * key id will do what is required to get this platform’s attestation including getting any certification data 
+ * required from the PCE.  Depending on the type of attestation key and the attestation key owner, this API will
+ * return the same attestation key public ID or generate a new one.  The caller can request that the attestation
+ * key owner "refresh" the key.  This will cause the owner to either re-get the key or generate a new one.  The
+ * platform's attestation key owner is expected to store the key in persistent memory and use it in the
+ * subsequent quote generation APIs described below. 
+ *  
+ * In an environment where attestation key provisioning and certification needs to take place during a platform 
+ * deployment phase, an application can generate the attestation key, certify it with the PCK Cert and register 
+ * it with the attestation owners cloud infrastructure.  That way, the key is available during the run time 
+ * phase to generate code without requiring re-certification. 
+ *  
+ * The QE's target info is also returned by this API that will allow the application's enclave to generate a 
+ * REPORT that the attestation key owner's QE can verify using local REPORT-based attestation when generating a 
+ * quote. 
+ *  
+ * In order to allow the application to allocate the public key id buffer first, the application can call this 
+ * function with the p_pub_key_id set to NULL and the p_pub_key_id_size to a valid size_t pointer.  In this 
+ * case, the function will return the required buffer size to contain the p_pub_key_id_size and ignore the other 
+ * parameters.  The application can then call this API again with the correct p_pub_key_size and the pointer to 
+ * the allocated buffer in p_pub_key_id. 
+ *  
+ * 
+ * @param p_att_key_id The selected att_key_id from the quote verifier's list.  It includes the QE identity as 
+ *                     well as the attestation key's algorithm type. It cannot be NULL.
+ * @param p_qe_target_info Pointer to QE's target info required by the application to generate an enclave REPORT
+ *                         targeting the selected QE.  Must not be NULL when p_pub_key_id is not NULL.
+ * @param refresh_att_key A flag indicating the attestation key owner should re-generated and certify or 
+ *                        otherwise attempt to re-provision the attestation key.  For example, for ECDSDA, the
+ *                        platform will generate a new key and request the PCE to recertify it.  For EPID, the
+ *                        platform will attempt to re-provision the EPID key.  The behavior is dependent on the
+ *                        key type and the key owner, but it should make an attempt to refresh the key typically
+ *                        to update the key to the current platform's TCB.
+ * @param p_pub_key_id_size This parameter can be used in 2 ways.  When p_pub_key_id is NULL, the API will 
+ *                          return the buffer size required to hold the attestation's public key ID.  The
+ *                          application can then allocate the buffer and call it again with p_pub_key_id not set
+ *                          to NULL and the other parameters valid.  If p_pub_key_id is not NULL, p_pub_key_size
+ *                          must be large enough to hold the return attestation's public key ID.  Must not be
+ *                          NULL.
+ * @param p_pub_key_id This parameter can be used in 2 ways. When it is passed in as NULL and p_pub_key_id_size
+ *                     is not NULL, the API will return the buffer size required to hold the attestation's
+ *                     public key ID.  The other parameters will be ignored.  When it is not NULL, it must point
+ *                     to a buffer which is at least a long as the value passed in by p_pub_key_id.  Can either
+ *                     be NULL or point to the correct buffer.his will point to the buffer that will contain the
+ *                     attestation key's public identifier. If first called with a NULL pointer, the API will
+ *                     return the required length of the buffer in p_pub_key_id_size.
+
+ * @return SGX_SUCCESS Successfully selected an attestation key.  Either returns the required attestation's 
+ *         public key ID size in p_pub_key_id_size when p_pub_key_id is passed in as NULL.  When p_pub_key_id is
+ *         not NULL, p_qe_target_info will contain the attestation key's QE target info for REPORT generation
+ *         and p_pub_key_id will contain the attestation's public key ID.
+ * @return SGX_ERROR_INVALID_PARAMETER Invalid parameter if p_pub_key_id_size, p_att_key_id is NULL.
+ *         If p_pub_key_size is not NULL, the other parameters must be valid.
+ * @return SGX_ERROR_UNSUPPORTED_ATT_KEY_ID The platform quoting infrastructure does not support the key described 
+ *         in p_att_key_id.
+ * @return SGX_ERROR_ATT_KEY_CERTIFICATION_FAILURE Failed to generate and certify the attestation key. 
+ *  
+ */  
+sgx_status_t SGXAPI sgx_init_quote_ex(const sgx_att_key_id_t* p_att_key_id,
+                                            sgx_target_info_t *p_qe_target_info,
+                                            bool refresh_att_key,
+                                            size_t* p_pub_key_id_size,
+                                            uint8_t* p_pub_key_id);
+
+/**
+ * The application needs to call this function before generating a quote.  The quote size is variable 
+ * depending on the type of attestation key selected and other platform or key data required to generate the 
+ * quote.  Once the application calls this API, it will use the returned p_quote_size to allocate the buffer 
+ * required to hold the generated quote.  A pointer to this buffer is provided to the ref_get_quote() API. 
+ *  
+ * If the key is not available, this API may return an error (SGX_ATT_KEY_NOT_INITIALIZED) depending on 
+ * the algorithm.  In this case, the caller must call sgx_init_quote() to re-generate and certify the 
+ * attestation key. 
+ *
+ * @param p_att_key_id The selected attestation key ID from the quote verifier's list.  It includes the QE 
+ *                     identity as well as the attestation key's algorithm type. It cannot be NULL.
+ * @param p_quote_size Pointer to the location where the required quote buffer size will be returned. Must 
+ *                     not be NULL.
+ *  
+ * @return SGX_SUCCESS Successfully calculated the required quote size. The required size in bytes is returned in the 
+ *         memory pointed to by p_quote_size.
+ * @return SGX_ERROR_INVALID_PARAMETER Invalid parameter. p_quote_size and p_att_key_id must not be NULL. 
+ * @return SGX_ERROR_ATT_KEY_UNINITIALIZED The platform quoting infrastructure does not have the attestation 
+ *         key available to generate quotes.  sgx_init_quote() must be called again.
+ * @return SGX_ERROR_UNSUPPORTED_ATT_KEY_ID The platform quoting infrastructure does not support the key 
+ *         described in p_att_key_id.
+ * @return SGX_ERROR_INVALID_ATT_KEY_CERT_DATA The data returned by the platform library's sgx_get_quote_config() is 
+ *         invalid.
+ */
+sgx_status_t SGXAPI sgx_get_quote_size_ex(const sgx_att_key_id_t *p_att_key_id,
+                                                uint32_t* p_quote_size);
+
+/**
+ * This function is c-code wrapper for getting the quote. The function will take the application enclave's REPORT that 
+ * will be converted into a quote after the QE verifies the REPORT.  Once verified it will sign it with platform's 
+ * attestation key matching the selected attestation key ID.  If the key is not available, this API may return an error 
+ * (SGX_ATT_KEY_NOT_INITIALIZED) depending on the algorithm.  In this case, the caller must call sgx_init_quote() 
+ * to re-generate and certify the attestation key. an attestation key. 
+ *  
+ * The caller can request a REPORT from the QE using a supplied nonce.  This will allow the enclave requesting the quote 
+ * to verify the QE used to generate the quote. This makes it more difficult for something to spoof a QE and allows the 
+ * app enclave to catch it earlier.  But since the authenticity of the QE lies in knowledge of the Quote signing key, 
+ * such spoofing will ultimately be detected by the quote verifier.  QE REPORT.ReportData = 
+ * SHA256(*p_nonce||*p_quote)||32-0x00's. 
+ * 
+ * @param p_app_report Pointer to the enclave report that needs the quote. The report needs to be generated using the 
+ *                     QE's target info returned by the sgx_init_quote() API.  Must not be NULL.
+ * @param p_att_key_id The selected attestation key ID from the quote verifier's list.  It includes the QE identity as 
+ *                     well as the attestation key's algorithm type. It cannot be NULL.
+ * @param p_qe_report_info Pointer to a data structure that will contain the information required for the QE to generate 
+ *                         a REPORT that can be verified by the application enclave.  The inputted data structure
+ *                         contains the application's TARGET_INFO, a nonce and a buffer to hold the generated report.
+ *                         The QE Report will be generated using the target information and the QE's REPORT.ReportData =
+ *                         SHA256(*p_nonce||*p_quote)||32-0x00's.  This parameter is used when the application wants to
+ *                         verify the QE's REPORT to provide earlier detection that the QE is not being spoofed by
+ *                         untrusted code.  A spoofed QE will ultimately be rejected by the remote verifier.   This
+ *                         parameter is optional and will be ignored when NULL.
+ * @param p_quote Pointer to the buffer that will contain the quote.
+ * @param quote_size Size of the buffer pointed to by p_quote. 
+ *  
+ * @return SGX_SUCCESS Successfully generated the quote. 
+ * @return SGX_ERROR_INVALID_PARAMETER If either p_app_report or p_quote is null. Or, if quote_size isn't large 
+ *         enough, p_att_key_id is NULL.
+ * @return SGX_ERROR_ATT_KEY_UNINITIALIZED The platform quoting infrastructure does not have the attestation key 
+ *         available to generate quotes.  sgx_init_quote() must be called again.
+ * @return SGX_ERROR_UNSUPPORTED_ATT_KEY_ID The platform quoting infrastructure does not support the key described in 
+ *         p_att_key_id.
+ * @return SGX_ERROR_INVALID_ATT_KEY_CERT_DATA The data returned by the platform library's sgx_get_quote_config() is 
+ *         invalid.
+ * @return SGX_ERROR_MAC_MISMATCH Report MAC check failed on application report.
+ */
+sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
+                                           const sgx_att_key_id_t *p_att_key_id,
+                                           sgx_qe_report_info_t *p_qe_report_info,
+                                           uint8_t *p_quote,
+                                           uint32_t quote_size);
+
 
 #ifdef  __cplusplus
 }

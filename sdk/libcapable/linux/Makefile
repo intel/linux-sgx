@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -43,7 +43,9 @@ LDFLAGS += $(COMMON_LDFLAGS)
 
 INC += -I$(COMMON_DIR)/inc                \
        -I$(COMMON_DIR)/inc/internal       \
-       -I$(COMMON_DIR)/inc/internal/linux 
+       -I$(COMMON_DIR)/inc/internal/linux \
+       -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
+       -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
 
 LIB += -L$(BUILD_DIR)
 

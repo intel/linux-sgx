@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,10 +49,9 @@ class CLoader;
 class CEnclave: private Uncopyable
 {
 public:
-    explicit CEnclave(CLoader &ldr);
+    explicit CEnclave();
     ~CEnclave();
     void* get_start_address(){ return m_start_addr;};
-    void * get_symbol_address(const char * const symbol);
     sgx_enclave_id_t get_enclave_id();
     uint32_t get_enclave_version();
     size_t get_dynamic_tcs_list_size();
@@ -66,13 +65,13 @@ public:
     uint32_t get_ref() { return m_ref; }
     void mark_zombie()  { m_zombie = true; }
     bool is_zombie() { return m_zombie; }
-    sgx_status_t initialize(const se_file_t& file, const secs_t& secs, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool);
+    sgx_status_t initialize(const se_file_t& file, CLoader &ldr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool);
     void add_thread(tcs_t * const tcs, bool is_unallocated);
     void add_thread(CTrustThread * const trust_thread);
     const debug_enclave_info_t* get_debug_info();
     void set_dbg_flag(bool dbg_flag) { m_dbg_flag = dbg_flag; }
     bool get_dbg_flag() { return m_dbg_flag; }
-    int set_extra_debug_info(secs_t& secs);
+    int set_extra_debug_info(secs_t& secs, void* g_peak_heap_addr);
     //rdunlock is used in signal handler
     void rdunlock() { se_rdunlock(&m_rwlock); }
     void push_ocall_frame(ocall_frame_t* frame_point, CTrustThread *trust_thread);
@@ -86,13 +85,20 @@ public:
     sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
     void destroy_uswitchless(void);
     sgx_target_info_t get_target_info();
+#ifdef SE_SIM
+    void *get_global_data_sim_ptr();
+#endif 
 
 private:
     CTrustThread * get_tcs(int ecall_cmd);
     void put_tcs(CTrustThread *trust_thread);
     sgx_status_t error_trts2urts(unsigned int trts_error);
 
-    CLoader                 &m_loader;
+    void set_dynamic_tcs_list_size(CLoader &ldr);
+#ifdef SE_SIM    
+    void set_global_data_sim_ptr(CLoader &ldr);
+#endif    
+
     sgx_enclave_id_t        m_enclave_id;
     void                    *m_start_addr;
     uint64_t                m_size;
@@ -113,6 +119,10 @@ private:
     struct sl_uswitchless*  m_uswitchless;
     bool                    m_us_has_started;
     sgx_target_info_t       m_target_info;
+    size_t                  m_dynamic_tcs_list_size;
+#ifdef SE_SIM    
+    void                    *m_global_data_sim_ptr;
+#endif
 };
 
 class CEnclavePool: private Uncopyable
@@ -123,7 +133,6 @@ public:
     CEnclave * get_enclave(const sgx_enclave_id_t enclave_id);
     CEnclave * ref_enclave(const sgx_enclave_id_t enclave_id);
     void unref_enclave(CEnclave *enclave);
-    int get_symbol_ordinal(const sgx_enclave_id_t enclave_id, const char *symbol, int *ordinal);
     CEnclave * remove_enclave(const sgx_enclave_id_t enclave_id, sgx_status_t &status);
     se_handle_t get_event(const void * const);
     void notify_debugger();

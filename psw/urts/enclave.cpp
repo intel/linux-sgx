@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,9 +48,8 @@
 int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
 int do_ocall(const bridge_fn_t bridge, void *ms);
 
-CEnclave::CEnclave(CLoader &ldr)
-    : m_loader(ldr)
-    , m_enclave_id(0)
+CEnclave::CEnclave()
+    : m_enclave_id(0)
     , m_start_addr(NULL)
     , m_size(0)
     , m_power_event_flag(0)
@@ -66,10 +65,15 @@ CEnclave::CEnclave(CLoader &ldr)
     , m_sealed_key(NULL)
     , m_uswitchless(NULL)
     , m_us_has_started(false)
+    , m_dynamic_tcs_list_size(0)
 {
     memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
     memset(&m_target_info, 0, sizeof(sgx_target_info_t));
     se_init_rwlock(&m_rwlock);
+#ifdef SE_SIM
+    m_global_data_sim_ptr = NULL;
+#endif
+
 }
 
 
@@ -109,8 +113,10 @@ on_exit:
     return status;
 }
 
-sgx_status_t CEnclave::initialize(const se_file_t& file, const secs_t& secs, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
+sgx_status_t CEnclave::initialize(const se_file_t& file,  CLoader &ldr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
 {
+    const secs_t& secs = ldr.get_secs();
+
     if (file.name != NULL)
     {
         uint32_t name_len = file.name_len;
@@ -131,8 +137,8 @@ sgx_status_t CEnclave::initialize(const se_file_t& file, const secs_t& secs, con
     m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
 
 
-    m_enclave_id = enclave_id;
-    m_start_addr = start_addr;
+    m_enclave_id = ldr.get_enclave_id();
+    m_start_addr = (void*)ldr.get_start_addr();
     m_size = enclave_size;
     m_version = enclave_version;
 
@@ -161,14 +167,28 @@ sgx_status_t CEnclave::initialize(const se_file_t& file, const secs_t& secs, con
         m_enclave_info.lpFileName = NULL;
         return SGX_ERROR_INVALID_PARAMETER;
     }
-
+    
+    set_dynamic_tcs_list_size(ldr);
+#ifdef SE_SIM
+    set_global_data_sim_ptr(ldr);
+#endif
+    
     if (memcpy_s(&m_target_info.mr_enclave, sizeof(sgx_measurement_t), &secs.mr_enclave, sizeof(sgx_measurement_t)))
+    {
+        free(m_enclave_info.lpFileName);
+        m_enclave_info.lpFileName = NULL;
         return SGX_ERROR_UNEXPECTED;
+    }
+        
     m_target_info.attributes = secs.attributes;
     m_target_info.config_svn = secs.config_svn;
     m_target_info.misc_select = secs.misc_select;
     if (memcpy_s(m_target_info.config_id, sizeof(sgx_config_id_t), secs.config_id, sizeof(sgx_config_id_t)))
+    {
+        free(m_enclave_info.lpFileName);
+        m_enclave_info.lpFileName = NULL;
         return SGX_ERROR_UNEXPECTED;
+    }
 
     return SGX_SUCCESS;
 }
@@ -182,7 +202,7 @@ CEnclave::~CEnclave()
     }
 
     m_ocall_table = NULL;
-	
+
     if (m_uswitchless)
     {
         sl_uswitchless_free(m_uswitchless);
@@ -195,11 +215,6 @@ CEnclave::~CEnclave()
     m_new_thread_event = NULL;
 }
 
-void * CEnclave::get_symbol_address(const char * const symbol)
-{
-    return m_loader.get_symbol_address(symbol);
-}
-
 sgx_enclave_id_t CEnclave::get_enclave_id()
 {
     return m_enclave_id;
@@ -210,9 +225,9 @@ uint32_t CEnclave::get_enclave_version()
     return m_version;
 }
 
-size_t CEnclave::get_dynamic_tcs_list_size()
+void CEnclave::set_dynamic_tcs_list_size(CLoader &ldr)
 {
-    std::vector<std::pair<tcs_t *, bool>> tcs_list = m_loader.get_tcs_list();
+    std::vector<std::pair<tcs_t *, bool>> tcs_list = ldr.get_tcs_list();
     size_t count = 0;
     for (size_t idx = 0; idx < tcs_list.size(); ++idx)
     {
@@ -221,8 +236,26 @@ size_t CEnclave::get_dynamic_tcs_list_size()
             count++;
         }
     }
-    return count;
+    
+    m_dynamic_tcs_list_size = count;
 }
+
+size_t CEnclave::get_dynamic_tcs_list_size()
+{
+    return m_dynamic_tcs_list_size;
+}
+
+#ifdef SE_SIM    
+void CEnclave::set_global_data_sim_ptr(CLoader &ldr)
+{
+    m_global_data_sim_ptr = ldr.get_symbol_address("g_global_data_sim");
+}
+
+void *CEnclave::get_global_data_sim_ptr()
+{
+    return m_global_data_sim_ptr;
+}
+#endif   
 
 uint8_t *CEnclave::get_sealed_key()
 {
@@ -512,9 +545,9 @@ void CEnclave::add_thread(CTrustThread * const trust_thread)
 }
 
 
-int CEnclave::set_extra_debug_info(secs_t& secs)
+int CEnclave::set_extra_debug_info(secs_t& secs, void* g_peak_heap_addr)
 {
-    void *g_peak_heap_used_addr = get_symbol_address("g_peak_heap_used");
+    void *g_peak_heap_used_addr = g_peak_heap_addr;
     m_enclave_info.g_peak_heap_used_addr = g_peak_heap_used_addr;
     m_enclave_info.start_addr = secs.base;
     m_enclave_info.misc_select = secs.misc_select;

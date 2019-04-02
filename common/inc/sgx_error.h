@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -112,6 +112,11 @@ typedef enum _status_t
     SGX_ERROR_FILE_FLUSH_FAILED             = SGX_MK_ERROR(0x7008),	/* fflush operation (to disk) failed (only used when no EXXX is returned) */
     SGX_ERROR_FILE_CLOSE_FAILED             = SGX_MK_ERROR(0x7009),	/* fclose operation (to disk) failed (only used when no EXXX is returned) */
 
+
+    SGX_ERROR_UNSUPPORTED_ATT_KEY_ID        = SGX_MK_ERROR(0x8001),    /* platform quoting infrastructure does not support the key.*/
+    SGX_ERROR_ATT_KEY_CERTIFICATION_FAILURE = SGX_MK_ERROR(0x8002),    /* Failed to generate and certify the attestation key.*/
+    SGX_ERROR_ATT_KEY_UNINITIALIZED         = SGX_MK_ERROR(0x8003),    /* The platform quoting infrastructure does not have the attestation key available to generate quote.*/
+    SGX_ERROR_INVALID_ATT_KEY_CERT_DATA     = SGX_MK_ERROR(0x8004),    /* TThe data returned by the platform library's sgx_get_quote_config() is invalid.*/
 
     SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED = SGX_MK_ERROR(0xF001), /* The ioctl for enclave_create unexpectedly failed with EINTR. */ 
 

@@ -15,6 +15,10 @@ global:
     sgx_get_whitelist_size;
     sgx_get_whitelist;
     sgx_register_wl_cert_chain;
+    sgx_select_att_key_id;
+    sgx_init_quote_ex;
+    sgx_get_quote_size_ex;
+    sgx_get_quote_ex;
 local:
     *;
 };

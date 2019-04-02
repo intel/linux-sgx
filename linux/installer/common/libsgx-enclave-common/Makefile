@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,7 +38,7 @@ INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(ECL_PACKAGES_PATH)/$(ECL_PKG_NAME)
 SOURCE_INSTALL_PATH=$(INSTALL_PATH)
 SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
 ECL_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
-USR_LIB_PATH=$(addsuffix /$(shell dpkg-architecture -qDEB_HOST_MULTIARCH), $(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory))))
+USR_LIB_PATH=$(addsuffix /$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null), $(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory))))
 
 UAE_VER=1.0.0
 URTS_VER=1.0.0

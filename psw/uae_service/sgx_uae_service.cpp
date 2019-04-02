@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,14 +28,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
+#include <stddef.h>
 #include <oal/uae_oal_api.h>
 #include <aesm_error.h>
+#include "sgx_ql_quote.h"
 #include "sgx_uae_service.h"
 #include "uae_service_internal.h"
 #include "config.h"
 
 #include "stdint.h"
 #include "se_sig_rl.h"
+#include "sgx_ql_core_wrapper.h"
 
 #if !defined(ntohl)
 #define ntohl(u32)                                      \
@@ -58,20 +62,21 @@
 #define SGX_GET_EXTENDED_GROUP_ID_MSEC (IPC_LATENCY)
 #define SGX_SWITCH_EXTENDED_GROUP_MSEC (IPC_LATENCY)
 #define REG_WL_CERT_CHAIN_MSEC (IPC_LATENCY)
+#define SE_CALC_QUOTE_SIZE_TIMEOUT_MSEC (IPC_LATENCY)
 
 extern "C" {
 
 sgx_status_t get_launch_token(
-    const enclave_css_t*        signature, 
-    const sgx_attributes_t*     attribute, 
+    const enclave_css_t*        signature,
+    const sgx_attributes_t*     attribute,
     sgx_launch_token_t*         launch_token)
 {
     if (signature == NULL || attribute == NULL || launch_token == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
-    
+
     aesm_error_t    result = AESM_UNEXPECTED_ERROR;
     uae_oal_status_t status = oal_get_launch_token(signature, attribute, launch_token, GET_LAUNCH_TOKEN_TIMEOUT_MSEC*1000, &result);
-    
+
     /*common mappings */
     sgx_status_t mapped = oal_map_status(status);
     if (mapped != SGX_SUCCESS)
@@ -98,7 +103,7 @@ sgx_status_t get_launch_token(
                     mapped = SGX_ERROR_UNEXPECTED;
             }
         }
-    } 
+    }
 
     return mapped;
 }
@@ -113,13 +118,13 @@ sgx_status_t sgx_init_quote(
     aesm_error_t    result = AESM_UNEXPECTED_ERROR;
 
     uae_oal_status_t status = oal_init_quote(p_target_info, p_gid, SE_INIT_QUOTE_TIMEOUT_MSEC*1000, &result);
-   
-    sgx_status_t mapped = oal_map_status(status); 
+
+    sgx_status_t mapped = oal_map_status(status);
     if (mapped != SGX_SUCCESS)
         return mapped;
 
     mapped = oal_map_result(result);
-    if (mapped != SGX_SUCCESS)                                 
+    if (mapped != SGX_SUCCESS)
     {
         /*operation specific mapping */
         if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
@@ -162,7 +167,7 @@ sgx_status_t sgx_get_quote(
     sgx_quote_t             *p_quote,
     uint32_t                quote_size)
 {
-    
+
     if (p_report == NULL || p_spid == NULL || p_quote == NULL || quote_size == 0 )
         return SGX_ERROR_INVALID_PARAMETER;
     if ((p_sig_rl == NULL && sig_rl_size != 0) ||
@@ -171,20 +176,20 @@ sgx_status_t sgx_get_quote(
 
     aesm_error_t    result = AESM_UNEXPECTED_ERROR;
 
-    uae_oal_status_t status = oal_get_quote(p_report, quote_type, p_spid, p_nonce, p_sig_rl, sig_rl_size, p_qe_report, 
+    uae_oal_status_t status = oal_get_quote(p_report, quote_type, p_spid, p_nonce, p_sig_rl, sig_rl_size, p_qe_report,
                                             p_quote, quote_size, SE_GET_QUOTE_TIMEOUT_MSEC(p_sig_rl)*1000, &result);
 
     sgx_status_t mapped = oal_map_status(status);
     if (mapped != SGX_SUCCESS)
         return mapped;
-    
+
     mapped = oal_map_result(result);
     if (mapped != SGX_SUCCESS)
     {
         /*operation specific mapping */
         if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
         {
-            switch (result) 
+            switch (result)
             {
                 case AESM_EPIDBLOB_ERROR:
                     mapped = SGX_ERROR_AE_INVALID_EPIDBLOB;
@@ -226,14 +231,14 @@ sgx_status_t sgx_get_ps_cap(sgx_ps_cap_t* p_sgx_ps_cap)
     sgx_status_t mapped = oal_map_status(status);
     if (mapped != SGX_SUCCESS)
         return mapped;
-    
+
     mapped = oal_map_result(result);
     if (mapped != SGX_SUCCESS)
     {
         /*operation specific mapping */
         if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
         {
-            switch (result) 
+            switch (result)
             {
             case AESM_LONG_TERM_PAIRING_FAILED:
             case AESM_EPH_SESSION_FAILED:
@@ -302,16 +307,16 @@ sgx_status_t create_session_ocall(
     uint32_t        dh_msg1_size,
     uint32_t timeout)
 {
-    
+
     if(!session_id || !se_dh_msg1)
         return SGX_ERROR_INVALID_PARAMETER;
     aesm_error_t    result = AESM_UNEXPECTED_ERROR;
     uae_oal_status_t status = oal_create_session(session_id, se_dh_msg1, dh_msg1_size, timeout*1000, &result);
-    
+
     sgx_status_t mapped = oal_map_status(status);
     if (mapped != SGX_SUCCESS)
         return mapped;
-    
+
     mapped = oal_map_result(result);
     if (mapped != SGX_SUCCESS)
     {
@@ -409,7 +414,7 @@ sgx_status_t close_session_ocall(
     sgx_status_t mapped = oal_map_status(status);
     if (mapped != SGX_SUCCESS)
         return mapped;
-    
+
     mapped = oal_map_result(result);
     if (mapped != SGX_SUCCESS)
     {
@@ -434,10 +439,10 @@ sgx_status_t close_session_ocall(
 		    break;
                 default:
                     mapped = SGX_ERROR_UNEXPECTED;
-            }       
+            }
         }
     }
-        
+
     return mapped;
 }
 
@@ -457,7 +462,7 @@ sgx_status_t invoke_service_ocall(
     sgx_status_t mapped = oal_map_status(status);
     if (mapped != SGX_SUCCESS)
         return mapped;
-    
+
     mapped = oal_map_result(result);
     if (mapped != SGX_SUCCESS)
     {
@@ -484,10 +489,10 @@ sgx_status_t invoke_service_ocall(
                 case AESM_MSG_ERROR:
                 default:
                     mapped = SGX_ERROR_UNEXPECTED;
-            }       
+            }
         }
     }
-        
+
     return mapped;
 }
 
@@ -569,7 +574,7 @@ sgx_status_t sgx_get_extended_epid_group_id(
     uae_oal_status_t ret = UAE_OAL_ERROR_UNEXPECTED;
     ret = oal_get_extended_epid_group_id(p_extended_epid_group_id, SGX_GET_EXTENDED_GROUP_ID_MSEC*1000, &result);
 
-    //common mappings 
+    //common mappings
     sgx_status_t mapped = oal_map_status(ret);
     if (mapped != SGX_SUCCESS)
         return mapped;
@@ -596,7 +601,7 @@ sgx_status_t sgx_switch_extended_epid_group(uint32_t extended_epid_group_id)
     uae_oal_status_t ret = UAE_OAL_ERROR_UNEXPECTED;
     ret = oal_switch_extended_epid_group(extended_epid_group_id, SGX_SWITCH_EXTENDED_GROUP_MSEC*1000, &result);
 
-    //common mappings 
+    //common mappings
     sgx_status_t mapped = oal_map_status(ret);
     if (mapped != SGX_SUCCESS)
         return mapped;
@@ -630,7 +635,7 @@ sgx_status_t sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_ce
     oal_ret = oal_register_common(p_wl_cert_chain, wl_cert_chain_size, SGX_REGISTER_WHITE_LIST_CERT,
             REG_WL_CERT_CHAIN_MSEC*1000, &result);
 
-    //common mappings 
+    //common mappings
     sgx_status_t mapped = oal_map_status(oal_ret);
     if (mapped != SGX_SUCCESS)
         return mapped;
@@ -650,6 +655,191 @@ sgx_status_t sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_ce
     }
     return mapped;
 }
+
+sgx_status_t sgx_select_att_key_id(const uint8_t *p_att_key_id_list, uint32_t att_key_id_list_size,
+                                                   sgx_att_key_id_t **pp_selected_key_id)
+{
+    sgx_status_t result = SGX_ERROR_UNEXPECTED;
+    quote3_error_t ret_val = SGX_QL_ERROR_UNEXPECTED;
+
+    if ((p_att_key_id_list == NULL && att_key_id_list_size != 0) ||
+        (p_att_key_id_list != NULL && att_key_id_list_size == 0))
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    ret_val = sgx_ql_select_att_key_id((sgx_ql_att_key_id_list_t*)p_att_key_id_list, (sgx_ql_att_key_id_t**)pp_selected_key_id);
+
+    switch (ret_val)
+    {
+    case SGX_QL_SUCCESS:
+        result = SGX_SUCCESS;
+        break;
+    case SGX_QL_ERROR_INVALID_PARAMETER:
+        result = SGX_ERROR_INVALID_PARAMETER;
+        break;
+    case SGX_QL_UNSUPPORTED_ATT_KEY_ID:
+        result = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
+        break;
+    default:
+        result = SGX_ERROR_UNEXPECTED;
+        break;
+    }
+
+    return result ;
+ }
+
+sgx_status_t sgx_init_quote_ex(const sgx_att_key_id_t* p_att_key_id,
+                                            sgx_target_info_t *p_qe_target_info,
+                                            bool refresh_att_key,
+                                            size_t* p_pub_key_id_size,
+                                            uint8_t* p_pub_key_id)
+{
+    // Verify inputs
+    if(NULL == p_pub_key_id_size || NULL == p_qe_target_info || NULL == p_att_key_id ||
+        (NULL != p_pub_key_id && (0 == *p_pub_key_id_size || *p_pub_key_id_size >= UINT32_MAX)))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    sgx_ql_cert_key_type_t certification_key_type = SGX_QL_CERT_TYPE;
+
+    aesm_error_t    result = AESM_UNEXPECTED_ERROR;
+    uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
+    oal_ret = oal_init_quote_ex((sgx_ql_att_key_id_t*)p_att_key_id, certification_key_type, p_qe_target_info, refresh_att_key, p_pub_key_id_size, *p_pub_key_id_size, p_pub_key_id,
+            SE_INIT_QUOTE_TIMEOUT_MSEC*1000, &result);
+
+    //common mappings
+    sgx_status_t mapped = oal_map_status(oal_ret);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
+    {
+        //operation specific mapping
+        if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
+        {
+            switch (result)
+            {
+            case AESM_UNSUPPORTED_ATT_KEY_ID:
+                mapped = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
+                break;
+            case AESM_KEY_CERTIFICATION_ERROR:
+                mapped = SGX_ERROR_ATT_KEY_CERTIFICATION_FAILURE;
+                break;
+            default:
+                mapped = SGX_ERROR_UNEXPECTED;
+            }
+        }
+    }
+    return mapped;
+
+}
+
+sgx_status_t SGXAPI sgx_get_quote_size_ex(const sgx_att_key_id_t *p_att_key_id,
+                                                uint32_t* p_quote_size)
+{
+    //Verify inputs
+    if(NULL == p_quote_size)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    // Choose the certification key type supported by the reference.
+    sgx_ql_cert_key_type_t certification_key_type = SGX_QL_CERT_TYPE;
+
+    aesm_error_t    result = AESM_UNEXPECTED_ERROR;
+    uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
+    oal_ret = oal_get_quote_size_ex((sgx_ql_att_key_id_t*)p_att_key_id, certification_key_type, p_quote_size,
+            SE_CALC_QUOTE_SIZE_TIMEOUT_MSEC*1000, &result);
+
+    //common mappings
+    sgx_status_t mapped = oal_map_status(oal_ret);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
+    {
+        //operation specific mapping
+        if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
+        {
+            switch (result)
+            {
+            case AESM_ATT_KEY_NOT_INITIALIZED:
+                mapped = SGX_ERROR_ATT_KEY_UNINITIALIZED;
+                break;
+            case AESM_ATT_KEY_CERT_DATA_INVALID:
+                mapped = SGX_ERROR_INVALID_ATT_KEY_CERT_DATA;
+                break;
+            case AESM_UNSUPPORTED_ATT_KEY_ID:
+                mapped = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
+                break;
+            default:
+                mapped = SGX_ERROR_UNEXPECTED;
+            }
+        }
+    }
+    return mapped;
+
+}
+
+sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
+                                           const sgx_att_key_id_t *p_att_key_id,
+                                           sgx_qe_report_info_t *p_qe_report_info,
+                                           uint8_t *p_quote,
+                                           uint32_t quote_size)
+{
+    //Verify inputs
+    if(NULL == p_app_report || NULL == p_att_key_id
+        || NULL == p_quote || 0 == quote_size)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    aesm_error_t    result = AESM_UNEXPECTED_ERROR;
+    uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
+    oal_ret = oal_get_quote_ex(p_app_report, (sgx_ql_att_key_id_t*)p_att_key_id, (sgx_ql_qe_report_info_t*)p_qe_report_info, quote_size, p_quote,
+            SE_GET_QUOTE_TIMEOUT_MSEC(NULL)*1000, &result);
+
+    //common mappings
+    sgx_status_t mapped = oal_map_status(oal_ret);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
+    {
+        //operation specific mapping
+        if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
+        {
+            switch (result)
+            {
+            case AESM_ATT_KEY_NOT_INITIALIZED:
+                mapped = SGX_ERROR_ATT_KEY_UNINITIALIZED;
+                break;
+            case AESM_ATT_KEY_CERT_DATA_INVALID:
+                mapped = SGX_ERROR_INVALID_ATT_KEY_CERT_DATA;
+                break;
+            case AESM_UNSUPPORTED_ATT_KEY_ID:
+                mapped = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
+                break;
+            case AESM_ERROR_REPORT:
+            case AESM_INVALID_REPORT:
+                mapped = SGX_ERROR_MAC_MISMATCH;
+                break;
+            case AESM_UNABLE_TO_GENERATE_QE_REPORT:
+                mapped = SGX_ERROR_UNEXPECTED;
+                break;
+            default:
+                mapped = SGX_ERROR_UNEXPECTED;
+            }
+        }
+    }
+    return mapped;
+}
+
+
+
 
 // common mapper function for all OAL specific error codes
 
@@ -701,6 +891,8 @@ sgx_status_t    oal_map_result(aesm_error_t result)
             break;
         case AESM_SERVICE_STOPPED:
         case AESM_SERVICE_UNAVAILABLE:
+        case AESM_ENCLAVE_LOAD_ERROR:
+        case AESM_ENCLAVE_LOST:
             retVal = SGX_ERROR_SERVICE_UNAVAILABLE;
             break;
         case AESM_OUT_OF_MEMORY_ERROR:

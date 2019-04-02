@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,7 +38,7 @@ INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(SGX_PACKAGES_PATH)/$(PSW_PKG_NAME)
 SOURCE_INSTALL_PATH=$(INSTALL_PATH)
 SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
 PSW_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
-USR_LIB_PATH=$(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory)))
+USR_LIB_PATH=$(addprefix $(DESTDIR)/usr/, $(or $(notdir $(shell gcc -print-multi-os-directory 2> /dev/null)),$(if $(wildcard /usr/lib64/.*),lib64),lib))
 
 ECL_VER=1.0.0
 

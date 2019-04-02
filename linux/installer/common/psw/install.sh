@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -41,7 +41,7 @@ AESM_PATH=$PSW_DST_PATH/aesm
 
 # Install the AESM service
 
-cut -d: -f1 /etc/passwd | grep -q -w aesmd || \
+id -u aesmd &> /dev/null || \
     /usr/sbin/useradd -r -U -c "User for aesmd" \
     -d /var/opt/aesmd -s /sbin/nologin aesmd
 
@@ -64,6 +64,7 @@ chown -R aesmd:aesmd /var/run/aesmd
 chmod 0755 /var/run/aesmd
 
 if [ -d /run/systemd/system ]; then
+    systemctl stop aesmd &> /dev/null || echo
     AESMD_NAME=aesmd.service
     AESMD_TEMP=$AESM_PATH/$AESMD_NAME
     if [ -d /lib/systemd/system ]; then
@@ -77,10 +78,10 @@ if [ -d /run/systemd/system ]; then
     chmod 0644 $AESMD_DEST
     rm -f $AESMD_TEMP
     rm -f $AESM_PATH/aesmd.conf
-    DISABLE_AESMD="systemctl disable aesmd"
     systemctl enable aesmd
     retval=$?
 elif [ -d /etc/init/ ]; then
+    /sbin/initctl stop aesmd &> /dev/null || echo
     AESMD_NAME=aesmd.conf
     AESMD_TEMP=$AESM_PATH/$AESMD_NAME
     AESMD_DEST=/etc/init/$AESMD_NAME
@@ -109,7 +110,7 @@ echo " done."
 cat > $PSW_DST_PATH/uninstall.sh <<EOF
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -145,14 +146,16 @@ if test \$(id -u) -ne 0; then
     exit 1
 fi
 
-get_lib()
-{
-    echo "\$(basename \$(gcc -print-multi-os-directory))"
-}
-
 # Killing AESM service
-/usr/sbin/service aesmd stop
-$DISABLE_AESMD
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl stop aesmd
+    systemctl disable aesmd 2> /dev/null
+elif [ -d /etc/init/ ]; then
+    /sbin/initctl reload-configuration
+    /sbin/initctl stop aesmd
+fi
+
 # Removing AESM configuration files
 rm -f $AESMD_DEST
 rm -f /etc/aesmd.conf
@@ -162,9 +165,9 @@ rm -f /etc/aesmd.conf
 rm -fr /var/run/aesmd
 
 # Removing runtime libraries
-rm -f /usr/\$(get_lib)/libsgx_uae_service.so
-rm -f /usr/\$(get_lib)/libsgx_urts.so
-rm -f /usr/\$(get_lib)/libsgx_enclave_common.so*
+rm -f /usr/{lib,lib64}/libsgx_uae_service.so
+rm -f /usr/{lib,lib64}/libsgx_urts.so
+rm -f /usr/{lib,lib64}/libsgx_enclave_common.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_uae_service.so
 rm -f /usr/lib/i386-linux-gnu/libsgx_urts.so
 rm -f /usr/lib/i386-linux-gnu/libsgx_enclave_common.so*
@@ -187,7 +190,7 @@ rm $AESM_PATH/cse_provision_tool
 cat > $AESM_PATH/linksgx.sh <<EOF
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions

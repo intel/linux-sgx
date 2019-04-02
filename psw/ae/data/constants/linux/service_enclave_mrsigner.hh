@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,6 +51,17 @@ const sgx_measurement_t G_SERVICE_ENCLAVE_MRSIGNER[] =
         }
     }
 };
+
+const sgx_measurement_t G_ECDSA_QE_MRSIGNER =
+{
+    {//MR_SIGNER of QE3 provided
+        0x8c, 0x4f, 0x57, 0x75, 0xd7, 0x96, 0x50, 0x3e,
+        0x96, 0x13, 0x7f, 0x77, 0xc6, 0x8a, 0x82, 0x9a,
+        0x00, 0x56, 0xac, 0x8d, 0xed, 0x70, 0x14, 0x0b,
+        0x08, 0x1b, 0x09, 0x44, 0x90, 0xc5, 0x7b, 0xff
+    }
+};
+
 
 #define AE_MR_SIGNER  0
 #define PCE_MR_SIGNER 1

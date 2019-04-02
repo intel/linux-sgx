@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -74,7 +74,7 @@ sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_bu
     for( ; ; )
     {
         // Step 1: check whether the loading and initialization operations are caused by power transition.
-        //		If the loading and initialization operations are caused by power transition, we need to call sgx_destory_enclave() first.
+        //		If the loading and initialization operations are caused by power transition, we need to call sgx_destroy_enclave() first.
         if(*eid != 0)
         {
             sgx_destroy_enclave(*eid);

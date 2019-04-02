@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,19 +30,19 @@
 #
 #
 
-grep intel_sgx /lib/modules/$(uname -r)/modules.builtin &> /dev/null
+grep 'sgx\.ko$\|intel_sgx\.ko$' /lib/modules/$(uname -r)/modules.builtin &> /dev/null
 if [[ $? != "0" ]]; then
-    modinfo isgx &> /dev/null
+    /sbin/modinfo isgx &> /dev/null
     if [[ $? != "0" ]]; then
-        modinfo intel_sgx &> /dev/null
+        /sbin/modinfo intel_sgx &> /dev/null
         if [[ $? != "0" ]]; then
             lsmod | grep 'isgx\|intel_sgx' &> /dev/null
             if [[ $? = "0" ]]; then
-                echo "Warning: You did not follow the document to install the driver package"
+                echo "Warning: You did not follow the document to install the driver package."
                 echo
-            else
-                echo "Please install the driver package before the PSW package"
-                exit 4
+            elif [[ ! -e /dev/isgx ]] && [[ ! -e /dev/sgx ]]; then
+                echo -e "\033[31;49;1mWarning: You may need to activate the SGX module if SGX is enabled in the kernel (e.g., sudo modprobe sgx) or download and install the SGX driver if the kernel doesn't have SGX support.\033[39;49;0m"
+                echo
             fi
         fi
     fi
