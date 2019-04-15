@@ -8,4 +8,4 @@
 	dh $@
 
 override_dh_shlibdeps:
-	dh -l $@
+	dh_shlibdeps -l $(LINUX_BUILD_DIR)
