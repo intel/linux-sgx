@@ -78,7 +78,7 @@ clean:
 	@$(MAKE) -C sdk/                                clean
 	@$(MAKE) -C psw/                                clean
 	@$(RM)   -r $(ROOT_DIR)/build
-	@$(RM)   -rf external/dcap_source
+	@$(RM)   -rf external/dcap_source/*
 	@$(RM)   -r linux/installer/bin/sgx_linux*.bin
 	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common-dbgsym_*
 	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common_*.tar.*
