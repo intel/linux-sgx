@@ -43,7 +43,8 @@ ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 else
 	curl --output dcap_source.tar.gz -L --tlsv1 ${DCAP_DOWNLOAD_BASE}/DCAP_${DCAP_VER}.tar.gz
 	tar xvzf dcap_source.tar.gz
-	rm dcap_source.tar.gz
+	$(RM) dcap_source.tar.gz
+	$(RM) -rf external/dcap_source
 	mv SGXDataCenterAttestationPrimitives-DCAP_${DCAP_VER} external/dcap_source
 endif
 
