@@ -28,6 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
+DCAP_VER?= 1.1
+DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
 
 include buildenv.mk
 .PHONY: all dcap_source psw sdk clean rebuild sdk_install_pkg psw_install_pkg
@@ -36,7 +38,14 @@ include buildenv.mk
 all: dcap_source sdk psw
 
 dcap_source:
+ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update --init --recursive
+else
+	curl --output dcap_source.tar.gz -L --tlsv1 ${DCAP_DOWNLOAD_BASE}/DCAP_${DCAP_VER}.tar.gz
+	tar xvzf dcap_source.tar.gz
+	rm dcap_source.tar.gz
+	mv SGXDataCenterAttestationPrimitives-DCAP_${DCAP_VER} external/dcap_source
+endif
 
 psw: dcap_source sdk
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
@@ -68,6 +77,7 @@ clean:
 	@$(MAKE) -C sdk/                                clean
 	@$(MAKE) -C psw/                                clean
 	@$(RM)   -r $(ROOT_DIR)/build
+	@$(RM)   -rf external/dcap_source
 	@$(RM)   -r linux/installer/bin/sgx_linux*.bin
 	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common-dbgsym_*
 	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common_*.tar.*
