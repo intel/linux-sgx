@@ -28,6 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
+DCAP_VER?= 1.1
+DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
 
 include buildenv.mk
 .PHONY: all dcap_source psw sdk clean rebuild sdk_install_pkg psw_install_pkg
@@ -36,7 +38,15 @@ include buildenv.mk
 all: dcap_source sdk psw
 
 dcap_source:
+ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update --init --recursive
+else
+	curl --output dcap_source.tar.gz -L --tlsv1 ${DCAP_DOWNLOAD_BASE}/DCAP_${DCAP_VER}.tar.gz
+	tar xvzf dcap_source.tar.gz
+	$(RM) dcap_source.tar.gz
+	$(RM) -rf external/dcap_source
+	mv SGXDataCenterAttestationPrimitives-DCAP_${DCAP_VER} external/dcap_source
+endif
 
 psw: dcap_source sdk
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
