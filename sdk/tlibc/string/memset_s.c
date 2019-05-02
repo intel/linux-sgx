@@ -56,14 +56,7 @@ memset_s(void *s, size_t smax, int c, size_t n)
         err = EINVAL;
         goto out;
     }
-    if (smax > SIZE_MAX) {
-        err = E2BIG;
-        goto out;
-    }
-    if (n > SIZE_MAX) {
-        err = E2BIG;
-        n = smax;
-    }
+
     if (n > smax) {
         err = EOVERFLOW;
         n = smax;
