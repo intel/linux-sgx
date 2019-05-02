@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -89,11 +89,17 @@ sgx_status_t sgx_create_report(const sgx_target_info_t *target_info, const sgx_r
     // Do EREPORT
     auto failed = do_ereport(&tmp_target_info, &tmp_report_data, &tmp_report);
     
-    // Copy data to the user buffer
+    // Copy data to the user buffer: *report = tmp_report; 
+    // Use a loop to avoid compiler to call memcpy, 
+    // which cannot be used during enclave initialization.
     // No need to cleanup the tmp_report as it is not secret.
     if (!failed)
     {
-        *report = tmp_report;
+        static_assert(sizeof(*report) % sizeof(uint64_t) == 0, "sizeof(sgx_report_t) should be multiple of 8");
+        for(size_t i = 0; i < sizeof(*report)/sizeof(uint64_t); i++)
+        {
+            ((uint64_t*)report)[i] = ((uint64_t*)&tmp_report)[i];
+        }
     }
 
 

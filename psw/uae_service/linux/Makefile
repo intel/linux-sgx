@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -32,10 +32,10 @@
 TOP_DIR  = ../../..
 include $(TOP_DIR)/buildenv.mk
 
-IPC_COMMON_DIR        := $(TOP_DIR)/psw/ae/common
-IPC_COMMON_SRC_DIR    := $(IPC_COMMON_DIR)/src
-IPC_COMMON_INC_DIR    := $(IPC_COMMON_DIR)/inc
-IPC_COMMON_PROTO_DIR  := $(IPC_COMMON_DIR)/proto
+IPC_COMMON_DIR        := $(TOP_DIR)/psw/ae/aesm_service/source/core/ipc
+IPC_COMMON_SRC_DIR    := $(IPC_COMMON_DIR)
+IPC_COMMON_INC_DIR    := $(IPC_COMMON_DIR)
+IPC_COMMON_PROTO_DIR  := $(IPC_COMMON_DIR)
 UAE_WRAPPER_DIR        := ../uae_wrapper
 UAE_SRC_DIR    := $(UAE_WRAPPER_DIR)/src
 UAE_INC_DIR    := $(UAE_WRAPPER_DIR)/inc
@@ -55,13 +55,18 @@ INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk    \
            -I$(IPC_COMMON_INC_DIR) \
            -I$(UAE_INC_DIR) \
            -I$(IPC_COMMON_PROTO_DIR) \
-           -I$(LINUX_PSW_DIR)/ae/aesm_service/source
+           -I$(LINUX_PSW_DIR)/ae/aesm_service/source \
+           -I$(LINUX_PSW_DIR)/ae/aesm_service/source/common \
+           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
+           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/enclave/ \
+           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/inc/ \
+           -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
 
 CXXFLAGS += -fPIC -Werror -Wno-unused-parameter -g -DPROTOBUF_INLINE_NOT_IN_HEADERS=0
 
 EXTERNAL_LIB += -lprotobuf 
  
-vpath %.cpp .. $(COMMON_DIR)/src  $(IPC_COMMON_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(UAE_SRC_DIR) $(AE_COMMON_DIR)
+vpath %.cpp .. $(COMMON_DIR)/src  $(IPC_COMMON_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(UAE_SRC_DIR) $(AE_COMMON_DIR) $(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote
 vpath %.c   $(COMMON_DIR)/src
 
 C_SRC   := se_trace.c
@@ -99,7 +104,13 @@ IPC_SRC  := AECloseSessionRequest.cpp    \
              AEGetQuoteRequest.cpp \
              UnixSocketFactory.cpp \
              NonBlockingUnixCommunicationSocket.cpp \
-             NonBlockingUnixSocketFactory.cpp
+             NonBlockingUnixSocketFactory.cpp \
+             AEInitQuoteExRequest.cpp \
+             AEInitQuoteExResponse.cpp \
+             AEGetQuoteExRequest.cpp \
+             AEGetQuoteExResponse.cpp \
+             AEGetQuoteSizeExRequest.cpp \
+             AEGetQuoteSizeExResponse.cpp
 
 PROTOBUF_SRC  :=  messages.pb.cc
 
@@ -111,7 +122,8 @@ SRC :=       AEServicesImpl.cpp \
              se_sig_rl.cpp \
              sgx_uae_service.cpp \
              uae_service_version.cpp \
-             uae_service_assert.cpp
+             uae_service_assert.cpp \
+             sgx_ql_core_wrapper.cpp
 
 OBJ := $(C_SRC:.c=.o) $(SRC:.cpp=.o) $(IPC_SRC:.cpp=.o)  $(PROTOBUF_SRC:.cc=.o) 
 
@@ -134,7 +146,7 @@ ifndef DEBUG
 endif
 
 $(LIBNAME): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(OBJ) -shared $(LDUFLAGS) $(EXTERNAL_LIB) -o $@
+	$(CXX) $(CXXFLAGS) $(OBJ) -shared $(LDUFLAGS) $(EXTERNAL_LIB) -Wl,-soname=$@ -o $@
 $(LIBNAME_DEBUG): $(LIBNAME)
 	((test -f $(LIBNAME_DEBUG)) || $(MAKE) separate_debug_info)
 

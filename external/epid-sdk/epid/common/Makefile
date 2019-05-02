@@ -32,12 +32,12 @@ LIB_IPPCP_DIR = ../../ext/ipp/sources/ippcp/src
 
 #set flags for linker
 LDFLAGS += -L$(GTEST_INCLUDE_DIR)/gtest  -L$(LIB_COMMON_TESTHELPER_DIR)  \
-	-L$(LIB_COMMON_DIR) -L$(LIB_IPPCP_DIR) \
+	-L$(LIB_COMMON_DIR) \
 	-lgtest -lcommon-testhelper -lcommon -lippcp
 
 #target part
 $(COMMON_OBJ): %.o: %.c
-	$(CC) $(CFLAGS) -I$(IPP_INCLUDE_DIR) -I$(COMMON_MATH_INCLUDE_DIR) -I$(COMMON_INCLUDE_DIR) -c $^ -o $@
+	$(CC) $(CFLAGS) -I$(COMMON_MATH_INCLUDE_DIR) -I$(COMMON_INCLUDE_DIR) -c $^ -o $@
 
 $(COMMON_LIB): $(COMMON_OBJ)
 	$(AR) rc $(COMMON_LIB) $(COMMON_OBJ)

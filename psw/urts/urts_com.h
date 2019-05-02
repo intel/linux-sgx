@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -243,8 +243,6 @@ static int __create_enclave(BinParser &parser,
                             const uint32_t ex_features,
                             const void* ex_features_p[32])
 {
-    // The "parser" will be registered into "loader" and "loader" will be registered into "enclave".
-    // After enclave is created, "parser" and "loader" are not needed any more.
     debug_enclave_info_t *debug_info = NULL;
     int ret = SGX_SUCCESS;
     sgx_config_id_t *config_id = NULL;
@@ -268,7 +266,7 @@ static int __create_enclave(BinParser &parser,
         return ret;
     }
 
-    CEnclave* enclave = new CEnclave(loader);
+    CEnclave* enclave = new CEnclave();
     uint32_t enclave_version = SDK_VERSION_1_5;
     uint64_t urts_version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION);
     // metadata->version has already been validated during load_encalve_ex()
@@ -285,9 +283,7 @@ static int __create_enclave(BinParser &parser,
 
     // initialize the enclave object
     ret = enclave->initialize(file,
-                              loader.get_secs(),
-                              loader.get_enclave_id(),
-                              const_cast<void*>(loader.get_start_addr()),
+                              loader,
                               metadata->enclave_size,
                               metadata->tcs_policy,
                               enclave_version,
@@ -318,7 +314,7 @@ static int __create_enclave(BinParser &parser,
 
     debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
 
-    enclave->set_extra_debug_info(const_cast<secs_t &>(loader.get_secs()));
+    enclave->set_extra_debug_info(const_cast<secs_t &>(loader.get_secs()), loader.get_symbol_address("g_peak_heap_used"));
 
     //add enclave to enclave pool before init_enclave because in simualtion
     //mode init_enclave will rely on CEnclavePool to get Enclave instance.
@@ -636,8 +632,7 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
     ret = _create_enclave_from_buffer_ex(debug, mh->base_addr, (uint64_t)(file_size), file, prd_css_file,
                                          enclave_id, misc_attr, ex_features, ex_features_p);
 
-    if(mh != NULL)
-        unmap_file(mh);
+    unmap_file(mh);
     return (sgx_status_t)ret;
 }
 

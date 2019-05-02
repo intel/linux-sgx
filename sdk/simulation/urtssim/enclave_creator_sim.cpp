@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -203,7 +203,7 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
         return SGX_ERROR_INVALID_ENCLAVE_ID;
     }
 
-    global_data_sim_t *global_data_sim_ptr = (global_data_sim_t *)enclave->get_symbol_address("g_global_data_sim");
+    global_data_sim_t *global_data_sim_ptr = (global_data_sim_t *)enclave->get_global_data_sim_ptr();
     //We have check the symbol of "g_global_data_sim" in urts_com.h::_create_enclave(), so here global_data_sim_ptr won't be NULL. 
     assert(global_data_sim_ptr != NULL);
 

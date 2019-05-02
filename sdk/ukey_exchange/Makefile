@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -36,7 +36,11 @@ CFLAGS   += -Werror
 CXXFLAGS += -Werror
 
 INCLUDE += -I$(COMMON_DIR)/inc/internal \
-           -I$(COMMON_DIR)/inc
+           -I$(COMMON_DIR)/inc \
+           -I$(LINUX_PSW_DIR)/ae/data/constants/linux/ \
+           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/inc/ \
+           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
+           -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
 
 INCLUDE += -I$(SGX_IPP_INC) 
 

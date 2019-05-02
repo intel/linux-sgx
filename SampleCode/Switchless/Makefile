@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -130,6 +130,9 @@ Enclave_C_Flags := -nostdinc -fvisibility=hidden -fpie -fstack-protector $(Encla
 Enclave_Cpp_Flags := $(Enclave_C_Flags) $(SGX_COMMON_CXXFLAGS) -nostdinc++
 Enclave_C_Flags += $(SGX_COMMON_CFLAGS)
 
+# Enable the security flags
+Enclave_Security_Link_Flags := -Wl,-z,relro,-z,now,-z,noexecstack
+
 # To generate a proper enclave, it is recommended to follow below guideline to link the trusted libraries:
 #    1. Link sgx_trts with the `--whole-archive' and `--no-whole-archive' options,
 #       so that the whole content of trts is included in the enclave.
@@ -144,7 +147,8 @@ Enclave_C_Flags += $(SGX_COMMON_CFLAGS)
 # -lsgx_tswitchless option must be put between -Wl,--whole-archive and 
 #  -Wl,--no-whole-archive with -l$(TRTS_LIBRARY) and before the linker options 
 #  for other libraries (e.g., -lsgx_tstdc).
-Enclave_Link_Flags := -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
+Enclave_Link_Flags := $(Enclave_Security_Link_Flags) \
+    -Wl,--no-undefined -nostdlib -nodefaultlibs -nostartfiles -L$(SGX_LIBRARY_PATH) \
 	-Wl,--whole-archive  -lsgx_tswitchless -l$(Trts_Library_Name) -Wl,--no-whole-archive \
 	-Wl,--start-group -lsgx_tstdc -lsgx_tcxx -l$(Crypto_Library_Name) -l$(Service_Library_Name) -Wl,--end-group \
 	-Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \

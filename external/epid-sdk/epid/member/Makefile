@@ -63,7 +63,7 @@ LIB_IPPCP_DIR = ../../ext/ipp/sources/ippcp/src
 #set flags for linker
 LDFLAGS += -L$(GTEST_INCLUDE_DIR)/gtest  -L$(LIB_COMMON_TESTHELPER_DIR)  \
 	-L$(LIB_MEMBER_DIR) -L$(LIB_VERIFIER_DIR) -L$(LIB_COMMON_DIR) \
-	-L$(LIB_IPPCP_DIR) -lgtest -lcommon-testhelper \
+	-lgtest -lcommon-testhelper \
 	-lmember -lverifier -lcommon -lippcp
 
 ifneq ($(TSS_PATH),)
@@ -87,7 +87,7 @@ ifneq ($(TINY),)
 endif
 
 $(MEMBER_OBJ): %.o: %.c
-	$(CC) $(CFLAGS) -I$(IPP_INCLUDE_DIR) -I$(IPP_SRC_INCLUDE_DIR) \
+	$(CC) $(CFLAGS) \
 	-I$(MEMBER_INCLUDE_DIR) -c $^ -o $@
 
 $(MEMBER_LIB): $(MEMBER_OBJ)

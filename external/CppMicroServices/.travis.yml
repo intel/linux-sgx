@@ -1,0 +1,118 @@
+sudo: false
+
+language: cpp
+
+env:
+  global:
+    - PATH=$HOME/cache/bin/:$PATH
+    - BUILD_DIR=/tmp/cppmicroservices_builds
+    - BUILD_CONFIGURATION=0
+    - secure: "g2dT1rLVDXAR7uFkhgKlm7rUqCPHwl+o4CFSqEo5w9H/M5xuuQLP597J8qwhgkWutJABM4G4zLF9yzb5rTbUH1BSdGTzmdUkvJGvLOFq09xwLQP5PAKlq6s1dpVr7J9Ciy49cEVDD2leaikMf9zK3ty9Fv5F2mL3Itd6a/U5M5o="
+
+# We do not test all build configurations with all compiler / platform
+# combinations. For now, just the latest compilers being tested will
+# run all build configurations.
+
+matrix:
+    include:
+
+        # Test our minimum GCC version, which is gcc 5.4 on Ubuntu Trusty
+        - os: linux
+          addons: { apt: { packages: ["valgrind", "gcc-5", "g++-5"], sources: ["ubuntu-toolchain-r-test"] } }
+          env: MY_CC=gcc-5 MY_CXX=g++-5
+
+        # Test our minium Clang version, which is clang 3.4 on Ubuntu Trusty
+        - os: linux
+          addons: { apt: { packages: ["valgrind", "clang-3.4", "libc++-dev", "libc++abi-dev"], sources: ["ubuntu-toolchain-r-test"] } }
+          # Travis puts /usr/local/clang-5.0.0/bin in front of the path, so we have to "fix" that
+          env: MY_CC=clang MY_CXX=clang++ PATH=/usr/bin:$PATH
+
+        # Test one build configuration with the latest available Clang
+        - os: linux
+          addons: { apt: { packages: ["valgrind", "clang-6.0", "libc++-dev", "libc++abi-dev"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-trusty-6.0"] } }
+          env: MY_CC=clang-6.0 MY_CXX=clang++-6.0
+
+        # Test all build configuration with the latest available GCC
+        - os: linux
+          addons: &gcc8-valgrind { apt: { packages: ["valgrind", "gcc-8", "g++-8"], sources: ["ubuntu-toolchain-r-test"] } }
+          env: MY_CC=gcc-8 MY_CXX=g++-8 WITH_COVERAGE=1
+
+        - os: linux
+          addons: *gcc8-valgrind
+          env: MY_CC=gcc-8 MY_CXX=g++-8 BUILD_CONFIGURATION=1 WITH_COVERAGE=1
+
+        - os: linux
+          addons: *gcc8-valgrind
+          env: MY_CC=gcc-8 MY_CXX=g++-8 BUILD_CONFIGURATION=2 WITH_COVERAGE=1
+
+        - os: linux
+          addons: *gcc8-valgrind
+          env: MY_CC=gcc-8 MY_CXX=g++-8 BUILD_CONFIGURATION=3 WITH_COVERAGE=1
+
+        # minimum supported compiler on OS X
+        - os: osx
+          osx_image: xcode7.3
+          compiler: clang
+          env: MACOSX_DEPLOYMENT_TARGET=10.11
+
+        - os: osx
+          osx_image: xcode7.3
+          compiler: clang
+          env: BUILD_CONFIGURATION=1 MACOSX_DEPLOYMENT_TARGET=10.11
+
+        # latest compiler on OS X
+        - os: osx
+          osx_image: xcode9.4
+          compiler: clang
+          env: BUILD_CONFIGURATION=0 MACOSX_DEPLOYMENT_TARGET=10.13 WITH_COVERAGE=1
+
+        - os: osx
+          osx_image: xcode9.4
+          compiler: clang
+          env: BUILD_CONFIGURATION=1 MACOSX_DEPLOYMENT_TARGET=10.13 WITH_COVERAGE=1
+
+        - os: osx
+          osx_image: xcode9.4
+          compiler: clang
+          env: BUILD_CONFIGURATION=2 MACOSX_DEPLOYMENT_TARGET=10.13 WITH_COVERAGE=1
+
+        - os: osx
+          osx_image: xcode9.4
+          compiler: clang
+          env: BUILD_CONFIGURATION=3 MACOSX_DEPLOYMENT_TARGET=10.13 WITH_COVERAGE=1
+
+cache:
+  directories:
+    - $HOME/cache
+
+branches:
+  except:
+    - gh_pages
+
+addons:
+  coverity_scan:
+    project:
+      name: CppMicroServices/CppMicroServices
+      description: "Build submitted via Travis CI"
+    notification_email: sascha.zelzer@gmail.com
+    build_command_prepend: "mkdir us-cov; cd us-cov; cmake -DCMAKE_BUILD_TYPE:STRING=Release -DUS_BUILD_EXAMPLES:BOOL=ON -DUS_BUILD_TESTING:BOOL=ON -DUS_BUILD_SHARED_LIBS:BOOL=ON ../"
+    build_command:   "make -j 4"
+    branch_pattern: coverity_scan
+
+
+before_install:
+  - test $TRAVIS_BRANCH != coverity_scan -o ${TRAVIS_JOB_NUMBER##*.} = 1 || exit 0
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then bash install_cmake.sh ; fi
+  - export CC=$MY_CC CXX=$MY_CXX
+  - env
+  - cmake --version
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then $CXX --version; fi
+
+
+script:
+  - test $TRAVIS_BRANCH != coverity_scan || exit 0
+  - if [ "${COVERITY_SCAN_BRANCH}" != 1 ]; then ctest -VV -S ./cmake/usCTestScript_travis.cmake ; fi
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -X gcov -s "/tmp/cppmicroservices_builds"
+

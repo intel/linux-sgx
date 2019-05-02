@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -89,9 +89,11 @@ update_changelog_version() {
     pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
 
     INS_VERSION=$(echo $(dpkg-parsechangelog |grep "Version" | cut -d: -f2))
-    DEB_VERSION=$(echo $INS_VERSION | cut -d- -f2)
+    DEB_VERSION=$(echo ${INS_VERSION} | cut -d- -f2)
 
-    sed -i "s/${INS_VERSION}/${SGX_VERSION}-$(lsb_release -cs)${DEB_VERSION}/" debian/changelog
+    FULL_VERSION=${SGX_VERSION}-$(lsb_release -cs)${DEB_VERSION}
+    sed -i "s/${INS_VERSION}/${FULL_VERSION}/" debian/changelog
+    sed -i "s/@dep_version@/${FULL_VERSION}/" debian/control
 
     popd
 }

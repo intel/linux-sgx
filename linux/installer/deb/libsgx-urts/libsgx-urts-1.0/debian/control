@@ -8,5 +8,5 @@ Homepage: https://github.com/intel/linux-sgx
 
 Package: libsgx-urts
 Architecture: amd64
-Depends: libsgx-enclave-common, ${shlibs:Depends}, ${misc:Depends}
+Depends: libsgx-enclave-common (>= 2.5), ${shlibs:Depends}, ${misc:Depends}
 Description: SGX uRTS

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -94,7 +94,7 @@ extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name,
     se_file_t file = {NULL, 0, false};
     char resolved_path[PATH_MAX];
     file.name = realpath(file_name, resolved_path);
-    file.name_len = (uint32_t)strlen(resolved_path);
+    file.name_len = (uint32_t)strnlen_s(resolved_path, PATH_MAX);
 
     ret = _create_enclave_ex(!!debug, fd, file, NULL, launch_token, launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
     if(SGX_SUCCESS != ret && misc_attr)

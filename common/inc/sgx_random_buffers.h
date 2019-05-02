@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -78,7 +78,7 @@ __attribute__((noinline)) static R _random_stack_noinline_wrapper(R(*f)(Ps...), 
 template <unsigned M = 0x1000, class R, class... Ps, class... Qs>
 R random_stack_advance(R(*f)(Ps...), Qs&&... args)
 {
-#if defined(MAXIMAL_CALLSTACK) || (defined(SGX_DEBUG_FLAG) && SGX_DEBUG_FLAG)
+#if defined(MAXIMAL_CALLSTACK)
     unsigned size = M;
 #else
     unsigned size = rdrand() % M + 1;
@@ -248,9 +248,6 @@ struct alignas(A)randomly_placed_buffer
             ptr = (reinterpret_cast<void**>(ptr))[-1];
         free(ptr);
     }
-
-    template <unsigned C = 1>
-    using storage = char[size(C)] alignas(A);
 
 private:
     struct alignas(A)_T_instantiator_

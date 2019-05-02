@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,8 +47,12 @@
 #include "se_lock.hpp"
 
 #include "se_cdefs.h"
+#include "sgx_ql_core_wrapper.h"
+#include "service_enclave_mrsigner.hh"
+
 SGX_ACCESS_VERSION(ukey_exchange, 1)
 
+static sgx_ql_att_key_id_t g_att_key_id;
 static sgx_target_info_t g_qe_target_info;
 static Mutex g_ukey_spin_lock;
 
@@ -76,6 +80,7 @@ sgx_status_t sgx_ra_get_msg1(
     if(SGX_SUCCESS != ret)
         return ret;
     g_ukey_spin_lock.lock();
+    memset(&g_att_key_id, 0, sizeof(sgx_att_key_id_t));
     if(memcpy_s(&g_qe_target_info, sizeof(g_qe_target_info),
              &qe_target_info, sizeof(qe_target_info)) != 0)
     {
@@ -115,8 +120,10 @@ sgx_status_t sgx_ra_proc_msg2(
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
     sgx_report_t report;
     sgx_ra_msg3_t *p_msg3 = NULL;
+    sgx_att_key_id_t empty_att_key_id;
 
     memset(&report, 0, sizeof(report));
+    memset(&empty_att_key_id, 0, sizeof(empty_att_key_id));
 
     {
         sgx_quote_nonce_t nonce;
@@ -128,6 +135,12 @@ sgx_status_t sgx_ra_proc_msg2(
 
         sgx_status_t status;
         g_ukey_spin_lock.lock();
+        if(0 != memcmp(&g_att_key_id, &empty_att_key_id, sizeof(g_att_key_id)))
+        {
+            ret = SGX_ERROR_INVALID_STATE;
+            g_ukey_spin_lock.unlock();
+            goto CLEANUP;
+        }
         if(memcpy_s(&qe_target_info, sizeof(qe_target_info),
                  &g_qe_target_info, sizeof(g_qe_target_info)) != 0)
         {
@@ -209,3 +222,241 @@ CLEANUP:
         SAFE_FREE(p_msg3);
     return ret;
 }
+
+
+sgx_status_t SGXAPI sgx_ra_get_msg1_ex(
+	const sgx_att_key_id_t *p_att_key_id,
+	sgx_ra_context_t context,
+	sgx_enclave_id_t eid,
+	sgx_ecall_get_ga_trusted_t p_get_ga,
+    sgx_ra_msg1_t *p_msg1)
+{
+    sgx_ql_att_key_id_t *p_ql_att_key_id;
+    if(NULL == p_att_key_id)
+        return SGX_ERROR_INVALID_PARAMETER;
+    p_ql_att_key_id = (sgx_ql_att_key_id_t *)p_att_key_id;
+    if (0 != p_ql_att_key_id->id)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (0 != p_ql_att_key_id->version)
+        return SGX_ERROR_INVALID_PARAMETER;
+    // Both QE and QE3 use 1 as prod_id
+    if(1 != p_ql_att_key_id->prod_id)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (SGX_QL_ALG_EPID == p_ql_att_key_id->algorithm_id)
+    {
+        if (sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER]) != p_ql_att_key_id->mrsigner_length)
+            return SGX_ERROR_INVALID_PARAMETER;
+        if (0 != memcmp(p_ql_att_key_id->mrsigner, &G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER],
+                        sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER])))
+            return SGX_ERROR_INVALID_PARAMETER;
+        return sgx_ra_get_msg1(context, eid, p_get_ga, p_msg1);
+    }
+    else if (SGX_QL_ALG_ECDSA_P256 == p_ql_att_key_id->algorithm_id)
+    {
+        if (sizeof(G_ECDSA_QE_MRSIGNER) != p_ql_att_key_id->mrsigner_length)
+            return SGX_ERROR_INVALID_PARAMETER;
+        if (0 != memcmp(p_ql_att_key_id->mrsigner, &G_ECDSA_QE_MRSIGNER, sizeof(G_ECDSA_QE_MRSIGNER)))
+            return SGX_ERROR_INVALID_PARAMETER;
+
+        if(!p_msg1 || !p_get_ga)
+            return SGX_ERROR_INVALID_PARAMETER;
+        size_t pub_key_id_size = 0;
+        sgx_target_info_t qe_target_info;
+
+        memset(&qe_target_info, 0, sizeof(qe_target_info));
+        sgx_status_t ret = sgx_init_quote_ex(p_att_key_id, &qe_target_info, false, &pub_key_id_size, NULL);
+        if(SGX_SUCCESS != ret)
+            return ret;
+        uint8_t *p_pub_key_id = (uint8_t *)malloc(pub_key_id_size);
+        if (NULL == p_pub_key_id)
+            return SGX_ERROR_OUT_OF_MEMORY;
+        ret = sgx_init_quote_ex(p_att_key_id, &qe_target_info, false, &pub_key_id_size, p_pub_key_id);
+        if(SGX_SUCCESS != ret)
+        {
+            free(p_pub_key_id);
+            return ret;
+        }
+        free(p_pub_key_id);
+        g_ukey_spin_lock.lock();
+        if(memcpy_s(&g_att_key_id, sizeof(sgx_att_key_id_t),
+                 p_ql_att_key_id, sizeof(sgx_att_key_id_t)) != 0)
+        {
+            g_ukey_spin_lock.unlock();
+            return SGX_ERROR_UNEXPECTED;
+        }
+        if(memcpy_s(&g_qe_target_info, sizeof(g_qe_target_info),
+                 &qe_target_info, sizeof(qe_target_info)) != 0)
+        {
+            g_ukey_spin_lock.unlock();
+            return SGX_ERROR_UNEXPECTED;
+        }
+        g_ukey_spin_lock.unlock();
+        memset(&p_msg1->gid, 0, sizeof(p_msg1->gid));
+
+        sgx_ec256_public_t g_a;
+        sgx_status_t status = SGX_ERROR_UNEXPECTED;
+        memset(&g_a, 0, sizeof(g_a));
+        ret = p_get_ga(eid, &status, context, &g_a);
+        if(SGX_SUCCESS !=ret)
+            return ret;
+        if (SGX_SUCCESS != status)
+            return status;
+        memcpy_s(&p_msg1->g_a, sizeof(p_msg1->g_a), &g_a, sizeof(g_a));
+        return SGX_SUCCESS;
+    }
+    else
+        return SGX_ERROR_FEATURE_NOT_SUPPORTED;
+}
+
+sgx_status_t SGXAPI sgx_ra_proc_msg2_ex(
+	const sgx_att_key_id_t *p_att_key_id,
+	sgx_ra_context_t context,
+	sgx_enclave_id_t eid,
+	sgx_ecall_proc_msg2_trusted_t p_proc_msg2,
+	sgx_ecall_get_msg3_trusted_t p_get_msg3,
+	const sgx_ra_msg2_t *p_msg2,
+	uint32_t msg2_size,
+	sgx_ra_msg3_t **pp_msg3,
+	uint32_t *p_msg3_size)
+{
+    sgx_ql_att_key_id_t *p_ql_att_key_id;
+    if(NULL == p_att_key_id)
+        return SGX_ERROR_INVALID_PARAMETER;
+    p_ql_att_key_id = (sgx_ql_att_key_id_t *)p_att_key_id;
+    if (0 != p_ql_att_key_id->id)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (0 != p_ql_att_key_id->version)
+        return SGX_ERROR_INVALID_PARAMETER;
+    // Both QE and QE3 use 1 as prod_id
+    if(1 != p_ql_att_key_id->prod_id)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (SGX_QL_ALG_EPID == p_ql_att_key_id->algorithm_id)
+    {
+        if (sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER]) != p_ql_att_key_id->mrsigner_length)
+            return SGX_ERROR_INVALID_PARAMETER;
+        if (0 != memcmp(p_ql_att_key_id->mrsigner, &G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER],
+                        sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER])))
+            return SGX_ERROR_INVALID_PARAMETER;
+        return sgx_ra_proc_msg2(context, eid, p_proc_msg2, p_get_msg3, p_msg2, msg2_size, pp_msg3, p_msg3_size);
+    }
+    else if (SGX_QL_ALG_ECDSA_P256 == p_ql_att_key_id->algorithm_id)
+    {
+        if (sizeof(G_ECDSA_QE_MRSIGNER) != p_ql_att_key_id->mrsigner_length)
+            return SGX_ERROR_INVALID_PARAMETER;
+        if (0 != memcmp(p_ql_att_key_id->mrsigner, &G_ECDSA_QE_MRSIGNER, sizeof(G_ECDSA_QE_MRSIGNER)))
+            return SGX_ERROR_INVALID_PARAMETER;
+
+        if(!p_msg2 || !p_proc_msg2 || !p_get_msg3 || !p_msg3_size || !pp_msg3)
+            return SGX_ERROR_INVALID_PARAMETER;
+        if(p_msg2->sig_rl_size)
+            return SGX_ERROR_UNEXPECTED; // No SigRL for ECDSA attestation
+        if(msg2_size != sizeof(sgx_ra_msg2_t) + p_msg2->sig_rl_size)
+            return SGX_ERROR_INVALID_PARAMETER;
+
+        sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+        sgx_report_t report;
+        sgx_ra_msg3_t *p_msg3 = NULL;
+
+        memset(&report, 0, sizeof(report));
+
+        {
+            sgx_quote_nonce_t nonce;
+            sgx_target_info_t qe_target_info;
+
+            memset(&nonce, 0, sizeof(nonce));
+
+            sgx_status_t status;
+            g_ukey_spin_lock.lock();
+            if(0 != memcmp(&g_att_key_id, p_ql_att_key_id, sizeof(g_att_key_id)))
+            {
+                ret = SGX_ERROR_INVALID_STATE;
+                g_ukey_spin_lock.unlock();
+                goto CLEANUP;
+            }
+            if(memcpy_s(&qe_target_info, sizeof(qe_target_info),
+                     &g_qe_target_info, sizeof(g_qe_target_info)) != 0)
+            {
+                ret = SGX_ERROR_UNEXPECTED;
+                g_ukey_spin_lock.unlock();
+                goto CLEANUP;
+            }
+            g_ukey_spin_lock.unlock();
+            ret = p_proc_msg2(eid, &status, context, p_msg2, &qe_target_info,
+                              &report, &nonce);
+            if(SGX_SUCCESS!=ret)
+            {
+                goto CLEANUP;
+            }
+            if(SGX_SUCCESS!=status)
+            {
+                ret = status;
+                goto CLEANUP;
+            }
+
+            uint32_t quote_size = 0;
+            ret = sgx_get_quote_size_ex(p_att_key_id, &quote_size);
+            if(SGX_SUCCESS!=ret)
+            {
+                goto CLEANUP;
+            }
+
+            //check integer overflow of quote_size
+            if (UINT32_MAX - quote_size < sizeof(sgx_ra_msg3_t))
+            {
+                ret = SGX_ERROR_UNEXPECTED;
+                goto CLEANUP;
+            }
+            uint32_t msg3_size = static_cast<uint32_t>(sizeof(sgx_ra_msg3_t)) + quote_size;
+            p_msg3 = (sgx_ra_msg3_t *)malloc(msg3_size);
+            if(!p_msg3)
+            {
+                ret = SGX_ERROR_OUT_OF_MEMORY;
+                goto CLEANUP;
+            }
+            memset(p_msg3, 0, msg3_size);
+
+            sgx_qe_report_info_t qe_report_info;
+            memset(&qe_report_info.app_enclave_target_info, 0, sizeof(qe_report_info.app_enclave_target_info));
+            memcpy_s(&(qe_report_info.app_enclave_target_info.attributes),
+                    sizeof(qe_report_info.app_enclave_target_info.attributes),
+                    &report.body.attributes,
+                    sizeof(report.body.attributes));
+            memcpy_s(&(qe_report_info.app_enclave_target_info.mr_enclave),
+                    sizeof(qe_report_info.app_enclave_target_info.mr_enclave),
+                    &report.body.mr_enclave,
+                    sizeof(report.body.mr_enclave));
+            memcpy_s(&(qe_report_info.app_enclave_target_info.misc_select),
+                    sizeof(qe_report_info.app_enclave_target_info.misc_select),
+                    &report.body.misc_select,
+                    sizeof(report.body.misc_select));
+            memcpy_s(&qe_report_info.nonce, sizeof(qe_report_info.nonce), &nonce, sizeof(nonce));
+            ret = sgx_get_quote_ex(&report, p_att_key_id, &qe_report_info, p_msg3->quote, quote_size);
+            if(SGX_SUCCESS!=ret)
+            {
+                goto CLEANUP;
+            }
+
+            ret = p_get_msg3(eid, &status, context, quote_size, &qe_report_info.qe_report,
+                             p_msg3, msg3_size);
+            if(SGX_SUCCESS!=ret)
+            {
+                goto CLEANUP;
+            }
+            if(SGX_SUCCESS!=status)
+            {
+                ret = status;
+                goto CLEANUP;
+            }
+            *pp_msg3 = p_msg3;
+            *p_msg3_size = msg3_size;
+        }
+
+        CLEANUP:
+            if(ret)
+                SAFE_FREE(p_msg3);
+            return ret;
+    }
+    else
+        return SGX_ERROR_FEATURE_NOT_SUPPORTED;
+}
+

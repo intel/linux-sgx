@@ -1,5 +1,5 @@
 (*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -214,8 +214,11 @@ let ms_retval_name = mk_ms_member_name retval_name
 let mk_tbridge_name (fname: string) = "sgx_" ^ fname
 let mk_parm_accessor name = sprintf "%s->%s" ms_struct_val (mk_ms_member_name name)
 let mk_tmp_var name = "_tmp_" ^ name
+let mk_tmp_var2 name1 name2 = "_tmp_" ^ name1 ^ "_" ^ name2
 let mk_len_var name = "_len_" ^ name
+let mk_len_var2 name1 name2 = "_len_" ^ name1 ^ "_" ^ name2
 let mk_in_var name = "_in_" ^ name
+let mk_in_var2 name1 name2 = "_in_" ^ name1 ^ "_" ^ name2
 let mk_ocall_table_name enclave_name = "ocall_table_" ^ enclave_name
 
 (* Un-trusted bridge name is prefixed with enclave file short name. *)
@@ -336,15 +339,99 @@ let mk_ms_member_decl (pt: Ast.parameter_type) (declr: Ast.declarator) (isecall:
   let dmstr = get_array_dims declr.Ast.array_dims in
     sprintf "\t%s%s%s %s%s;\n%s" qual tystr ptr field dmstr str_len
 
+(* It is used to save the structures defined in EDLs. *)
+let defined_structure = ref []
+let is_structure_defined s = List.exists (fun (( i, _ ): (Ast.struct_def * bool)) -> i.Ast.sname = s) !defined_structure
+let get_struct_def s = List.find (fun (( i, _ ): (Ast.struct_def * bool)) -> i.Ast.sname = s) !defined_structure
+
+let is_structure_deep_copy (s:Ast.struct_def) = 
+    let is_deep_copy (pd: Ast.pdecl) = 
+      let (pt, _)    = pd in
+      match pt with
+        | Ast.PTVal _      -> false
+        | Ast.PTPtr (_, attr) -> if attr.Ast.pa_size = Ast.empty_ptr_size then false else true
+    in
+    List.exists is_deep_copy s.Ast.smlist
+
+(* Check duplicated structure definition and illegal usage.
+ *)
+let check_structure (ec: enclave_content) =
+  let trusted_fds = tf_list_to_fd_list ec.tfunc_decls in
+  let untrusted_fds = uf_list_to_fd_list ec.ufunc_decls in
+  List.iter(fun (st: Ast.composite_type) ->
+      match st with
+        Ast.StructDef s -> 
+            if is_structure_defined s.Ast.sname then 
+                failwithf "duplicated structure definition `%s'" s.Ast.sname
+            else 
+                defined_structure := (s, is_structure_deep_copy s) :: !defined_structure;
+        | _ -> ()
+      )  ec.comp_defs;
+  List.iter  (fun (fd: Ast.func_decl) ->
+        List.iter (fun (pd: Ast.pdecl) ->
+            let (pt, _)= pd in
+            match pt with
+              | Ast.PTVal (Ast.Struct(s))     ->
+                if is_structure_defined s then
+                      let (struct_def, deep_copy) = get_struct_def s
+                      in
+                      if deep_copy then 
+                        failwithf "the structure declaration \"%s\" specifies a deep copy is expected. Referenced by value in function \"%s\" detected."s fd.Ast.fname
+                      else ()
+                 else ()
+            | Ast.PTPtr (Ast.Ptr(Ast.Struct(s)), attr) ->
+                if is_structure_defined s then
+                      let (_, deep_copy) = get_struct_def s
+                      in
+                      if deep_copy && attr.Ast.pa_direction = Ast.PtrOut then 
+                        failwithf "the structure declaration \"%s\" specifies a deep copy, should not be used with an `out' attribute in function \"%s\"."s fd.Ast.fname
+                      else ()
+                 else ()
+              | _ -> ()
+            ) fd.Ast.plist
+        ) (trusted_fds @ untrusted_fds)
+
+(* Generate code using given function if a parameter is structure pointer. *)
+let invoke_if_struct (ty: Ast.atype) (param_direction: Ast.ptr_direction) (var_name: string)
+    (pre:string -> string -> string)
+    (generator: Ast.ptr_direction -> string -> string -> Ast.atype -> Ast.ptr_attr -> Ast.declarator -> string )
+    (post:string)=
+    match ty with
+        Ast.Ptr(Ast.Struct(struct_type)) ->
+            if is_structure_defined struct_type then
+              let (struct_def, deep_copy)= get_struct_def struct_type
+              in
+              if deep_copy then
+                let body = 
+                  List.fold_left (
+                    fun acc (pty, declr) ->
+                     match pty with
+                        Ast.PTVal _          -> acc
+                      | Ast.PTPtr (member_ty, member_attr) ->
+                        if member_attr.Ast.pa_size <> Ast.empty_ptr_size then
+                          acc ^ generator param_direction struct_type var_name member_ty member_attr declr
+                        else acc 
+                    ) "" struct_def.Ast.smlist
+                in
+                if body = "" then ""
+                else (pre struct_type var_name) ^ body ^ post
+              else ""
+            else ""
+       | _ -> ""
+
 (* Generate data structure definition *)
 let gen_comp_def (st: Ast.composite_type) =
-  let gen_member_list mlist =
-    List.fold_left (fun acc (ty, declr) ->
-                      acc ^ mk_member_decl ty declr) "" mlist
+  let gen_union_member_list mlist =
+    List.fold_left (fun acc (ty, pdeclr) ->
+                 acc ^ mk_member_decl ty pdeclr) "" mlist
+  in
+  let gen_struct_member_list mlist =
+    List.fold_left (fun acc (pt, declr) ->
+                acc ^ mk_member_decl (Ast.get_param_atype pt) declr) "" mlist
   in
     match st with
-        Ast.StructDef s -> mk_struct_decl (gen_member_list s.Ast.mlist) s.Ast.sname
-      | Ast.UnionDef  u -> mk_union_decl  (gen_member_list u.Ast.mlist) u.Ast.sname
+        Ast.StructDef s -> mk_struct_decl (gen_struct_member_list s.Ast.smlist) s.Ast.sname
+      | Ast.UnionDef  u -> mk_union_decl  (gen_union_member_list u.Ast.umlist) u.Ast.uname
       | Ast.EnumDef   e -> mk_enum_def    e
 
 (* Generate a list of '#include' *)
@@ -914,7 +1001,6 @@ let gen_check_tbridge_ptr_parms (plist: Ast.pdecl list) =
   if pointer_checkings = "" then ""
   else pointer_checkings ^ "\n\t//\n\t// fence after pointer checks\n\t//\n\tsgx_lfence();\n"
 
-
 (* If a foreign type is a readonly pointer, we cast it to 'void*' for memcpy() and free() *)
 let mk_in_ptr_dst_name (ty: Ast.atype) (attr: Ast.ptr_attr) (ptr_name: string) =
   let rdonly = 
@@ -924,6 +1010,175 @@ let mk_in_ptr_dst_name (ty: Ast.atype) (attr: Ast.ptr_attr) (ptr_name: string) =
   in
   if rdonly then "(void*)" ^ ptr_name
   else ptr_name
+
+let gen_struct_ptr_size (ty: Ast.atype) (pattr: Ast.ptr_attr) (name: string) (get_parm: string -> string) =
+  let mk_len_size v =
+    match v with
+        Ast.AString s -> get_parm s
+      | Ast.ANumber n -> sprintf "%d" n in
+  let mk_len_count v size_str =
+    match v with
+        Ast.AString s -> sprintf "%s * %s" (get_parm s) size_str
+      | Ast.ANumber n -> sprintf "%d * %s" n size_str in
+  let do_ps_attribute (sattr: Ast.ptr_size) =
+    let size_str =
+      match sattr.Ast.ps_size with
+        Some a -> mk_len_size a
+      | None   -> 
+        match ty with
+          Ast.Ptr ty  -> 
+            sprintf "sizeof(%s)" (Ast.get_tystr ty)
+        | _ -> 
+          if pattr.Ast.pa_isptr then
+            sprintf "sizeof(*%s)" (get_parm name)
+          else
+            sprintf "sizeof(%s)"  (Ast.get_tystr ty)
+    in
+      match sattr.Ast.ps_count with
+        None   -> size_str
+      | Some a -> mk_len_count a size_str
+  in
+  sprintf "%s" (do_ps_attribute pattr.Ast.pa_size)
+  
+(* Generate code to check the length of buffers in structure. *)
+let gen_check_member_length (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) (get_parm: string -> string) (indent: string) (break_out: string list) =
+    let name        = declr.Ast.identifier in
+    let mk_len_size v =
+      match v with
+        Ast.AString s -> get_parm s
+      | Ast.ANumber n -> sprintf "%d" n in
+
+    let gen_check_overflow cnt size_str =
+      let if_statement =
+        match cnt with
+            Ast.AString s -> sprintf "if (%s != 0 &&\n%s\t\t(size_t)%s > (SIZE_MAX / %s)) {\n" size_str indent (get_parm s) size_str
+          | Ast.ANumber n -> sprintf "if (%s != 0 &&\n%s\t\t%d > (SIZE_MAX / %s)) {\n" size_str indent n size_str
+      in
+        (List.fold_left (fun acc s -> acc ^ indent ^ s ^ "\n") if_statement break_out) ^ indent ^ "}"
+    in
+    let size_str =
+      match attr.Ast.pa_size.Ast.ps_size with
+        Some a -> mk_len_size a
+      | None   -> 
+        match ty with
+          Ast.Ptr ty  -> 
+            sprintf "sizeof(%s)" (Ast.get_tystr ty)
+        | _ -> 
+          if attr.Ast.pa_isptr then
+            sprintf "sizeof(*%s)" (get_parm name)
+          else
+            sprintf "sizeof(%s)"  (Ast.get_tystr ty)
+      in
+        match attr.Ast.pa_size.Ast.ps_count with
+          None   -> ""
+        | Some a -> (gen_check_overflow a size_str) 
+
+(* Generate the code to handle structure pointer deep copy,
+ * which is to be inserted before actually calling the trusted function.
+ *)
+let gen_struct_ptr_direction_pre_calculate (param_direction: Ast.ptr_direction) (struct_type: string) (struct_name: string)  (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+    let name        = declr.Ast.identifier in
+    let in_struct_name = mk_in_var struct_name in
+    let in_ptr_name = mk_in_var2 struct_name name in
+    let len_var     = mk_len_var2 struct_name name in
+    let in_struct = sprintf "(%s + i)->%s" in_struct_name in
+    let in_struct_member = sprintf "%s" (in_struct name)  in
+    let gen_tmp_var_for_out = 
+        match param_direction with
+            Ast.PtrInOut ->
+			[
+                    sprintf "if (ADD_ASSIGN_OVERFLOW(_%s_malloc_size, sizeof(void*) + sizeof(size_t))) {" struct_name;
+                    "\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+                    "\tgoto err;";
+                    "}";
+                  ]
+            | _ -> []
+    in
+    let check_size =
+        match ty with
+        Ast.Ptr(Ast.Void) | Ast.Ptr(Ast.Foreign(_)) | Ast.Foreign(_)  | Ast.Ptr(Ast.Struct(_)) -> []
+        | _ ->
+            [
+            sprintf "\tif (%s %% sizeof(*%s) != 0) {" len_var in_ptr_name; (* "size x count" is a multiple of sizeof type *)
+            "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+            "\t\tgoto err;";
+            "\t}";
+            ]
+    in
+    let code_template =
+            [
+            gen_check_member_length ty attr declr in_struct "\t\t\t" ["\tstatus = SGX_ERROR_INVALID_PARAMETER;";"\tgoto err;"];
+            sprintf "if (%s != NULL && (%s = %s) != 0) {" in_struct_member len_var (gen_struct_ptr_size ty attr name in_struct);
+            sprintf "\tif (!sgx_is_outside_enclave(%s, %s)) {" in_struct_member len_var;
+            "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+            "\t\tgoto err;";
+            "\t}\n";
+            ]
+            @ check_size @
+            [
+            sprintf "\tif (ADD_ASSIGN_OVERFLOW(_%s_malloc_size, %s)) {" struct_name len_var;
+            "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+            "\t\tgoto err;";
+            "\t}";
+            "}";
+            ]
+    in
+    List.fold_left (fun acc s -> acc ^ "\t\t\t" ^ s ^ "\n") "" (gen_tmp_var_for_out @ code_template)
+
+(* Generate the code to handle structure pointer deep copy,
+ * which is to be inserted before actually calling the trusted function.
+ *)
+let gen_struct_ptr_direction_pre_copy (param_direction: Ast.ptr_direction) (struct_type: string) (struct_name: string)  (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+    let name        = declr.Ast.identifier in
+    let in_struct_name = mk_in_var struct_name in
+    let in_ptr_name = mk_in_var2 struct_name name in
+    let len_var     = mk_len_var2 struct_name name in
+    let in_ptr_dst_name = mk_in_ptr_dst_name ty attr in_ptr_name in
+    let in_struct = sprintf "(%s + i)->%s" in_struct_name in
+    let in_struct_member = sprintf "%s" (in_struct name)  in
+    let code_template =
+        let gen_tmp_var_for_out = 
+            match param_direction with
+                Ast.PtrInOut -> 
+                    [
+                    sprintf "*(%s*)__tmp_%s = %s;" (Ast.get_tystr ty) in_struct_name in_ptr_name ;
+                    sprintf "__tmp_%s = (void *)((size_t)__tmp_%s + sizeof(void*));" in_struct_name in_struct_name;
+                    sprintf "*(size_t*)__tmp_%s = %s;" in_struct_name len_var;
+                    sprintf "__tmp_%s= (void *)((size_t)__tmp_%s + sizeof(size_t));" in_struct_name in_struct_name;
+                    ]
+                | _ -> []
+        in
+        let check_size =
+                match ty with
+                Ast.Ptr(Ast.Void) | Ast.Ptr(Ast.Foreign(_)) | Ast.Foreign(_)  | Ast.Ptr(Ast.Struct(_)) -> []
+                | _ ->
+                    [
+                    sprintf "\tif (%s %% sizeof(*%s) != 0) {" len_var in_struct_member; (* "size x count" is a multiple of sizeof type *)
+                    "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                    "\t\t\tgoto err;";
+                    "\t}";
+                    ]
+        in
+        [
+        sprintf "%s = %s;" in_ptr_name in_struct_member;
+        sprintf "%s = %s;" len_var (gen_struct_ptr_size ty attr name in_struct);
+        ] @ gen_tmp_var_for_out @
+        [
+        sprintf "if (%s != NULL && %s != 0) {" in_ptr_dst_name len_var;
+        ] @ check_size @
+        [
+        sprintf "\tif (memcpy_s(__tmp_%s, %s, %s, %s)) {" in_struct_name len_var in_struct_member len_var;
+        "\t\tstatus = SGX_ERROR_UNEXPECTED;";
+        "\t\tgoto err;";
+        sprintf "\t}";
+        sprintf "\t%s = __tmp_%s;" in_struct_member in_struct_name;
+        sprintf "\t__tmp_%s = (void *)((size_t)__tmp_%s + %s);" in_struct_name in_struct_name len_var ;
+        "}";
+        "else";
+        sprintf "\t%s = NULL;" in_struct_member;
+        ]
+    in
+    List.fold_left (fun acc s -> acc ^ "\t\t\t" ^ s ^ "\n") "" code_template
 
 (* Generate the code to handle function pointer parameter direction,
  * which is to be inserted before actually calling the trusted function.
@@ -938,23 +1193,77 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
     let in_ptr_dst_name = mk_in_ptr_dst_name ty attr in_ptr_name in
     let tmp_ptr_name= mk_tmp_var name in
     let malloc_and_copy pre_indent =
+      let check_size =
+          if attr.Ast.pa_isstr then [] else
+          if attr.Ast.pa_iswstr then
+                  [
+                  sprintf "\tif (%s %% sizeof(wchar_t) != 0)" len_var;
+                  "\t{";
+                  "\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                  "\t\tgoto err;";
+                  "\t}";
+                  ]
+          else
+              match ty with
+                Ast.Ptr(Ast.Void) | Ast.Ptr(Ast.Foreign(_)) | Ast.Foreign(_) -> []
+              | Ast.Ptr(Ast.Struct(struct_type)) ->
+                    if is_structure_defined struct_type then
+                      let (struct_def, deep_copy)= get_struct_def struct_type
+                      in
+                      if deep_copy then
+                          [
+                          sprintf "\tif ( %s %% sizeof(*%s) != 0)" len_var tmp_ptr_name;
+                          "\t{";
+                          "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+                          "\t\tgoto err;";
+                          "\t}";
+                          ]
+                      else []
+                    else []
+              | _ -> 
+				  [
+				  sprintf "\tif ( %s %% sizeof(*%s) != 0)" len_var tmp_ptr_name;
+				  "\t{";
+				  "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+				  "\t\tgoto err;";
+				  "\t}";
+				  ]
+      in
       match attr.Ast.pa_direction with
           Ast.PtrIn | Ast.PtrInOut ->
-            let wstr_len_check =
-              if attr.Ast.pa_iswstr then
-                let wstr_len_check_template  = [
-                  sprintf "\n\t\tif (%s %% sizeof(wchar_t) != 0)" len_var;
-                  "\t\t{";
-                  "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
-                  "\t\t\tgoto err;";
-                  "\t\t}";
-                  ]
+            let struct_deep_copy_pre = 
+                let struct_calculate = 
+                    (invoke_if_struct ty attr.Ast.pa_direction name 
+                        (fun struct_type name ->
+                            sprintf "\t\tfor (i = 0; i < %s / sizeof(struct %s); i++){\n"  (mk_len_var name) struct_type
+                        )
+                    gen_struct_ptr_direction_pre_calculate "\t\t}\n")
+                in
+                let struct_malloc =
+                  let code_template = [
+                      sprintf "\t__tmp_%s = malloc(_%s_malloc_size);"(mk_in_var name) name;
+                      sprintf "\tif (__tmp_%s == NULL) {" (mk_in_var name);
+                      "\t\tstatus = SGX_ERROR_OUT_OF_MEMORY;";
+                      "\t\tgoto err;";
+                      "\t}";
+                      ]
                   in
-                  List.fold_left (fun acc s -> acc ^ s ^ "\n") "" wstr_len_check_template
-                else ""
+                  List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") "" code_template
+                in
+                let struct_copy =
+                    (invoke_if_struct ty attr.Ast.pa_direction name 
+                    (fun struct_type name ->
+                        sprintf "\t\t_in_member_%s = __tmp_%s;\n\t\tfor (i = 0; i < %s / sizeof(struct %s); i++){\n"  name (mk_in_var name) (mk_len_var name) struct_type 
+                    ) gen_struct_ptr_direction_pre_copy "\t\t}\n")
+                in
+                struct_calculate ^ (if struct_calculate = "" then "" else struct_malloc) ^ struct_copy
             in
-            let code_template = [
-              sprintf "if (%s != NULL && %s != 0) {%s" tmp_ptr_name len_var wstr_len_check;
+            let code_template = 
+              [
+              sprintf "if (%s != NULL && %s != 0) {" tmp_ptr_name len_var;
+              ]
+              @ check_size @
+              [
               sprintf "\t%s = (%s)malloc(%s);" in_ptr_name in_ptr_type len_var;
               sprintf "\tif (%s == NULL) {" in_ptr_name;
               "\t\tstatus = SGX_ERROR_OUT_OF_MEMORY;";
@@ -963,8 +1272,8 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
               sprintf "\tif (memcpy_s(%s, %s, %s, %s)) {" in_ptr_dst_name len_var tmp_ptr_name len_var;
               "\t\tstatus = SGX_ERROR_UNEXPECTED;";
               "\t\tgoto err;";
-              "\t}\n";
-            ]
+              sprintf "\t}\n%s" struct_deep_copy_pre;
+              ]
             in
             let s1 = List.fold_left (fun acc s -> acc ^ pre_indent ^ s ^ "\n") "" code_template in
             let s2 =
@@ -993,8 +1302,12 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
               else s1 in
             sprintf "%s\t}\n" s2
         | Ast.PtrOut ->
-            let code_template = [
+            let code_template =
+              [
               sprintf "if (%s != NULL && %s != 0) {" tmp_ptr_name len_var;
+              ]
+              @ check_size @
+              [
               sprintf "\tif ((%s = (%s)malloc(%s)) == NULL) {" in_ptr_name in_ptr_type len_var;
               "\t\tstatus = SGX_ERROR_OUT_OF_MEMORY;";
               "\t\tgoto err;";
@@ -1012,6 +1325,55 @@ let gen_parm_ptr_direction_pre (plist: Ast.pdecl list) =
               Ast.PTVal _          -> acc
             | Ast.PTPtr (ty, attr) -> acc ^ clone_in_ptr ty attr declr) "" plist
 
+(* Generate the code to handle tructure pointer deep copy,
+ * which is to be inserted after finishing calling the trusted function.
+ *)
+let gen_struct_ptr_direction_post (param_direction: Ast.ptr_direction) (struct_type: string) (struct_name: string) (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+    let name        = declr.Ast.identifier in
+    let in_struct_name = mk_in_var struct_name in
+    let in_ptr_name = mk_in_var2 struct_name name in
+    let in_struct = sprintf "(%s + i)->%s" in_struct_name in
+    let in_struct_member = sprintf "%s" (in_struct name)  in
+    let in_len_ptr_var = mk_len_var2 struct_name name in
+    let out_len_ptr_var = mk_len_var2 ("out_" ^ struct_name) name in
+      match param_direction with
+          Ast.PtrIn -> ""
+        | Ast.PtrInOut ->
+            let check_size =
+                match ty with
+                Ast.Ptr(Ast.Void) | Ast.Ptr(Ast.Foreign(_)) | Ast.Foreign(_)  | Ast.Ptr(Ast.Struct(_)) -> ""
+                | _ -> sprintf " || (%s %% sizeof(*%s) != 0)" in_len_ptr_var in_struct_member (* "size x count" is a multiple of sizeof type *)
+            in
+            let code_template  = [
+                sprintf "%s = *(%s*)__tmp_%s;" in_ptr_name (Ast.get_tystr ty) in_struct_name;
+                sprintf "__tmp_%s = (void *)((size_t)__tmp_%s + sizeof(void*));" in_struct_name in_struct_name;
+                sprintf "%s = *(size_t*)__tmp_%s;" in_len_ptr_var in_struct_name;
+                sprintf "__tmp_%s = (void *)((size_t)__tmp_%s + sizeof(size_t));" in_struct_name in_struct_name;
+                gen_check_member_length ty attr declr in_struct "\t\t\t" ["\tstatus = SGX_ERROR_INVALID_PARAMETER;";"\tbreak;"];
+                sprintf "size_t %s = %s;" out_len_ptr_var  (gen_struct_ptr_size ty attr name in_struct);
+                sprintf "if(%s!= NULL &&" in_struct_member;
+                sprintf "\t\t%s != 0) {"  out_len_ptr_var;
+                sprintf "\tif (%s > %s%s) {" out_len_ptr_var  in_len_ptr_var check_size;
+                "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+                "\t\tbreak;";
+                "\t}";
+                sprintf "\tif (!sgx_is_within_enclave(%s, %s) ||" in_struct_member out_len_ptr_var;
+                sprintf "\t\t\t!sgx_is_outside_enclave(%s, %s)) {" in_ptr_name in_len_ptr_var;
+                "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
+                "\t\tbreak;";
+                "\t}";
+                sprintf "\tif (memcpy_s(%s, %s, %s, %s)) {" in_ptr_name in_len_ptr_var in_struct_member out_len_ptr_var;
+                sprintf "\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                "\t\tbreak;";
+                "\t}";
+                "}";
+                sprintf "%s = %s;" in_struct_member in_ptr_name;
+                sprintf "__tmp_%s = (void *)((size_t)__tmp_%s + %s);" in_struct_name in_struct_name in_len_ptr_var;
+                ]
+          in
+          List.fold_left (fun acc s -> acc ^ "\t\t\t" ^ s ^ "\n") "" code_template
+        | _ -> ""
+
 (* Generate the code to handle function pointer parameter direction,
  * which is to be inserted after finishing calling the trusted function.
  *)
@@ -1020,9 +1382,21 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
     let name        = declr.Ast.identifier in
     let in_ptr_name = mk_in_var name in
     let len_var     = mk_len_var name in
-    let in_ptr_dst_name = mk_in_ptr_dst_name ty attr in_ptr_name in
+    let struct_deep_copy_post = 
+          let pre struct_type name =
+            let code_template  = [
+                sprintf "__tmp_%s = _in_member_%s;" (mk_in_var name) name;
+                sprintf "for (i = 0; i < %s / sizeof(struct %s); i++){"  (mk_len_var name) struct_type;
+                "\tif (status != SGX_SUCCESS)";
+                "\t\tbreak;";
+                ]
+            in
+            List.fold_left (fun acc s -> acc ^ "\t\t" ^ s ^ "\n") "" code_template
+          in
+          invoke_if_struct ty attr.Ast.pa_direction name pre gen_struct_ptr_direction_post "\t\t}\n"
+      in
       match attr.Ast.pa_direction with
-          Ast.PtrIn -> sprintf "\tif (%s) free(%s);\n" in_ptr_name in_ptr_dst_name
+        Ast.PtrIn -> ""
         | Ast.PtrInOut | Ast.PtrOut ->
           if attr.Ast.pa_isstr then
                 let code_template  = [
@@ -1032,8 +1406,8 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
                   sprintf "\t\t%s = strlen(%s) + 1;" len_var in_ptr_name;
                   sprintf "\t\tif (memcpy_s((void*)%s, %s, %s, %s)) {" (mk_tmp_var name) len_var in_ptr_name len_var;
                   "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                  "\t\t\tgoto err;";
                   "\t\t}";
-                  sprintf "\t\tfree(%s);" in_ptr_name;
                   "\t}";
                   ]
                 in
@@ -1046,8 +1420,8 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
                   sprintf "\t\t%s = (wcslen(%s) + 1) * sizeof(wchar_t);" len_var in_ptr_name;
                   sprintf "\t\tif (memcpy_s((void*)%s, %s, %s, %s)) {" (mk_tmp_var name) len_var in_ptr_name len_var;
                   "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                  "\t\t\tgoto err;";
                   "\t\t}";
-                  sprintf "\t\tfree(%s);" in_ptr_name;
                   "\t}";
                   ]
                 in  
@@ -1055,17 +1429,18 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
             else
                 let code_template  = [ 
                   sprintf "\tif (%s) {" in_ptr_name;
-                  sprintf "\t\tif (memcpy_s(%s, %s, %s, %s)) {" (mk_tmp_var name) len_var in_ptr_name len_var;
+                  sprintf "%s\t\tif (memcpy_s(%s, %s, %s, %s)) {" struct_deep_copy_post (mk_tmp_var name) len_var in_ptr_name len_var;
                   "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
+                  "\t\t\tgoto err;";
                   "\t\t}";
-                  sprintf "\t\tfree(%s);" in_ptr_name;
-                  "\t}"
+                  "\t}";
                   ]
                 in
                 List.fold_left (fun acc s -> acc ^ s ^ "\n") "" code_template
         | _ -> ""
-  in List.fold_left
-       (fun acc (pty, declr) ->
+  in
+  List.fold_left
+      (fun acc (pty, declr) ->
           match pty with
               Ast.PTVal _          -> acc
             | Ast.PTPtr (ty, attr) -> acc ^ copy_and_free ty attr declr) "" plist
@@ -1082,6 +1457,39 @@ let gen_err_mark (plist: Ast.pdecl list) =
                         | Ast.PTPtr(_, attr) -> has_inout_p attr) plist
     then "err:"
     else ""
+
+(* Generate the code to handle function pointer parameter direction,
+ * which is to be inserted after finishing calling the trusted function.
+ *)
+let gen_parm_ptr_free_post (plist: Ast.pdecl list) =
+  let copy_and_free (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+    let name        = declr.Ast.identifier in
+    let in_ptr_name = mk_in_var name in
+    let in_ptr_dst_name = mk_in_ptr_dst_name ty attr in_ptr_name in
+      match attr.Ast.pa_direction with
+        Ast.PtrIn ->
+            let struct_free =
+                match ty with
+                  Ast.Ptr(Ast.Struct(struct_type)) ->
+                        if is_structure_defined struct_type then
+                          let (_, deep_copy)= get_struct_def struct_type
+                          in
+                          if deep_copy then
+                             sprintf "\tif (_in_member_%s) free(_in_member_%s);\n" name name
+                          else ""
+                        else ""
+                  | _ -> ""
+            in
+            sprintf "\tif (%s) free(%s);\n%s" in_ptr_name in_ptr_dst_name struct_free
+        | Ast.PtrInOut | Ast.PtrOut ->
+                  sprintf "\tif (%s) free(%s);\n" in_ptr_name in_ptr_name
+        | _ -> ""
+  in
+  List.fold_left
+      (fun acc (pty, declr) ->
+          match pty with
+              Ast.PTVal _          -> acc
+            | Ast.PTPtr (ty, attr) -> acc ^ copy_and_free ty attr declr) "" plist
 
 (* It is used to save the parameters used as the value of size/count attribute. *)
 let param_cache = Hashtbl.create 1
@@ -1166,10 +1574,20 @@ let gen_tbridge_local_vars (plist: Ast.pdecl list) =
       else gen_tmp_size attr plist ^ "\t" ^ gen_ptr_size ty attr name mk_tmp_var in
     let in_ptr =
       match attr.Ast.pa_direction with
-      Ast.PtrNoDirection -> ""
-    | _ -> sprintf "\t%s %s = NULL;\n" (Ast.get_tystr ty) (mk_in_var name)
+          Ast.PtrNoDirection -> ""
+        | _ -> sprintf "\t%s %s = NULL;\n" (Ast.get_tystr ty) (mk_in_var name)
     in
-      tmp_var ^ len_var ^ in_ptr
+    let in_ptr_struct_var =
+      if not attr.Ast.pa_chkptr then ""
+      else
+       let gen_struct_local_var (param_direction: Ast.ptr_direction) (struct_type: string) (struct_name: string) (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator)=
+           let in_ptr_name = mk_in_var2 struct_name declr.Ast.identifier in
+           let in_len_ptr_name = mk_len_var2 struct_name declr.Ast.identifier in
+           sprintf "\t%s %s = NULL;\n\tsize_t %s = 0;\n" (Ast.get_tystr ty) in_ptr_name in_len_ptr_name 
+       in
+       invoke_if_struct ty attr.Ast.pa_direction name  (fun _ name -> sprintf "\tvoid* __tmp_%s = NULL;\n\tsize_t _%s_malloc_size = 0;\n\tvoid* _in_member_%s = NULL;\n" (mk_in_var name) name name) gen_struct_local_var ""
+    in
+      (tmp_var ^ len_var ^ in_ptr ^ in_ptr_struct_var, if in_ptr_struct_var <> "" then true else false)
   in
   let gen_local_var_for_foreign_array (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
     let tystr = Ast.get_tystr ty in
@@ -1187,16 +1605,19 @@ let gen_tbridge_local_vars (plist: Ast.pdecl list) =
   let gen_local_var (pd: Ast.pdecl) =
     let (pty, declr) = pd in
       match pty with
-      Ast.PTVal _          -> ""
-    | Ast.PTPtr (ty, attr) ->
+          Ast.PTVal _          -> ("", false)
+        | Ast.PTPtr (ty, attr) ->
             if is_foreign_array pty
-            then gen_local_var_for_foreign_array ty attr declr.Ast.identifier
+            then (gen_local_var_for_foreign_array ty attr declr.Ast.identifier, false)
             else do_gen_local_var pty attr declr.Ast.identifier
   in
   let new_param_list = List.map conv_array_to_ptr plist
   in
+  let (str, deep_copy) =
     Hashtbl.clear param_cache;
-    List.fold_left (fun acc pd -> acc ^ gen_local_var pd) status_var new_param_list
+    List.fold_left (fun acc pd -> let (str, deep_copy) =  (gen_local_var pd) in (fst acc ^ str, snd acc || deep_copy)) (status_var, false) new_param_list
+  in
+    str ^ if deep_copy then "\tsize_t i = 0;\n" else ""
 
 (* It generates trusted bridge code for a trusted function. *)
 let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
@@ -1224,7 +1645,7 @@ let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
       in
         sprintf "%s%s%s\t%s\n\t%s\n%s" func_open local_vars dummy_var check_pms invoke_func func_close
     else
-      sprintf "%s%s\t%s\n%s\n%s%s\n%s\n\t%s\n%s\n%s\n%s"
+      sprintf "%s%s\t%s\n%s\n%s%s\n%s\n\t%s\n%s\n%s\n%s%s"
         func_open
         (mk_check_pms fd.Ast.fname)
         declare_ms_ptr
@@ -1233,8 +1654,9 @@ let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
         (gen_check_tbridge_ptr_parms fd.Ast.plist)
         (gen_parm_ptr_direction_pre fd.Ast.plist)
         (if fd.Ast.rtype <> Ast.Void then update_retval else invoke_func)
-        (gen_err_mark fd.Ast.plist)
         (gen_parm_ptr_direction_post fd.Ast.plist)
+        (gen_err_mark fd.Ast.plist)
+        (gen_parm_ptr_free_post fd.Ast.plist)
         func_close
 
 let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
@@ -1252,12 +1674,39 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
                 if is_ary then sprintf "%s = SGX_CAST(%s, %s);" parm_accessor tystr name
                 else sprintf "%s = %s;" parm_accessor name
               else
+                let check_size =
+                    match ty with
+                    Ast.Ptr(Ast.Void) | Ast.Ptr(Ast.Foreign(_)) | Ast.Foreign(_)  -> []
+                   | Ast.Ptr(Ast.Struct(struct_type)) ->
+                            if is_structure_defined struct_type then
+                              let (_, deep_copy)= get_struct_def struct_type
+                              in
+                              if deep_copy then
+                                [
+                                   sprintf "\tif (%s %% sizeof(*%s) != 0) {" len_var name;
+                                   sprintf "\t\t%s();" sgx_ocfree_fn;
+                                   "\t\treturn SGX_ERROR_INVALID_PARAMETER;";
+                                   "\t}";
+                                ]
+                                else []
+                            else []
+                   | _ ->
+                    [
+                       sprintf "\tif (%s %% sizeof(*%s) != 0) {" len_var name;
+                       sprintf "\t\t%s();" sgx_ocfree_fn;
+                       "\t\treturn SGX_ERROR_INVALID_PARAMETER;";
+                       "\t}";
+                    ]
+                in
                 match attr.Ast.pa_direction with
                   Ast.PtrOut ->
                     let code_template =
                       [sprintf "if (%s != NULL) {" name;
                        sprintf "\t%s = (%s)__tmp;" parm_accessor tystr;
                        sprintf "\t__tmp_%s = __tmp;" name;
+                      ]
+                      @ check_size @
+                      [
                        sprintf "\tmemset(__tmp_%s, 0, %s);" name len_var;
                        sprintf "\t__tmp = (void *)((size_t)__tmp + %s);" len_var;
                        sprintf "\tocalloc_size -= %s;" len_var;
@@ -1271,6 +1720,9 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
                       [sprintf "if (%s != NULL) {" name;
                        sprintf "\t%s = (%s)__tmp;" parm_accessor tystr;
                        sprintf "\t__tmp_%s = __tmp;" name;
+                      ]
+                      @ check_size @
+                      [
                        sprintf "\tif (memcpy_s(__tmp_%s, ocalloc_size, %s, %s)) {" name name len_var;
                        sprintf "\t\t%s();" sgx_ocfree_fn;
                        "\t\treturn SGX_ERROR_UNEXPECTED;";
@@ -1284,43 +1736,115 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
                     in List.fold_left (fun acc s -> acc ^ s ^ "\n\t") "" code_template
                 | _ ->
                     let code_template =
-              [sprintf "if (%s != NULL) {" name;
-               sprintf "\t%s = (%s)__tmp;" parm_accessor tystr;
-               sprintf "\tif (memcpy_s(__tmp, ocalloc_size, %s, %s)) {"  name len_var;
-               sprintf "\t\t%s();" sgx_ocfree_fn;
-               "\t\treturn SGX_ERROR_UNEXPECTED;";
-               "\t}";
-               sprintf "\t__tmp = (void *)((size_t)__tmp + %s);" len_var;
-               sprintf "\tocalloc_size -= %s;" len_var;
-               "} else {";
-               sprintf "\t%s = NULL;" parm_accessor;
-               "}"
-              ]
+					  [sprintf "if (%s != NULL) {" name;
+					   sprintf "\t%s = (%s)__tmp;" parm_accessor tystr;
+                      ]
+                      @ check_size @
+                      [
+					   sprintf "\tif (memcpy_s(__tmp, ocalloc_size, %s, %s)) {"  name len_var;
+					   sprintf "\t\t%s();" sgx_ocfree_fn;
+					   "\t\treturn SGX_ERROR_UNEXPECTED;";
+					   "\t}";
+					   sprintf "\t__tmp = (void *)((size_t)__tmp + %s);" len_var;
+					   sprintf "\tocalloc_size -= %s;" len_var;
+					   "} else {";
+					   sprintf "\t%s = NULL;" parm_accessor;
+					   "}"
+					  ]
                     in List.fold_left (fun acc s -> acc ^ s ^ "\n\t") "" code_template
 
-(* Generate local variables required for the trusted proxy. *)
+(* Attach data pointed by structure member pointer at the end of ms. *)
+let tproxy_fill_structure(pd: Ast.pdecl) (is_ocall_switchless: bool)=
+  let (pt, declr)   = pd in
+  let name          = declr.Ast.identifier in
+  let parm_accessor = mk_parm_accessor name in
+  let sgx_ocfree_fn = get_sgx_fname SGX_OCFREE is_ocall_switchless in
+  let fill_structure(param_direction: Ast.ptr_direction) (struct_type: string) (struct_name: string)  (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+    let member_name        = declr.Ast.identifier in
+    let len_member_name = mk_len_var2 struct_name member_name in
+    let in_struct = sprintf "(%s + i)->%s" parm_accessor in
+    let in_struct_member = sprintf "%s" (in_struct member_name)  in
+    let para_struct = sprintf "(%s + i)->%s" name in
+    let para_struct_member = sprintf "%s" (para_struct member_name)  in
+                match param_direction with
+                | Ast.PtrInOut | Ast.PtrIn  ->
+                    let code_template =
+                      [
+                       sprintf "%s = %s;"  len_member_name (gen_struct_ptr_size ty attr name para_struct);
+                       sprintf "\tif (%s != NULL && %s != 0) {" para_struct_member len_member_name;
+                       sprintf "\t\tif (memcpy_s(__tmp, %s, %s, %s)) {" len_member_name para_struct_member len_member_name;
+                       sprintf "\t\t\t%s();" sgx_ocfree_fn;
+                       "\t\t\treturn SGX_ERROR_UNEXPECTED;";
+                       "\t\t}";
+                       sprintf "\t\t%s = (%s)__tmp;" in_struct_member (Ast.get_tystr ty);
+                       sprintf "\t\t__tmp = (void *)((size_t)__tmp + %s);" len_member_name;
+                       sprintf "\t\tocalloc_size -= %s;" len_member_name;
+                       "\t} else {";
+                       sprintf "\t\t%s = NULL;" in_struct_member;
+                       "\t}"
+                      ]
+                    in List.fold_left (fun acc s -> acc ^ "\t\t\t" ^ s ^ "\n") "" code_template
+                | _ -> ""
+    in
+        match pt with
+              Ast.PTPtr(ty, attr) ->
+                let pre struct_type name = 
+                  let code_template =
+                    if attr.Ast.pa_direction = Ast.PtrInOut then
+                                  [sprintf "if (%s != NULL && %s != 0 ) {" name (mk_len_var name);
+                                   sprintf "\t__tmp_member_%s = __tmp;" name;
+                                   sprintf "\tfor (i = 0; i < %s / sizeof(struct %s); i++){"  (mk_len_var name) struct_type
+                                  ]
+                    else
+                                  [sprintf "if (%s != NULL && %s != 0 ) {" name (mk_len_var name);
+                                   sprintf "\tfor (i = 0; i < %s / sizeof(struct %s); i++){"  (mk_len_var name) struct_type
+                                  ]
+                  in 
+                  List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") "" code_template
+                  in
+                  invoke_if_struct ty attr.Ast.pa_direction name  pre fill_structure "\t\t}\n\t}\n"
+              | _ -> ""
+
+(* Generate local variables required for the trusted proxy, inclidng variables required by structure deep copy. *)
 let gen_tproxy_local_vars (plist: Ast.pdecl list) =
   let status_var = "sgx_status_t status = SGX_SUCCESS;\n" in
-  let do_gen_local_var (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
-    if not attr.Ast.pa_chkptr then ""
-    else "\t" ^ gen_ptr_size ty attr name (fun x -> x)
+  let do_gen_local_vars (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
+    let do_gen_local_var =
+      if not attr.Ast.pa_chkptr then ""
+      else "\t" ^ gen_ptr_size ty attr name (fun x -> x)
+    in
+    let in_ptr_struct_var =
+      if not attr.Ast.pa_chkptr then ""
+      else
+         let gen_in_ptr_struct_var (_: Ast.ptr_direction) (_: string) (struct_name: string) (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+           let member_name = declr.Ast.identifier in
+           let in_len_ptr_name = mk_len_var2 struct_name member_name in
+           sprintf "\tsize_t %s = 0;\n" in_len_ptr_name 
+         in
+         invoke_if_struct ty attr.Ast.pa_direction name  (fun _ name -> if attr.Ast.pa_direction = Ast.PtrInOut then sprintf"\tvoid* __tmp_member_%s = NULL;\n" name else "") gen_in_ptr_struct_var ""
+    in 
+    (do_gen_local_var ^ in_ptr_struct_var, if in_ptr_struct_var <> "" then true else false)
   in
   let gen_local_var (pd: Ast.pdecl) =
     let (pty, declr) = pd in
       match pty with
-          Ast.PTVal _          -> ""
-        | Ast.PTPtr (ty, attr) -> do_gen_local_var ty attr declr.Ast.identifier
+          Ast.PTVal _          -> ("", false)
+        | Ast.PTPtr (ty, attr) -> do_gen_local_vars ty attr declr.Ast.identifier
   in
   let new_param_list = List.map conv_array_to_ptr plist
   in
-    List.fold_left (fun acc pd -> acc ^ gen_local_var pd) status_var new_param_list
+  let (str, deep_copy) =
+    List.fold_left (fun acc pd -> let (str, deep_copy) =  (gen_local_var pd) in (fst acc ^ str, snd acc || deep_copy)) (status_var, false) new_param_list
+  in
+    str ^ if deep_copy then "\tsize_t i = 0;\n" else ""
+    
 
 (* Generate only one ocalloc block required for the trusted proxy. *)
 let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) (is_switchless: bool) =
   let ms_struct_name = mk_ms_struct_name fname in
   let new_param_list = List.map conv_array_to_ptr plist in
   let local_vars_block = sprintf "%s* %s = NULL;\n\tsize_t ocalloc_size = sizeof(%s);\n\tvoid *__tmp = NULL;\n\n" ms_struct_name ms_struct_val ms_struct_name in
-  let local_var (attr: Ast.ptr_attr) (name: string) =
+  let local_var (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
     if not attr.Ast.pa_chkptr then ""
     else
       match attr.Ast.pa_direction with
@@ -1331,18 +1855,20 @@ let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) (is_switchless: bo
     let (pty, declr) = pd in
       match pty with
         Ast.PTVal _         -> ""
-      | Ast.PTPtr (_, attr) -> local_var attr declr.Ast.identifier
+      | Ast.PTPtr (ty, attr) -> local_var ty attr declr.Ast.identifier
   in
-
+  let mk_check_enclave_ptr (name: string) (lenvar: string) =
+    let checker = "CHECK_ENCLAVE_POINTER" in
+    sprintf "%s(%s, %s)" checker name lenvar
+  in
   let check_enclave_ptr_block =
-    let check_enclave_ptr (pd: Ast.pdecl) = 
-      let checker = "CHECK_ENCLAVE_POINTER" in
+    let check_enclave_ptr (pd: Ast.pdecl) =
       let (pty, declr) = pd in
         match pty with
           Ast.PTVal _          -> ""
         | Ast.PTPtr (ty, attr) -> 
            if not attr.Ast.pa_chkptr then ""
-           else sprintf "\t%s(%s, %s);\n" checker declr.Ast.identifier (mk_len_var declr.Ast.identifier) 
+           else "\t" ^ mk_check_enclave_ptr declr.Ast.identifier (mk_len_var declr.Ast.identifier) ^ ";\n"
     in 
     let do_check_enclave_ptr = List.fold_left (fun acc pd -> acc ^ check_enclave_ptr pd) "" new_param_list in
     let break_line = if do_check_enclave_ptr = "" then "" else "\n" in
@@ -1351,7 +1877,7 @@ let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) (is_switchless: bo
 
   let count_ocalloc_size (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
     if not attr.Ast.pa_chkptr then ""
-    else sprintf "\tocalloc_size += (%s != NULL) ? %s : 0;\n" name (mk_len_var name)
+    else sprintf "\tif (ADD_ASSIGN_OVERFLOW(ocalloc_size, (%s != NULL) ? %s : 0))\n\t\treturn SGX_ERROR_INVALID_PARAMETER;\n" name (mk_len_var name)
   in
   let do_count_ocalloc_size (pd: Ast.pdecl) =
     let (pty, declr) = pd in
@@ -1376,6 +1902,75 @@ let gen_ocalloc_block (fname: string) (plist: Ast.pdecl list) (is_switchless: bo
   let s2 = List.fold_left (fun acc pd -> acc ^ do_count_ocalloc_size pd) (s1 ^ check_enclave_ptr_block) new_param_list in
      List.fold_left (fun acc s -> acc ^ s) s2 do_gen_ocalloc_block
 
+(* Generate only one ocalloc block required for the trusted proxy. *)
+let gen_ocalloc_block_struct_deep_copy (fname: string) (plist: Ast.pdecl list) (is_ocall_switchless: bool)=
+  let new_param_list = List.map conv_array_to_ptr plist in
+  let sgx_ocalloc_fn = get_sgx_fname SGX_OCALLOC is_ocall_switchless in
+  let sgx_ocfree_fn = get_sgx_fname SGX_OCFREE is_ocall_switchless in
+  let count_ocalloc_size (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
+    if not attr.Ast.pa_chkptr then ""
+    else 
+      let count_struct_ocalloc_size =  
+         let gen_member_size (_: Ast.ptr_direction) (_: string) (struct_name: string)  (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+           let in_len_ptr_var = mk_len_var2 struct_name declr.Ast.identifier in
+           let para_struct = sprintf "(%s + i)->%s"  struct_name in
+           let check_size =
+                match ty with
+                Ast.Ptr(Ast.Void) | Ast.Ptr(Ast.Foreign(_)) | Ast.Foreign(_)  | Ast.Ptr(Ast.Struct(_)) -> []
+                | _ ->
+                    [
+                       sprintf "if (%s %% sizeof(*%s) != 0) {" in_len_ptr_var (para_struct declr.Ast.identifier); (* "size x count" is a multiple of sizeof type *)
+                       sprintf "\t%s();" sgx_ocfree_fn;
+                       "\treturn SGX_ERROR_INVALID_PARAMETER;";
+                       "}";
+                    ]
+           in
+           let code_template = 
+               [
+               gen_check_member_length ty attr declr para_struct "\t\t\t" [(sprintf "\t%s();" sgx_ocfree_fn);"\treturn SGX_ERROR_INVALID_PARAMETER;"];
+               sprintf "%s = %s;" in_len_ptr_var (gen_struct_ptr_size ty attr struct_name para_struct);
+               ]
+               @ check_size @
+               [
+               sprintf "if (%s && ! sgx_is_within_enclave(%s, %s)) {" (para_struct declr.Ast.identifier)  (para_struct declr.Ast.identifier) in_len_ptr_var;
+               sprintf "\t%s();" sgx_ocfree_fn;
+               "\treturn SGX_ERROR_INVALID_PARAMETER;";
+               "}";
+               sprintf "\tif (ADD_ASSIGN_OVERFLOW(ocalloc_size, (%s != NULL) ? %s : 0)) {" (para_struct declr.Ast.identifier) in_len_ptr_var;
+               sprintf "\t%s();" sgx_ocfree_fn;
+               "\treturn SGX_ERROR_INVALID_PARAMETER;";
+               "}";
+               ]
+           in
+           List.fold_left (fun acc s -> acc ^ "\t\t\t" ^ s ^ "\n") "" code_template
+         in
+         invoke_if_struct ty attr.Ast.pa_direction name (fun struct_type name -> sprintf "\t\tfor (i = 0; i < %s / sizeof(struct %s); i++){\n"  (mk_len_var name) struct_type) gen_member_size "\t\t}\n"
+      in
+      if count_struct_ocalloc_size <> "" then
+                  sprintf "\tif (%s != NULL && %s != 0){\n" name (mk_len_var name) ^
+                  sprintf "%s" count_struct_ocalloc_size ^
+                  "\t}\n"
+      else ""
+  in
+  let do_count_ocalloc_size (pd: Ast.pdecl) =
+    let (pty, declr) = pd in
+      match pty with
+        Ast.PTVal _          -> ""
+      | Ast.PTPtr (ty, attr) -> count_ocalloc_size ty attr declr.Ast.identifier
+  in
+  let do_gen_ocalloc_block = [
+      sprintf "\n\t__tmp = %s(ocalloc_size);\n" sgx_ocalloc_fn;
+      "\tif (__tmp == NULL) {\n";
+      sprintf "\t\t%s();\n" sgx_ocfree_fn;
+      "\t\treturn SGX_ERROR_UNEXPECTED;\n";
+      "\t}\n";
+      ]
+  in
+  let s2 = List.fold_left (fun acc pd -> acc ^ do_count_ocalloc_size pd) "" new_param_list in
+  if s2 = "" then ""
+  else
+     List.fold_left (fun acc s -> acc ^ s) s2 do_gen_ocalloc_block
+
 (* Generate trusted proxy code for a given untrusted function. *)
 let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
   let fd = ufunc.Ast.uf_fdecl in
@@ -1383,12 +1978,13 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
   let func_open = sprintf "%s\n{\n" (gen_tproxy_proto fd) in
   let local_vars = gen_tproxy_local_vars fd.Ast.plist in
   let ocalloc_ms_struct = gen_ocalloc_block fd.Ast.fname fd.Ast.plist ufunc.Ast.uf_is_switchless in
+  let ocalloc_struct_deep_copy = gen_ocalloc_block_struct_deep_copy fd.Ast.fname fd.Ast.plist in
   let sgx_ocfree_fn = get_sgx_fname SGX_OCFREE ufunc.Ast.uf_is_switchless in
   let gen_ocfree rtype plist =
     if rtype = Ast.Void && plist = [] && propagate_errno = false then "" else sprintf "\t%s();\n" sgx_ocfree_fn
   in
   let handle_out_ptr plist =
-    let copy_memory (attr: Ast.ptr_attr) (declr: Ast.declarator) =
+    let copy_memory (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) =
       let name = declr.Ast.identifier in
         match attr.Ast.pa_direction with
             Ast.PtrInOut | Ast.PtrOut ->
@@ -1423,22 +2019,91 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
                 in  
                 List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") "" code_template
               else
-                let code_template  = [ 
-                  sprintf "\tif (%s) {" name;
-                  sprintf "\t\tif (memcpy_s((void*)%s, %s, __tmp_%s, %s)) {" name (mk_len_var name) name (mk_len_var name);
-                  sprintf "\t\t\t%s();" sgx_ocfree_fn;
-                  "\t\t\treturn SGX_ERROR_UNEXPECTED;";
-                  "\t\t}";
-                  "\t}";
-                ]
+                let struct_deep_copy_post =
+                    let copy_and_free_struct_member  (_: Ast.ptr_direction) (_: string) (struct_name: string)  (ty: Ast.atype) (attr: Ast.ptr_attr) (declr: Ast.declarator) = 
+                        let name        = declr.Ast.identifier in
+                        let para_struct = sprintf "(%s + i)->%s" struct_name in
+                        let para_struct_member = sprintf "%s" (para_struct name)  in
+                        let local_struct = sprintf "__local_%s.%s" struct_name in
+                        let in_len_ptr_var = mk_len_var2 struct_name name in
+                        let out_len_ptr_var = mk_len_var2 ("out_" ^ struct_name) name in
+                        let check_size =
+                            match ty with
+                            Ast.Ptr(Ast.Void) ->  ""
+                            | _ -> sprintf " || (%s %% sizeof(*%s) != 0)" out_len_ptr_var para_struct_member (* "size x count" is a multiple of sizeof type *)
+                        in
+                        let code_template  = [
+                            sprintf "size_t %s = 0;" out_len_ptr_var;
+                            gen_check_member_length ty attr declr local_struct "\t\t\t\t" [(sprintf "\t%s();" sgx_ocfree_fn);"\treturn SGX_ERROR_INVALID_PARAMETER;"];
+                            sprintf "%s = %s;"  in_len_ptr_var (gen_struct_ptr_size ty attr name para_struct);
+                            sprintf "if(%s!= NULL &&" para_struct_member;
+                            sprintf "\t\t(%s = %s) != 0) {"  out_len_ptr_var (gen_struct_ptr_size ty attr name local_struct);
+                            sprintf "\tif (%s != __tmp_member_%s ||" (local_struct name) struct_name;(*pointer is not changed by untrusted code *)
+                            sprintf "\t\t\t%s > %s%s) {"  out_len_ptr_var in_len_ptr_var check_size;
+                            sprintf "\t\t%s();" sgx_ocfree_fn;
+                            "\t\treturn SGX_ERROR_INVALID_PARAMETER;";
+                            "\t}";
+                            sprintf "\tif (memcpy_s(%s, %s, __tmp_member_%s, %s)) {" para_struct_member in_len_ptr_var struct_name out_len_ptr_var;
+                            sprintf "\t\t%s();" sgx_ocfree_fn;
+                            "\t\treturn SGX_ERROR_UNEXPECTED;";
+                            "\t}";
+                            "}";
+                            sprintf "%s = %s;" (local_struct name) para_struct_member;
+                            sprintf "__tmp_member_%s = (void *)((size_t)__tmp_member_%s + (%s != NULL? %s : 0));" struct_name struct_name para_struct_member in_len_ptr_var;
+
+                            ]
+                        in
+                        List.fold_left (fun acc s -> acc ^ "\t\t\t\t" ^ s ^ "\n") "" code_template
+                    in
+                    let pre (struct_type: string) (name: string) =
+                        let code_template2 = [
+                            sprintf "for (i = 0; i < %s / sizeof(struct %s); i++){" (mk_len_var name) struct_type;
+                            sprintf "\t%s __local_%s;" struct_type name;
+                            sprintf "\tif (memcpy_s(&__local_%s, sizeof(%s), ((%s*)__tmp_%s + i), sizeof(%s))) {"name struct_type struct_type name struct_type;
+                            sprintf "\t\t%s();" sgx_ocfree_fn;
+                            "\t\treturn SGX_ERROR_UNEXPECTED;";
+                            "\t}";
+                            ]
+                        in
+                        List.fold_left (fun acc s -> acc ^ "\t\t\t" ^ s ^ "\n") "\n" code_template2
+                    in
+                    let post =
+                        let code_template3 = [
+                            sprintf "\tif (memcpy_s((void*)(%s + i), sizeof(__local_%s), &__local_%s, sizeof(__local_%s))) {" name name name name;
+                            sprintf "\t\t%s();" sgx_ocfree_fn;
+                            "\t\treturn SGX_ERROR_UNEXPECTED;";
+                            "\t}";
+                            "}";
+                            ]
+                        in
+                        List.fold_left (fun acc s -> acc ^ "\t\t\t" ^ s ^ "\n") "\n" code_template3
+                    in
+                    invoke_if_struct ty attr.Ast.pa_direction name pre copy_and_free_struct_member post
+                in
+                let code_template  = 
+                  if struct_deep_copy_post = "" then
+                      [
+                      sprintf "\tif (%s) {" name;
+                      sprintf "\t\tif (memcpy_s((void*)%s, %s, __tmp_%s, %s)) {" name (mk_len_var name) name (mk_len_var name);
+                      sprintf "\t\t\t%s();" sgx_ocfree_fn;
+                      "\t\t\treturn SGX_ERROR_UNEXPECTED;";
+                      "\t\t}";
+                      "\t}" ;
+                      ]
+                  else
+                      [
+                      sprintf "\tif (%s) {%s" name struct_deep_copy_post;
+                      "\t}" ;
+                      ]
                 in
                 List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") "" code_template
 
           | _ -> ""
-    in List.fold_left (fun acc (pty, declr) ->
+    in
+    List.fold_left (fun acc (pty, declr) ->
              match pty with
                              Ast.PTVal _ -> acc
-               | Ast.PTPtr(ty, attr) -> acc ^ copy_memory attr declr) "" plist in
+               | Ast.PTPtr(ty, attr) -> acc ^ copy_memory ty attr declr) "" plist in
 
   let set_errno = if propagate_errno then "\t\terrno = ms->ocall_errno;\n" else "" in
   let func_close = sprintf "%s%s%s\n%s%s\n"
@@ -1460,10 +2125,12 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
         func_body := local_vars :: !func_body;
         func_body := ocalloc_ms_struct:: !func_body;
         List.iter (fun pd -> func_body := tproxy_fill_ms_field pd ufunc.Ast.uf_is_switchless :: !func_body ) fd.Ast.plist;
+        func_body := ocalloc_struct_deep_copy ufunc.Ast.uf_is_switchless :: !func_body;
+        List.iter (fun pd -> func_body := tproxy_fill_structure pd ufunc.Ast.uf_is_switchless:: !func_body) fd.Ast.plist;
         func_body := ocall_with_ms :: !func_body;
         func_body := "if (status == SGX_SUCCESS) {" :: !func_body;
         if fd.Ast.rtype <> Ast.Void then func_body := update_retval :: !func_body;
-        List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") func_open (List.rev !func_body) ^ func_close
+        List.fold_left (fun acc s -> if s = "" then acc else acc ^ "\t" ^ s ^ "\n") func_open (List.rev !func_body) ^ func_close
       end
 
 (* It generates OCALL table and the untrusted proxy to setup OCALL table. *)
@@ -1535,7 +2202,12 @@ let gen_trusted_source (ec: enclave_content) =
 \tif ((ptr) && ! sgx_is_within_enclave((ptr), (siz)))\t\\\n\
 \t\treturn SGX_ERROR_INVALID_PARAMETER;\\\n\
 } while (0)\n\
-\n" in
+\n\
+#define ADD_ASSIGN_OVERFLOW(a, b) (\t\\\n\
+\t((a) += (b)) < (b)\t\\\n\
+)\n\
+\n"
+  in
   let trusted_fds = tf_list_to_fd_list ec.tfunc_decls in
   let tbridge_list =
     let dummy_var = tbridge_gen_dummy_variable ec in
@@ -1762,6 +2434,7 @@ let gen_enclave_code (e: Ast.enclave) (ep: edger8r_params) =
     create_dir ep.untrusted_dir;
     create_dir ep.trusted_dir;
     check_duplication ec;
+    check_structure ec;
     check_allow_list ec;
     (if not ep.header_only then check_priv_funcs ec);
     if Plugin.available() then

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,7 +39,6 @@ namespace {
             if(layout->id == id)
                 return layout;
         }
-        assert(false);
         return NULL;
     }
     bool do_update_global_data(const metadata_t *const metadata,
@@ -47,7 +46,10 @@ namespace {
                                global_data_t* global_data)
     {
         layout_entry_t *layout_heap = get_entry_by_id(metadata, LAYOUT_ID_HEAP_MIN);
-
+        if(layout_heap == NULL)
+        {
+            return false;
+        }
         global_data->enclave_size = (sys_word_t)metadata->enclave_size;
         global_data->heap_offset = (sys_word_t)layout_heap->rva;
         global_data->heap_size = (sys_word_t)(create_param->heap_init_size);

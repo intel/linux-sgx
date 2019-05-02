@@ -1,5 +1,5 @@
 (*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -121,16 +121,22 @@ type declarator = {
 
 let is_array (declr: declarator) = declr.array_dims <> []
 
-(* Parameter declaration. *)
+(* Parameter and Struct declaration. *)
 type pdecl = parameter_type * declarator
 
-(* Structure member declaration *)
+(* Union member declaration *)
 type mdecl = atype * declarator
 
-(* Definition of a struct or union *)
+(* Definition of a struct *)
 type struct_def = {
   sname : string;       (* structure name. *)
-  mlist : mdecl list;   (* structure members. *)
+  smlist : pdecl list;   (* structure members. *)
+}
+
+(* Definition of a union *)
+type union_def = {
+  uname : string;       (* union name. *)
+  umlist : mdecl list;   (* union members. *)
 }
 
 (* Definition of a enum *)
@@ -145,7 +151,7 @@ type enum_def = {
 (* Composite type - the form for struct/union definition are the same. *)
 type composite_type =
     StructDef of struct_def
-  | UnionDef  of struct_def
+  | UnionDef  of union_def
   | EnumDef   of enum_def
 
 (* Function declaration. *)

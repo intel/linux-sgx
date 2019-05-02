@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,8 +30,12 @@
  */
 
 void sgx_get_quote(){}
+void sgx_get_quote_ex(){}
 void sgx_get_quote_size(){}
+void sgx_get_quote_size_ex(){}
 void sgx_init_quote(){}
+void sgx_init_quote_ex(){}
+void sgx_select_att_key_id(){}
 void sgx_get_whitelist_size(){}
 void sgx_get_whitelist(){}
 void sgx_switch_extended_epid_group(){}

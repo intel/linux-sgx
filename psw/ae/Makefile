@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,22 +31,22 @@
 
 include ../../buildenv.mk
 
-CHECK_CURL := $(shell which curl-config)
+CHECK_CMAKE := $(shell which cmake)
 
-ifeq ($(CHECK_CURL), )
-    CURL_RESULT := check_fail
+ifeq ($(CHECK_CMAKE), )
+    CMAKE_RESULT := cmake_check_fail
 else
-    CURL_RESULT :=
+    CMAKE_RESULT :=
 endif
 
 .PHONY: all
 ifeq ($(BUILD_REF_LE), 1)
-all: $(CURL_RESULT) AESM REF_LE COPY_AES CSE| $(BUILD_DIR)
+all: $(CMAKE_RESULT) AESM REF_LE COPY_AES CSE| $(BUILD_DIR)
 else
-all: $(CURL_RESULT) AESM COPY_AES CSE| $(BUILD_DIR)
+all: $(CMAKE_RESULT) AESM COPY_AES CSE| $(BUILD_DIR)
 endif #($(BUILD_REF_LE), 1)
 
-# COPY_AES: currently copy le, qe, pve, pce, pse_op, pse_pr, pse_pr_2
+# COPY_AES: currently copy le, qe, pve, pce, pse_op, pse_pr, pse_pr_2, qe3
 .PHONY: COPY_AES
 COPY_AES: | $(BUILD_DIR)
 	$(CP) data/prebuilt/* $(BUILD_DIR)
@@ -80,11 +80,12 @@ rebuild:
 	$(MAKE) clean
 	$(MAKE) all
 
-.PHONY: check_fail
-check_fail:
-	@echo ERROR: Please install libcurl by command such as
-	@echo    apt-get install libcurl4-openssl-dev
+
+.PHONY: cmake_check_fail
+cmake_check_fail:
+	@echo ERROR: Please install cmake by command such as
+	@echo apt-get install cmake
 	@echo or
-	@echo    yum install libcurl-devel
+	@echo yum install cmake
 	@echo with root account
 	@exit 2

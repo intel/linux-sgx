@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -40,9 +40,11 @@ INCLUDES := -I..                                            \
             -I$(LINUX_SDK_DIR)/simulation/urtssim           \
             -I$(LINUX_EXTERNAL_DIR)/epid-sdk                \
             -I$(LINUX_EXTERNAL_DIR)/rdrand/                 \
-            -I$(LINUX_PSW_DIR)/ae/inc     \
-            -I$(LINUX_PSW_DIR)/ae/inc/internal \
-            -I$(LINUX_PSW_DIR)/ae/common  
+            -I$(LINUX_PSW_DIR)/ae/inc                       \
+            -I$(LINUX_PSW_DIR)/ae/inc/internal              \
+            -I$(LINUX_PSW_DIR)/ae/common                    \
+            -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
+            -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
 
 CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g
 CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES)
@@ -75,7 +77,7 @@ DLLNAME_DEBUG = libsgx_uae_service_sim.so.debug
 LIBUAE_SERVICE_DEPLOY := libsgx_uae_service_deploy.so
 
 .PHONY: all
-all: $(DLLNAME) $(DLLNAME_DEBUG) $(LIBUAE_SERVICE_DEPLOY) | $(BUILD_DIR)
+all: $(DLLNAME) $(DLLNAME_DEBUG) $(LIBUAE_SERVICE_DEPLOY)| $(BUILD_DIR)
 	$(CP) $(DLLNAME) $|
 	$(CP) $(LIBUAE_SERVICE_DEPLOY) $|
 ifndef DEBUG

@@ -73,6 +73,8 @@
 	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init)
 #define SGX_IOC_ENCLAVE_INIT_IN_KERNEL \
 	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init_in_kernel)
+#define SGX_IOC_ENCLAVE_SET_ATTRIBUTE \
+	_IOW(SGX_MAGIC, 0x03, struct sgx_enclave_set_attribute)
 #define SGX_IOC_ENCLAVE_EMODPR \
 	_IOW(SGX_MAGIC, 0x09, struct sgx_modification_param)
 #define SGX_IOC_ENCLAVE_MKTCS \
@@ -161,6 +163,17 @@ struct sgx_enclave_init {
 struct sgx_enclave_init_in_kernel {
 	__u64	addr;
 	__u64	sigstruct;
+};
+
+/**
+ * struct sgx_enclave_set_attribute - parameter structure for the
+ *                                    %SGX_IOC_ENCLAVE_SET_ATTRIBUTE ioctl
+ * @addr:               address within the ELRANGE
+ * @attribute_fd:       file handle of the attribute file in the securityfs
+ */
+struct sgx_enclave_set_attribute {
+        __u64   addr;
+        __u64   attribute_fd;
 };
 
 struct sgx_enclave_destroy {

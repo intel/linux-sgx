@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -46,11 +46,16 @@ my-dir = $(realpath $(call parent-dir,$(lastword $(MAKEFILE_LIST))))
 
 
 ROOT_DIR              := $(call my-dir)
+ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
+  $(error main directory cannot contain spaces nor colons)
+endif
+
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
 LINUX_PSW_DIR         := $(ROOT_DIR)/psw
 LINUX_SDK_DIR         := $(ROOT_DIR)/sdk
 LINUX_UNITTESTS       := $(ROOT_DIR)/unittests
+DCAP_DIR              := $(LINUX_EXTERNAL_DIR)/dcap_source
 
 
 CP    := /bin/cp -f

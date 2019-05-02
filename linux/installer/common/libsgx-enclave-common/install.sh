@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -33,6 +33,11 @@
 
 set -e 
 
+if test $(id -u) -ne 0; then
+    echo "Root privilege is required."
+    exit 1
+fi
+
 SCRIPT_DIR=$(dirname "$0")
 source ${SCRIPT_DIR}/installConfig
 
@@ -41,15 +46,13 @@ AESM_PATH=$ECL_DST_PATH/aesm
 
 # Install the AESM service
 
-cut -d: -f1 /etc/passwd | grep -q -w aesmd || \
+id -u aesmd &> /dev/null || \
     /usr/sbin/useradd -r -U -c "User for aesmd" \
     -d /var/opt/aesmd -s /sbin/nologin aesmd
 
 mkdir -p /var/opt/aesmd
 cp -rf $AESM_PATH/data /var/opt/aesmd/
-rm -rf $AESM_PATH/data
 cp -rf $AESM_PATH/conf/aesmd.conf /etc/aesmd.conf
-rm -rf $AESM_PATH/conf
 chmod  0644 /etc/aesmd.conf
 chown -R aesmd:aesmd /var/opt/aesmd
 chmod 0750 /var/opt/aesmd
@@ -63,10 +66,8 @@ mkdir -p /var/run/aesmd
 chown -R aesmd:aesmd /var/run/aesmd
 chmod 0755 /var/run/aesmd
 
-# Stop aesmd first.
-/usr/sbin/service aesmd stop &> /dev/null || echo
-
 if [ -d /run/systemd/system ]; then
+    systemctl stop aesmd &> /dev/null || echo
     AESMD_NAME=aesmd.service
     AESMD_TEMP=$AESM_PATH/$AESMD_NAME
     if [ -d /lib/systemd/system ]; then
@@ -78,12 +79,10 @@ if [ -d /run/systemd/system ]; then
     sed -e "s:@aesm_folder@:$AESM_PATH:" \
         $AESMD_TEMP > $AESMD_DEST
     chmod 0644 $AESMD_DEST
-    rm -f $AESMD_TEMP
-    rm -f $AESM_PATH/aesmd.conf
-    DISABLE_AESMD="systemctl disable aesmd"
     systemctl enable aesmd
     retval=$?
 elif [ -d /etc/init/ ]; then
+    /sbin/initctl stop aesmd &> /dev/null || echo
     AESMD_NAME=aesmd.conf
     AESMD_TEMP=$AESM_PATH/$AESMD_NAME
     AESMD_DEST=/etc/init/$AESMD_NAME
@@ -91,8 +90,6 @@ elif [ -d /etc/init/ ]; then
     sed -e "s:@aesm_folder@:$AESM_PATH:" \
         $AESMD_TEMP > $AESMD_DEST
     chmod 0644 $AESMD_DEST
-    rm -f $AESMD_TEMP
-    rm -f $AESM_PATH/aesmd.service
     /sbin/initctl reload-configuration
     retval=$?
 else
@@ -112,7 +109,7 @@ echo " done."
 cat > $ECL_DST_PATH/cleanup.sh <<EOF
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -148,14 +145,16 @@ if test \$(id -u) -ne 0; then
     exit 1
 fi
 
-get_lib()
-{
-    echo "\$(basename \$(gcc -print-multi-os-directory))"
-}
-
 # Killing AESM service
-/usr/sbin/service aesmd stop
-$DISABLE_AESMD
+if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl stop aesmd
+    systemctl disable aesmd 2> /dev/null
+elif [ -d /etc/init/ ]; then
+    /sbin/initctl reload-configuration
+    /sbin/initctl stop aesmd
+fi
+
 # Removing AESM configuration files
 rm -f $AESMD_DEST
 rm -f /etc/aesmd.conf
@@ -175,12 +174,11 @@ EOF
 chmod +x $ECL_DST_PATH/cleanup.sh
 
 $AESM_PATH/cse_provision_tool || true
-rm $AESM_PATH/cse_provision_tool
 
 cat > $AESM_PATH/linksgx.sh <<EOF
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -233,8 +231,6 @@ if [ -d /run/systemd/system ]; then
 elif [ -d /etc/init/ ]; then
     /sbin/initctl start aesmd
 fi
-
-rm -fr $ECL_DST_PATH/scripts
 
 exit 0
 

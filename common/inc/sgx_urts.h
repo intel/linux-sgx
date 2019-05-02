@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -80,9 +80,9 @@ typedef uint8_t sgx_launch_token_t[1024];
 
 /* Convenient macro to be passed to sgx_create_enclave(). */
 #if !defined(NDEBUG) || defined(EDEBUG)
-#define SGX_DEBUG_FLAG ((int)1)
+#define SGX_DEBUG_FLAG 1
 #else
-#define SGX_DEBUG_FLAG ((int)0)
+#define SGX_DEBUG_FLAG 0
 #endif
 
 sgx_status_t SGXAPI sgx_create_enclave(const char *file_name, 

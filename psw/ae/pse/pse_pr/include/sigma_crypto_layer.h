@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -69,7 +69,6 @@ public:
     void set_pub_key_gb_be(uint8_t* pGb) { memcpy(m_local_public_key_gb_big_endian, pGb, sizeof(m_local_public_key_gb_big_endian)); }
     void set_remote_pub_key_ga_be(uint8_t* pGa) { memcpy(m_remote_public_key_ga_big_endian, pGa, sizeof(m_remote_public_key_ga_big_endian)); }
 
-    const uint8_t* get_SMK() { return m_SMK; }
     const uint8_t* get_SK() { return m_SK; }
     const uint8_t* get_MK() { return m_MK; }
 

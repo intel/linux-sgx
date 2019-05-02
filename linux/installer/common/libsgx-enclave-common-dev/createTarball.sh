@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -54,6 +54,8 @@ python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/sgx-enclave-common-dev_base.txt
 python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
 
 # Create the tarball
+ECL_VER=$(awk '/ENCLAVE_COMMON_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 pushd ${INSTALL_PATH} &> /dev/null
+sed -i "s/ECL_VER=.*/ECL_VER=${ECL_VER}/" Makefile
 tar -zcvf ${TARBALL_NAME} *
 popd &> /dev/null

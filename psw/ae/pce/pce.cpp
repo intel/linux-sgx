@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -100,7 +100,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
 	//
     sgx_lfence();
 
-    *encrypted_ppid_out_size = RSA_MOD_SIZE;//output size is same as public key module size
+    *encrypted_ppid_out_size = 0;//set out_size to 0. IFF all operations pass, the out_size will be set to RSA_MOD_SIZE
     if (encrypted_ppid_buf_size < RSA_MOD_SIZE){
         return AE_INSUFFICIENT_DATA_IN_BUFFER;
     }
@@ -148,7 +148,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
     uint8_t *le_n = NULL;
     void *key = NULL;
     ae_error_t ae_ret = AE_FAILURE;
-
+    size_t temp_encrypted_size = 0;
     do {
         //get ppid
         //
@@ -180,7 +180,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
 
         //get expected cipher text length
         //
-        if (sgx_rsa_pub_encrypt_sha256(key, NULL, (size_t*)encrypted_ppid_out_size,
+        if (sgx_rsa_pub_encrypt_sha256(key, NULL, &temp_encrypted_size,
             (ppid_buf.ppid), sizeof(ppid_buf.ppid)) != SGX_SUCCESS) {
             ae_ret = AE_FAILURE;
             break;
@@ -188,14 +188,14 @@ uint32_t get_pc_info(const sgx_report_t* report,
 
         //validate out size match RSA_MOD_SIZE
         //
-        if (*encrypted_ppid_out_size != RSA_MOD_SIZE) {
+        if (temp_encrypted_size != RSA_MOD_SIZE) {
             ae_ret = AE_FAILURE;
             break;
         }
 
         //encrypt ppid, using RSA public key into encrypted_ppid buffer
         //
-        if (sgx_rsa_pub_encrypt_sha256(key, encrypted_ppid, (size_t*)encrypted_ppid_out_size,
+        if (sgx_rsa_pub_encrypt_sha256(key, encrypted_ppid, &temp_encrypted_size,
             (ppid_buf.ppid), sizeof(ppid_buf.ppid)) != SGX_SUCCESS) {
             ae_ret = AE_FAILURE;
             break;
@@ -203,17 +203,18 @@ uint32_t get_pc_info(const sgx_report_t* report,
 
         //validate out size match RSA_MOD_SIZE
         //
-        if (*encrypted_ppid_out_size != RSA_MOD_SIZE) {
+        if (temp_encrypted_size != RSA_MOD_SIZE) {
             ae_ret = AE_FAILURE;
             break;
         }
 
         //get ISV and SVN values
         //
-        if (get_isv_svn(&pce_info->pce_isvn) != AE_SUCCESS) {
+        if ((ae_ret = get_isv_svn(&pce_info->pce_isvn)) != AE_SUCCESS) {
             break;
     }
 
+    *encrypted_ppid_out_size = RSA_MOD_SIZE;
     pce_info->pce_id = CUR_PCE_ID;
     *signature_scheme = NIST_P256_ECDSA_SHA256;
     ae_ret = AE_SUCCESS;
@@ -225,8 +226,9 @@ uint32_t get_pc_info(const sgx_report_t* report,
         free(le_n);
     sgx_free_rsa_key(key, SGX_RSA_PUBLIC_KEY, RSA_MOD_SIZE, RSA_E_SIZE);
     memset_s(&ppid_buf, sizeof(ppid_buf), 0, sizeof(ppid_t));
-    if (AE_SUCCESS != ae_ret)
-        memset_s(encrypted_ppid, encrypted_ppid_buf_size, 0, *encrypted_ppid_out_size);
+    if (AE_SUCCESS != ae_ret) {
+        memset_s(encrypted_ppid, encrypted_ppid_buf_size, 0, encrypted_ppid_buf_size);
+    }
     return ae_ret;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,6 +38,7 @@
 #include "wl_pub.hh"
 #include "launch_enclave_mrsigner.hh"
 #include "service_enclave_mrsigner.hh"
+#include "tseal_migration_attr.h"
 
 #if !defined(SWAP_ENDIAN_DW)
 #define SWAP_ENDIAN_DW(dw)    ((((dw) & 0x000000ff) << 24)                  \
@@ -190,10 +191,8 @@ ae_error_t le_generate_launch_token(
     sgx_measurement_t empty_mrsigner;
     sgx_report_t report;
 
-    // se_attributes must have no reserved bit set.
-    // urts(finally EINIT instruction)rejects EINIT Token with SGX_FLAGS_INITTED
-    // set. So LE doesn't need to check it here.
-    if((se_attributes->flags) & SGX_FLAGS_RESERVED)
+    // Check the reserved bits which have security implications.
+    if((se_attributes->flags) & FLAGS_SECURITY_BITS_RESERVED)
     {
         return LE_INVALID_ATTRIBUTE;
     }

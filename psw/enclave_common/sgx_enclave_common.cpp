@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -260,6 +260,31 @@ extern "C" void* COMM_API enclave_create(
     s_enclave_mem_region[enclave_base].prot = 0;
 
     se_mutex_unlock(&s_enclave_mutex);
+
+    if (s_is_kernel_driver == true && (secs->attributes.flags & SGX_FLAGS_PROVISION_KEY)) {
+        if (-1 != access("/sys/kernel/security/sgx/provision", F_OK)) {
+            int phdev = open("/sys/kernel/security/sgx/provision", O_RDWR);
+            if (-1 == phdev) {
+                if (enclave_error != NULL)
+                    *enclave_error = ENCLAVE_NOT_AUTHORIZED;
+                return NULL;
+            }
+
+            struct sgx_enclave_set_attribute attrp = { 0, 0 };
+            attrp.addr = POINTER_TO_U64(enclave_base);
+            attrp.attribute_fd = phdev;
+
+            if (0 != ioctl(s_hdevice, SGX_IOC_ENCLAVE_SET_ATTRIBUTE, &attrp)) {
+                close(phdev);
+
+                if (enclave_error != NULL)
+                    *enclave_error = ENCLAVE_NOT_AUTHORIZED;
+                return NULL;
+            }
+
+            close(phdev);
+        }
+    }
 
     if (enclave_error != NULL)
         *enclave_error = ENCLAVE_ERROR_SUCCESS;

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -55,9 +55,13 @@ INC += -I$(COMMON_DIR)/inc                \
        -I$(VTUNE_DIR)/sdk/src/ittnotify 
 
 LDFLAGS := -lwrapper
+INTERNAL_LDFLAGS := -lwrapper
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,-Bdynamic -lsgx_enclave_common
+INTERNAL_LDFLAGS += $(COMMON_LDFLAGS)
 LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
+INTERNAL_LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
 LDFLAGS += -Wl,--version-script=urts.lds -Wl,--gc-sections
+INTERNAL_LDFLAGS += -Wl,--version-script=urts_internal.lds -Wl,--gc-sections
 
 DIR1 := $(LINUX_PSW_DIR)/urts/linux
 DIR2 := $(LINUX_PSW_DIR)/urts
@@ -112,7 +116,7 @@ vpath %.S   $(DIR1):$(DIR5)
 LIBWRAPPER            := libwrapper.a
 LIBSGX_ENCLAVE_COMMON := libsgx_enclave_common.a
 LIBURTS               := libsgx_urts.so
-LIBURTS_INTERNAL      := liburts_internal.a
+LIBURTS_INTERNAL      := liburts_internal.so
 LIBURTS_DEBUG	      := libsgx_urts.so.debug
 
 # untrusted switchless settings
@@ -120,6 +124,7 @@ USWITCHLESS_NAME := uswitchless
 USWITCHLESS_DIR  := $(LINUX_PSW_DIR)/$(USWITCHLESS_NAME)
 LIBUSWITCHLESS   := $(USWITCHLESS_DIR)/lib$(USWITCHLESS_NAME).a
 LDFLAGS          += -L$(USWITCHLESS_DIR) -l$(USWITCHLESS_NAME)
+INTERNAL_LDFLAGS += -L$(USWITCHLESS_DIR) -l$(USWITCHLESS_NAME)
 
 .PHONY: all
 all: $(LIBURTS) $(LIBURTS_INTERNAL) $(LIBURTS_DEBUG) | $(BUILD_DIR)
@@ -129,17 +134,13 @@ ifndef DEBUG
 	@$(CP) $(LIBURTS_DEBUG)    $|
 endif
 
-$(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) $(LIBUSWITCHLESS)
-	$(CP) $(COMMON_DIR)/se_wrapper/libwrapper.a $@
-	$(MKDIR) ./.switchless_tmp
-	$(RM) ./.switchless_tmp/*
-	cd ./.switchless_tmp && \
-	$(AR) x $(LIBUSWITCHLESS)
+$(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) $(LIBUSWITCHLESS) ittnotify
 	@$(MKDIR) $(BUILD_DIR)/.sgx_enclave_common
 	@$(RM) -f $(BUILD_DIR)/.sgx_enclave_common/*
-	cd $(BUILD_DIR)/.sgx_enclave_common && $(AR) x $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON)
-	$(AR) rcs $@ $(INTERNAL_OBJ) ./.switchless_tmp/*.o $(BUILD_DIR)/.sgx_enclave_common/*.o
-	@$(RM) -rf ./.switchless_tmp
+	cd $(BUILD_DIR)/.sgx_enclave_common && \
+	$(AR) x $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON) && \
+	$(RM) -f edmm_utility.o
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@ $(LIB) -o $@ $(INTERNAL_OBJ) $(BUILD_DIR)/.sgx_enclave_common/*.o  $(INTERNAL_LDFLAGS)
 	@$(RM) -rf $(BUILD_DIR)/.sgx_enclave_common
 
 $(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) $(LIBUSWITCHLESS) ittnotify

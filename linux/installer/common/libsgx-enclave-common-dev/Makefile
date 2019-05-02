@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -35,9 +35,15 @@ SOURCE_FOLDER=package
 
 ECL_INC_PATH=$(SOURCE_FOLDER)/$(INC_DIR)
 USR_INC_PATH=$(addprefix $(DESTDIR)/usr/, $(INC_DIR))
+USR_LIB_PATH=$(shell readlink -m $(addsuffix /$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null), $(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory)))))
+
+ECL_VER=1.0.0
 
 default:
 
 install:
 	install -d $(USR_INC_PATH)
 	install $(ECL_INC_PATH)/* $(USR_INC_PATH)
+	install -d $(USR_LIB_PATH)
+	cd $(USR_LIB_PATH) && \
+	ln -fs libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_enclave_common.so

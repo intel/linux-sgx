@@ -67,3 +67,11 @@ config.01.xml: There is no dynamic thread, no dynamic heap expansion.
 config.02.xml: There is no dynamic thread. But dynamic heap expansion can happen.
 config.03.xml: There are dynamic threads. For a dynamic thread, there's no stack expansion.
 config.04.xml: There are dynamic threads. For a dynamic thread, stack will expanded as necessary.
+
+-------------------------------------------------
+Launch token initialization
+-------------------------------------------------
+If using libsgx-enclave-common or sgxpsw under version 2.4, an initialized variable launch_token needs to be passed as the 3rd parameter of API sgx_create_enclave. For example,
+
+sgx_launch_token_t launch_token = {0};
+sgx_create_enclave(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, launch_token, NULL, &global_eid, NULL);

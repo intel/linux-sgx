@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2018 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -320,7 +320,6 @@ sgx_status_t sgx_aes_gcm128_enc_update(uint8_t *p_src, uint32_t src_len,
         return SGX_ERROR_INVALID_PARAMETER;
     }
     if (ippsAES_GCMEncrypt(p_src, p_dst, src_len, (IppsAES_GCMState*)aes_gcm_state) != ippStsNoErr) {
-        CLEAR_FREE_MEM(p_dst, src_len);
         return SGX_ERROR_UNEXPECTED;
     }
     return SGX_SUCCESS;
