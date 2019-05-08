@@ -260,25 +260,6 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
   ```
-- `iclsClient` and `JHI` are optional prerequisite components and are needed if you need to use Intel(R) SGX Platform Service. To install these components:  
-  Ensure `mei_me` driver is enabled and `/dev/mei0` exists.  
-  Send email to sgx_program@intel.com to request `iclsClient`.  
-  Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder, build and install the `JHI` service using the following commands:
-  * On Ubuntu 16.04 and Ubuntu 18.04:
-  ```
-    $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config libsystemd-dev
-    $ cmake .;make;sudo make install;sudo systemctl enable jhi
-  ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
-  ```
-    $ sudo yum install libuuid-devel libxml2-devel cmake pkgconfig systemd-devel
-    $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
-  ```
-  * On SUSE Linux Enterprise Server 12:  
-  ```
-    $ sudo zypper install libuuid-devel libxml2-devel cmake pkg-config systemd-devel
-    $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
-  ```
 
 ### Install the Intel(R) SGX PSW
 To install the Intel(R) SGX PSW, invoke the installer with root privilege: 
