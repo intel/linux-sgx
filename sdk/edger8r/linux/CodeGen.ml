@@ -647,7 +647,7 @@ let gen_uheader_preemble (guard: string) (inclist: string)=
 #include <wchar.h>\n\
 #include <stddef.h>\n\
 #include <string.h>\n\
-#include \"sgx_edger8r.h\" /* for sgx_satus_t etc. */\n" in
+#include \"sgx_edger8r.h\" /* for sgx_status_t etc. */\n" in
     grd_hdr ^ inc_exp ^ "\n" ^ inclist ^ "\n" ^ common_macros
 
 let ms_writer out_chan ec =
