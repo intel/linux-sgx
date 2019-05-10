@@ -33,6 +33,7 @@
 #define _SGX_UAE_SERVICE_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "sgx_quote.h"
 #include "sgx_error.h"
