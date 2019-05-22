@@ -290,9 +290,9 @@ To enable ECDSA attestation
 Driver for Data Center Attestation Primitives (Intel® SGX DCAP).
 Please follow the Intel® SGX DCAP Installation Guide for Linux* OS to
 install the driver. You can find the documentation here:
-https://download.01.org/intel-sgx/dcap-\<version>/linux/docs/
-As example: Intel® SGX DCAP 1.1 file's location is:
-https://download.01.org/intel-sgx/dcap-1.1/linux/docs/
+https://download.01.org/intel-sgx/dcap-{version}/linux/docs/
+For example: Intel® SGX DCAP 1.1 file's location is:
+[https://download.01.org/intel-sgx/dcap-1.1/linux/docs/](https://download.01.org/intel-sgx/dcap-1.1/linux/docs/)
 Filename is Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf, in
 section “Intel® SGX Driver”.
 
