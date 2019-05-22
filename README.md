@@ -1,4 +1,5 @@
 
+
 Intel(R) Software Guard Extensions for Linux\* OS
 ================================================
 
@@ -285,9 +286,27 @@ To enable ECDSA attestation
 - Ensure that you have the following required hardware:
   * 8th Generation Intel(R) Core(TM) Processor or newer with **Flexible Launch Control** support*
   * Intel(R) Atom(TM) Processor with **Flexible Launch Control** support*
-- Ensure the PCS caching service is setup correctly by local administrator or data center administrator. Also make sure that if the PCS server is not on local machine, the configure file (/etc/sgx_default_qcnl.conf) needs to be consistent with the real environment, for example: 
+- To use ECDSA attestation, you must install Intel® Software Guard Extensions
+Driver for Data Center Attestation Primitives (Intel® SGX DCAP).
+Please follow the Intel® SGX DCAP Installation Guide for Linux* OS to
+install the driver. You can find the documentation here:
+https://download.01.org/intel-sgx/dcap-\<version>/linux/docs/
+As example: Intel® SGX DCAP 1.1 file's location is:
+https://download.01.org/intel-sgx/dcap-1.1/linux/docs/
+Filename is Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf, in
+section “Intel® SGX Driver”.
+
+> **NOTE** If you had already installed Intel® SGX driver without ECDSA attestation, please uninstall the driver firstly. Or the newly
+> installed ECDSA attestation enabled Intel® SGX driver will be
+> unworkable.
+
+- Install PCK Caching Service. For how to install and configure PCK Caching
+Service, please refer [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration/pcs)
+- Ensure the PCK Caching Service is setup correctly by local administrator
+or data center administrator. Also make sure that the configure file of 
+quote provider library (/etc/sgx_default_qcnl.conf) needs to be consistent
+with the real environment, for example:
 PCS_URL=https://your_pcs_server:8081/sgx/certification/v1/
-- For how to install and configure PCK Caching Service, please go to https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration
 
 ### Start or Stop aesmd Service
 The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.  
