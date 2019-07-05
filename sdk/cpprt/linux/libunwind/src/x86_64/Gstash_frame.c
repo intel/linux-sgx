@@ -32,14 +32,31 @@ tdep_stash_frame (struct dwarf_cursor *d, struct dwarf_reg_state *rs)
   unw_tdep_frame_t *f = &c->frame_info;
 
   Debug (4, "ip=0x%lx cfa=0x%lx type %d cfa [where=%d val=%ld] cfaoff=%ld"
-	 " ra=0x%lx rbp [where=%d val=%ld @0x%lx] rsp [where=%d val=%ld @0x%lx]\n",
-	 d->ip, d->cfa, f->frame_type,
-	 rs->reg[DWARF_CFA_REG_COLUMN].where,
-	 rs->reg[DWARF_CFA_REG_COLUMN].val,
-	 rs->reg[DWARF_CFA_OFF_COLUMN].val,
-	 DWARF_GET_LOC(d->loc[d->ret_addr_column]),
-	 rs->reg[RBP].where, rs->reg[RBP].val, DWARF_GET_LOC(d->loc[RBP]),
-	 rs->reg[RSP].where, rs->reg[RSP].val, DWARF_GET_LOC(d->loc[RSP]));
+         " ra=0x%lx rbp [where=%d val=%ld @0x%lx] rsp [where=%d val=%ld @0x%lx]\n",
+         d->ip, d->cfa, f->frame_type,
+         rs->reg.where[DWARF_CFA_REG_COLUMN],
+         rs->reg.val[DWARF_CFA_REG_COLUMN],
+         rs->reg.val[DWARF_CFA_OFF_COLUMN],
+         DWARF_GET_LOC(d->loc[rs->ret_addr_column]),
+         rs->reg.where[RBP], rs->reg.val[RBP], DWARF_GET_LOC(d->loc[RBP]),
+         rs->reg.where[RSP], rs->reg.val[RSP], DWARF_GET_LOC(d->loc[RSP]));
+
+  if (rs->reg.where[DWARF_CFA_REG_COLUMN] == DWARF_WHERE_EXPR &&
+    rs->reg.where[RBP] == DWARF_WHERE_EXPR) {
+    /* Check for GCC generated alignment frame for rsp.  A simple
+     * def_cfa_expr that loads a constant offset from rbp, where the
+     * addres of the rip was pushed on the stack */
+    unw_word_t cfa_addr = rs->reg.val[DWARF_CFA_REG_COLUMN];
+    unw_word_t rbp_addr = rs->reg.val[RBP];
+    unw_word_t cfa_offset;
+
+    int ret = dwarf_stack_aligned(d, cfa_addr, rbp_addr, &cfa_offset);
+    if (ret) {
+      f->frame_type = UNW_X86_64_FRAME_ALIGNED;
+      f->cfa_reg_offset = cfa_offset;
+      f->cfa_reg_rsp = 0;
+    }
+  }
 
   /* A standard frame is defined as:
       - CFA is register-relative offset off RBP or RSP;
@@ -47,30 +64,30 @@ tdep_stash_frame (struct dwarf_cursor *d, struct dwarf_reg_state *rs)
       - RBP is unsaved or saved at CFA+offset, offset != -1;
       - RSP is unsaved or saved at CFA+offset, offset != -1.  */
   if (f->frame_type == UNW_X86_64_FRAME_OTHER
-      && (rs->reg[DWARF_CFA_REG_COLUMN].where == DWARF_WHERE_REG)
-      && (rs->reg[DWARF_CFA_REG_COLUMN].val == RBP
-	  || rs->reg[DWARF_CFA_REG_COLUMN].val == RSP)
-      && labs(rs->reg[DWARF_CFA_OFF_COLUMN].val) < (1 << 29)
-      && DWARF_GET_LOC(d->loc[d->ret_addr_column]) == d->cfa-8
-      && (rs->reg[RBP].where == DWARF_WHERE_UNDEF
-	  || rs->reg[RBP].where == DWARF_WHERE_SAME
-	  || (rs->reg[RBP].where == DWARF_WHERE_CFAREL
-	      && labs(rs->reg[RBP].val) < (1 << 14)
-	      && rs->reg[RBP].val+1 != 0))
-      && (rs->reg[RSP].where == DWARF_WHERE_UNDEF
-	  || rs->reg[RSP].where == DWARF_WHERE_SAME
-	  || (rs->reg[RSP].where == DWARF_WHERE_CFAREL
-	      && labs(rs->reg[RSP].val) < (1 << 14)
-	      && rs->reg[RSP].val+1 != 0)))
+      && (rs->reg.where[DWARF_CFA_REG_COLUMN] == DWARF_WHERE_REG)
+      && (rs->reg.val[DWARF_CFA_REG_COLUMN] == RBP
+          || rs->reg.val[DWARF_CFA_REG_COLUMN] == RSP)
+      && labs((long) rs->reg.val[DWARF_CFA_OFF_COLUMN]) < (1 << 28)
+      && DWARF_GET_LOC(d->loc[rs->ret_addr_column]) == d->cfa-8
+      && (rs->reg.where[RBP] == DWARF_WHERE_UNDEF
+          || rs->reg.where[RBP] == DWARF_WHERE_SAME
+          || (rs->reg.where[RBP] == DWARF_WHERE_CFAREL
+              && labs((long) rs->reg.val[RBP]) < (1 << 14)
+              && rs->reg.val[RBP]+1 != 0))
+      && (rs->reg.where[RSP] == DWARF_WHERE_UNDEF
+          || rs->reg.where[RSP] == DWARF_WHERE_SAME
+          || (rs->reg.where[RSP] == DWARF_WHERE_CFAREL
+              && labs((long) rs->reg.val[RSP]) < (1 << 14)
+              && rs->reg.val[RSP]+1 != 0)))
   {
     /* Save information for a standard frame. */
     f->frame_type = UNW_X86_64_FRAME_STANDARD;
-    f->cfa_reg_rsp = (rs->reg[DWARF_CFA_REG_COLUMN].val == RSP);
-    f->cfa_reg_offset = rs->reg[DWARF_CFA_OFF_COLUMN].val;
-    if (rs->reg[RBP].where == DWARF_WHERE_CFAREL)
-      f->rbp_cfa_offset = rs->reg[RBP].val;
-    if (rs->reg[RSP].where == DWARF_WHERE_CFAREL)
-      f->rsp_cfa_offset = rs->reg[RSP].val;
+    f->cfa_reg_rsp = (rs->reg.val[DWARF_CFA_REG_COLUMN] == RSP);
+    f->cfa_reg_offset = rs->reg.val[DWARF_CFA_OFF_COLUMN];
+    if (rs->reg.where[RBP] == DWARF_WHERE_CFAREL)
+      f->rbp_cfa_offset = rs->reg.val[RBP];
+    if (rs->reg.where[RSP] == DWARF_WHERE_CFAREL)
+      f->rsp_cfa_offset = rs->reg.val[RSP];
     Debug (4, " standard frame\n");
   }
 
@@ -90,6 +107,10 @@ tdep_stash_frame (struct dwarf_cursor *d, struct dwarf_reg_state *rs)
 #endif
 
     Debug (4, " sigreturn frame\n");
+  }
+
+  else if (f->frame_type == UNW_X86_64_FRAME_ALIGNED) {
+    Debug (4, " aligned frame, offset %li\n", f->cfa_reg_offset);
   }
 
   /* PLT and guessed RBP-walked frames are handled in unw_step(). */

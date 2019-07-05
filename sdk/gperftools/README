@@ -1,5 +1,5 @@
 Please, download the latest gperftools code from: https://github.com/gperftools/gperftools
-The Intel(R) Software Guard Extensions (Intel(R) SGX) tcmalloc is based on gperftools-2.5 (the latest version avaialble at the release date).
+The Intel(R) Software Guard Extensions (Intel(R) SGX) tcmalloc is based on gperftools-2.7 (the latest version avaialble at the release date).
 
 Do the following to enable tcmalloc in Intel(R) SGX:
 1. Copy libsgx_tcmalloc.a to the Intel(R) SGX SDK installation directory.

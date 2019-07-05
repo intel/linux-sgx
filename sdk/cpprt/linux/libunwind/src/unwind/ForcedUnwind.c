@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003-2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -25,9 +25,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "unwind-internal.h"
 
-PROTECTED _Unwind_Reason_Code
+_Unwind_Reason_Code
 _Unwind_ForcedUnwind (struct _Unwind_Exception *exception_object,
-		      _Unwind_Stop_Fn stop, void *stop_parameter)
+                      _Unwind_Stop_Fn stop, void *stop_parameter)
 {
   struct _Unwind_Context context;
   unw_context_t uc;
@@ -48,5 +48,5 @@ _Unwind_ForcedUnwind (struct _Unwind_Exception *exception_object,
 }
 
 _Unwind_Reason_Code __libunwind_Unwind_ForcedUnwind (struct _Unwind_Exception*,
-						     _Unwind_Stop_Fn, void *)
+                                                     _Unwind_Stop_Fn, void *)
      ALIAS (_Unwind_ForcedUnwind);

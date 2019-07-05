@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -29,7 +29,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 HIDDEN struct ia64_global_unwind_state unw =
   {
-    .needs_initialization = 1,
     .lock = PTHREAD_MUTEX_INITIALIZER,
     .save_order = {
       IA64_REG_IP, IA64_REG_PFS, IA64_REG_PSP, IA64_REG_PR,
@@ -53,15 +52,15 @@ HIDDEN struct ia64_global_unwind_state unw =
 HIDDEN void
 tdep_init (void)
 {
-  uint8_t f1_bytes[16] = {
+  const uint8_t f1_bytes[16] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
     0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
-  uint8_t nat_val_bytes[16] = {
+  const uint8_t nat_val_bytes[16] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xff, 0xfe,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
-  uint8_t int_val_bytes[16] = {
+  const uint8_t int_val_bytes[16] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x3e,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
@@ -73,7 +72,7 @@ tdep_init (void)
 
   lock_acquire (&unw.lock, saved_mask);
   {
-    if (!tdep_needs_initialization)
+    if (tdep_init_done)
       /* another thread else beat us to it... */
       goto out;
 
@@ -81,7 +80,7 @@ tdep_init (void)
 
     mempool_init (&unw.reg_state_pool, sizeof (struct ia64_reg_state), 0);
     mempool_init (&unw.labeled_state_pool,
-		  sizeof (struct ia64_labeled_state), 0);
+                  sizeof (struct ia64_labeled_state), 0);
 
     unw.read_only.r0 = 0;
     unw.read_only.f0.raw.bits[0] = 0;
@@ -91,24 +90,24 @@ tdep_init (void)
     bep = (uint8_t *) &unw.read_only.f1_be;
     for (i = 0; i < 16; ++i)
       {
-	*--lep = f1_bytes[i];
-	*bep++ = f1_bytes[i];
+        *--lep = f1_bytes[i];
+        *bep++ = f1_bytes[i];
       }
 
     lep = (uint8_t *) &unw.nat_val_le + 16;
     bep = (uint8_t *) &unw.nat_val_be;
     for (i = 0; i < 16; ++i)
       {
-	*--lep = nat_val_bytes[i];
-	*bep++ = nat_val_bytes[i];
+        *--lep = nat_val_bytes[i];
+        *bep++ = nat_val_bytes[i];
       }
 
     lep = (uint8_t *) &unw.int_val_le + 16;
     bep = (uint8_t *) &unw.int_val_be;
     for (i = 0; i < 16; ++i)
       {
-	*--lep = int_val_bytes[i];
-	*bep++ = int_val_bytes[i];
+        *--lep = int_val_bytes[i];
+        *bep++ = int_val_bytes[i];
       }
 
     assert (8*sizeof(unw_hash_index_t) >= IA64_LOG_UNW_HASH_SIZE);
@@ -116,7 +115,7 @@ tdep_init (void)
 #ifndef UNW_REMOTE_ONLY
     ia64_local_addr_space_init ();
 #endif
-    tdep_needs_initialization = 0;	/* signal that we're initialized... */
+    tdep_init_done = 1; /* signal that we're initialized... */
   }
  out:
   lock_release (&unw.lock, saved_mask);

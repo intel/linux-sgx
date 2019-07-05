@@ -13,7 +13,6 @@ target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/../../inc/internal
 	${PROJECT_SOURCE_DIR}/../../pse/pse_op
 	${PROJECT_SOURCE_DIR}/../../../../external/epid-sdk
-	${PROJECT_SOURCE_DIR}/../../data/constants/linux
 	${PROJECT_SOURCE_DIR}/../../../../external/DALSdk/JHI/linux
 	${PROJECT_SOURCE_DIR}/../../../../external/sqlite/src
 	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/common/inc

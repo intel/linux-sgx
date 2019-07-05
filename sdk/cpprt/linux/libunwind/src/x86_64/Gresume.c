@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2002-2004 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    Modified for x86_64 by Max Asbock <masbock@us.ibm.com>
 
@@ -44,7 +44,7 @@ x86_64_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
      at least.  */
   dwarf_make_proc_info (&c->dwarf);
 
-  if (unlikely (c->sigcontext_format != X86_64_SCF_NONE))
+  if (unlikely (c->sigcontext_addr != X86_64_SCF_NONE))
     {
       x86_64_sigreturn(cursor);
       abort();
@@ -52,7 +52,7 @@ x86_64_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
   else
     {
       Debug (8, "resuming at ip=%llx via setcontext()\n",
-	     (unsigned long long) c->dwarf.ip);
+             (unsigned long long) c->dwarf.ip);
       setcontext (uc);
     }
   return -UNW_EINVAL;
@@ -67,9 +67,9 @@ static inline int
 establish_machine_state (struct cursor *c)
 {
   int (*access_reg) (unw_addr_space_t, unw_regnum_t, unw_word_t *,
-		     int write, void *);
+                     int write, void *);
   int (*access_fpreg) (unw_addr_space_t, unw_regnum_t, unw_fpreg_t *,
-		       int write, void *);
+                       int write, void *);
   unw_addr_space_t as = c->dwarf.as;
   void *arg = c->dwarf.as_arg;
   unw_fpreg_t fpval;
@@ -85,20 +85,29 @@ establish_machine_state (struct cursor *c)
     {
       Debug (16, "copying %s %d\n", unw_regname (reg), reg);
       if (unw_is_fpreg (reg))
-	{
-	  if (tdep_access_fpreg (c, reg, &fpval, 0) >= 0)
-	    (*access_fpreg) (as, reg, &fpval, 1, arg);
-	}
+        {
+          if (tdep_access_fpreg (c, reg, &fpval, 0) >= 0)
+            (*access_fpreg) (as, reg, &fpval, 1, arg);
+        }
       else
-	{
-	  if (tdep_access_reg (c, reg, &val, 0) >= 0)
-	    (*access_reg) (as, reg, &val, 1, arg);
-	}
+        {
+          if (tdep_access_reg (c, reg, &val, 0) >= 0)
+            (*access_reg) (as, reg, &val, 1, arg);
+        }
+    }
+
+  if (c->dwarf.args_size)
+    {
+      if (tdep_access_reg (c, UNW_X86_64_RSP, &val, 0) >= 0)
+        {
+          val += c->dwarf.args_size;
+          (*access_reg) (as, UNW_X86_64_RSP, &val, 1, arg);
+        }
     }
   return 0;
 }
 
-PROTECTED int
+int
 unw_resume (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
@@ -110,5 +119,5 @@ unw_resume (unw_cursor_t *cursor)
     return ret;
 
   return (*c->dwarf.as->acc.resume) (c->dwarf.as, (unw_cursor_t *) c,
-				     c->dwarf.as_arg);
+                                     c->dwarf.as_arg);
 }

@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2003 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    Modified for x86_64 by Max Asbock <masbock@us.ibm.com>
 
@@ -28,7 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "init.h"
 #include "unwind_i.h"
 
-PROTECTED int
+int
 unw_init_remote (unw_cursor_t *cursor, unw_addr_space_t as, void *as_arg)
 {
 #ifdef UNW_LOCAL_ONLY
@@ -36,7 +36,7 @@ unw_init_remote (unw_cursor_t *cursor, unw_addr_space_t as, void *as_arg)
 #else /* !UNW_LOCAL_ONLY */
   struct cursor *c = (struct cursor *) cursor;
 
-  if (tdep_needs_initialization)
+  if (!tdep_init_done)
     tdep_init ();
 
   Debug (1, "(cursor=%p)\n", c);
@@ -50,7 +50,7 @@ unw_init_remote (unw_cursor_t *cursor, unw_addr_space_t as, void *as_arg)
   else
     {
       c->dwarf.as_arg = as_arg;
-      c->uc = 0;
+      c->uc = NULL;
     }
   return common_init (c, 0);
 #endif /* !UNW_LOCAL_ONLY */

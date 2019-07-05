@@ -24,7 +24,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "unwind_i.h"
 
-PROTECTED int
+int
 unw_get_proc_info (unw_cursor_t *cursor, unw_proc_info_t *pi)
 {
   struct cursor *c = (struct cursor *) cursor;

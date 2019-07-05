@@ -140,7 +140,7 @@ extern "C" bool get_metadata(const char* enclave_file, metadata_t *metadata)
     map_handle_t* mh = NULL;
     metadata_t *p_metadata;
 
-    uint32_t file_size = 0;
+    off_t file_size = 0;
     int fd = open(enclave_file, O_RDONLY);
     if(-1 == fd)
     {

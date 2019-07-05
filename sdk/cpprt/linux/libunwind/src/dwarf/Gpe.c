@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2003, 2005 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -30,10 +30,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 HIDDEN int
 dwarf_read_encoded_pointer (unw_addr_space_t as, unw_accessors_t *a,
-			    unw_word_t *addr, unsigned char encoding,
-			    const unw_proc_info_t *pi,
-			    unw_word_t *valp, void *arg)
+                            unw_word_t *addr, unsigned char encoding,
+                            const unw_proc_info_t *pi,
+                            unw_word_t *valp, void *arg)
 {
   return dwarf_read_encoded_pointer_inlined (as, a, addr, encoding,
-					     pi, valp, arg);
+                                             pi, valp, arg);
 }

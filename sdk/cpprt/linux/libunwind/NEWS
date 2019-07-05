@@ -1,5 +1,31 @@
 -*-Mode: outline-*-
 
+* News for v1.3:
+
+** Iteration of unwind register states support
+   Doug Moore <dougm@rice.edu>
+** Freebsd/Armv6 support
+   Konstantin Belousov <kib@freebsd.org>
+** Many, many dwarf bugfixes
+** Mips remote unwind support
+** aarch64 ptrace support
+
+* News for v1.2:
+
+** aarch64 port
+** dwarf parsing improvements
+** Fast stacktraces for aarch64 & arm
+** tilegx port
+** powerpc64 port
+
+* News for v1.1:
+
+** coredump unwind support
+** New arch: SuperH
+** Improved support for PowerPC, ARM
+** Lots of cleanups, perf tweaks
+** pkg-config support
+
 * News for v1.0:
 
 ** Fast unwind (rbp, rsp, rip only) on x86_64 with a fallback to 

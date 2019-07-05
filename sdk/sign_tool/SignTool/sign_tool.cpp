@@ -33,12 +33,12 @@
 // SignTool.cpp : Defines the entry point for the console application.
 //
 
-/** 
-* File: 
+/**
+* File:
 *     sign_tool.cpp
-*Description: 
+*Description:
 *     Defines the entry point for the application.
-* 
+*
 */
 
 #include <openssl/bio.h>
@@ -146,7 +146,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
 {
     assert(hash && dllpath && metadata && meta_offset);
     bool res = false;
-    uint32_t file_size = 0;
+    off_t file_size = 0;
     uint64_t quota = 0;
     bin_fmt_t bin_fmt = BF_UNKNOWN;
 
@@ -237,7 +237,9 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
             res = false;
             break;
         }
+        SE_TRACE_DEBUG("\n");
         se_trace(SE_TRACE_ERROR, REQUIRED_ENCLAVE_SIZE, quota);
+        se_trace(SE_TRACE_ERROR, "The required memory is 0x%llx, %llu KB.\n", quota, quota/1024);
         res = true;
         break;
     default:
@@ -265,7 +267,7 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
         RSA_get0_key(rsa, &n, &e, NULL);
         int exponent_size = BN_num_bytes(e);
         int modulus_size = BN_num_bytes(n);
-        
+
         if(modulus_size > SE_KEY_SIZE)
             return false;
         unsigned char *modulus = (unsigned char *)malloc(SE_KEY_SIZE);
@@ -274,14 +276,14 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
             return false;
         }
         memset(modulus, 0, SE_KEY_SIZE);
-        
+
         exponent_size = (uint32_t)(ROUND_TO(exponent_size, sizeof(uint32_t)) / sizeof(uint32_t));
         modulus_size = (uint32_t)(ROUND_TO(modulus_size, sizeof(uint32_t)) / sizeof(uint32_t));
         if(exponent_size != 0x1 || modulus_size != 0x60)
         {
             free(modulus);
             return false;
-        }	
+        }
         if(BN_bn2bin(n, modulus) != SE_KEY_SIZE)
         {
             free(modulus);
@@ -300,7 +302,7 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
         assert(css->key.exponent[0] == 0x03);
     }
 
-    // fill the enclave hash 
+    // fill the enclave hash
     memcpy_s(&css->body.enclave_hash, sizeof(css->body.enclave_hash), enclave_hash, SGX_HASH_SIZE);
 
     if(path[UNSIGNED] != NULL)
@@ -332,7 +334,7 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
             se_trace(SE_TRACE_ERROR, UNSIGNED_FILE_XML_MISMATCH);
             return false;
         }
-    }   
+    }
     return true;
 }
 
@@ -344,7 +346,7 @@ static bool calc_RSAq1q2(int length_s, const uint8_t *data_s, int length_m, cons
     BIGNUM *ptemp1=NULL, *ptemp2=NULL, *pQ1=NULL, *pQ2=NULL, *pM=NULL, *pS = NULL;
     unsigned char *q1 = NULL, *q2= NULL;
     BN_CTX *ctx = NULL;
-    
+
     do{
         if((ptemp1 = BN_new()) == NULL)
             break;
@@ -358,14 +360,14 @@ static bool calc_RSAq1q2(int length_s, const uint8_t *data_s, int length_m, cons
             break;
         if((pS = BN_new()) == NULL)
             break;
-    
+
         if(BN_bin2bn((const unsigned char *)data_m, length_m, pM) == NULL)
             break;
         if(BN_bin2bn((const unsigned char *)data_s, length_s, pS) == NULL)
             break;
         if((ctx = BN_CTX_new()) == NULL)
             break;
-    
+
         //q1 = floor(signature*signature/modulus)
         //q2 = floor((signature*signature.signature - q1*signature*Modulus)/Modulus)
         if(BN_mul(ptemp1, pS, pS, ctx) != 1) 
@@ -429,7 +431,7 @@ static bool create_signature(const RSA *rsa, const char *sigpath, enclave_css_t 
 
     uint8_t signature[SIGNATURE_SIZE];    // keep the signature in big endian
     memset(signature, 0, SIGNATURE_SIZE);
-    //**********get the signature*********
+    //**********get the signature*********//
     if(sigpath != NULL)//CATSIG mode
     {
         if(get_file_size(sigpath) != SIGNATURE_SIZE)
@@ -444,7 +446,7 @@ static bool create_signature(const RSA *rsa, const char *sigpath, enclave_css_t 
         }
     }
     else  //SIGN mode
-    {   
+    {
         size_t buffer_size = sizeof(enclave_css->header) + sizeof(enclave_css->body);
         uint8_t * temp_buffer = (uint8_t *)malloc(buffer_size * sizeof(char));
         if(NULL == temp_buffer)
@@ -475,17 +477,17 @@ static bool create_signature(const RSA *rsa, const char *sigpath, enclave_css_t 
         (enclave_css->key.signature)[i] = signature[SIGNATURE_SIZE-1-i];
     }
 
-    //************************calculate q1 and q2*********************
+    //************************calculate q1 and q2*********************//
     uint8_t modulus[SE_KEY_SIZE];
     for(int i = 0; i<SE_KEY_SIZE; i++)
     {
         modulus[i] = enclave_css->key.modulus[SE_KEY_SIZE-1-i];
     }
-    bool res = calc_RSAq1q2(sizeof(enclave_css->key.signature), 
-        (const uint8_t *)signature, 
-        sizeof(enclave_css->key.modulus), 
-        (const uint8_t *)modulus, 
-        (uint8_t *)enclave_css->buffer.q1, 
+    bool res = calc_RSAq1q2(sizeof(enclave_css->key.signature),
+        (const uint8_t *)signature,
+        sizeof(enclave_css->key.modulus),
+        (const uint8_t *)modulus,
+        (uint8_t *)enclave_css->buffer.q1,
         (uint8_t *)enclave_css->buffer.q2);
     return res;
 }
@@ -501,7 +503,7 @@ static bool verify_signature(const RSA *rsa, const enclave_css_t *enclave_css)
         return false;
     }
     memcpy_s(temp_buffer, buffer_size, &enclave_css->header, sizeof(enclave_css->header));
-    memcpy_s(temp_buffer + sizeof(enclave_css->header), buffer_size-sizeof(enclave_css->header), 
+    memcpy_s(temp_buffer + sizeof(enclave_css->header), buffer_size-sizeof(enclave_css->header),
         &enclave_css->body, sizeof(enclave_css->body));
 
     uint8_t hash[SGX_HASH_SIZE] = {0};
@@ -571,7 +573,7 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
     typedef struct _param_struct_{
         const char *name;          //options
         char *value;               //keep the path
-        int flag;                  //indicate this parameter is required(0), optional(1) or invalid(2) 
+        int flag;                  //indicate this parameter is required(0), optional(1) or invalid(2)
     }param_struct_t;               //keep the parameter pairs
 
     param_struct_t params_sign[] = {
@@ -634,13 +636,13 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
     {
         const char* para_str;
         int error_flag_bit;
- 
+
     } ignore_error_map_t;
-    ignore_error_map_t iem[] = 
+    ignore_error_map_t iem[] =
     {
         {"-ignore-rel-error", REL_ERROR_BIT},
         {"-ignore-init-sec-error", INIT_SEC_ERROR_BIT}
-    }; 
+    };
     unsigned int params_count = (unsigned)(sizeof(params_sign)/sizeof(params_sign[0]));
 
     for(unsigned int i=2; i<argc; i++)
@@ -654,7 +656,7 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
                 {
                     se_trace(SE_TRACE_ERROR, REPEAT_OPTION_ERROR, argv[i]);
                     return false;
-                }	
+                }
                 ie_bits |= iem[idx].error_flag_bit;
                 break;
             }
@@ -680,7 +682,7 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
                     i++;
                     break;
                 }
-                else     //didn't match: 1) no path parameter behind option parameter 2) parameters format error. 
+                else     //didn't match: 1) no path parameter behind option parameter 2) parameters format error.
                 {
                     se_trace(SE_TRACE_ERROR, INVALID_FILE_NAME_ERROR, params[tempmode][j].name);
                     return false;
@@ -717,15 +719,15 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
 
 }
 
-//generate_output: 
+//generate_output:
 //    To generate the final output file
 //    SIGN-    need to fill the enclave_css_t(key part included), sign the header and body and
 //             update the metadata in the out file
-//    GENDATA- need to fill the enclave_css_t(key part excluded), get the body and header, 
+//    GENDATA- need to fill the enclave_css_t(key part excluded), get the body and header,
 //             and then write the whole out file with body+header+hash
-//    CATSIG-  need to fill the enclave_css_t(include key), read the signature from the sigpath, 
+//    CATSIG-  need to fill the enclave_css_t(include key), read the signature from the sigpath,
 //             and then update the metadata in the out file
-static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, const RSA *rsa, metadata_t *metadata, 
+static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, const RSA *rsa, metadata_t *metadata,
                             const char **path)
 {
     assert(enclave_hash != NULL && metadata != NULL && path != NULL);
@@ -777,7 +779,7 @@ static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, co
             }
 
             if(false == create_signature(NULL, path[SIG], &(metadata->enclave_css)))
-            {   
+            {
                 return false;
             }
             break;
@@ -794,6 +796,175 @@ static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, co
 
 
 #include "se_page_attr.h"
+
+/*
+ * Dump layout information available in the metadata
+ */
+static bool dump_metadata_layout(metadata_t * metadata)
+{
+    layout_entry_t *start = NULL;
+    layout_entry_t *end = NULL;
+    uint32_t size = 0;
+    uint16_t entry_id = 0;
+    uint16_t entry_cnt = 0;
+
+    do {
+        if (metadata->magic_num != METADATA_MAGIC || metadata->size == 0)
+            break;
+
+        size += metadata->size;
+        if (size < metadata->size) {
+            return false;
+        }
+        else {
+            SE_TRACE_DEBUG("\n");
+            se_trace(SE_TRACE_DEBUG, "\tMetadata Version = 0x%016llX\n", metadata->version);
+            start = GET_PTR(layout_entry_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
+            end = GET_PTR(layout_entry_t, start, metadata->dirs[DIR_LAYOUT].size);
+            entry_cnt = 0;
+            for (layout_entry_t *layout = start; layout < end; layout++)
+            {
+                entry_id = layout->id;
+
+                if (!IS_GROUP_ID(entry_id)) {
+                    se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", entry_cnt++, entry_id, layout_id_str[entry_id]);
+                    se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout->page_count);
+                    se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout->attributes);
+                    se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout->si_flags);
+                    se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout->rva, layout->rva + 4096 * layout->page_count);
+                }
+                else {
+                    layout_group_t *layout_grp = reinterpret_cast<layout_group_t*>(layout);
+                    se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", entry_cnt++, entry_id, layout_id_str[entry_id & ~(GROUP_FLAG)]);
+                    se_trace(SE_TRACE_DEBUG, "Entry Count = %4u,  ", layout_grp->entry_count);
+                    se_trace(SE_TRACE_DEBUG, "Load Times = %u,     ", layout_grp->load_times);
+                    se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout_grp->load_step);
+                }
+            }
+
+        }
+        metadata = (metadata_t *)((size_t)metadata + metadata->size);
+
+    } while (size < METADATA_SIZE);
+
+    return true;
+}
+
+/*
+ * We need to add the RSRV layout back at the end.
+ */
+static bool metadata_add_layout(metadata_t *metadata, layout_t * min_layout_to_add, layout_t * init_layout_to_add, layout_t * max_layout_to_add)
+{
+    uint32_t size = 0;
+    void * start = GET_PTR(void *, metadata, metadata->dirs[DIR_LAYOUT].offset);
+    void * end = NULL;
+    layout_entry_t * layout = NULL;
+    uint16_t entry_id = 0;
+
+    if (min_layout_to_add)
+    {
+        size = metadata->size;
+        end = GET_PTR(void *, start, metadata->dirs[DIR_LAYOUT].size);
+        if (memcpy_s(end, METADATA_SIZE - size, min_layout_to_add, sizeof(layout_t))) {
+            se_trace(SE_TRACE_WARNING, "%s: Error memcpy_s failed\n", __FUNCTION__);
+            return false;
+        }
+        metadata->size += (uint32_t)sizeof(layout_t);
+        metadata->dirs[DIR_LAYOUT].size += (uint32_t)sizeof(layout_t);
+
+        layout = (layout_entry_t *)min_layout_to_add;
+        entry_id = layout->id;
+        SE_TRACE_DEBUG("\n");
+        if (!IS_GROUP_ID(entry_id)) {
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, entry_id, layout_id_str[entry_id]);
+            se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout->page_count);
+            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout->attributes);
+            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout->si_flags);
+            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout->rva, layout->rva + 4096 * layout->page_count);
+        }
+        else {
+            layout_group_t *layout_grp = reinterpret_cast<layout_group_t*>(layout);
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, entry_id, layout_id_str[entry_id & ~(GROUP_FLAG)]);
+            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u,  ", layout_grp->entry_count);
+            se_trace(SE_TRACE_DEBUG, "Load Times = %u,     ", layout_grp->load_times);
+            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout_grp->load_step);
+        }
+
+    }
+
+    if (init_layout_to_add)
+    {
+        // Remove the PAGE_ATTR_POST_ADD attribute so that a dynamic
+        // range isn't created during enclave loading time.
+        init_layout_to_add->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
+
+        size = metadata->size;
+        end = GET_PTR(void *, start, metadata->dirs[DIR_LAYOUT].size);
+        if (memcpy_s(end, METADATA_SIZE - size, init_layout_to_add, sizeof(layout_t))) {
+            se_trace(SE_TRACE_WARNING, "%s: Error memcpy_s failed\n", __FUNCTION__);
+            return false;
+        }
+        metadata->size += (uint32_t)sizeof(layout_t);
+        metadata->dirs[DIR_LAYOUT].size += (uint32_t)sizeof(layout_t);
+
+        layout = (layout_entry_t *)init_layout_to_add;
+        entry_id = layout->id;
+        SE_TRACE_DEBUG("\n");
+        if (!IS_GROUP_ID(entry_id)) {
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, entry_id, layout_id_str[entry_id]);
+            se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout->page_count);
+            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout->attributes);
+            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout->si_flags);
+            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout->rva, layout->rva + 4096 * layout->page_count);
+        }
+        else {
+            layout_group_t *layout_grp = reinterpret_cast<layout_group_t*>(layout);
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, entry_id, layout_id_str[entry_id & ~(GROUP_FLAG)]);
+            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u,  ", layout_grp->entry_count);
+            se_trace(SE_TRACE_DEBUG, "Load Times = %u,     ", layout_grp->load_times);
+            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout_grp->load_step);
+        }
+    }
+
+    if (max_layout_to_add)
+    {
+        // Modify LAYOUT_ID_RSRV_MAX so that it isn't included in the
+        // MRENCLAVE. Remove the PAGE_ATTR_POST_ADD attribute so that a
+        // dynamic range isn't created during enclave loading time.
+        max_layout_to_add->entry.si_flags = SI_FLAG_NONE;
+        max_layout_to_add->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
+
+        size = metadata->size;
+        end = GET_PTR(void *, start, metadata->dirs[DIR_LAYOUT].size);
+        if (memcpy_s(end, METADATA_SIZE - size, max_layout_to_add, sizeof(layout_t))) {
+            se_trace(SE_TRACE_WARNING, "%s: Error memcpy_s failed\n", __FUNCTION__);
+            return false;
+        }
+        metadata->size += (uint32_t)sizeof(layout_t);
+        metadata->dirs[DIR_LAYOUT].size += (uint32_t)sizeof(layout_t);
+
+        layout = (layout_entry_t *)max_layout_to_add;
+        entry_id = layout->id;
+        SE_TRACE_DEBUG("\n");
+        if (!IS_GROUP_ID(entry_id)) {
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, entry_id, layout_id_str[entry_id]);
+            se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout->page_count);
+            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout->attributes);
+            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout->si_flags);
+            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout->rva, layout->rva + 4096 * layout->page_count);
+        }
+        else {
+            layout_group_t *layout_grp = reinterpret_cast<layout_group_t*>(layout);
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, entry_id, layout_id_str[entry_id & ~(GROUP_FLAG)]);
+            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u,  ", layout_grp->entry_count);
+            se_trace(SE_TRACE_DEBUG, "Load Times = %u,     ", layout_grp->load_times);
+            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout_grp->load_step);
+        }
+    }
+
+    return true;
+}
+
 static void metadata_cleanup(metadata_t *metadata, uint32_t size_to_reduce)
 {
     layout_t *heap_max = NULL, *heap_init = NULL, *ut_stack_max = NULL;
@@ -878,6 +1049,8 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
         return false;
     }
 
+    SE_TRACE_DEBUG("\n");
+
     // append 2_0 metadata
     memcpy_s(metadata2, metadata->size, metadata, metadata->size);
     metadata2->version = META_DATA_MAKE_VERSION(SGX_2_0_MAJOR_VERSION,SGX_2_0_MINOR_VERSION);
@@ -893,6 +1066,9 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     layout_t *end = GET_PTR(layout_t, start, metadata2->dirs[DIR_LAYOUT].size);
     layout_t tmp_layout;
     layout_t *ut_start = NULL, *ut_end = NULL, *after_ut = NULL;
+    layout_t *min_rsrv_entry = NULL;
+    layout_t *init_rsrv_entry = NULL;
+    layout_t *max_rsrv_entry = NULL;
     uint32_t size_to_reduce = 0;
     bool ret = false;
 
@@ -916,13 +1092,53 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
 
     assert((ut_start != NULL) && (ut_end != NULL) && ((size_t)ut_end > (size_t)ut_start));
 
+    /* Store location of RSRV layouts */
+    for (layout_t *l = start; l < end; l++)
+    {
+        if (l->entry.id == LAYOUT_ID_RSRV_MIN)
+        {
+            min_rsrv_entry = l;
+            continue;
+        }
+	else if (l->entry.id == LAYOUT_ID_RSRV_INIT)
+        {
+            init_rsrv_entry = l;
+            continue;
+        }
+	else if (l->entry.id == LAYOUT_ID_RSRV_MAX)
+        {
+            max_rsrv_entry = l;
+            continue;
+        }
+    }
+
     // entry/group layout if they all exist:
     // utility thread | minpool thread | minpool group | eremove thread | eremove group | dyn thread | dyn group
 
-    // there is only an utility thread in layout table
+    // there is only an utility thread and no RSVR layout in layout table
     if (&ut_end[1] == end)
     {
+        se_trace(SE_TRACE_DEBUG, "%s: Utility thread TD is the last layout\n", __FUNCTION__);
         metadata_cleanup(metadata2, 0);
+        ret = append_compatible_metadata(metadata2, metadata);
+        free(metadata2);
+        return ret;
+    }
+    // only an utility thread + RSVR layouts
+    else if(&ut_end[1] == min_rsrv_entry)
+    {
+        se_trace(SE_TRACE_DEBUG, "%s: Utility thread TD + RSVR layout\n", __FUNCTION__);
+        metadata_cleanup(metadata2, 0);
+        // Cleanup dynamic range for RSRV
+        if (init_rsrv_entry)
+        {
+            init_rsrv_entry->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
+        }
+        if (max_rsrv_entry)
+        {
+            max_rsrv_entry->entry.si_flags = SI_FLAG_NONE;
+            max_rsrv_entry->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
+        }
         ret = append_compatible_metadata(metadata2, metadata);
         free(metadata2);
         return ret;
@@ -944,7 +1160,18 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     memcpy_s(after_ut, sizeof(layout_t), &tmp_layout, sizeof(layout_t));
     size_to_reduce = (uint32_t)((size_t)end - (size_t)(&after_ut[1]));
     metadata_cleanup(metadata2, size_to_reduce);
+    /* Append RSRV layout information */
+    if (NULL != min_rsrv_entry)
+    {
+        ret = metadata_add_layout(metadata2, min_rsrv_entry, init_rsrv_entry, max_rsrv_entry);
+        if (false == ret)
+            goto end;
+    }
     ret = append_compatible_metadata(metadata2, metadata);
+    if (false == ret)
+        goto end;
+    ret = dump_metadata_layout(metadata);
+end:
     free(metadata2);
     return ret;
 }
@@ -952,10 +1179,10 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
 static bool dump_enclave_metadata(const char *enclave_path, const char *dumpfile_path, const char *cssfile)
 {
     assert(enclave_path != NULL && dumpfile_path != NULL);
-    
+
     uint64_t meta_offset = 0;
     bin_fmt_t bin_fmt = BF_UNKNOWN;
-    uint32_t file_size = 0;
+    off_t file_size = 0;
 
     se_file_handle_t fh = open_file(enclave_path);
     if (fh == THE_INVALID_HANDLE)
@@ -1003,37 +1230,41 @@ static bool dump_enclave_metadata(const char *enclave_path, const char *dumpfile
             close_handle(fh);
             return false;
         }
-    } 
+    }
 
     close_handle(fh);
     return true;
 }
 int main(int argc, char* argv[])
 {
-    xml_parameter_t parameter[] = {{"ProdID", 0xFFFF, 0, 0, 0},
-                                   {"ISVSVN", 0xFFFF, 0, 0, 0},
-                                   {"ReleaseType", 1, 0, 0, 0},
-                                   {"IntelSigned", 1, 0, 0, 0},
-                                   {"ProvisionKey",1,0,0,0},
-                                   {"LaunchKey",1,0,0,0},
-                                   {"DisableDebug",1,0,0,0},
-                                   {"HW", 0x10,0,0,0},
-                                   {"TCSNum",0xFFFFFFFF,TCS_NUM_MIN,TCS_NUM_MIN,0},
-                                   {"TCSMaxNum",0xFFFFFFFF,TCS_NUM_MIN,TCS_NUM_MIN,0},
-                                   {"TCSMinPool",0xFFFFFFFF,0,TCS_NUM_MIN,0},
-                                   {"TCSPolicy",TCS_POLICY_UNBIND,TCS_POLICY_BIND,TCS_POLICY_UNBIND,0},
-                                   {"StackMaxSize",0x1FFFFFFFFF,STACK_SIZE_MIN,STACK_SIZE_MAX,0},
-                                   {"StackMinSize",0x1FFFFFFFFF,STACK_SIZE_MIN,STACK_SIZE_MIN,0},
-                                   {"HeapMaxSize",0x1FFFFFFFFF,0,HEAP_SIZE_MAX,0},
-                                   {"HeapMinSize",0x1FFFFFFFFF,0,HEAP_SIZE_MIN,0},
-                                   {"HeapInitSize",0x1FFFFFFFFF,0,HEAP_SIZE_MIN,0},
-                                   {"MiscSelect", 0xFFFFFFFF, 0, DEFAULT_MISC_SELECT, 0},
-                                   {"MiscMask", 0xFFFFFFFF, 0, DEFAULT_MISC_MASK, 0},
-                                   {"EnableKSS", 1, 0, 0, 0},
-                                   {"ISVFAMILYID_H", ISVFAMILYID_MAX, 0, 0, 0},
-                                   {"ISVFAMILYID_L", ISVFAMILYID_MAX , 0, 0, 0},
-                                   {"ISVEXTPRODID_H", ISVEXTPRODID_MAX, 0, 0, 0},
-                                   {"ISVEXTPRODID_L", ISVEXTPRODID_MAX, 0, 0, 0}};
+    xml_parameter_t parameter[] = {/* name,           max_value          min_value,      default value,       flag */
+                                   {"ProdID",         0xFFFF,            0,              0,                   0},
+                                   {"ISVSVN",         0xFFFF,            0,              0,                   0},
+                                   {"ReleaseType",    1,                 0,              0,                   0},
+                                   {"IntelSigned",    1,                 0,              0,                   0},
+                                   {"ProvisionKey",   1,                 0,              0,                   0},
+                                   {"LaunchKey",      1,                 0,              0,                   0},
+                                   {"DisableDebug",   1,                 0,              0,                   0},
+                                   {"HW",             0x10,              0,              0,                   0},
+                                   {"TCSNum",         0xFFFFFFFF,        TCS_NUM_MIN,    TCS_NUM_MIN,         0},
+                                   {"TCSMaxNum",      0xFFFFFFFF,        TCS_NUM_MIN,    TCS_NUM_MIN,         0},
+                                   {"TCSMinPool",     0xFFFFFFFF,        0,              TCS_NUM_MIN,         0},
+                                   {"TCSPolicy",      TCS_POLICY_UNBIND, TCS_POLICY_BIND,TCS_POLICY_UNBIND,   0},
+                                   {"StackMaxSize",   0x1FFFFFFFFF,      STACK_SIZE_MIN, STACK_SIZE_MAX,      0},
+                                   {"StackMinSize",   0x1FFFFFFFFF,      STACK_SIZE_MIN, STACK_SIZE_MIN,      0},
+                                   {"HeapMaxSize",    0x1FFFFFFFFF,      0,              HEAP_SIZE_MAX,       0},
+                                   {"HeapMinSize",    0x1FFFFFFFFF,      0,              HEAP_SIZE_MIN,       0},
+                                   {"HeapInitSize",   0x1FFFFFFFFF,      0,              HEAP_SIZE_MIN,       0},
+                                   {"RsrvMaxSize",    0x1FFFFFFFFF,      0,              RSRV_SIZE_MAX,       0},
+                                   {"RsrvMinSize",    0x1FFFFFFFFF,      0,              RSRV_SIZE_MIN,       0},
+                                   {"RsrvInitSize",   0x1FFFFFFFFF,      0,              RSRV_SIZE_MIN,       0},
+                                   {"MiscSelect",     0x00FFFFFFFF,      0,              DEFAULT_MISC_SELECT, 0},
+                                   {"MiscMask",       0x00FFFFFFFF,      0,              DEFAULT_MISC_MASK,   0},
+                                   {"EnableKSS",      1,                 0,              0,                   0},
+                                   {"ISVFAMILYID_H",  ISVFAMILYID_MAX,   0,              0,                   0},
+                                   {"ISVFAMILYID_L",  ISVFAMILYID_MAX ,  0,              0,                   0},
+                                   {"ISVEXTPRODID_H", ISVEXTPRODID_MAX,  0,              0,                   0},
+                                   {"ISVEXTPRODID_L", ISVEXTPRODID_MAX,  0,              0,                   0}};
 
     const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
@@ -1048,7 +1279,7 @@ int main(int argc, char* argv[])
     memset(&metadata_raw, 0, sizeof(metadata_raw));
 
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L    
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     OpenSSL_add_all_algorithms();
     ERR_load_crypto_strings();
 #else
@@ -1078,7 +1309,7 @@ int main(int argc, char* argv[])
         res = 0;
         goto clear_return;
     }
-    
+
     //Other modes
     //
     //Parse the xml file to get the metadata
@@ -1087,7 +1318,7 @@ int main(int argc, char* argv[])
         goto clear_return;
     }
     //Parse the key file
-    if(parse_key_file(mode, path[KEY], &rsa, &key_type) == false && key_type != NO_KEY) 
+    if(parse_key_file(mode, path[KEY], &rsa, &key_type) == false && key_type != NO_KEY)
     {
         goto clear_return;
     }
@@ -1127,7 +1358,7 @@ int main(int argc, char* argv[])
             goto clear_return;
         }
     }
-    
+
     if(path[DUMPFILE] != NULL)
     {
         if(print_metadata(path[DUMPFILE], metadata) == false)
@@ -1154,8 +1385,8 @@ clear_return:
     if(res == -1 && path[DUMPFILE])
         remove(path[DUMPFILE]);
     if(res == -1 && path[CSSFILE])
-        remove(path[CSSFILE]);    
-#if OPENSSL_VERSION_NUMBER < 0x10100000L    
+        remove(path[CSSFILE]);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     EVP_cleanup();
     CRYPTO_cleanup_all_ex_data();
     ERR_remove_thread_state(NULL);

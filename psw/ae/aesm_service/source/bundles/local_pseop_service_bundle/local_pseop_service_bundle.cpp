@@ -50,9 +50,10 @@ static ae_error_t thread_to_init_pse(aesm_thread_arg_type_t arg)
 class LocalPseopServiceImp : public IPseopService
 {
 private:
+    bool initialized;
     aesm_thread_t pse_thread;
 public:
-    LocalPseopServiceImp():pse_thread(NULL){}
+    LocalPseopServiceImp(): initialized(false), pse_thread(NULL) {}
 
     aesm_error_t create_session(
         uint32_t* session_id,
@@ -60,6 +61,8 @@ public:
         uint32_t se_dh_msg1_size)
     {
         AESM_DBG_INFO("LocalPseopServiceImp::create_session");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_pse_mutex);
         CHECK_LONG_TERM_PAIRING_STATUS;
         ae_error_t psStatus;
@@ -124,6 +127,8 @@ public:
         uint32_t se_dh_msg3_size)
     {
         AESM_DBG_INFO("LocalPseopServiceImp::exchange_report");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_pse_mutex);
         CHECK_LONG_TERM_PAIRING_STATUS;
 
@@ -141,6 +146,8 @@ public:
         uint32_t pse_message_resp_size)
     {
         AESM_DBG_INFO("LocalPseopServiceImp::invoke_service");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_pse_mutex);
         CHECK_LONG_TERM_PAIRING_STATUS;
         return PSEOPAESMLogic::invoke_service(pse_message_req,
@@ -153,6 +160,8 @@ public:
         uint64_t* ps_cap)
     {
         AESM_DBG_INFO("LocalPseopServiceImp::get_ps_cap");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_pse_mutex);
 
         return PSEOPAESMLogic::get_ps_cap(ps_cap);
@@ -162,6 +171,8 @@ public:
         uint32_t session_id)
     {
         AESM_DBG_INFO("LocalPseopServiceImp::close_session");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_pse_mutex);
 
         return PSEOPAESMLogic::close_session(session_id);
@@ -174,11 +185,28 @@ public:
     uint8_t* update_info, uint32_t update_info_size)
     {
         AESM_DBG_INFO("LocalPseopServiceImp::report_attestation_status");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_pse_mutex);
         CHECK_LONG_TERM_PAIRING_STATUS;
         return  PlatformInfoLogic::report_attestation_status(platform_info,platform_info_size,
             attestation_status,
             update_info, update_info_size);
+    }
+
+    aesm_error_t check_update_status(
+    uint8_t* platform_info, uint32_t platform_info_size,
+    uint8_t* update_info, uint32_t update_info_size,
+    uint32_t config, uint32_t* status)
+    {
+        AESM_DBG_INFO("LocalPseopServiceImp::check_update_status");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        AESMLogicLock lock(_pse_mutex);
+        CHECK_LONG_TERM_PAIRING_STATUS;
+        return  PlatformInfoLogic::check_update_status(platform_info,platform_info_size,
+            update_info, update_info_size,
+            config, status);
     }
 
     ae_error_t save_psda_capability()
@@ -205,8 +233,14 @@ public:
     ae_error_t start()
     {
         AESM_DBG_INFO("Starting pseop bundle");
-        get_service_wrapper(g_epid_service);
-        get_service_wrapper(g_psepr_service);
+        if (initialized == true)
+        {
+            AESM_DBG_INFO("pseop bundle has been started");
+            return AE_SUCCESS;
+        }
+        auto context = cppmicroservices::GetBundleContext();
+        get_service_wrapper(g_epid_service, context);
+        get_service_wrapper(g_psepr_service, context);
         if (g_epid_service == nullptr || g_epid_service->start())
             return AE_FAILURE;
         if (g_psepr_service == nullptr || g_psepr_service->start())
@@ -218,6 +252,7 @@ public:
             return AE_FAILURE;
         }
         AESM_DBG_INFO("pseop bundle started");
+        initialized = true;
         return AE_SUCCESS;
      }
 
@@ -237,6 +272,7 @@ public:
 
         CPSEClass::instance().unload_enclave();
         AESM_DBG_INFO("pseop bundle stopped");
+        initialized = false;
     }
 
     ae_error_t load_enclave()

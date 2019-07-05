@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2002, 2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -29,7 +29,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 static inline int
 local_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
-		      int need_unwind_info, void *arg)
+                      int need_unwind_info, void *arg)
 {
   return -UNW_ENOINFO;
 }
@@ -38,7 +38,7 @@ local_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
 
 static inline int
 local_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
-		      int need_unwind_info, void *arg)
+                      int need_unwind_info, void *arg)
 {
   unw_dyn_info_list_t *list;
   unw_dyn_info_t *di;
@@ -53,7 +53,7 @@ local_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
   for (di = list->first; di; di = di->next)
     if (ip >= di->start_ip && ip < di->end_ip)
       return unwi_extract_dynamic_proc_info (as, ip, pi, di, need_unwind_info,
-					     arg);
+                                             arg);
   return -UNW_ENOINFO;
 }
 
@@ -63,7 +63,7 @@ local_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
 
 static inline int
 remote_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
-		       int need_unwind_info, void *arg)
+                       int need_unwind_info, void *arg)
 {
   return -UNW_ENOINFO;
 }
@@ -72,7 +72,7 @@ remote_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
 
 static inline int
 remote_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
-		       int need_unwind_info, void *arg)
+                       int need_unwind_info, void *arg)
 {
   return unwi_dyn_remote_find_proc_info (as, ip, pi, need_unwind_info, arg);
 }
@@ -81,8 +81,8 @@ remote_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
 
 HIDDEN int
 unwi_find_dynamic_proc_info (unw_addr_space_t as, unw_word_t ip,
-			     unw_proc_info_t *pi, int need_unwind_info,
-			     void *arg)
+                             unw_proc_info_t *pi, int need_unwind_info,
+                             void *arg)
 {
   if (as == unw_local_addr_space)
     return local_find_proc_info (as, ip, pi, need_unwind_info, arg);

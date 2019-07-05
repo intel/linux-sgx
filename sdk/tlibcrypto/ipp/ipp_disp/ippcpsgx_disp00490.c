@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECESFinal_SM2, (Ipp8u* pTag, int tagLen, IppsECESState_SM2* pState))
-IPPAPI(IppStatus, l9_ippsGFpECESFinal_SM2, (Ipp8u* pTag, int tagLen, IppsECESState_SM2* pState))
+IPPAPI(IppStatus, y8_ippsGFpECESSetKey_SM2, (const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppsECESState_SM2* pState, IppsGFpECState* pEC, Ipp8u* pEcScratchBuffer))
+IPPAPI(IppStatus, l9_ippsGFpECESSetKey_SM2, (const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppsECESState_SM2* pState, IppsGFpECState* pEC, Ipp8u* pEcScratchBuffer))
+IPPAPI(IppStatus, k0_ippsGFpECESSetKey_SM2, (const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppsECESState_SM2* pState, IppsGFpECState* pEC, Ipp8u* pEcScratchBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECESFinal_SM2, (Ipp8u* pTag, int tagLen, IppsECESState_SM2* pState))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECESSetKey_SM2, (const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppsECESState_SM2* pState, IppsGFpECState* pEC, Ipp8u* pEcScratchBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsGFpECESFinal_SM2( pTag, tagLen, pState );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpECESSetKey_SM2( pPrivate, pPublic, pState, pEC, pEcScratchBuffer );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsGFpECESFinal_SM2( pTag, tagLen, pState );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsGFpECESSetKey_SM2( pPrivate, pPublic, pState, pEC, pEcScratchBuffer );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsGFpECESSetKey_SM2( pPrivate, pPublic, pState, pEC, pEcScratchBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECESFinal_SM2, (Ipp8u* pTag, int tagLen, IppsECESState_SM2* pState))
-IPPAPI(IppStatus, h9_ippsGFpECESFinal_SM2, (Ipp8u* pTag, int tagLen, IppsECESState_SM2* pState))
+IPPAPI(IppStatus, p8_ippsGFpECESSetKey_SM2, (const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppsECESState_SM2* pState, IppsGFpECState* pEC, Ipp8u* pEcScratchBuffer))
+IPPAPI(IppStatus, h9_ippsGFpECESSetKey_SM2, (const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppsECESState_SM2* pState, IppsGFpECState* pEC, Ipp8u* pEcScratchBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECESFinal_SM2, (Ipp8u* pTag, int tagLen, IppsECESState_SM2* pState))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECESSetKey_SM2, (const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppsECESState_SM2* pState, IppsGFpECState* pEC, Ipp8u* pEcScratchBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsGFpECESFinal_SM2( pTag, tagLen, pState );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsGFpECESSetKey_SM2( pPrivate, pPublic, pState, pEC, pEcScratchBuffer );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsGFpECESFinal_SM2( pTag, tagLen, pState );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsGFpECESSetKey_SM2( pPrivate, pPublic, pState, pEC, pEcScratchBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

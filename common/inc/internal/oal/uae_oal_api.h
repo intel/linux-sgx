@@ -32,7 +32,6 @@
 #define _UAE_OAL_H
 
 #include "sgx_quote.h"
-#include "sgx_ql_quote.h"
 #include "sgx_error.h"
 #include "sgx_urts.h"
 #include <arch.h>
@@ -55,8 +54,8 @@ uae_oal_status_t SGXAPI oal_get_launch_token(
     const enclave_css_t*        signature,
     const sgx_attributes_t*     attribute,
     sgx_launch_token_t*         launch_token,
-    uint32_t                timeout_usec,
-    aesm_error_t            *result);
+    uint32_t                    timeout_usec,
+    aesm_error_t                *result);
 
 
 uae_oal_status_t SGXAPI oal_init_quote(
@@ -87,7 +86,15 @@ uae_oal_status_t SGXAPI oal_get_ps_cap(
 uae_oal_status_t SGXAPI oal_report_attestation_status(
     const sgx_platform_info_t*  p_platform_info,
     int                         attestation_status,
-    sgx_update_info_bit_t*          p_update_info,
+    sgx_update_info_bit_t*      p_update_info,
+    uint32_t                    timeout_usec,
+    aesm_error_t                *result);
+
+uae_oal_status_t SGXAPI oal_check_update_status(
+    const sgx_platform_info_t*  p_platform_info,
+    sgx_update_info_bit_t*      p_update_info,
+    uint32_t                    config,
+    uint32_t*                   status,
     uint32_t                    timeout_usec,
     aesm_error_t                *result);
 
@@ -148,26 +155,28 @@ uae_oal_status_t oal_register_common(
     uint32_t timeout_usec,
     aesm_error_t *result);
 
-uae_oal_status_t oal_init_quote_ex(const sgx_ql_att_key_id_t *att_key_id,
-                uint32_t certification_key_type,
+uae_oal_status_t oal_select_att_key_id(const uint8_t *att_key_id_list,
+                uint32_t att_key_id_list_size,
+                sgx_att_key_id_t *selected_key_id,
+                uint32_t timeout_usec, aesm_error_t *result);
+
+uae_oal_status_t oal_init_quote_ex(const sgx_att_key_id_t *att_key_id,
                 sgx_target_info_t *target_info,
-                bool refresh_att_key,
-		size_t *pub_key_id_size, size_t buf_size, uint8_t *pub_key_id,
+                size_t *pub_key_id_size, size_t buf_size, uint8_t *pub_key_id,
                 uint32_t timeout_usec, aesm_error_t *result);
 
 uae_oal_status_t oal_get_quote_size_ex(
-                const sgx_ql_att_key_id_t *att_key_id,
-                uint32_t certification_key_type,
+                const sgx_att_key_id_t *att_key_id,
                 uint32_t *quote_size,
                 uint32_t timeout_usec, aesm_error_t *result);
 
 uae_oal_status_t oal_get_quote_ex(
                 const sgx_report_t *p_report,
-                const sgx_ql_att_key_id_t *att_key_id,
-                sgx_ql_qe_report_info_t *qe_report_info,
+                const sgx_att_key_id_t *att_key_id,
+                sgx_qe_report_info_t *qe_report_info,
                 uint32_t quote_size, uint8_t *p_quote,
-    uint32_t timeout_usec, 
-    aesm_error_t *result);
+                uint32_t timeout_usec,
+                aesm_error_t *result);
 
 
 sgx_status_t    oal_map_status(uae_oal_status_t status);

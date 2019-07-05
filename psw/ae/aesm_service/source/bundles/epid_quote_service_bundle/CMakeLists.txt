@@ -2,7 +2,7 @@ set(Edger8rOutputPVE "${CMAKE_CURRENT_BINARY_DIR}/provision_enclave_u.c")
 set(Edger8rOutputQE "${CMAKE_CURRENT_BINARY_DIR}/quoting_enclave_u.c")
 get_filename_component(bundle ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 aux_source_directory(. _srcs)
-set(all_src ${_srcs} ${CMAKE_SOURCE_DIR}/../../common/pek_pub_key.cpp)
+set(all_src ${_srcs} ${CMAKE_SOURCE_DIR}/../../common/pek_pub_key.cpp ${CMAKE_SOURCE_DIR}/../../common/se_sig_rl.cpp)
 link_directories(${CMAKE_SOURCE_DIR}/../../../../build/linux)
 CreateBundle(${bundle} ${all_src} ${Edger8rOutputQE} ${Edger8rOutputPVE})
 
@@ -15,6 +15,12 @@ target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/../../pve
 	${PROJECT_SOURCE_DIR}/../../../../external/epid-sdk
 	${PROJECT_SOURCE_DIR}/../../../../external/ippcp_internal/inc
+	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/inc
+	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/common/inc
+	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/enclave
+	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/pce_wrapper/inc
+	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal
+	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal/linux
 )
 
 add_custom_command(

@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003-2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -69,26 +69,26 @@ _longjmp (jmp_buf env, int val)
   do
     {
       if (unw_get_reg (&c, UNW_REG_SP, &sp) < 0)
-	abort ();
+        abort ();
 #ifdef __FreeBSD__
       if (sp != wp[JB_SP] + sizeof(unw_word_t))
 #else
       if (sp != wp[JB_SP])
 #endif
-	continue;
+        continue;
 
       if (!bsp_match (&c, wp))
-	continue;
+        continue;
 
       /* found the right frame: */
 
       assert (UNW_NUM_EH_REGS >= 2);
 
       if (unw_set_reg (&c, UNW_REG_EH + 0, wp[JB_RP]) < 0
-	  || unw_set_reg (&c, UNW_REG_EH + 1, val) < 0
-	  || unw_set_reg (&c, UNW_REG_IP,
-			  (unw_word_t) (uintptr_t) &_UI_longjmp_cont))
-	abort ();
+          || unw_set_reg (&c, UNW_REG_EH + 1, val) < 0
+          || unw_set_reg (&c, UNW_REG_IP,
+                          (unw_word_t) (uintptr_t) &_UI_longjmp_cont))
+        abort ();
 
       unw_resume (&c);
 

@@ -409,6 +409,22 @@ sgx_status_t SGXAPI sgx_report_attestation_status(
     return SGX_SUCCESS;
 }
 
+sgx_status_t SGXAPI sgx_check_update_status(
+    const sgx_platform_info_t* p_platform_info,
+    sgx_update_info_bit_t* p_update_info,
+    uint32_t config,
+    uint32_t* p_status)
+{
+    if (p_update_info == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
+    UNUSED(p_platform_info);
+    UNUSED(config);
+    memset(p_update_info, 0, sizeof(sgx_update_info_bit_t));
+    if (NULL != p_status)
+        *p_status = 0;
+    return SGX_SUCCESS;
+}
+
 sgx_status_t SGXAPI sgx_get_extended_epid_group_id(uint32_t* p_extended_epid_group_id)
 {
     if (p_extended_epid_group_id == NULL)
@@ -443,23 +459,21 @@ sgx_status_t SGXAPI sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_
 }
 
 sgx_status_t SGXAPI sgx_select_att_key_id(const uint8_t *p_att_key_id_list, uint32_t att_key_id_list_size,
-                                                   sgx_att_key_id_t **pp_selected_key_id)
+                                                   sgx_att_key_id_t *p_selected_key_id)
 {
     UNUSED(p_att_key_id_list);
     UNUSED(att_key_id_list_size);
-    UNUSED(pp_selected_key_id);
+    UNUSED(p_selected_key_id);
     return SGX_SUCCESS;
 }
 
 sgx_status_t SGXAPI sgx_init_quote_ex(const sgx_att_key_id_t* p_att_key_id,
                                             sgx_target_info_t *p_qe_target_info,
-                                            bool refresh_att_key,
                                             size_t* p_pub_key_id_size,
                                             uint8_t* p_pub_key_id)
 {
     UNUSED(p_att_key_id);
     UNUSED(p_qe_target_info);
-    UNUSED(refresh_att_key);
     UNUSED(p_pub_key_id_size);
     UNUSED(p_pub_key_id);
     return SGX_SUCCESS;

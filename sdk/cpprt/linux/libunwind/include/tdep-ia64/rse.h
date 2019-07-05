@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 1998, 1999, 2002, 2003, 2005 Hewlett-Packard Co
- *	David Mosberger-Tang <davidm@hpl.hp.com>
+ *      David Mosberger-Tang <davidm@hpl.hp.com>
  *
  * Register stack engine related helper functions.  This file may be
  * used in applications, so be careful about the name-space and give
@@ -15,7 +15,7 @@
 static inline uint64_t
 rse_slot_num (uint64_t addr)
 {
-	return (addr >> 3) & 0x3f;
+        return (addr >> 3) & 0x3f;
 }
 
 /*
@@ -24,7 +24,7 @@ rse_slot_num (uint64_t addr)
 static inline uint64_t
 rse_is_rnat_slot (uint64_t addr)
 {
-	return rse_slot_num (addr) == 0x3f;
+        return rse_slot_num (addr) == 0x3f;
 }
 
 /*
@@ -34,7 +34,7 @@ rse_is_rnat_slot (uint64_t addr)
 static inline uint64_t
 rse_rnat_addr (uint64_t slot_addr)
 {
-	return slot_addr | (0x3f << 3);
+        return slot_addr | (0x3f << 3);
 }
 
 /*
@@ -45,9 +45,9 @@ rse_rnat_addr (uint64_t slot_addr)
 static inline uint64_t
 rse_num_regs (uint64_t bspstore, uint64_t bsp)
 {
-	uint64_t slots = (bsp - bspstore) >> 3;
+        uint64_t slots = (bsp - bspstore) >> 3;
 
-	return slots - (rse_slot_num(bspstore) + slots)/0x40;
+        return slots - (rse_slot_num(bspstore) + slots)/0x40;
 }
 
 /*
@@ -57,11 +57,11 @@ rse_num_regs (uint64_t bspstore, uint64_t bsp)
 static inline uint64_t
 rse_skip_regs (uint64_t addr, long num_regs)
 {
-	long delta = rse_slot_num(addr) + num_regs;
+        long delta = rse_slot_num(addr) + num_regs;
 
-	if (num_regs < 0)
-		delta -= 0x3e;
-	return addr + ((num_regs + delta/0x3f) << 3);
+        if (num_regs < 0)
+                delta -= 0x3e;
+        return addr + ((num_regs + delta/0x3f) << 3);
 }
 
 #endif /* RSE_H */

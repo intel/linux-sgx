@@ -49,16 +49,20 @@
 
 IPPAPI(IppStatus, y8_ippsSMS4DecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsSMS4Spec* pCtx, const Ipp8u* pIV))
 IPPAPI(IppStatus, l9_ippsSMS4DecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsSMS4Spec* pCtx, const Ipp8u* pIV))
+IPPAPI(IppStatus, k0_ippsSMS4DecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsSMS4Spec* pCtx, const Ipp8u* pIV))
 
 IPPFUN(IppStatus,sgx_disp_ippsSMS4DecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsSMS4Spec* pCtx, const Ipp8u* pIV))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsSMS4DecryptCFB( pSrc, pDst, len, cfbBlkSize, pCtx, pIV );
+      } else 
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsSMS4DecryptCFB( pSrc, pDst, len, cfbBlkSize, pCtx, pIV );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return y8_ippsSMS4DecryptCFB( pSrc, pDst, len, cfbBlkSize, pCtx, pIV );
       } else 
         return ippStsCpuNotSupportedErr;
@@ -74,10 +78,10 @@ IPPFUN(IppStatus,sgx_disp_ippsSMS4DecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, in
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return h9_ippsSMS4DecryptCFB( pSrc, pDst, len, cfbBlkSize, pCtx, pIV );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return p8_ippsSMS4DecryptCFB( pSrc, pDst, len, cfbBlkSize, pCtx, pIV );
       } else 
         return ippStsCpuNotSupportedErr;

@@ -56,17 +56,13 @@ INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk    \
            -I$(UAE_INC_DIR) \
            -I$(IPC_COMMON_PROTO_DIR) \
            -I$(LINUX_PSW_DIR)/ae/aesm_service/source \
-           -I$(LINUX_PSW_DIR)/ae/aesm_service/source/common \
-           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
-           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/enclave/ \
-           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/inc/ \
-           -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
+           -I$(LINUX_PSW_DIR)/ae/aesm_service/source/common
 
 CXXFLAGS += -fPIC -Werror -Wno-unused-parameter -g -DPROTOBUF_INLINE_NOT_IN_HEADERS=0
 
 EXTERNAL_LIB += -lprotobuf 
  
-vpath %.cpp .. $(COMMON_DIR)/src  $(IPC_COMMON_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(UAE_SRC_DIR) $(AE_COMMON_DIR) $(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote
+vpath %.cpp .. $(COMMON_DIR)/src  $(IPC_COMMON_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(UAE_SRC_DIR) $(AE_COMMON_DIR)
 vpath %.c   $(COMMON_DIR)/src
 
 C_SRC   := se_trace.c
@@ -86,6 +82,8 @@ IPC_SRC  := AECloseSessionRequest.cpp    \
              AEGetPsCapResponse.cpp \
              AEReportAttestationRequest.cpp \
              AEReportAttestationResponse.cpp \
+             AECheckUpdateStatusRequest.cpp \
+             AECheckUpdateStatusResponse.cpp \
              ProtobufSerializer.cpp \
              AEGetLaunchTokenRequest.cpp  \
              AEGetWhiteListSizeRequest.cpp \
@@ -105,6 +103,8 @@ IPC_SRC  := AECloseSessionRequest.cpp    \
              UnixSocketFactory.cpp \
              NonBlockingUnixCommunicationSocket.cpp \
              NonBlockingUnixSocketFactory.cpp \
+             AESelectAttKeyIDRequest.cpp \
+             AESelectAttKeyIDResponse.cpp \
              AEInitQuoteExRequest.cpp \
              AEInitQuoteExResponse.cpp \
              AEGetQuoteExRequest.cpp \
@@ -122,8 +122,7 @@ SRC :=       AEServicesImpl.cpp \
              se_sig_rl.cpp \
              sgx_uae_service.cpp \
              uae_service_version.cpp \
-             uae_service_assert.cpp \
-             sgx_ql_core_wrapper.cpp
+             uae_service_assert.cpp
 
 OBJ := $(C_SRC:.c=.o) $(SRC:.cpp=.o) $(IPC_SRC:.cpp=.o)  $(PROTOBUF_SRC:.cc=.o) 
 

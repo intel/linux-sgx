@@ -69,7 +69,7 @@ extern void init_cpuinfo(uint32_t *cpuinfo_table)
 	return;
 }
 
-void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo_table)
+void get_cpu_features(uint64_t *__intel_cpu_feature_indicator)
 {
     unsigned int cpuid0_eax, cpuid0_ebx, cpuid0_ecx, cpuid0_edx;
     unsigned int cpuid1_eax, cpuid1_ebx, cpuid1_ecx, cpuid1_edx;
@@ -84,8 +84,6 @@ void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo
               cpuid0_ecx == CPU_NTEL_VAL))
     {
         *__intel_cpu_feature_indicator = cpu_feature_indicator;
-        // sgxssl cpuid initiation
-        init_cpuinfo(cpuinfo_table);
         return;
     }
 
@@ -206,6 +204,4 @@ void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo
     
 
     *__intel_cpu_feature_indicator = cpu_feature_indicator;
-    // sgxssl cpuid initiation
-    init_cpuinfo(cpuinfo_table);
 }

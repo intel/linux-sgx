@@ -49,16 +49,20 @@
 
 IPPAPI(IppStatus, y8_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
 IPPAPI(IppStatus, l9_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
+IPPAPI(IppStatus, k0_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
 
 IPPFUN(IppStatus,sgx_disp_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsHashGetTag( pTag, tagLen, pState );
+      } else 
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsHashGetTag( pTag, tagLen, pState );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return y8_ippsHashGetTag( pTag, tagLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;
@@ -74,10 +78,10 @@ IPPFUN(IppStatus,sgx_disp_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHas
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return h9_ippsHashGetTag( pTag, tagLen, pState );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return p8_ippsHashGetTag( pTag, tagLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;

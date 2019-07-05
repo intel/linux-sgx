@@ -35,6 +35,7 @@
 
 #ifndef LINUX_REGS_H__
 #define LINUX_REGS_H__
+#include "sgx_cet.h"
 
 #if defined(__i386) || defined(__i386__)
 #  define LINUX32       1
@@ -140,6 +141,7 @@
     .globl \name
     .type \name, @function
 \name:
+    _CET_ENDBR
 .endm
 
 /* declare a function with visibility='hidden' */
@@ -148,6 +150,7 @@
     .hidden \name
     .type \name, @function
 \name:
+    _CET_ENDBR
 .endm
 
 .macro NAKED_PROLOG

@@ -32,10 +32,10 @@ extern "C" {
 #include <inttypes.h>
 #include <stddef.h>
 
-#define UNW_TARGET	arm
-#define UNW_TARGET_ARM	1
+#define UNW_TARGET      arm
+#define UNW_TARGET_ARM  1
 
-#define _U_TDEP_QP_TRUE	0	/* see libunwind-dynamic.h  */
+#define _U_TDEP_QP_TRUE 0       /* see libunwind-dynamic.h  */
 
 /* This needs to be big enough to accommodate "struct cursor", while
    leaving some slack for future expansion.  Changing this value will
@@ -44,7 +44,7 @@ extern "C" {
    want to err on making it rather too big than too small.  */
    
 /* FIXME for ARM. Too big?  What do other things use for similar tasks?  */
-#define UNW_TDEP_CURSOR_LEN	4096
+#define UNW_TDEP_CURSOR_LEN     4096
 
 typedef uint32_t unw_word_t;
 typedef int32_t unw_sword_t;
@@ -242,7 +242,7 @@ typedef enum
   }
 arm_regnum_t;
 
-#define UNW_TDEP_NUM_EH_REGS	2	/* FIXME for ARM.  */
+#define UNW_TDEP_NUM_EH_REGS    2       /* FIXME for ARM.  */
 
 typedef struct unw_tdep_save_loc
   {
@@ -263,22 +263,23 @@ unw_tdep_context_t;
    registers.  FIXME: Not ideal, may not be sufficient for all libunwind
    use cases.  Stores pc+8, which is only approximately correct, really.  */
 #ifndef __thumb__
-#define unw_tdep_getcontext(uc) (({					\
-  unw_tdep_context_t *unw_ctx = (uc);					\
-  register unsigned long *unw_base asm ("r0") = unw_ctx->regs;		\
-  __asm__ __volatile__ (						\
-    "stmia %[base], {r0-r15}"						\
-    : : [base] "r" (unw_base) : "memory");				\
+#define unw_tdep_getcontext(uc) (({                                     \
+  unw_tdep_context_t *unw_ctx = (uc);                                   \
+  register unsigned long *unw_base __asm__ ("r0") = unw_ctx->regs;      \
+  __asm__ __volatile__ (                                                \
+    "stmia %[base], {r0-r15}"                                           \
+    : : [base] "r" (unw_base) : "memory");                              \
   }), 0)
 #else /* __thumb__ */
-#define unw_tdep_getcontext(uc) (({					\
-  unw_tdep_context_t *unw_ctx = (uc);					\
-  register unsigned long *unw_base asm ("r0") = unw_ctx->regs;		\
-  __asm__ __volatile__ (						\
-    ".align 2\nbx pc\nnop\n.code 32\n"					\
-    "stmia %[base], {r0-r15}\n"						\
-    "orr %[base], pc, #1\nbx %[base]"					\
-    : [base] "+r" (unw_base) : : "memory", "cc");			\
+#define unw_tdep_getcontext(uc) (({                                     \
+  unw_tdep_context_t *unw_ctx = (uc);                                   \
+  register unsigned long *unw_base __asm__ ("r0") = unw_ctx->regs;      \
+  __asm__ __volatile__ (                                                \
+    ".align 2\nbx pc\nnop\n.code 32\n"                                  \
+    "stmia %[base], {r0-r15}\n"                                         \
+    "orr %[base], pc, #1\nbx %[base]\n"                                 \
+    ".code 16\n"							\
+    : [base] "+r" (unw_base) : : "memory", "cc");                       \
   }), 0)
 #endif
 
@@ -292,7 +293,7 @@ unw_tdep_proc_info_t;
 
 #include "libunwind-common.h"
 
-#define unw_tdep_is_fpreg		UNW_ARCH_OBJ(is_fpreg)
+#define unw_tdep_is_fpreg               UNW_ARCH_OBJ(is_fpreg)
 extern int unw_tdep_is_fpreg (int);
 
 #if defined(__cplusplus) || defined(c_plusplus)

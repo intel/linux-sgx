@@ -4,10 +4,10 @@
 #include <stdint.h>
 #include "aesm_error.h"
 
-struct IQuoteService : public IService
+struct IQuoteService : virtual public IService
 {
     // The value should be the same as the major version in manifest.json
-    enum {VERSION = 1};
+    enum {VERSION = 2};
     virtual ~IQuoteService() = default;
 
     virtual aesm_error_t init_quote(

@@ -7,14 +7,14 @@ is_local_addr_space (unw_addr_space_t as)
 
   return (as == _Uhppa_local_addr_space
 #ifndef UNW_REMOTE_ONLY
-	  || as == _ULhppa_local_addr_space
+          || as == _ULhppa_local_addr_space
 #endif
-	  );
+          );
 }
 
 HIDDEN int
 tdep_find_proc_info (unw_addr_space_t as, unw_word_t ip,
-		     unw_proc_info_t *pi, int need_unwind_info, void *arg)
+                     unw_proc_info_t *pi, int need_unwind_info, void *arg)
 {
   printf ("%s: begging to get implemented...\n", __FUNCTION__);
   return 0;
@@ -22,8 +22,8 @@ tdep_find_proc_info (unw_addr_space_t as, unw_word_t ip,
 
 HIDDEN int
 tdep_search_unwind_table (unw_addr_space_t as, unw_word_t ip,
-			  unw_dyn_info_t *di,
-			  unw_proc_info_t *pi, int need_unwind_info, void *arg)
+                          unw_dyn_info_t *di,
+                          unw_proc_info_t *pi, int need_unwind_info, void *arg)
 {
   printf ("%s: the biggest beggar of them all...\n", __FUNCTION__);
   return 0;

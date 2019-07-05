@@ -367,7 +367,6 @@ static ae_error_t qe_epid_sign(
     sgx_aes_state_handle_t aes_gcm_state = NULL;
     void *pub_key = NULL;
     size_t pub_key_size = 0;
-    uint8_t* pub_key_buffer = NULL;
     sgx_ecc_state_handle_t ecc_handle = NULL;
 
     memset(&wrap_key, 0, sizeof(wrap_key));
@@ -483,6 +482,12 @@ static ae_error_t qe_epid_sign(
     /* Get output buffer size */
     se_ret = sgx_rsa_pub_encrypt_sha256(pub_key, NULL, &pub_key_size, aes_key, sizeof(aes_key));
     if(SGX_SUCCESS != se_ret)
+    {
+        ret = QE_UNEXPECTED_ERROR;
+        goto CLEANUP;
+    }
+
+    if (pub_key_size != sizeof(wrap_key.encrypted_key))
     {
         ret = QE_UNEXPECTED_ERROR;
         goto CLEANUP;
@@ -828,8 +833,6 @@ CLEANUP:
         sgx_aes_gcm_close(aes_gcm_state);
     if (pub_key)
         sgx_free_rsa_key(pub_key, SGX_RSA_PUBLIC_KEY, sizeof(plaintext.qsdk_mod), sizeof(plaintext.qsdk_exp));
-    if (pub_key_buffer)
-        free(pub_key_buffer);
     if (ecc_handle)
         sgx_ecc256_close_context(ecc_handle);
 

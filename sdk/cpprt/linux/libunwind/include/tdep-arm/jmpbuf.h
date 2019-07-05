@@ -26,7 +26,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 /* FIXME for ARM!  */
 
-#define JB_SP		4
-#define JB_RP		5
-#define JB_MASK_SAVED	6
-#define JB_MASK		7
+#define JB_SP           4
+#define JB_RP           5
+#define JB_MASK_SAVED   6
+#define JB_MASK         7

@@ -1,5 +1,5 @@
 '\" t
-.\" Manual page created with latex2man on Thu Aug 16 09:44:43 MDT 2007
+.\" Manual page created with latex2man on Thu Jan 12 06:50:29 PST 2017
 .\" NOTE: This file is generated, DO NOT EDIT.
 .de Vb
 .ft CW
@@ -10,7 +10,7 @@
 
 .fi
 ..
-.TH "LIBUNWIND" "3" "16 August 2007" "Programming Library " "Programming Library "
+.TH "LIBUNWIND" "3" "12 January 2017" "Programming Library " "Programming Library "
 .SH NAME
 libunwind
 \-\- a (mostly) platform\-independent unwind API 
@@ -81,6 +81,11 @@ unw_word_t);
 int
 unw_set_caching_policy(unw_addr_space_t,
 unw_caching_policy_t);
+.br
+int
+unw_set_cache_size(unw_addr_space_t,
+size_t,
+int);
 .br
 .PP
 const char *unw_regname(unw_regnum_t);
@@ -428,7 +433,9 @@ UNW_CACHE_NONE,
 it is possible to turn off caching 
 completely, therefore eliminating the risk of stale data alltogether 
 (at the cost of slower execution). By default, caching is enabled for 
-local unwinding only. 
+local unwinding only. The cache size can be dynamically changed with 
+unw_set_cache_size(),
+which also fluches the current cache. 
 .PP
 .SH FILES
 
@@ -482,6 +489,7 @@ unw_is_signal_frame(3),
 unw_regname(3),
 unw_resume(3),
 unw_set_caching_policy(3),
+unw_set_cache_size(3),
 unw_set_fpreg(3),
 unw_set_reg(3),
 unw_step(3),

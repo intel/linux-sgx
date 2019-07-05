@@ -55,7 +55,7 @@ get_unwind_info(struct UCD_info *ui, unw_addr_space_t as, unw_word_t ip)
   coredump_phdr_t *phdr = _UCD_get_elf_image(ui, ip);
   if (!phdr)
     {
-      Debug(1, "%s returns error: _UCD_get_elf_image failed\n", __func__);
+      Debug(1, "returns error: _UCD_get_elf_image failed\n");
       return -UNW_ENOINFO;
     }
   /* segbase: where it is mapped in virtual memory */
@@ -68,9 +68,9 @@ get_unwind_info(struct UCD_info *ui, unw_addr_space_t as, unw_word_t ip)
 
   /* Here, SEGBASE is the starting-address of the (mmap'ped) segment
      which covers the IP we're looking for.  */
-  if (dwarf_find_unwind_table(&ui->edi, as, phdr->backing_filename, segbase, mapoff, ip) < 0)
+  if (tdep_find_unwind_table(&ui->edi, as, phdr->backing_filename, segbase, mapoff, ip) < 0)
     {
-      Debug(1, "%s returns error: dwarf_find_unwind_table failed\n", __func__);
+      Debug(1, "returns error: tdep_find_unwind_table failed\n");
       return -UNW_ENOINFO;
     }
 
@@ -92,26 +92,26 @@ get_unwind_info(struct UCD_info *ui, unw_addr_space_t as, unw_word_t ip)
 #endif
       && ui->edi.di_debug.format == -1)
   {
-    Debug(1, "%s returns error: all formats are -1\n", __func__);
+    Debug(1, "returns error: all formats are -1\n");
     return -UNW_ENOINFO;
   }
 
-  Debug(1, "%s returns success\n", __func__);
+  Debug(1, "returns success\n");
   return 0;
 }
 
 int
 _UCD_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
-		     int need_unwind_info, void *arg)
+                     int need_unwind_info, void *arg)
 {
   struct UCD_info *ui = arg;
 
-  Debug(1, "%s: entering\n", __func__);
+  Debug(1, "entering\n");
 
   int ret = -UNW_ENOINFO;
 
   if (get_unwind_info(ui, as, ip) < 0) {
-    Debug(1, "%s returns error: get_unwind_info failed\n", __func__);
+    Debug(1, "returns error: get_unwind_info failed\n");
     return -UNW_ENOINFO;
   }
 
@@ -119,33 +119,33 @@ _UCD_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
   if (ui->edi.ktab.format != -1)
     {
       /* The kernel unwind table resides in local memory, so we have
-	 to use the local address space to search it.  Since
-	 _UCD_put_unwind_info() has no easy way of detecting this
-	 case, we simply make a copy of the unwind-info, so
-	 _UCD_put_unwind_info() can always free() the unwind-info
-	 without ill effects.  */
+         to use the local address space to search it.  Since
+         _UCD_put_unwind_info() has no easy way of detecting this
+         case, we simply make a copy of the unwind-info, so
+         _UCD_put_unwind_info() can always free() the unwind-info
+         without ill effects.  */
       ret = tdep_search_unwind_table (unw_local_addr_space, ip, &ui->edi.ktab, pi,
-				      need_unwind_info, arg);
+                                      need_unwind_info, arg);
       if (ret >= 0)
-	{
-	  if (!need_unwind_info)
-	    pi->unwind_info = NULL;
-	  else
-	    {
-	      void *mem = malloc (pi->unwind_info_size);
+        {
+          if (!need_unwind_info)
+            pi->unwind_info = NULL;
+          else
+            {
+              void *mem = malloc (pi->unwind_info_size);
 
-	      if (!mem)
-		return -UNW_ENOMEM;
-	      memcpy (mem, pi->unwind_info, pi->unwind_info_size);
-	      pi->unwind_info = mem;
-	    }
-	}
+              if (!mem)
+                return -UNW_ENOMEM;
+              memcpy (mem, pi->unwind_info, pi->unwind_info_size);
+              pi->unwind_info = mem;
+            }
+        }
     }
 #endif
 
   if (ret == -UNW_ENOINFO && ui->edi.di_cache.format != -1)
     ret = tdep_search_unwind_table (as, ip, &ui->edi.di_cache,
-				    pi, need_unwind_info, arg);
+                                    pi, need_unwind_info, arg);
 
 #if UNW_TARGET_ARM
   if (ret == -UNW_ENOINFO && ui->edi.di_arm.format != -1)
@@ -155,9 +155,9 @@ _UCD_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
 
   if (ret == -UNW_ENOINFO && ui->edi.di_debug.format != -1)
     ret = tdep_search_unwind_table (as, ip, &ui->edi.di_debug, pi,
-				    need_unwind_info, arg);
+                                    need_unwind_info, arg);
 
-  Debug(1, "%s: returns %d\n", __func__, ret);
+  Debug(1, "returns %d\n", ret);
 
   return ret;
 }

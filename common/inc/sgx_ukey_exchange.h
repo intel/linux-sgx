@@ -325,10 +325,6 @@ sgx_status_t SGXAPI sgx_ra_get_msg1_ex(
  *                                                          infrastructure does not
  *                                                          support the key described
  *                                                          in p_att_key_id.
- *                      SGX_ERROR_INVALID_ATT_KEY_CERT_DATA The data returned by the
- *                                                          platform library's
- *                                                          sgx_get_quote_config() is 
- *                                                          invalid.
  *                      And other possible return code from sgx_ecall.
  */
 sgx_status_t SGXAPI sgx_ra_proc_msg2_ex(

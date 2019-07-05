@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2002-2004 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    Modified for x86_64 by Max Asbock <masbock@us.ibm.com>
 
@@ -63,7 +63,7 @@ x86_64_scratch_loc (struct cursor *c, unw_regnum_t reg)
 
 HIDDEN int
 tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
-		 int write)
+                 int write)
 {
   dwarf_loc_t loc = DWARF_NULL_LOC;
   unsigned int mask;
@@ -74,14 +74,14 @@ tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
 
     case UNW_X86_64_RIP:
       if (write)
-	c->dwarf.ip = *valp;		/* also update the RIP cache */
+        c->dwarf.ip = *valp;            /* also update the RIP cache */
       loc = c->dwarf.loc[RIP];
       break;
 
     case UNW_X86_64_CFA:
     case UNW_X86_64_RSP:
       if (write)
-	return -UNW_EREADONLYREG;
+        return -UNW_EREADONLYREG;
       *valp = c->dwarf.cfa;
       return 0;
 
@@ -90,18 +90,18 @@ tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
       arg_num = reg - UNW_X86_64_RAX;
       mask = (1 << arg_num);
       if (write)
-	{
-	  c->dwarf.eh_args[arg_num] = *valp;
-	  c->dwarf.eh_valid_mask |= mask;
-	  return 0;
-	}
+        {
+          c->dwarf.eh_args[arg_num] = *valp;
+          c->dwarf.eh_valid_mask |= mask;
+          return 0;
+        }
       else if ((c->dwarf.eh_valid_mask & mask) != 0)
-	{
-	  *valp = c->dwarf.eh_args[arg_num];
-	  return 0;
-	}
+        {
+          *valp = c->dwarf.eh_args[arg_num];
+          return 0;
+        }
       else
-	loc = c->dwarf.loc[(reg == UNW_X86_64_RAX) ? RAX : RDX];
+        loc = c->dwarf.loc[(reg == UNW_X86_64_RAX) ? RAX : RDX];
       break;
 
     case UNW_X86_64_RCX: loc = c->dwarf.loc[RCX]; break;
@@ -132,7 +132,7 @@ tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
 
 HIDDEN int
 tdep_access_fpreg (struct cursor *c, unw_regnum_t reg, unw_fpreg_t *valp,
-		   int write)
+                   int write)
 {
       return -UNW_EBADREG;
 }

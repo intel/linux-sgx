@@ -34,7 +34,7 @@ include ../../buildenv.mk
 CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
             -I$(COMMON_DIR)/inc          \
             -I$(COMMON_DIR)/inc/tlibc    \
-            -I$(LINUX_EXTERNAL_DIR)/ippcp_internal/inc
+	    -I$(SGX_IPP_INC)
 
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-exceptions -fno-rtti
 
@@ -72,7 +72,6 @@ LIB_NAME := libsgx_tcrypto_sgxssl.a
 
 else
 
-CPPFLAGS += -I$(SGX_IPP_INC)
 CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -Werror -fno-exceptions -fPIC
 
 OBJ += sgx_tcrypto_common.o sgx_rsa_internal.o

@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSADecrypt_OAEP_rmf,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsRSADecrypt_OAEP_rmf,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, k0_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_OAEP_rmf,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsRSADecrypt_OAEP_rmf( pSrc, pLab, labLen, pDst, pDstLen, pKey, pMethod, pBuffer );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsRSADecrypt_OAEP_rmf( pSrc, pLab, labLen, pDst, pDstLen, pKey, pMethod, pBuffer );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSADecrypt_OAEP_rmf,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsRSADecrypt_OAEP_rmf,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI(IppStatus, p8_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, h9_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_OAEP_rmf,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsRSADecrypt_OAEP_rmf( pSrc, pLab, labLen, pDst, pDstLen, pKey, pMethod, pBuffer );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsRSADecrypt_OAEP_rmf( pSrc, pLab, labLen, pDst, pDstLen, pKey, pMethod, pBuffer );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

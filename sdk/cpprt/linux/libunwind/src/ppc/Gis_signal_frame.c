@@ -27,18 +27,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include <libunwind_i.h>
 
-PROTECTED int
+int
 unw_is_signal_frame (unw_cursor_t * cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
-  unw_word_t w0, w1, ip;
+  unw_word_t w0, w1, i0, i1, i2, ip;
   unw_addr_space_t as;
   unw_accessors_t *a;
   void *arg;
   int ret;
 
   as = c->dwarf.as;
-  as->validate = 1;		/* Don't trust the ip */
+  as->validate = 1;             /* Don't trust the ip */
   arg = c->dwarf.as_arg;
 
   /* Check if return address points at sigreturn sequence.
@@ -56,11 +56,23 @@ unw_is_signal_frame (unw_cursor_t * cursor)
      consecutive 32-bit words, so the second 8-byte word needs to be
      shifted right by 32 bits (think big-endian) */
 
-  a = unw_get_accessors (as);
+  a = unw_get_accessors_int (as);
   if ((ret = (*a->access_mem) (as, ip, &w0, 0, arg)) < 0
       || (ret = (*a->access_mem) (as, ip + 8, &w1, 0, arg)) < 0)
     return 0;
-  w1 >>= 32;
-  return (w0 == 0x38210080380000ac && w1 == 0x44000002);
 
+  if (tdep_big_endian (as))
+    {
+      i0 = w0 >> 32;
+      i1 = w0 & 0xffffffffUL;
+      i2 = w1 >> 32;
+    }
+  else
+    {
+      i0 = w0 & 0xffffffffUL;
+      i1 = w0 >> 32;
+      i2 = w1 & 0xffffffffUL;
+    }
+
+  return (i0 == 0x38210080 && i1 == 0x380000ac && i2 == 0x44000002);
 }

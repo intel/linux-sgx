@@ -8,10 +8,10 @@
 #include "se_sig_rl.h"
 
 
-struct IPceService : public IService
+struct IPceService : virtual public IService
 {
     // The value should be the same as the major version in manifest.json
-    enum {VERSION = 1};
+    enum {VERSION = 2};
     virtual ~IPceService() = default;
 
     //TODO: shall we remove thse 2 interfaces?

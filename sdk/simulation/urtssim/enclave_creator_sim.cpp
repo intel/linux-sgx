@@ -222,8 +222,12 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
 
     //Since CPUID instruction is NOT supported within enclave, we emuerate the cpu features here and send to tRTS.
     system_features_t info;
-    info.cpu_features = 0;
-    get_cpu_features(&info.cpu_features, (unsigned int*)info.cpuinfo_table);
+    memset(&info, 0, sizeof(system_features_t));
+    get_cpu_features(&info.cpu_features);
+    get_cpu_features_ext(&info.cpu_features_ext);
+    init_cpuinfo((uint32_t *)info.cpuinfo_table);
+    info.system_feature_set[0] |= (1ULL << SYS_FEATURE_EXTEND);
+    info.size = sizeof(system_features_t);
     info.version = SDK_VERSION_1_5;
     info.sealed_key = enclave->get_sealed_key();
     status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));

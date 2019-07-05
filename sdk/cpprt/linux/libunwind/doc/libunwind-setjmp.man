@@ -36,7 +36,7 @@ _longjmp(jmp_buf env,
 int val);
 .br
 int
-setjmp(sigjmp_buf env,
+sigsetjmp(sigjmp_buf env,
 int savemask);
 .br
 void

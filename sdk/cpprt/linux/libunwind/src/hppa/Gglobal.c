@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2004-2005 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -25,8 +25,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "unwind_i.h"
 
-HIDDEN pthread_mutex_t hppa_lock = PTHREAD_MUTEX_INITIALIZER;
-HIDDEN int tdep_needs_initialization = 1;
+HIDDEN define_lock (hppa_lock);
+HIDDEN int tdep_init_done;
 
 HIDDEN void
 tdep_init (void)
@@ -37,7 +37,7 @@ tdep_init (void)
 
   lock_acquire (&hppa_lock, saved_mask);
   {
-    if (!tdep_needs_initialization)
+    if (tdep_init_done)
       /* another thread else beat us to it... */
       goto out;
 
@@ -48,7 +48,7 @@ tdep_init (void)
 #ifndef UNW_REMOTE_ONLY
     hppa_local_addr_space_init ();
 #endif
-    tdep_needs_initialization = 0;	/* signal that we're initialized... */
+    tdep_init_done = 1; /* signal that we're initialized... */
   }
  out:
   lock_release (&hppa_lock, saved_mask);

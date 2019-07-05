@@ -46,7 +46,7 @@ static const char *regname[] =
     "RIP",
    };
 
-PROTECTED const char *
+const char *
 unw_regname (unw_regnum_t reg)
 {
   if (reg < (unw_regnum_t) ARRAY_SIZE (regname))

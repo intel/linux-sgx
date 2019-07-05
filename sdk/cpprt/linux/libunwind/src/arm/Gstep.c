@@ -1,6 +1,7 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2008 CodeSourcery
    Copyright 2011 Linaro Limited
+   Copyright (C) 2012 Tommi Rantala <tt.rantala@gmail.com>
 
 This file is part of libunwind.
 
@@ -29,7 +30,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include <signal.h>
 
-#define arm_exidx_step	UNW_OBJ(arm_exidx_step)
+#define arm_exidx_step  UNW_OBJ(arm_exidx_step)
 
 static inline int
 arm_exidx_step (struct cursor *c)
@@ -43,9 +44,18 @@ arm_exidx_step (struct cursor *c)
 
   /* mark PC unsaved */
   c->dwarf.loc[UNW_ARM_R15] = DWARF_NULL_LOC;
+  unw_word_t ip = c->dwarf.ip;
+  if (c->dwarf.use_prev_instr)
+    --ip;
 
-  if ((ret = tdep_find_proc_info (&c->dwarf, c->dwarf.ip, 1)) < 0)
-     return ret;
+  /* check dynamic info first --- it overrides everything else */
+  ret = unwi_find_dynamic_proc_info (c->dwarf.as, ip, &c->dwarf.pi, 1,
+                                     c->dwarf.as_arg);
+  if (ret == -UNW_ENOINFO)
+    {
+      if ((ret = tdep_find_proc_info (&c->dwarf, ip, 1)) < 0)
+        return ret;
+    }
 
   if (c->dwarf.pi.format != UNW_INFO_FORMAT_ARM_EXIDX)
     return -UNW_ENOINFO;
@@ -63,103 +73,16 @@ arm_exidx_step (struct cursor *c)
   if (c->dwarf.ip == old_ip && c->dwarf.cfa == old_cfa)
     {
       Dprintf ("%s: ip and cfa unchanged; stopping here (ip=0x%lx)\n",
-	       __FUNCTION__, (long) c->dwarf.ip);
+               __FUNCTION__, (long) c->dwarf.ip);
       return -UNW_EBADFRAME;
     }
+
+  c->dwarf.pi_valid = 0;
 
   return (c->dwarf.ip == 0) ? 0 : 1;
 }
 
-PROTECTED int
-unw_handle_signal_frame (unw_cursor_t *cursor)
-{
-  struct cursor *c = (struct cursor *) cursor;
-  int ret;
-  unw_word_t sc_addr, sp, sp_addr = c->dwarf.cfa;
-  struct dwarf_loc sp_loc = DWARF_LOC (sp_addr, 0);
-
-  if ((ret = dwarf_get (&c->dwarf, sp_loc, &sp)) < 0)
-    return -UNW_EUNSPEC;
-
-  /* Obtain signal frame type (non-RT or RT). */
-  ret = unw_is_signal_frame (cursor);
-
-  /* Save the SP and PC to be able to return execution at this point
-     later in time (unw_resume).  */
-  c->sigcontext_sp = c->dwarf.cfa;
-  c->sigcontext_pc = c->dwarf.ip;
-
-  /* Since kernel version 2.6.18 the non-RT signal frame starts with a
-     ucontext while the RT signal frame starts with a siginfo, followed
-     by a sigframe whose first element is an ucontext.
-     Prior 2.6.18 the non-RT signal frame starts with a sigcontext while
-     the RT signal frame starts with two pointers followed by a siginfo
-     and an ucontext. The first pointer points to the start of the siginfo
-     structure and the second one to the ucontext structure.  */
-
-  if (ret == 1)
-    {
-      /* Handle non-RT signal frames. Check if the first word on the stack
-	 is the magic number.  */
-      if (sp == 0x5ac3c35a)
-	{
-	  c->sigcontext_format = ARM_SCF_LINUX_SIGFRAME;
-	  sc_addr = sp_addr + LINUX_UC_MCONTEXT_OFF;
-	}
-      else
-	{
-	  c->sigcontext_format = ARM_SCF_LINUX_OLD_SIGFRAME;
-	  sc_addr = sp_addr;
-	}
-      c->sigcontext_addr = sp_addr;
-    }
-  else if (ret == 2)
-    {
-      /* Handle RT signal frames. Check if the first word on the stack is a
-	 pointer to the siginfo structure.  */
-      if (sp == sp_addr + 8)
-	{
-	  c->sigcontext_format = ARM_SCF_LINUX_OLD_RT_SIGFRAME;
-	  c->sigcontext_addr = sp_addr + 8 + sizeof (siginfo_t); 
-	}
-      else
-	{
-	  c->sigcontext_format = ARM_SCF_LINUX_RT_SIGFRAME;
-	  c->sigcontext_addr = sp_addr + sizeof (siginfo_t);
-	}
-      sc_addr = c->sigcontext_addr + LINUX_UC_MCONTEXT_OFF;
-    }
-  else
-    return -UNW_EUNSPEC;
-
-  /* Update the dwarf cursor.
-     Set the location of the registers to the corresponding addresses of the
-     uc_mcontext / sigcontext structure contents.  */
-  c->dwarf.loc[UNW_ARM_R0] = DWARF_LOC (sc_addr + LINUX_SC_R0_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R1] = DWARF_LOC (sc_addr + LINUX_SC_R1_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R2] = DWARF_LOC (sc_addr + LINUX_SC_R2_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R3] = DWARF_LOC (sc_addr + LINUX_SC_R3_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R4] = DWARF_LOC (sc_addr + LINUX_SC_R4_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R5] = DWARF_LOC (sc_addr + LINUX_SC_R5_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R6] = DWARF_LOC (sc_addr + LINUX_SC_R6_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R7] = DWARF_LOC (sc_addr + LINUX_SC_R7_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R8] = DWARF_LOC (sc_addr + LINUX_SC_R8_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R9] = DWARF_LOC (sc_addr + LINUX_SC_R9_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R10] = DWARF_LOC (sc_addr + LINUX_SC_R10_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R11] = DWARF_LOC (sc_addr + LINUX_SC_FP_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R12] = DWARF_LOC (sc_addr + LINUX_SC_IP_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R13] = DWARF_LOC (sc_addr + LINUX_SC_SP_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R14] = DWARF_LOC (sc_addr + LINUX_SC_LR_OFF, 0);
-  c->dwarf.loc[UNW_ARM_R15] = DWARF_LOC (sc_addr + LINUX_SC_PC_OFF, 0);
-
-  /* Set SP/CFA and PC/IP.  */
-  dwarf_get (&c->dwarf, c->dwarf.loc[UNW_ARM_R13], &c->dwarf.cfa);
-  dwarf_get (&c->dwarf, c->dwarf.loc[UNW_ARM_R15], &c->dwarf.ip);
-
-  return 1;
-}
-
-PROTECTED int
+int
 unw_step (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
@@ -168,8 +91,8 @@ unw_step (unw_cursor_t *cursor)
   Debug (1, "(cursor=%p)\n", c);
 
   /* Check if this is a signal frame. */
-  if (unw_is_signal_frame (cursor))
-     return unw_handle_signal_frame (cursor);
+  if (unw_is_signal_frame (cursor) > 0)
+     return arm_handle_signal_frame (cursor);
 
 #ifdef CONFIG_DEBUG_FRAME
   /* First, try DWARF-based unwinding. */
@@ -179,9 +102,9 @@ unw_step (unw_cursor_t *cursor)
       Debug(1, "dwarf_step()=%d\n", ret);
 
       if (likely (ret > 0))
-	return 1;
+        return 1;
       else if (unlikely (ret == -UNW_ESTOPUNWIND))
-	return ret;
+        return ret;
 
     if (ret < 0 && ret != -UNW_ENOINFO)
       {
@@ -196,21 +119,25 @@ unw_step (unw_cursor_t *cursor)
     {
       ret = arm_exidx_step (c);
       if (ret > 0)
-	return 1;
+        return 1;
       if (ret == -UNW_ESTOPUNWIND || ret == 0)
-	return ret;
+        return ret;
     }
 
   /* Fall back on APCS frame parsing.
      Note: This won't work in case the ARM EABI is used. */
+#ifdef __FreeBSD__
+  if (0)
+#else
   if (unlikely (ret < 0))
+#endif
     {
       if (UNW_TRY_METHOD(UNW_ARM_METHOD_FRAME))
         {
+          Debug (13, "dwarf_step() failed (ret=%d), trying frame-chain\n", ret);
           ret = UNW_ESUCCESS;
           /* DWARF unwinding failed, try to follow APCS/optimized APCS frame chain */
           unw_word_t instr, i;
-          Debug (13, "dwarf_step() failed (ret=%d), trying frame-chain\n", ret);
           dwarf_loc_t ip_loc, fp_loc;
           unw_word_t frame;
           /* Mark all registers unsaved, since we don't know where
@@ -252,7 +179,8 @@ unw_step (unw_cursor_t *cursor)
                 }
               c->dwarf.loc[UNW_ARM_R12] = ip_loc;
               c->dwarf.loc[UNW_ARM_R11] = fp_loc;
-              Debug(15, "ip=%lx\n", c->dwarf.ip);
+              c->dwarf.pi_valid = 0;
+              Debug(15, "ip=%x\n", c->dwarf.ip);
             }
           else
             {
@@ -260,5 +188,5 @@ unw_step (unw_cursor_t *cursor)
             }
         }
     }
-  return ret == -UNW_ENOINFO ? 0 : 1;
+  return ret == -UNW_ENOINFO ? 0 : ret;
 }

@@ -3,5 +3,5 @@
   "bundle.activator" : true,
   "bundle.name" : "EPID Quote Service",
   "bundle.description" : "This bundle provide EPID Quote Service",
-  "bundle.version" : "1.0.0"
+  "bundle.version" : "2.0.0"
 }

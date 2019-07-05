@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002, 2004-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -25,10 +25,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "libunwind_i.h"
 
-PROTECTED unw_accessors_t *
+HIDDEN ALIAS(unw_get_accessors) unw_accessors_t *
+unw_get_accessors_int (unw_addr_space_t as);
+
+unw_accessors_t *
 unw_get_accessors (unw_addr_space_t as)
 {
-  if (tdep_needs_initialization)
+  if (!tdep_init_done)
     tdep_init ();
   return &as->acc;
 }

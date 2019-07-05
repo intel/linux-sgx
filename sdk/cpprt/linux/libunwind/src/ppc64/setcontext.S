@@ -1,7 +1,7 @@
 	.global _UI_setcontext
 
 _UI_setcontext:
-	retq
+        blr
 
 #ifdef __linux__
         /* We do not need executable stack.  */

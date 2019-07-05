@@ -73,6 +73,10 @@
 
 #define RSA_SEED_SIZE_SHA256 32
 
+#ifndef MAX_IPP_BN_LENGTH
+#define MAX_IPP_BN_LENGTH 2048
+#endif //MAX_IPP_BN_LENGTH
+
 #define sgx_create_rsa_pub_key sgx_create_rsa_pub1_key
 
 IppStatus sgx_ipp_newBN(const Ipp32u *p_data, int size_in_bytes, IppsBigNumState **p_new_BN);
@@ -84,7 +88,7 @@ IppStatus sgx_ipp_newPrimeGen(int nMaxBits, IppsPrimeState ** pPrimeG);
 extern "C" {
 #endif
 
-void secure_free_rsa_pri2_key(int p_byte_size, IppsRSAPrivateKeyState *pri_key2);
+void secure_free_rsa_pri_key(IppsRSAPrivateKeyState *pri_key);
 
 void secure_free_rsa_pub_key(int n_byte_size, int e_byte_size, IppsRSAPublicKeyState *pub_key);
 

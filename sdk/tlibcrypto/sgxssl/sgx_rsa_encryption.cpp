@@ -181,7 +181,7 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
 		//
 		d = BN_dup(n);
 		NULL_BREAK(d);
-        
+
 		//select algorithms with an execution time independent of the respective numbers, to avoid exposing sensitive information to timing side-channel attacks.
 		//
 		BN_set_flags(d, BN_FLG_CONSTTIME);
@@ -196,6 +196,8 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
 		rsa_ctx = RSA_new();
 		rsa_key = EVP_PKEY_new();
 
+                //EVP_PKEY_assign_RSA() use the supplied key internally and so if this call succeed, key will be freed when the parent pkey is freed.
+                //
 		if (rsa_ctx == NULL || rsa_key == NULL || !EVP_PKEY_assign_RSA(rsa_key, rsa_ctx)) {
 			RSA_free(rsa_ctx);
 			rsa_key = NULL;
@@ -306,71 +308,179 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
 }
 
 sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
-	const size_t pin_len) {
+                                        const size_t pin_len)
+{
 
-	if (rsa_key == NULL || pout_len == NULL || pin_data == NULL || pin_len < 1 || pin_len >= INT_MAX) {
-		return SGX_ERROR_INVALID_PARAMETER;
-	}
+    if (rsa_key == NULL || pout_len == NULL || pin_data == NULL || pin_len < 1 || pin_len >= INT_MAX)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
 
-	EVP_PKEY_CTX *ctx = NULL;
-	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
+    EVP_PKEY_CTX *ctx = NULL;
+    size_t data_len = 0;
+    sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
 
-	do {
-		//allocate and init PKEY_CTX
-		//
-		ctx = EVP_PKEY_CTX_new((EVP_PKEY*)rsa_key, NULL);
-		if ((ctx == NULL) || (EVP_PKEY_encrypt_init(ctx) < 1)) {
-			break;
-		}
+    do
+    {
+        //allocate and init PKEY_CTX
+        //
+        ctx = EVP_PKEY_CTX_new((EVP_PKEY*)rsa_key, NULL);
+        if ((ctx == NULL) || (EVP_PKEY_encrypt_init(ctx) < 1))
+        {
+            break;
+        }
 
-		//set the RSA padding mode, init it to use SHA256
-		//
-		EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
-		EVP_PKEY_CTX_set_rsa_oaep_md(ctx, EVP_sha256());
+        //set the RSA padding mode, init it to use SHA256
+        //
+        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+        EVP_PKEY_CTX_set_rsa_oaep_md(ctx, EVP_sha256());
 
-		if (EVP_PKEY_encrypt(ctx, pout_data, pout_len, pin_data, pin_len) <= 0) {
-			break;
-		}
+        if (EVP_PKEY_encrypt(ctx, NULL, &data_len, pin_data, pin_len) <= 0)
+        {
+            break;
+        }
 
-		ret_code = SGX_SUCCESS;
-	} while (0);
+        if(pout_data == NULL)
+        {
+            *pout_len = data_len;
+            ret_code = SGX_SUCCESS;
+            break;
+        }
 
-	EVP_PKEY_CTX_free(ctx);
+        else if(*pout_len < data_len)
+        {
+            ret_code = SGX_ERROR_INVALID_PARAMETER;
+            break;
+        }
 
-	return ret_code;
+        if (EVP_PKEY_encrypt(ctx, pout_data, pout_len, pin_data, pin_len) <= 0)
+        {
+            break;
+        }
+
+        ret_code = SGX_SUCCESS;
+    }
+    while (0);
+
+    EVP_PKEY_CTX_free(ctx);
+
+    return ret_code;
 }
 
 sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
-	const size_t pin_len) {
+        const size_t pin_len)
+{
 
-	if (rsa_key == NULL || pout_len == NULL || pin_data == NULL || pin_len < 1 || pin_len >= INT_MAX) {
+    if (rsa_key == NULL || pout_len == NULL || pin_data == NULL || pin_len < 1 || pin_len >= INT_MAX)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    EVP_PKEY_CTX *ctx = NULL;
+    size_t data_len = 0;
+    sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
+
+    do
+    {
+        //allocate and init PKEY_CTX
+        //
+        ctx = EVP_PKEY_CTX_new((EVP_PKEY*)rsa_key, NULL);
+        if ((ctx == NULL) || (EVP_PKEY_decrypt_init(ctx) < 1))
+        {
+            break;
+        }
+
+        //set the RSA padding mode, init it to use SHA256
+        //
+        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+        EVP_PKEY_CTX_set_rsa_oaep_md(ctx, EVP_sha256());
+
+        if (EVP_PKEY_decrypt(ctx, NULL, &data_len, pin_data, pin_len) <= 0)
+        {
+            break;
+        }
+        if(pout_data == NULL)
+        {
+            *pout_len = data_len;
+            ret_code = SGX_SUCCESS;
+            break;
+        }
+
+        else if(*pout_len < data_len)
+        {
+            ret_code = SGX_ERROR_INVALID_PARAMETER;
+            break;
+        }
+
+        if (EVP_PKEY_decrypt(ctx, pout_data, pout_len, pin_data, pin_len) <= 0)
+        {
+            break;
+        }
+        ret_code = SGX_SUCCESS;
+    }
+    while (0);
+
+    EVP_PKEY_CTX_free(ctx);
+
+    return ret_code;
+}
+
+sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_byte_size, const unsigned char *le_n, const unsigned char *le_e,
+	const unsigned char *le_d, void **new_pri_key1)
+{
+	if (n_byte_size <= 0 || e_byte_size <= 0 || d_byte_size <= 0 || new_pri_key1 == NULL ||
+		le_n == NULL || le_e == NULL || le_d == NULL) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
-	EVP_PKEY_CTX *ctx = NULL;
+	EVP_PKEY *rsa_key = NULL;
+	RSA *rsa_ctx = NULL;
 	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
+	BIGNUM* n = NULL;
+	BIGNUM* e = NULL;
+	BIGNUM* d = NULL;
 
 	do {
-		//allocate and init PKEY_CTX
+		//convert input buffers to BNs
 		//
-		ctx = EVP_PKEY_CTX_new((EVP_PKEY*)rsa_key, NULL);
-		if ((ctx == NULL) || (EVP_PKEY_decrypt_init(ctx) < 1)) {
+		n = BN_lebin2bn(le_n, n_byte_size, n);
+		BN_CHECK_BREAK(n);
+		e = BN_lebin2bn(le_e, e_byte_size, e);
+		BN_CHECK_BREAK(e);
+		d = BN_lebin2bn(le_d, d_byte_size, d);
+		BN_CHECK_BREAK(d);
+
+		// allocates and initializes an RSA key structure
+		//
+		rsa_ctx = RSA_new();
+		rsa_key = EVP_PKEY_new();
+
+                //EVP_PKEY_assign_RSA() use the supplied key internally and so if this call succeed, key will be freed when the parent pkey is freed.
+                //
+		if (rsa_ctx == NULL || rsa_key == NULL || !EVP_PKEY_assign_RSA(rsa_key, rsa_ctx)) {
+			RSA_free(rsa_ctx);
+			rsa_ctx = NULL;
 			break;
 		}
 
-		//set the RSA padding mode, init it to use SHA256
+		//set n, e, d values of RSA key
+		//Calling set functions transfers the memory management of input BNs to the RSA object,
+		//and therefore the values that have been passed in should not be freed by the caller after these functions has been called.
 		//
-		EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
-		EVP_PKEY_CTX_set_rsa_oaep_md(ctx, EVP_sha256());
-
-		if (EVP_PKEY_decrypt(ctx, pout_data, pout_len, pin_data, pin_len) <= 0) {
+		if (!RSA_set0_key(rsa_ctx, n, e, d)) {
 			break;
 		}
 
+		*new_pri_key1 = rsa_key;
 		ret_code = SGX_SUCCESS;
 	} while (0);
 
-	EVP_PKEY_CTX_free(ctx);
+	if (ret_code != SGX_SUCCESS) {
+		EVP_PKEY_free(rsa_key);
+		BN_clear_free(n);
+		BN_clear_free(e);
+		BN_clear_free(d);
+	}
 
 	return ret_code;
 }

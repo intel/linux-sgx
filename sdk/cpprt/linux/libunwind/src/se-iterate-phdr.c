@@ -29,7 +29,6 @@
  *
  */
 #ifdef HAVE_SGX
-
 #include "global_data.h"
 #include <string.h>
 

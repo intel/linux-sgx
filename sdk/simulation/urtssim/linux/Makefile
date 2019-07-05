@@ -78,6 +78,7 @@ OBJ1 := enclave.o         \
         urts_xsave.o      \
         se_ocalls.o       \
         cpu_features.o    \
+        cpu_features_ext.o    \
         node.o            \
         launch_checker.o 
 
@@ -188,7 +189,7 @@ uae_service_sim:
 
 .PHONY: ittnotify
 ittnotify:
-	$(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify/
+	CFLAGS= CXXFLAGS= $(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify/
 
 $(LIBURTS_DEPLOY):../urts_deploy.c
 	 $(CC) -I$(COMMON_DIR)/inc -shared -fPIC -Wl,-soname=libsgx_urts.so $< -o $@

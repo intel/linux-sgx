@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPrimeGetSize,(int nMaxBits, int* pSize))
-IPPAPI(IppStatus, l9_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPAPI(IppStatus, y8_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
+IPPAPI(IppStatus, l9_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
+IPPAPI(IppStatus, k0_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsPrimeGetSize( nMaxBits, pSize );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsTRNGenRDSEED( pRand, nBits, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsPrimeGetSize( nMaxBits, pSize );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsTRNGenRDSEED( pRand, nBits, pCtx );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsTRNGenRDSEED( pRand, nBits, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPrimeGetSize,(int nMaxBits, int* pSize))
-IPPAPI(IppStatus, h9_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPAPI(IppStatus, p8_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
+IPPAPI(IppStatus, h9_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsPrimeGetSize( nMaxBits, pSize );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsTRNGenRDSEED( pRand, nBits, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsPrimeGetSize( nMaxBits, pSize );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsTRNGenRDSEED( pRand, nBits, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -46,22 +46,22 @@ extern pid_t _UCD_get_pid(struct UCD_info *);
 extern int _UCD_get_cursig(struct UCD_info *);
 extern int _UCD_add_backing_file_at_segment(struct UCD_info *, int phdr_no, const char *filename);
 extern int _UCD_add_backing_file_at_vaddr(struct UCD_info *,
-				          unsigned long vaddr,
-					  const char *filename);
+                                          unsigned long vaddr,
+                                          const char *filename);
 
 extern int _UCD_find_proc_info (unw_addr_space_t, unw_word_t,
-				unw_proc_info_t *, int, void *);
+                                unw_proc_info_t *, int, void *);
 extern void _UCD_put_unwind_info (unw_addr_space_t, unw_proc_info_t *, void *);
 extern int _UCD_get_dyn_info_list_addr (unw_addr_space_t, unw_word_t *,
-					void *);
+                                        void *);
 extern int _UCD_access_mem (unw_addr_space_t, unw_word_t, unw_word_t *, int,
-			    void *);
+                            void *);
 extern int _UCD_access_reg (unw_addr_space_t, unw_regnum_t, unw_word_t *,
-			    int, void *);
+                            int, void *);
 extern int _UCD_access_fpreg (unw_addr_space_t, unw_regnum_t, unw_fpreg_t *,
-			      int, void *);
+                              int, void *);
 extern int _UCD_get_proc_name (unw_addr_space_t, unw_word_t, char *, size_t,
-			       unw_word_t *, void *);
+                               unw_word_t *, void *);
 extern int _UCD_resume (unw_addr_space_t, unw_cursor_t *, void *);
 extern unw_accessors_t _UCD_accessors;
 

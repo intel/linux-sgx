@@ -26,7 +26,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 int
 _UCD_access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
-		   int write, void *arg)
+                   int write, void *arg)
 {
   print_error (__func__);
   print_error (" not implemented\n");

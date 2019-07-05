@@ -28,7 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 HIDDEN int
 tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
-		 int write)
+                 int write)
 {
   dwarf_loc_t loc = DWARF_NULL_LOC;
   
@@ -69,6 +69,12 @@ tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
       loc = c->dwarf.loc[reg - UNW_MIPS_R0];
       break;
 
+    case UNW_MIPS_PC:
+      if (write)
+	c->dwarf.ip = *valp;            /* update the IP cache */
+      loc = c->dwarf.loc[reg];
+      break;
+
     case UNW_MIPS_CFA:
       if (write)
         return -UNW_EREADONLYREG;
@@ -92,7 +98,7 @@ tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
 
 HIDDEN int
 tdep_access_fpreg (struct cursor *c, unw_regnum_t reg, unw_fpreg_t *valp,
-		   int write)
+                   int write)
 {
   Debug (1, "bad register number %u\n", reg);
   return -UNW_EBADREG;

@@ -264,13 +264,11 @@ sgx_status_t sgx_aes_gcm128_enc_inplace_update( sgx_aes_state_handle_t aes_gcm_s
             enc_len = buf_len - off;
         }
         if ((sgx_aes_gcm128_enc_update(buf + off, enc_len, block, aes_gcm_state)) != SGX_SUCCESS) {
-            (void)memset_s(block, sizeof(block), 0, BLOCK_SIZE);
             return SGX_ERROR_UNEXPECTED;
         }
         memcpy(buf + off, block, enc_len);
     }
 
-    (void)memset_s(block, sizeof(block), 0, BLOCK_SIZE);
     return SGX_SUCCESS;
 
 }

@@ -46,6 +46,7 @@ void create_session_ocall(){}
 void exchange_report_ocall(){}
 void invoke_service_ocall(){}
 void sgx_report_attestation_status(){}
+void sgx_check_update_status(){}
 void sgx_get_ps_cap(){}
 void sgx_calc_quote_size(){}
 void sgx_register_wl_cert_chain(){}

@@ -29,9 +29,10 @@
  *
  */
 
+
 #ifndef _SGX_IPPCP_H_
 #define _SGX_IPPCP_H_
- 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -242,6 +243,8 @@ extern "C" {
   #define ippsHashGetTag_rmf sgx_disp_ippsHashGetTag_rmf
   #define ippsHashFinal_rmf sgx_disp_ippsHashFinal_rmf
   #define ippsHashMessage_rmf sgx_disp_ippsHashMessage_rmf
+  #define ippsHashMethodGetInfo sgx_disp_ippsHashMethodGetInfo
+  #define ippsHashGetInfo_rmf sgx_disp_ippsHashGetInfo_rmf
   #define ippsMGF sgx_disp_ippsMGF
   #define ippsMGF1_rmf sgx_disp_ippsMGF1_rmf
   #define ippsMGF2_rmf sgx_disp_ippsMGF2_rmf
@@ -474,6 +477,7 @@ extern "C" {
   #define ippsGFpAdd_PE sgx_disp_ippsGFpAdd_PE
   #define ippsGFpSub_PE sgx_disp_ippsGFpSub_PE
   #define ippsGFpMul_PE sgx_disp_ippsGFpMul_PE
+  #define ippsGFpGetInfo sgx_disp_ippsGFpGetInfo
   #define ippsGFpECGetSize sgx_disp_ippsGFpECGetSize
   #define ippsGFpECInit sgx_disp_ippsGFpECInit
   #define ippsGFpECSet sgx_disp_ippsGFpECSet
@@ -528,6 +532,7 @@ extern "C" {
   #define ippsGFpECVerifyNR sgx_disp_ippsGFpECVerifyNR
   #define ippsGFpECSignSM2 sgx_disp_ippsGFpECSignSM2
   #define ippsGFpECVerifySM2 sgx_disp_ippsGFpECVerifySM2
+  #define ippsGFpECGetInfo_GF sgx_disp_ippsGFpECGetInfo_GF
   #define ippsGFpECESGetSize_SM2 sgx_disp_ippsGFpECESGetSize_SM2
   #define ippsGFpECESInit_SM2 sgx_disp_ippsGFpECESInit_SM2
   #define ippsGFpECESSetKey_SM2 sgx_disp_ippsGFpECESSetKey_SM2

@@ -10,7 +10,7 @@
 struct IEpidQuoteService : public IQuoteService
 {
     // The value should be the same as the major version in manifest.json
-    enum {VERSION = 1};
+    enum {VERSION = 2};
     virtual ~IEpidQuoteService() = default;
 
     virtual aesm_error_t get_extended_epid_group_id(

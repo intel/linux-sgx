@@ -34,9 +34,20 @@
 #include "global_data.h"
 #include "util.h"
 #include "thread_data.h"
+#include "trts_internal.h"
 
 // No need to check the state of enclave or thread.
 // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
+size_t get_enclave_size(void)
+{
+    return (size_t) g_global_data.enclave_size;
+}
+
+size_t get_enclave_end(void)
+{
+    return (size_t)get_enclave_base() + (size_t)g_global_data.enclave_size - 1;
+}
+
 void * get_heap_base(void)
 {
     return GET_PTR(void, &__ImageBase, g_global_data.heap_offset);
@@ -70,6 +81,46 @@ size_t get_heap_min_size(void)
         }
     }
     return heap_size;
+}
+
+void * get_rsrv_base(void)
+{
+    return GET_PTR(void, &__ImageBase, g_global_data.rsrv_offset);
+}
+
+size_t get_rsrv_end(void)
+{
+    return (size_t)get_rsrv_base() + (size_t)get_rsrv_size() - 1;
+}
+
+size_t get_rsrv_size(void)
+{
+    size_t rsrv_size = g_global_data.rsrv_size;
+    if (EDMM_supported)
+    {
+        for (uint32_t i = 0; i < g_global_data.layout_entry_num; i++)
+        {
+            if (g_global_data.layout_table[i].entry.id == LAYOUT_ID_RSRV_MAX)
+            {
+                rsrv_size += ((size_t)g_global_data.layout_table[i].entry.page_count << SE_PAGE_SHIFT);
+            }
+        }
+    }
+    return rsrv_size;
+}
+
+size_t get_rsrv_min_size(void)
+{
+    size_t rsrv_size = 0;
+    for (uint32_t i = 0; i < g_global_data.layout_entry_num; i++)
+    {
+        if (g_global_data.layout_table[i].entry.id == LAYOUT_ID_RSRV_MIN)
+        {
+            rsrv_size = ((size_t)g_global_data.layout_table[i].entry.page_count << SE_PAGE_SHIFT);
+            break;
+        }
+    }
+    return rsrv_size;
 }
 
 int * get_errno_addr(void)

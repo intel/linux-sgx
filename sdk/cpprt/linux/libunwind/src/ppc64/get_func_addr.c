@@ -29,17 +29,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 int
 tdep_get_func_addr (unw_addr_space_t as, unw_word_t addr,
-		    unw_word_t *entry_point)
+                    unw_word_t *entry_point)
 {
-  unw_accessors_t *a;
-  int ret;
+  if (as->abi == UNW_PPC64_ABI_ELFv1)
+    {
+      unw_accessors_t *a;
+      int ret;
 
-  a = unw_get_accessors (as);
-  /* Entry-point is stored in the 1st word of the function descriptor.
-     In case that changes in the future, we'd have to update the line
-     below and read the word at addr + offset: */
-  ret = (*a->access_mem) (as, addr, entry_point, 0, NULL);
-  if (ret < 0)
-    return ret;
+      a = unw_get_accessors_int (as);
+      /* Entry-point is stored in the 1st word of the function descriptor.
+         In case that changes in the future, we'd have to update the line
+         below and read the word at addr + offset: */
+      ret = (*a->access_mem) (as, addr, entry_point, 0, NULL);
+      if (ret < 0)
+        return ret;
+    }
+  else
+    *entry_point = addr;
+
   return 0;
 }

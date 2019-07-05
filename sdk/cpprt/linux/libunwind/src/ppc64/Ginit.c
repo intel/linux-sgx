@@ -34,18 +34,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #ifdef UNW_REMOTE_ONLY
 
 /* unw_local_addr_space is a NULL pointer in this case.  */
-PROTECTED unw_addr_space_t unw_local_addr_space;
+unw_addr_space_t unw_local_addr_space;
 
 #else /* !UNW_REMOTE_ONLY */
 
 static struct unw_addr_space local_addr_space;
 
-PROTECTED unw_addr_space_t unw_local_addr_space = &local_addr_space;
-
-
-#define PAGE_SIZE 4096
-#define PAGE_START(a)	((a) & ~(PAGE_SIZE-1))
-
+unw_addr_space_t unw_local_addr_space = &local_addr_space;
 
 static void *
 uc_addr (ucontext_t *uc, int reg)
@@ -66,25 +61,25 @@ uc_addr (ucontext_t *uc, int reg)
       unsigned gregs_idx;
 
       switch (reg)
-	{
-	case UNW_PPC64_NIP:
-	  gregs_idx = NIP_IDX;
-	  break;
-	case UNW_PPC64_CTR:
-	  gregs_idx = CTR_IDX;
-	  break;
-	case UNW_PPC64_LR:
-	  gregs_idx = LINK_IDX;
-	  break;
-	case UNW_PPC64_XER:
-	  gregs_idx = XER_IDX;
-	  break;
-	case UNW_PPC64_CR0:
-	  gregs_idx = CCR_IDX;
-	  break;
-	default:
-	  return NULL;
-	}
+        {
+        case UNW_PPC64_NIP:
+          gregs_idx = NIP_IDX;
+          break;
+        case UNW_PPC64_CTR:
+          gregs_idx = CTR_IDX;
+          break;
+        case UNW_PPC64_LR:
+          gregs_idx = LINK_IDX;
+          break;
+        case UNW_PPC64_XER:
+          gregs_idx = XER_IDX;
+          break;
+        case UNW_PPC64_CR0:
+          gregs_idx = CCR_IDX;
+          break;
+        default:
+          return NULL;
+        }
       addr = &uc->uc_mcontext.gp_regs[gregs_idx];
     }
   return addr;
@@ -98,7 +93,7 @@ tdep_uc_addr (ucontext_t *uc, int reg)
   return uc_addr (uc, reg);
 }
 
-# endif	/* UNW_LOCAL_ONLY */
+# endif /* UNW_LOCAL_ONLY */
 
 HIDDEN unw_dyn_info_list_t _U_dyn_info_list;
 
@@ -111,7 +106,7 @@ put_unwind_info (unw_addr_space_t as, unw_proc_info_t *proc_info, void *arg)
 
 static int
 get_dyn_info_list_addr (unw_addr_space_t as, unw_word_t *dyn_info_list_addr,
-			void *arg)
+                        void *arg)
 {
   *dyn_info_list_addr = (unw_word_t) &_U_dyn_info_list;
   return 0;
@@ -119,7 +114,7 @@ get_dyn_info_list_addr (unw_addr_space_t as, unw_word_t *dyn_info_list_addr,
 
 static int
 access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val, int write,
-	    void *arg)
+            void *arg)
 {
   if (write)
     {
@@ -136,14 +131,14 @@ access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val, int write,
 
 static int
 access_reg (unw_addr_space_t as, unw_regnum_t reg, unw_word_t *val,
-	    int write, void *arg)
+            int write, void *arg)
 {
   unw_word_t *addr;
   ucontext_t *uc = arg;
 
-  if ((unsigned int) (reg - UNW_PPC64_F0) < 32)
+  if (UNW_PPC64_F0 <= reg && reg <= UNW_PPC64_F31)
     goto badreg;
-  if ((unsigned int) (reg - UNW_PPC64_V0) < 32)
+  if (UNW_PPC64_V0 <= reg && reg <= UNW_PPC64_V31)
     goto badreg;
 
   addr = uc_addr (uc, reg);
@@ -169,17 +164,15 @@ badreg:
 
 static int
 access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
-	      int write, void *arg)
+              int write, void *arg)
 {
   ucontext_t *uc = arg;
   unw_fpreg_t *addr;
 
-  if ((unsigned) (reg - UNW_PPC64_F0) < 0)
+  /* Allow only 32 fregs and 32 vregs */
+  if (!(((unsigned) (reg - UNW_PPC64_F0) < 32)
+	||((unsigned) (reg - UNW_PPC64_V0) < 32)))
     goto badreg;
-
-  if ((unsigned) (reg - UNW_PPC64_V0) >= 32)
-    goto badreg;
-
 
   addr = uc_addr (uc, reg);
   if (!addr)
@@ -205,8 +198,8 @@ badreg:
 
 static int
 get_static_proc_name (unw_addr_space_t as, unw_word_t ip,
-		      char *buf, size_t buf_len, unw_word_t *offp,
-		      void *arg)
+                      char *buf, size_t buf_len, unw_word_t *offp,
+                      void *arg)
 {
   return _Uelf64_get_proc_name (as, getpid (), ip, buf, buf_len, offp);
 }
@@ -215,7 +208,13 @@ HIDDEN void
 ppc64_local_addr_space_init (void)
 {
   memset (&local_addr_space, 0, sizeof (local_addr_space));
-  local_addr_space.caching_policy = UNW_CACHE_GLOBAL;
+  local_addr_space.big_endian = (__BYTE_ORDER == __BIG_ENDIAN);
+#if _CALL_ELF == 2
+  local_addr_space.abi = UNW_PPC64_ABI_ELFv2;
+#else
+  local_addr_space.abi = UNW_PPC64_ABI_ELFv1;
+#endif
+  local_addr_space.caching_policy = UNWI_DEFAULT_CACHING_POLICY;
   local_addr_space.acc.find_proc_info = dwarf_find_proc_info;
   local_addr_space.acc.put_unwind_info = put_unwind_info;
   local_addr_space.acc.get_dyn_info_list_addr = get_dyn_info_list_addr;

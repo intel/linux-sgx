@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -26,7 +26,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "unwind_i.h"
 #include "offsets.h"
 
-PROTECTED int
+#include <sys/syscall.h>
+
+int
 unw_is_signal_frame (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
@@ -37,37 +39,38 @@ unw_is_signal_frame (unw_cursor_t *cursor)
   int ret;
 
   as = c->dwarf.as;
-  a = unw_get_accessors (as);
+  a = unw_get_accessors_int (as);
   arg = c->dwarf.as_arg;
 
   /* Check if EIP points at sigreturn() sequence.  On Linux, this is:
 
     __restore:
-	0x58				pop %eax
-	0xb8 0x77 0x00 0x00 0x00	movl 0x77,%eax
-	0xcd 0x80			int 0x80
+        0x58                            pop %eax
+        0xb8 0x77 0x00 0x00 0x00        movl 0x77,%eax
+        0xcd 0x80                       int 0x80
 
      without SA_SIGINFO, and
 
     __restore_rt:
        0xb8 0xad 0x00 0x00 0x00        movl 0xad,%eax
        0xcd 0x80                       int 0x80
-       0x00                            
+       0x00
 
      if SA_SIGINFO is specified.
   */
   ip = c->dwarf.ip;
-  if ((ret = (*a->access_mem) (as, ip, &w0, 0, arg)) < 0
-      || (ret = (*a->access_mem) (as, ip + 4, &w1, 0, arg)) < 0)
-    return ret;
-  ret = ((w0 == 0x0077b858 && w1 == 0x80cd0000)
-	 || (w0 == 0x0000adb8 && (w1 & 0xffffff) == 0x80cd00));
+  if ((*a->access_mem) (as, ip, &w0, 0, arg) < 0
+      || (*a->access_mem) (as, ip + 4, &w1, 0, arg) < 0)
+    ret = 0;
+  else
+    ret = ((w0 == 0x0077b858 && w1 == 0x80cd0000)
+         || (w0 == 0x0000adb8 && (w1 & 0xffffff) == 0x80cd00));
   Debug (16, "returning %d\n", ret);
   return ret;
 }
 
-PROTECTED int
-unw_handle_signal_frame (unw_cursor_t *cursor)
+HIDDEN int
+x86_handle_signal_frame (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
   int ret;
@@ -86,7 +89,7 @@ unw_handle_signal_frame (unw_cursor_t *cursor)
   siginfo_ptr_loc = DWARF_LOC (siginfo_ptr_addr, 0);
   sigcontext_ptr_loc = DWARF_LOC (sigcontext_ptr_addr, 0);
   ret = (dwarf_get (&c->dwarf, siginfo_ptr_loc, &siginfo_ptr)
-	 | dwarf_get (&c->dwarf, sigcontext_ptr_loc, &sigcontext_ptr));
+         | dwarf_get (&c->dwarf, sigcontext_ptr_loc, &sigcontext_ptr));
   if (ret < 0)
     {
       Debug (2, "returning 0\n");
@@ -104,10 +107,10 @@ unw_handle_signal_frame (unw_cursor_t *cursor)
   else
     {
       /* If SA_SIGINFO were not specified, we actually read
-	 various segment pointers instead.  We believe that at
-	 least fs and _fsh are always zero for linux, so it is
-	 not just unlikely, but impossible that we would end
-	 up here. */
+         various segment pointers instead.  We believe that at
+         least fs and _fsh are always zero for linux, so it is
+         not just unlikely, but impossible that we would end
+         up here. */
       c->sigcontext_format = X86_SCF_LINUX_RT_SIGFRAME;
       c->sigcontext_addr = sigcontext_ptr;
       sc_addr = sigcontext_ptr + LINUX_UC_MCONTEXT_OFF;
@@ -179,8 +182,8 @@ x86_get_scratch_loc (struct cursor *c, unw_regnum_t reg)
     case UNW_X86_SS: off = LINUX_SC_SS_OFF; break;
 
       /* The following is probably not correct for all possible cases.
-	 Somebody who understands this better should review this for
-	 correctness.  */
+         Somebody who understands this better should review this for
+         correctness.  */
 
     case UNW_X86_FCW: is_fpstate = 1; off = LINUX_FPSTATE_CW_OFF; break;
     case UNW_X86_FSW: is_fpstate = 1; off = LINUX_FPSTATE_SW_OFF; break;
@@ -232,13 +235,13 @@ x86_get_scratch_loc (struct cursor *c, unw_regnum_t reg)
   if (is_fpstate)
     {
       if ((ret = dwarf_get (&c->dwarf,
-			    DWARF_MEM_LOC (&c->dwarf,
-					   addr + LINUX_SC_FPSTATE_OFF),
-			    &fpstate_addr)) < 0)
-	return DWARF_NULL_LOC;
+                            DWARF_MEM_LOC (&c->dwarf,
+                                           addr + LINUX_SC_FPSTATE_OFF),
+                            &fpstate_addr)) < 0)
+        return DWARF_NULL_LOC;
 
       if (!fpstate_addr)
-	return DWARF_NULL_LOC;
+        return DWARF_NULL_LOC;
 
       return DWARF_MEM_LOC (c, fpstate_addr + off);
     }
@@ -292,12 +295,10 @@ x86_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
 
   if (unlikely (c->sigcontext_format != X86_SCF_NONE))
     {
-#if (!HAVE_SGX)
       struct sigcontext *sc = (struct sigcontext *) c->sigcontext_addr;
 
       Debug (8, "resuming at ip=%x via sigreturn(%p)\n", c->dwarf.ip, sc);
-      sigreturn (sc);
-#endif
+      x86_sigreturn (sc);
     }
   else
     {
@@ -305,5 +306,26 @@ x86_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
       setcontext (uc);
     }
   return -UNW_EINVAL;
+}
+
+/* sigreturn() is a no-op on x86 glibc.  */
+HIDDEN void
+x86_sigreturn (unw_cursor_t *cursor)
+{
+  struct cursor *c = (struct cursor *) cursor;
+  struct sigcontext *sc = (struct sigcontext *) c->sigcontext_addr;
+  mcontext_t *sc_mcontext = &((ucontext_t*)sc)->uc_mcontext;
+  /* Copy in saved uc - all preserved regs are at the start of sigcontext */
+  memcpy(sc_mcontext, &c->uc->uc_mcontext,
+         DWARF_NUM_PRESERVED_REGS * sizeof(unw_word_t));
+
+  Debug (8, "resuming at ip=%llx via sigreturn(%p)\n",
+             (unsigned long long) c->dwarf.ip, sc);
+  __asm__ __volatile__ ("mov %0, %%esp;"
+                        "mov %1, %%eax;"
+                        "syscall"
+                        :: "r"(sc), "i"(SYS_rt_sigreturn)
+                        : "memory");
+  abort();
 }
 #endif

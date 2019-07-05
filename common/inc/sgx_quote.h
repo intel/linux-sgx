@@ -100,7 +100,7 @@ typedef struct _update_info_bit
 } sgx_update_info_bit_t;
 
 typedef struct _att_key_id_t {
-    uint8_t     att_key_id[158];
+    uint8_t     att_key_id[256];
 }sgx_att_key_id_t;
 
 typedef struct _qe_report_info_t {

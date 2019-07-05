@@ -34,7 +34,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #ifdef UNW_REMOTE_ONLY
 
-PROTECTED int
+int
 unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
 {
   /* XXX: empty stub.  */
@@ -43,12 +43,12 @@ unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
 
 #else /* !UNW_REMOTE_ONLY */
 
-PROTECTED int
-unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
+static int
+unw_init_local_common(unw_cursor_t *cursor, ucontext_t *uc, unsigned use_prev_instr)
 {
   struct cursor *c = (struct cursor *) cursor;
 
-  if (tdep_needs_initialization)
+  if (!tdep_init_done)
     tdep_init ();
 
   Debug (1, "(cursor=%p)\n", c);
@@ -56,10 +56,33 @@ unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
   c->dwarf.as = unw_local_addr_space;
   c->dwarf.as_arg = uc;
   #ifdef UNW_TARGET_PPC64
-    return common_init_ppc64 (c, 1);
+    return common_init_ppc64 (c, use_prev_instr);
   #else
-    return common_init_ppc32 (c, 1);
+    return common_init_ppc32 (c, use_prev_instr);
   #endif
+}
+
+int
+unw_init_local(unw_cursor_t *cursor, ucontext_t *uc)
+{
+  return unw_init_local_common(cursor, uc, 1);
+}
+
+int
+unw_init_local2 (unw_cursor_t *cursor, ucontext_t *uc, int flag)
+{
+  if (!flag)
+    {
+      return unw_init_local_common(cursor, uc, 1);
+    }
+  else if (flag == UNW_INIT_SIGNAL_FRAME)
+    {
+      return unw_init_local_common(cursor, uc, 0);
+    }
+  else
+    {
+      return -UNW_EINVAL;
+    }
 }
 
 #endif /* !UNW_REMOTE_ONLY */

@@ -33,7 +33,6 @@
 #include <assert.h>
 #include "PVEClass.h"
 #include "QEClass.h"
-#include "pce_service.h"
 #include "util.h"
 #include "prof_fun.h"
 #include "sgx_report.h"
@@ -41,11 +40,6 @@
 #include "epid_pve_type.h"
 #include "aesm_xegd_blob.h"
 #include "provision_enclave_u.h"
-
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
-extern std::shared_ptr<IPceService> g_pce_service;
 
 void CPVEClass::before_enclave_load() {
     // always unload qe enclave before loading pve enclave

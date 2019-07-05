@@ -622,7 +622,7 @@ sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_fil
     UNUSED(launch_updated);
 
     unsigned int ret = SGX_SUCCESS;
-    uint32_t file_size = 0;
+    off_t file_size = 0;
     map_handle_t* mh = NULL;
 
     mh = map_file(pfile, &file_size);

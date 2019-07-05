@@ -132,6 +132,7 @@ bool ThreadStatus::find_or_insert_iocache(BaseThreadIOCache* ioc, BaseThreadIOCa
     out_ioc = cur_iocache = ioc;
     cur_iocache->ref_count=2;//initialize to be refenced by parent thread and the thread itself
     thread_state = ths_busy;//mark thread to be busy that the thread to be started
+    status_clock = se_get_tick_count();
     AESM_DBG_TRACE("successfully add ioc %p (status=%d,timeout=%d) into thread %p",out_ioc, (int)out_ioc->status, (int)out_ioc->timeout, this);
     return true;
 }
@@ -150,7 +151,7 @@ void ThreadStatus::stop_thread(uint64_t stop_tick_count)
     //change state to stop
     thread_mutex.lock();
     thread_state = ths_stop;
-    
+
     do{
         std::list<BaseThreadIOCache *>::iterator it;
         for(it=output_cache.begin(); it!=output_cache.end();++it){
@@ -299,14 +300,14 @@ ae_error_t ThreadStatus::set_thread_start(BaseThreadIOCache* ioc, BaseThreadIOCa
         }
         else{
             AESM_DBG_TRACE("timeout:%u,timediff: %f", timeout,timediff);
-            ae_ret = aesm_wait_thread(out_ioc->thread_handle, &ret, (unsigned long)timediff); 
+            ae_ret = aesm_wait_thread(out_ioc->thread_handle, &ret, (unsigned long)timediff);
         }
     }
     AESM_DBG_TRACE("wait for ioc %p (status=%d,timeout=%d,ref_count=%d) result:%d",out_ioc,(int)out_ioc->status,(int)out_ioc->timeout,(int)out_ioc->ref_count, ae_ret);
     return ae_ret;
 };
 
-#define TIMEOUT_SHORT_TIME    60 
+#define TIMEOUT_SHORT_TIME    60
 #define TIMEOUT_FOR_A_WHILE   (5*60)
 #define TIMEOUT_LONG_TIME     (3600*24) //at most once every day
 static time_t get_timeout_via_ae_error(ae_error_t ae)
@@ -372,159 +373,3 @@ bool ThreadStatus::query_status_and_reset_clock(void)
     status_clock = se_get_tick_count();
     return true;
 }
-
-#if 0
-//Code above implement logic of threads in the AESM Service
-//Code below to define IOCache of each thread
-
-static ThreadStatus long_term_paring_thread;
-
-class CheckLtpIOCache:public BaseThreadIOCache{
-    bool is_new_pairing;//extra output
-protected:
-    CheckLtpIOCache(){
-        is_new_pairing=false;
-    }
-    virtual ae_error_t entry();
-    virtual ThreadStatus& get_thread();
-    friend ae_error_t start_check_ltp_thread(bool& is_new_pairing, unsigned long timeout);
-public:
-    virtual bool operator==(const BaseThreadIOCache& oc)const{
-        const CheckLtpIOCache *p=dynamic_cast<const CheckLtpIOCache *>(&oc);
-        if(p==NULL)return false;
-        return true;//no input, always equal
-    }
-};
-
-class UpdatePseIOCache:public BaseThreadIOCache{
-    platform_info_blob_wrapper_t pib;//input
-    uint32_t attestation_status;//input
-protected:
-    UpdatePseIOCache(const platform_info_blob_wrapper_t& pib_info, uint32_t attst_status){
-        (void)memcpy_s(&this->pib, sizeof(this->pib), &pib_info, sizeof(pib_info));
-        attestation_status=attst_status;
-    }
-    virtual ae_error_t entry();
-    virtual ThreadStatus& get_thread();
-    friend ae_error_t start_update_pse_thread(const platform_info_blob_wrapper_t* update_blob, uint32_t attestation_status, unsigned long timeout);
-public:
-    virtual bool operator==(const BaseThreadIOCache& oc)const{
-        const UpdatePseIOCache *p=dynamic_cast<const UpdatePseIOCache *>(&oc);
-        if(p==NULL)return false;
-        return attestation_status==p->attestation_status&&memcmp(&pib, &p->pib, sizeof(pib))==0;
-    }
-};
-
-class CertProvLtpIOCache:public BaseThreadIOCache{
-    bool is_new_pairing;//extra output
-protected:
-    CertProvLtpIOCache(){
-        is_new_pairing = false;
-    }
-    virtual ae_error_t entry();
-    virtual ThreadStatus& get_thread();
-    friend ae_error_t start_long_term_pairing_thread(bool& is_new_paring, unsigned long timeout);
-public:
-    virtual bool operator==(const BaseThreadIOCache& oc)const{
-        const CertProvLtpIOCache *p=dynamic_cast<const CertProvLtpIOCache *>(&oc);
-        if(p==NULL)return false;
-        return true;
-    }
-};
-
-
-ThreadStatus& CheckLtpIOCache::get_thread()
-{
-    return long_term_paring_thread;
-}
-
-ThreadStatus& UpdatePseIOCache::get_thread()
-{
-    return long_term_paring_thread;
-}
-
-ThreadStatus& CertProvLtpIOCache::get_thread()
-{
-    return long_term_paring_thread;
-}
-
-
-ae_error_t CheckLtpIOCache::entry()
-{
-    return ae_ret = PlatformInfoLogic::check_ltp_thread_func(is_new_pairing);
-}
-
-ae_error_t UpdatePseIOCache::entry()
-{
-    return ae_ret = PlatformInfoLogic::update_pse_thread_func(&pib, attestation_status);
-}
-
-ae_error_t CertProvLtpIOCache::entry()
-{
-    return ae_ret = PSEOPAESMLogic::certificate_provisioning_and_long_term_pairing_func(is_new_pairing);
-}
-
-//start implementation of external functions
-
-#define INIT_THREAD(cache_type, timeout, init_list) \
-    BaseThreadIOCache *ioc = new cache_type init_list; \
-    BaseThreadIOCache *out_ioc = NULL; \
-    ae_error_t ae_ret = AE_FAILURE; \
-    ae_ret = ioc->start(out_ioc, (uint32_t)(timeout)); \
-    if(ae_ret != AE_SUCCESS){ \
-        if(out_ioc!=NULL){out_ioc->deref();}\
-        return ae_ret; \
-    }\
-    assert(out_ioc!=NULL);\
-    cache_type *pioc = dynamic_cast<cache_type *>(out_ioc);\
-    assert(pioc!=NULL);
-    //now the thread has finished it's execution and we could read result without lock
-#define COPY_OUTPUT(x)  x=pioc->x
-#define FINI_THREAD() \
-    ae_ret = pioc->ae_ret;\
-    pioc->deref();/*derefence the cache object after usage of it*/ \
-    return ae_ret;
-
-//usage model
-//INIT_THREAD(thread_used, cache_type, timeout, init_list)
-// COPY_OUTPUT(is_new_pairing);// copy out output parameter except for return value from pioc object to output parameter, such as
-//FINI_THREAD(thread_used)
-
-ae_error_t start_check_ltp_thread(bool& is_new_pairing, unsigned long timeout)
-{
-    INIT_THREAD(CheckLtpIOCache, timeout, ())
-    COPY_OUTPUT(is_new_pairing);
-    FINI_THREAD()
-}
-
-ae_error_t start_update_pse_thread(const platform_info_blob_wrapper_t* update_blob, uint32_t attestation_status, unsigned long timeout)
-{
-    INIT_THREAD(UpdatePseIOCache, timeout, (*update_blob, attestation_status))
-    FINI_THREAD()
-}
-
-ae_error_t start_long_term_pairing_thread(bool& is_new_pairing, unsigned long timeout)
-{
-    INIT_THREAD(CertProvLtpIOCache, timeout, ())
-    COPY_OUTPUT(is_new_pairing);
-    FINI_THREAD()
-}
-bool query_pse_thread_status(void)
-{
-    return long_term_paring_thread.query_status_and_reset_clock();
-}
-ae_error_t wait_pve_thread(uint64_t time_out_milliseconds)
-{
-    return epid_thread.wait_for_cur_thread(time_out_milliseconds);
-}
-
-void stop_all_long_lived_threads(uint64_t time_out_milliseconds)
-{
-    uint64_t freq = se_get_tick_count_freq();
-    uint64_t stop_tick_count = se_get_tick_count()+(time_out_milliseconds*freq+500)/1000;
-    epid_thread.stop_thread(stop_tick_count);
-    long_term_paring_thread.stop_thread(stop_tick_count);
-    white_list_thread.stop_thread(stop_tick_count);
-}
-
-#endif

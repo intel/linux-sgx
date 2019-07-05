@@ -30,7 +30,7 @@
  */
 
 namespace {
-    layout_entry_t *get_entry_by_id(const metadata_t *const metadata, uint16_t id)
+    layout_entry_t *get_entry_by_id(const metadata_t *const metadata, uint16_t id, bool do_assert = true)
     {
         layout_entry_t *layout_start = GET_PTR(layout_entry_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
         layout_entry_t *layout_end = GET_PTR(layout_entry_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
@@ -39,6 +39,8 @@ namespace {
             if(layout->id == id)
                 return layout;
         }
+        if (do_assert)
+            assert(false);
         return NULL;
     }
     bool do_update_global_data(const metadata_t *const metadata,
@@ -46,13 +48,28 @@ namespace {
                                global_data_t* global_data)
     {
         layout_entry_t *layout_heap = get_entry_by_id(metadata, LAYOUT_ID_HEAP_MIN);
+        layout_entry_t *layout_rsrv = get_entry_by_id(metadata, LAYOUT_ID_RSRV_MIN, false);
         if(layout_heap == NULL)
         {
             return false;
         }
+
+        if (NULL == layout_rsrv)
+        {
+            global_data->rsrv_offset = (sys_word_t)0;
+	    global_data->rsrv_size = (sys_word_t)0;
+        }
+        else
+        {
+            global_data->rsrv_offset = (sys_word_t)(layout_rsrv->rva);
+	    global_data->rsrv_size = (sys_word_t)(create_param->rsrv_init_size);
+        }
+
         global_data->enclave_size = (sys_word_t)metadata->enclave_size;
         global_data->heap_offset = (sys_word_t)layout_heap->rva;
         global_data->heap_size = (sys_word_t)(create_param->heap_init_size);
+        //global_data->rsrv_offset = (sys_word_t)(layout_rsrv->rva);
+        //global_data->rsrv_size = (sys_word_t)(create_param->rsrv_init_size);
         global_data->thread_policy = (sys_word_t)metadata->tcs_policy;
         thread_data_t *thread_data = &global_data->td_template;
 
@@ -79,8 +96,41 @@ namespace {
         layout_entry_t *layout_start = GET_PTR(layout_entry_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
         layout_entry_t *layout_end = GET_PTR(layout_entry_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
         global_data->layout_entry_num = 0;
+
+        SE_TRACE_DEBUG("\n");
+        se_trace(SE_TRACE_DEBUG, "Global Data:\n");
+        se_trace(SE_TRACE_DEBUG, "\tEnclave size     = 0x%016llX\n", global_data->enclave_size);
+        se_trace(SE_TRACE_DEBUG, "\tHeap Offset      = 0x%016llX\n", global_data->heap_offset);
+        se_trace(SE_TRACE_DEBUG, "\tHeap Size        = 0x%016llX\n", global_data->heap_size);
+        se_trace(SE_TRACE_DEBUG, "\tRsrv Offset      = 0x%016llX\n", global_data->rsrv_offset);
+        se_trace(SE_TRACE_DEBUG, "\tRsrv Size        = 0x%016llX\n", global_data->rsrv_size);
+        se_trace(SE_TRACE_DEBUG, "\tThread Policy    = 0x%016llX\n", global_data->thread_policy);
+        se_trace(SE_TRACE_DEBUG, "\tLayout Table:\n");
+
+        unsigned entry_cnt = 1;
+
         for (layout_entry_t *layout = layout_start; layout < layout_end; layout++)
         {
+            uint16_t entry_id = layout->id;
+
+            if (!IS_GROUP_ID(entry_id)) {
+                se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", entry_cnt, entry_id, layout_id_str[entry_id]);
+                se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout->page_count);
+                se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout->attributes);
+                se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout->si_flags);
+                se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout->rva,
+                    layout->rva + 4096 * layout->page_count);
+            }
+            else {
+#ifndef DISABLE_TRACE
+                layout_group_t *layout_grp = reinterpret_cast<layout_group_t*>(layout);
+#endif
+                se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", entry_cnt, entry_id, layout_id_str[entry_id & ~(GROUP_FLAG)]);
+                se_trace(SE_TRACE_DEBUG, "Entry Count = %4u,  ", layout_grp->entry_count);
+                se_trace(SE_TRACE_DEBUG, "Load Times = %u,     ", layout_grp->load_times);
+                se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout_grp->load_step);
+            }
+
             if(0 != memcpy_s(&global_data->layout_table[global_data->layout_entry_num], 
                      sizeof(global_data->layout_table) - global_data->layout_entry_num * sizeof(layout_t), 
                      layout, 
@@ -89,7 +139,9 @@ namespace {
                 return false;
             }
             global_data->layout_entry_num++;
+            entry_cnt++;
         }
+
         return true;
     }
 }

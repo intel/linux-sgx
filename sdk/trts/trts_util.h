@@ -41,9 +41,15 @@
 extern "C" {
 #endif
 
+size_t get_enclave_size(void);
+size_t get_enclave_end(void);
 void * get_heap_base(void);
 size_t get_heap_size(void);
 size_t get_heap_min_size(void);
+void * get_rsrv_base(void);
+size_t get_rsrv_end(void);
+size_t get_rsrv_size(void);
+size_t get_rsrv_min_size(void);
 int * get_errno_addr(void);
 bool is_stack_addr(void *address, size_t size);
 bool is_valid_sp(uintptr_t sp);

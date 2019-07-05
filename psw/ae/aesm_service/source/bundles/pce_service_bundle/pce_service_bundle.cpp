@@ -27,7 +27,8 @@ public:
             return AE_SUCCESS;
         }
         AESM_DBG_INFO("Starting pce bundle");
-        get_service_wrapper(g_launch_service);
+        auto context = cppmicroservices::GetBundleContext();
+        get_service_wrapper(g_launch_service, context);
 
         if (g_launch_service)
             g_launch_service->start();

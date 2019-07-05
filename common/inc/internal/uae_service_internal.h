@@ -45,7 +45,7 @@ extern "C" {
  * @param signature[in] Signature of enclave to be launched.
  * @param attribute[in] Attribute of enclave to be launched.
  * @param launch_token[out] Vontains launch token.
- * @return if a launch token is generated,return SGX_SCCUESS, otherwise return general error code SGX_ERROR_SERVICE_UNAVAILABLE
+ * @return if a launch token is generated,return SGX_SUCCESS, otherwise return general error code SGX_ERROR_SERVICE_UNAVAILABLE
  *         SGX_ERROR_SERVICE_TIMEOUT, or SGX_ERROR_SERVICE_INVALID_PRIVILEGE, SGX_ERROR_INVALID_PARAMETER
  *         to indicate special error condition.
  */

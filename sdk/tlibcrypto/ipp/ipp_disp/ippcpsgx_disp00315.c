@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
-IPPAPI(IppStatus, l9_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPAPI(IppStatus, y8_ippsDLPSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrvKey, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsDLPState* pCtx))
+IPPAPI(IppStatus, l9_ippsDLPSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrvKey, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsDLPState* pCtx))
+IPPAPI(IppStatus, k0_ippsDLPSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrvKey, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsDLPState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsDLPSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrvKey, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsDLPState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsDLPSignDSA( pMsgDigest, pPrvKey, pSignR, pSignS, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsDLPSignDSA( pMsgDigest, pPrvKey, pSignR, pSignS, pCtx );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsDLPSignDSA( pMsgDigest, pPrvKey, pSignR, pSignS, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
-IPPAPI(IppStatus, h9_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPAPI(IppStatus, p8_ippsDLPSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrvKey, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsDLPState* pCtx))
+IPPAPI(IppStatus, h9_ippsDLPSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrvKey, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsDLPState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsDLPSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrvKey, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsDLPState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsDLPSignDSA( pMsgDigest, pPrvKey, pSignR, pSignS, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsDLPSignDSA( pMsgDigest, pPrvKey, pSignR, pSignS, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

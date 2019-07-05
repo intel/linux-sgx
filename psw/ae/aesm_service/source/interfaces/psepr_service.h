@@ -6,10 +6,10 @@
 #include "platform_info_blob.h"
 
 
-struct IPseprService : public IService
+struct IPseprService : virtual public IService
 {
     // The value should be the same as the major version in manifest.json
-    enum {VERSION = 1};
+    enum {VERSION = 2};
     virtual ~IPseprService() = default;
 
     virtual ae_error_t certificate_provisioning(

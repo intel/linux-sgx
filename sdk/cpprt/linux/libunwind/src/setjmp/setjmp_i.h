@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -50,20 +50,20 @@ bsp_match (unw_cursor_t *c, unw_word_t *wp)
       unw_cursor_t tmp = *c;
 
       /* The caller of {sig,}setjmp() cannot have a NULL-frame.  If we
-	 see a NULL-frame, we haven't reached the right target yet.
-	 To have a NULL-frame, the number of locals must be zero and
-	 the stack-frame must also be empty.  */
+         see a NULL-frame, we haven't reached the right target yet.
+         To have a NULL-frame, the number of locals must be zero and
+         the stack-frame must also be empty.  */
 
       if (unw_step (&tmp) < 0)
-	abort ();
+        abort ();
 
       if (unw_get_reg (&tmp, UNW_REG_SP, &sp) < 0
-	  || unw_get_reg (&tmp, UNW_REG_SP, &prev_sp) < 0)
-	abort ();
+          || unw_get_reg (&tmp, UNW_REG_SP, &prev_sp) < 0)
+        abort ();
 
       if (sp == prev_sp)
-	/* got a NULL-frame; keep looking... */
-	return 0;
+        /* got a NULL-frame; keep looking... */
+        return 0;
     }
   return 1;
 }
@@ -93,7 +93,7 @@ resume_restores_sigmask (unw_cursor_t *c, unw_word_t *wp)
   else
     {
       if (sigprocmask (SIG_BLOCK, NULL, &current_mask) < 0)
-	abort ();
+        abort ();
       mp = &current_mask;
     }
   memcpy (&sc->sc_mask, mp, sizeof (sc->sc_mask));

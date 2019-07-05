@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpxMethod_com, (void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpxMethod_com, (void) )
+IPPAPI( const IppsGFpMethod*, y8_ippsGFpxMethod_binom3, (void) )
+IPPAPI( const IppsGFpMethod*, l9_ippsGFpxMethod_binom3, (void) )
+IPPAPI( const IppsGFpMethod*, k0_ippsGFpxMethod_binom3, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_com, (void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsGFpxMethod_com(  );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpxMethod_binom3(  );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsGFpxMethod_com(  );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsGFpxMethod_binom3(  );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsGFpxMethod_binom3(  );
       } else 
         return NULL;
 }
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpxMethod_com, (void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpxMethod_com, (void) )
+IPPAPI( const IppsGFpMethod*, p8_ippsGFpxMethod_binom3, (void) )
+IPPAPI( const IppsGFpMethod*, h9_ippsGFpxMethod_binom3, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_com, (void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsGFpxMethod_com(  );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsGFpxMethod_binom3(  );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsGFpxMethod_com(  );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsGFpxMethod_binom3(  );
       } else 
         return NULL;
 }

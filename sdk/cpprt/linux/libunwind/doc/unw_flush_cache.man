@@ -1,5 +1,5 @@
 '\" t
-.\" Manual page created with latex2man on Thu Aug 16 09:44:44 MDT 2007
+.\" Manual page created with latex2man on Fri Dec  2 16:09:33 PST 2016
 .\" NOTE: This file is generated, DO NOT EDIT.
 .de Vb
 .ft CW
@@ -10,7 +10,7 @@
 
 .fi
 ..
-.TH "UNW\\_FLUSH\\_CACHE" "3" "16 August 2007" "Programming Library " "Programming Library "
+.TH "UNW\\_FLUSH\\_CACHE" "3" "02 December 2016" "Programming Library " "Programming Library "
 .SH NAME
 unw_flush_cache
 \-\- flush cached info 
@@ -80,6 +80,7 @@ use from a signal handler.
 .PP
 libunwind(3),
 unw_set_caching_policy(3)
+unw_set_cache_size(3)
 .PP
 .SH AUTHOR
 

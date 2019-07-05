@@ -99,7 +99,6 @@ struct UCD_info
 
 extern coredump_phdr_t * _UCD_get_elf_image(struct UCD_info *ui, unw_word_t ip);
 
-#define ALIGN(x,a) (((x)+(a)-1UL)&~((a)-1UL))
 #define STRUCT_MEMBER_P(struct_p, struct_offset) ((void *) ((char*) (struct_p) + (long) (struct_offset)))
 #define STRUCT_MEMBER(member_type, struct_p, struct_offset) (*(member_type*) STRUCT_MEMBER_P ((struct_p), (struct_offset)))
 

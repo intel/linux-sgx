@@ -9,7 +9,7 @@
 
 static inline int
 fetch8 (unw_addr_space_t as, unw_accessors_t *a,
-	unw_word_t *addr, int8_t *valp, void *arg)
+        unw_word_t *addr, int8_t *valp, void *arg)
 {
   *valp = *(int8_t *) (uintptr_t) *addr;
   *addr += 1;
@@ -18,7 +18,7 @@ fetch8 (unw_addr_space_t as, unw_accessors_t *a,
 
 static inline int
 fetch16 (unw_addr_space_t as, unw_accessors_t *a,
-	 unw_word_t *addr, int16_t *valp, void *arg)
+         unw_word_t *addr, int16_t *valp, void *arg)
 {
   *valp = *(int16_t *) (uintptr_t) *addr;
   *addr += 2;
@@ -27,7 +27,7 @@ fetch16 (unw_addr_space_t as, unw_accessors_t *a,
 
 static inline int
 fetch32 (unw_addr_space_t as, unw_accessors_t *a,
-	 unw_word_t *addr, int32_t *valp, void *arg)
+         unw_word_t *addr, int32_t *valp, void *arg)
 {
   *valp = *(int32_t *) (uintptr_t) *addr;
   *addr += 4;
@@ -36,7 +36,7 @@ fetch32 (unw_addr_space_t as, unw_accessors_t *a,
 
 static inline int
 fetchw (unw_addr_space_t as, unw_accessors_t *a,
-	unw_word_t *addr, unw_word_t *valp, void *arg)
+        unw_word_t *addr, unw_word_t *valp, void *arg)
 {
   *valp = *(unw_word_t *) (uintptr_t) *addr;
   *addr += sizeof (unw_word_t);
@@ -45,11 +45,11 @@ fetchw (unw_addr_space_t as, unw_accessors_t *a,
 
 #else /* !UNW_LOCAL_ONLY */
 
-#define WSIZE	(sizeof (unw_word_t))
+#define WSIZE   (sizeof (unw_word_t))
 
 static inline int
 fetch8 (unw_addr_space_t as, unw_accessors_t *a,
-	unw_word_t *addr, int8_t *valp, void *arg)
+        unw_word_t *addr, int8_t *valp, void *arg)
 {
   unw_word_t val, aligned_addr = *addr & -WSIZE, off = *addr - aligned_addr;
   int ret;
@@ -69,12 +69,13 @@ fetch8 (unw_addr_space_t as, unw_accessors_t *a,
 
 static inline int
 fetch16 (unw_addr_space_t as, unw_accessors_t *a,
-	 unw_word_t *addr, int16_t *valp, void *arg)
+         unw_word_t *addr, int16_t *valp, void *arg)
 {
   unw_word_t val, aligned_addr = *addr & -WSIZE, off = *addr - aligned_addr;
   int ret;
 
-  assert ((off & 0x1) == 0);
+  if ((off & 0x1) != 0)
+    return -UNW_EINVAL;
 
   *addr += 2;
 
@@ -91,12 +92,13 @@ fetch16 (unw_addr_space_t as, unw_accessors_t *a,
 
 static inline int
 fetch32 (unw_addr_space_t as, unw_accessors_t *a,
-	 unw_word_t *addr, int32_t *valp, void *arg)
+         unw_word_t *addr, int32_t *valp, void *arg)
 {
   unw_word_t val, aligned_addr = *addr & -WSIZE, off = *addr - aligned_addr;
   int ret;
 
-  assert ((off & 0x3) == 0);
+  if ((off & 0x3) != 0)
+    return -UNW_EINVAL;
 
   *addr += 4;
 
@@ -113,7 +115,7 @@ fetch32 (unw_addr_space_t as, unw_accessors_t *a,
 
 static inline int
 fetchw (unw_addr_space_t as, unw_accessors_t *a,
-	unw_word_t *addr, unw_word_t *valp, void *arg)
+        unw_word_t *addr, unw_word_t *valp, void *arg)
 {
   int ret;
 

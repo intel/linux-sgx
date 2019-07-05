@@ -65,6 +65,9 @@ typedef enum _para_type_t
     HEAPMAXSIZE,
     HEAPMINSIZE,
     HEAPINITSIZE,
+    RSRVMAXSIZE,
+    RSRVMINSIZE,
+    RSRVINITSIZE,
     MISCSELECT,
     MISCMASK,
     ENABLEKSS,
@@ -107,7 +110,7 @@ private:
     bool build_layout_entries();
     bool build_patch_entries(std::vector<patch_entry_t> &patches);
 
-    layout_entry_t *get_entry_by_id(uint16_t id);
+    layout_entry_t *get_entry_by_id(uint16_t id, bool do_assert);
     bool build_tcs_template(tcs_t *tcs);
     bool build_gd_template(uint8_t *data, uint32_t *data_size);
 

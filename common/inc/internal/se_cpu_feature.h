@@ -34,7 +34,7 @@
 #define _SE_CPU_FEATURE_H_
 
 #include <stdint.h>
-#include "se_cpu_feature_defs.h"
+#include "se_cpu_feature_defs_ext.h"
 
 
 #ifdef __cplusplus

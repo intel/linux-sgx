@@ -3,5 +3,5 @@
   "bundle.activator" : true,
   "bundle.name" : "Local PSEOP Service",
   "bundle.description" : "This bundle provide Local PSEOP Service",
-  "bundle.version" : "1.0.0"
+  "bundle.version" : "2.0.0"
 }

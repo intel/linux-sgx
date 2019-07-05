@@ -26,13 +26,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 /* FIXME for MIPS.  */
 
-PROTECTED int
+int
 unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
 {
   struct cursor *c = (struct cursor *) cursor;
   dwarf_loc_t loc;
 
-  loc = DWARF_NULL_LOC;		/* default to "not saved" */
+  loc = DWARF_NULL_LOC;         /* default to "not saved" */
 
   switch (reg)
     {
@@ -68,6 +68,7 @@ unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
     case UNW_MIPS_R29:
     case UNW_MIPS_R30:
     case UNW_MIPS_R31:
+    case UNW_MIPS_PC:
       loc = c->dwarf.loc[reg - UNW_MIPS_R0];
       break;
 

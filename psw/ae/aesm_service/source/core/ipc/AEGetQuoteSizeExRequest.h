@@ -44,7 +44,7 @@ namespace aesm
 class AEGetQuoteSizeExRequest : public IAERequest{
     public:
         AEGetQuoteSizeExRequest(const aesm::message::Request_GetQuoteSizeExRequest& request);
-        AEGetQuoteSizeExRequest(uint32_t att_key_id_size, uint8_t* att_key_id, uint32_t certification_key_type, uint32_t timeout = 0);
+        AEGetQuoteSizeExRequest(uint32_t att_key_id_size, uint8_t* att_key_id, uint32_t timeout = 0);
         AEGetQuoteSizeExRequest(const AEGetQuoteSizeExRequest& other);
         ~AEGetQuoteSizeExRequest();
 

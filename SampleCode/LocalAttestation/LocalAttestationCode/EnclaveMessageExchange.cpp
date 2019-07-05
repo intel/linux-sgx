@@ -100,7 +100,7 @@ ATTESTATION_STATUS create_session(sgx_enclave_id_t src_enclave_id,
     {
             return status;
     }
-    
+
     //Ocall to request for a session with the destination enclave and obtain session id and Message 1 if successful
     status = session_request_ocall(&retstatus, src_enclave_id, dest_enclave_id, &dh_msg1, &session_id);
     if (status == SGX_SUCCESS)
@@ -171,7 +171,7 @@ ATTESTATION_STATUS session_request(sgx_enclave_id_t src_enclave_id,
     {
         return status;
     }
-    
+
     //get a new SessionID
     if ((status = (sgx_status_t)generate_session_id(session_id)) != SUCCESS)
         return status; //no more sessions available
@@ -197,7 +197,7 @@ ATTESTATION_STATUS session_request(sgx_enclave_id_t src_enclave_id,
     memcpy(&session_info.in_progress.dh_session, &sgx_dh_session, sizeof(sgx_dh_session_t));
     //Store the session information under the correspoding source enlave id key
     g_dest_session_info_map.insert(std::pair<sgx_enclave_id_t, dh_session_t>(src_enclave_id, session_info));
-    
+
     return status;
 }
 
@@ -244,10 +244,10 @@ ATTESTATION_STATUS exchange_report(sgx_enclave_id_t src_enclave_id,
 
         dh_msg3->msg3_body.additional_prop_length = 0;
         //Process message 2 from source enclave and obtain message 3
-        sgx_status_t se_ret = sgx_dh_responder_proc_msg2(dh_msg2, 
-                                                       dh_msg3, 
-                                                       &sgx_dh_session, 
-                                                       &dh_aek, 
+        sgx_status_t se_ret = sgx_dh_responder_proc_msg2(dh_msg2,
+                                                       dh_msg3,
+                                                       &sgx_dh_session,
+                                                       &dh_aek,
                                                        &initiator_identity);
         if(SGX_SUCCESS != se_ret)
         {
@@ -298,7 +298,6 @@ ATTESTATION_STATUS send_request_receive_response(sgx_enclave_id_t src_enclave_id
     uint32_t decrypted_data_length;
     uint32_t plain_text_offset;
     uint8_t l_tag[TAG_SIZE];
-    size_t max_resp_message_length;
     plaintext = (const uint8_t*)(" ");
     plaintext_length = 0;
 
@@ -335,7 +334,7 @@ ATTESTATION_STATUS send_request_receive_response(sgx_enclave_id_t src_enclave_id
     status = sgx_rijndael128GCM_encrypt(&session_info->active.AEK, (uint8_t*)inp_buff, data2encrypt_length,
                 reinterpret_cast<uint8_t *>(&(req_message->message_aes_gcm_data.payload)),
                 reinterpret_cast<uint8_t *>(&(req_message->message_aes_gcm_data.reserved)),
-                sizeof(req_message->message_aes_gcm_data.reserved), plaintext, plaintext_length, 
+                sizeof(req_message->message_aes_gcm_data.reserved), plaintext, plaintext_length,
                 &(req_message->message_aes_gcm_data.payload_tag));
 
     if(SGX_SUCCESS != status)
@@ -343,7 +342,7 @@ ATTESTATION_STATUS send_request_receive_response(sgx_enclave_id_t src_enclave_id
         SAFE_FREE(req_message);
         return status;
     }
-    
+
     //Allocate memory for the response payload to be copied
     *out_buff = (char*)malloc(max_out_buff_size);
     if(!*out_buff)
@@ -384,15 +383,6 @@ ATTESTATION_STATUS send_request_receive_response(sgx_enclave_id_t src_enclave_id
         return ATTESTATION_SE_ERROR;
     }
 
-    max_resp_message_length = sizeof(secure_message_t)+ max_out_buff_size;
-
-    if(sizeof(resp_message) > max_resp_message_length)
-    {
-        SAFE_FREE(req_message);
-        SAFE_FREE(resp_message);
-        return INVALID_PARAMETER_ERROR;
-    }
-
     //Code to process the response message from the Destination Enclave
 
     decrypted_data_length = resp_message->message_aes_gcm_data.payload_size;
@@ -409,12 +399,12 @@ ATTESTATION_STATUS send_request_receive_response(sgx_enclave_id_t src_enclave_id
     memset(decrypted_data, 0, decrypted_data_length);
 
     //Decrypt the response message payload
-    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, resp_message->message_aes_gcm_data.payload, 
+    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, resp_message->message_aes_gcm_data.payload,
                 decrypted_data_length, decrypted_data,
                 reinterpret_cast<uint8_t *>(&(resp_message->message_aes_gcm_data.reserved)),
-                sizeof(resp_message->message_aes_gcm_data.reserved), &(resp_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length, 
+                sizeof(resp_message->message_aes_gcm_data.reserved), &(resp_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length,
                 &resp_message->message_aes_gcm_data.payload_tag);
-    
+
     if(SGX_SUCCESS != status)
     {
         SAFE_FREE(req_message);
@@ -515,10 +505,10 @@ ATTESTATION_STATUS generate_response(sgx_enclave_id_t src_enclave_id,
     memset(decrypted_data, 0, decrypted_data_length);
 
     //Decrypt the request message payload from source enclave
-    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, req_message->message_aes_gcm_data.payload, 
+    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, req_message->message_aes_gcm_data.payload,
                 decrypted_data_length, decrypted_data,
                 reinterpret_cast<uint8_t *>(&(req_message->message_aes_gcm_data.reserved)),
-                sizeof(req_message->message_aes_gcm_data.reserved), &(req_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length, 
+                sizeof(req_message->message_aes_gcm_data.reserved), &(req_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length,
                 &req_message->message_aes_gcm_data.payload_tag);
 
     if(SGX_SUCCESS != status)
@@ -565,7 +555,7 @@ ATTESTATION_STATUS generate_response(sgx_enclave_id_t src_enclave_id,
         SAFE_FREE(decrypted_data);
         return INVALID_REQUEST_TYPE_ERROR;
     }
-    
+
 
     if(resp_data_length > max_payload_size)
     {
@@ -607,7 +597,7 @@ ATTESTATION_STATUS generate_response(sgx_enclave_id_t src_enclave_id,
     status = sgx_rijndael128GCM_encrypt(&session_info->active.AEK, (uint8_t*)resp_data, data2encrypt_length,
                 reinterpret_cast<uint8_t *>(&(temp_resp_message->message_aes_gcm_data.payload)),
                 reinterpret_cast<uint8_t *>(&(temp_resp_message->message_aes_gcm_data.reserved)),
-                sizeof(temp_resp_message->message_aes_gcm_data.reserved), plaintext, plaintext_length, 
+                sizeof(temp_resp_message->message_aes_gcm_data.reserved), plaintext, plaintext_length,
                 &(temp_resp_message->message_aes_gcm_data.payload_tag));
 
     if(SGX_SUCCESS != status)

@@ -95,7 +95,7 @@ UNW_ENOINFO
 was unable to determine 
 the name of the procedure. 
 .TP
-UNW_ENOMME
+UNW_ENOMEM
  The procedure name is too long to fit 
 in the buffer provided. A truncated version of the name has been 
 returned. 

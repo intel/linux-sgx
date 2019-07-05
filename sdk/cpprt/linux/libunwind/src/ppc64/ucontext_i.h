@@ -33,18 +33,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
    /usr/src/linux-2.6.18-1.8/arch/powerpc/kernel/ppc32.h
 */
 
-#define NIP_IDX		32
-#define MSR_IDX		33
-#define ORIG_GPR3_IDX	34
-#define CTR_IDX		35
-#define LINK_IDX	36
-#define XER_IDX		37
-#define CCR_IDX		38
-#define SOFTE_IDX	39
-#define TRAP_IDX	40
-#define DAR_IDX		41
-#define DSISR_IDX	42
-#define RESULT_IDX	43
+#define NIP_IDX         32
+#define MSR_IDX         33
+#define ORIG_GPR3_IDX   34
+#define CTR_IDX         35
+#define LINK_IDX        36
+#define XER_IDX         37
+#define CCR_IDX         38
+#define SOFTE_IDX       39
+#define TRAP_IDX        40
+#define DAR_IDX         41
+#define DSISR_IDX       42
+#define RESULT_IDX      43
 
 #define VSCR_IDX        32
 #define VRSAVE_IDX      33

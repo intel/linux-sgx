@@ -38,7 +38,7 @@ mips_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
 
 #endif /* !UNW_REMOTE_ONLY */
 
-PROTECTED int
+int
 unw_resume (unw_cursor_t *cursor)
 {
   return -UNW_EINVAL;

@@ -55,7 +55,7 @@ extern "C" {
 #endif
 
 /* Map a file to memory and get its size. */
-map_handle_t* map_file(se_file_handle_t fd, uint32_t *size);
+map_handle_t* map_file(se_file_handle_t fd, off_t *size);
 
 /* Unmap a mapped file. */
 void unmap_file(map_handle_t* mh);

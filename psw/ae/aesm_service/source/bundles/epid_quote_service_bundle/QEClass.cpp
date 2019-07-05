@@ -34,16 +34,10 @@
 #include "arch.h"
 #include "QEClass.h"
 #include "PVEClass.h"
-#include "pce_service.h"
 #include "se_memcpy.h"
 #include "prof_fun.h"
 #include "quoting_enclave_u.h"
 #include "metadata.h"
-
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
-extern std::shared_ptr<IPceService> g_pce_service;
 
 void CQEClass::before_enclave_load() {
     // always unload qe enclave before loading pve enclave

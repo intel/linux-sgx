@@ -33,6 +33,7 @@
 #include "se_trace.h"
 #include "se_memcpy.h"
 #include "global_data.h"
+#include "metadata.h"
 #include <sys/mman.h>
 #include <vector>
 #include <tuple>
@@ -512,6 +513,9 @@ bool build_regular_sections(const uint8_t* start_addr,
     const ElfW(Ehdr) *elf_hdr = (const ElfW(Ehdr) *)start_addr;
     const ElfW(Phdr) *prg_hdr = GET_PTR(ElfW(Phdr), start_addr, elf_hdr->e_phoff);
     uint64_t virtual_size = 0, alignment = 0, aligned_virtual_size = 0;
+#ifndef DISABLE_TRACE
+    unsigned section_count = 1; /* Definition only used with se_trace(SE_TRACE_DEBUG) below */
+#endif
 
     if (get_meta_property(start_addr, elf_hdr, metadata_offset, metadata_block_size) == false)
         return false;
@@ -526,6 +530,10 @@ bool build_regular_sections(const uint8_t* start_addr,
             sec = build_section(GET_PTR(uint8_t, start_addr, prg_hdr->p_offset),
                                 (uint64_t)prg_hdr->p_filesz, (uint64_t)prg_hdr->p_memsz,
                                 (uint64_t)prg_hdr->p_vaddr, (uint32_t) prg_hdr->p_flags);
+            se_trace(SE_TRACE_DEBUG, "LOAD Section: %d\n", section_count++);
+            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016lX\n", (uint64_t)prg_hdr->p_flags);
+            se_trace(SE_TRACE_DEBUG, "VAddr = 0x%016lX\n", (uint64_t)prg_hdr->p_vaddr);
+            se_trace(SE_TRACE_DEBUG, "Size  = 0x%016lX\n\n", (uint64_t)prg_hdr->p_memsz);
             break;
 
         case PT_TLS:
@@ -541,6 +549,10 @@ bool build_regular_sections(const uint8_t* start_addr,
             sec = build_section(GET_PTR(uint8_t, start_addr, prg_hdr->p_offset),
                                 (uint64_t)prg_hdr->p_filesz, aligned_virtual_size,
                                 (uint64_t)prg_hdr->p_vaddr, (uint32_t) prg_hdr->p_flags);
+            se_trace(SE_TRACE_DEBUG, "TLS Section: %d\n", section_count++);
+            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016lX\n", (uint64_t)prg_hdr->p_flags);
+            se_trace(SE_TRACE_DEBUG, "VAddr = 0x%016lX\n", (uint64_t)prg_hdr->p_vaddr);
+            se_trace(SE_TRACE_DEBUG, "Size  = 0x%016lX\n\n", (uint64_t)prg_hdr->p_memsz);
             break;
 
         default:

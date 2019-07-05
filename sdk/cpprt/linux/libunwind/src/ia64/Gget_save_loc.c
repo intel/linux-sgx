@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2003, 2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -30,7 +30,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "offsets.h"
 #include "regs.h"
 
-PROTECTED int
+int
 unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
 {
   struct cursor *c = (struct cursor *) cursor;
@@ -38,7 +38,7 @@ unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
   uint8_t nat_bitnr;
   int ret;
 
-  loc = IA64_NULL_LOC;		/* default to "not saved" */
+  loc = IA64_NULL_LOC;          /* default to "not saved" */
 
   switch (reg)
     {
@@ -62,8 +62,8 @@ unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
       reg_loc = c->loc[IA64_REG_R4 + (reg - (UNW_IA64_NAT + 4))];
       nat_bitnr = c->nat_bitnr[reg - (UNW_IA64_NAT + 4)];
       if (IA64_IS_FP_LOC (reg_loc))
-	/* NaT bit saved as a NaTVal.  */
-	loc = reg_loc;
+        /* NaT bit saved as a NaTVal.  */
+        loc = reg_loc;
       break;
 
     case UNW_IA64_FR + 2: loc = c->loc[IA64_REG_F2]; break;
@@ -74,29 +74,29 @@ unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
       loc = c->loc[IA64_REG_F16 + (reg - (UNW_IA64_FR + 16))];
       break;
 
-    case UNW_IA64_AR_BSP:	loc = c->loc[IA64_REG_BSP]; break;
-    case UNW_IA64_AR_BSPSTORE:	loc = c->loc[IA64_REG_BSPSTORE]; break;
-    case UNW_IA64_AR_PFS:	loc = c->loc[IA64_REG_PFS]; break;
-    case UNW_IA64_AR_RNAT:	loc = c->loc[IA64_REG_RNAT]; break;
-    case UNW_IA64_AR_UNAT:	loc = c->loc[IA64_REG_UNAT]; break;
-    case UNW_IA64_AR_LC:	loc = c->loc[IA64_REG_LC]; break;
-    case UNW_IA64_AR_FPSR:	loc = c->loc[IA64_REG_FPSR]; break;
-    case UNW_IA64_BR + 1:	loc = c->loc[IA64_REG_B1]; break;
-    case UNW_IA64_BR + 2:	loc = c->loc[IA64_REG_B2]; break;
-    case UNW_IA64_BR + 3:	loc = c->loc[IA64_REG_B3]; break;
-    case UNW_IA64_BR + 4:	loc = c->loc[IA64_REG_B4]; break;
-    case UNW_IA64_BR + 5:	loc = c->loc[IA64_REG_B5]; break;
-    case UNW_IA64_CFM:		loc = c->cfm_loc; break;
-    case UNW_IA64_PR:		loc = c->loc[IA64_REG_PR]; break;
+    case UNW_IA64_AR_BSP:       loc = c->loc[IA64_REG_BSP]; break;
+    case UNW_IA64_AR_BSPSTORE:  loc = c->loc[IA64_REG_BSPSTORE]; break;
+    case UNW_IA64_AR_PFS:       loc = c->loc[IA64_REG_PFS]; break;
+    case UNW_IA64_AR_RNAT:      loc = c->loc[IA64_REG_RNAT]; break;
+    case UNW_IA64_AR_UNAT:      loc = c->loc[IA64_REG_UNAT]; break;
+    case UNW_IA64_AR_LC:        loc = c->loc[IA64_REG_LC]; break;
+    case UNW_IA64_AR_FPSR:      loc = c->loc[IA64_REG_FPSR]; break;
+    case UNW_IA64_BR + 1:       loc = c->loc[IA64_REG_B1]; break;
+    case UNW_IA64_BR + 2:       loc = c->loc[IA64_REG_B2]; break;
+    case UNW_IA64_BR + 3:       loc = c->loc[IA64_REG_B3]; break;
+    case UNW_IA64_BR + 4:       loc = c->loc[IA64_REG_B4]; break;
+    case UNW_IA64_BR + 5:       loc = c->loc[IA64_REG_B5]; break;
+    case UNW_IA64_CFM:          loc = c->cfm_loc; break;
+    case UNW_IA64_PR:           loc = c->loc[IA64_REG_PR]; break;
 
-    case UNW_IA64_GR + 32 ... UNW_IA64_GR + 127:	/* stacked reg */
+    case UNW_IA64_GR + 32 ... UNW_IA64_GR + 127:        /* stacked reg */
       reg = rotate_gr (c, reg - UNW_IA64_GR);
       ret = ia64_get_stacked (c, reg, &loc, NULL);
       if (ret < 0)
-	return ret;
+        return ret;
       break;
 
-    case UNW_IA64_NAT + 32 ... UNW_IA64_NAT + 127:	/* stacked reg */
+    case UNW_IA64_NAT + 32 ... UNW_IA64_NAT + 127:      /* stacked reg */
       reg = rotate_gr (c, reg - UNW_IA64_NAT);
       ret = ia64_get_stacked (c, reg, NULL, &loc);
       break;
@@ -108,9 +108,9 @@ unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
       /* scratch & special registers: */
 
     case UNW_IA64_GR + 0:
-    case UNW_IA64_GR + 1:				/* global pointer */
+    case UNW_IA64_GR + 1:                               /* global pointer */
     case UNW_IA64_NAT + 0:
-    case UNW_IA64_NAT + 1:				/* global pointer */
+    case UNW_IA64_NAT + 1:                              /* global pointer */
     case UNW_IA64_FR + 0:
     case UNW_IA64_FR + 1:
       break;

@@ -480,6 +480,10 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
         ret = sgx_error_to_pve_error(sgx_status);
         goto ret_point;
     }
+    if (output_len != PEK_MOD_SIZE) {
+        ret = PVEC_UNEXPECTED_ERROR;
+        goto ret_point;
+    }
     sgx_status = sgx_rsa_pub_encrypt_sha256(pub_key, msg3_output->encrypted_pwk2, &output_len, reinterpret_cast<const unsigned char*>(pwk2_tlv_buffer),
         PWK2_TLV_TOTAL_SIZE);
     if (SGX_SUCCESS != sgx_status) {

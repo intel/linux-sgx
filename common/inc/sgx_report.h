@@ -83,22 +83,29 @@ typedef struct _target_info_t
     uint8_t                 reserved3[SGX_TARGET_INFO_RESERVED3_BYTES]; /* (128) Struct size is 512 bytes */
 } sgx_target_info_t;
 
+
+#define SGX_REPORT_BODY_RESERVED1_BYTES 12
+#define SGX_REPORT_BODY_RESERVED2_BYTES 32
+#define SGX_REPORT_BODY_RESERVED3_BYTES 32
+#define SGX_REPORT_BODY_RESERVED4_BYTES 42
+
+
 typedef struct _report_body_t
 {
     sgx_cpu_svn_t           cpu_svn;        /* (  0) Security Version of the CPU */
     sgx_misc_select_t       misc_select;    /* ( 16) Which fields defined in SSA.MISC */
-    uint8_t                 reserved1[12];  /* ( 20) */
+    uint8_t                 reserved1[SGX_REPORT_BODY_RESERVED1_BYTES];  /* ( 20) */
     sgx_isvext_prod_id_t    isv_ext_prod_id;/* ( 32) ISV assigned Extended Product ID */
     sgx_attributes_t        attributes;     /* ( 48) Any special Capabilities the Enclave possess */
     sgx_measurement_t       mr_enclave;     /* ( 64) The value of the enclave's ENCLAVE measurement */
-    uint8_t                 reserved2[32];  /* ( 96) */
+    uint8_t                 reserved2[SGX_REPORT_BODY_RESERVED2_BYTES];  /* ( 96) */
     sgx_measurement_t       mr_signer;      /* (128) The value of the enclave's SIGNER measurement */
-    uint8_t                 reserved3[32];  /* (160) */
+    uint8_t                 reserved3[SGX_REPORT_BODY_RESERVED3_BYTES];  /* (160) */
     sgx_config_id_t         config_id;      /* (192) CONFIGID */
     sgx_prod_id_t           isv_prod_id;    /* (256) Product ID of the Enclave */
     sgx_isv_svn_t           isv_svn;        /* (258) Security Version of the Enclave */
     sgx_config_svn_t        config_svn;     /* (260) CONFIGSVN */
-    uint8_t                 reserved4[42];  /* (262) */
+    uint8_t                 reserved4[SGX_REPORT_BODY_RESERVED4_BYTES];  /* (262) */
     sgx_isvfamily_id_t      isv_family_id;  /* (304) ISV assigned Family ID */
     sgx_report_data_t       report_data;    /* (320) Data provided by the user */
 } sgx_report_body_t;

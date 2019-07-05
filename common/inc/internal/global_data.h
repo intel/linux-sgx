@@ -44,12 +44,14 @@
 #include "metadata.h"
 #include "rts.h"
 
-#define LAYOUT_ENTRY_NUM 38
+#define LAYOUT_ENTRY_NUM 42
 typedef struct _global_data_t
 {
     sys_word_t     enclave_size;
     sys_word_t     heap_offset;
     sys_word_t     heap_size;
+    sys_word_t     rsrv_offset;
+    sys_word_t     rsrv_size;
     sys_word_t     thread_policy;
     thread_data_t  td_template;
     uint8_t        tcs_template[TCS_TEMPLATE_SIZE];

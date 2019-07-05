@@ -132,7 +132,7 @@ $(LIBTCXX): cpprt tlibcxx
 
 .PHONY: cpprt
 cpprt:
-	$(MAKE) -C cpprt 
+	$(MAKE) -C cpprt
 
 .PHONY: tlibcxx
 tlibcxx: $(BUILD_DIR)
@@ -141,7 +141,7 @@ tlibcxx: $(BUILD_DIR)
 
 # ---------------------------------------------------
 #  tse
-#      includes: selib, tseal, tae_service, ec_dh_lib 
+#      includes: selib, tseal, tae_service, ec_dh_lib
 # ---------------------------------------------------
 .PHONY: tservice
 tservice: $(LIBTSE)
@@ -189,7 +189,7 @@ tcmalloc:
 .PHONY: tprotected_fs
 tprotected_fs: edger8r
 	$(MAKE) -C protected_fs/sgx_tprotected_fs
-	
+
 .PHONY: sgx_pcl
 sgx_pcl:
 	$(MAKE) -C protected_code_loader
@@ -279,6 +279,6 @@ clean:
 	$(MAKE) -C edger8r/linux                       clean
 	$(MAKE) -C protected_code_loader               clean
 	$(MAKE) -C encrypt_enclave                     clean
-	$(MAKE) -C switchless/                         clean	
+	$(MAKE) -C switchless/                         clean
 	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt

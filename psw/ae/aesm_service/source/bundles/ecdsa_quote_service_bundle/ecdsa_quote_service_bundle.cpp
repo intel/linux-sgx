@@ -1,4 +1,4 @@
-#include <quote_ex_service.h>
+#include <quote_provider_service.h>
 #include <pce_service.h>
 
 #include <cppmicroservices/BundleActivator.h>
@@ -16,7 +16,7 @@
 using namespace cppmicroservices;
 std::shared_ptr<IPceService> g_pce_service;
 static AESMLogicMutex ecdsa_quote_mutex;
-
+extern const sgx_ql_att_key_id_t g_default_ecdsa_p256_att_key_id;
 
 static sgx_pce_error_t ae_error_to_pce_error(uint32_t input)
 {
@@ -203,8 +203,11 @@ sgx_pce_error_t sgx_pce_sign_report(const sgx_isv_svn_t *p_isv_svn,
 }
 
 extern void unload_qe();
+extern quote3_error_t load_qe(sgx_enclave_id_t *p_qe_eid,
+                                  sgx_misc_attribute_t *p_qe_attributes,
+                                  sgx_launch_token_t *p_launch_token);
 
-class EcdsaQuoteServiceImp : public IQuoteExService
+class EcdsaQuoteServiceImp : public IQuoteProviderService
 {
 private:
 
@@ -221,7 +224,8 @@ public:
         }
 
         AESM_DBG_INFO("Starting ecdsa bundle");
-        get_service_wrapper(g_pce_service);
+        auto context = cppmicroservices::GetBundleContext();
+        get_service_wrapper(g_pce_service, context);
 
         if (!g_pce_service)
         {
@@ -241,6 +245,16 @@ public:
             return AE_FAILURE;
         }
 
+        sgx_enclave_id_t qe_eid = 0;
+        sgx_misc_attribute_t qe_attributes ={ 0 };
+        sgx_launch_token_t launch_token = { 0 };
+
+        if (SGX_QL_SUCCESS != load_qe(&qe_eid, &qe_attributes, &launch_token))
+        {
+            AESM_DBG_ERROR("Starting ecdsa bundle failed because QE3 failed to load");
+            return AE_FAILURE;
+        }
+
         initialized = true;
         AESM_DBG_INFO("ecdsa bundle started");
         return AE_SUCCESS;
@@ -249,69 +263,101 @@ public:
     {
         sgx_ql_set_enclave_load_policy(SGX_QL_EPHEMERAL);
         unload_qe();
+        initialized = false;
         AESM_DBG_INFO("ecdsa bundle stopped");
     }
 
     aesm_error_t init_quote_ex(
-        const uint8_t *att_key_id, uint32_t att_key_id_size,
-        uint32_t certification_key_type,
+        const uint8_t *att_key_id_ext, uint32_t att_key_id_ext_size,
         uint8_t *target_info, uint32_t target_info_size,
-        bool refresh_att_key,
         uint8_t *pub_key_id, size_t *pub_key_id_size)
     {
         AESM_DBG_INFO("init_quote_ex");
-        if(NULL != att_key_id && sizeof(sgx_ql_att_key_id_t) != att_key_id_size
-           || NULL != target_info && sizeof(sgx_target_info_t) != target_info_size)
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        // att_key_id_ext has been checked by caller
+        if((NULL != target_info && sizeof(sgx_target_info_t) != target_info_size)
+           || (NULL == pub_key_id && NULL == pub_key_id_size))
         {
             return AESM_PARAMETER_ERROR;
         }
         AESMLogicLock lock(ecdsa_quote_mutex);
         return quote3_error_to_aesm_error(sgx_ql_init_quote(
-            //TODO: need to update sgx_ql_get_quote_size to add "const" for att_key_id
-			const_cast<sgx_ql_att_key_id_t *>(reinterpret_cast<const sgx_ql_att_key_id_t *>(att_key_id)),
-			reinterpret_cast<sgx_target_info_t *>(target_info),
-			refresh_att_key,
-			pub_key_id_size,
-			pub_key_id));
+                //TODO: need to update sgx_ql_get_quote_size to add "const" for att_key_id
+                &((sgx_att_key_id_ext_t *)att_key_id_ext)->base,
+                reinterpret_cast<sgx_target_info_t *>(target_info),
+                false,
+                pub_key_id_size,
+                pub_key_id));
     }
 
     aesm_error_t get_quote_size_ex(
-        const uint8_t *att_key_id, uint32_t att_key_id_size,
-        uint32_t certification_key_type,
+        const uint8_t *att_key_id_ext, uint32_t att_key_id_ext_size,
         uint32_t *quote_size)
     {
         AESM_DBG_INFO("get_quote_size_ex");
-        if(NULL != att_key_id && sizeof(sgx_ql_att_key_id_t) != att_key_id_size)
-        {
-            return AESM_PARAMETER_ERROR;
-        }
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        // att_key_id_ext has been checked by caller
         AESMLogicLock lock(ecdsa_quote_mutex);
         return quote3_error_to_aesm_error(sgx_ql_get_quote_size(
-            //TODO: need to update sgx_ql_get_quote_size to add "const" for att_key_id
-			const_cast<sgx_ql_att_key_id_t *>(reinterpret_cast<const sgx_ql_att_key_id_t *>(att_key_id)),
-			quote_size));
+                //TODO: need to update sgx_ql_get_quote_size to add "const" for att_key_id
+                &((sgx_att_key_id_ext_t *)att_key_id_ext)->base,
+                quote_size));
     }
 
     aesm_error_t get_quote_ex(
         const uint8_t *app_report, uint32_t app_report_size,
-        const uint8_t *att_key_id, uint32_t att_key_id_size,
+        const uint8_t *att_key_id_ext, uint32_t att_key_id_ext_size,
         uint8_t *qe_report_info, uint32_t qe_report_info_size,
         uint8_t *quote, uint32_t quote_size)
     {
         AESM_DBG_INFO("get_quote_ex");
-        if(NULL != app_report && sizeof(sgx_report_t) != app_report_size
-           || NULL != att_key_id && sizeof(sgx_ql_att_key_id_t) != att_key_id_size
-           || NULL != qe_report_info && sizeof(sgx_ql_qe_report_info_t) != qe_report_info_size)
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        // att_key_id_ext has been checked by caller
+        if((NULL != app_report && sizeof(sgx_report_t) != app_report_size)
+           || (NULL != qe_report_info && sizeof(sgx_ql_qe_report_info_t) != qe_report_info_size)
+           || (NULL == qe_report_info && qe_report_info_size))
         {
             return AESM_PARAMETER_ERROR;
         }
         AESMLogicLock lock(ecdsa_quote_mutex);
         return quote3_error_to_aesm_error(sgx_ql_get_quote(
-			reinterpret_cast<const sgx_report_t *>(app_report),
-            //TODO: need to update sgx_ql_get_quote_size to add "const" for att_key_id
-			const_cast<sgx_ql_att_key_id_t *>(reinterpret_cast<const sgx_ql_att_key_id_t *>(att_key_id)),
-			reinterpret_cast<sgx_ql_qe_report_info_t *>(qe_report_info),
-			quote, quote_size));
+                    reinterpret_cast<const sgx_report_t *>(app_report),
+                    //TODO: need to update sgx_ql_get_quote_size to add "const" for att_key_id
+                    &((sgx_att_key_id_ext_t *)att_key_id_ext)->base,
+                    reinterpret_cast<sgx_ql_qe_report_info_t *>(qe_report_info),
+                    quote, quote_size));
+    }
+
+    aesm_error_t get_att_key_id(uint8_t *att_key_id, uint32_t att_key_id_size)
+    {
+        AESM_DBG_INFO("get_att_key_id");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        if(NULL == att_key_id || sizeof(sgx_att_key_id_ext_t) > att_key_id_size)
+        {
+            return AESM_PARAMETER_ERROR;
+        }
+        // Clear return buffer, make sure spid is 0s
+        memset(att_key_id, 0, att_key_id_size);
+        sgx_att_key_id_ext_t *p_att_key_id = (sgx_att_key_id_ext_t *)att_key_id;
+        memcpy_s(&p_att_key_id->base, sizeof(p_att_key_id->base),
+            &g_default_ecdsa_p256_att_key_id, sizeof(g_default_ecdsa_p256_att_key_id));
+        p_att_key_id->base.algorithm_id = SGX_QL_ALG_ECDSA_P256;
+        p_att_key_id->base.prod_id = 1;
+        return AESM_SUCCESS;
+    }
+
+    aesm_error_t get_att_key_id_num(uint32_t *att_key_id_num)
+    {
+        if(NULL == att_key_id_num)
+        {
+            return AESM_PARAMETER_ERROR;
+        }
+        *att_key_id_num = 1;
+        return AESM_SUCCESS;
     }
 };
 
@@ -320,7 +366,7 @@ class Activator : public BundleActivator
   void Start(BundleContext ctx)
   {
     auto service = std::make_shared<EcdsaQuoteServiceImp>();
-    ctx.RegisterService<IQuoteExService>(service);
+    ctx.RegisterService<IQuoteProviderService>(service);
   }
 
   void Stop(BundleContext)

@@ -48,6 +48,8 @@
 #define AESM_DEFAULT_CONN_TIME_OUT 1000
 #define AESM_DEFAULT_TIME_OUT 10000
 
+#define REQUEST_ID ("Request-ID")
+
 
 typedef struct _network_malloc_info_t{
     char *base;
@@ -139,6 +141,11 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
     CURLcode cc=CURLE_OK;
     int num_bytes = 0;
     long resp_code = 0;
+    network_malloc_info_t malloc_info_resp = {0, 0};
+    network_malloc_info_t malloc_info_header = {0, 0};
+    uint32_t header_length = 0;
+    uint32_t start = 0, end = 0;
+    char* p_header = NULL;
     if(is_ocsp){
         tmp = curl_slist_append(headers, "Accept: application/ocsp-response");
         if(tmp==NULL){
@@ -187,24 +194,29 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
             goto fini;
         }
     }
+
     if((cc=curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback))!=CURLE_OK){
         AESM_DBG_ERROR("Fail to set callback function:%d",(int)cc);
         ae_ret = AE_FAILURE;
         goto fini;
     }
+    if((cc=curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void *>(&malloc_info_resp)))!=CURLE_OK){
+       AESM_DBG_ERROR("fail to set write back function parameter:%d",(int)cc);
+       ae_ret = AE_FAILURE;
+       goto fini;
+    }
 
-    network_malloc_info_t malloc_info;
-    malloc_info.base=NULL;
-    malloc_info.size = 0;
-    if((cc=curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void *>(&malloc_info)))!=CURLE_OK){
+    if((cc=curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_callback))!=CURLE_OK){
+        AESM_DBG_ERROR("Fail to set callback function:%d",(int)cc);
+        ae_ret = AE_FAILURE;
+        goto fini;
+    }
+    if((cc=curl_easy_setopt(curl, CURLOPT_HEADERDATA, reinterpret_cast<void *>(&malloc_info_header)))!=CURLE_OK){
        AESM_DBG_ERROR("fail to set write back function parameter:%d",(int)cc);
        ae_ret = AE_FAILURE;
        goto fini;
     }
     if((cc=curl_easy_perform(curl))!=CURLE_OK){
-        if(malloc_info.base){
-            free(malloc_info.base);
-        }
         AESM_DBG_ERROR("fail in connect:%d",(int)cc);
         ae_ret = OAL_NETWORK_UNAVAILABLE_ERROR;
         goto fini;
@@ -214,20 +226,59 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
     // indicates an error has occured
     if((cc=curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &resp_code))!=CURLE_OK || resp_code>=400){
         AESM_DBG_ERROR("Response code error:%d", resp_code);
-        if(malloc_info.base){
-            free(malloc_info.base);
-        }
         ae_ret = AE_FAILURE;
         goto fini;
     }
 
-    *resp_msg = malloc_info.base;
-    resp_size = malloc_info.size;
+    // return pointer to response buffer
+    *resp_msg = malloc_info_resp.base;
+    resp_size = malloc_info_resp.size;
+
     AESM_DBG_TRACE("get response size=%d",resp_size);
+
+    // Log request-id from HTTP response header
+    // which follows the generic HTTP header format
+    // Request-ID: XXXXXXXXXXXXXXX 
+    header_length = malloc_info_header.size;
+    p_header = malloc_info_header.base;
+    while(start < header_length) {
+        while (end < header_length && p_header[end] != '\r' && p_header[end] != '\n') {
+            end++;
+        }
+        if (end == start) {
+            start++;
+            end++;
+        }
+        else {
+            // parse one line
+            std::string str((unsigned char*)p_header+start, (unsigned char*)p_header+end);
+            size_t pos = str.find(": ");
+            if (pos != std::string::npos) {
+                std::string key = str.substr(0, pos);
+                std::string value = str.substr(pos+2);
+                if (key.compare(REQUEST_ID) == 0) {
+                    AESM_LOG_INFO("The Request ID is %s", value.c_str());
+                    break;
+                }
+            }
+            start = end;
+        }
+    }
+    // End of log
+
     ae_ret = AE_SUCCESS;
+
 fini:
     if(headers!=NULL){
         curl_slist_free_all(headers);
+    }
+    if (ae_ret != AE_SUCCESS) {
+        if(malloc_info_resp.base){
+            free(malloc_info_resp.base);
+        }
+    }
+    if(malloc_info_header.base){
+        free(malloc_info_header.base);
     }
     return ae_ret;
 }

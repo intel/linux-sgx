@@ -45,9 +45,7 @@ class AEInitQuoteExRequest : public IAERequest{
     public:
         AEInitQuoteExRequest(const aesm::message::Request_InitQuoteExRequest& request);
         AEInitQuoteExRequest(uint32_t att_key_id_size, const uint8_t *att_key_id,
-                uint32_t certification_key_type,
-                bool refresh_att_key,
-                bool b_pub_key_id, 
+                bool b_pub_key_id,
                 size_t buf_size, uint32_t timeout = 0);
         AEInitQuoteExRequest(const AEInitQuoteExRequest& other);
         ~AEInitQuoteExRequest();

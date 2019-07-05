@@ -43,7 +43,6 @@
 #include "sgx_trts.h"
 #include "ipp_wrapper.h"
 
-#define MAX_IPP_BN_LENGTH 2048
 
 sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned char *p_n, unsigned char *p_d, unsigned char *p_e,
     unsigned char *p_p, unsigned char *p_q, unsigned char *p_dmp1,
@@ -70,7 +69,7 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
         //
         error_code = sgx_ipp_newPrimeGen(n_byte_size * 8 / 2, &p_prime);
         ERROR_BREAK(error_code);
-        
+
         //allocate and init private key of type 2
         //
         error_code = ippsRSA_GetSizePrivateKeyType2(n_byte_size / 2 * 8, n_byte_size / 2 * 8, &pri_size);
@@ -83,7 +82,7 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
         }
         error_code = ippsRSA_InitPrivateKeyType2(n_byte_size / 2 * 8, n_byte_size / 2 * 8, p_pri_key, pri_size);
         ERROR_BREAK(error_code);
-        
+
         //allocate scratch buffer, to be used as temp buffer
         //
         error_code = ippsRSA_GetBufferSizePrivateKey(&scratch_buffer_size, p_pri_key);
@@ -121,7 +120,7 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
         //
         do {
             // generate keys
-            // ippsRSA_GenerateKeys() may return ippStsInsufficientEntropy. 
+            // ippsRSA_GenerateKeys() may return ippStsInsufficientEntropy.
             // In that case, we need to retry the API
             error_code = ippsRSA_GenerateKeys(bn_e_s,
                 bn_n,
@@ -196,7 +195,7 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
     sgx_ipp_secure_free_BN(bn_iqmp, n_byte_size / 2);
 
     SAFE_FREE_MM(p_prime);
-    secure_free_rsa_pri2_key(n_byte_size / 2, p_pri_key);
+    secure_free_rsa_pri_key(p_pri_key);
     CLEAR_FREE_MEM(scratch_buffer, scratch_buffer_size);
 
     if (error_code == ippStsMemAllocErr)
@@ -233,7 +232,7 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
         ERROR_BREAK(error_code);
         error_code = sgx_ipp_newBN((const Ipp32u*)p_rsa_key_iqmp, mod_size / 2, &p_iqmp);
         ERROR_BREAK(error_code);
-        
+
         //allocate and initialize private key of type 2
         //
         error_code = ippsRSA_GetSizePrivateKeyType2(mod_size / 2 * 8, mod_size / 2 * 8, &rsa2_size);
@@ -246,7 +245,7 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
         }
         error_code = ippsRSA_InitPrivateKeyType2(mod_size / 2 * 8, mod_size / 2 * 8, p_rsa2, rsa2_size);
         ERROR_BREAK(error_code);
-        
+
         //setup private key with values of input components
         //
         error_code = ippsRSA_SetPrivateKeyType2(p_p, p_q, p_dmp1, p_dmq1, p_iqmp, p_rsa2);
@@ -267,7 +266,7 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
     }
 
     if (ret_code != SGX_SUCCESS) {
-        secure_free_rsa_pri2_key(mod_size / 2, p_rsa2);
+        secure_free_rsa_pri_key(p_rsa2);
     }
     return ret_code;
 }
@@ -329,39 +328,42 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
 
 sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
     const size_t pin_len) {
-    (void)(pout_len);
-    if (rsa_key == NULL || pin_data == NULL || pin_len < 1 || pin_len >= INT_MAX) {
+    if (rsa_key == NULL || pout_len == NULL || pin_data == NULL || pin_len < 1 || pin_len >= INT_MAX) {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
     IppsBigNumState* p_modulus = NULL;
-    int dataLen = 0;
+    int mod_len = 0;
     uint8_t *p_scratch_buffer = NULL;
     Ipp8u seeds[RSA_SEED_SIZE_SHA256] = { 0 };
     int scratch_buff_size = 0;
     sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
 
     do {
-        // return required pout_data buffer size
         //
+        //create a new BN
+        //
+        if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_modulus) != ippStsNoErr) {
+            break;
+        }
+        //get public key modulus
+        //
+        if (ippsRSA_GetPublicKey(p_modulus, NULL, (IppsRSAPublicKeyState*)rsa_key) != ippStsNoErr) {
+            break;
+        }
+        //get modulus length in bits
+        //
+        if (ippsExtGet_BN(0, &mod_len, 0, p_modulus) != ippStsNoErr) {
+            break;
+        }
         if (pout_data == NULL) {
-            //create a new BN
-            //
-            if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_modulus) != ippStsNoErr) {
-                break;
-            }
-            //get public key modulus
-            //
-            if (ippsRSA_GetPublicKey(p_modulus, NULL, (IppsRSAPublicKeyState*)rsa_key) != ippStsNoErr) {
-                break;
-            }
-            //get modulus length in bits
-            //
-            if (ippsExtGet_BN(0, &dataLen, 0, p_modulus) != ippStsNoErr) {
-                break;
-            }
-            *pout_len = dataLen / 8;
+            // return required pout_data buffer size
+            *pout_len = mod_len / 8;
             ret_code = SGX_SUCCESS;
+            break;
+        }
+        else if (*pout_len < (size_t)(mod_len / 8)) {
+            ret_code = SGX_ERROR_INVALID_PARAMETER;
             break;
         }
 
@@ -390,6 +392,7 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data,
             pout_data, (IppsRSAPublicKeyState*)rsa_key, IPP_ALG_HASH_SHA256, p_scratch_buffer) != ippStsNoErr) {
             break;
         }
+	*pout_len = mod_len / 8;
 
         ret_code = SGX_SUCCESS;
     } while (0);
@@ -406,33 +409,55 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    IppsBigNumState* p_modulus = NULL;
+    IppsBigNumState* p_bn = NULL;
     int dataLen = 0;
+    int factor = 1;
     sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
     uint8_t *p_scratch_buffer = NULL;
     int scratch_buff_size = 0;
 
     do {
-        // return required pout_data buffer size
+        //create a new BN
+        //
+        if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_bn) != ippStsNoErr)
+        {
+            break;
+        }
+        //get private key modulus or prime factor P
+        //
+        if (ippsRSA_GetPrivateKeyType1(p_bn, NULL, (IppsRSAPrivateKeyState*)rsa_key) != ippStsNoErr)
+        {
+            if (ippsRSA_GetPrivateKeyType2(p_bn, NULL, NULL, NULL, NULL, (IppsRSAPrivateKeyState*)rsa_key) != ippStsNoErr)
+            {
+                break;
+            }
+            else
+            {
+                //we're working with prime number and not modulus, need to multiply length by 2
+                //
+                factor = 2;
+            }
+        }
+        //get modulus or prime factor P bits length
+        //
+        if (ippsExtGet_BN(0, &dataLen, 0, p_bn) != ippStsNoErr)
+        {
+            break;
+        }
+        
+        // output buffer is NULL, return required pout_data buffer size
         //
         if (pout_data == NULL) {
-            //create a new BN
+            //calculate pout_len based on RSA factors size and return.
+            // convert bits to bytes, in case of working with P, multiply by factor=2.
             //
-            if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_modulus) != ippStsNoErr) {
-                break;
-            }
-            //get private key modulus
-            //
-            if (ippsRSA_GetPrivateKeyType1(p_modulus, NULL, (IppsRSAPrivateKeyState*)rsa_key) != ippStsNoErr) {
-                break;
-            }
-            //get modulus length in bits
-            //
-            if (ippsExtGet_BN(0, &dataLen, 0, p_modulus) != ippStsNoErr) {
-                break;
-            }
-            *pout_len = dataLen / 8;
+            *pout_len = dataLen / 8 * factor;
             ret_code = SGX_SUCCESS;
+            break;
+        }
+        else if(*pout_len < (size_t)(dataLen / 8 * factor))
+        {
+            ret_code = SGX_ERROR_INVALID_PARAMETER;
             break;
         }
 
@@ -457,14 +482,76 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data
 
     } while (0);
     CLEAR_FREE_MEM(p_scratch_buffer, scratch_buff_size);
-    sgx_ipp_secure_free_BN(p_modulus, MAX_IPP_BN_LENGTH);
+    sgx_ipp_secure_free_BN(p_bn, MAX_IPP_BN_LENGTH);
 
     return ret_code;
 }
+
+sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_byte_size, const unsigned char *le_n, const unsigned char *le_e,
+    const unsigned char *le_d, void **new_pri_key1)
+{
+    if (n_byte_size <= 0 || e_byte_size <= 0 || d_byte_size <= 0 || new_pri_key1 == NULL ||
+        le_n == NULL || le_e == NULL || le_d == NULL) {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    IppsRSAPrivateKeyState *p_rsa1 = NULL;
+    IppsBigNumState *p_n = NULL, *p_d = NULL;
+    int rsa1_size = 0;
+    sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
+
+    IppStatus error_code = ippStsErr;
+    do {
+
+        //generate and assign RSA components BNs
+        //
+        error_code = sgx_ipp_newBN((const Ipp32u*)le_n, n_byte_size, &p_n);
+        ERROR_BREAK(error_code);
+        error_code = sgx_ipp_newBN((const Ipp32u*)le_d, d_byte_size, &p_d);
+        ERROR_BREAK(error_code);
+
+        //allocate and init private key of type 1
+        //
+        error_code = ippsRSA_GetSizePrivateKeyType1(n_byte_size * 8, d_byte_size * 8, &rsa1_size);
+        if (error_code != ippStsNoErr || rsa1_size <= 0) {
+            break;
+        }
+        p_rsa1 = (IppsRSAPrivateKeyState *)malloc(rsa1_size);
+        if (!p_rsa1)
+        {
+            error_code = ippStsMemAllocErr;
+            break;
+        }
+        error_code = ippsRSA_InitPrivateKeyType1(n_byte_size * 8, d_byte_size * 8, p_rsa1, rsa1_size);
+        ERROR_BREAK(error_code);
+
+        //setup private key with values of input components
+        //
+        error_code = ippsRSA_SetPrivateKeyType1(p_n, p_d, p_rsa1);
+        ERROR_BREAK(error_code);
+
+        *new_pri_key1 = p_rsa1;
+        ret_code = SGX_SUCCESS;
+
+    } while (0);
+
+    sgx_ipp_secure_free_BN(p_n, n_byte_size);
+    sgx_ipp_secure_free_BN(p_d, d_byte_size);
+    if (ret_code != SGX_SUCCESS) {
+        secure_free_rsa_pri_key(p_rsa1);
+        if (error_code == ippStsMemAllocErr) {
+            ret_code = SGX_ERROR_OUT_OF_MEMORY;
+        }
+    }
+
+    return ret_code;
+}
+
+
 sgx_status_t sgx_free_rsa_key(void *p_rsa_key, sgx_rsa_key_type_t key_type, int mod_size, int exp_size) {
 	if (key_type == SGX_RSA_PRIVATE_KEY) {
 		(void)(exp_size);
-		secure_free_rsa_pri2_key(mod_size/2, (IppsRSAPrivateKeyState*)p_rsa_key);
+		secure_free_rsa_pri_key((IppsRSAPrivateKeyState*)p_rsa_key);
 	} else if (key_type == SGX_RSA_PUBLIC_KEY) {
 		secure_free_rsa_pub_key(mod_size, exp_size, (IppsRSAPublicKeyState*)p_rsa_key);
 	}
@@ -496,17 +583,17 @@ sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int has
         //
         ipp_status = sgx_ipp_newBN(reinterpret_cast<const Ipp32u *>(hash_drg), hash_drg_len, &bn_d);
         ERROR_BREAK(ipp_status);
-        
+
         //generate mod to be n-1 where n is order of ECC Group
         //
         ipp_status = sgx_ipp_newBN(reinterpret_cast<const Ipp32u *>(sgx_nistp256_r_m1), sgx_nistp256_r_m1_len, &bn_m);
         ERROR_BREAK(ipp_status);
-        
+
         //allocate memory for output BN
         //
         ipp_status = sgx_ipp_newBN(NULL, sgx_nistp256_r_m1_len, &bn_o);
         ERROR_BREAK(ipp_status);
-        
+
         //create big number with value of 1
         //
         ipp_status = sgx_ipp_newBN(&i, sizeof(Ipp32u), &bn_one);

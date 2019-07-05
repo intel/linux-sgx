@@ -33,7 +33,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "unwind_i.h"
 #include "ucontext_i.h"
 
-PROTECTED int
+int
 unw_is_signal_frame (unw_cursor_t *cursor)
 {
   /* XXXKIB */
@@ -45,16 +45,16 @@ unw_is_signal_frame (unw_cursor_t *cursor)
   int ret;
 
   as = c->dwarf.as;
-  a = unw_get_accessors (as);
+  a = unw_get_accessors_int (as);
   arg = c->dwarf.as_arg;
 
   /* Check if RIP points at sigreturn sequence.
-48 8d 7c 24 10		lea	SIGF_UC(%rsp),%rdi
-6a 00			pushq	$0
-48 c7 c0 a1 01 00 00	movq	$SYS_sigreturn,%rax
-0f 05			syscall
-f4		0:	hlt
-eb fd			jmp	0b
+48 8d 7c 24 10          lea     SIGF_UC(%rsp),%rdi
+6a 00                   pushq   $0
+48 c7 c0 a1 01 00 00    movq    $SYS_sigreturn,%rax
+0f 05                   syscall
+f4              0:      hlt
+eb fd                   jmp     0b
   */
 
   ip = c->dwarf.ip;
@@ -72,8 +72,8 @@ eb fd			jmp	0b
      return (c->sigcontext_format);
    }
   /* Check if RIP points at standard syscall sequence.
-49 89 ca	mov    %rcx,%r10
-0f 05		syscall
+49 89 ca        mov    %rcx,%r10
+0f 05           syscall
   */
   if ((ret = (*a->access_mem) (as, ip - 5, &b0, 0, arg)) < 0)
     return (0);
@@ -87,8 +87,8 @@ eb fd			jmp	0b
   return (X86_64_SCF_NONE);
 }
 
-PROTECTED int
-unw_handle_signal_frame (unw_cursor_t *cursor)
+HIDDEN int
+x86_64_handle_signal_frame (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
   unw_word_t ucontext;
@@ -131,19 +131,20 @@ unw_handle_signal_frame (unw_cursor_t *cursor)
   else if (c->sigcontext_format == X86_64_SCF_FREEBSD_SYSCALL)
    {
     c->dwarf.loc[RCX] = c->dwarf.loc[R10];
-    /*  rsp_loc = DWARF_LOC(c->dwarf.cfa - 8, 0);	*/
-    /*	rbp_loc = c->dwarf.loc[RBP];			*/
+    /*  rsp_loc = DWARF_LOC(c->dwarf.cfa - 8, 0);       */
+    /*  rbp_loc = c->dwarf.loc[RBP];                    */
     c->dwarf.loc[RIP] = DWARF_LOC (c->dwarf.cfa, 0);
     ret = dwarf_get (&c->dwarf, c->dwarf.loc[RIP], &c->dwarf.ip);
     Debug (1, "Frame Chain [RIP=0x%Lx] = 0x%Lx\n",
-	   (unsigned long long) DWARF_GET_LOC (c->dwarf.loc[RIP]),
-	   (unsigned long long) c->dwarf.ip);
+           (unsigned long long) DWARF_GET_LOC (c->dwarf.loc[RIP]),
+           (unsigned long long) c->dwarf.ip);
     if (ret < 0)
      {
        Debug (2, "returning %d\n", ret);
        return ret;
      }
     c->dwarf.cfa += 8;
+    c->dwarf.use_prev_instr = 1;
     return 1;
    }
   else
@@ -191,8 +192,26 @@ x86_64_sigreturn (unw_cursor_t *cursor)
   ucontext_t *uc = (ucontext_t *)(c->sigcontext_addr +
     offsetof(struct sigframe, sf_uc));
 
+  uc->uc_mcontext.mc_r8 = c->uc->uc_mcontext.mc_r8;
+  uc->uc_mcontext.mc_r9 = c->uc->uc_mcontext.mc_r9;
+  uc->uc_mcontext.mc_r10 = c->uc->uc_mcontext.mc_r10;
+  uc->uc_mcontext.mc_r11 = c->uc->uc_mcontext.mc_r11;
+  uc->uc_mcontext.mc_r12 = c->uc->uc_mcontext.mc_r12;
+  uc->uc_mcontext.mc_r13 = c->uc->uc_mcontext.mc_r13;
+  uc->uc_mcontext.mc_r14 = c->uc->uc_mcontext.mc_r14;
+  uc->uc_mcontext.mc_r15 = c->uc->uc_mcontext.mc_r15;
+  uc->uc_mcontext.mc_rdi = c->uc->uc_mcontext.mc_rdi;
+  uc->uc_mcontext.mc_rsi = c->uc->uc_mcontext.mc_rsi;
+  uc->uc_mcontext.mc_rbp = c->uc->uc_mcontext.mc_rbp;
+  uc->uc_mcontext.mc_rbx = c->uc->uc_mcontext.mc_rbx;
+  uc->uc_mcontext.mc_rdx = c->uc->uc_mcontext.mc_rdx;
+  uc->uc_mcontext.mc_rax = c->uc->uc_mcontext.mc_rax;
+  uc->uc_mcontext.mc_rcx = c->uc->uc_mcontext.mc_rcx;
+  uc->uc_mcontext.mc_rsp = c->uc->uc_mcontext.mc_rsp;
+  uc->uc_mcontext.mc_rip = c->uc->uc_mcontext.mc_rip;
+
   Debug (8, "resuming at ip=%llx via sigreturn(%p)\n",
-	     (unsigned long long) c->dwarf.ip, uc);
+             (unsigned long long) c->dwarf.ip, uc);
   sigreturn(uc);
   abort();
 }

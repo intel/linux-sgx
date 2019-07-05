@@ -7,10 +7,10 @@
 #include "sgx_urts.h"
 #include "arch.h"
 
-struct ILaunchService : public IService
+struct ILaunchService : virtual public IService
 {
     // The value should be the same as the major version in manifest.json
-    enum {VERSION = 1};
+    enum {VERSION = 2};
     virtual ~ILaunchService() = default;
 
     virtual aesm_error_t get_launch_token(

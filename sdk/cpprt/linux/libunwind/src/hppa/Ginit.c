@@ -1,7 +1,7 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002, 2004 Hewlett-Packard Co
    Copyright (C) 2007 David Mosberger-Tang
-	Contributed by David Mosberger-Tang <dmosberger@gmail.com>
+        Contributed by David Mosberger-Tang <dmosberger@gmail.com>
 
 This file is part of libunwind.
 
@@ -32,13 +32,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #ifdef UNW_REMOTE_ONLY
 
 /* unw_local_addr_space is a NULL pointer in this case.  */
-PROTECTED unw_addr_space_t unw_local_addr_space;
+unw_addr_space_t unw_local_addr_space;
 
 #else /* !UNW_REMOTE_ONLY */
 
 static struct unw_addr_space local_addr_space;
 
-PROTECTED unw_addr_space_t unw_local_addr_space = &local_addr_space;
+unw_addr_space_t unw_local_addr_space = &local_addr_space;
 
 static inline void *
 uc_addr (ucontext_t *uc, int reg)
@@ -79,7 +79,7 @@ put_unwind_info (unw_addr_space_t as, unw_proc_info_t *proc_info, void *arg)
 
 static int
 get_dyn_info_list_addr (unw_addr_space_t as, unw_word_t *dyn_info_list_addr,
-			void *arg)
+                        void *arg)
 {
   *dyn_info_list_addr = (unw_word_t) &_U_dyn_info_list;
   return 0;
@@ -87,7 +87,7 @@ get_dyn_info_list_addr (unw_addr_space_t as, unw_word_t *dyn_info_list_addr,
 
 static int
 access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val, int write,
-	    void *arg)
+            void *arg)
 {
   if (write)
     {
@@ -104,7 +104,7 @@ access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val, int write,
 
 static int
 access_reg (unw_addr_space_t as, unw_regnum_t reg, unw_word_t *val, int write,
-	    void *arg)
+            void *arg)
 {
   unw_word_t *addr;
   ucontext_t *uc = arg;
@@ -135,7 +135,7 @@ access_reg (unw_addr_space_t as, unw_regnum_t reg, unw_word_t *val, int write,
 
 static int
 access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
-	      int write, void *arg)
+              int write, void *arg)
 {
   ucontext_t *uc = arg;
   unw_fpreg_t *addr;
@@ -150,14 +150,14 @@ access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
   if (write)
     {
       Debug (12, "%s <- %08x.%08x\n",
-	     unw_regname (reg), val->raw.bits[1], val->raw.bits[0]);
+             unw_regname (reg), val->raw.bits[1], val->raw.bits[0]);
       *(unw_fpreg_t *) addr = *val;
     }
   else
     {
       *val = *(unw_fpreg_t *) addr;
       Debug (12, "%s -> %08x.%08x\n",
-	     unw_regname (reg), val->raw.bits[1], val->raw.bits[0]);
+             unw_regname (reg), val->raw.bits[1], val->raw.bits[0]);
     }
   return 0;
 
@@ -169,8 +169,8 @@ access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
 
 static int
 get_static_proc_name (unw_addr_space_t as, unw_word_t ip,
-		      char *buf, size_t buf_len, unw_word_t *offp,
-		      void *arg)
+                      char *buf, size_t buf_len, unw_word_t *offp,
+                      void *arg)
 {
   return _Uelf32_get_proc_name (as, getpid (), ip, buf, buf_len, offp);
 }
@@ -179,7 +179,7 @@ HIDDEN void
 hppa_local_addr_space_init (void)
 {
   memset (&local_addr_space, 0, sizeof (local_addr_space));
-  local_addr_space.caching_policy = UNW_CACHE_GLOBAL;
+  local_addr_space.caching_policy = UNWI_DEFAULT_CACHING_POLICY;
   local_addr_space.acc.find_proc_info = dwarf_find_proc_info;
   local_addr_space.acc.put_unwind_info = put_unwind_info;
   local_addr_space.acc.get_dyn_info_list_addr = get_dyn_info_list_addr;

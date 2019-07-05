@@ -35,7 +35,7 @@
 #include "se_trace.h"
 #include <stdlib.h>
 
-map_handle_t* map_file(se_file_handle_t fd, uint32_t *size)
+map_handle_t* map_file(se_file_handle_t fd, off_t *size)
 {
     struct stat st;
     memset(&st, 0, sizeof(st));
@@ -56,7 +56,7 @@ map_handle_t* map_file(se_file_handle_t fd, uint32_t *size)
     }
 
     mh->length = (size_t)st.st_size;
-    if (size) *size = (uint32_t)st.st_size;
+    if (size) *size = st.st_size;
     return mh;
 }
 

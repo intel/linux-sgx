@@ -49,16 +49,20 @@
 
 IPPAPI(IppStatus, y8_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
 IPPAPI(IppStatus, l9_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
+IPPAPI(IppStatus, k0_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
 
 IPPFUN(IppStatus,sgx_disp_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
+      } else 
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return y8_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
@@ -74,10 +78,10 @@ IPPFUN(IppStatus,sgx_disp_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, i
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return h9_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return p8_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;

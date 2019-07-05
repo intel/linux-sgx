@@ -3,5 +3,5 @@
   "bundle.activator" : true,
   "bundle.name" : "PSEPR Service",
   "bundle.description" : "This bundle provide PSEPR Service",
-  "bundle.version" : "1.0.0"
+  "bundle.version" : "2.0.0"
 }

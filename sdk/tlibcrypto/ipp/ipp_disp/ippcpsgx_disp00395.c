@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
-IPPAPI(IppStatus, l9_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPAPI(IppStatus, y8_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPAPI(IppStatus, l9_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPAPI(IppStatus, k0_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPFUN(IppStatus,sgx_disp_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpxGetSize( pGroundGF, degree, pSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsGFpxGetSize( pGroundGF, degree, pSize );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsGFpxGetSize( pGroundGF, degree, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
-IPPAPI(IppStatus, h9_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPAPI(IppStatus, p8_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPAPI(IppStatus, h9_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPFUN(IppStatus,sgx_disp_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsGFpxGetSize( pGroundGF, degree, pSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsGFpxGetSize( pGroundGF, degree, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

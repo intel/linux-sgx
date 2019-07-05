@@ -25,23 +25,18 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #ifndef unwind_i_h
 #define unwind_i_h
 
-#include <memory.h>
 #include <stdint.h>
 
 #include <libunwind-mips.h>
 
 #include "libunwind_i.h"
 
-/*
-#define x86_lock			UNW_OBJ(lock)
-#define x86_local_resume		UNW_OBJ(local_resume)
-#define x86_local_addr_space_init	UNW_OBJ(local_addr_space_init)
-#define x86_scratch_loc			UNW_OBJ(scratch_loc)
+#define mips_lock                       UNW_OBJ(lock)
+#define mips_local_resume               UNW_OBJ(local_resume)
+#define mips_local_addr_space_init      UNW_OBJ(local_addr_space_init)
 
-extern int x86_local_resume (unw_addr_space_t as, unw_cursor_t *cursor,
-			     void *arg);
-extern dwarf_loc_t x86_scratch_loc (struct cursor *c, unw_regnum_t reg);
-*/
+extern int mips_local_resume (unw_addr_space_t as, unw_cursor_t *cursor,
+                             void *arg);
 
 extern void mips_local_addr_space_init (void);
 

@@ -32,7 +32,7 @@
  */
 
 /* like alloc, but automatic free in return */
-
+#include "linux/sgx_cet.h"
 #define _C_LABEL(x) x
 #ifdef __i386__
 #define _ALIGN_TEXT .align 2, 0x90
@@ -43,6 +43,7 @@
 #define ENTRY(y)    _ENTRY(_C_LABEL(y));
 
 ENTRY(alloca)
+	_CET_ENDBR
 #ifdef __i386__
 	popl	%edx		/*  pop return addr */
 	popl	%eax		/*  pop amount to allocate */
@@ -55,7 +56,7 @@ ENTRY(alloca)
 	pushl	4(%ecx)
 	pushl	0(%ecx)
 	pushl	%eax		/* dummy to pop at callsite */
-	jmp	*%edx		    /* "return" */
+	_CET_NOTRACK jmp	*%edx		    /* "return" */
 #else /* __x86_64__ */
 	popq	%rdx
 	movq	%rsp,%rcx
@@ -63,5 +64,5 @@ ENTRY(alloca)
 	andq	$~15,%rdi
 	subq	%rdi,%rsp
 	movq	%rsp,%rax
-	jmp	*%rdx
+	_CET_NOTRACK jmp	*%rdx
 #endif

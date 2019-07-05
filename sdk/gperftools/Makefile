@@ -32,7 +32,7 @@
 include ../../buildenv.mk
 
 TCMALLOC := libsgx_tcmalloc.a
-SRCDIR := gperftools-2.5
+SRCDIR := gperftools-2.7
 
 ifdef DEBUG
     DEBUG_FLAG := DEBUG
@@ -47,6 +47,10 @@ ifeq ($(CC_BELOW_4_9), 1)
 else
     COMMON_FLAG := -fstack-protector-strong
 endif
+# turn on cet
+ifeq ($(CC_GREAT_EQUAL_8), 1)
+    COMMON_FLAG += -fcf-protection
+endif
 
 .PHONY: all
 all: $(TCMALLOC) | $(BUILD_DIR)
@@ -54,7 +58,7 @@ all: $(TCMALLOC) | $(BUILD_DIR)
 
 .PHONY: libtcmalloc
 libtcmalloc:
-	cd $(SRCDIR) && ( test -f Makefile || ./autogen-linux.sh $(DEBUG_FLAG) $(COMMON_FLAG)) && $(MAKE)
+	cd $(SRCDIR) && ( test -f Makefile || ./autogen.sh $(DEBUG_FLAG) $(COMMON_FLAG)) && $(MAKE)
 
 $(TCMALLOC): libtcmalloc
 	$(CP) $(SRCDIR)/.libs/libtcmalloc_minimal.a $(TCMALLOC)

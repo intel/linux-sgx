@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2003 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -51,23 +51,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "libunwind_i.h"
 
-#define sos_alloc(s)		UNWI_ARCH_OBJ(_sos_alloc)(s)
-#define mempool_init(p,s,r)	UNWI_ARCH_OBJ(_mempool_init)(p,s,r)
-#define mempool_alloc(p)	UNWI_ARCH_OBJ(_mempool_alloc)(p)
-#define mempool_free(p,o)	UNWI_ARCH_OBJ(_mempool_free)(p,o)
+#define sos_alloc(s)            UNWI_ARCH_OBJ(_sos_alloc)(s)
+#define mempool_init(p,s,r)     UNWI_ARCH_OBJ(_mempool_init)(p,s,r)
+#define mempool_alloc(p)        UNWI_ARCH_OBJ(_mempool_alloc)(p)
+#define mempool_free(p,o)       UNWI_ARCH_OBJ(_mempool_free)(p,o)
 
 /* The mempool structure should be treated as an opaque object.  It's
    declared here only to enable static allocation of mempools.  */
 struct mempool
   {
     pthread_mutex_t lock;
-    size_t obj_size;		/* object size (rounded up for alignment) */
-    size_t chunk_size;		/* allocation granularity */
-    unsigned int reserve;	/* minimum (desired) size of the free-list */
-    unsigned int num_free;	/* number of objects on the free-list */
+    size_t obj_size;            /* object size (rounded up for alignment) */
+    size_t chunk_size;          /* allocation granularity */
+    unsigned int reserve;       /* minimum (desired) size of the free-list */
+    unsigned int num_free;      /* number of objects on the free-list */
     struct object
       {
-	struct object *next;
+        struct object *next;
       }
     *free_list;
   };
@@ -82,7 +82,7 @@ extern void *sos_alloc (size_t size);
    tight memory situations.  If it is zero, mempool attempts to pick a
    reasonable default value.  */
 extern void mempool_init (struct mempool *pool,
-			  size_t obj_size, size_t reserve);
+                          size_t obj_size, size_t reserve);
 extern void *mempool_alloc (struct mempool *pool);
 extern void mempool_free (struct mempool *pool, void *object);
 

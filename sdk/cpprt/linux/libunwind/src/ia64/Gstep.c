@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -28,7 +28,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 static inline int
 linux_sigtramp (struct cursor *c, ia64_loc_t prev_cfm_loc,
-		unw_word_t *num_regsp)
+                unw_word_t *num_regsp)
 {
 #if defined(UNW_LOCAL_ONLY) && !defined(__linux)
   return -UNW_EINVAL;
@@ -37,8 +37,8 @@ linux_sigtramp (struct cursor *c, ia64_loc_t prev_cfm_loc,
   int ret;
 
   if ((ret = ia64_get (c, IA64_LOC_ADDR (c->sp + 0x10
-					 + LINUX_SIGFRAME_ARG2_OFF, 0),
-		       &sc_addr)) < 0)
+                                         + LINUX_SIGFRAME_ARG2_OFF, 0),
+                       &sc_addr)) < 0)
     return ret;
 
   c->sigcontext_addr = sc_addr;
@@ -47,7 +47,7 @@ linux_sigtramp (struct cursor *c, ia64_loc_t prev_cfm_loc,
       && IA64_GET_ADDR (c->loc[IA64_REG_IP]) == sc_addr + LINUX_SC_BR_OFF + 8)
     {
       /* Linux kernels before 2.4.19 and 2.5.10 had buggy
-	 unwind info for sigtramp.  Fix it up here.  */
+         unwind info for sigtramp.  Fix it up here.  */
       c->loc[IA64_REG_IP]  = IA64_LOC_ADDR (sc_addr + LINUX_SC_IP_OFF, 0);
       c->cfm_loc = IA64_LOC_ADDR (sc_addr + LINUX_SC_CFM_OFF, 0);
     }
@@ -55,14 +55,14 @@ linux_sigtramp (struct cursor *c, ia64_loc_t prev_cfm_loc,
   /* do what can't be described by unwind directives: */
   c->loc[IA64_REG_PFS] = IA64_LOC_ADDR (sc_addr + LINUX_SC_AR_PFS_OFF, 0);
   c->ec_loc = prev_cfm_loc;
-  *num_regsp = c->cfm & 0x7f;		/* size of frame */
+  *num_regsp = c->cfm & 0x7f;           /* size of frame */
   return 0;
 #endif
 }
 
 static inline int
 linux_interrupt (struct cursor *c, ia64_loc_t prev_cfm_loc,
-		 unw_word_t *num_regsp, int marker)
+                 unw_word_t *num_regsp, int marker)
 {
 #if defined(UNW_LOCAL_ONLY) && !(defined(__linux) && defined(__KERNEL__))
   return -UNW_EINVAL;
@@ -79,19 +79,19 @@ linux_interrupt (struct cursor *c, ia64_loc_t prev_cfm_loc,
 
   /* do what can't be described by unwind directives: */
   if (marker == ABI_MARKER_OLD_LINUX_INTERRUPT)
-	  pfs_loc = IA64_LOC_ADDR (sc_addr + LINUX_OLD_PT_PFS_OFF, 0);
+          pfs_loc = IA64_LOC_ADDR (sc_addr + LINUX_OLD_PT_PFS_OFF, 0);
   else
-	  pfs_loc = IA64_LOC_ADDR (sc_addr + LINUX_PT_PFS_OFF, 0);
+          pfs_loc = IA64_LOC_ADDR (sc_addr + LINUX_PT_PFS_OFF, 0);
   c->loc[IA64_REG_PFS] = pfs_loc;
   c->ec_loc = prev_cfm_loc;
-  *num_regsp = num_regs;		/* size of frame */
+  *num_regsp = num_regs;                /* size of frame */
   return 0;
 #endif
 }
 
 static inline int
 hpux_sigtramp (struct cursor *c, ia64_loc_t prev_cfm_loc,
-	       unw_word_t *num_regsp)
+               unw_word_t *num_regsp)
 {
 #if defined(UNW_LOCAL_ONLY) && !defined(__hpux)
   return -UNW_EINVAL;
@@ -177,36 +177,36 @@ check_rbs_switch (struct cursor *c)
   if (c->pi.flags & UNW_PI_FLAG_IA64_RBS_SWITCH)
     {
       /* Got ourselves a frame that has saved ar.bspstore, ar.bsp,
-	 and ar.rnat, so we're all set for rbs-switching:  */
+         and ar.rnat, so we're all set for rbs-switching:  */
       if ((ret = ia64_get (c, c->loc[IA64_REG_BSP], &saved_bsp)) < 0
-	  || (ret = ia64_get (c, c->loc[IA64_REG_BSPSTORE], &saved_bspstore)))
-	return ret;
+          || (ret = ia64_get (c, c->loc[IA64_REG_BSPSTORE], &saved_bspstore)))
+        return ret;
     }
   else if ((c->abi_marker == ABI_MARKER_LINUX_SIGTRAMP
-	    || c->abi_marker == ABI_MARKER_OLD_LINUX_SIGTRAMP)
-	   && !IA64_IS_REG_LOC (c->loc[IA64_REG_BSP])
-	   && (IA64_GET_ADDR (c->loc[IA64_REG_BSP])
-	       == c->sigcontext_addr + LINUX_SC_AR_BSP_OFF))
+            || c->abi_marker == ABI_MARKER_OLD_LINUX_SIGTRAMP)
+           && !IA64_IS_REG_LOC (c->loc[IA64_REG_BSP])
+           && (IA64_GET_ADDR (c->loc[IA64_REG_BSP])
+               == c->sigcontext_addr + LINUX_SC_AR_BSP_OFF))
     {
       /* When Linux delivers a signal on an alternate stack, it
-	 does things a bit differently from what the unwind
-	 conventions allow us to describe: instead of saving
-	 ar.rnat, ar.bsp, and ar.bspstore, it saves the former two
-	 plus the "loadrs" value.  Because of this, we need to
-	 detect & record a potential rbs-area switch
-	 manually... */
+         does things a bit differently from what the unwind
+         conventions allow us to describe: instead of saving
+         ar.rnat, ar.bsp, and ar.bspstore, it saves the former two
+         plus the "loadrs" value.  Because of this, we need to
+         detect & record a potential rbs-area switch
+         manually... */
 
       /* If ar.bsp has been saved already AND the current bsp is
-	 not equal to the saved value, then we know for sure that
-	 we're past the point where the backing store has been
-	 switched (and before the point where it's restored).  */
+         not equal to the saved value, then we know for sure that
+         we're past the point where the backing store has been
+         switched (and before the point where it's restored).  */
       if ((ret = ia64_get (c, IA64_LOC_ADDR (c->sigcontext_addr
-					     + LINUX_SC_AR_BSP_OFF, 0),
-			   &saved_bsp) < 0)
-	  || (ret = ia64_get (c, IA64_LOC_ADDR (c->sigcontext_addr
-						+ LINUX_SC_LOADRS_OFF, 0),
-			      &loadrs) < 0))
-	return ret;
+                                             + LINUX_SC_AR_BSP_OFF, 0),
+                           &saved_bsp) < 0)
+          || (ret = ia64_get (c, IA64_LOC_ADDR (c->sigcontext_addr
+                                                + LINUX_SC_LOADRS_OFF, 0),
+                              &loadrs) < 0))
+        return ret;
       loadrs >>= 16;
       ndirty = rse_num_regs (c->bsp - loadrs, c->bsp);
       saved_bspstore = rse_skip_regs (saved_bsp, -ndirty);
@@ -267,54 +267,54 @@ update_frame_state (struct cursor *c)
     {
       c->last_abi_marker = c->abi_marker;
       switch (ia64_get_abi_marker (c))
-	{
-	case ABI_MARKER_LINUX_SIGTRAMP:
-	case ABI_MARKER_OLD_LINUX_SIGTRAMP:
-	  ia64_set_abi (c, ABI_LINUX);
-	  if ((ret = linux_sigtramp (c, prev_cfm_loc, &num_regs)) < 0)
-	    return ret;
-	  break;
+        {
+        case ABI_MARKER_LINUX_SIGTRAMP:
+        case ABI_MARKER_OLD_LINUX_SIGTRAMP:
+          ia64_set_abi (c, ABI_LINUX);
+          if ((ret = linux_sigtramp (c, prev_cfm_loc, &num_regs)) < 0)
+            return ret;
+          break;
 
-	case ABI_MARKER_OLD_LINUX_INTERRUPT:
-	case ABI_MARKER_LINUX_INTERRUPT:
-	  ia64_set_abi (c, ABI_LINUX);
-	  if ((ret = linux_interrupt (c, prev_cfm_loc, &num_regs,
-				      c->abi_marker)) < 0)
-	    return ret;
-	  break;
+        case ABI_MARKER_OLD_LINUX_INTERRUPT:
+        case ABI_MARKER_LINUX_INTERRUPT:
+          ia64_set_abi (c, ABI_LINUX);
+          if ((ret = linux_interrupt (c, prev_cfm_loc, &num_regs,
+                                      c->abi_marker)) < 0)
+            return ret;
+          break;
 
-	case ABI_MARKER_HP_UX_SIGTRAMP:
-	  ia64_set_abi (c, ABI_HPUX);
-	  if ((ret = hpux_sigtramp (c, prev_cfm_loc, &num_regs)) < 0)
-	    return ret;
-	  break;
+        case ABI_MARKER_HP_UX_SIGTRAMP:
+          ia64_set_abi (c, ABI_HPUX);
+          if ((ret = hpux_sigtramp (c, prev_cfm_loc, &num_regs)) < 0)
+            return ret;
+          break;
 
-	default:
-	  Debug (1, "unknown ABI marker: ABI=%u, context=%u\n",
-		 c->abi_marker >> 8, c->abi_marker & 0xff);
-	  return -UNW_EINVAL;
-	}
+        default:
+          Debug (1, "unknown ABI marker: ABI=%u, context=%u\n",
+                 c->abi_marker >> 8, c->abi_marker & 0xff);
+          return -UNW_EINVAL;
+        }
       Debug (12, "sigcontext_addr=%lx (ret=%d)\n",
-	     (unsigned long) c->sigcontext_addr, ret);
+             (unsigned long) c->sigcontext_addr, ret);
 
       c->sigcontext_off = c->sigcontext_addr - c->sp;
 
       /* update the IP cache: */
       if ((ret = ia64_get (c, c->loc[IA64_REG_IP], &ip)) < 0)
- 	return ret;
+        return ret;
       c->ip = ip;
       if (ip == 0)
-	/* end of frame-chain reached */
-	return 0;
+        /* end of frame-chain reached */
+        return 0;
     }
   else
-    num_regs = (c->cfm >> 7) & 0x7f;	/* size of locals */
+    num_regs = (c->cfm >> 7) & 0x7f;    /* size of locals */
 
   if (!IA64_IS_NULL_LOC (c->loc[IA64_REG_BSP]))
     {
       ret = check_rbs_switch (c);
       if (ret < 0)
-	return ret;
+        return ret;
     }
 
   c->bsp = rse_skip_regs (c->bsp, -num_regs);
@@ -325,7 +325,7 @@ update_frame_state (struct cursor *c)
   if (c->ip == prev_ip && c->sp == prev_sp && c->bsp == prev_bsp)
     {
       Dprintf ("%s: ip, sp, and bsp unchanged; stopping here (ip=0x%lx)\n",
-	       __FUNCTION__, (long) ip);
+               __FUNCTION__, (long) ip);
       return -UNW_EBADFRAME;
     }
 
@@ -342,7 +342,7 @@ update_frame_state (struct cursor *c)
 }
 
 
-PROTECTED int
+int
 unw_step (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;

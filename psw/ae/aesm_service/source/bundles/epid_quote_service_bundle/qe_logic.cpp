@@ -117,6 +117,7 @@ aesm_error_t QEAESMLogic::init_quote(
     //EPID BLOB not exist
     if ((ae_ret = epid_blob.read(epid_data)) != AE_SUCCESS ){
         if (AESM_SUCCESS != (aesm_result = try_reprovision_if_not(updated, epid_data))){
+            (void)epid_blob.remove();
             goto ret_point;
         }
     }
@@ -126,6 +127,7 @@ aesm_error_t QEAESMLogic::init_quote(
     {
         (void)epid_blob.remove();
         if (AESM_SUCCESS != (aesm_result = try_reprovision_if_not(updated, epid_data))){
+            (void)epid_blob.remove();
             goto ret_point;
         }
     }
@@ -146,6 +148,7 @@ aesm_error_t QEAESMLogic::init_quote(
         if(plain_text_sdk->epid_key_version == EPID_KEY_BLOB_VERSION_SDK){ // Detect the EPID blob has been converted into SDK format, which is problematic
             (void)epid_blob.remove();
             if (AESM_SUCCESS != (aesm_result = try_reprovision_if_not(updated, epid_data))) {
+                (void)epid_blob.remove();
                 goto ret_point;
             }
         }
@@ -170,6 +173,7 @@ aesm_error_t QEAESMLogic::init_quote(
     if(ae_ret == QE_EPIDBLOB_ERROR){
         (void)epid_blob.remove();
         if(AESM_SUCCESS!=(aesm_result = try_reprovision_if_not(updated, epid_data))){
+            (void)epid_blob.remove();
             goto ret_point;
         }
     }

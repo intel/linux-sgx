@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2002, 2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -38,7 +38,7 @@ free_regions (unw_dyn_region_info_t *region)
 
 static int
 intern_op (unw_addr_space_t as, unw_accessors_t *a, unw_word_t *addr,
-	   unw_dyn_op_t *op, void *arg)
+           unw_dyn_op_t *op, void *arg)
 {
   int ret;
 
@@ -53,7 +53,7 @@ intern_op (unw_addr_space_t as, unw_accessors_t *a, unw_word_t *addr,
 
 static int
 intern_regions (unw_addr_space_t as, unw_accessors_t *a,
-		unw_word_t *addr, unw_dyn_region_info_t **regionp, void *arg)
+                unw_word_t *addr, unw_dyn_region_info_t **regionp, void *arg)
 {
   uint32_t insn_count, op_count, i;
   unw_dyn_region_info_t *region;
@@ -63,7 +63,7 @@ intern_regions (unw_addr_space_t as, unw_accessors_t *a,
   *regionp = NULL;
 
   if (!*addr)
-    return 0;	/* NULL region-list */
+    return 0;   /* NULL region-list */
 
   if ((ret = fetchw (as, a, addr, &next_addr, arg)) < 0
       || (ret = fetch32 (as, a, addr, (int32_t *) &insn_count, arg)) < 0
@@ -98,8 +98,8 @@ intern_regions (unw_addr_space_t as, unw_accessors_t *a,
 
 static int
 intern_array (unw_addr_space_t as, unw_accessors_t *a,
-	      unw_word_t *addr, unw_word_t table_len, unw_word_t **table_data,
-	      void *arg)
+              unw_word_t *addr, unw_word_t table_len, unw_word_t **table_data,
+              void *arg)
 {
   unw_word_t i, *data = calloc (table_len, WSIZE);
   int ret = 0;
@@ -130,18 +130,18 @@ free_dyn_info (unw_dyn_info_t *di)
     {
     case UNW_INFO_FORMAT_DYNAMIC:
       if (di->u.pi.regions)
-	{
-	  free_regions (di->u.pi.regions);
-	  di->u.pi.regions = NULL;
-	}
+        {
+          free_regions (di->u.pi.regions);
+          di->u.pi.regions = NULL;
+        }
       break;
 
     case UNW_INFO_FORMAT_TABLE:
       if (di->u.ti.table_data)
-	{
-	  free (di->u.ti.table_data);
-	  di->u.ti.table_data = NULL;
-	}
+        {
+          free (di->u.ti.table_data);
+          di->u.ti.table_data = NULL;
+        }
       break;
 
     case UNW_INFO_FORMAT_REMOTE_TABLE:
@@ -152,7 +152,7 @@ free_dyn_info (unw_dyn_info_t *di)
 
 static int
 intern_dyn_info (unw_addr_space_t as, unw_accessors_t *a,
-		 unw_word_t *addr, unw_dyn_info_t *di, void *arg)
+                 unw_word_t *addr, unw_dyn_info_t *di, void *arg)
 {
   unw_word_t first_region;
   int ret;
@@ -161,32 +161,32 @@ intern_dyn_info (unw_addr_space_t as, unw_accessors_t *a,
     {
     case UNW_INFO_FORMAT_DYNAMIC:
       if ((ret = fetchw (as, a, addr, &di->u.pi.name_ptr, arg)) < 0
-	  || (ret = fetchw (as, a, addr, &di->u.pi.handler, arg)) < 0
-	  || (ret = fetch32 (as, a, addr,
-			     (int32_t *) &di->u.pi.flags, arg)) < 0)
-	goto out;
-      *addr += 4;	/* skip over pad0 */
+          || (ret = fetchw (as, a, addr, &di->u.pi.handler, arg)) < 0
+          || (ret = fetch32 (as, a, addr,
+                             (int32_t *) &di->u.pi.flags, arg)) < 0)
+        goto out;
+      *addr += 4;       /* skip over pad0 */
       if ((ret = fetchw (as, a, addr, &first_region, arg)) < 0
-	  || (ret = intern_regions (as, a, &first_region, &di->u.pi.regions,
-				    arg)) < 0)
-	goto out;
+          || (ret = intern_regions (as, a, &first_region, &di->u.pi.regions,
+                                    arg)) < 0)
+        goto out;
       break;
 
     case UNW_INFO_FORMAT_TABLE:
       if ((ret = fetchw (as, a, addr, &di->u.ti.name_ptr, arg)) < 0
-	  || (ret = fetchw (as, a, addr, &di->u.ti.segbase, arg)) < 0
-	  || (ret = fetchw (as, a, addr, &di->u.ti.table_len, arg)) < 0
-	  || (ret = intern_array (as, a, addr, di->u.ti.table_len,
-				  &di->u.ti.table_data, arg)) < 0)
-	goto out;
+          || (ret = fetchw (as, a, addr, &di->u.ti.segbase, arg)) < 0
+          || (ret = fetchw (as, a, addr, &di->u.ti.table_len, arg)) < 0
+          || (ret = intern_array (as, a, addr, di->u.ti.table_len,
+                                  &di->u.ti.table_data, arg)) < 0)
+        goto out;
       break;
 
     case UNW_INFO_FORMAT_REMOTE_TABLE:
       if ((ret = fetchw (as, a, addr, &di->u.rti.name_ptr, arg)) < 0
-	  || (ret = fetchw (as, a, addr, &di->u.rti.segbase, arg)) < 0
-	  || (ret = fetchw (as, a, addr, &di->u.rti.table_len, arg)) < 0
-	  || (ret = fetchw (as, a, addr, &di->u.rti.table_data, arg)) < 0)
-	goto out;
+          || (ret = fetchw (as, a, addr, &di->u.rti.segbase, arg)) < 0
+          || (ret = fetchw (as, a, addr, &di->u.rti.table_len, arg)) < 0
+          || (ret = fetchw (as, a, addr, &di->u.rti.table_data, arg)) < 0)
+        goto out;
       break;
 
     default:
@@ -202,10 +202,10 @@ intern_dyn_info (unw_addr_space_t as, unw_accessors_t *a,
 
 HIDDEN int
 unwi_dyn_remote_find_proc_info (unw_addr_space_t as, unw_word_t ip,
-				unw_proc_info_t *pi,
-				int need_unwind_info, void *arg)
+                                unw_proc_info_t *pi,
+                                int need_unwind_info, void *arg)
 {
-  unw_accessors_t *a = unw_get_accessors (as);
+  unw_accessors_t *a = unw_get_accessors_int (as);
   unw_word_t dyn_list_addr, addr, next_addr, gen1, gen2, start_ip, end_ip;
   unw_dyn_info_t *di = NULL;
   int ret;
@@ -215,9 +215,9 @@ unwi_dyn_remote_find_proc_info (unw_addr_space_t as, unw_word_t ip,
   else
     {
       if ((*a->get_dyn_info_list_addr) (as, &dyn_list_addr, arg) < 0)
-	return -UNW_ENOINFO;
+        return -UNW_ENOINFO;
       if (as->caching_policy != UNW_CACHE_NONE)
-	as->dyn_info_list_addr = dyn_list_addr;
+        as->dyn_info_list_addr = dyn_list_addr;
     }
 
   do
@@ -227,59 +227,55 @@ unwi_dyn_remote_find_proc_info (unw_addr_space_t as, unw_word_t ip,
       ret = -UNW_ENOINFO;
 
       if (fetchw (as, a, &addr, &gen1, arg) < 0
-	  || fetchw (as, a, &addr, &next_addr, arg) < 0)
-	break;
+          || fetchw (as, a, &addr, &next_addr, arg) < 0)
+        return ret;
 
       for (addr = next_addr; addr != 0; addr = next_addr)
-	{
-	  if (fetchw (as, a, &addr, &next_addr, arg) < 0)
-	    goto recheck;	/* only fail if generation # didn't change */
+        {
+          if (fetchw (as, a, &addr, &next_addr, arg) < 0)
+            goto recheck;       /* only fail if generation # didn't change */
 
-	  addr += WSIZE;	/* skip over prev_addr */
+          addr += WSIZE;        /* skip over prev_addr */
 
-	  if (fetchw (as, a, &addr, &start_ip, arg) < 0
-	      || fetchw (as, a, &addr, &end_ip, arg) < 0)
-	    goto recheck;	/* only fail if generation # didn't change */
+          if (fetchw (as, a, &addr, &start_ip, arg) < 0
+              || fetchw (as, a, &addr, &end_ip, arg) < 0)
+            goto recheck;       /* only fail if generation # didn't change */
 
-	  if (ip >= start_ip && ip < end_ip)
-	    {
-	      if (!di)
-		{
-		  di = calloc (1, sizeof (*di));
-		  if (!di)
-		    return -UNW_ENOMEM;
-		}
+          if (ip >= start_ip && ip < end_ip)
+            {
+              if (!di)
+                di = calloc (1, sizeof (*di));
 
-	      di->start_ip = start_ip;
-	      di->end_ip = end_ip;
+              di->start_ip = start_ip;
+              di->end_ip = end_ip;
 
-	      if (fetchw (as, a, &addr, &di->gp, arg) < 0
-		  || fetch32 (as, a, &addr, &di->format, arg) < 0)
-		goto recheck;	/* only fail if generation # didn't change */
+              if (fetchw (as, a, &addr, &di->gp, arg) < 0
+                  || fetch32 (as, a, &addr, &di->format, arg) < 0)
+                goto recheck;   /* only fail if generation # didn't change */
 
-	      addr += 4;	/* skip over padding */
+              addr += 4;        /* skip over padding */
 
-	      if (need_unwind_info
-		  && intern_dyn_info (as, a, &addr, di, arg) < 0)
-		goto recheck;	/* only fail if generation # didn't change */
+              if (need_unwind_info
+                  && intern_dyn_info (as, a, &addr, di, arg) < 0)
+                goto recheck;   /* only fail if generation # didn't change */
 
-	      if (unwi_extract_dynamic_proc_info (as, ip, pi, di,
-						  need_unwind_info, arg) < 0)
-		{
-		  free_dyn_info (di);
-		  goto recheck;	/* only fail if generation # didn't change */
-		}
-	      ret = 0;	/* OK, found it */
-	      break;
-	    }
-	}
+              if (unwi_extract_dynamic_proc_info (as, ip, pi, di,
+                                                  need_unwind_info, arg) < 0)
+                {
+                  free_dyn_info (di);
+                  goto recheck; /* only fail if generation # didn't change */
+                }
+              ret = 0;  /* OK, found it */
+              break;
+            }
+        }
 
       /* Re-check generation number to ensure the data we have is
-	 consistent.  */
+         consistent.  */
     recheck:
       addr = dyn_list_addr;
       if (fetchw (as, a, &addr, &gen2, arg) < 0)
-	break;
+        return ret;
     }
   while (gen1 != gen2);
 
@@ -291,7 +287,7 @@ unwi_dyn_remote_find_proc_info (unw_addr_space_t as, unw_word_t ip,
 
 HIDDEN void
 unwi_dyn_remote_put_unwind_info (unw_addr_space_t as, unw_proc_info_t *pi,
-				 void *arg)
+                                 void *arg)
 {
   if (!pi->unwind_info)
     return;
@@ -315,7 +311,7 @@ unwi_dyn_validate_cache (unw_addr_space_t as, void *arg)
        in the cache.  */
     return 0;
 
-  a = unw_get_accessors (as);
+  a = unw_get_accessors_int (as);
   addr = as->dyn_info_list_addr;
 
   if (fetchw (as, a, &addr, &gen, arg) < 0)
