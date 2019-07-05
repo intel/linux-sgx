@@ -286,22 +286,11 @@ To enable ECDSA attestation
 - Ensure that you have the following required hardware:
   * 8th Generation Intel(R) Core(TM) Processor or newer with **Flexible Launch Control** support*
   * Intel(R) Atom(TM) Processor with **Flexible Launch Control** support*
-- To use ECDSA attestation, you must install Intel® Software Guard Extensions
-Driver for Data Center Attestation Primitives (Intel® SGX DCAP).
-Please follow the Intel® SGX DCAP Installation Guide for Linux* OS to
-install the driver. You can find the documentation here:
-https://download.01.org/intel-sgx/dcap-{version}/linux/docs/
-For example: Intel® SGX DCAP 1.1 file's location is:
-[https://download.01.org/intel-sgx/dcap-1.1/linux/docs/](https://download.01.org/intel-sgx/dcap-1.1/linux/docs/)
-Filename is Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf, in
-section “Intel® SGX Driver”.
-
-> **NOTE** If you had already installed Intel® SGX driver without ECDSA attestation, please uninstall the driver firstly. Or the newly
-> installed ECDSA attestation enabled Intel® SGX driver will be
-> unworkable.
+- To use ECDSA attestation, you must install Intel(R) Software Guard Extensions Driver for Data Center Attestation Primitives (Intel(R) SGX DCAP). Please follow the [Intel® SGX DCAP Installation Guide for Linux* OS](https://download.01.org/intel-sgx/latest/dcap-latest/linux/docs/Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf), section “Intel® SGX Driver”, to install the Intel(R) SGX DCAP driver.  
+**NOTE**: If you have already installed Intel(R) SGX driver without ECDSA attestation, please uninstall the driver firstly. Otherwise the newly installed ECDSA attestation enabled Intel(R) SGX driver will be unworkable.
 
 - Install PCK Caching Service. For how to install and configure PCK Caching
-Service, please refer [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration/pcs)
+Service, please refer to [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration/pccs)
 - Ensure the PCK Caching Service is setup correctly by local administrator
 or data center administrator. Also make sure that the configure file of 
 quote provider library (/etc/sgx_default_qcnl.conf) needs to be consistent
