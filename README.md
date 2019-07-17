@@ -41,6 +41,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -54,7 +55,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml ocaml-ocamlbuild wget python openssl-devel
@@ -74,7 +75,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6, CentOS 7.5 and Fedora 27:
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake
   ```
@@ -148,7 +149,7 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make deb_pkg DEBUG=1
   ```
-- On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+- On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
 - On Fedora 27:
 - On SUSE Linux Enterprise Server 12:
   ```
@@ -176,6 +177,7 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -184,7 +186,7 @@ Install the Intel(R) SGX SDK
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python 
@@ -241,6 +243,7 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -253,7 +256,7 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6, CentOS 7.5 and Fedora 27:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -274,7 +277,7 @@ To install the Intel(R) SGX PSW, invoke the installer with root privilege:
   $ cd linux/installer/deb
   $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb
   ```
-- On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+- On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
 - On Fedora 27:
 - On SUSE Linux Enterprise Server 12:
   ```
