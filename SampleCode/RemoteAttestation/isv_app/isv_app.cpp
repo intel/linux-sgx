@@ -716,8 +716,11 @@ int main(int argc, char* argv[])
 
 
         ra_free_network_response_buffer(p_msg0_resp_full);
+        p_msg0_resp_full = NULL;
         ra_free_network_response_buffer(p_msg2_full);
+        p_msg2_full = NULL;
         ra_free_network_response_buffer(p_att_result_msg_full);
+        p_att_result_msg_full = NULL;
 
         // p_msg3 is malloc'd by the untrusted KE library. App needs to free.
         SAFE_FREE(p_msg3);
