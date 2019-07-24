@@ -221,6 +221,14 @@ int main(int argc, char* argv[])
     int i = 2; // We will do it twice, the first time is ECDSA quoting, the second one is EPID quoting
     do
     {
+        if (i == 2)
+        {
+            fprintf(OUTPUT, "\nFirst round, we will try ECDSA algorithm.\n");
+        }
+        else
+        {
+            fprintf(OUTPUT, "\nSecond round, we will try EPID algorithm.\n");
+        }
         // Preparation for remote attestation by configuring extended epid group id.
         {
             uint32_t extended_epid_group_id = 0;
@@ -272,7 +280,7 @@ int main(int argc, char* argv[])
             if(SGX_SUCCESS != ret)
             {
                 ret = -1;
-                fprintf(OUTPUT, "\nError, call sgx_select_att_key_id fail [%s].",
+                fprintf(OUTPUT, "\nInfo, call sgx_select_att_key_id fail, current platform configuration doesn't support this attestation key ID.",
                         __FUNCTION__);
                 goto CLEANUP;
             }
