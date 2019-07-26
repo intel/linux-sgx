@@ -68,6 +68,7 @@ public:
     static bool cpu_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool qe_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool pce_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
+    static bool platform_configuration_needed(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool pse_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool psda_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool ps_collectively_not_uptodate(const platform_info_blob_wrapper_t* p_platform_info_blob);

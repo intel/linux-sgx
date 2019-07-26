@@ -919,8 +919,8 @@ aesm_error_t PlatformInfoLogic::check_update_status(
         }
         if (qe_svn_out_of_date(&pibw) ||
             pse_svn_out_of_date(&pibw) ||
-            pce_svn_out_of_date(&pibw))
-            //psda_svn_out_of_date(p_platform_info))
+            pce_svn_out_of_date(&pibw) ||
+            platform_configuration_needed(&pibw))
         {
             p_update_info->pswUpdate = 1;
             goto set_update_available;
@@ -1222,7 +1222,8 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
             status = AESM_UPDATE_AVAILABLE;
         }
         if (qe_svn_out_of_date(&pibw) ||
-            pce_svn_out_of_date(&pibw)
+            pce_svn_out_of_date(&pibw) ||
+            platform_configuration_needed(&pibw)
           ||pse_svn_out_of_date(&pibw))
         {
             p_update_info->pswUpdate = 1;
