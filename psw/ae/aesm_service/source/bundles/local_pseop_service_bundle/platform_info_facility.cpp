@@ -223,6 +223,20 @@ bool PlatformInfoLogic::cpu_svn_out_of_date(const platform_info_blob_wrapper_t* 
 
     return retVal;
 }
+
+bool PlatformInfoLogic::platform_configuration_needed(const platform_info_blob_wrapper_t* p_platform_info_blob)
+{
+    uint16_t flags = 0;
+    bool retVal = false;
+    ae_error_t getflagsError = get_sgx_tcb_evaluation_flags(p_platform_info_blob, &flags);
+    if (AE_SUCCESS == getflagsError) {
+        retVal = (0 != (PLATFORM_CONFIGURATION_NEEDED & flags));
+    }
+    SGX_DBGPRINT_ONE_STRING_TWO_INTS_CREATE_SESSION(__FUNCTION__" returning ", retVal, retVal);
+
+    return retVal;
+}
+
 bool PlatformInfoLogic::pse_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob)
 {
     uint16_t flags = 0;
@@ -263,7 +277,8 @@ ae_error_t PlatformInfoLogic::need_epid_provisioning(const platform_info_blob_wr
     if (sgx_gid_out_of_date(p_platform_info_blob) &&
         !qe_svn_out_of_date(p_platform_info_blob) &&
         !cpu_svn_out_of_date(p_platform_info_blob) &&
-        !pce_svn_out_of_date(p_platform_info_blob))
+        !pce_svn_out_of_date(p_platform_info_blob) &&
+        !platform_configuration_needed(p_platform_info_blob))
     {
         status = AESM_NEP_DONT_NEED_UPDATE_PVEQE;      // don't need update, but need epid provisioning
     }
