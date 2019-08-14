@@ -77,6 +77,8 @@
 #include <stddef.h>
 #define container_of(ptr, type, member) (type *)( (char *)(ptr) - offsetof(type,member) )
 
+#ifndef weak_alias
 #define weak_alias(_old, _new) __typeof(_old) _new __attribute__((weak, alias(#_old)))
+#endif
 
 #endif
