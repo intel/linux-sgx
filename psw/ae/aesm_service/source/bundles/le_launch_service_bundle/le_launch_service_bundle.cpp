@@ -159,9 +159,9 @@ private:
             //AESM_LOG_FATAL("%s", g_event_string_table[SGX_EVENT_SERVICE_UNAVAILABLE]);
             return ae_ret;
         }
-
-        get_service_wrapper(g_network_service);
-        start_white_list_thread();
+        auto context = cppmicroservices::GetBundleContext();
+        get_service_wrapper(g_network_service, context);
+        start_white_list_thread(0);
         initialized = true;
         AESM_DBG_INFO("le bundle started");
         return AE_SUCCESS;
@@ -171,6 +171,7 @@ private:
         uint64_t stop_tick_count = se_get_tick_count()+500/1000;
         white_list_thread.stop_thread(stop_tick_count);
         CLEClass::instance().unload_enclave();
+        initialized = false;
         AESM_DBG_INFO("le bundle stopped");
     }
 
@@ -181,6 +182,8 @@ private:
         uint8_t *lictoken, uint32_t lictoken_size)
     {
         AESM_DBG_INFO("enter function");
+        if (initialized == false)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_le_mutex);
 
         ae_error_t ret_le = AE_SUCCESS;
@@ -247,6 +250,8 @@ private:
         sgx_launch_token_t* launch_token)
     {
         AESM_DBG_INFO("enter function");
+        if (initialized == false)
+            return SGX_ERROR_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_le_mutex);
 
         ae_error_t ret_le = AE_SUCCESS;
@@ -325,10 +330,10 @@ private:
         uint8_t *white_list_cert, uint32_t buf_size)
     {
         uint32_t white_cert_size = 0;
+        if (initialized == false)
+            return AESM_SERVICE_UNAVAILABLE;
         if (NULL == white_list_cert)
-        {
             return AESM_PARAMETER_ERROR;
-        }
         AESMLogicLock lock(_le_mutex);
         if (is_in_kernel_driver())
         {
@@ -355,10 +360,10 @@ private:
     aesm_error_t get_white_list_size(
         uint32_t *white_list_cert_size)
     {
+        if (initialized == false)
+            return AESM_SERVICE_UNAVAILABLE;
         if (NULL == white_list_cert_size)
-        {
             return AESM_PARAMETER_ERROR;
-        }
         AESMLogicLock lock(_le_mutex);
                 if (is_in_kernel_driver())
         {
@@ -377,6 +382,8 @@ private:
             uint32_t white_list_cert_size)
         {
             AESM_DBG_INFO("enter function");
+            if (initialized == false)
+                return AESM_SERVICE_UNAVAILABLE;
             AESM_LOG_INFO_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_WL_UPDATE_START]);
             AESMLogicLock lock(_le_mutex);
             ae_error_t ret_le = AE_SUCCESS;

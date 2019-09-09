@@ -47,39 +47,43 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpMethod_p192r1, (void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpMethod_p192r1, (void) )
+IPPAPI(IppStatus, y8_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPAPI(IppStatus, l9_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPAPI(IppStatus, k0_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p192r1, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsGFpMethod_p192r1(  );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsGFpMethod_p192r1(  );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
       } else 
-        return NULL;
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
+      } else 
+        return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpMethod_p192r1, (void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpMethod_p192r1, (void) )
+IPPAPI(IppStatus, p8_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPAPI(IppStatus, h9_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p192r1, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsGFpMethod_p192r1(  );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsGFpMethod_p192r1(  );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #endif

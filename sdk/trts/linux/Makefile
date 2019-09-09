@@ -63,9 +63,8 @@ LIBTRTS = libsgx_trts.a
 all: $(LIBTRTS) | $(BUILD_DIR)
 	$(CP) $(LIBTRTS) $|
 
-$(LIBTRTS): $(OBJS) setcontext.o
+$(LIBTRTS): $(OBJS) 
 	$(AR) rsD $@ $(OBJS) 
-	$(AR) rsD $@ $(ARCH)/setcontext.o
 
 %.o: %.S
 	echo $(ASM_SRCS)
@@ -80,14 +79,9 @@ $(LIBTRTS): $(OBJS) setcontext.o
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
-.PHONY: setcontext.o
-setcontext.o:
-	$(MAKE) -C $(ARCH)
-
 .PHONY: clean
 clean:
 	@$(RM) $(OBJS) $(LIBTRTS) $(BUILD_DIR)/$(LIBTRTS) 
-	$(MAKE) -C $(ARCH) clean
 
 .PHONY: rebuild
 rebuild:

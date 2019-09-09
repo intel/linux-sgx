@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsBigNumGetSize,(int length, int* pSize))
-IPPAPI(IppStatus, l9_ippsBigNumGetSize,(int length, int* pSize))
+IPPAPI(IppStatus, y8_ippsHMACGetTag_rmf,(Ipp8u* pMD, int mdLen, const IppsHMACState_rmf* pCtx))
+IPPAPI(IppStatus, l9_ippsHMACGetTag_rmf,(Ipp8u* pMD, int mdLen, const IppsHMACState_rmf* pCtx))
+IPPAPI(IppStatus, k0_ippsHMACGetTag_rmf,(Ipp8u* pMD, int mdLen, const IppsHMACState_rmf* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsBigNumGetSize,(int length, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsHMACGetTag_rmf,(Ipp8u* pMD, int mdLen, const IppsHMACState_rmf* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsBigNumGetSize( length, pSize );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsHMACGetTag_rmf( pMD, mdLen, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsBigNumGetSize( length, pSize );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsHMACGetTag_rmf( pMD, mdLen, pCtx );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsHMACGetTag_rmf( pMD, mdLen, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsBigNumGetSize,(int length, int* pSize))
-IPPAPI(IppStatus, h9_ippsBigNumGetSize,(int length, int* pSize))
+IPPAPI(IppStatus, p8_ippsHMACGetTag_rmf,(Ipp8u* pMD, int mdLen, const IppsHMACState_rmf* pCtx))
+IPPAPI(IppStatus, h9_ippsHMACGetTag_rmf,(Ipp8u* pMD, int mdLen, const IppsHMACState_rmf* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsBigNumGetSize,(int length, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsHMACGetTag_rmf,(Ipp8u* pMD, int mdLen, const IppsHMACState_rmf* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsBigNumGetSize( length, pSize );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsHMACGetTag_rmf( pMD, mdLen, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsBigNumGetSize( length, pSize );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsHMACGetTag_rmf( pMD, mdLen, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

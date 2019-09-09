@@ -38,7 +38,7 @@
 #include <pcl_internal.h>
 
 /*
- * @func pcl_memcpy implements memcpy that can run before runtime initiazliation
+ * @func pcl_memcpy implements memcpy that can run before runtime initialization
  * @param OUT void* dst, output destination buffer
  * @param IN void* src, input source buffer
  * @param size_t size, buffer size in bytes
@@ -53,7 +53,7 @@ void pcl_memcpy(OUT void* dst, IN void* src, size_t size)
 }
 
 /*
- * @func pcl_memset implements memset that can run before runtime initiazliation
+ * @func pcl_memset implements memset that can run before runtime initialization
  * @param OUT void* dst, output destination buffer
  * @param uint8_t val, value to set buffer
  * @param size_t size, buffer size in bytes
@@ -70,7 +70,7 @@ void pcl_memset(OUT void* dst, uint8_t val, size_t size)
 
 /*
  * @func pcl_volatile_memset implements memset that will not be optimized by compiler
- * and can run before runtime initiazliation 
+ * and can run before runtime initialization 
  * @param OUT volatile void* dst, output volatile destination buffer
  * @param uint8_t val, value to set buffer
  * @param size_t size, buffer size in bytes

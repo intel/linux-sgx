@@ -31,7 +31,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
    sensitive to the performance of this routine, why bother...  */
 static int
 elf_w (CD_get_proc_name) (struct UCD_info *ui, unw_addr_space_t as, unw_word_t ip,
-		       char *buf, size_t buf_len, unw_word_t *offp)
+                       char *buf, size_t buf_len, unw_word_t *offp)
 {
   unsigned long segbase, mapoff;
   int ret;
@@ -40,7 +40,7 @@ elf_w (CD_get_proc_name) (struct UCD_info *ui, unw_addr_space_t as, unw_word_t i
   coredump_phdr_t *cphdr = _UCD_get_elf_image(ui, ip);
   if (!cphdr)
     {
-      Debug(1, "%s returns error: _UCD_get_elf_image failed\n", __func__);
+      Debug(1, "returns error: _UCD_get_elf_image failed\n");
       return -UNW_ENOINFO;
     }
   /* segbase: where it is mapped in virtual memory */
@@ -56,7 +56,7 @@ elf_w (CD_get_proc_name) (struct UCD_info *ui, unw_addr_space_t as, unw_word_t i
 
 int
 _UCD_get_proc_name (unw_addr_space_t as, unw_word_t ip,
-		    char *buf, size_t buf_len, unw_word_t *offp, void *arg)
+                    char *buf, size_t buf_len, unw_word_t *offp, void *arg)
 {
   struct UCD_info *ui = arg;
 

@@ -32,23 +32,77 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ippcp.h"
+#include "ipp_wrapper.h"
 
-extern "C" void secure_free_rsa_pri2_key(int p_byte_size, IppsRSAPrivateKeyState *pri_key2)
+
+extern "C" void secure_free_rsa_pri_key(IppsRSAPrivateKeyState *pri_key)
 {
-    if (p_byte_size <= 0 || pri_key2 == NULL) {
-        if (pri_key2)
-            free(pri_key2);
+    if (pri_key == NULL) {
         return;
     }
 
-    int rsa2_size = 0;
-    if (ippsRSA_GetSizePrivateKeyType2(p_byte_size * 8, p_byte_size * 8, &rsa2_size) != ippStsNoErr) {
-        free(pri_key2);
-        return;
-    }
-    /* Clear the buffer before free. */
-    memset_s(pri_key2, rsa2_size, 0, rsa2_size);
-    free(pri_key2);
+    IppsBigNumState* p_bn_mod = NULL;
+    IppsBigNumState* p_bn_p = NULL;
+    IppsBigNumState* p_bn_exp = NULL;
+    IppsBigNumState* p_bn_q = NULL;
+    int mod_bits = 0;
+    int exp_bits = 0;
+    int p_bits = 0;
+    int q_bits = 0;
+    int ctx_size = 0;
+
+    do {
+        //create new BNs.
+        // p_bn_mod/p: used to store modulus data in case of type1 key, in case of type2 key it'll store prime number P data.
+        // p_bn_exp/q: used to store exponent data in case of type1 key, in case of type2 key it'll store prime number Q data.
+        //
+        if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_bn_mod) != ippStsNoErr) {
+            break;
+        }
+        if (sgx_ipp_newBN(NULL, MAX_IPP_BN_LENGTH, &p_bn_exp) != ippStsNoErr) {
+            break;
+        }
+        p_bn_p = p_bn_mod;
+        p_bn_q = p_bn_exp;
+        //check private key type. IPP does not provide direct API to do this, we use the below workaround
+        //
+        if (ippsRSA_GetPrivateKeyType1(p_bn_mod, p_bn_exp, (IppsRSAPrivateKeyState*)pri_key) == ippStsNoErr) {
+            if (ippsExtGet_BN(0, &mod_bits, 0, p_bn_mod) != ippStsNoErr) {
+                break;
+            }
+            if (ippsExtGet_BN(0, &exp_bits, 0, p_bn_exp) != ippStsNoErr) {
+                break;
+            }
+            if (ippsRSA_GetSizePrivateKeyType1(mod_bits, exp_bits, &ctx_size) != ippStsNoErr) {
+                break;
+            }
+            if (ippsRSA_InitPrivateKeyType1(mod_bits, exp_bits, (IppsRSAPrivateKeyState*)pri_key, ctx_size) != ippStsNoErr) {
+                break;
+            }
+        }
+        else {
+            if (ippsRSA_GetPrivateKeyType2(p_bn_p, p_bn_q, NULL, NULL, NULL, (IppsRSAPrivateKeyState*)pri_key) != ippStsNoErr) {
+                break;
+            }
+            if (ippsExtGet_BN(0, &p_bits, 0, p_bn_p) != ippStsNoErr) {
+                break;
+            }
+            if (ippsExtGet_BN(0, &q_bits, 0, p_bn_q) != ippStsNoErr) {
+                break;
+            }
+            if (ippsRSA_GetSizePrivateKeyType2(p_bits, q_bits, &ctx_size) != ippStsNoErr) {
+                break;
+            }
+            if (ippsRSA_InitPrivateKeyType2(p_bits, q_bits, (IppsRSAPrivateKeyState*)pri_key, ctx_size) != ippStsNoErr) {
+                break;
+            }
+        }
+        memset_s(pri_key, ctx_size, 0, ctx_size);
+    } while (0);
+
+    free(pri_key);
+    sgx_ipp_secure_free_BN(p_bn_mod, MAX_IPP_BN_LENGTH);
+    sgx_ipp_secure_free_BN(p_bn_exp, MAX_IPP_BN_LENGTH);
     return;
 }
 

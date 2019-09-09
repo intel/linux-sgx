@@ -93,7 +93,7 @@ extern "C" sgx_status_t init_ipp_cpuid(uint64_t cpu_feature_indicator)
         {
             ippCpuFeatures |= ippCPUID_AVX2;
         }
-        if ((cpu_feature_indicator & CPU_FEATURE_ADCOX) == CPU_FEATURE_ADCOX)
+        if ((cpu_feature_indicator & CPU_FEATURE_ADX) == CPU_FEATURE_ADX)
         {
             ippCpuFeatures |= ippCPUID_ADCOX;
         }
@@ -101,9 +101,57 @@ extern "C" sgx_status_t init_ipp_cpuid(uint64_t cpu_feature_indicator)
         {
             ippCpuFeatures |= ippCPUID_RDSEED;
         }
-        if ((cpu_feature_indicator & CPU_FEATURE_PREFETCHW) == CPU_FEATURE_PREFETCHW)
+	if ((cpu_feature_indicator & CPU_FEATURE_SHA) == CPU_FEATURE_SHA)
         {
-            ippCpuFeatures |= ippCPUID_PREFETCHW;
+            ippCpuFeatures |= ippCPUID_SHA;
+        }
+        
+	// AVX512
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512F) == CPU_FEATURE_AVX512F)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512F;
+            ippCpuFeatures |= ippAVX512_ENABLEDBYOS;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512PF) == CPU_FEATURE_AVX512PF)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512PF;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512ER) == CPU_FEATURE_AVX512ER)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512ER;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512CD) == CPU_FEATURE_AVX512CD)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512CD;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512DQ) == CPU_FEATURE_AVX512DQ)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512DQ;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512BW) == CPU_FEATURE_AVX512BW)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512BW;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512VL) == CPU_FEATURE_AVX512VL)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512VL;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512VBMI) == CPU_FEATURE_AVX512VBMI)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512VBMI;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512_4VNNIW) == CPU_FEATURE_AVX512_4VNNIW)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512_4VNNIW;
+        }
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512_4FMAPS) == CPU_FEATURE_AVX512_4FMAPS)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512_4FMADDPS;
+        }
+
+        if ((cpu_feature_indicator & CPU_FEATURE_AVX512IFMA52) == CPU_FEATURE_AVX512IFMA52)
+        {
+            ippCpuFeatures |= ippCPUID_AVX512IFMA;
         }
     }
     else

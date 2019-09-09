@@ -30,13 +30,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #ifdef UNW_REMOTE_ONLY
 
 /* unw_local_addr_space is a NULL pointer in this case.  */
-PROTECTED unw_addr_space_t unw_local_addr_space;
+unw_addr_space_t unw_local_addr_space;
 
 #else /* !UNW_REMOTE_ONLY */
 
 static struct unw_addr_space local_addr_space;
 
-PROTECTED unw_addr_space_t unw_local_addr_space = &local_addr_space;
+unw_addr_space_t unw_local_addr_space = &local_addr_space;
 
 static inline void *
 uc_addr (unw_tdep_context_t *uc, int reg)
@@ -66,16 +66,71 @@ HIDDEN unw_dyn_info_list_t _U_dyn_info_list;
 
 static int
 get_dyn_info_list_addr (unw_addr_space_t as, unw_word_t *dyn_info_list_addr,
-			void *arg)
+                        void *arg)
 {
   *dyn_info_list_addr = (unw_word_t) &_U_dyn_info_list;
   return 0;
 }
 
+#define PAGE_SIZE 4096
+#define PAGE_START(a)	((a) & ~(PAGE_SIZE-1))
+
+/* Cache of already validated addresses */
+#define NLGA 4
+static unw_word_t last_good_addr[NLGA];
+static int lga_victim;
+
+static int
+validate_mem (unw_word_t addr)
+{
+  int i, victim;
+  size_t len;
+
+  if (PAGE_START(addr + sizeof (unw_word_t) - 1) == PAGE_START(addr))
+    len = PAGE_SIZE;
+  else
+    len = PAGE_SIZE * 2;
+
+  addr = PAGE_START(addr);
+
+  if (addr == 0)
+    return -1;
+
+  for (i = 0; i < NLGA; i++)
+    {
+      if (last_good_addr[i] && (addr == last_good_addr[i]))
+      return 0;
+    }
+
+  if (msync ((void *) addr, len, MS_ASYNC) == -1)
+    return -1;
+
+  victim = lga_victim;
+  for (i = 0; i < NLGA; i++) {
+    if (!last_good_addr[victim]) {
+      last_good_addr[victim++] = addr;
+      return 0;
+    }
+    victim = (victim + 1) % NLGA;
+  }
+
+  /* All slots full. Evict the victim. */
+  last_good_addr[victim] = addr;
+  victim = (victim + 1) % NLGA;
+  lga_victim = victim;
+
+  return 0;
+}
+
 static int
 access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val, int write,
-	    void *arg)
+            void *arg)
 {
+  /* validate address */
+    const struct cursor *c = (const struct cursor *) arg;
+    if (c && validate_mem(addr))
+      return -1;
+
   if (write)
     {
       Debug (16, "mem[%x] <- %x\n", addr, *val);
@@ -91,7 +146,7 @@ access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val, int write,
 
 static int
 access_reg (unw_addr_space_t as, unw_regnum_t reg, unw_word_t *val, int write,
-	    void *arg)
+            void *arg)
 {
   unw_word_t *addr;
   unw_tdep_context_t *uc = arg;
@@ -122,7 +177,7 @@ Debug (16, "reg = %s\n", unw_regname (reg));
 
 static int
 access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
-	      int write, void *arg)
+              int write, void *arg)
 {
   unw_tdep_context_t *uc = arg;
   unw_fpreg_t *addr;
@@ -136,14 +191,14 @@ access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
   if (write)
     {
       Debug (12, "%s <- %08lx.%08lx.%08lx\n", unw_regname (reg),
-	     ((long *)val)[0], ((long *)val)[1], ((long *)val)[2]);
+             ((long *)val)[0], ((long *)val)[1], ((long *)val)[2]);
       *(unw_fpreg_t *) addr = *val;
     }
   else
     {
       *val = *(unw_fpreg_t *) addr;
       Debug (12, "%s -> %08lx.%08lx.%08lx\n", unw_regname (reg),
-	     ((long *)val)[0], ((long *)val)[1], ((long *)val)[2]);
+             ((long *)val)[0], ((long *)val)[1], ((long *)val)[2]);
     }
   return 0;
 
@@ -155,8 +210,8 @@ access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
 
 static int
 get_static_proc_name (unw_addr_space_t as, unw_word_t ip,
-		      char *buf, size_t buf_len, unw_word_t *offp,
-		      void *arg)
+                      char *buf, size_t buf_len, unw_word_t *offp,
+                      void *arg)
 {
   return _Uelf32_get_proc_name (as, getpid (), ip, buf, buf_len, offp);
 }
@@ -165,7 +220,7 @@ HIDDEN void
 arm_local_addr_space_init (void)
 {
   memset (&local_addr_space, 0, sizeof (local_addr_space));
-  local_addr_space.caching_policy = UNW_CACHE_GLOBAL;
+  local_addr_space.caching_policy = UNWI_DEFAULT_CACHING_POLICY;
   local_addr_space.acc.find_proc_info = arm_find_proc_info;
   local_addr_space.acc.put_unwind_info = arm_put_unwind_info;
   local_addr_space.acc.get_dyn_info_list_addr = get_dyn_info_list_addr;

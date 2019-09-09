@@ -6,10 +6,10 @@
 #include <aeerror.h>
 #include <aesm_error.h>
 
-struct IPseopService : public IService
+struct IPseopService : virtual public IService
 {
     // The value should be the same as the major version in manifest.json
-    enum {VERSION = 1};
+    enum {VERSION = 2};
     virtual ~IPseopService() = default;
 
     virtual aesm_error_t create_session(
@@ -41,6 +41,11 @@ struct IPseopService : public IService
     uint8_t* platform_info, uint32_t platform_info_size,
     uint32_t attestation_status,
     uint8_t* update_info, uint32_t update_info_size) = 0;
+    
+    virtual aesm_error_t check_update_status(
+    uint8_t* platform_info, uint32_t platform_info_size,
+    uint8_t* update_info, uint32_t update_info_size,
+    uint32_t attestation_status, uint32_t* status) = 0;
         
     virtual ae_error_t save_psda_capability() = 0;
 

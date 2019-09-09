@@ -49,16 +49,20 @@
 
 IPPAPI(IppStatus, y8_ippsTDESEncryptCTR,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, Ipp8u* pCtrValue, int ctrNumBitSize))
 IPPAPI(IppStatus, l9_ippsTDESEncryptCTR,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, Ipp8u* pCtrValue, int ctrNumBitSize))
+IPPAPI(IppStatus, k0_ippsTDESEncryptCTR,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, Ipp8u* pCtrValue, int ctrNumBitSize))
 
 IPPFUN(IppStatus,sgx_disp_ippsTDESEncryptCTR,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, Ipp8u* pCtrValue, int ctrNumBitSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsTDESEncryptCTR( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pCtrValue, ctrNumBitSize );
+      } else 
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsTDESEncryptCTR( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pCtrValue, ctrNumBitSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return y8_ippsTDESEncryptCTR( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pCtrValue, ctrNumBitSize );
       } else 
         return ippStsCpuNotSupportedErr;
@@ -74,10 +78,10 @@ IPPFUN(IppStatus,sgx_disp_ippsTDESEncryptCTR,(const Ipp8u* pSrc, Ipp8u* pDst, in
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return h9_ippsTDESEncryptCTR( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pCtrValue, ctrNumBitSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return p8_ippsTDESEncryptCTR( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pCtrValue, ctrNumBitSize );
       } else 
         return ippStsCpuNotSupportedErr;

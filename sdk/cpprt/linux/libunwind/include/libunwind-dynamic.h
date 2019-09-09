@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -59,50 +59,54 @@ the following rules should be followed in declaring these structures:
 
 typedef enum
   {
-    UNW_DYN_STOP = 0,		/* end-of-unwind-info marker */
-    UNW_DYN_SAVE_REG,		/* save register to another register */
-    UNW_DYN_SPILL_FP_REL,	/* frame-pointer-relative register spill */
-    UNW_DYN_SPILL_SP_REL,	/* stack-pointer-relative register spill */
-    UNW_DYN_ADD,		/* add constant value to a register */
-    UNW_DYN_POP_FRAMES,		/* drop one or more stack frames */
-    UNW_DYN_LABEL_STATE,	/* name the current state */
-    UNW_DYN_COPY_STATE,		/* set the region's entry-state */
-    UNW_DYN_ALIAS		/* get unwind info from an alias */
+    UNW_DYN_STOP = 0,           /* end-of-unwind-info marker */
+    UNW_DYN_SAVE_REG,           /* save register to another register */
+    UNW_DYN_SPILL_FP_REL,       /* frame-pointer-relative register spill */
+    UNW_DYN_SPILL_SP_REL,       /* stack-pointer-relative register spill */
+    UNW_DYN_ADD,                /* add constant value to a register */
+    UNW_DYN_POP_FRAMES,         /* drop one or more stack frames */
+    UNW_DYN_LABEL_STATE,        /* name the current state */
+    UNW_DYN_COPY_STATE,         /* set the region's entry-state */
+    UNW_DYN_ALIAS               /* get unwind info from an alias */
   }
 unw_dyn_operation_t;
 
 typedef enum
   {
-    UNW_INFO_FORMAT_DYNAMIC,		/* unw_dyn_proc_info_t */
-    UNW_INFO_FORMAT_TABLE,		/* unw_dyn_table_t */
-    UNW_INFO_FORMAT_REMOTE_TABLE,	/* unw_dyn_remote_table_t */
-    UNW_INFO_FORMAT_ARM_EXIDX		/* ARM specific unwind info */
+    UNW_INFO_FORMAT_DYNAMIC,            /* unw_dyn_proc_info_t */
+    UNW_INFO_FORMAT_TABLE,              /* unw_dyn_table_t */
+    UNW_INFO_FORMAT_REMOTE_TABLE,       /* unw_dyn_remote_table_t */
+    UNW_INFO_FORMAT_ARM_EXIDX,          /* ARM specific unwind info */
+    UNW_INFO_FORMAT_IP_OFFSET,          /* Like UNW_INFO_FORMAT_REMOTE_TABLE, but
+                                           table entries are considered
+                                           relative to di->start_ip, rather
+                                           than di->segbase */
   }
 unw_dyn_info_format_t;
 
 typedef struct unw_dyn_op
   {
-    int8_t tag;				/* what operation? */
-    int8_t qp;				/* qualifying predicate register */
-    int16_t reg;			/* what register */
-    int32_t when;			/* when does it take effect? */
-    unw_word_t val;			/* auxiliary value */
+    int8_t tag;                         /* what operation? */
+    int8_t qp;                          /* qualifying predicate register */
+    int16_t reg;                        /* what register */
+    int32_t when;                       /* when does it take effect? */
+    unw_word_t val;                     /* auxiliary value */
   }
 unw_dyn_op_t;
 
 typedef struct unw_dyn_region_info
   {
-    struct unw_dyn_region_info *next;	/* linked list of regions */
-    int32_t insn_count;			/* region length (# of instructions) */
-    uint32_t op_count;			/* length of op-array */
-    unw_dyn_op_t op[1];			/* variable-length op-array */
+    struct unw_dyn_region_info *next;   /* linked list of regions */
+    int32_t insn_count;                 /* region length (# of instructions) */
+    uint32_t op_count;                  /* length of op-array */
+    unw_dyn_op_t op[1];                 /* variable-length op-array */
   }
 unw_dyn_region_info_t;
 
 typedef struct unw_dyn_proc_info
   {
-    unw_word_t name_ptr;	/* address of human-readable procedure name */
-    unw_word_t handler;		/* address of personality routine */
+    unw_word_t name_ptr;        /* address of human-readable procedure name */
+    unw_word_t handler;         /* address of personality routine */
     uint32_t flags;
     int32_t pad0;
     unw_dyn_region_info_t *regions;
@@ -111,18 +115,18 @@ unw_dyn_proc_info_t;
 
 typedef struct unw_dyn_table_info
   {
-    unw_word_t name_ptr;	/* addr. of table name (e.g., library name) */
-    unw_word_t segbase;		/* segment base */
-    unw_word_t table_len;	/* must be a multiple of sizeof(unw_word_t)! */
+    unw_word_t name_ptr;        /* addr. of table name (e.g., library name) */
+    unw_word_t segbase;         /* segment base */
+    unw_word_t table_len;       /* must be a multiple of sizeof(unw_word_t)! */
     unw_word_t *table_data;
   }
 unw_dyn_table_info_t;
 
 typedef struct unw_dyn_remote_table_info
   {
-    unw_word_t name_ptr;	/* addr. of table name (e.g., library name) */
-    unw_word_t segbase;		/* segment base */
-    unw_word_t table_len;	/* must be a multiple of sizeof(unw_word_t)! */
+    unw_word_t name_ptr;        /* addr. of table name (e.g., library name) */
+    unw_word_t segbase;         /* segment base */
+    unw_word_t table_len;       /* must be a multiple of sizeof(unw_word_t)! */
     unw_word_t table_data;
   }
 unw_dyn_remote_table_info_t;
@@ -132,16 +136,16 @@ typedef struct unw_dyn_info
     /* doubly-linked list of dyn-info structures: */
     struct unw_dyn_info *next;
     struct unw_dyn_info *prev;
-    unw_word_t start_ip;	/* first IP covered by this entry */
-    unw_word_t end_ip;		/* first IP NOT covered by this entry */
-    unw_word_t gp;		/* global-pointer in effect for this entry */
-    int32_t format;		/* real type: unw_dyn_info_format_t */
+    unw_word_t start_ip;        /* first IP covered by this entry */
+    unw_word_t end_ip;          /* first IP NOT covered by this entry */
+    unw_word_t gp;              /* global-pointer in effect for this entry */
+    int32_t format;             /* real type: unw_dyn_info_format_t */
     int32_t pad;
     union
       {
-	unw_dyn_proc_info_t pi;
-	unw_dyn_table_info_t ti;
-	unw_dyn_remote_table_info_t rti;
+        unw_dyn_proc_info_t pi;
+        unw_dyn_table_info_t ti;
+        unw_dyn_remote_table_info_t rti;
       }
     u;
   }
@@ -157,9 +161,9 @@ unw_dyn_info_list_t;
 
 /* Return the size (in bytes) of an unw_dyn_region_info_t structure that can
    hold OP_COUNT ops.  */
-#define _U_dyn_region_info_size(op_count)				\
-	((char *) (((unw_dyn_region_info_t *) NULL)->op + (op_count))	\
-	 - (char *) NULL)
+#define _U_dyn_region_info_size(op_count)                               \
+        ((char *) (((unw_dyn_region_info_t *) NULL)->op + (op_count))   \
+         - (char *) NULL)
 
 /* Register the unwind info for a single procedure.
    This routine is NOT signal-safe.  */
@@ -172,39 +176,39 @@ extern void _U_dyn_cancel (unw_dyn_info_t *);
 
 /* Convenience routines.  */
 
-#define _U_dyn_op(_tag, _qp, _when, _reg, _val)				\
-	((unw_dyn_op_t) { (_tag), (_qp), (_reg), (_when), (_val) })
+#define _U_dyn_op(_tag, _qp, _when, _reg, _val)                         \
+        ((unw_dyn_op_t) { (_tag), (_qp), (_reg), (_when), (_val) })
 
-#define _U_dyn_op_save_reg(op, qp, when, reg, dst)			\
-	(*(op) = _U_dyn_op (UNW_DYN_SAVE_REG, (qp), (when), (reg), (dst)))
+#define _U_dyn_op_save_reg(op, qp, when, reg, dst)                      \
+        (*(op) = _U_dyn_op (UNW_DYN_SAVE_REG, (qp), (when), (reg), (dst)))
 
-#define _U_dyn_op_spill_fp_rel(op, qp, when, reg, offset)		\
-	(*(op) = _U_dyn_op (UNW_DYN_SPILL_FP_REL, (qp), (when), (reg),	\
-			    (offset)))
+#define _U_dyn_op_spill_fp_rel(op, qp, when, reg, offset)               \
+        (*(op) = _U_dyn_op (UNW_DYN_SPILL_FP_REL, (qp), (when), (reg),  \
+                            (offset)))
 
-#define _U_dyn_op_spill_sp_rel(op, qp, when, reg, offset)		\
-	(*(op) = _U_dyn_op (UNW_DYN_SPILL_SP_REL, (qp), (when), (reg),	\
-			    (offset)))
+#define _U_dyn_op_spill_sp_rel(op, qp, when, reg, offset)               \
+        (*(op) = _U_dyn_op (UNW_DYN_SPILL_SP_REL, (qp), (when), (reg),  \
+                            (offset)))
 
-#define _U_dyn_op_add(op, qp, when, reg, value)				\
-	(*(op) = _U_dyn_op (UNW_DYN_ADD, (qp), (when), (reg), (value)))
+#define _U_dyn_op_add(op, qp, when, reg, value)                         \
+        (*(op) = _U_dyn_op (UNW_DYN_ADD, (qp), (when), (reg), (value)))
 
-#define _U_dyn_op_pop_frames(op, qp, when, num_frames)			\
-	(*(op) = _U_dyn_op (UNW_DYN_POP_FRAMES, (qp), (when), 0, (num_frames)))
+#define _U_dyn_op_pop_frames(op, qp, when, num_frames)                  \
+        (*(op) = _U_dyn_op (UNW_DYN_POP_FRAMES, (qp), (when), 0, (num_frames)))
 
-#define _U_dyn_op_label_state(op, label)				\
-	(*(op) = _U_dyn_op (UNW_DYN_LABEL_STATE, _U_QP_TRUE, -1, 0, (label)))
+#define _U_dyn_op_label_state(op, label)                                \
+        (*(op) = _U_dyn_op (UNW_DYN_LABEL_STATE, _U_QP_TRUE, -1, 0, (label)))
 
-#define _U_dyn_op_copy_state(op, label)					\
-	(*(op) = _U_dyn_op (UNW_DYN_COPY_STATE, _U_QP_TRUE, -1, 0, (label)))
+#define _U_dyn_op_copy_state(op, label)                                 \
+        (*(op) = _U_dyn_op (UNW_DYN_COPY_STATE, _U_QP_TRUE, -1, 0, (label)))
 
-#define _U_dyn_op_alias(op, qp, when, addr)				\
-	(*(op) = _U_dyn_op (UNW_DYN_ALIAS, (qp), (when), 0, (addr)))
+#define _U_dyn_op_alias(op, qp, when, addr)                             \
+        (*(op) = _U_dyn_op (UNW_DYN_ALIAS, (qp), (when), 0, (addr)))
 
-#define _U_dyn_op_stop(op)						\
-	(*(op) = _U_dyn_op (UNW_DYN_STOP, _U_QP_TRUE, -1, 0, 0))
+#define _U_dyn_op_stop(op)                                              \
+        (*(op) = _U_dyn_op (UNW_DYN_STOP, _U_QP_TRUE, -1, 0, 0))
 
 /* The target-dependent qualifying predicate which is always TRUE.  On
    IA-64, that's p0 (0), on non-predicated architectures, the value is
    ignored.  */
-#define _U_QP_TRUE	_U_TDEP_QP_TRUE
+#define _U_QP_TRUE      _U_TDEP_QP_TRUE

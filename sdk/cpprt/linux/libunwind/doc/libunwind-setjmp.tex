@@ -17,7 +17,7 @@
 \Type{void} \Func{longjmp}(\Type{jmp\_buf}~\Var{env}, \Type{int}~\Var{val});\\
 \Type{int} \Func{\_setjmp}(\Type{jmp\_buf}~\Var{env});\\
 \Type{void} \Func{\_longjmp}(\Type{jmp\_buf}~\Var{env}, \Type{int}~\Var{val});\\
-\Type{int} \Func{setjmp}(\Type{sigjmp\_buf}~\Var{env}, \Type{int}~\Var{savemask});\\
+\Type{int} \Func{sigsetjmp}(\Type{sigjmp\_buf}~\Var{env}, \Type{int}~\Var{savemask});\\
 \Type{void} \Func{siglongjmp}(\Type{sigjmp\_buf}~\Var{env}, \Type{int}~\Var{val});\\
 
 \section{Description}

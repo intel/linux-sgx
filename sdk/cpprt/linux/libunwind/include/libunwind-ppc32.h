@@ -39,10 +39,10 @@ extern "C" {
 #include <inttypes.h>
 #include <ucontext.h>
 
-#define UNW_TARGET		ppc32
-#define UNW_TARGET_PPC32	1
+#define UNW_TARGET              ppc32
+#define UNW_TARGET_PPC32        1
 
-#define _U_TDEP_QP_TRUE	0	/* see libunwind-dynamic.h  */
+#define _U_TDEP_QP_TRUE 0       /* see libunwind-dynamic.h  */
 
 /*
  * This needs to be big enough to accommodate "struct cursor", while
@@ -62,7 +62,7 @@ extern "C" {
  * round that up to 280.
  */
 
-#define UNW_TDEP_CURSOR_LEN 200
+#define UNW_TDEP_CURSOR_LEN 280
 
 #if __WORDSIZE==32
 typedef uint32_t unw_word_t;
@@ -170,7 +170,7 @@ ppc32_regnum_t;
  * passing parameters to exception handlers.
  */
 
-#define UNW_TDEP_NUM_EH_REGS	4
+#define UNW_TDEP_NUM_EH_REGS    4
 
 typedef struct unw_tdep_save_loc
   {
@@ -185,7 +185,7 @@ typedef ucontext_t unw_tdep_context_t;
    using the "getcontext" name just because it's using libunwind.  We
    can't just use __getcontext() either, because that isn't exported
    by glibc...  */
-#define unw_tdep_getcontext(uc)		(getcontext (uc), 0)
+#define unw_tdep_getcontext(uc)         (getcontext (uc), 0)
 
 #include "libunwind-dynamic.h"
 
@@ -197,7 +197,7 @@ unw_tdep_proc_info_t;
 
 #include "libunwind-common.h"
 
-#define unw_tdep_is_fpreg		UNW_ARCH_OBJ(is_fpreg)
+#define unw_tdep_is_fpreg               UNW_ARCH_OBJ(is_fpreg)
 extern int unw_tdep_is_fpreg (int);
 
 #if defined(__cplusplus) || defined(c_plusplus)

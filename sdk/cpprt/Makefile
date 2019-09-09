@@ -73,31 +73,31 @@ all: $(CPPRT)
 
 .PHONY: prepare-libunwind
 prepare-libunwind:
-	$(CP) linux/pthread_compat.h linux/libunwind/include
+	$(CP) linux/pthread_compat.h $(LIBUNWIND_DIR)/include
 
 $(CPPRT): $(OBJS) prepare-libunwind libunwind
-	$(CP) linux/libunwind/src/.libs/libunwind.a $(CPPRT)
+	$(CP) $(LIBUNWIND_DIR)/src/.libs/libunwind.a $(CPPRT)
 	$(AR) rs $@ $(OBJS)
 
 .PHONY: libunwind
 libunwind:
-	cd linux/libunwind/ && ( test -f Makefile || ./autogen-linux.sh ) && $(MAKE) -j5
+	cd $(LIBUNWIND_DIR)/ && ( test -f Makefile || ./autogen.sh $(DEBUG)) && $(MAKE) -j5
 
 
 .PHONY: clean
 clean:
 	@$(RM) $(OBJS) $(CPPRT)
-ifeq ("$(shell test -f linux/libunwind/Makefile && echo Makefile exists)", "Makefile exists")	
-	@-$(MAKE) -C linux/libunwind distclean
+ifeq ("$(shell test -f $(LIBUNWIND_DIR)/Makefile && echo Makefile exists)", "Makefile exists")	
+	@-$(MAKE) -C $(LIBUNWIND_DIR) clean
 endif
-	@$(RM) -r linux/libunwind/INSTALL             \
-              linux/libunwind/Makefile.in         \
-              linux/libunwind/aclocal.m4          \
-              linux/libunwind/autom4te.cache/     \
-              linux/libunwind/config/             \
-              linux/libunwind/configure           \
-              linux/libunwind/doc/Makefile.in     \
-              linux/libunwind/include/pthread_compat.h \
-              linux/libunwind/include/config.h.in \
-              linux/libunwind/src/Makefile.in
+	@$(RM) -r $(LIBUNWIND_DIR)/INSTALL             \
+              $(LIBUNWIND_DIR)/Makefile.in         \
+              $(LIBUNWIND_DIR)/aclocal.m4          \
+              $(LIBUNWIND_DIR)/autom4te.cache/     \
+              $(LIBUNWIND_DIR)/config/             \
+              $(LIBUNWIND_DIR)/configure           \
+              $(LIBUNWIND_DIR)/doc/Makefile.in     \
+              $(LIBUNWIND_DIR)/include/pthread_compat.h \
+              $(LIBUNWIND_DIR)/src/Makefile.in   \
+              $(LIBUNWIND_DIR)/Makefile
 

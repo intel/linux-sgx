@@ -114,7 +114,7 @@ fi
 
 USER_INPUT_PATH=$(cd "$USER_INPUT_PATH"; pwd -P)
 
-PATH=/usr/bin:/bin
+PATH=/usr/bin:/bin:$PATH
 umask 022
 
 SDKPKG=`mktemp -t sgx-sdk-pkg.XXXXXX`
@@ -156,11 +156,11 @@ pushd ${SDK_TEMP_FOLDER}
 
 sed -i "s#\(SGX_PACKAGES_PATH=\).*#\1$USER_INPUT_PATH#" scripts/installConfig
 source scripts/installConfig
-make install INSTALLER_FORM=BIN
+make install INSTALLER_FORMAT=BIN
 
 popd
 
-${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/scripts/install.sh BIN
+${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/scripts/install.sh
 
 rm -fr ${SDK_TEMP_FOLDER}
 

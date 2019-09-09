@@ -32,6 +32,7 @@
 
 #include "aesm_config.h"
 #include "aesm_proxy_type.h"
+#include "aesm_quoting_type.h"
 #include "oal/oal.h"
 #include "default_url_info.hh"
 #include <sys/types.h>
@@ -49,6 +50,7 @@ enum _config_value_t{
     config_white_list_url,
     config_aesm_proxy_url,
     config_aesm_proxy_type,
+    config_aesm_quoting_type,
     config_value_nums
 };
 
@@ -60,7 +62,8 @@ struct _config_patterns_t{
     {config_space, "^[[:blank:]]*$"},   //matching empty line
     {config_white_list_url, "^[[:blank:]]*whitelist[[:blank:]]*url[[:blank:]]*=" URL_PATTERN OPTION_COMMENT "$"}, //matching line in format: whilelist url = ....
     {config_aesm_proxy_url,"^[[:blank:]]*aesm[[:blank:]]*proxy[[:blank:]]*=" URL_PATTERN OPTION_COMMENT "$"}, //matching line in format: aesm proxy = ...
-    {config_aesm_proxy_type, "^[[:blank:]]*proxy[[:blank:]]*type[[:blank:]]*=[[:blank:]]([^[:blank:]]+)[[:blank:]]*" OPTION_COMMENT "$"}//matching line in format: proxy type = [direct|default|manual]
+    {config_aesm_proxy_type, "^[[:blank:]]*proxy[[:blank:]]*type[[:blank:]]*=[[:blank:]]([^[:blank:]]+)[[:blank:]]*" OPTION_COMMENT "$"},//matching line in format: proxy type = [direct|default|manual]
+    {config_aesm_quoting_type, "^[[:blank:]]*default[[:blank:]]*quoting[[:blank:]]*type[[:blank:]]*=[[:blank:]]([^[:blank:]]+)[[:blank:]]*" OPTION_COMMENT "$"}//matching line in format: default quoting type = [ecdsa_256|epid_unlinkable|epid_linkable]
 };
 
 #define NUM_CONFIG_PATTERNS (sizeof(config_patterns)/sizeof(config_patterns[0]))
@@ -110,6 +113,13 @@ static const char *proxy_type_name[]={
 };
 #define NUM_PROXY_TYPE (sizeof(proxy_type_name)/sizeof(proxy_type_name[0]))
 
+static const char *quoting_type_name[]={
+    "epid_unlinkable",
+    "epid_linkable",
+    "ecdsa_256"
+};
+#define NUM_QUOTING_TYPE (sizeof(quoting_type_name)/sizeof(quoting_type_name[0]))
+
 //function to decode proxy type from string to integer value
 static uint32_t read_aesm_proxy_type(const char *string, uint32_t len)
 {
@@ -123,7 +133,20 @@ static uint32_t read_aesm_proxy_type(const char *string, uint32_t len)
      return (uint32_t)NUM_PROXY_TYPE;
 }
 
-#define MAX_MATCHED_REG_EXP 3
+//function to decode default quoting type from string to integer value
+static uint32_t read_aesm_quoting_type(const char *string, uint32_t len)
+{
+     uint32_t i;
+     for(i=0;i<NUM_QUOTING_TYPE;++i){
+        if(strncasecmp(quoting_type_name[i],string,len)==0){
+            return i;
+        }
+     }
+     AESM_DBG_TRACE("Invalid default quoting type %.*s",len,string);
+     return (uint32_t)NUM_QUOTING_TYPE;
+}
+
+#define MAX_MATCHED_REG_EXP 4
 //Function to processing one line in config file
 //  If any pattern is matched, get the correspondent data and set it into the output parameter 'infos'
 static bool config_process_one_line(const char *line, config_entry_t entries[], aesm_config_infos_t& infos)
@@ -159,6 +182,9 @@ static bool config_process_one_line(const char *line, config_entry_t entries[], 
             case config_aesm_proxy_type://It is a proxy type, we need change the string to integer by calling function read_aesm_proxy_type
                  infos.proxy_type = read_aesm_proxy_type(line+matches[1].rm_so, matches[1].rm_eo-matches[1].rm_so);
                  break;
+             case config_aesm_quoting_type://It is a default quoting type, we need change the string to integer by calling function read_aesm_quoting_type
+                  infos.quoting_type = read_aesm_quoting_type(line+matches[1].rm_so, matches[1].rm_eo-matches[1].rm_so);
+                  break;
             default:
                  AESM_DBG_ERROR("reg exp type %d not processed", i);
                  break;
@@ -182,8 +208,9 @@ bool read_aesm_config(aesm_config_infos_t& infos)
     memset(&entries,0,sizeof(entries));
     memset(&infos, 0, sizeof(aesm_config_infos_t));
     strcpy(infos.white_list_url, DEFAULT_WHITE_LIST_URL);
-    
+
     infos.proxy_type = AESM_PROXY_TYPE_DEFAULT_PROXY;
+    infos.quoting_type = AESM_QUOTING_DEFAULT_VALUE;
     FILE *f =fopen(AESM_CONFIG_FILE, "r");
     if(f==NULL){
          AESM_DBG_ERROR("Cannnot read aesm config file %s",AESM_CONFIG_FILE);
@@ -205,6 +232,11 @@ bool read_aesm_config(aesm_config_infos_t& infos)
           (infos.proxy_type==AESM_PROXY_TYPE_MANUAL_PROXY&&infos.aesm_proxy[0]=='\0')){
             AESM_DBG_WARN("Invalid proxy type %d",infos.proxy_type);
             infos.proxy_type = AESM_PROXY_TYPE_DIRECT_ACCESS;
+            ret = false;
+    }
+    if(infos.quoting_type>=NUM_QUOTING_TYPE){
+            AESM_DBG_WARN("Invalid default quoting type %d",infos.quoting_type);
+            infos.quoting_type = AESM_QUOTING_DEFAULT_VALUE;
             ret = false;
     }
     return ret;

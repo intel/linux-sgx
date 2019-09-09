@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2003 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -29,22 +29,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 /* This matches the value used by GCC (see
    gcc/config/i386.h:DWARF_FRAME_REGISTERS), which leaves plenty of
    room for expansion.  */
-#define DWARF_NUM_PRESERVED_REGS	17
+#define DWARF_NUM_PRESERVED_REGS        17
 
-#define DWARF_REGNUM_MAP_LENGTH		19
+#define DWARF_REGNUM_MAP_LENGTH         19
 
 /* Return TRUE if the ADDR_SPACE uses big-endian byte-order.  */
-#define dwarf_is_big_endian(addr_space)	0
+#define dwarf_is_big_endian(addr_space) 0
 
 /* Convert a pointer to a dwarf_cursor structure to a pointer to
    unw_cursor_t.  */
-#define dwarf_to_cursor(c)	((unw_cursor_t *) (c))
+#define dwarf_to_cursor(c)      ((unw_cursor_t *) (c))
 
 typedef struct dwarf_loc
   {
     unw_word_t val;
 #ifndef UNW_LOCAL_ONLY
-    unw_word_t type;		/* see X86_LOC_TYPE_* macros.  */
+    unw_word_t type;            /* see X86_LOC_TYPE_* macros.  */
 #endif
   }
 dwarf_loc_t;

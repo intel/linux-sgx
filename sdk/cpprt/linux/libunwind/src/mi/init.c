@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -32,7 +32,7 @@ static const char rcsid[] UNUSED =
 
 #if UNW_DEBUG
 
-/* Must not be declared HIDDEN/PROTECTED because libunwind.so and
+/* Must not be declared HIDDEN because libunwind.so and
    libunwind-PLATFORM.so will both define their own copies of this
    variable and we want to use only one or the other when both
    libraries are loaded.  */
@@ -43,7 +43,6 @@ long unwi_debug_level;
 HIDDEN void
 mi_init (void)
 {
-#if !HAVE_SGX
 #if UNW_DEBUG
   const char *str = getenv ("UNW_DEBUG_LEVEL");
 
@@ -55,7 +54,6 @@ mi_init (void)
       setbuf (stdout, NULL);
       setbuf (stderr, NULL);
     }
-#endif
 #endif
 
   assert (sizeof (struct cursor) <= sizeof (unw_cursor_t));

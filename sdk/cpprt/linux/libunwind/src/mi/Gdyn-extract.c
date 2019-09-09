@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2002, 2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -27,8 +27,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 HIDDEN int
 unwi_extract_dynamic_proc_info (unw_addr_space_t as, unw_word_t ip,
-				unw_proc_info_t *pi, unw_dyn_info_t *di,
-				int need_unwind_info, void *arg)
+                                unw_proc_info_t *pi, unw_dyn_info_t *di,
+                                int need_unwind_info, void *arg)
 {
   pi->start_ip = di->start_ip;
   pi->end_ip = di->end_ip;
@@ -42,13 +42,15 @@ unwi_extract_dynamic_proc_info (unw_addr_space_t as, unw_word_t ip,
       pi->flags = di->u.pi.flags;
       pi->unwind_info_size = 0;
       if (need_unwind_info)
-	pi->unwind_info = di;
+        pi->unwind_info = di;
       else
-	pi->unwind_info = NULL;
+        pi->unwind_info = NULL;
       return 0;
 
     case UNW_INFO_FORMAT_TABLE:
     case UNW_INFO_FORMAT_REMOTE_TABLE:
+    case UNW_INFO_FORMAT_ARM_EXIDX:
+    case UNW_INFO_FORMAT_IP_OFFSET:
 #ifdef tdep_search_unwind_table
       /* call platform-specific search routine: */
       return tdep_search_unwind_table (as, ip, di, pi, need_unwind_info, arg);

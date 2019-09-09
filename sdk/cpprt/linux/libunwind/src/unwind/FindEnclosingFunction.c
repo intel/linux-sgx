@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003-2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -25,13 +25,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "unwind-internal.h"
 
-PROTECTED void *
+void *
 _Unwind_FindEnclosingFunction (void *ip)
 {
   unw_proc_info_t pi;
 
   if (unw_get_proc_info_by_ip (unw_local_addr_space,
-			       (unw_word_t) (uintptr_t) ip, &pi, 0)
+                               (unw_word_t) (uintptr_t) ip, &pi, 0)
       < 0)
     return NULL;
 

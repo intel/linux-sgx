@@ -26,11 +26,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 int
 _UCD_access_mem(unw_addr_space_t as, unw_word_t addr, unw_word_t *val,
-		 int write, void *arg)
+                 int write, void *arg)
 {
   if (write)
     {
-      Debug(0, "%s: write is not supported\n", __func__);
+      Debug(0, "write is not supported\n");
       return -UNW_EINVAL;
     }
 
@@ -43,18 +43,16 @@ _UCD_access_mem(unw_addr_space_t as, unw_word_t addr, unw_word_t *val,
     {
       phdr = &ui->phdrs[i];
       if (phdr->p_vaddr <= addr && addr_last < phdr->p_vaddr + phdr->p_memsz)
-	{
-	  goto found;
-	}
+        {
+          goto found;
+        }
     }
-  Debug(1, "%s: addr 0x%llx is unmapped\n",
-		__func__, (unsigned long long)addr
-  );
+  Debug(1, "addr 0x%llx is unmapped\n", (unsigned long long)addr);
   return -UNW_EINVAL;
 
  found: ;
 
-  const char *filename;
+  const char *filename UNUSED;
   off_t fileofs;
   int fd;
   if (addr_last >= phdr->p_vaddr + phdr->p_filesz)
@@ -63,9 +61,9 @@ _UCD_access_mem(unw_addr_space_t as, unw_word_t addr, unw_word_t *val,
       /* Do we have it in the backup file? */
       if (phdr->backing_fd < 0)
         {
-          Debug(1, "%s: access to not-present data in phdr[%d]: addr:0x%llx\n",
-				__func__, i, (unsigned long long)addr
-			);
+          Debug(1, "access to not-present data in phdr[%d]: addr:0x%llx\n",
+                                i, (unsigned long long)addr
+                        );
           return -UNW_EINVAL;
         }
       filename = phdr->backing_filename;
@@ -83,20 +81,18 @@ _UCD_access_mem(unw_addr_space_t as, unw_word_t addr, unw_word_t *val,
   if (read(fd, val, sizeof(*val)) != sizeof(*val))
     goto read_error;
 
-  Debug(1, "%s: 0x%llx <- [addr:0x%llx fileofs:0x%llx]\n",
-	__func__,
-	(unsigned long long)(*val),
-	(unsigned long long)addr,
-	(unsigned long long)fileofs
+  Debug(1, "0x%llx <- [addr:0x%llx fileofs:0x%llx]\n",
+        (unsigned long long)(*val),
+        (unsigned long long)addr,
+        (unsigned long long)fileofs
   );
   return 0;
 
  read_error:
-  Debug(1, "%s: access out of file: addr:0x%llx fileofs:%llx file:'%s'\n",
-	__func__,
-	(unsigned long long)addr,
-	(unsigned long long)fileofs,
-	filename
+  Debug(1, "access out of file: addr:0x%llx fileofs:%llx file:'%s'\n",
+        (unsigned long long)addr,
+        (unsigned long long)fileofs,
+        filename
   );
   return -UNW_EINVAL;
 }

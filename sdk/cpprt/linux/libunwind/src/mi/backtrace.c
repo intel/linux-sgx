@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2002 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -45,10 +45,10 @@ slow_backtrace (void **buffer, int size, unw_context_t *uc)
   while (unw_step (&cursor) > 0)
     {
       if (n >= size)
-	return n;
+        return n;
 
       if (unw_get_reg (&cursor, UNW_REG_IP, &ip) < 0)
-	return n;
+        return n;
       buffer[n++] = (void *) (uintptr_t) ip;
     }
   return n;
@@ -76,6 +76,6 @@ unw_backtrace (void **buffer, int size)
 }
 
 extern int backtrace (void **buffer, int size)
-  __attribute__((weak, alias("unw_backtrace")));
+  WEAK ALIAS(unw_backtrace);
 
 #endif /* !UNW_REMOTE_ONLY */

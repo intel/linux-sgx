@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
-IPPAPI(IppStatus, l9_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, y8_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
+IPPAPI(IppStatus, l9_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
+IPPAPI(IppStatus, k0_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsGFpElementInit( pA, lenA, pR, pGFp );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsGFpElementInit( pA, lenA, pR, pGFp );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
-IPPAPI(IppStatus, h9_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, p8_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
+IPPAPI(IppStatus, h9_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsGFpElementInit( pA, lenA, pR, pGFp );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsGFpElementInit( pA, lenA, pR, pGFp );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

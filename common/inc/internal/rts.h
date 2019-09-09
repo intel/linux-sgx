@@ -78,11 +78,14 @@ typedef struct _system_features
     uint64_t system_feature_set[1];
     uint32_t cpuinfo_table[8][4];
     uint8_t* sealed_key;
+    uint64_t size;
+    uint64_t cpu_features_ext;
 }system_features_t;
 
 // current system_feature_set only contains one element of type uint64_t, the highest
 // bit is bit 63
 #define SYS_FEATURE_MSb     63
+#define SYS_FEATURE_EXTEND  62
 
 #define OCALL_FLAG        0x4F434944
 

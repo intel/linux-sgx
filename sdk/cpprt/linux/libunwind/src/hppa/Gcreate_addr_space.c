@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -27,14 +27,21 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "unwind_i.h"
 
-PROTECTED unw_addr_space_t
+unw_addr_space_t
 unw_create_addr_space (unw_accessors_t *a, int byte_order)
 {
 #ifdef UNW_LOCAL_ONLY
   return NULL;
 #else
-  unw_addr_space_t as = malloc (sizeof (*as));
+  unw_addr_space_t as;
 
+  /*
+   * hppa supports only big-endian.
+   */
+  if (byte_order != 0 && byte_order != __BIG_ENDIAN)
+    return NULL;
+
+  as = malloc (sizeof (*as));
   if (!as)
     return NULL;
 
@@ -42,11 +49,6 @@ unw_create_addr_space (unw_accessors_t *a, int byte_order)
 
   as->acc = *a;
 
-  /*
-   * hppa supports only big-endian.
-   */
-  if (byte_order != 0 && byte_order != __BIG_ENDIAN)
-    return NULL;
   return as;
 #endif
 }

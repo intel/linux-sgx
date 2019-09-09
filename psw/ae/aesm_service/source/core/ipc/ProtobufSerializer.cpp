@@ -56,6 +56,8 @@
 
 #include <AEReportAttestationRequest.h>
 
+#include <AECheckUpdateStatusRequest.h>
+
 #include <AEGetWhiteListSizeRequest.h>
 
 #include <AEGetWhiteListRequest.h>
@@ -71,6 +73,8 @@
 #include <AEGetQuoteSizeExRequest.h>
 
 #include <AEGetQuoteExRequest.h>
+
+#include <AESelectAttKeyIDRequest.h>
 
 
 IAERequest* ProtobufSerializer::inflateRequest(AEMessage* message) {
@@ -101,6 +105,8 @@ IAERequest* ProtobufSerializer::inflateRequest(AEMessage* message) {
         request = new AEGetPsCapRequest(reqMsg->getpscapreq());
     else if (reqMsg->has_reporterrreq() == true)
         request = new AEReportAttestationRequest(reqMsg->reporterrreq());
+    else if (reqMsg->has_checkupdatestatusreq() == true)
+        request = new AECheckUpdateStatusRequest(reqMsg->checkupdatestatusreq());
     else if(reqMsg->has_getwhitelistsizereq() == true)
         request = new AEGetWhiteListSizeRequest(reqMsg->getwhitelistsizereq());
     else if(reqMsg->has_getwhitelistreq() == true)
@@ -117,6 +123,8 @@ IAERequest* ProtobufSerializer::inflateRequest(AEMessage* message) {
         request = new AEGetQuoteSizeExRequest(reqMsg->getquotesizeexreq());
     else if(reqMsg->has_getquoteexreq() == true)
         request = new AEGetQuoteExRequest(reqMsg->getquoteexreq());
+    else if(reqMsg->has_selectattkeyidreq() == true)
+        request = new AESelectAttKeyIDRequest(reqMsg->selectattkeyidreq());
 
     delete reqMsg;
     return request;

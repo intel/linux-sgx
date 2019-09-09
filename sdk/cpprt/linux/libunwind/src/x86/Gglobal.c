@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2003, 2005 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -26,12 +26,12 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "unwind_i.h"
 #include "dwarf_i.h"
 
-HIDDEN pthread_mutex_t x86_lock = PTHREAD_MUTEX_INITIALIZER;
-HIDDEN int tdep_needs_initialization = 1;
+HIDDEN define_lock (x86_lock);
+HIDDEN int tdep_init_done;
 
 /* See comments for svr4_dbx_register_map[] in gcc/config/i386/i386.c.  */
 
-HIDDEN uint8_t dwarf_to_unw_regnum_map[19] =
+HIDDEN const uint8_t dwarf_to_unw_regnum_map[19] =
   {
     UNW_X86_EAX, UNW_X86_ECX, UNW_X86_EDX, UNW_X86_EBX,
     UNW_X86_ESP, UNW_X86_EBP, UNW_X86_ESI, UNW_X86_EDI,
@@ -45,13 +45,11 @@ tdep_init (void)
 {
   intrmask_t saved_mask;
 
-#if (!HAVE_SGX)
   sigfillset (&unwi_full_mask);
-#endif
 
   lock_acquire (&x86_lock, saved_mask);
   {
-    if (!tdep_needs_initialization)
+    if (tdep_init_done)
       /* another thread else beat us to it... */
       goto out;
 
@@ -62,7 +60,7 @@ tdep_init (void)
 #ifndef UNW_REMOTE_ONLY
     x86_local_addr_space_init ();
 #endif
-    tdep_needs_initialization = 0;	/* signal that we're initialized... */
+    tdep_init_done = 1; /* signal that we're initialized... */
   }
  out:
   lock_release (&x86_lock, saved_mask);

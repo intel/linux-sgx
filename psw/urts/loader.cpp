@@ -43,6 +43,7 @@
 #include "se_vendor.h"
 #include "se_detect.h"
 #include "binparser.h"
+#include "metadata.h"
 #include <assert.h>
 #include <vector>
 #include <tuple>
@@ -50,6 +51,32 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <sys/mman.h>
+
+const char * layout_id_str[] = {
+    "Undefined",
+    "HEAP_MIN",
+    "HEAP_INIT",
+    "HEAP_MAX",
+    "TCS",
+    "TD",
+    "SSA",
+    "STACK_MAX",
+    "STACK_MIN",
+    "THREAD_GROUP",
+    "GUARD",
+    "HEAP_DYN_MIN",
+    "HEAP_DYN_INIT",
+    "HEAP_DYN_MAX",
+    "TCS_DYN",
+    "TD_DYN",
+    "SSA_DYN",
+    "STACK_DYN_MAX",
+    "STACK_DYN_MIN",
+    "THREAD_GROUP_DYN",
+    "RSRV_MIN",
+    "RSRV_INIT",
+    "RSRV_MAX"
+};
 
 // enclave creator instance
 extern EnclaveCreator* g_enclave_creator;
@@ -346,11 +373,15 @@ int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
     memset(added_page, 0, SE_PAGE_SIZE);
     memset(&sinfo, 0, sizeof(sinfo));
     uint64_t rva = start_rva + layout->rva;
-    //uint64_t start_addr = (uint64_t)get_start_addr();
-
-
 
     assert(IS_PAGE_ALIGNED(rva));
+    se_trace(SE_TRACE_DEBUG, "\t%s\n", __FUNCTION__);
+    se_trace(SE_TRACE_DEBUG, "\tEntry Id     = %4u, %-16s, ", layout->id, layout_id_str[layout->id & ~(GROUP_FLAG)]);
+    se_trace(SE_TRACE_DEBUG, "Page Count = %5u, ", layout->page_count);
+    se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X, ", layout->attributes);
+    se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX, ", layout->si_flags);
+    se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX -> ", layout->rva);
+    se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX\n", rva);
 
     if (layout->attributes & PAGE_ATTR_EADD)
     {
@@ -428,6 +459,21 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
     int ret = SGX_ERROR_UNEXPECTED;
     for(layout_t *layout = layout_start; layout < layout_end; layout++)
     {
+        se_trace(SE_TRACE_DEBUG, "%s, step = 0x%016llX\n", __FUNCTION__, delta);
+        if (!IS_GROUP_ID(layout->entry.id)) {
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id]);
+            se_trace(SE_TRACE_DEBUG, "Page Count = %5u, ", layout->entry.page_count);
+            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X, ", layout->entry.attributes);
+            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX, ", layout->entry.si_flags);
+            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX + 0x%016llX\n", layout->entry.rva, delta);
+        }
+        else {
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id & ~(GROUP_FLAG)]);
+            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u, ", layout->group.entry_count);
+            se_trace(SE_TRACE_DEBUG, "Load Times = %u,    ", layout->group.load_times);
+            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout->group.load_step);
+        }
+
         if (!IS_GROUP_ID(layout->group.id))
         {
             if(SGX_SUCCESS != (ret = build_context(delta, &layout->entry)))
@@ -474,7 +520,8 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
     int ret = enclave_creator->create_enclave(&m_secs, &m_enclave_id, &m_start_addr, is_ae(&m_metadata->enclave_css));
     if(SGX_SUCCESS == ret)
     {
-        SE_TRACE(SE_TRACE_NOTICE, "enclave start address = %p, size = 0x%llx\n", m_start_addr, m_metadata->enclave_size);
+        SE_TRACE(SE_TRACE_NOTICE, "Enclave start addr. = %p, Size = 0x%llx, %llu KB\n", 
+                 m_start_addr, m_metadata->enclave_size, m_metadata->enclave_size/1024);
     }
 	// m_secs.mr_enclave value is not set previously
     if(memcpy_s(&m_secs.mr_enclave, sizeof(sgx_measurement_t), &m_metadata->enclave_css.body.enclave_hash, sizeof(sgx_measurement_t)))
@@ -517,6 +564,8 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
     }
 
     // build heap/thread context
+    SE_TRACE_DEBUG("\n");
+    se_trace(SE_TRACE_DEBUG, "\tMetadata Version = 0x%016llX\n", m_metadata->version);
     if (SGX_SUCCESS != (ret = build_contexts(GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset), 
                                       GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size),
                                       0)))

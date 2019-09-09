@@ -54,8 +54,6 @@ LOWLIB_DIR := $(SIM_DIR)/assembly/linux/
 TLS_DIR    := $(SIM_DIR)/uinst/linux/
 # The source for trusted loader
 TLDR_DIR   := $(LINUX_SDK_DIR)/trts/linux/
-# Support for platform dependent 'setcontext'
-SC_DIR     := $(LINUX_SDK_DIR)/trts/linux/$(ARCH)/
 # The source for xsave/xrstor
 XSAVE_DIR     := $(COMMON_DIR)/src/linux/
 
@@ -91,12 +89,10 @@ TLDR_C_OBJS  := elf_parser.o  \
 
 TLDR_OBJS := $(TLDR_ASM_OBJS) $(TLDR_C_OBJS)
 
-SC_OBJ := setcontext.o
-
 LIBTRTS := libsgx_trts_sim.a
 
 vpath %.cpp $(TRTS_DIR):$(TINST_DIR)
-vpath %.S   $(LOWLIB_DIR):$(TLDR_DIR):$(SC_DIR):$(XSAVE_DIR)
+vpath %.S   $(LOWLIB_DIR):$(TLDR_DIR):$(XSAVE_DIR)
 vpath %.c   $(TLS_DIR):$(TLDR_DIR)
 
 # ------------------------------------------------------------
@@ -104,8 +100,8 @@ vpath %.c   $(TLS_DIR):$(TLDR_DIR)
 all: $(LIBTRTS) | $(BUILD_DIR)
 	$(CP) $< $|
 
-$(LIBTRTS): $(TRTS_OBJS) $(TINST_OBJS) $(LOWLIB_OBJS) $(TLS_OBJS) $(TLDR_OBJS) $(SC_OBJ) 
-	$(AR) rcsD $@ $(TRTS_OBJS) $(TINST_OBJS) $(LOWLIB_OBJS) $(TLS_OBJS) $(TLDR_OBJS) $(SC_OBJ)
+$(LIBTRTS): $(TRTS_OBJS) $(TINST_OBJS) $(LOWLIB_OBJS) $(TLS_OBJS) $(TLDR_OBJS) 
+	$(AR) rcsD $@ $(TRTS_OBJS) $(TINST_OBJS) $(LOWLIB_OBJS) $(TLS_OBJS) $(TLDR_OBJS)
 
 # ------------------------------------------------------------
 $(TRTS1_OBJS):    CPPFLAGS += -I$(COMMON_DIR)/inc/tlibc \
@@ -131,8 +127,6 @@ $(TLDR_C_OBJS):  CPPFLAGS += -I$(COMMON_DIR)/inc/internal/linux/ \
                              -I$(SIM_DIR)/assembly/
 
 $(TLDR_ASM_OBJS): ASFLAGS += -I$(SIM_DIR)/assembly/
-
-$(SC_OBJ):       ASFLAGS += -I$(LINUX_SDK_DIR)/cpprt/linux/libunwind/src/$(ARCH) -DISE=1
 
 $(BUILD_DIR):
 	$(MKDIR) $@

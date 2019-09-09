@@ -41,11 +41,11 @@ typedef struct
   size_t log_size;
   size_t used;
   size_t dtor_count;  /* Counts how many times our destructor has already
-			 been called. */
+                         been called. */
 } unw_trace_cache_t;
 
 static const unw_tdep_frame_t empty_frame = { 0, UNW_X86_64_FRAME_OTHER, -1, -1, 0, -1, -1 };
-static pthread_mutex_t trace_init_lock = PTHREAD_MUTEX_INITIALIZER;
+static define_lock (trace_init_lock);
 static pthread_once_t trace_cache_once = PTHREAD_ONCE_INIT;
 static sig_atomic_t trace_cache_once_happen;
 static pthread_key_t trace_cache_key;
@@ -63,7 +63,7 @@ trace_cache_free (void *arg)
     /* Not yet our turn to get destroyed. Re-install ourselves into the key. */
     pthread_setspecific(trace_cache_key, cache);
     Debug(5, "delayed freeing cache %p (%zx to go)\n", cache,
-	  PTHREAD_DESTRUCTOR_ITERATIONS - cache->dtor_count);
+          PTHREAD_DESTRUCTOR_ITERATIONS - cache->dtor_count);
     return;
   }
   tls_cache_destroyed = 1;
@@ -89,7 +89,7 @@ trace_cache_buckets (size_t n)
   size_t i;
 
   GET_MEMORY(frames, n * sizeof (unw_tdep_frame_t));
-  if (likely(frames != 0))
+  if (likely(frames != NULL))
     for (i = 0; i < n; ++i)
       frames[i] = empty_frame;
 
@@ -109,7 +109,7 @@ trace_cache_create (void)
     /* The current thread is in the process of exiting. Don't recreate
        cache, as we wouldn't have another chance to free it. */
     Debug(5, "refusing to reallocate cache: "
-	     "thread-locals are being deallocated\n");
+             "thread-locals are being deallocated\n");
     return NULL;
   }
 
@@ -162,7 +162,7 @@ trace_cache_get_unthreaded (void)
 {
   unw_trace_cache_t *cache;
   intrmask_t saved_mask;
-  static unw_trace_cache_t *global_cache = 0;
+  static unw_trace_cache_t *global_cache = NULL;
   lock_acquire (&trace_init_lock, saved_mask);
   if (! global_cache)
   {
@@ -180,7 +180,7 @@ static unw_trace_cache_t *
 trace_cache_get (void)
 {
   unw_trace_cache_t *cache;
-  if (likely (pthread_once != 0))
+  if (likely (pthread_once != NULL))
   {
     pthread_once(&trace_cache_once, &trace_cache_init_once);
     if (!trace_cache_once_happen)
@@ -212,11 +212,11 @@ trace_cache_get (void)
    highly unusual unwind info which uses these creatively. */
 static unw_tdep_frame_t *
 trace_init_addr (unw_tdep_frame_t *f,
-		 unw_cursor_t *cursor,
-		 unw_word_t cfa,
-		 unw_word_t rip,
-		 unw_word_t rbp,
-		 unw_word_t rsp)
+                 unw_cursor_t *cursor,
+                 unw_word_t cfa,
+                 unw_word_t rip,
+                 unw_word_t rbp,
+                 unw_word_t rsp)
 {
   struct cursor *c = (struct cursor *) cursor;
   struct dwarf_cursor *d = &c->dwarf;
@@ -258,9 +258,9 @@ trace_init_addr (unw_tdep_frame_t *f,
     f->last_frame = -1;
 
   Debug (3, "frame va %lx type %d last %d cfa %s+%d rbp @ cfa%+d rsp @ cfa%+d\n",
-	 f->virtual_address, f->frame_type, f->last_frame,
-	 f->cfa_reg_rsp ? "rsp" : "rbp", f->cfa_reg_offset,
-	 f->rbp_cfa_offset, f->rsp_cfa_offset);
+         f->virtual_address, f->frame_type, f->last_frame,
+         f->cfa_reg_rsp ? "rsp" : "rbp", f->cfa_reg_offset,
+         f->rbp_cfa_offset, f->rsp_cfa_offset);
 
   return f;
 }
@@ -271,11 +271,11 @@ trace_init_addr (unw_tdep_frame_t *f,
    frame cache slot which describes RIP. */
 static unw_tdep_frame_t *
 trace_lookup (unw_cursor_t *cursor,
-	      unw_trace_cache_t *cache,
-	      unw_word_t cfa,
-	      unw_word_t rip,
-	      unw_word_t rbp,
-	      unw_word_t rsp)
+              unw_trace_cache_t *cache,
+              unw_word_t cfa,
+              unw_word_t rip,
+              unw_word_t rbp,
+              unw_word_t rsp)
 {
   /* First look up for previously cached information using cache as
      linear probing hash table with probe step of 1.  Majority of
@@ -437,7 +437,7 @@ tdep_trace (unw_cursor_t *cursor, void **buffer, int *size)
   {
     rip -= d->use_prev_instr;
     Debug (2, "depth %d cfa 0x%lx rip 0x%lx rsp 0x%lx rbp 0x%lx\n",
-	   depth, cfa, rip, rsp, rbp);
+           depth, cfa, rip, rsp, rbp);
 
     /* See if we have this address cached.  If not, evaluate enough of
        the dwarf unwind information to fill the cache line data, or to
@@ -480,7 +480,7 @@ tdep_trace (unw_cursor_t *cursor, void **buffer, int *size)
       cfa = (f->cfa_reg_rsp ? rsp : rbp) + f->cfa_reg_offset;
       ACCESS_MEM_FAST(ret, c->validate, d, cfa - 8, rip);
       if (likely(ret >= 0) && likely(f->rbp_cfa_offset != -1))
-	ACCESS_MEM_FAST(ret, c->validate, d, cfa + f->rbp_cfa_offset, rbp);
+        ACCESS_MEM_FAST(ret, c->validate, d, cfa + f->rbp_cfa_offset, rbp);
 
       /* Don't bother reading RSP from DWARF, CFA becomes new RSP. */
       rsp = cfa;
@@ -506,16 +506,34 @@ tdep_trace (unw_cursor_t *cursor, void **buffer, int *size)
       d->use_prev_instr = 0;
       break;
 
+    case UNW_X86_64_FRAME_ALIGNED:
+      /* Address of RIP was pushed on the stack via a simple
+       * def_cfa_expr - result stack offset stored in cfa_reg_offset */
+      cfa = (f->cfa_reg_rsp ? rsp : rbp) + f->cfa_reg_offset;
+      ACCESS_MEM_FAST(ret, c->validate, d, cfa, cfa);
+      if (likely(ret >= 0))
+        ACCESS_MEM_FAST(ret, c->validate, d, cfa - 8, rip);
+      if (likely(ret >= 0))
+        ACCESS_MEM_FAST(ret, c->validate, d, rbp, rbp);
+
+      /* Don't bother reading RSP from DWARF, CFA becomes new RSP. */
+      rsp = cfa;
+
+      /* Next frame needs to back up for unwind info lookup. */
+      d->use_prev_instr = 1;
+
+      break;
+
     default:
       /* We cannot trace through this frame, give up and tell the
-	 caller we had to stop.  Data collected so far may still be
-	 useful to the caller, so let it know how far we got.  */
+         caller we had to stop.  Data collected so far may still be
+         useful to the caller, so let it know how far we got.  */
       ret = -UNW_ESTOPUNWIND;
       break;
     }
 
     Debug (4, "new cfa 0x%lx rip 0x%lx rsp 0x%lx rbp 0x%lx\n",
-	   cfa, rip, rsp, rbp);
+           cfa, rip, rsp, rbp);
 
     /* If we failed or ended up somewhere bogus, stop. */
     if (unlikely(ret < 0 || rip < 0x4000))

@@ -184,7 +184,7 @@ EOF
 
 chmod +x $PSW_DST_PATH/uninstall.sh
 
-$AESM_PATH/cse_provision_tool || true
+$AESM_PATH/cse_provision_tool 2> /dev/null || true
 rm $AESM_PATH/cse_provision_tool
 
 cat > $AESM_PATH/linksgx.sh <<EOF

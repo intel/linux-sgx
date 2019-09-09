@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2002, 2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -27,7 +27,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 HIDDEN void
 unwi_put_dynamic_unwind_info (unw_addr_space_t as, unw_proc_info_t *pi,
-			      void *arg)
+                              void *arg)
 {
   switch (pi->format)
     {
@@ -37,7 +37,7 @@ unwi_put_dynamic_unwind_info (unw_addr_space_t as, unw_proc_info_t *pi,
       unwi_dyn_remote_put_unwind_info (as, pi, arg);
 # else
       if (as != unw_local_addr_space)
-	unwi_dyn_remote_put_unwind_info (as, pi, arg);
+        unwi_dyn_remote_put_unwind_info (as, pi, arg);
 # endif
 #endif
       break;

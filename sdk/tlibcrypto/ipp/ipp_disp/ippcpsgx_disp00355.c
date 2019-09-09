@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPGet,(IppsBigNumState* pPrime, IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pGX,IppsBigNumState* pGY,IppsBigNumState* pOrder, int* cofactor, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPGet,(IppsBigNumState* pPrime, IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pGX,IppsBigNumState* pGY,IppsBigNumState* pOrder, int* cofactor, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPBindGxyTblStd521r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, l9_ippsECCPBindGxyTblStd521r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, k0_ippsECCPBindGxyTblStd521r1,(IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGet,(IppsBigNumState* pPrime, IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pGX,IppsBigNumState* pGY,IppsBigNumState* pOrder, int* cofactor, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPBindGxyTblStd521r1,(IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsECCPGet( pPrime, pA, pB, pGX, pGY, pOrder, cofactor, pEC );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsECCPBindGxyTblStd521r1( pEC );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsECCPGet( pPrime, pA, pB, pGX, pGY, pOrder, cofactor, pEC );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsECCPBindGxyTblStd521r1( pEC );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsECCPBindGxyTblStd521r1( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPGet,(IppsBigNumState* pPrime, IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pGX,IppsBigNumState* pGY,IppsBigNumState* pOrder, int* cofactor, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPGet,(IppsBigNumState* pPrime, IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pGX,IppsBigNumState* pGY,IppsBigNumState* pOrder, int* cofactor, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPBindGxyTblStd521r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, h9_ippsECCPBindGxyTblStd521r1,(IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGet,(IppsBigNumState* pPrime, IppsBigNumState* pA, IppsBigNumState* pB, IppsBigNumState* pGX,IppsBigNumState* pGY,IppsBigNumState* pOrder, int* cofactor, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPBindGxyTblStd521r1,(IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsECCPGet( pPrime, pA, pB, pGX, pGY, pOrder, cofactor, pEC );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsECCPBindGxyTblStd521r1( pEC );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsECCPGet( pPrime, pA, pB, pGX, pGY, pOrder, cofactor, pEC );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsECCPBindGxyTblStd521r1( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

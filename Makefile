@@ -29,6 +29,9 @@
 #
 #
 
+DCAP_VER?= 1.2
+DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
+
 include buildenv.mk
 .PHONY: all dcap_source psw sdk clean rebuild sdk_install_pkg psw_install_pkg
 .NOTPARALLEL: dcap_source sdk psw
@@ -36,7 +39,15 @@ include buildenv.mk
 all: dcap_source sdk psw
 
 dcap_source:
+ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update --init --recursive
+else
+	curl --output dcap_source.tar.gz -L --tlsv1 ${DCAP_DOWNLOAD_BASE}/DCAP_${DCAP_VER}.tar.gz
+	tar xvzf dcap_source.tar.gz
+	$(RM) dcap_source.tar.gz
+	$(RM) -rf external/dcap_source
+	mv SGXDataCenterAttestationPrimitives-DCAP_${DCAP_VER} external/dcap_source
+endif
 
 psw: dcap_source sdk
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
@@ -64,6 +75,19 @@ deb_pkg: deb_sgx_urts_pkg deb_sgx_enclave_common_pkg deb_sgx_enclave_common_dev_
 	@$(RM) -f ./linux/installer/deb/*.deb ./linux/installer/deb/*.ddeb
 	cp `find ./linux/installer/deb/ -name "*.deb" -o -name "*.ddeb"` ./linux/installer/deb/
 
+rpm_sdk_pkg: sdk
+	./linux/installer/rpm/sdk/build.sh
+
+rpm_psw_pkg: psw
+	./linux/installer/rpm/psw/build.sh
+
+rpm_psw_dev_pkg:
+	./linux/installer/rpm/psw-dev/build.sh
+
+rpm_pkg: rpm_sdk_pkg rpm_psw_pkg rpm_psw_dev_pkg
+	@$(RM) -f ./linux/installer/rpm/*.rpm
+	cp `find ./linux/installer/rpm/ -name "*.rpm"` ./linux/installer/rpm/
+
 clean:
 	@$(MAKE) -C sdk/                                clean
 	@$(MAKE) -C psw/                                clean
@@ -82,6 +106,10 @@ clean:
 	@$(RM)   -r linux/installer/deb/libsgx-urts/libsgx-urts_*.deb
 	@$(RM)   -r linux/installer/deb/*.deb
 	@$(RM)   -r linux/installer/deb/*.ddeb
+	@$(RM)   -r linux/installer/rpm/sdk/sgxsdk*.rpm
+	@$(RM)   -r linux/installer/rpm/psw/sgxpsw*.rpm
+	@$(RM)   -r linux/installer/rpm/psw-dev/sgxpsw-dev*.rpm
+	@$(RM)   -r linux/installer/rpm/*.rpm
 	@$(RM)   -rf linux/installer/common/psw/output
 	@$(RM)   -rf linux/installer/common/psw/gen_source.py
 	@$(RM)   -rf linux/installer/common/libsgx-enclave-common/output

@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003 Hewlett-Packard Co
-	Contributed by ...
+        Contributed by ...
 
 This file is part of libunwind.
 
@@ -30,14 +30,14 @@ common_init (struct cursor *c, unsigned use_prev_instr)
 {
   int ret;
 
-  c->ip_loc = HPPA_REG_LOC (c, UNW_HPPA_IP);
-  c->sp_loc = HPPA_REG_LOC (c, UNW_HPPA_SP);
+  c->dwarf.loc[UNW_HPPA_IP] = DWARF_REG_LOC (&c->dwarf, UNW_HPPA_IP);
+  c->dwarf.loc[UNW_HPPA_SP] = DWARF_REG_LOC (&c->dwarf, UNW_HPPA_SP);
 
-  ret = hppa_get (c, c->ip_loc, &c->ip);
+  ret = dwarf_get (&c->dwarf, c->dwarf.loc[UNW_HPPA_IP], &c->dwarf.ip);
   if (ret < 0)
     return ret;
 
-  ret = hppa_get (c, HPPA_REG_LOC (c, UNW_HPPA_SP), &c->sp);
+  ret = dwarf_get (&c->dwarf, c->dwarf.loc[UNW_HPPA_SP], &c->dwarf.cfa);
   if (ret < 0)
     return ret;
 

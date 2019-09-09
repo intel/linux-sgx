@@ -18,10 +18,10 @@ typedef enum _http_methods_t
 	POST,
 } http_methods_t;
 
-struct INetworkService : public IService
+struct INetworkService : virtual public IService
 {
     // The value should be the same as the major version in manifest.json
-    enum {VERSION = 1};
+    enum {VERSION = 2};
     virtual ~INetworkService() = default;
 
     virtual ae_error_t aesm_send_recv_msg(

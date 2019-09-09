@@ -23,14 +23,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "_UCD_internal.h"
 
-PROTECTED unw_accessors_t _UCD_accessors =
+unw_accessors_t _UCD_accessors =
   {
-    .find_proc_info		= _UCD_find_proc_info,
-    .put_unwind_info		= _UCD_put_unwind_info,
-    .get_dyn_info_list_addr	= _UCD_get_dyn_info_list_addr,
-    .access_mem			= _UCD_access_mem,
-    .access_reg			= _UCD_access_reg,
-    .access_fpreg		= _UCD_access_fpreg,
-    .resume			= _UCD_resume,
-    .get_proc_name		= _UCD_get_proc_name
+    .find_proc_info             = _UCD_find_proc_info,
+    .put_unwind_info            = _UCD_put_unwind_info,
+    .get_dyn_info_list_addr     = _UCD_get_dyn_info_list_addr,
+    .access_mem                 = _UCD_access_mem,
+    .access_reg                 = _UCD_access_reg,
+    .access_fpreg               = _UCD_access_fpreg,
+    .resume                     = _UCD_resume,
+    .get_proc_name              = _UCD_get_proc_name
   };

@@ -46,13 +46,16 @@ my-dir = $(realpath $(call parent-dir,$(lastword $(MAKEFILE_LIST))))
 
 
 ROOT_DIR              := $(call my-dir)
+ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
+  $(error main directory cannot contain spaces nor colons)
+endif
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
 LINUX_PSW_DIR         := $(ROOT_DIR)/psw
 LINUX_SDK_DIR         := $(ROOT_DIR)/sdk
 LINUX_UNITTESTS       := $(ROOT_DIR)/unittests
 DCAP_DIR              := $(LINUX_EXTERNAL_DIR)/dcap_source
-
+LIBUNWIND_DIR         := $(ROOT_DIR)/sdk/cpprt/linux/libunwind
 
 CP    := /bin/cp -f
 MKDIR := mkdir -p
@@ -61,6 +64,7 @@ OBJCOPY := objcopy
 NIPX := .nipx
 NIPD := .nipd
 NIPRODT := .niprod
+CC ?= gcc
 
 # clean the content of 'INCLUDE' - this variable will be set by vcvars32.bat
 # thus it will cause build error when this variable is used by our Makefile,
@@ -76,6 +80,12 @@ ifeq ($(CC_BELOW_4_9), 1)
     COMMON_FLAGS += -fstack-protector
 else
     COMMON_FLAGS += -fstack-protector-strong
+endif
+
+# turn on cet
+CC_GREAT_EQUAL_8 := $(shell expr "`$(CC) -dumpversion`" \>= "8")
+ifeq ($(CC_GREAT_EQUAL_8), 1)
+    COMMON_FLAGS += -fcf-protection
 endif
 
 ifdef DEBUG
@@ -171,6 +181,9 @@ COMMON_LDFLAGS := -Wl,-z,relro,-z,now,-z,noexecstack
 # will hide all symbols from dynamic symbol table even if they are marked
 # as `global' in the LD version script.
 ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie
+ifeq ($(CC_GREAT_EQUAL_8), 1)
+    ENCLAVE_CFLAGS += -fcf-protection
+endif
 ENCLAVE_CXXFLAGS = $(ENCLAVE_CFLAGS) -nostdinc++
 ENCLAVE_LDFLAGS  = $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \

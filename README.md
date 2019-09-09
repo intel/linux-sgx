@@ -1,4 +1,5 @@
 
+
 Intel(R) Software Guard Extensions for Linux\* OS
 ================================================
 
@@ -25,7 +26,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 Documentation
 -------------
 - [Intel(R) SGX for Linux\* OS](https://01.org/intel-softwareguard-extensions) project home page on [01.org](https://01.org)
-- [Intel(R) SGX Programming Reference](https://software.intel.com/sites/default/files/managed/48/88/329298-002.pdf)
+- [Intel(R) SGX Programming Reference](https://software.intel.com/sites/default/files/managed/7c/f1/332831-sdm-vol-3d.pdf)
 
 Build and Install the Intel(R) SGX Driver
 -----------------------------------------
@@ -40,6 +41,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -53,7 +55,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml ocaml-ocamlbuild wget python openssl-devel
@@ -73,7 +75,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6, CentOS 7.5 and Fedora 27:
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake
   ```
@@ -147,7 +149,7 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make deb_pkg DEBUG=1
   ```
-- On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+- On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
 - On Fedora 27:
 - On SUSE Linux Enterprise Server 12:
   ```
@@ -175,6 +177,7 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -183,7 +186,7 @@ Install the Intel(R) SGX SDK
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python 
@@ -240,6 +243,7 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -252,46 +256,13 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6, CentOS 7.5 and Fedora 27:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
   * On SUSE Linux Enterprise Server 12:  
   ```
     $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
-  ```
-- `iclsClient` and `JHI` are optional prerequisite components and are needed if you need to use Intel(R) SGX Platform Service. To install these components:  
-  Ensure `mei_me` driver is enabled and `/dev/mei0` exists.  
-  Get `iclsClient` via sgx_program@intel.com and install it using the following commands:  
-  * On Ubuntu 16.04 and Ubuntu 18.04:
-  ```
-    $ sudo apt-get install alien
-    $ sudo alien --scripts iclsClient-1.45.449.12-1.x86_64.rpm
-    $ sudo dpkg -i iclsclient_1.45.449.12-2_amd64.deb
-  ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
-  ```
-    $ sudo yum install iclsClient-1.45.449.12-1.x86_64.rpm
-  ```
-  * On SUSE Linux Enterprise Server 12:  
-  ```
-    $ sudo zypper install iclsClient-1.45.449.12-1.x86_64.rpm
-  ```
-  Download source code from [dynamic-application-loader-host-interface](https://github.com/01org/dynamic-application-loader-host-interface) project. In the source code folder, build and install the `JHI` service using the following commands:
-  * On Ubuntu 16.04 and Ubuntu 18.04:
-  ```
-    $ sudo apt-get install uuid-dev libxml2-dev cmake pkg-config libsystemd-dev
-    $ cmake .;make;sudo make install;sudo systemctl enable jhi
-  ```
-  * On Red Hat Enterprise Linux 7.4, CentOS 7.5 and Fedora 27:  
-  ```
-    $ sudo yum install libuuid-devel libxml2-devel cmake pkgconfig systemd-devel
-    $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
-  ```
-  * On SUSE Linux Enterprise Server 12:  
-  ```
-    $ sudo zypper install libuuid-devel libxml2-devel cmake pkg-config systemd-devel
-    $ cmake .;make;sudo make install;sudo ldconfig;sudo systemctl enable jhi
   ```
 
 ### Install the Intel(R) SGX PSW
@@ -306,7 +277,7 @@ To install the Intel(R) SGX PSW, invoke the installer with root privilege:
   $ cd linux/installer/deb
   $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb
   ```
-- On Red Hat Enterprise Linux 7.4 and CentOS 7.5:
+- On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
 - On Fedora 27:
 - On SUSE Linux Enterprise Server 12:
   ```
@@ -318,9 +289,16 @@ To enable ECDSA attestation
 - Ensure that you have the following required hardware:
   * 8th Generation Intel(R) Core(TM) Processor or newer with **Flexible Launch Control** support*
   * Intel(R) Atom(TM) Processor with **Flexible Launch Control** support*
-- Ensure the PCS caching service is setup correctly by local administrator or data center administrator. Also make sure that if the PCS server is not on local machine, the configure file (/etc/sgx_default_qcnl.conf) needs to be consistent with the real environment, for example: 
+- To use ECDSA attestation, you must install Intel(R) Software Guard Extensions Driver for Data Center Attestation Primitives (Intel(R) SGX DCAP). Please follow the [Intel® SGX DCAP Installation Guide for Linux* OS](https://download.01.org/intel-sgx/latest/dcap-latest/linux/docs/Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf), section “Intel® SGX Driver”, to install the Intel(R) SGX DCAP driver.  
+**NOTE**: If you have already installed Intel(R) SGX driver without ECDSA attestation, please uninstall the driver firstly. Otherwise the newly installed ECDSA attestation enabled Intel(R) SGX driver will be unworkable.
+
+- Install PCK Caching Service. For how to install and configure PCK Caching
+Service, please refer to [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration/pccs)
+- Ensure the PCK Caching Service is setup correctly by local administrator
+or data center administrator. Also make sure that the configure file of 
+quote provider library (/etc/sgx_default_qcnl.conf) needs to be consistent
+with the real environment, for example:
 PCS_URL=https://your_pcs_server:8081/sgx/certification/v1/
-- For how to install and configure PCK Caching Service, please go to https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration
 
 ### Start or Stop aesmd Service
 The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.  

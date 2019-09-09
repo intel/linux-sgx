@@ -56,7 +56,7 @@ get_pid_by_tid(int tid)
   size_t len, len1;
   char *buf;
   struct kinfo_proc *kv;
-  int i, pid;
+  unsigned i, pid;
 
   len = 0;
   mib[0] = CTL_KERN;
@@ -88,9 +88,9 @@ get_pid_by_tid(int tid)
   return (pid);
 }
 
-PROTECTED int
+int
 tdep_get_elf_image (struct elf_image *ei, pid_t pid, unw_word_t ip,
-		    unsigned long *segbase, unsigned long *mapoff, char *path, size_t pathlen)
+                    unsigned long *segbase, unsigned long *mapoff, char *path, size_t pathlen)
 {
   int mib[4], error, ret;
   size_t len, len1;
@@ -110,7 +110,7 @@ tdep_get_elf_image (struct elf_image *ei, pid_t pid, unw_word_t ip,
       if (mib[3] != -1)
         error = sysctl(mib, 4, NULL, &len, NULL, 0);
       if (error == -1)
-	return (-UNW_EUNSPEC);
+        return (-UNW_EUNSPEC);
     } else
       return (-UNW_EUNSPEC);
   }
@@ -143,3 +143,24 @@ tdep_get_elf_image (struct elf_image *ei, pid_t pid, unw_word_t ip,
   free_mem(buf, len1);
   return (ret);
 }
+
+#ifndef UNW_REMOTE_ONLY
+
+void
+tdep_get_exe_image_path (char *path)
+{
+  int mib[4], error;
+  size_t len;
+
+  len = 0;
+  mib[0] = CTL_KERN;
+  mib[1] = KERN_PROC;
+  mib[2] = KERN_PROC_PATHNAME;
+  mib[3] = getpid();
+
+  error = sysctl(mib, 4, path, &len, NULL, 0);
+  if (error == -1)
+	  path[0] = 0;
+}
+
+#endif

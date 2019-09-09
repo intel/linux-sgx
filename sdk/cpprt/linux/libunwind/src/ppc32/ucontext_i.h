@@ -26,6 +26,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #ifndef ucontext_i_h
 #define ucontext_i_h
 
+#include "compiler.h"
 #include <ucontext.h>
 
 /* These values were derived by reading
@@ -33,18 +34,17 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
    /usr/src/linux-2.6.18-1.8/arch/powerpc/kernel/ppc32.h
 */
 
-//#define NIP_IDX		32
-#define CTR_IDX		32
-#define XER_IDX		33
-#define CCR_IDX		34
-#define MSR_IDX		35
-//#define MQ_IDX		36
-#define LINK_IDX	36
+//#define NIP_IDX               32
+#define CTR_IDX         32
+#define XER_IDX         33
+#define CCR_IDX         34
+#define MSR_IDX         35
+//#define MQ_IDX                36
+#define LINK_IDX        36
 
 /* These are dummy structures used only for obtaining the offsets of the
    various structure members. */
-static ucontext_t dmy_ctxt;
-static vrregset_t dmy_vrregset;
+static ucontext_t dmy_ctxt UNUSED;
 
 #define UC_MCONTEXT_GREGS_R0 ((void *)&dmy_ctxt.uc_mcontext.uc_regs->gregs[0] - (void *)&dmy_ctxt)
 #define UC_MCONTEXT_GREGS_R1 ((void *)&dmy_ctxt.uc_mcontext.uc_regs->gregs[1] - (void *)&dmy_ctxt)

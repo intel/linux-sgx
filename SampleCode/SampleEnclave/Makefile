@@ -154,7 +154,7 @@ Enclave_Link_Flags := $(Enclave_Security_Link_Flags) \
 	-Wl,--defsym,__ImageBase=0 -Wl,--gc-sections   \
 	-Wl,--version-script=Enclave/Enclave.lds
 
-Enclave_Cpp_Objects := $(Enclave_Cpp_Files:.cpp=.o)
+Enclave_Cpp_Objects := $(sort $(Enclave_Cpp_Files:.cpp=.o))
 
 Enclave_Name := enclave.so
 Signed_Enclave_Name := enclave.signed.so

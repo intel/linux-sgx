@@ -69,11 +69,16 @@ int ra_network_send_receive(const char *server_url,
     case TYPE_RA_MSG0:
         ret = sp_ra_proc_msg0_req((const sample_ra_msg0_t*)((size_t)p_req
             + sizeof(ra_samp_request_header_t)),
-            p_req->size);
+            p_req->size,
+            &p_resp_msg);
         if (0 != ret)
         {
             fprintf(stderr, "\nError, call sp_ra_proc_msg1_req fail [%s].",
                 __FUNCTION__);
+        }
+        else
+        {
+            *p_resp = p_resp_msg;
         }
         break;
 

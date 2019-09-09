@@ -30,6 +30,8 @@
 #
 #
 
+# -*- coding: iso-8859-15 -*-
+
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -54,7 +56,7 @@ def GetLoadSymbolCommand(EnclaveFile, Base):
         # their offsets and add the Proj base address.
         for line in FileList:
             list = line.split();
-            if(len(list) > 0):
+            if(len(list) > 1):
                 SegOffset = -1;
                 # The readelf will put a space after the open bracket for single
                 # digit section numbers.  This causes the line.split to create

@@ -34,7 +34,8 @@ include $(TOP_DIR)/buildenv.mk
 
 CPPMICROSERVICES_DIR := $(LINUX_EXTERNAL_DIR)/CppMicroServices
 CPPMICROSERVICES_INSTALL := $(CPPMICROSERVICES_DIR)/local-install
-AESM_CONFIG := -DBUILD_SHARED_LIBS=ON -DUS_BUILD_SHARED_LIBS=ON -DMODE=$(MODE)
+AESM_CONFIG := -DBUILD_SHARED_LIBS=ON -DUS_BUILD_SHARED_LIBS=ON
+CPPMICROSERVICES_CONFIG := -DCMAKE_INSTALL_PREFIX=$(CPPMICROSERVICES_INSTALL) -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_FLAGS= -DCMAKE_CXX_FLAGS=
 ifdef DEBUG
     AESM_CONFIG += -DCMAKE_BUILD_TYPE=Debug
 else
@@ -44,6 +45,7 @@ endif
 ifeq ($(BUILD_REF_LE), 1)
      AESM_CONFIG += -DREF_LE=ON
 endif
+AESM_CONFIG += -DAESM_ECDSA_BUNDLE=ON
 
 ifeq ($(ARCH), x86)
 	SQLITECFLAGS += -m32
@@ -62,7 +64,7 @@ CFLAGS := $(filter-out -Werror, $(CFLAGS))
 
 WHITE_LIST_FILE := $(LINUX_PSW_DIR)/ae/data/prebuilt/white_list_cert_to_be_verify.bin
 APPNAME         := source/build/bin/aesm_service
-CPPMICROSERVICES:= $(CPPMICROSERVICES_DIR)/build/lib/libCppMicroServicesd.so.4.0.0
+CPPMICROSERVICES:= $(CPPMICROSERVICES_DIR)/build/lib/libCppMicroServices.so.4.0.0
 RDRAND_LIBDIR :=$(LINUX_EXTERNAL_DIR)/rdrand/src
 RDRAND_MAKEFILE := $(RDRAND_LIBDIR)/Makefile
 
@@ -89,9 +91,9 @@ $(CPPMICROSERVICES):
 	mkdir -p $(CPPMICROSERVICES_DIR)/build
 ifeq ($(shell test $(CMAKE_VERSION) -lt 32 && echo 1), 1)
 	$(CPPMICROSERVICES_DIR)/install_cmake.sh
-	cd $(CPPMICROSERVICES_DIR)/build && $(CMAKE) -DCMAKE_COMMAND=$(CMAKE) -DCMAKE_INSTALL_PREFIX=$(CPPMICROSERVICES_INSTALL) ../ && $(MAKE) && $(MAKE) install
+	cd $(CPPMICROSERVICES_DIR)/build && $(CMAKE) -DCMAKE_COMMAND=$(CMAKE) $(CPPMICROSERVICES_CONFIG) ../ && $(MAKE) && $(MAKE) install
 else
-	cd $(CPPMICROSERVICES_DIR)/build && cmake -DCMAKE_INSTALL_PREFIX=$(CPPMICROSERVICES_INSTALL) ../ && $(MAKE) && $(MAKE) install
+	cd $(CPPMICROSERVICES_DIR)/build && cmake $(CPPMICROSERVICES_CONFIG) ../ && $(MAKE) && $(MAKE) install
 endif
 
 source/build/CMakeCache.txt: $(CPPMICROSERVICES)
@@ -123,6 +125,10 @@ clean:
 	@$(RM) -r source/build
 	@$(RM) -r $(CPPMICROSERVICES_DIR)/build
 	@$(RM) -r $(CPPMICROSERVICES_INSTALL)
+	@$(RM) -r data
+ifeq ($(RDRAND_MAKEFILE), $(wildcard $(RDRAND_MAKEFILE)))
+	@$(MAKE) distclean -C $(RDRAND_LIBDIR)
+endif
 
 .PHONY: rebuild
 rebuild:

@@ -34,10 +34,10 @@
 
 /*
 ** SHA256-128 implementation:
-**    out-length := x ¨C number of bits to output
+**    out-length := number of bits to output
 **    prefix := SHA-256(out-length)
 **    digest := SHA-256(prefix || m)
-**    output := truncate(digest, out-length) ? always return first out-length bits
+**    output := truncate(digest, out-length), always return first out-length bits
 */
 sgx_status_t SGXAPI sgx_sha256_128_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha256_128_hash_t *p_hash)
 {

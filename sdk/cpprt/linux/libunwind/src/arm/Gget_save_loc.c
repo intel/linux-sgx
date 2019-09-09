@@ -24,13 +24,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "unwind_i.h"
 
-PROTECTED int
+int
 unw_get_save_loc (unw_cursor_t *cursor, int reg, unw_save_loc_t *sloc)
 {
   struct cursor *c = (struct cursor *) cursor;
   dwarf_loc_t loc;
 
-  loc = DWARF_NULL_LOC;		/* default to "not saved" */
+  loc = DWARF_NULL_LOC;         /* default to "not saved" */
 
   switch (reg)
     {

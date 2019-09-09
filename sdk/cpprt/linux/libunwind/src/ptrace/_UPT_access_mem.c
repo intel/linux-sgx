@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003-2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
    Copyright (C) 2010 Konstantin Belousov <kib@freebsd.org>
 
 This file is part of libunwind.
@@ -29,42 +29,80 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #if HAVE_DECL_PTRACE_POKEDATA || HAVE_TTRACE
 int
 _UPT_access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val,
-		 int write, void *arg)
+                 int write, void *arg)
 {
   struct UPT_info *ui = arg;
+  int    i, end;
+  unw_word_t tmp_val;
+
+  if (!ui)
+        return -UNW_EINVAL;
+
   pid_t pid = ui->pid;
 
-  errno = 0;
-  if (write)
-    {
-      Debug (16, "mem[%lx] <- %lx\n", (long) addr, (long) *val);
-#ifdef HAVE_TTRACE
-#	warning No support for ttrace() yet.
-#else
-      ptrace (PTRACE_POKEDATA, pid, addr, *val);
-      if (errno)
-	return -UNW_EINVAL;
-#endif
-    }
+  // Some 32-bit archs have to define a 64-bit unw_word_t.
+  // Callers of this function therefore expect a 64-bit
+  // return value, but ptrace only returns a 32-bit value
+  // in such cases.
+  if (sizeof(long) == 4 && sizeof(unw_word_t) == 8)
+    end = 2;
   else
+    end = 1;
+
+  for (i = 0; i < end; i++)
     {
-#ifdef HAVE_TTRACE
-#	warning No support for ttrace() yet.
+      unw_word_t tmp_addr = i == 0 ? addr : addr + 4;
+
+      errno = 0;
+      if (write)
+        {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+          tmp_val = i == 0 ? *val : *val >> 32;
 #else
-      *val = ptrace (PTRACE_PEEKDATA, pid, addr, 0);
-      if (errno)
-	return -UNW_EINVAL;
+          tmp_val = i == 0 && end == 2 ? *val >> 32 : *val;
 #endif
-      Debug (16, "mem[%lx] -> %lx\n", (long) addr, (long) *val);
+
+          Debug (16, "mem[%lx] <- %lx\n", (long) tmp_addr, (long) tmp_val);
+#ifdef HAVE_TTRACE
+#         warning No support for ttrace() yet.
+#else
+          ptrace (PTRACE_POKEDATA, pid, tmp_addr, tmp_val);
+          if (errno)
+            return -UNW_EINVAL;
+#endif
+        }
+      else
+        {
+#ifdef HAVE_TTRACE
+#         warning No support for ttrace() yet.
+#else
+          tmp_val = (unsigned long) ptrace (PTRACE_PEEKDATA, pid, tmp_addr, 0);
+
+          if (i == 0)
+              *val = 0;
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+          *val |= tmp_val << (i * 32);
+#else
+          *val |= i == 0 && end == 2 ? tmp_val << 32 : tmp_val;
+#endif
+
+          if (errno)
+            return -UNW_EINVAL;
+#endif
+          Debug (16, "mem[%lx] -> %lx\n", (long) tmp_addr, (long) tmp_val);
+        }
     }
   return 0;
 }
 #elif HAVE_DECL_PT_IO
 int
 _UPT_access_mem (unw_addr_space_t as, unw_word_t addr, unw_word_t *val,
-		 int write, void *arg)
+                 int write, void *arg)
 {
   struct UPT_info *ui = arg;
+  if (!ui)
+        return -UNW_EINVAL;
   pid_t pid = ui->pid;
   struct ptrace_io_desc iod;
 

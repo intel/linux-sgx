@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPInitStd384r1,(IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPInitStd384r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPInitStd224r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, l9_ippsECCPInitStd224r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, k0_ippsECCPInitStd224r1,(IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPInitStd384r1,(IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPInitStd224r1,(IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsECCPInitStd384r1( pEC );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsECCPInitStd224r1( pEC );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsECCPInitStd384r1( pEC );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsECCPInitStd224r1( pEC );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsECCPInitStd224r1( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPInitStd384r1,(IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPInitStd384r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPInitStd224r1,(IppsECCPState* pEC))
+IPPAPI(IppStatus, h9_ippsECCPInitStd224r1,(IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPInitStd384r1,(IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPInitStd224r1,(IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsECCPInitStd384r1( pEC );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsECCPInitStd224r1( pEC );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsECCPInitStd384r1( pEC );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsECCPInitStd224r1( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

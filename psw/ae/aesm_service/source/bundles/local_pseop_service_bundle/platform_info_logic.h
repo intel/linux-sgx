@@ -43,6 +43,10 @@ struct update_pse_thread_func_arg;
 class PlatformInfoLogic{
 public:
     static ae_error_t update_pse_thread_func(const platform_info_blob_wrapper_t* p_platform_info, uint32_t attestation_status);
+    static aesm_error_t check_update_status(
+        uint8_t* platform_info, uint32_t platform_info_size,
+        uint8_t* update_info, uint32_t update_info_size,
+        uint32_t config, uint32_t* status);
     static aesm_error_t report_attestation_status(
         uint8_t* platform_info, uint32_t platform_info_size,
         uint32_t attestation_status,
@@ -64,6 +68,7 @@ public:
     static bool cpu_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool qe_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool pce_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
+    static bool platform_configuration_needed(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool pse_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool psda_svn_out_of_date(const platform_info_blob_wrapper_t* p_platform_info_blob);
     static bool ps_collectively_not_uptodate(const platform_info_blob_wrapper_t* p_platform_info_blob);

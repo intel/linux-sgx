@@ -62,7 +62,7 @@ LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless
+components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless 
 
 # ---------------------------------------------------
 #  tstdc
@@ -148,7 +148,7 @@ tlibcxx: $(BUILD_DIR)
 
 # ---------------------------------------------------
 #  tservice
-#      includes: selib, tseal, tae_service, ec_dh_lib 
+#      includes: selib, tseal, tae_service, ec_dh_lib
 # ---------------------------------------------------
 .PHONY: tservice
 tservice: $(LIBTSE)
@@ -187,7 +187,7 @@ tcrypto:
 .PHONY: tkey_exchange
 tkey_exchange: edger8r
 	$(MAKE) -C tkey_exchange
-	
+
 .PHONY: tcmalloc
 tcmalloc:
 	$(MAKE) -C gperftools/
@@ -195,7 +195,7 @@ tcmalloc:
 .PHONY: tprotected_fs
 tprotected_fs: edger8r
 	$(MAKE) -C protected_fs/sgx_tprotected_fs
-	
+
 .PHONY: sgx_pcl
 sgx_pcl:
 	$(MAKE) -C protected_code_loader
@@ -284,7 +284,7 @@ clean:
 	$(MAKE) -C edger8r/linux                       clean
 	$(MAKE) -C protected_code_loader               clean
 	$(MAKE) -C encrypt_enclave                     clean
-	$(MAKE) -C switchless/                         clean	
+	$(MAKE) -C switchless/                         clean
 	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt
 

@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003-2004 Hewlett-Packard Co
-	Contributed by David Mosberger
+        Contributed by David Mosberger
 
 This file is part of libunwind.
 
@@ -26,7 +26,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "unwind_i.h"
 #include "offsets.h"
 
-PROTECTED int
+int
 unw_step (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
@@ -46,49 +46,48 @@ unw_step (unw_cursor_t *cursor)
   if (unlikely (ret < 0))
     {
       /* DWARF failed, let's see if we can follow the frame-chain
-	 or skip over the signal trampoline.  */
+         or skip over the signal trampoline.  */
 
       Debug (13, "dwarf_step() failed (ret=%d), trying fallback\n", ret);
 
       if (unw_is_signal_frame (cursor))
-	{
+        {
 #ifdef __linux__
-	  /* Assume that the trampoline is at the beginning of the
-	     sigframe.  */
-	  unw_word_t ip, sc_addr = c->dwarf.ip + LINUX_RT_SIGFRAME_UC_OFF;
-	  dwarf_loc_t iaoq_loc = DWARF_LOC (sc_addr + LINUX_SC_IAOQ_OFF, 0);
+          /* Assume that the trampoline is at the beginning of the
+             sigframe.  */
+          unw_word_t ip, sc_addr = c->dwarf.ip + LINUX_RT_SIGFRAME_UC_OFF;
+          dwarf_loc_t iaoq_loc = DWARF_LOC (sc_addr + LINUX_SC_IAOQ_OFF, 0);
 
-	  c->sigcontext_format = HPPA_SCF_LINUX_RT_SIGFRAME;
-	  c->sigcontext_addr = sc_addr;
-	  c->dwarf.ret_addr_column = UNW_HPPA_RP;
+          c->sigcontext_format = HPPA_SCF_LINUX_RT_SIGFRAME;
+          c->sigcontext_addr = sc_addr;
 
-	  if ((ret = dwarf_get (&c->dwarf, iaoq_loc, &ip)) , 0)
-	    {
-	      Debug (2, "failed to read IAOQ[1] (ret=%d)\n", ret);
-	      return ret;
-	    }
-	  c->dwarf.ip = ip & ~0x3;	/* mask out the privilege level */
+          if ((ret = dwarf_get (&c->dwarf, iaoq_loc, &ip)) < 0)
+            {
+              Debug (2, "failed to read IAOQ[1] (ret=%d)\n", ret);
+              return ret;
+            }
+          c->dwarf.ip = ip & ~0x3;      /* mask out the privilege level */
 
-	  for (i = 0; i < 32; ++i)
-	    {
-	      c->dwarf.loc[UNW_HPPA_GR + i]
-		= DWARF_LOC (sc_addr + LINUX_SC_GR_OFF + 4*i, 0);
-	      c->dwarf.loc[UNW_HPPA_FR + i]
-		= DWARF_LOC (sc_addr + LINUX_SC_FR_OFF + 4*i, 0);
-	    }
+          for (i = 0; i < 32; ++i)
+            {
+              c->dwarf.loc[UNW_HPPA_GR + i]
+                = DWARF_LOC (sc_addr + LINUX_SC_GR_OFF + 4*i, 0);
+              c->dwarf.loc[UNW_HPPA_FR + i]
+                = DWARF_LOC (sc_addr + LINUX_SC_FR_OFF + 4*i, 0);
+            }
 
-	  if ((ret = dwarf_get (&c->dwarf, c->dwarf.loc[UNW_HPPA_SP],
-				&c->dwarf.cfa)) < 0)
-	    {
-	      Debug (2, "failed to read SP (ret=%d)\n", ret);
-	      return ret;
-	    }
+          if ((ret = dwarf_get (&c->dwarf, c->dwarf.loc[UNW_HPPA_SP],
+                                &c->dwarf.cfa)) < 0)
+            {
+              Debug (2, "failed to read SP (ret=%d)\n", ret);
+              return ret;
+            }
 #else
 # error Implement me!
 #endif
-	}
+        }
       else
-	c->dwarf.ip = 0;
+        c->dwarf.ip = 0;
     }
   ret = (c->dwarf.ip == 0) ? 0 : 1;
   Debug (2, "returning %d\n", ret);

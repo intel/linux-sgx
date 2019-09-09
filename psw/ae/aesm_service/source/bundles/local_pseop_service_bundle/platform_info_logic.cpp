@@ -649,6 +649,343 @@ ae_error_t PlatformInfoLogic::update_pse_thread_func(const platform_info_blob_wr
 }
 
 
+// It'll give user flexibility to address the needed/pending EPID or PSE provisioning by input parameter-"config" (bit 1: trigger EPID provisioning, bit 2: trigger PSE provisioning/LTP),
+// And user can always learn "FW/SW update is available" or "EPID provisioning & PSE provisioning/LTP is or was needed/pending" from the output parameter - "update_status" & "update_info", no matter whether attestation succeed or not. 
+// The report_attestation_status will not return any indication of SGX TCB component should be updated if attestation_status input parameter is 0)
+
+#define CHECK_UPDATE_STATUS_NEED_UPDATE		0x1
+#define CHECK_UPDATE_STATUS_EPID_PROV		0x2
+#define CHECK_UPDATE_STATUS_CERT_PROV_LTP	0x4
+#define CHECK_UPDATE_STATUS_CONFIG_ALL		(CHECK_UPDATE_STATUS_EPID_PROV | CHECK_UPDATE_STATUS_CERT_PROV_LTP)
+
+aesm_error_t PlatformInfoLogic::check_update_status(
+    uint8_t* platform_info, uint32_t platform_info_size,
+    uint8_t* update_info, uint32_t update_info_size,
+    uint32_t config, uint32_t* status)
+{
+    AESM_DBG_TRACE("enter fun");
+    if (0 != (config & ~CHECK_UPDATE_STATUS_CONFIG_ALL)) { // any unsupported bits in config input
+        return AESM_CONFIG_UNSUPPORTED;
+    }
+
+    if ((NULL == platform_info && NULL != update_info) // can't determine update status w/o PIB
+        || (NULL == platform_info && 0 == config)) { // nothing to do without platform info
+        return AESM_PARAMETER_ERROR;
+    }
+
+    platform_info_blob_wrapper_t pibw;
+
+    //
+    // presence of platform info is conditional, on whether we're up to date
+    // if we're up to date, no platform info and no need for update info
+    //
+    if (((NULL != platform_info) && (sizeof(pibw.platform_info_blob) > platform_info_size)) || ((NULL != update_info) && (sizeof(sgx_update_info_bit_t) > update_info_size)))
+    {
+        return AESM_PARAMETER_ERROR;
+    }
+
+    aesm_error_t ret_status = AESM_SUCCESS;       // status only tells app to look at updateInfo
+
+    //
+    // we want to know what ias based its decision on; ie, some ltp blob
+    // so it's important that we take a snapshot of the ltp blob before
+    // we potentially trigger ltp and it's better, in general, to
+    // read it asap since other threads could be triggering ltp (our
+    // service locks help with this, but there's no harm in reading it
+    // early especially since it's conditional).
+    //
+    pairing_blob_t pairing_blob;
+    ae_error_t readLtpBlobStatus = AE_FAILURE;
+    //
+    // clear update_info memory and only need to read ltp blob (know what was reported to ias) if we have an update info structure to fill in
+    //
+    if (NULL != update_info) {
+        memset(update_info, 0x0, update_info_size);
+        readLtpBlobStatus = Helper::read_ltp_blob(pairing_blob);
+        if (AE_FAILED(readLtpBlobStatus))
+        {
+            AESM_DBG_ERROR("read_ltp_blob Return: (ae%d)", readLtpBlobStatus);
+        }
+    }
+
+    // should be okay for status to be null. if all user wants is to know about updates,
+    // then function should be capable of returning STATUS_UPDATE_AVAILABLE and filling in update_info even if update_status is null.
+    if (NULL != status)
+        *status = 0;
+
+    // check ltp bolb version
+    // if sigma 2.0 is supported, version is 1.1 and caller wants to trigger PSE provisioning/long-term pairing, trigger re-pairing
+    if (AE_SUCCESS == readLtpBlobStatus && (config & CHECK_UPDATE_STATUS_CERT_PROV_LTP))
+    {
+        if (!(Helper::ltpBlobSessionProp(pairing_blob)&SIGMA_VERSION_MASK)
+            && PSDAService::instance().is_sigma20_supported())
+        {
+            // trigger re-pairing
+            bool is_new_pairing = false;
+            if (NULL != status) {
+                *status |= CHECK_UPDATE_STATUS_CERT_PROV_LTP; // set if PSE provisioning/long-term pairing is or was needed/pending
+            }
+            ae_error_t ltpStatus = start_long_term_pairing_thread(is_new_pairing);
+            if (ltpStatus == AE_SUCCESS)
+            {
+                readLtpBlobStatus = Helper::read_ltp_blob(pairing_blob);
+                if (AE_FAILED(readLtpBlobStatus))
+                {
+                    AESM_DBG_ERROR("read_ltp_blob Return: (ae%d)", readLtpBlobStatus);
+                }
+            }
+            else
+                return AESM_LONG_TERM_PAIRING_FAILED;
+        }
+    }
+
+    if (NULL != platform_info) {
+        pibw.valid_info_blob = false;
+        memcpy_s(&pibw.platform_info_blob, sizeof(pibw.platform_info_blob), platform_info, platform_info_size);
+    }
+    //
+    // contents of input platform info can get stale, but not by virtue of anything we do
+    // (the latest/current versions can change)
+    // therefore, we'll use the same platform info the whole time
+    //
+    bool pibSigGood = (AE_SUCCESS == pib_verify_signature(pibw));
+    //
+    // invalid pib is an error whenever it's provided
+    //
+    if (!pibSigGood) {
+        AESM_DBG_ERROR("pib verify signature failed");
+        return AESM_PLATFORM_INFO_BLOB_INVALID_SIG;
+    }
+
+    if (!g_epid_service) {
+        AESM_DBG_ERROR("failed to get IEpidquoteService service");
+        return AESM_SERVICE_UNAVAILABLE;
+    }
+    uint32_t x_group_id;
+
+    if (AESM_SUCCESS != g_epid_service->get_extended_epid_group_id(&x_group_id)) {
+        AESM_DBG_ERROR("get_extended_epid_group_id failed");
+        return AESM_UNEXPECTED_ERROR;
+    }
+    if (pibw.platform_info_blob.xeid != x_group_id) {
+        return AESM_UNEXPECTED_ERROR;
+    }
+    uint32_t gid_mt_result = g_epid_service->is_gid_matching_result_in_epid_blob(pibw.platform_info_blob.gid);
+    if (IEpidQuoteService::GIDMT_UNMATCHED == gid_mt_result ||
+        IEpidQuoteService::GIDMT_UNEXPECTED_ERROR == gid_mt_result) {
+        return AESM_UNEXPECTED_ERROR;
+    }
+    else if (IEpidQuoteService::GIDMT_NOT_AVAILABLE == gid_mt_result) {
+        return AESM_EPIDBLOB_ERROR;
+    }
+
+    ae_error_t nepStatus = need_epid_provisioning(&pibw);
+    AESM_DBG_TRACE("need_epid_provisioning return (ae%d)", nepStatus);
+    switch (nepStatus)
+    {
+    case AESM_NEP_DONT_NEED_EPID_PROVISIONING:
+    {
+        break;
+    }
+    case AESM_NEP_DONT_NEED_UPDATE_PVEQE:       // sure thing
+    {
+        if (NULL != status) {
+            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
+        }
+        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
+            if (!g_epid_service) {
+                AESM_DBG_ERROR("failed to get IEpidquoteService service");
+                ret_status = AESM_SERVICE_UNAVAILABLE;
+                break;
+            }
+            bool perfRekey = false;
+            ret_status = g_epid_service->provision(perfRekey, THREAD_TIMEOUT);
+            if (AESM_BUSY == ret_status || //thread timeout
+                AESM_PROXY_SETTING_ASSIST == ret_status || //uae service need to set up proxy info and retry
+                AESM_UPDATE_AVAILABLE == ret_status || //PSW need be updated
+                AESM_UNRECOGNIZED_PLATFORM == ret_status || //Platform not recognized by Provisioning backend
+                AESM_OUT_OF_EPC == ret_status) // out of EPC
+            {
+                return ret_status;//We should return to uae serivce directly
+            }
+            if (AESM_SUCCESS != ret_status &&
+                AESM_OUT_OF_MEMORY_ERROR != ret_status &&
+                AESM_BACKEND_SERVER_BUSY != ret_status &&
+                AESM_NETWORK_ERROR != ret_status &&
+                AESM_NETWORK_BUSY_ERROR != ret_status)
+            {
+                ret_status = AESM_SGX_PROVISION_FAILED;
+            }
+        }
+        break;
+    }
+    case AESM_NEP_PERFORMANCE_REKEY:
+    {
+        if (NULL != status) {
+            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
+        }
+        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
+            bool perfRekey = true;
+            if (!g_epid_service) {
+                AESM_DBG_ERROR("failed to get IEpidquoteService service");
+                ret_status = AESM_SERVICE_UNAVAILABLE;
+                break;
+            }
+            ret_status = g_epid_service->provision(perfRekey, THREAD_TIMEOUT);
+            if (AESM_BUSY == ret_status ||//thread timeout
+                AESM_PROXY_SETTING_ASSIST == ret_status ||//uae service need to set up proxy info and retry
+                AESM_UPDATE_AVAILABLE == ret_status ||
+                AESM_UNRECOGNIZED_PLATFORM == ret_status ||
+                AESM_OUT_OF_EPC == ret_status)
+            {
+                return ret_status;//We should return to uae serivce directly
+            }
+            if (AESM_SUCCESS != ret_status &&
+                AESM_OUT_OF_MEMORY_ERROR != ret_status &&
+                AESM_BACKEND_SERVER_BUSY != ret_status &&
+                AESM_NETWORK_ERROR != ret_status &&
+                AESM_NETWORK_BUSY_ERROR != ret_status)
+            {
+                ret_status = AESM_SGX_PROVISION_FAILED;
+            }
+        }
+        break;
+    }
+    default:
+    {
+        ret_status = AESM_UNEXPECTED_ERROR;
+        break;
+    }
+    }
+
+    // don't worry about pairing unless indication that PS being used
+    if (ps_collectively_not_uptodate(&pibw) && pibw.platform_info_blob.xeid == x_group_id)//only update for default extended epid group
+    {
+        if (NULL != status) {
+            *status |= CHECK_UPDATE_STATUS_CERT_PROV_LTP; // ps_collectively_not_uptodate is true represents PSE provisioning/long-term pairing is needed
+        }
+        uint32_t attestation_status = config & CHECK_UPDATE_STATUS_CERT_PROV_LTP; // attestation_status is 1 if caller also wants to trigger PSE provisioning/long-term pairing
+        ae_error_t ae_ret = start_update_pse_thread(&pibw, attestation_status);
+        switch (ae_ret)
+        {
+        case AE_SUCCESS:
+            break;
+        case OAL_THREAD_TIMEOUT_ERROR:
+            return AESM_BUSY;
+        case PVE_PROV_ATTEST_KEY_NOT_FOUND:
+            return AESM_UNRECOGNIZED_PLATFORM;
+        case PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE:
+            return AESM_UPDATE_AVAILABLE;
+        case OAL_PROXY_SETTING_ASSIST:
+            // don't log an error here
+            return AESM_PROXY_SETTING_ASSIST;
+        case PSW_UPDATE_REQUIRED:
+            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_PSWVER]);
+            return AESM_UPDATE_AVAILABLE;
+        case AESM_AE_OUT_OF_EPC:
+            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);
+            return AESM_OUT_OF_EPC;
+        case AESM_PSDA_PLATFORM_KEYS_REVOKED:
+            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PLATFORM_REVOKED]);
+            return AESM_EPID_REVOKED_ERROR;
+        case AESM_LTP_SIMPLE_LTP_ERROR:
+        default:
+            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);
+            break;
+        }
+    }
+
+    if (NULL != update_info)
+    {
+        sgx_update_info_bit_t* p_update_info = (sgx_update_info_bit_t*)update_info;
+        memset(p_update_info, 0, sizeof(*p_update_info));
+
+        //
+        // here, we treat values that get reported live - cpusvn, qe.isvsvn, pse.isvsvn - different
+        // than values that come out of ltp blob - psda svn, me gid.
+        // in normal flow, live values reported to IAS will be the same as current values now so
+        // we just look at out-of-date bits corresponding to these values.
+        // the alternative would be to compare current with latest as reported by IAS. this
+        // isn't an option for cpusvn since what we get from IAS is equivalent cpusvn.
+        //
+        // for values that come out of ltp blob, for psda svn, we do compare latest with current; for
+        // me gid, we see if current is different that what was most likely reported to ias; we can't
+        // know for sure what was reported since report_attestation_status can be called anytime.
+        //
+        if (cpu_svn_out_of_date(&pibw))
+        {
+            p_update_info->ucodeUpdate = 1;
+            goto set_update_available;
+        }
+        if (qe_svn_out_of_date(&pibw) ||
+            pse_svn_out_of_date(&pibw) ||
+            pce_svn_out_of_date(&pibw) ||
+            platform_configuration_needed(&pibw))
+        {
+            p_update_info->pswUpdate = 1;
+            goto set_update_available;
+        }
+        else if (psda_svn_out_of_date(&pibw)) {
+            //
+            // the psda svn value in quote is from ltp blob -> possibly stale
+            // better to determine if update is required by comparing current
+            // psda svn to latest as reported by ias in platform info
+            //
+            // if current is equal to latest, it means code above will have triggered ltp
+            //
+            if (latest_psda_svn(&pibw) != PSDAService::instance().psda_svn) {
+                p_update_info->pswUpdate = 1;
+                goto set_update_available;
+            }
+        }
+
+        if (cse_gid_out_of_date(&pibw)) {
+
+
+            //
+            // compare current CSME GID to one reported to IAS, in LTP blob
+            // if same, need update
+            // if different, assume subsequent attestation will succeed (basically
+            // assume CSME GID is now up-to-date)
+            //
+            if (AE_SUCCESS == readLtpBlobStatus) {
+                if (Helper::ltpBlobCseGid(pairing_blob) == PSDAService::instance().csme_gid) {
+                    p_update_info->csmeFwUpdate = 1;
+                    goto set_update_available;
+                }
+
+            }
+            else {
+                p_update_info->csmeFwUpdate = 1;
+                goto set_update_available;
+            }
+        }
+
+    set_update_available:
+        if (NULL != status) {
+            *status |= CHECK_UPDATE_STATUS_NEED_UPDATE;
+        }
+        ret_status = AESM_UPDATE_AVAILABLE;
+
+        //
+        // IAS will provide latest PSDA SVN value => avoid ambiguity like one above
+        // we may not be able to get current PSDA SVN (and we can know that we didn't get it),
+        // for several reasons (no applet file present, no heci, no jhi)
+        // i don't really want to further complicate this code, but
+        // if we can't get the value in the case here, we should return that
+        // "Intel Platform SW" may need to be re-installed
+        //
+
+        //
+        // what if MEI/HECI, JHI, iCLS isn't present/installed?
+        // none of these are in our TCB, but they are necessary to
+        // get properties of our TCB, when PS being used =>
+        // at least need to document this dependency
+        //
+    }
+    return ret_status;
+}
+
 aesm_error_t PlatformInfoLogic::report_attestation_status(
     uint8_t* platform_info, uint32_t platform_info_size,
     uint32_t attestation_status,
@@ -885,7 +1222,8 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
             status = AESM_UPDATE_AVAILABLE;
         }
         if (qe_svn_out_of_date(&pibw) ||
-            pce_svn_out_of_date(&pibw)
+            pce_svn_out_of_date(&pibw) ||
+            platform_configuration_needed(&pibw)
           ||pse_svn_out_of_date(&pibw))
         {
             p_update_info->pswUpdate = 1;

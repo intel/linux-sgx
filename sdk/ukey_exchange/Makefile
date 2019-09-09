@@ -37,21 +37,21 @@ CXXFLAGS += -Werror
 
 INCLUDE += -I$(COMMON_DIR)/inc/internal \
            -I$(COMMON_DIR)/inc \
-           -I$(LINUX_PSW_DIR)/ae/data/constants/linux/ \
            -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/inc/ \
            -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
            -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
 
-INCLUDE += -I$(SGX_IPP_INC) 
+INCLUDE += -I$(SGX_IPP_INC)
 
 vpath %.cpp $(COMMON_DIR)/src
 
 vpath %.c $(TOP_DIR)/common/src
 
-CXXFLAGS += -fPIC -fno-exceptions -fno-rtti $(INCLUDE)
-CFLAGS += -fPIC $(INCLUDE)
+KE_DEFINITIONS = -DAESM_ECDSA_BUNDLE
+CXXFLAGS += -fPIC -fno-exceptions -fno-rtti $(KE_DEFINITIONS) $(INCLUDE)
+CFLAGS += -fPIC $(KE_DEFINITIONS) $(INCLUDE)
 
-OBJ := ukey_exchange.o se_thread.o ukey_exchange_version.o 
+OBJ := ukey_exchange.o se_thread.o ukey_exchange_version.o
 
 LIBNAME := libsgx_ukey_exchange.a
 

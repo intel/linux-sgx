@@ -68,8 +68,6 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/common/inc/tlibc/wctype.h	<installdir>/package/include/tlibc/wctype.h	0	main	STP
 <deliverydir>/common/inc/tlibc/setjmp.h	<installdir>/package/include/tlibc/setjmp.h	0	main	STP
 <deliverydir>/common/inc/tlibc/mbusafecrt.h	<installdir>/package/include/tlibc/mbusafecrt.h	0	main	STP
-<deliverydir>/common/src/se_memory.c	<installdir>/package/ptrace/se_memory.c	0	main	STP
-<deliverydir>/common/src/se_trace.c	<installdir>/package/ptrace/se_trace.c	0	main	STP
 <deliverydir>/psw/enclave_common/sgx_enclave_common.h	<installdir>/package/include/./sgx_enclave_common.h	0	main	STP
 <deliverydir>/external/ippcp_internal/inc/ippcp.h	<installdir>/package/include/ipp/ippcp.h	0	main	STP
 <deliverydir>/external/ippcp_internal/inc/ippcpdefs.h	<installdir>/package/include/ipp/ippcpdefs.h	0	main	STP
@@ -277,7 +275,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/SampleCommonLoader/Include/linux-regs.h	<installdir>/package/SampleCode/SampleCommonLoader/Include/linux-regs.h	0	N/A	N/A
 <deliverydir>/SampleCode/SampleCommonLoader/Include/sgx_enclave_blob.h	<installdir>/package/SampleCode/SampleCommonLoader/Include/sgx_enclave_blob.h	0	N/A	N/A
 <deliverydir>/SampleCode/SampleCommonLoader/Include/sgx_enclave_ss.h	<installdir>/package/SampleCode/SampleCommonLoader/Include/sgx_enclave_ss.h	0	N/A	N/A
-<deliverydir>/sdk/debugger_interface/linux/se_ptrace.c	<installdir>/package/ptrace/se_ptrace.c	0	main	STP
+<deliverydir>/build/linux/gdb-sgx-plugin/sgx-gdb	<installdir>/package/bin/sgx-gdb	0	main	STP
 <deliverydir>/sdk/sample_libcrypto/sample_libcrypto.h	<installdir>/package/SampleCode/RemoteAttestation/sample_libcrypto/sample_libcrypto.h	0	main	STP
 <deliverydir>/sdk/tlibcxx/include/algorithm	<installdir>/package/include/libcxx/algorithm	0	main	STP
 <deliverydir>/sdk/tlibcxx/include/array	<installdir>/package/include/libcxx/array	0	main	STP

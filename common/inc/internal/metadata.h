@@ -58,28 +58,30 @@
 #define MINOR_VERSION_OF_METADATA(version) (((uint64_t)version) & 0xFFFFFFFF)
 
 
-#define METADATA_MAGIC 0x86A80294635D0E4CULL
-#define METADATA_SIZE 0x5000
-#define TCS_TEMPLATE_SIZE 72
+#define METADATA_MAGIC      0x86A80294635D0E4CULL
+#define METADATA_SIZE       0x5000 /* 20 KB */
+#define TCS_TEMPLATE_SIZE   72
 
 /* TCS Policy bit masks */
 #define TCS_POLICY_BIND     0x00000000  /* If set, the TCS is bound to the application thread */
 #define TCS_POLICY_UNBIND   0x00000001
 
-#define MAX_SAVE_BUF_SIZE 2632    
+#define MAX_SAVE_BUF_SIZE   2632
 
-#define TCS_NUM_MIN 1
-#define SSA_NUM_MIN 2
-#define SSA_FRAME_SIZE_MIN 1
-#define SSA_FRAME_SIZE_MAX 2
-#define STACK_SIZE_MIN 0x2000
-#define STACK_SIZE_MAX 0x40000
-#define HEAP_SIZE_MIN 0x1000
-#define HEAP_SIZE_MAX 0x1000000
+#define TCS_NUM_MIN         1
+#define SSA_NUM_MIN         2
+#define SSA_FRAME_SIZE_MIN  1
+#define SSA_FRAME_SIZE_MAX  2
+#define STACK_SIZE_MIN      0x0002000 /*   8 KB */
+#define STACK_SIZE_MAX      0x0040000 /* 256 KB */
+#define HEAP_SIZE_MIN       0x0001000 /*   4 KB */
+#define HEAP_SIZE_MAX       0x1000000 /*  16 MB */
+#define RSRV_SIZE_MIN       0x0000000 /*   0 KB */
+#define RSRV_SIZE_MAX       0x0000000 /*   0 KB */
 #define DEFAULT_MISC_SELECT 0
-#define DEFAULT_MISC_MASK 0xFFFFFFFF
-#define ISVFAMILYID_MAX   0xFFFFFFFFFFFFFFFFULL
-#define ISVEXTPRODID_MAX  0xFFFFFFFFFFFFFFFFULL
+#define DEFAULT_MISC_MASK   0xFFFFFFFF
+#define ISVFAMILYID_MAX     0xFFFFFFFFFFFFFFFFULL
+#define ISVEXTPRODID_MAX    0xFFFFFFFFFFFFFFFFULL
 
 
 typedef struct _data_directory_t
@@ -117,10 +119,13 @@ typedef enum
 #define LAYOUT_ID_STACK_DYN_MAX 17
 #define LAYOUT_ID_STACK_DYN_MIN 18
 #define LAYOUT_ID_THREAD_GROUP_DYN GROUP_ID(19)
+#define LAYOUT_ID_RSRV_MIN     (20)
+#define LAYOUT_ID_RSRV_INIT    (21)
+#define LAYOUT_ID_RSRV_MAX     (22)
 
+extern const char * layout_id_str[];
 
-
-/* 
+/*
 **    layout table example
 **    entry0 - entry1 - entry2 - group3 (entry_count=2, load_times=3) ...
 **    the load sequence should be:
@@ -133,7 +138,7 @@ typedef struct _layout_entry_t
     uint16_t    id;             /* unique ID to identify the purpose for this entry */
     uint16_t    attributes;     /* EADD/EEXTEND/EREMOVE... */
     uint32_t    page_count;     /* map size in page. Biggest chunk = 2^32 pages = 2^44 bytes. */
-    uint64_t    rva;            /* map offset, relative to encalve base */
+    uint64_t    rva;            /* map offset, relative to enclave base */
     uint32_t    content_size;   /* if content_offset = 0, content_size is the initial data to fill the whole page. */
     uint32_t    content_offset; /* offset to the initial content, relative to metadata */
     si_flags_t  si_flags;       /* security info, R/W/X, SECS/TCS/REG/VA */

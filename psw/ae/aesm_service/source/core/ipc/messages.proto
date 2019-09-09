@@ -63,6 +63,13 @@ message Request{
         optional    uint32  timeout                 = 9;
     }
 
+    message CheckUpdateStatusRequest{
+        optional    bytes platform_info             = 1;
+        required    uint32 update_info_size         = 2;
+        required    uint32 config                   = 3;
+        optional    uint32  timeout                 = 9;
+    }
+
     //private API
     message CreateSessionRequest{
         required    uint32 dh_msg1_size     = 1;
@@ -117,16 +124,18 @@ message Request{
 
     message InitQuoteExRequest{
         optional    bytes  att_key_id              = 1;
-        required    uint32 certification_key_type  = 2;
-        required    bool   refresh_att_key         = 3;
-        required    bool   b_pub_key_id            = 4;
-        optional    uint64 buf_size                = 5;
+        required    bool   b_pub_key_id            = 3;
+        optional    uint64 buf_size                = 4;
         optional    uint32 timeout                 = 9;
+    }
+
+    message SelectAttKeyIDRequest{
+        optional    bytes  att_key_id_list         = 1;
+        optional    uint32  timeout                = 2;
     }
 
     message GetQuoteSizeExRequest{
         optional    bytes   att_key_id             = 1;
-        required    uint32  certification_key_type = 2;
         optional    uint32  timeout                = 9;
     }
 
@@ -148,13 +157,15 @@ message Request{
     optional    CloseSessionRequest closeSessionReq           = 8;
     optional    GetPsCapRequest getPsCapReq                   = 9;
     optional    GetWhiteListSizeRequest getWhiteListSizeReq   = 10;
-    optional    GetWhiteListRequest     getWhiteListReq       = 11;
+    optional    GetWhiteListRequest getWhiteListReq           = 11;
     optional    SGXGetExtendedEpidGroupIdRequest sgxGetExtendedEpidGroupIdReq   = 12;
     optional    SGXSwitchExtendedEpidGroupRequest sgxSwitchExtendedEpidGroupReq = 13;
     optional    SGXRegisterRequest sgxRegisterReq             = 14;
     optional    InitQuoteExRequest initQuoteExReq             = 15;
     optional    GetQuoteSizeExRequest getQuoteSizeExReq       = 16;
     optional    GetQuoteExRequest getQuoteExReq               = 17;
+    optional    CheckUpdateStatusRequest checkUpdateStatusReq = 18;
+    optional    SelectAttKeyIDRequest selectAttKeyIDReq       = 19;
 }
 
 message Response{
@@ -179,6 +190,12 @@ message Response{
     message ReportAttestationErrorResponse{
         required   uint32 errorCode             = 1 [default = 1];
         optional   bytes platform_update_info   = 2;
+    }
+    
+    message CheckUpdateStatusResponse{
+        required   uint32 errorCode             = 1 [default = 1];
+        optional   bytes platform_update_info   = 2;
+        optional   uint32 status                 = 3;
     }
 
     //private API
@@ -229,6 +246,11 @@ message Response{
         required   uint32 errorCode = 1 [ default = 1];
     }
 
+    message SelectAttKeyIDResponse{
+        required    uint32 errorCode            = 1 [default = 1];
+        optional    bytes  selected_att_key_id  = 2;
+    }
+
     message InitQuoteExResponse{
         required    uint32 errorCode       = 1 [default = 1];
         optional    bytes  target_info     = 2;
@@ -257,11 +279,13 @@ message Response{
     optional    CloseSessionResponse closeSessionRes        = 8;
     optional    GetPsCapResponse getPsCapRes                = 9;
     optional    GetWhiteListSizeResponse getWhiteListSizeRes = 10;
-    optional    GetWhiteListResponse  getWhiteListRes       = 11;
+    optional    GetWhiteListResponse getWhiteListRes        = 11;
     optional    SGXGetExtendedEpidGroupIdResponse sgxGetExtendedEpidGroupIdRes = 12;
     optional    SGXSwitchExtendedEpidGroupResponse sgxSwitchExtendedEpidGroupRes = 13;
     optional    SGXRegisterResponse sgxRegisterRes          = 14;
     optional    InitQuoteExResponse initQuoteExRes          = 15;
     optional    GetQuoteSizeExResponse getQuoteSizeExRes    = 16;
     optional    GetQuoteExResponse getQuoteExRes            = 17;
+    optional    CheckUpdateStatusResponse checkUpdateStatusRes = 18;
+    optional    SelectAttKeyIDResponse selectAttKeyIDRes    = 19;
 }

@@ -30,16 +30,16 @@ extern "C" {
 #endif
 
 #include <inttypes.h>
-#include <ucontext.h>
+#include <sys/ucontext.h>
 
 #ifdef mips
 # undef mips
 #endif
 
-#define UNW_TARGET	mips
-#define UNW_TARGET_MIPS	1
+#define UNW_TARGET      mips
+#define UNW_TARGET_MIPS 1
 
-#define _U_TDEP_QP_TRUE	0	/* see libunwind-dynamic.h  */
+#define _U_TDEP_QP_TRUE 0       /* see libunwind-dynamic.h  */
 
 /* This needs to be big enough to accommodate "struct cursor", while
    leaving some slack for future expansion.  Changing this value will
@@ -48,13 +48,16 @@ extern "C" {
    want to err on making it rather too big than too small.  */
    
 /* FIXME for MIPS. Too big?  What do other things use for similar tasks?  */
-#define UNW_TDEP_CURSOR_LEN	4096
+#define UNW_TDEP_CURSOR_LEN     4096
 
-/* The size of a "word" varies on MIPS.  This type is used for memory
-   addresses and register values.  To allow a single library to support
-   multiple ABIs, and to support N32 at all, we must use a 64-bit type
-   even when addresses are only 32 bits.  */
+/* The size of a "word" varies on MIPS. This type is used for memory
+   addresses and register values, which are 32-bit wide for O32 and N32 
+   ABIs, and 64-bit wide for N64 ABI. */
+#if _MIPS_SIM == _ABI64
 typedef uint64_t unw_word_t;
+#else
+typedef uint32_t unw_word_t;
+#endif
 typedef int32_t unw_sword_t;
 
 /* FIXME: MIPS ABIs.  */
@@ -95,13 +98,15 @@ typedef enum
     UNW_MIPS_R30,
     UNW_MIPS_R31,
 
+    UNW_MIPS_PC = 34,
+
     /* FIXME: Other registers!  */
 
     /* For MIPS, the CFA is the value of SP (r29) at the call site in the
        previous frame.  */
     UNW_MIPS_CFA,
 
-    UNW_TDEP_LAST_REG = UNW_MIPS_R31,
+    UNW_TDEP_LAST_REG = UNW_MIPS_PC,
 
     UNW_TDEP_IP = UNW_MIPS_R31,
     UNW_TDEP_SP = UNW_MIPS_R29,
@@ -117,7 +122,7 @@ typedef enum
   }
 mips_abi_t;
 
-#define UNW_TDEP_NUM_EH_REGS	2	/* FIXME for MIPS.  */
+#define UNW_TDEP_NUM_EH_REGS    2       /* FIXME for MIPS.  */
 
 typedef struct unw_tdep_save_loc
   {
@@ -145,7 +150,7 @@ unw_tdep_proc_info_t;
 #define unw_tdep_getcontext UNW_ARCH_OBJ(getcontext)
 extern int unw_tdep_getcontext (ucontext_t *uc);
 
-#define unw_tdep_is_fpreg		UNW_ARCH_OBJ(is_fpreg)
+#define unw_tdep_is_fpreg               UNW_ARCH_OBJ(is_fpreg)
 extern int unw_tdep_is_fpreg (int);
 
 #if defined(__cplusplus) || defined(c_plusplus)

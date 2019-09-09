@@ -2,7 +2,7 @@
 #define elf32_h
 
 #ifndef ELF_CLASS
-#define ELF_CLASS	ELFCLASS32
+#define ELF_CLASS       ELFCLASS32
 #endif
 #include "elfxx.h"
 

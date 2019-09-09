@@ -43,6 +43,17 @@
 #include "simple_vector.h"
 #include "se_cdefs.h"
 
+static const sgx_measurement_t g_qe_mrsigner =
+{
+    {//MR_SIGNER of CSS signed QE copied from psw/ae/data/constants/linux/service_enclave_mrsigner.hh
+        0xec, 0x15, 0xb1, 0x07, 0x87, 0xd2, 0xf8, 0x46,
+        0x67, 0xce, 0xb0, 0xb5, 0x98, 0xff, 0xc4, 0x4a,
+        0x1f, 0x1c, 0xb8, 0x0f, 0x67, 0x0a, 0xae, 0x5d,
+        0xf9, 0xe8, 0xfa, 0x9f, 0x63, 0x76, 0xe1, 0xf8
+    }
+};
+
+
 // Add a version to tkey_exchange.
 SGX_ACCESS_VERSION(tkey_exchange, 1)
 
@@ -412,9 +423,9 @@ extern "C" sgx_status_t sgx_ra_get_msg3_trusted(
     if (!sgx_is_outside_enclave(emp_msg3, msg3_size))
         return SGX_ERROR_INVALID_PARAMETER;
     //
-    // fence after boundary check 
-    // this also stops speculation in case of 
-    // branch associated 
+    // fence after boundary check
+    // this also stops speculation in case of
+    // branch associated
     // with sizeof(sgx_ra_msg3_t) + quote_size != msg3_size
     // mispredicting
     //
@@ -566,8 +577,11 @@ extern "C" sgx_status_t sgx_ra_get_msg3_trusted(
             break;
         }
 
+        // Temporarily workaround, only verify report_data for EPID quote
+        // TODO : this issue needs to be addressed in future releases
         //verify qe_report->body.report_data == SHA256(NONCE || emp_quote)
-        if(0 != memcmp(&qe_report->body.report_data, &hash, sizeof(hash)))
+        if((0 == memcmp(&qe_report->body.mr_signer, &g_qe_mrsigner, sizeof(g_qe_mrsigner)))
+            && (0 != memcmp(&qe_report->body.report_data, &hash, sizeof(hash))))
         {
             se_ret = SGX_ERROR_MAC_MISMATCH;
             break;

@@ -806,6 +806,7 @@ extern "C" {
     *   Inputs: rsa_key	- Pointer to the RSA private key.
     *           pin_data - Pointer to the input ciphertext buffer.
     *           pin_len - Ciphertext buffer size.
+    *           pout_len[In/Out] - Pointer to the length of output buffer.
     *   Output: pout_data - Pointer to the output buffer.
     *           pout_len - Pointer to amount of data written.
     *
@@ -819,6 +820,7 @@ extern "C" {
     *   Inputs: rsa_key - Pointer to the RSA public key.
     *           pin_data - Pointer to the input data buffer.
     *           pin_len - Input buffer size.
+    *           pout_len[In/Out] - Pointer to the length of output buffer.
     *   Output: pout_data - Pointer to the output buffer.
     *           pout_len - Pointer to amount of data (ciphertext) written.
     *
@@ -843,6 +845,22 @@ extern "C" {
     sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned char *p_rsa_key_e, const unsigned char *p_rsa_key_p, const unsigned char *p_rsa_key_q,
         const unsigned char *p_rsa_key_dmp1, const unsigned char *p_rsa_key_dmq1, const unsigned char *p_rsa_key_iqmp,
         void **new_pri_key2);
+
+    /** Create RSA private key using input buffer factors - little endian.
+    *
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: n_byte_size	- Size in bytes of the key modulus.
+    *           e_byte_size	- Size in bytes of the public exponent e.
+    *           d_byte_size	- Size in bytes of the private exponent d.
+    *           le_e - Pointer to the public exponent e buffer.
+    *           le_n - Pointer to the modulus n buffer.
+    *           le_d - Pointer to the private exponent d buffer.
+    *   Output: new_pri_key1 - Pointer to the generated private key.
+    *
+    */
+    sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_byte_size, const unsigned char *le_n, const unsigned char *le_e,
+        const unsigned char *le_d, void **new_pri_key1);
 
     /** Create RSA public key using input buffer factors in little endian.
     *

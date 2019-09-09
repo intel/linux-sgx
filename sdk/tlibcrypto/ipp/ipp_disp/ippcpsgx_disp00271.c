@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSA_GetPublicKey,(IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, const IppsRSAPublicKeyState* pKey))
-IPPAPI(IppStatus, l9_ippsRSA_GetPublicKey,(IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, const IppsRSAPublicKeyState* pKey))
+IPPAPI(IppStatus, y8_ippsRSA_InitPublicKey,(int rsaModulusBitSize, int publicExpBitSize, IppsRSAPublicKeyState* pKey, int keyCtxSize))
+IPPAPI(IppStatus, l9_ippsRSA_InitPublicKey,(int rsaModulusBitSize, int publicExpBitSize, IppsRSAPublicKeyState* pKey, int keyCtxSize))
+IPPAPI(IppStatus, k0_ippsRSA_InitPublicKey,(int rsaModulusBitSize, int publicExpBitSize, IppsRSAPublicKeyState* pKey, int keyCtxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GetPublicKey,(IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, const IppsRSAPublicKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_InitPublicKey,(int rsaModulusBitSize, int publicExpBitSize, IppsRSAPublicKeyState* pKey, int keyCtxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsRSA_GetPublicKey( pModulus, pPublicExp, pKey );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsRSA_InitPublicKey( rsaModulusBitSize, publicExpBitSize, pKey, keyCtxSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsRSA_GetPublicKey( pModulus, pPublicExp, pKey );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsRSA_InitPublicKey( rsaModulusBitSize, publicExpBitSize, pKey, keyCtxSize );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsRSA_InitPublicKey( rsaModulusBitSize, publicExpBitSize, pKey, keyCtxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSA_GetPublicKey,(IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, const IppsRSAPublicKeyState* pKey))
-IPPAPI(IppStatus, h9_ippsRSA_GetPublicKey,(IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, const IppsRSAPublicKeyState* pKey))
+IPPAPI(IppStatus, p8_ippsRSA_InitPublicKey,(int rsaModulusBitSize, int publicExpBitSize, IppsRSAPublicKeyState* pKey, int keyCtxSize))
+IPPAPI(IppStatus, h9_ippsRSA_InitPublicKey,(int rsaModulusBitSize, int publicExpBitSize, IppsRSAPublicKeyState* pKey, int keyCtxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GetPublicKey,(IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, const IppsRSAPublicKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_InitPublicKey,(int rsaModulusBitSize, int publicExpBitSize, IppsRSAPublicKeyState* pKey, int keyCtxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsRSA_GetPublicKey( pModulus, pPublicExp, pKey );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsRSA_InitPublicKey( rsaModulusBitSize, publicExpBitSize, pKey, keyCtxSize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsRSA_GetPublicKey( pModulus, pPublicExp, pKey );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsRSA_InitPublicKey( rsaModulusBitSize, publicExpBitSize, pKey, keyCtxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

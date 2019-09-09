@@ -28,9 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#define STRFILEVER    "2.5.100.49891"
+#define STRFILEVER    "2.6.100.51363"
 #define COPYRIGHT      "Copyright (C) 2019 Intel Corporation"
 
-#define UAE_SERVICE_VERSION       "1.1.100.0"
-#define URTS_VERSION              "1.1.100.0"
-#define ENCLAVE_COMMON_VERSION    "1.0.103.0"
+#define UAE_SERVICE_VERSION       "1.2.100.0"
+#define URTS_VERSION              "1.1.101.0"
+#define ENCLAVE_COMMON_VERSION    "1.0.104.0"

@@ -49,16 +49,20 @@
 
 IPPAPI(IppStatus, y8_ippsSHA1Unpack,(const Ipp8u* pBuffer, IppsSHA1State* pState))
 IPPAPI(IppStatus, l9_ippsSHA1Unpack,(const Ipp8u* pBuffer, IppsSHA1State* pState))
+IPPAPI(IppStatus, k0_ippsSHA1Unpack,(const Ipp8u* pBuffer, IppsSHA1State* pState))
 
 IPPFUN(IppStatus,sgx_disp_ippsSHA1Unpack,(const Ipp8u* pBuffer, IppsSHA1State* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsSHA1Unpack( pBuffer, pState );
+      } else 
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsSHA1Unpack( pBuffer, pState );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return y8_ippsSHA1Unpack( pBuffer, pState );
       } else 
         return ippStsCpuNotSupportedErr;
@@ -74,10 +78,10 @@ IPPFUN(IppStatus,sgx_disp_ippsSHA1Unpack,(const Ipp8u* pBuffer, IppsSHA1State* p
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return h9_ippsSHA1Unpack( pBuffer, pState );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return p8_ippsSHA1Unpack( pBuffer, pState );
       } else 
         return ippStsCpuNotSupportedErr;

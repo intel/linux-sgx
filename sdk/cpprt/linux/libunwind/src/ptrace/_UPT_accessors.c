@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -25,14 +25,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "_UPT_internal.h"
 
-PROTECTED unw_accessors_t _UPT_accessors =
+unw_accessors_t _UPT_accessors =
   {
-    .find_proc_info		= _UPT_find_proc_info,
-    .put_unwind_info		= _UPT_put_unwind_info,
-    .get_dyn_info_list_addr	= _UPT_get_dyn_info_list_addr,
-    .access_mem			= _UPT_access_mem,
-    .access_reg			= _UPT_access_reg,
-    .access_fpreg		= _UPT_access_fpreg,
-    .resume			= _UPT_resume,
-    .get_proc_name		= _UPT_get_proc_name
+    .find_proc_info             = _UPT_find_proc_info,
+    .put_unwind_info            = _UPT_put_unwind_info,
+    .get_dyn_info_list_addr     = _UPT_get_dyn_info_list_addr,
+    .access_mem                 = _UPT_access_mem,
+    .access_reg                 = _UPT_access_reg,
+    .access_fpreg               = _UPT_access_fpreg,
+    .resume                     = _UPT_resume,
+    .get_proc_name              = _UPT_get_proc_name
   };

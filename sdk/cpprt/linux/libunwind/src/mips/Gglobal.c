@@ -25,17 +25,8 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include "unwind_i.h"
 #include "dwarf_i.h"
 
-HIDDEN pthread_mutex_t mips_lock = PTHREAD_MUTEX_INITIALIZER;
-HIDDEN int tdep_needs_initialization = 1;
-
-/* FIXME: I'm pretty sure we don't need this at all for MIPS, but "generic"
-   code (include/dwarf_i.h) seems to expect it to be here at present.  */
-
-HIDDEN uint8_t dwarf_to_unw_regnum_map[] =
-  {
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31
-  };
+HIDDEN define_lock (mips_lock);
+HIDDEN int tdep_init_done;
 
 HIDDEN void
 tdep_init (void)
@@ -46,7 +37,7 @@ tdep_init (void)
 
   lock_acquire (&mips_lock, saved_mask);
   {
-    if (!tdep_needs_initialization)
+    if (tdep_init_done)
       /* another thread else beat us to it... */
       goto out;
 
@@ -57,7 +48,7 @@ tdep_init (void)
 #ifndef UNW_REMOTE_ONLY
     mips_local_addr_space_init ();
 #endif
-    tdep_needs_initialization = 0;	/* signal that we're initialized... */
+    tdep_init_done = 1; /* signal that we're initialized... */
   }
  out:
   lock_release (&mips_lock, saved_mask);

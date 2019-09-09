@@ -34,37 +34,65 @@ include scripts/installConfig
 SOURCE_FOLDER=package
 SCRIPTS_FOLDER=scripts
 
-INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(SGX_PACKAGES_PATH)/$(SDK_PKG_NAME))
-SOURCE_INSTALL_PATH=$(INSTALL_PATH)
-SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
-SDK_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
+SOURCE_PATH=$(shell readlink -m /$(SGX_PACKAGES_PATH)/$(SDK_PKG_NAME))
+SOURCE_INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(SOURCE_PATH))
+SCRIPTS_INSTALL_PATH=$(SOURCE_INSTALL_PATH)/$(SCRIPTS_FOLDER)
+SDK_LIB_PATH=$(SOURCE_PATH)/$(LIB_DIR)
+SDK_LIB_INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(SDK_LIB_PATH))
+USR_LIB_PATH=$(shell readlink -m /usr/$(or $(notdir $(shell gcc -print-multi-os-directory 2> /dev/null)),$(if $(wildcard /usr/lib64/.*),lib64),lib)/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null))
+USR_LIB_INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(USR_LIB_PATH))
+USR_BIN_INSTALL_PATH=$(shell readlink -m $(DESTDIR)/usr/bin)
 
 default:
 
-install:
-	install -d $(SOURCE_INSTALL_PATH)
-	install -d $(SCRIPTS_INSTALL_PATH)
+install: install_source install_script install_gdb install_library install_pkgconfig update_pkgconfig
 
-ifneq ($(INSTALLER_FORM),BIN)
-	install -d $(DESTDIR)/usr/lib
-	install -d $(DESTDIR)/usr/lib/pkgconfig
+install_source: #for all format
+	install -d $(SOURCE_INSTALL_PATH)
+	cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
+
+install_script: #for bin format
+ifeq ($(INSTALLER_FORMAT),BIN)
+	install -d $(SCRIPTS_INSTALL_PATH)
+	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
 endif
 
-	cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
-	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
+install_gdb:
+	@sed -i "s#@SDK_LIB_PATH@#$(SDK_LIB_PATH)#" $(SOURCE_INSTALL_PATH)/bin/sgx-gdb
+	chmod +x $(SOURCE_INSTALL_PATH)/bin/sgx-gdb
+ifneq ($(INSTALLER_FORMAT),BIN)
+	install -d $(USR_BIN_INSTALL_PATH)
+	mv $(SOURCE_INSTALL_PATH)/bin/sgx-gdb $(USR_BIN_INSTALL_PATH)
+endif
 
-ifeq ($(INSTALLER_FORM),BIN)
-	@sed -i "s#\(prefix=\).*#\1$(INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
-	@sed -i "s#\(prefix=\).*#\1$(INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
-	@sed -i "s#\(prefix=\).*#\1$(INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc
-	@sed -i "s#\(prefix=\).*#\1$(INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts.pc
+install_library: #for deb & rpm format
+ifneq ($(INSTALLER_FORMAT),BIN)
+	install -d $(USR_LIB_INSTALL_PATH)
+	mv $(SDK_LIB_INSTALL_PATH)/libsgx_uae_service_sim.so $(USR_LIB_INSTALL_PATH)
+	mv $(SDK_LIB_INSTALL_PATH)/libsgx_urts_sim.so $(USR_LIB_INSTALL_PATH)
+endif
+
+install_pkgconfig: #for deb & rpm format
+ifneq ($(INSTALLER_FORMAT),BIN)
+	install -d $(USR_LIB_INSTALL_PATH)/pkgconfig
+	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
+	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
+	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
+	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
+	@sed -i "s#\(libdir=\).*#\1$(USR_LIB_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
+	@sed -i "s#\(libdir=\).*#\1$(USR_LIB_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
+	rm -fr $(SOURCE_INSTALL_PATH)/pkgconfig
+endif
+
+update_pkgconfig: #for bin format
+ifeq ($(INSTALLER_FORMAT),BIN)
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts.pc
 else
-	@sed -i "s#\(libdir=\).*#\1/usr/lib#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
-	@sed -i "s#\(libdir=\).*#\1/usr/lib#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
-	mv $(SDK_LIB_PATH)/libsgx_uae_service_sim.so $(DESTDIR)/usr/lib
-	mv $(SDK_LIB_PATH)/libsgx_urts_sim.so $(DESTDIR)/usr/lib
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc $(DESTDIR)/usr/lib/pkgconfig
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc $(DESTDIR)/usr/lib/pkgconfig
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc $(DESTDIR)/usr/lib/pkgconfig
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts.pc $(DESTDIR)/usr/lib/pkgconfig
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_urts.pc
 endif

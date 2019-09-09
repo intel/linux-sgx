@@ -1,8 +1,9 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    Modified for x86_64 by Max Asbock <masbock@us.ibm.com>
+   Copyright (C) 2012 Tommi Rantala <tt.rantala@gmail.com>
 
 This file is part of libunwind.
 
@@ -33,7 +34,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #define __LITTLE_ENDIAN _LITTLE_ENDIAN
 #endif
 
-PROTECTED unw_addr_space_t
+unw_addr_space_t
 unw_create_addr_space (unw_accessors_t *a, int byte_order)
 {
 #ifdef UNW_LOCAL_ONLY
@@ -52,6 +53,7 @@ unw_create_addr_space (unw_accessors_t *a, int byte_order)
     return NULL;
 
   memset (as, 0, sizeof (*as));
+
   as->acc = *a;
 
   return as;

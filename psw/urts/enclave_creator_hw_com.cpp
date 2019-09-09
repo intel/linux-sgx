@@ -50,6 +50,7 @@ bool EnclaveCreatorHW::use_se_hw() const
 int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
 {
     system_features_t info;
+    memset(&info, 0, sizeof(system_features_t));
     info.system_feature_set[0] = (uint64_t)1 << SYS_FEATURE_MSb;
 
     CEnclave *enclave= CEnclavePool::instance()->get_enclave(enclave_id);
@@ -58,9 +59,11 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
         return SGX_ERROR_INVALID_ENCLAVE_ID;
 
     //Since CPUID instruction is NOT supported within enclave, we enumerate the cpu features here and send to tRTS.
-    info.cpu_features = 0;
-    memset(info.cpuinfo_table, 0, sizeof(info.cpuinfo_table));
-    get_cpu_features(&info.cpu_features, (uint32_t*)info.cpuinfo_table);
+    get_cpu_features(&info.cpu_features);
+    get_cpu_features_ext(&info.cpu_features_ext);
+    init_cpuinfo((uint32_t *)info.cpuinfo_table);
+    info.system_feature_set[0] |= (1ULL << SYS_FEATURE_EXTEND);
+    info.size = sizeof(system_features_t);
     info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_2_2, enclave->get_enclave_version());
     info.sealed_key = enclave->get_sealed_key();
     if (is_EDMM_supported(enclave_id))

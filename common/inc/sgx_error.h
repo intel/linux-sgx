@@ -91,6 +91,7 @@ typedef enum _status_t
     SGX_ERROR_MC_OVER_QUOTA             = SGX_MK_ERROR(0x400f),   /* Monotonic counters exceeds quota limitation */
     SGX_ERROR_KDF_MISMATCH              = SGX_MK_ERROR(0x4011),   /* Key derivation function doesn't match during key exchange */
     SGX_ERROR_UNRECOGNIZED_PLATFORM     = SGX_MK_ERROR(0x4012),   /* EPID Provisioning failed due to platform not recognized by backend server*/
+    SGX_ERROR_UNSUPPORTED_CONFIG        = SGX_MK_ERROR(0x4013),   /* The config for trigging EPID Provisiong or PSE Provisiong&LTP is invalid*/
 
     SGX_ERROR_NO_PRIVILEGE              = SGX_MK_ERROR(0x5002),   /* Not enough privilege to perform the operation */
 
@@ -117,6 +118,7 @@ typedef enum _status_t
     SGX_ERROR_ATT_KEY_CERTIFICATION_FAILURE = SGX_MK_ERROR(0x8002),    /* Failed to generate and certify the attestation key.*/
     SGX_ERROR_ATT_KEY_UNINITIALIZED         = SGX_MK_ERROR(0x8003),    /* The platform quoting infrastructure does not have the attestation key available to generate quote.*/
     SGX_ERROR_INVALID_ATT_KEY_CERT_DATA     = SGX_MK_ERROR(0x8004),    /* TThe data returned by the platform library's sgx_get_quote_config() is invalid.*/
+    SGX_ERROR_PLATFORM_CERT_UNAVAILABLE     = SGX_MK_ERROR(0x8005),    /* The PCK Cert for the platform is not available.*/
 
     SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED = SGX_MK_ERROR(0xF001), /* The ioctl for enclave_create unexpectedly failed with EINTR. */ 
 

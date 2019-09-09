@@ -60,7 +60,6 @@ typedef enum _aesm_error_t
     AESM_SGX_DEVICE_NOT_AVAILABLE                 = 24,
     AESM_ENABLE_SGX_DEVICE_FAILED                 = 25,
     AESM_PLATFORM_INFO_BLOB_INVALID_SIG           = 26,
-    AESM_SERVICE_NOT_AVAILABLE                    = 27,
     AESM_KDF_MISMATCH                             = 28,
     AESM_OUT_OF_EPC                               = 29,
     AESM_SERVICE_UNAVAILABLE                      = 30,
@@ -84,5 +83,6 @@ typedef enum _aesm_error_t
     AESM_ENCLAVE_LOAD_ERROR                       = 48,
     AESM_UNABLE_TO_GENERATE_QE_REPORT             = 49,
     AESM_KEY_CERTIFICATION_ERROR                   = 50,
+    AESM_CONFIG_UNSUPPORTED						  =51,
 } aesm_error_t;
 #endif

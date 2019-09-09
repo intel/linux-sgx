@@ -49,16 +49,20 @@
 
 IPPAPI(IppStatus, y8_ippsAESDecryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
 IPPAPI(IppStatus, l9_ippsAESDecryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
+IPPAPI(IppStatus, k0_ippsAESDecryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
 
 IPPFUN(IppStatus,sgx_disp_ippsAESDecryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAESDecryptXTS_Direct( pSrc, pDst, encBitsize, aesBlkNo, pTweakPT, pKey, keyBitsize, dataUnitBitsize );
+      } else 
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsAESDecryptXTS_Direct( pSrc, pDst, encBitsize, aesBlkNo, pTweakPT, pKey, keyBitsize, dataUnitBitsize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return y8_ippsAESDecryptXTS_Direct( pSrc, pDst, encBitsize, aesBlkNo, pTweakPT, pKey, keyBitsize, dataUnitBitsize );
       } else 
         return ippStsCpuNotSupportedErr;
@@ -74,10 +78,10 @@ IPPFUN(IppStatus,sgx_disp_ippsAESDecryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pD
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return h9_ippsAESDecryptXTS_Direct( pSrc, pDst, encBitsize, aesBlkNo, pTweakPT, pKey, keyBitsize, dataUnitBitsize );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
         return p8_ippsAESDecryptXTS_Direct( pSrc, pDst, encBitsize, aesBlkNo, pTweakPT, pKey, keyBitsize, dataUnitBitsize );
       } else 
         return ippStsCpuNotSupportedErr;

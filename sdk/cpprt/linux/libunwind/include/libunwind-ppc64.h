@@ -39,10 +39,10 @@ extern "C" {
 #include <inttypes.h>
 #include <ucontext.h>
 
-#define UNW_TARGET		ppc64
-#define UNW_TARGET_PPC64	1
+#define UNW_TARGET              ppc64
+#define UNW_TARGET_PPC64        1
 
-#define _U_TDEP_QP_TRUE	0	/* see libunwind-dynamic.h  */
+#define _U_TDEP_QP_TRUE 0       /* see libunwind-dynamic.h  */
 
 /*
  * This needs to be big enough to accommodate "struct cursor", while
@@ -222,12 +222,19 @@ typedef enum
   }
 ppc64_regnum_t;
 
+typedef enum
+  {
+    UNW_PPC64_ABI_ELFv1,
+    UNW_PPC64_ABI_ELFv2
+  }
+ppc64_abi_t;
+
 /*
  * According to David Edelsohn, GNU gcc uses R3, R4, R5, and maybe R6 for
  * passing parameters to exception handlers.
  */
 
-#define UNW_TDEP_NUM_EH_REGS	4
+#define UNW_TDEP_NUM_EH_REGS    4
 
 typedef struct unw_tdep_save_loc
   {
@@ -242,7 +249,7 @@ typedef ucontext_t unw_tdep_context_t;
    using the "getcontext" name just because it's using libunwind.  We
    can't just use __getcontext() either, because that isn't exported
    by glibc...  */
-#define unw_tdep_getcontext(uc)		(getcontext (uc), 0)
+#define unw_tdep_getcontext(uc)         (getcontext (uc), 0)
 
 #include "libunwind-dynamic.h"
 
@@ -254,7 +261,7 @@ unw_tdep_proc_info_t;
 
 #include "libunwind-common.h"
 
-#define unw_tdep_is_fpreg		UNW_ARCH_OBJ(is_fpreg)
+#define unw_tdep_is_fpreg               UNW_ARCH_OBJ(is_fpreg)
 extern int unw_tdep_is_fpreg (int);
 
 #if defined(__cplusplus) || defined(c_plusplus)

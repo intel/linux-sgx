@@ -43,6 +43,8 @@
 \Type{void} \Func{unw\_flush\_cache}(\Type{unw\_addr\_space\_t}, \Type{unw\_word\_t}, \Type{unw\_word\_t});\\
 \noindent
 \Type{int} \Func{unw\_set\_caching\_policy}(\Type{unw\_addr\_space\_t}, \Type{unw\_caching\_policy\_t});\\
+\noindent
+\Type{int} \Func{unw\_set\_cache\_size}(\Type{unw\_addr\_space\_t}, \Type{size\_t}, \Type{int});\\
 
 \noindent
 \Type{const char *}\Func{unw\_regname}(\Type{unw\_regnum\_t});\\
@@ -293,7 +295,8 @@ object.  In particular, by selecting the policy
 \Const{UNW\_CACHE\_NONE}, it is possible to turn off caching
 completely, therefore eliminating the risk of stale data alltogether
 (at the cost of slower execution).  By default, caching is enabled for
-local unwinding only.
+local unwinding only.  The cache size can be dynamically changed with
+\Func{unw\_set\_cache\_size}(), which also fluches the current cache.
 
 
 \section{Files}
@@ -337,6 +340,7 @@ local unwinding only.
 \SeeAlso{unw\_regname(3)},
 \SeeAlso{unw\_resume(3)},
 \SeeAlso{unw\_set\_caching\_policy(3)},
+\SeeAlso{unw\_set\_cache\_size(3)},
 \SeeAlso{unw\_set\_fpreg(3)},
 \SeeAlso{unw\_set\_reg(3)},
 \SeeAlso{unw\_step(3)},

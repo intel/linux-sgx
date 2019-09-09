@@ -61,7 +61,8 @@ GDB_PLUGINS_FILES := gdb-sgx-plugin/sgx_emmt.py         \
                      gdb-sgx-plugin/gdb_sgx_cmd         \
                      gdb-sgx-plugin/gdb_sgx_plugin.py   \
                      gdb-sgx-plugin/load_symbol_cmd.py  \
-                     gdb-sgx-plugin/readelf.py
+                     gdb-sgx-plugin/readelf.py          \
+                     gdb-sgx-plugin/sgx-gdb
 
 GDB_OUT_DIR := $(BUILD_DIR)/gdb-sgx-plugin
 TARGET      := libsgx_ptrace.so

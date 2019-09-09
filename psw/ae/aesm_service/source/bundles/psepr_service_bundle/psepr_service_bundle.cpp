@@ -20,6 +20,12 @@ std::shared_ptr<INetworkService> g_network_service;
 
 class PseprServiceImp : public IPseprService
 {
+  private:
+      bool initialized;
+
+  public:
+      PseprServiceImp():initialized(false) {}
+
   ae_error_t certificate_provisioning(
         platform_info_blob_wrapper_t* pib_wrapper)  const
   {
@@ -38,19 +44,22 @@ class PseprServiceImp : public IPseprService
   ae_error_t start()
   {
     AESM_DBG_INFO("Starting psepr bundle");
-    get_service_wrapper(g_network_service);
-    get_service_wrapper(g_epid_service);
-    get_service_wrapper(g_pseop_service);
+    auto context = cppmicroservices::GetBundleContext();
+    get_service_wrapper(g_network_service, context);
+    get_service_wrapper(g_epid_service, context);
+    get_service_wrapper(g_pseop_service, context);
 
     if (g_epid_service == nullptr || g_epid_service->start())
         return AE_FAILURE;
     AESM_DBG_INFO("psepr bundle started");
+    initialized = true;
     return AE_SUCCESS;//CPSEPRClass::instance().load_enclave();
   }
 
   void unload_enclave()
   {
     CPSEPRClass::instance().unload_enclave();
+    initialized = false;
   }
 
   void stop()

@@ -1,5 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2008 CodeSourcery
+   Copyright (C) 2012 Tommi Rantala <tt.rantala@gmail.com>
 
 This file is part of libunwind.
 
@@ -27,23 +28,22 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 /* This is FIRST_PSEUDO_REGISTER in GCC, since DWARF_FRAME_REGISTERS is not
    explicitly defined.  */
-#define DWARF_NUM_PRESERVED_REGS	128
+#define DWARF_NUM_PRESERVED_REGS        128
 
-/* FIXME: Probably unnecessary on ARM.  See arm/Gglobal.c.  */
-#define DWARF_REGNUM_MAP_LENGTH		16
+#define dwarf_to_unw_regnum(reg) (((reg) < 16) ? (reg) : 0)
 
 /* Return TRUE if the ADDR_SPACE uses big-endian byte-order.  */
-#define dwarf_is_big_endian(addr_space)	0
+#define dwarf_is_big_endian(addr_space) 0
 
 /* Convert a pointer to a dwarf_cursor structure to a pointer to
    unw_cursor_t.  */
-#define dwarf_to_cursor(c)	((unw_cursor_t *) (c))
+#define dwarf_to_cursor(c)      ((unw_cursor_t *) (c))
 
 typedef struct dwarf_loc
   {
     unw_word_t val;
 #ifndef UNW_LOCAL_ONLY
-    unw_word_t type;		/* see DWARF_LOC_TYPE_* macros.  */
+    unw_word_t type;            /* see DWARF_LOC_TYPE_* macros.  */
 #endif
   }
 dwarf_loc_t;

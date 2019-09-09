@@ -82,6 +82,7 @@ OBJ1 := loader.o          \
         urts_xsave.o      \
         se_ocalls.o       \
         cpu_features.o    \
+        cpu_features_ext.o    \
         launch_checker.o  \
         urts_version.o    \
         enclave_creator_hw_com.o 

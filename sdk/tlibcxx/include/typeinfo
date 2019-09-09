@@ -58,9 +58,6 @@ public:
 */
 
 #include <__config>
-#if defined(_LIBCPP_SGX_CONFIG)
-#include <../stdc++/typeinfo>
-#else // !defined(_LIBCPP_SGX_CONFIG)
 #include <exception>
 #include <cstddef>
 #include <cstdint>
@@ -167,7 +164,5 @@ public:
 };
 
 }  // std
-
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // __LIBCPP_TYPEINFO

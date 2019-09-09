@@ -45,17 +45,13 @@ AEInitQuoteExRequest::AEInitQuoteExRequest(const aesm::message::Request::InitQuo
     m_request->CopyFrom(request);
 }
 AEInitQuoteExRequest::AEInitQuoteExRequest(uint32_t att_key_id_size, const uint8_t *att_key_id,
-                uint32_t certification_key_type,
-                bool refresh_att_key,
-                bool b_pub_key_id,
-                size_t buf_size, uint32_t timeout):
-        m_request(NULL)
+        bool b_pub_key_id,
+        size_t buf_size, uint32_t timeout):
+    m_request(NULL)
 {
     m_request = new aesm::message::Request::InitQuoteExRequest();
     if (att_key_id_size != 0 && att_key_id != NULL)
         m_request->set_att_key_id(att_key_id, att_key_id_size);
-    m_request->set_certification_key_type(certification_key_type);
-    m_request->set_refresh_att_key(refresh_att_key);
     m_request->set_b_pub_key_id(b_pub_key_id);
     if (buf_size != 0)
         m_request->set_buf_size(buf_size);
@@ -139,9 +135,7 @@ IAEResponse* AEInitQuoteExRequest::execute(IAESMLogic* aesmLogic)
             att_key_id = (uint8_t*)const_cast<char *>(m_request->att_key_id().data());
         }
 
-        uint32_t certification_key_type = m_request->certification_key_type();
-        uint32_t refresh_att_key = m_request->refresh_att_key();
-        uint32_t b_pub_key_id = m_request->b_pub_key_id();
+        bool b_pub_key_id = m_request->b_pub_key_id();
 
         if (m_request->has_buf_size())
 	{
@@ -151,9 +145,7 @@ IAEResponse* AEInitQuoteExRequest::execute(IAESMLogic* aesmLogic)
 
         result= aesmLogic->init_quote_ex(
                 att_key_id_size, att_key_id,
-                certification_key_type,
                 &target_info, &target_info_size,
-                refresh_att_key,
                 b_pub_key_id, &pub_key_id_size, &pub_key_id);
     }
     IAEResponse* response = new AEInitQuoteExResponse(result, target_info_size, target_info, &pub_key_id_size, buf_size, pub_key_id);

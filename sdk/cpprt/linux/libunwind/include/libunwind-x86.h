@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -34,17 +34,17 @@ extern "C" {
 #include <inttypes.h>
 #include <ucontext.h>
 
-#define UNW_TARGET	x86
-#define UNW_TARGET_X86	1
+#define UNW_TARGET      x86
+#define UNW_TARGET_X86  1
 
-#define _U_TDEP_QP_TRUE	0	/* see libunwind-dynamic.h  */
+#define _U_TDEP_QP_TRUE 0       /* see libunwind-dynamic.h  */
 
 /* This needs to be big enough to accommodate "struct cursor", while
    leaving some slack for future expansion.  Changing this value will
    require recompiling all users of this library.  Stack allocation is
    relatively cheap and unwind-state copying is relatively rare, so we
    want to err on making it rather too big than too small.  */
-#define UNW_TDEP_CURSOR_LEN	127
+#define UNW_TDEP_CURSOR_LEN     127
 
 typedef uint32_t unw_word_t;
 typedef int32_t unw_sword_t;
@@ -72,78 +72,78 @@ typedef enum
        DWARF, but that doesn't work because the libunwind requires
        that the exception argument registers be consecutive, which the
        wouldn't be with the DWARF numbering.  */
-    UNW_X86_EAX,	/* scratch (exception argument 1) */
-    UNW_X86_EDX,	/* scratch (exception argument 2) */
-    UNW_X86_ECX,	/* scratch */
-    UNW_X86_EBX,	/* preserved */
-    UNW_X86_ESI,	/* preserved */
-    UNW_X86_EDI,	/* preserved */
-    UNW_X86_EBP,	/* (optional) frame-register */
-    UNW_X86_ESP,	/* (optional) frame-register */
-    UNW_X86_EIP,	/* frame-register */
-    UNW_X86_EFLAGS,	/* scratch (except for "direction", which is fixed */
-    UNW_X86_TRAPNO,	/* scratch */
+    UNW_X86_EAX,        /* scratch (exception argument 1) */
+    UNW_X86_EDX,        /* scratch (exception argument 2) */
+    UNW_X86_ECX,        /* scratch */
+    UNW_X86_EBX,        /* preserved */
+    UNW_X86_ESI,        /* preserved */
+    UNW_X86_EDI,        /* preserved */
+    UNW_X86_EBP,        /* (optional) frame-register */
+    UNW_X86_ESP,        /* (optional) frame-register */
+    UNW_X86_EIP,        /* frame-register */
+    UNW_X86_EFLAGS,     /* scratch (except for "direction", which is fixed */
+    UNW_X86_TRAPNO,     /* scratch */
 
     /* MMX/stacked-fp registers */
-    UNW_X86_ST0,	/* fp return value */
-    UNW_X86_ST1,	/* scratch */
-    UNW_X86_ST2,	/* scratch */
-    UNW_X86_ST3,	/* scratch */
-    UNW_X86_ST4,	/* scratch */
-    UNW_X86_ST5,	/* scratch */
-    UNW_X86_ST6,	/* scratch */
-    UNW_X86_ST7,	/* scratch */
+    UNW_X86_ST0,        /* fp return value */
+    UNW_X86_ST1,        /* scratch */
+    UNW_X86_ST2,        /* scratch */
+    UNW_X86_ST3,        /* scratch */
+    UNW_X86_ST4,        /* scratch */
+    UNW_X86_ST5,        /* scratch */
+    UNW_X86_ST6,        /* scratch */
+    UNW_X86_ST7,        /* scratch */
 
-    UNW_X86_FCW,	/* scratch */
-    UNW_X86_FSW,	/* scratch */
-    UNW_X86_FTW,	/* scratch */
-    UNW_X86_FOP,	/* scratch */
-    UNW_X86_FCS,	/* scratch */
-    UNW_X86_FIP,	/* scratch */
-    UNW_X86_FEA,	/* scratch */
-    UNW_X86_FDS,	/* scratch */
+    UNW_X86_FCW,        /* scratch */
+    UNW_X86_FSW,        /* scratch */
+    UNW_X86_FTW,        /* scratch */
+    UNW_X86_FOP,        /* scratch */
+    UNW_X86_FCS,        /* scratch */
+    UNW_X86_FIP,        /* scratch */
+    UNW_X86_FEA,        /* scratch */
+    UNW_X86_FDS,        /* scratch */
 
     /* SSE registers */
-    UNW_X86_XMM0_lo,	/* scratch */
-    UNW_X86_XMM0_hi,	/* scratch */
-    UNW_X86_XMM1_lo,	/* scratch */
-    UNW_X86_XMM1_hi,	/* scratch */
-    UNW_X86_XMM2_lo,	/* scratch */
-    UNW_X86_XMM2_hi,	/* scratch */
-    UNW_X86_XMM3_lo,	/* scratch */
-    UNW_X86_XMM3_hi,	/* scratch */
-    UNW_X86_XMM4_lo,	/* scratch */
-    UNW_X86_XMM4_hi,	/* scratch */
-    UNW_X86_XMM5_lo,	/* scratch */
-    UNW_X86_XMM5_hi,	/* scratch */
-    UNW_X86_XMM6_lo,	/* scratch */
-    UNW_X86_XMM6_hi,	/* scratch */
-    UNW_X86_XMM7_lo,	/* scratch */
-    UNW_X86_XMM7_hi,	/* scratch */
+    UNW_X86_XMM0_lo,    /* scratch */
+    UNW_X86_XMM0_hi,    /* scratch */
+    UNW_X86_XMM1_lo,    /* scratch */
+    UNW_X86_XMM1_hi,    /* scratch */
+    UNW_X86_XMM2_lo,    /* scratch */
+    UNW_X86_XMM2_hi,    /* scratch */
+    UNW_X86_XMM3_lo,    /* scratch */
+    UNW_X86_XMM3_hi,    /* scratch */
+    UNW_X86_XMM4_lo,    /* scratch */
+    UNW_X86_XMM4_hi,    /* scratch */
+    UNW_X86_XMM5_lo,    /* scratch */
+    UNW_X86_XMM5_hi,    /* scratch */
+    UNW_X86_XMM6_lo,    /* scratch */
+    UNW_X86_XMM6_hi,    /* scratch */
+    UNW_X86_XMM7_lo,    /* scratch */
+    UNW_X86_XMM7_hi,    /* scratch */
 
-    UNW_X86_MXCSR,	/* scratch */
+    UNW_X86_MXCSR,      /* scratch */
 
     /* segment registers */
-    UNW_X86_GS,		/* special */
-    UNW_X86_FS,		/* special */
-    UNW_X86_ES,		/* special */
-    UNW_X86_DS,		/* special */
-    UNW_X86_SS,		/* special */
-    UNW_X86_CS,		/* special */
-    UNW_X86_TSS,	/* special */
-    UNW_X86_LDT,	/* special */
+    UNW_X86_GS,         /* special */
+    UNW_X86_FS,         /* special */
+    UNW_X86_ES,         /* special */
+    UNW_X86_DS,         /* special */
+    UNW_X86_SS,         /* special */
+    UNW_X86_CS,         /* special */
+    UNW_X86_TSS,        /* special */
+    UNW_X86_LDT,        /* special */
 
     /* frame info (read-only) */
     UNW_X86_CFA,
 
-    UNW_X86_XMM0,	/* scratch */
-    UNW_X86_XMM1,	/* scratch */
-    UNW_X86_XMM2,	/* scratch */
-    UNW_X86_XMM3,	/* scratch */
-    UNW_X86_XMM4,	/* scratch */
-    UNW_X86_XMM5,	/* scratch */
-    UNW_X86_XMM6,	/* scratch */
-    UNW_X86_XMM7,	/* scratch */
+    UNW_X86_XMM0,       /* scratch */
+    UNW_X86_XMM1,       /* scratch */
+    UNW_X86_XMM2,       /* scratch */
+    UNW_X86_XMM3,       /* scratch */
+    UNW_X86_XMM4,       /* scratch */
+    UNW_X86_XMM5,       /* scratch */
+    UNW_X86_XMM6,       /* scratch */
+    UNW_X86_XMM7,       /* scratch */
 
     UNW_TDEP_LAST_REG = UNW_X86_XMM7,
 
@@ -153,7 +153,7 @@ typedef enum
   }
 x86_regnum_t;
 
-#define UNW_TDEP_NUM_EH_REGS	2	/* eax and edx are exception args */
+#define UNW_TDEP_NUM_EH_REGS    2       /* eax and edx are exception args */
 
 typedef struct unw_tdep_save_loc
   {
@@ -174,10 +174,10 @@ unw_tdep_proc_info_t;
 
 #include "libunwind-common.h"
 
-#define unw_tdep_getcontext		UNW_ARCH_OBJ(getcontext)
+#define unw_tdep_getcontext             UNW_ARCH_OBJ(getcontext)
 extern int unw_tdep_getcontext (unw_tdep_context_t *);
 
-#define unw_tdep_is_fpreg		UNW_ARCH_OBJ(is_fpreg)
+#define unw_tdep_is_fpreg               UNW_ARCH_OBJ(is_fpreg)
 extern int unw_tdep_is_fpreg (int);
 
 #if defined(__cplusplus) || defined(c_plusplus)

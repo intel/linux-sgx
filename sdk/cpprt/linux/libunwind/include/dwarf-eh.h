@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2003 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -58,9 +58,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
     string:
 
      'z': The operand for this character is a uleb128 value that gives the
-	  length of the CIE augmentation body, not counting the length
-	  of the uleb128 operand itself.  If present, this code must
-	  appear as the first character in the augmentation body.
+          length of the CIE augmentation body, not counting the length
+          of the uleb128 operand itself.  If present, this code must
+          appear as the first character in the augmentation body.
 
      'L': Indicates that the FDE's augmentation body contains an LSDA
           pointer.  The operand for this character is a single byte
@@ -73,13 +73,13 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
           operand for this character is a single byte that specifies
           the pointer-encoding (PE) that is used for the
           code-pointers.  Note: the "address_range" member is always
-	  encoded as an absolute value.  Apart from that, the specified
-	  FDE pointer-encoding applies.
+          encoded as an absolute value.  Apart from that, the specified
+          FDE pointer-encoding applies.
 
      'P': Indicates the presence of a personality routine (handler).
           The first operand for this character specifies the
-	  pointer-encoding (PE) that is used for the second operand,
-	  which specifies the address of the personality routine.
+          pointer-encoding (PE) that is used for the second operand,
+          which specifies the address of the personality routine.
 
     If the augmentation string contains any other characters, the
     remainder of the augmentation string should be ignored.
@@ -104,25 +104,25 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 */
 
-#define DW_EH_VERSION		1	/* The version we're implementing */
+#define DW_EH_VERSION           1       /* The version we're implementing */
 
-struct dwarf_eh_frame_hdr
+struct __attribute__((packed)) dwarf_eh_frame_hdr
   {
     unsigned char version;
     unsigned char eh_frame_ptr_enc;
     unsigned char fde_count_enc;
     unsigned char table_enc;
+    Elf_W (Addr) eh_frame;
     /* The rest of the header is variable-length and consists of the
        following members:
 
-	encoded_t eh_frame_ptr;
-	encoded_t fde_count;
-	struct
-	  {
-	    encoded_t start_ip;	// first address covered by this FDE
-	    encoded_t fde_addr;	// address of the FDE
-	  }
-	binary_search_table[fde_count];  */
+        encoded_t fde_count;
+        struct
+          {
+            encoded_t start_ip; // first address covered by this FDE
+            encoded_t fde_addr; // address of the FDE
+          }
+        binary_search_table[fde_count];  */
   };
 
 #endif /* dwarf_eh_h */

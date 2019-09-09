@@ -49,13 +49,14 @@
 #include "rts.h"
 #include "trts_util.h"
 #include "se_memcpy.h"
+#include "se_cpu_feature.h"
 
 // The global cpu feature bits from uRTS
 uint64_t g_cpu_feature_indicator __attribute__((section(RELRO_SECTION_NAME))) = 0;
 int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
 sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
 
-const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4,
+const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 
@@ -117,7 +118,24 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     }
     sgx_lfence();
 
-    const system_features_t sys_features = *info;
+    system_features_t sys_features = *info;
+    if(sys_features.system_feature_set[0] & (1ULL<< SYS_FEATURE_EXTEND))
+    {
+        if(info->size < sizeof(sys_features))
+        {
+            for(size_t i = 0; i < sizeof(sys_features) - info->size; i++)
+            {
+                *((uint8_t *)&sys_features + info->size + i) = 0;
+            } 
+        }
+    }
+    else
+    {
+        // old urts is used to load the enclave and size/cpu_feature_ext is not set by urts.
+        // So clear these new fields
+        sys_features.size = 0;
+        sys_features.cpu_features_ext = 0;
+    }
     g_sdk_version = sys_features.version;
     if (g_sdk_version == SDK_VERSION_1_5)
     {
@@ -138,18 +156,30 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     // xsave
     uint64_t xfrm = get_xfeature_state();
 
+    // Unset conflict cpu feature bits for legacy cpu features.
+    uint64_t cpu_features = (sys_features.cpu_features | INCOMPAT_FEATURE_BIT);
+
+    if (sys_features.system_feature_set[0] & ((uint64_t)(1ULL << SYS_FEATURE_EXTEND)))
+    {
+        // The sys_features structure is collected by updated uRTS, so use the updated cpu features instead.
+        cpu_features = sys_features.cpu_features_ext;
+    }
+
     // optimized libs
-    if (SDK_VERSION_2_0 < g_sdk_version) {
-		if (0 != init_optimized_libs(sys_features.cpu_features, (uint32_t*)sys_features.cpuinfo_table, xfrm))
-		{
-			return -1;
-		}
-	} else {
-		if (0 != init_optimized_libs(sys_features.cpu_features, NULL, xfrm))
-		{
-			return -1;
-		}
-	}
+    if (SDK_VERSION_2_0 < g_sdk_version || sys_features.size != 0)
+    {
+        if (0 != init_optimized_libs(cpu_features, (uint32_t*)sys_features.cpuinfo_table, xfrm))
+        {
+            return -1;
+        }
+    }
+    else 
+    {
+        if (0 != init_optimized_libs(cpu_features, NULL, xfrm))
+        {
+            return -1;
+        }
+    }
 	
     if(SGX_SUCCESS != sgx_read_rand((unsigned char*)&__stack_chk_guard,
                                      sizeof(__stack_chk_guard)))

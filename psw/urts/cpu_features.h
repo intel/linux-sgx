@@ -34,7 +34,9 @@
 
 #include "cpuid.h"
 
-void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo_table);
+void init_cpuinfo(uint32_t *cpuinfo_table);
+void get_cpu_features(uint64_t *__intel_cpu_feature_indicator);
+void get_cpu_features_ext(uint64_t *__intel_cpu_feature_indicator);
 
 inline void sgx_cpuid(unsigned int in_eax, unsigned int *eax, unsigned int *ebx, unsigned int *ecx, unsigned int *edx)
 {

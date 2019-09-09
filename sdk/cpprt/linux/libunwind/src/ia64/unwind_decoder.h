@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2002 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -33,55 +33,55 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
  * macros/constants before including this file:
  *
  *  Types:
- *	unw_word	Unsigned integer type with at least 64 bits
+ *      unw_word        Unsigned integer type with at least 64 bits
  *
  *  Register names:
- *	UNW_REG_BSP
- *	UNW_REG_BSPSTORE
- *	UNW_REG_FPSR
- *	UNW_REG_LC
- *	UNW_REG_PFS
- *	UNW_REG_PR
- *	UNW_REG_RNAT
- *	UNW_REG_PSP
- *	UNW_REG_RP
- *	UNW_REG_UNAT
+ *      UNW_REG_BSP
+ *      UNW_REG_BSPSTORE
+ *      UNW_REG_FPSR
+ *      UNW_REG_LC
+ *      UNW_REG_PFS
+ *      UNW_REG_PR
+ *      UNW_REG_RNAT
+ *      UNW_REG_PSP
+ *      UNW_REG_RP
+ *      UNW_REG_UNAT
  *
  *  Decoder action macros:
- *	UNW_DEC_BAD_CODE(code)
- *	UNW_DEC_ABI(fmt,abi,context,arg)
- *	UNW_DEC_BR_GR(fmt,brmask,gr,arg)
- *	UNW_DEC_BR_MEM(fmt,brmask,arg)
- *	UNW_DEC_COPY_STATE(fmt,label,arg)
- *	UNW_DEC_EPILOGUE(fmt,t,ecount,arg)
- *	UNW_DEC_FRGR_MEM(fmt,grmask,frmask,arg)
- *	UNW_DEC_FR_MEM(fmt,frmask,arg)
- *	UNW_DEC_GR_GR(fmt,grmask,gr,arg)
- *	UNW_DEC_GR_MEM(fmt,grmask,arg)
- *	UNW_DEC_LABEL_STATE(fmt,label,arg)
- *	UNW_DEC_MEM_STACK_F(fmt,t,size,arg)
- *	UNW_DEC_MEM_STACK_V(fmt,t,arg)
- *	UNW_DEC_PRIUNAT_GR(fmt,r,arg)
- *	UNW_DEC_PRIUNAT_WHEN_GR(fmt,t,arg)
- *	UNW_DEC_PRIUNAT_WHEN_MEM(fmt,t,arg)
- *	UNW_DEC_PRIUNAT_WHEN_PSPREL(fmt,pspoff,arg)
- *	UNW_DEC_PRIUNAT_WHEN_SPREL(fmt,spoff,arg)
- *	UNW_DEC_PROLOGUE(fmt,body,rlen,arg)
- *	UNW_DEC_PROLOGUE_GR(fmt,rlen,mask,grsave,arg)
- *	UNW_DEC_REG_PSPREL(fmt,reg,pspoff,arg)
- *	UNW_DEC_REG_REG(fmt,src,dst,arg)
- *	UNW_DEC_REG_SPREL(fmt,reg,spoff,arg)
- *	UNW_DEC_REG_WHEN(fmt,reg,t,arg)
- *	UNW_DEC_RESTORE(fmt,t,abreg,arg)
- *	UNW_DEC_RESTORE_P(fmt,qp,t,abreg,arg)
- *	UNW_DEC_SPILL_BASE(fmt,pspoff,arg)
- *	UNW_DEC_SPILL_MASK(fmt,imaskp,arg)
- *	UNW_DEC_SPILL_PSPREL(fmt,t,abreg,pspoff,arg)
- *	UNW_DEC_SPILL_PSPREL_P(fmt,qp,t,abreg,pspoff,arg)
- *	UNW_DEC_SPILL_REG(fmt,t,abreg,x,ytreg,arg)
- *	UNW_DEC_SPILL_REG_P(fmt,qp,t,abreg,x,ytreg,arg)
- *	UNW_DEC_SPILL_SPREL(fmt,t,abreg,spoff,arg)
- *	UNW_DEC_SPILL_SPREL_P(fmt,qp,t,abreg,pspoff,arg)
+ *      UNW_DEC_BAD_CODE(code)
+ *      UNW_DEC_ABI(fmt,abi,context,arg)
+ *      UNW_DEC_BR_GR(fmt,brmask,gr,arg)
+ *      UNW_DEC_BR_MEM(fmt,brmask,arg)
+ *      UNW_DEC_COPY_STATE(fmt,label,arg)
+ *      UNW_DEC_EPILOGUE(fmt,t,ecount,arg)
+ *      UNW_DEC_FRGR_MEM(fmt,grmask,frmask,arg)
+ *      UNW_DEC_FR_MEM(fmt,frmask,arg)
+ *      UNW_DEC_GR_GR(fmt,grmask,gr,arg)
+ *      UNW_DEC_GR_MEM(fmt,grmask,arg)
+ *      UNW_DEC_LABEL_STATE(fmt,label,arg)
+ *      UNW_DEC_MEM_STACK_F(fmt,t,size,arg)
+ *      UNW_DEC_MEM_STACK_V(fmt,t,arg)
+ *      UNW_DEC_PRIUNAT_GR(fmt,r,arg)
+ *      UNW_DEC_PRIUNAT_WHEN_GR(fmt,t,arg)
+ *      UNW_DEC_PRIUNAT_WHEN_MEM(fmt,t,arg)
+ *      UNW_DEC_PRIUNAT_WHEN_PSPREL(fmt,pspoff,arg)
+ *      UNW_DEC_PRIUNAT_WHEN_SPREL(fmt,spoff,arg)
+ *      UNW_DEC_PROLOGUE(fmt,body,rlen,arg)
+ *      UNW_DEC_PROLOGUE_GR(fmt,rlen,mask,grsave,arg)
+ *      UNW_DEC_REG_PSPREL(fmt,reg,pspoff,arg)
+ *      UNW_DEC_REG_REG(fmt,src,dst,arg)
+ *      UNW_DEC_REG_SPREL(fmt,reg,spoff,arg)
+ *      UNW_DEC_REG_WHEN(fmt,reg,t,arg)
+ *      UNW_DEC_RESTORE(fmt,t,abreg,arg)
+ *      UNW_DEC_RESTORE_P(fmt,qp,t,abreg,arg)
+ *      UNW_DEC_SPILL_BASE(fmt,pspoff,arg)
+ *      UNW_DEC_SPILL_MASK(fmt,imaskp,arg)
+ *      UNW_DEC_SPILL_PSPREL(fmt,t,abreg,pspoff,arg)
+ *      UNW_DEC_SPILL_PSPREL_P(fmt,qp,t,abreg,pspoff,arg)
+ *      UNW_DEC_SPILL_REG(fmt,t,abreg,x,ytreg,arg)
+ *      UNW_DEC_SPILL_REG_P(fmt,qp,t,abreg,x,ytreg,arg)
+ *      UNW_DEC_SPILL_SPREL(fmt,t,abreg,spoff,arg)
+ *      UNW_DEC_SPILL_SPREL_P(fmt,qp,t,abreg,pspoff,arg)
  */
 
 static unw_word
@@ -96,7 +96,7 @@ unw_decode_uleb128 (unsigned char **dpp)
       byte = *bp++;
       result |= (byte & 0x7f) << shift;
       if ((byte & 0x80) == 0)
-	break;
+        break;
       shift += 7;
     }
   *dpp = bp;
@@ -114,9 +114,9 @@ unw_decode_x1 (unsigned char *dp, unsigned char code, void *arg)
   off = unw_decode_uleb128 (&dp);
   abreg = (byte1 & 0x7f);
   if (byte1 & 0x80)
-	  UNW_DEC_SPILL_SPREL(X1, t, abreg, off, arg);
+          UNW_DEC_SPILL_SPREL(X1, t, abreg, off, arg);
   else
-	  UNW_DEC_SPILL_PSPREL(X1, t, abreg, off, arg);
+          UNW_DEC_SPILL_PSPREL(X1, t, abreg, off, arg);
   return dp;
 }
 
@@ -232,7 +232,7 @@ unw_decode_p2_p5 (unsigned char *dp, unsigned char code, void *arg)
       unsigned char byte1 = *dp++;
 
       UNW_DEC_BR_GR(P2, ((code & 0xf) << 1) | ((byte1 >> 7) & 1),
-		    (byte1 & 0x7f), arg);
+                    (byte1 & 0x7f), arg);
     }
   else if ((code & 0x08) == 0)
     {
@@ -241,21 +241,21 @@ unw_decode_p2_p5 (unsigned char *dp, unsigned char code, void *arg)
       r = ((code & 0x7) << 1) | ((byte1 >> 7) & 1);
       dst = (byte1 & 0x7f);
       switch (r)
-	{
-	case 0: UNW_DEC_REG_GR(P3, UNW_REG_PSP, dst, arg); break;
-	case 1: UNW_DEC_REG_GR(P3, UNW_REG_RP, dst, arg); break;
-	case 2: UNW_DEC_REG_GR(P3, UNW_REG_PFS, dst, arg); break;
-	case 3: UNW_DEC_REG_GR(P3, UNW_REG_PR, dst, arg); break;
-	case 4: UNW_DEC_REG_GR(P3, UNW_REG_UNAT, dst, arg); break;
-	case 5: UNW_DEC_REG_GR(P3, UNW_REG_LC, dst, arg); break;
-	case 6: UNW_DEC_RP_BR(P3, dst, arg); break;
-	case 7: UNW_DEC_REG_GR(P3, UNW_REG_RNAT, dst, arg); break;
-	case 8: UNW_DEC_REG_GR(P3, UNW_REG_BSP, dst, arg); break;
-	case 9: UNW_DEC_REG_GR(P3, UNW_REG_BSPSTORE, dst, arg); break;
-	case 10: UNW_DEC_REG_GR(P3, UNW_REG_FPSR, dst, arg); break;
-	case 11: UNW_DEC_PRIUNAT_GR(P3, dst, arg); break;
-	default: UNW_DEC_BAD_CODE(r); break;
-	}
+        {
+        case 0: UNW_DEC_REG_GR(P3, UNW_REG_PSP, dst, arg); break;
+        case 1: UNW_DEC_REG_GR(P3, UNW_REG_RP, dst, arg); break;
+        case 2: UNW_DEC_REG_GR(P3, UNW_REG_PFS, dst, arg); break;
+        case 3: UNW_DEC_REG_GR(P3, UNW_REG_PR, dst, arg); break;
+        case 4: UNW_DEC_REG_GR(P3, UNW_REG_UNAT, dst, arg); break;
+        case 5: UNW_DEC_REG_GR(P3, UNW_REG_LC, dst, arg); break;
+        case 6: UNW_DEC_RP_BR(P3, dst, arg); break;
+        case 7: UNW_DEC_REG_GR(P3, UNW_REG_RNAT, dst, arg); break;
+        case 8: UNW_DEC_REG_GR(P3, UNW_REG_BSP, dst, arg); break;
+        case 9: UNW_DEC_REG_GR(P3, UNW_REG_BSPSTORE, dst, arg); break;
+        case 10: UNW_DEC_REG_GR(P3, UNW_REG_FPSR, dst, arg); break;
+        case 11: UNW_DEC_PRIUNAT_GR(P3, dst, arg); break;
+        default: UNW_DEC_BAD_CODE(r); break;
+        }
     }
   else if ((code & 0x7) == 0)
     UNW_DEC_SPILL_MASK(P4, dp, arg);
@@ -297,90 +297,90 @@ unw_decode_p7_p10 (unsigned char *dp, unsigned char code, void *arg)
       r = (code & 0xf);
       t = unw_decode_uleb128 (&dp);
       switch (r)
-	{
-	case 0:
-	  size = unw_decode_uleb128 (&dp);
-	  UNW_DEC_MEM_STACK_F(P7, t, size, arg);
-	  break;
+        {
+        case 0:
+          size = unw_decode_uleb128 (&dp);
+          UNW_DEC_MEM_STACK_F(P7, t, size, arg);
+          break;
 
-	case 1: UNW_DEC_MEM_STACK_V(P7, t, arg); break;
-	case 2: UNW_DEC_SPILL_BASE(P7, t, arg); break;
-	case 3: UNW_DEC_REG_SPREL(P7, UNW_REG_PSP, t, arg); break;
-	case 4: UNW_DEC_REG_WHEN(P7, UNW_REG_RP, t, arg); break;
-	case 5: UNW_DEC_REG_PSPREL(P7, UNW_REG_RP, t, arg); break;
-	case 6: UNW_DEC_REG_WHEN(P7, UNW_REG_PFS, t, arg); break;
-	case 7: UNW_DEC_REG_PSPREL(P7, UNW_REG_PFS, t, arg); break;
-	case 8: UNW_DEC_REG_WHEN(P7, UNW_REG_PR, t, arg); break;
-	case 9: UNW_DEC_REG_PSPREL(P7, UNW_REG_PR, t, arg); break;
-	case 10: UNW_DEC_REG_WHEN(P7, UNW_REG_LC, t, arg); break;
-	case 11: UNW_DEC_REG_PSPREL(P7, UNW_REG_LC, t, arg); break;
-	case 12: UNW_DEC_REG_WHEN(P7, UNW_REG_UNAT, t, arg); break;
-	case 13: UNW_DEC_REG_PSPREL(P7, UNW_REG_UNAT, t, arg); break;
-	case 14: UNW_DEC_REG_WHEN(P7, UNW_REG_FPSR, t, arg); break;
-	case 15: UNW_DEC_REG_PSPREL(P7, UNW_REG_FPSR, t, arg); break;
-	default: UNW_DEC_BAD_CODE(r); break;
-	}
+        case 1: UNW_DEC_MEM_STACK_V(P7, t, arg); break;
+        case 2: UNW_DEC_SPILL_BASE(P7, t, arg); break;
+        case 3: UNW_DEC_REG_SPREL(P7, UNW_REG_PSP, t, arg); break;
+        case 4: UNW_DEC_REG_WHEN(P7, UNW_REG_RP, t, arg); break;
+        case 5: UNW_DEC_REG_PSPREL(P7, UNW_REG_RP, t, arg); break;
+        case 6: UNW_DEC_REG_WHEN(P7, UNW_REG_PFS, t, arg); break;
+        case 7: UNW_DEC_REG_PSPREL(P7, UNW_REG_PFS, t, arg); break;
+        case 8: UNW_DEC_REG_WHEN(P7, UNW_REG_PR, t, arg); break;
+        case 9: UNW_DEC_REG_PSPREL(P7, UNW_REG_PR, t, arg); break;
+        case 10: UNW_DEC_REG_WHEN(P7, UNW_REG_LC, t, arg); break;
+        case 11: UNW_DEC_REG_PSPREL(P7, UNW_REG_LC, t, arg); break;
+        case 12: UNW_DEC_REG_WHEN(P7, UNW_REG_UNAT, t, arg); break;
+        case 13: UNW_DEC_REG_PSPREL(P7, UNW_REG_UNAT, t, arg); break;
+        case 14: UNW_DEC_REG_WHEN(P7, UNW_REG_FPSR, t, arg); break;
+        case 15: UNW_DEC_REG_PSPREL(P7, UNW_REG_FPSR, t, arg); break;
+        default: UNW_DEC_BAD_CODE(r); break;
+        }
     }
   else
     {
       switch (code & 0xf)
-	{
-	case 0x0: /* p8 */
-	  {
-	    r = *dp++;
-	    t = unw_decode_uleb128 (&dp);
-	    switch (r)
-	      {
-	      case  1: UNW_DEC_REG_SPREL(P8, UNW_REG_RP, t, arg); break;
-	      case  2: UNW_DEC_REG_SPREL(P8, UNW_REG_PFS, t, arg); break;
-	      case  3: UNW_DEC_REG_SPREL(P8, UNW_REG_PR, t, arg); break;
-	      case  4: UNW_DEC_REG_SPREL(P8, UNW_REG_LC, t, arg); break;
-	      case  5: UNW_DEC_REG_SPREL(P8, UNW_REG_UNAT, t, arg); break;
-	      case  6: UNW_DEC_REG_SPREL(P8, UNW_REG_FPSR, t, arg); break;
-	      case  7: UNW_DEC_REG_WHEN(P8, UNW_REG_BSP, t, arg); break;
-	      case  8: UNW_DEC_REG_PSPREL(P8, UNW_REG_BSP, t, arg); break;
-	      case  9: UNW_DEC_REG_SPREL(P8, UNW_REG_BSP, t, arg); break;
-	      case 10: UNW_DEC_REG_WHEN(P8, UNW_REG_BSPSTORE, t, arg); break;
-	      case 11: UNW_DEC_REG_PSPREL(P8, UNW_REG_BSPSTORE, t, arg); break;
-	      case 12: UNW_DEC_REG_SPREL(P8, UNW_REG_BSPSTORE, t, arg); break;
-	      case 13: UNW_DEC_REG_WHEN(P8, UNW_REG_RNAT, t, arg); break;
-	      case 14: UNW_DEC_REG_PSPREL(P8, UNW_REG_RNAT, t, arg); break;
-	      case 15: UNW_DEC_REG_SPREL(P8, UNW_REG_RNAT, t, arg); break;
-	      case 16: UNW_DEC_PRIUNAT_WHEN_GR(P8, t, arg); break;
-	      case 17: UNW_DEC_PRIUNAT_PSPREL(P8, t, arg); break;
-	      case 18: UNW_DEC_PRIUNAT_SPREL(P8, t, arg); break;
-	      case 19: UNW_DEC_PRIUNAT_WHEN_MEM(P8, t, arg); break;
-	      default: UNW_DEC_BAD_CODE(r); break;
-	    }
-	  }
-	  break;
+        {
+        case 0x0: /* p8 */
+          {
+            r = *dp++;
+            t = unw_decode_uleb128 (&dp);
+            switch (r)
+              {
+              case  1: UNW_DEC_REG_SPREL(P8, UNW_REG_RP, t, arg); break;
+              case  2: UNW_DEC_REG_SPREL(P8, UNW_REG_PFS, t, arg); break;
+              case  3: UNW_DEC_REG_SPREL(P8, UNW_REG_PR, t, arg); break;
+              case  4: UNW_DEC_REG_SPREL(P8, UNW_REG_LC, t, arg); break;
+              case  5: UNW_DEC_REG_SPREL(P8, UNW_REG_UNAT, t, arg); break;
+              case  6: UNW_DEC_REG_SPREL(P8, UNW_REG_FPSR, t, arg); break;
+              case  7: UNW_DEC_REG_WHEN(P8, UNW_REG_BSP, t, arg); break;
+              case  8: UNW_DEC_REG_PSPREL(P8, UNW_REG_BSP, t, arg); break;
+              case  9: UNW_DEC_REG_SPREL(P8, UNW_REG_BSP, t, arg); break;
+              case 10: UNW_DEC_REG_WHEN(P8, UNW_REG_BSPSTORE, t, arg); break;
+              case 11: UNW_DEC_REG_PSPREL(P8, UNW_REG_BSPSTORE, t, arg); break;
+              case 12: UNW_DEC_REG_SPREL(P8, UNW_REG_BSPSTORE, t, arg); break;
+              case 13: UNW_DEC_REG_WHEN(P8, UNW_REG_RNAT, t, arg); break;
+              case 14: UNW_DEC_REG_PSPREL(P8, UNW_REG_RNAT, t, arg); break;
+              case 15: UNW_DEC_REG_SPREL(P8, UNW_REG_RNAT, t, arg); break;
+              case 16: UNW_DEC_PRIUNAT_WHEN_GR(P8, t, arg); break;
+              case 17: UNW_DEC_PRIUNAT_PSPREL(P8, t, arg); break;
+              case 18: UNW_DEC_PRIUNAT_SPREL(P8, t, arg); break;
+              case 19: UNW_DEC_PRIUNAT_WHEN_MEM(P8, t, arg); break;
+              default: UNW_DEC_BAD_CODE(r); break;
+            }
+          }
+          break;
 
-	case 0x1:
-	  byte1 = *dp++; byte2 = *dp++;
-	  UNW_DEC_GR_GR(P9, (byte1 & 0xf), (byte2 & 0x7f), arg);
-	  break;
+        case 0x1:
+          byte1 = *dp++; byte2 = *dp++;
+          UNW_DEC_GR_GR(P9, (byte1 & 0xf), (byte2 & 0x7f), arg);
+          break;
 
-	case 0xf: /* p10 */
-	  byte1 = *dp++; byte2 = *dp++;
-	  UNW_DEC_ABI(P10, byte1, byte2, arg);
-	  break;
+        case 0xf: /* p10 */
+          byte1 = *dp++; byte2 = *dp++;
+          UNW_DEC_ABI(P10, byte1, byte2, arg);
+          break;
 
-	case 0x9:
-	  return unw_decode_x1 (dp, code, arg);
+        case 0x9:
+          return unw_decode_x1 (dp, code, arg);
 
-	case 0xa:
-	  return unw_decode_x2 (dp, code, arg);
+        case 0xa:
+          return unw_decode_x2 (dp, code, arg);
 
-	case 0xb:
-	  return unw_decode_x3 (dp, code, arg);
+        case 0xb:
+          return unw_decode_x3 (dp, code, arg);
 
-	case 0xc:
-	  return unw_decode_x4 (dp, code, arg);
+        case 0xc:
+          return unw_decode_x4 (dp, code, arg);
 
-	default:
-	  UNW_DEC_BAD_CODE(code);
-	  break;
-	}
+        default:
+          UNW_DEC_BAD_CODE(code);
+          break;
+        }
     }
   return dp;
 }
@@ -422,9 +422,9 @@ unw_decode_b3_x4 (unsigned char *dp, unsigned char code, void *arg)
     {
       label = unw_decode_uleb128 (&dp);
       if ((code & 0x08) != 0)
-	UNW_DEC_COPY_STATE(B4, label, arg);
+        UNW_DEC_COPY_STATE(B4, label, arg);
       else
-	UNW_DEC_LABEL_STATE(B4, label, arg);
+        UNW_DEC_LABEL_STATE(B4, label, arg);
     }
   else
     switch (code & 0x7)

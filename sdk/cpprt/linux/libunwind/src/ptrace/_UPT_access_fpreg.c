@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
    Copyright (C) 2010 Konstantin Belousov <kib@freebsd.org>
 
 This file is part of libunwind.
@@ -29,14 +29,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #if HAVE_DECL_PTRACE_POKEUSER || HAVE_TTRACE
 int
 _UPT_access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
-		   int write, void *arg)
+                   int write, void *arg)
 {
   unw_word_t *wp = (unw_word_t *) val;
   struct UPT_info *ui = arg;
   pid_t pid = ui->pid;
   int i;
 
-  if ((unsigned) reg >= sizeof (_UPT_reg_offset) / sizeof (_UPT_reg_offset[0]))
+  if ((unsigned) reg >= ARRAY_SIZE (_UPT_reg_offset))
     return -UNW_EBADREG;
 
   errno = 0;
@@ -44,57 +44,73 @@ _UPT_access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
     for (i = 0; i < (int) (sizeof (*val) / sizeof (wp[i])); ++i)
       {
 #ifdef HAVE_TTRACE
-#	warning No support for ttrace() yet.
+#       warning No support for ttrace() yet.
 #else
-	ptrace (PTRACE_POKEUSER, pid, _UPT_reg_offset[reg] + i * sizeof(wp[i]),
-		wp[i]);
+        ptrace (PTRACE_POKEUSER, pid, _UPT_reg_offset[reg] + i * sizeof(wp[i]),
+                wp[i]);
 #endif
-	if (errno)
-	  return -UNW_EBADREG;
+        if (errno)
+          return -UNW_EBADREG;
       }
   else
     for (i = 0; i < (int) (sizeof (*val) / sizeof (wp[i])); ++i)
       {
 #ifdef HAVE_TTRACE
-#	warning No support for ttrace() yet.
+#       warning No support for ttrace() yet.
 #else
-	wp[i] = ptrace (PTRACE_PEEKUSER, pid,
-			_UPT_reg_offset[reg] + i * sizeof(wp[i]), 0);
+        wp[i] = ptrace (PTRACE_PEEKUSER, pid,
+                        _UPT_reg_offset[reg] + i * sizeof(wp[i]), 0);
 #endif
-	if (errno)
-	  return -UNW_EBADREG;
+        if (errno)
+          return -UNW_EBADREG;
       }
   return 0;
 }
 #elif HAVE_DECL_PT_GETFPREGS
 int
 _UPT_access_fpreg (unw_addr_space_t as, unw_regnum_t reg, unw_fpreg_t *val,
-		   int write, void *arg)
+                   int write, void *arg)
 {
   struct UPT_info *ui = arg;
   pid_t pid = ui->pid;
   fpregset_t fpreg;
 
-  if ((unsigned) reg >= sizeof (_UPT_reg_offset) / sizeof (_UPT_reg_offset[0]))
-    return -UNW_EBADREG;
-
-  if (ptrace(PT_GETFPREGS, pid, (caddr_t)&fpreg, 0) == -1)
-	  return -UNW_EBADREG;
-  if (write) {
 #if defined(__amd64__)
-	  memcpy(&fpreg.fpr_xacc[reg], val, sizeof(unw_fpreg_t));
+  if (1) /* XXXKIB */
+    return -UNW_EBADREG;
 #elif defined(__i386__)
-	  memcpy(&fpreg.fpr_acc[reg], val, sizeof(unw_fpreg_t));
+  if ((unsigned) reg < UNW_X86_ST0 || (unsigned) reg > UNW_X86_ST7)
+    return -UNW_EBADREG;
+#elif defined(__arm__)
+  if ((unsigned) reg < UNW_ARM_F0 || (unsigned) reg > UNW_ARM_F7)
+    return -UNW_EBADREG;
 #else
 #error Fix me
 #endif
-	  if (ptrace(PT_SETFPREGS, pid, (caddr_t)&fpreg, 0) == -1)
-		  return -UNW_EBADREG;
+  if ((unsigned) reg >= ARRAY_SIZE (_UPT_reg_offset))
+    return -UNW_EBADREG;
+
+  if (ptrace(PT_GETFPREGS, pid, (caddr_t)&fpreg, 0) == -1)
+          return -UNW_EBADREG;
+  if (write) {
+#if defined(__amd64__)
+          memcpy(&fpreg.fpr_xacc[reg], val, sizeof(unw_fpreg_t));
+#elif defined(__i386__)
+          memcpy(&fpreg.fpr_acc[reg], val, sizeof(unw_fpreg_t));
+#elif defined(__arm__)
+          memcpy(&fpreg.fpr[reg], val, sizeof(unw_fpreg_t));
+#else
+#error Fix me
+#endif
+          if (ptrace(PT_SETFPREGS, pid, (caddr_t)&fpreg, 0) == -1)
+                  return -UNW_EBADREG;
   } else
 #if defined(__amd64__)
-	  memcpy(val, &fpreg.fpr_xacc[reg], sizeof(unw_fpreg_t));
+          memcpy(val, &fpreg.fpr_xacc[reg], sizeof(unw_fpreg_t));
 #elif defined(__i386__)
-	  memcpy(val, &fpreg.fpr_acc[reg], sizeof(unw_fpreg_t));
+          memcpy(val, &fpreg.fpr_acc[reg], sizeof(unw_fpreg_t));
+#elif defined(__arm__)
+          memcpy(val, &fpreg.fpr[reg], sizeof(unw_fpreg_t));
 #else
 #error Fix me
 #endif

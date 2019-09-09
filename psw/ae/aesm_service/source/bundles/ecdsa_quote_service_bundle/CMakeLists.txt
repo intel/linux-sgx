@@ -23,7 +23,6 @@ target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal/linux
 )
 
-target_compile_definitions(${bundle} PRIVATE AESM_ECDSA_BUNDLE)
 add_custom_command(
     OUTPUT ${Edger8rOutputQE3}
     COMMAND ${PROJECT_SOURCE_DIR}/../../../../build/linux/sgx_edger8r --untrusted --untrusted-dir ${CMAKE_CURRENT_BINARY_DIR} qe3.edl --search-path ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/enclave

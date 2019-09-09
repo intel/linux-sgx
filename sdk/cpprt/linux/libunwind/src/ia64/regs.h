@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -40,9 +40,9 @@ rotate_gr (struct cursor *c, int reg)
     preg = reg;
   else
     {
-      preg = reg + rrb_gr;	/* apply rotation */
+      preg = reg + rrb_gr;      /* apply rotation */
       if ((unsigned) (preg - 32) >= sor)
-	preg -= sor;		/* wrap around */
+        preg -= sor;            /* wrap around */
     }
   if (sor)
     Debug (15, "sor=%u rrb.gr=%u, r%d -> r%d\n", sor, rrb_gr, reg, preg);
@@ -60,12 +60,12 @@ rotate_fr (struct cursor *c, int reg)
 
   rrb_fr = (c->cfm >> 25) & 0x7f;
   if (reg < 32)
-    preg = reg;		/* register not part of the rotating partition */
+    preg = reg;         /* register not part of the rotating partition */
   else
     {
-      preg = reg + rrb_fr;	/* apply rotation */
+      preg = reg + rrb_fr;      /* apply rotation */
       if (preg > 127)
-	preg -= 96;		/* wrap around */
+        preg -= 96;             /* wrap around */
     }
   if (rrb_fr)
     Debug (15, "rrb.fr=%u, f%d -> f%d\n", rrb_fr, reg, preg);

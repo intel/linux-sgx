@@ -55,18 +55,20 @@ class IAESMLogic {
                                      uint32_t bufferSize, uint8_t** quote,
                                      bool b_qe_report, uint32_t* qe_reportSize, uint8_t** qe_report) = 0;
 
+        virtual aesm_error_t select_att_key_id(uint32_t att_key_id_list_size,
+                const uint8_t *att_key_id_list,
+                uint32_t *select_att_key_id_size,
+                uint8_t **select_att_key_id) = 0;
+
         virtual aesm_error_t init_quote_ex(
                 uint32_t att_key_id_size, const uint8_t *att_key_id,
-                uint32_t certification_key_type,
                 uint8_t **target_info, uint32_t *target_info_size,
-                bool refresh_att_key,
                 bool b_pub_key_id, size_t *pub_key_id_size, uint8_t **pub_key_id) = 0;
-        
+
         virtual aesm_error_t get_quote_size_ex(
                 uint32_t att_key_id_size, const uint8_t *att_key_id,
-                uint32_t certification_key_type,
                 uint32_t *quote_size) = 0;
-    
+
         virtual aesm_error_t get_quote_ex(
                 uint32_t report_size, const uint8_t *report,
                 uint32_t att_key_id_size, const uint8_t *att_key_id,
@@ -96,6 +98,9 @@ class IAESMLogic {
         virtual aesm_error_t reportAttestationStatus(uint8_t* platform_info, uint32_t platform_info_size,
                                            uint32_t attestation_error_code,
                                            uint8_t** update_info, uint32_t update_info_size) = 0;
+        virtual aesm_error_t checkUpdateStatus(uint8_t* platform_info, uint32_t platform_info_size,
+                                           uint8_t** update_info, uint32_t update_info_size,
+                                           uint32_t config, uint32_t* p_status) = 0;
         virtual aesm_error_t getWhiteListSize(uint32_t* white_list_size) = 0;
         virtual aesm_error_t getWhiteList(uint8_t** white_list, uint32_t mWhiteListSize) = 0;
         virtual aesm_error_t sgxGetExtendedEpidGroupId(uint32_t* x_group_id) = 0;

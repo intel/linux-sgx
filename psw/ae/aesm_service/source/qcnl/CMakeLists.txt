@@ -5,6 +5,7 @@ else()
     message (FATAL_ERROR "Cannot find CURL")
 endif()
 aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl _srcs)
+aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/linux _srcs)
 add_library(sgx_default_qcnl_wrapper SHARED ${_srcs})
 
 target_include_directories(sgx_default_qcnl_wrapper PRIVATE

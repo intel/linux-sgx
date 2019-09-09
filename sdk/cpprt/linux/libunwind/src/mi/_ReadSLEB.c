@@ -13,7 +13,7 @@ _ReadSLEB (unsigned char **dpp)
       result |= (byte & 0x7f) << shift;
       shift += 7;
       if ((byte & 0x80) == 0)
-	break;
+        break;
     }
 
   if (shift < 8 * sizeof (unw_word_t) && (byte & 0x40) != 0)

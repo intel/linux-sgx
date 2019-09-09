@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
-IPPAPI(IppStatus, l9_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPAPI(IppStatus, y8_ippsDLPGet,(IppsBigNumState* pP, IppsBigNumState* pR, IppsBigNumState* pG, IppsDLPState* pCtx))
+IPPAPI(IppStatus, l9_ippsDLPGet,(IppsBigNumState* pP, IppsBigNumState* pR, IppsBigNumState* pG, IppsDLPState* pCtx))
+IPPAPI(IppStatus, k0_ippsDLPGet,(IppsBigNumState* pP, IppsBigNumState* pR, IppsBigNumState* pG, IppsDLPState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsDLPGet,(IppsBigNumState* pP, IppsBigNumState* pR, IppsBigNumState* pG, IppsDLPState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsDLPGetDP( pDP, tag, pCtx );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsDLPGet( pP, pR, pG, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsDLPGetDP( pDP, tag, pCtx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsDLPGet( pP, pR, pG, pCtx );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsDLPGet( pP, pR, pG, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
-IPPAPI(IppStatus, h9_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPAPI(IppStatus, p8_ippsDLPGet,(IppsBigNumState* pP, IppsBigNumState* pR, IppsBigNumState* pG, IppsDLPState* pCtx))
+IPPAPI(IppStatus, h9_ippsDLPGet,(IppsBigNumState* pP, IppsBigNumState* pR, IppsBigNumState* pG, IppsDLPState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsDLPGet,(IppsBigNumState* pP, IppsBigNumState* pR, IppsBigNumState* pG, IppsDLPState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsDLPGetDP( pDP, tag, pCtx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsDLPGet( pP, pR, pG, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsDLPGetDP( pDP, tag, pCtx );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsDLPGet( pP, pR, pG, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

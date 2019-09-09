@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003, 2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -50,10 +50,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 struct UPT_info
   {
-    pid_t pid;		/* the process-id of the child we're unwinding */
+    pid_t pid;          /* the process-id of the child we're unwinding */
     struct elf_dyn_info edi;
   };
 
-extern int _UPT_reg_offset[UNW_REG_LAST + 1];
+extern const int _UPT_reg_offset[UNW_REG_LAST + 1];
 
 #endif /* _UPT_internal_h */

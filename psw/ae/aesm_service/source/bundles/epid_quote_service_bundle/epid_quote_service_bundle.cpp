@@ -1,4 +1,5 @@
 #include <epid_quote_service.h>
+#include <quote_provider_service.h>
 #include <network_service.h>
 #include <pce_service.h>
 
@@ -7,6 +8,9 @@
 #include <cppmicroservices/GetBundleContext.h>
 
 #include <iostream>
+// Need this macro definition before inttypes.h to use printing format
+// specifiers(SCNu32 and PRIu32 used below) in C++
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include "aesm_xegd_blob.h"
 #include "aesm_logic.h"
@@ -22,6 +26,9 @@
 #include "es_info.h"
 #include "endpoint_select_info.h"
 #include "cppmicroservices_util.h"
+#include "service_enclave_mrsigner.hh"
+#include "sgx_ql_quote.h"
+#include "se_sig_rl.h"
 
 using namespace cppmicroservices;
 std::shared_ptr<INetworkService> g_network_service;
@@ -32,6 +39,7 @@ std::shared_ptr<ILaunchService> g_launch_service;
 extern ThreadStatus epid_thread;
 static uint32_t active_extended_epid_group_id = 0;
 static AESMLogicMutex _qe_pve_mutex;
+
 
 #define CHECK_EPID_PROVISIONG_STATUS \
     if(!query_pve_thread_status()){\
@@ -122,6 +130,7 @@ static ae_error_t read_global_extended_epid_group_id(uint32_t *xeg_id)
         return OAL_CONFIG_FILE_ERROR;
     }
     ae_ret = OAL_CONFIG_FILE_ERROR;
+    // Need to define __STDC_FORMAT_MACROS to use SCNu32 in C++
     if(fscanf(f, "%" SCNu32, xeg_id)==1){
         ae_ret = AE_SUCCESS;
     }
@@ -140,6 +149,7 @@ static ae_error_t set_global_extended_epid_group_id(uint32_t xeg_id)
         return OAL_CONFIG_FILE_ERROR;
     }
     ae_ret = OAL_CONFIG_FILE_ERROR;
+    // Need to define __STDC_FORMAT_MACROS to use PRIu32 in C++
     if(fprintf(f, "%" PRIu32, xeg_id)>0){
         ae_ret = AE_SUCCESS;
     }
@@ -148,7 +158,7 @@ static ae_error_t set_global_extended_epid_group_id(uint32_t xeg_id)
 }
 
 
-class EpidQuoteServiceImp : public IEpidQuoteService
+class EpidQuoteServiceImp : public IEpidQuoteService, public IQuoteProviderService
 {
 private:
     bool initialized;
@@ -160,6 +170,7 @@ public:
     ae_error_t start()
     {
         ae_error_t ae_ret = AE_SUCCESS;
+        AESMLogicLock lock(_qe_pve_mutex);
         if (initialized == true)
         {
             AESM_DBG_INFO("epid bundle has been started");
@@ -167,9 +178,10 @@ public:
         }
 
         AESM_DBG_INFO("Starting epid bundle");
-        get_service_wrapper(g_network_service);
-        get_service_wrapper(g_launch_service);
-        get_service_wrapper(g_pce_service);
+        auto context = cppmicroservices::GetBundleContext();
+        get_service_wrapper(g_network_service, context);
+        get_service_wrapper(g_launch_service, context);
+        get_service_wrapper(g_pce_service, context);
 
         if (g_launch_service)
             g_launch_service->start();
@@ -214,6 +226,7 @@ public:
 
         CPVEClass::instance().unload_enclave();
         CQEClass::instance().unload_enclave();
+        initialized = false;
         AESM_DBG_INFO("epid bundle stopped");
     }
 
@@ -228,6 +241,8 @@ public:
         uint16_t pce_isv_svn = 0xFFFF;
         memset(&pce_target_info, 0, sizeof(pce_target_info));
         AESM_DBG_INFO("init_quote");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         if(sizeof(sgx_target_info_t) != target_info_size ||
            sizeof(sgx_epid_group_id_t) != gid_size)
         {
@@ -269,6 +284,8 @@ public:
         uint16_t pce_isv_svn = 0xFFFF;
         memset(&pce_target_info, 0, sizeof(pce_target_info));
         AESM_DBG_INFO("get_quote");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         if(sizeof(sgx_report_t) != report_size ||
            sizeof(sgx_spid_t) != spid_size)
         {
@@ -306,10 +323,10 @@ public:
         uint32_t* extended_epid_group_id)
     {
         AESM_DBG_INFO("get_extended_epid_group");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         if (NULL == extended_epid_group_id)
-        {
             return AESM_PARAMETER_ERROR;
-        }
         *extended_epid_group_id = get_active_extended_epid_group_id_internal();
         return AESM_SUCCESS;
     }
@@ -318,6 +335,8 @@ public:
         uint32_t extended_epid_group_id)
     {
         AESM_DBG_INFO("switch_extended_epid_group");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         ae_error_t ae_ret;
         if ((ae_ret = XEGDBlob::verify_xegd_by_xgid(extended_epid_group_id)) != AE_SUCCESS ||
             (ae_ret = EndpointSelectionInfo::verify_file_by_xgid(extended_epid_group_id)) != AE_SUCCESS){
@@ -337,6 +356,8 @@ public:
     uint32_t endpoint_selection(
         endpoint_selection_infos_t& es_info)
     {
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_qe_pve_mutex);
         SGX_DBGPRINT_ONE_STRING_TWO_INTS_ENDPOINT_SELECTION(__FUNCTION__" (line, 0)", __LINE__, 0);
         return EndpointSelectionInfo::instance().start_protocol(es_info);
@@ -345,6 +366,8 @@ public:
         bool performance_rekey_used,
         uint32_t timeout_usec)
     {
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_qe_pve_mutex);
         CHECK_EPID_PROVISIONG_STATUS;
         return PvEAESMLogic::provision(performance_rekey_used, timeout_usec);
@@ -375,6 +398,129 @@ public:
         }
         return GIDMT_MATCHED;
     }
+
+    aesm_error_t init_quote_ex(
+        const uint8_t *att_key_id_ext, uint32_t att_key_id_ext_size,
+        uint8_t *target_info, uint32_t target_info_size,
+        uint8_t *pub_key_id, size_t *pub_key_id_size)
+    {
+        AESM_DBG_INFO("init_quote_ex");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        AESMLogicLock lock(_qe_pve_mutex);
+        // att_key_id_ext has been checked by caller
+        if((NULL != target_info && sizeof(sgx_target_info_t) != target_info_size)
+           || (NULL == pub_key_id && NULL == pub_key_id_size)
+           || (NULL != pub_key_id && sizeof(sgx_epid_group_id_t) != *pub_key_id_size))
+        {
+            return AESM_PARAMETER_ERROR;
+        }
+
+        if(NULL == pub_key_id)
+        {
+            *pub_key_id_size = sizeof(sgx_epid_group_id_t);
+            return AESM_SUCCESS;
+        }
+
+        return init_quote(target_info, target_info_size, pub_key_id, *pub_key_id_size);
+    }
+
+    aesm_error_t get_quote_size_ex(
+        const uint8_t *att_key_id_ext, uint32_t att_key_id_ext_size,
+        uint32_t *p_quote_size)
+    {
+        AESM_DBG_INFO("get_quote_size_ex");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        // att_key_id_ext has been checked by caller
+
+        sgx_status_t ret = SGX_SUCCESS;
+        uint32_t quote_size = 0;
+        ret = sgx_calc_quote_size(NULL, 0, &quote_size);
+        if (SGX_ERROR_INVALID_PARAMETER == ret)
+            return AESM_PARAMETER_ERROR;
+        else if (SGX_SUCCESS != ret)
+            return AESM_UNEXPECTED_ERROR;
+        else
+            *p_quote_size = quote_size;
+
+        return AESM_SUCCESS;
+    }
+
+    aesm_error_t get_quote_ex(
+        const uint8_t *app_report, uint32_t app_report_size,
+        const uint8_t *att_key_id_ext, uint32_t att_key_id_ext_size,
+        uint8_t *qe_report_info, uint32_t qe_report_info_size,
+        uint8_t *quote, uint32_t quote_size)
+    {
+        AESM_DBG_INFO("get_quote_ex");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        AESMLogicLock lock(_qe_pve_mutex);
+        // att_key_id_ext has been checked by caller
+        if((NULL == app_report && sizeof(sgx_report_t) != app_report_size)
+           || (NULL != qe_report_info && sizeof(sgx_ql_qe_report_info_t) != qe_report_info_size)
+           || (NULL == qe_report_info && !qe_report_info_size))
+        {
+            return AESM_PARAMETER_ERROR;
+        }
+        sgx_att_key_id_ext_t *p_att_key_id_ext = (sgx_att_key_id_ext_t *)att_key_id_ext;
+        sgx_qe_report_info_t *p_qe_report_info = (sgx_qe_report_info_t *)qe_report_info;
+        return get_quote(app_report, app_report_size, p_att_key_id_ext->att_key_type,
+                    p_att_key_id_ext->spid, sizeof(p_att_key_id_ext->spid),
+                    p_qe_report_info ? (uint8_t *)&p_qe_report_info->nonce:NULL, p_qe_report_info ? sizeof(p_qe_report_info->nonce):0,
+                    NULL, 0,
+                    p_qe_report_info ? (uint8_t *)&p_qe_report_info->qe_report:NULL, p_qe_report_info ? sizeof(p_qe_report_info->qe_report):0,
+                    quote, quote_size);
+    }
+
+    aesm_error_t get_att_key_id(uint8_t *att_key_id, uint32_t att_key_id_size)
+    {
+        AESM_DBG_INFO("get_att_key_id");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        // check parameters, and epid bundle support both linkable and unlinkable quote
+        if(NULL == att_key_id || sizeof(sgx_att_key_id_ext_t) * 2 > att_key_id_size)
+        {
+            return AESM_PARAMETER_ERROR;
+        }
+        // Fill the unlinkable att_key_id;
+        sgx_att_key_id_ext_t *p_att_key_id_ext = (sgx_att_key_id_ext_t *)att_key_id;
+        sgx_ql_att_key_id_t *p_ql_att_key_id = (sgx_ql_att_key_id_t *)&p_att_key_id_ext->base;
+        //Clear the output strcuture, and also make the following fields to be 0s
+        //id, version, extended_prod_id, config_id, family_id, spid, att_key_type(SGX_UNLINKABLE_SIGNATURE)
+        memset(att_key_id, 0, att_key_id_size);
+        p_ql_att_key_id->mrsigner_length = (uint16_t)sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER]);
+        memcpy_s(p_ql_att_key_id->mrsigner, sizeof(p_ql_att_key_id->mrsigner),
+                        &G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER],
+                        sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER]));
+        p_ql_att_key_id->prod_id = 1;
+        p_ql_att_key_id->algorithm_id = SGX_QL_ALG_EPID;
+        p_att_key_id_ext->att_key_type = SGX_UNLINKABLE_SIGNATURE;
+
+        // Fill the linkable att_key_id;
+        p_att_key_id_ext++;
+        p_ql_att_key_id = (sgx_ql_att_key_id_t *)&p_att_key_id_ext->base;
+        p_ql_att_key_id->mrsigner_length = (uint16_t)sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER]);
+        memcpy_s(p_ql_att_key_id->mrsigner, sizeof(p_ql_att_key_id->mrsigner),
+                        &G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER],
+                        sizeof(G_SERVICE_ENCLAVE_MRSIGNER[AE_MR_SIGNER]));
+        p_ql_att_key_id->prod_id = 1;
+        p_ql_att_key_id->algorithm_id = SGX_QL_ALG_RESERVED_1;
+        p_att_key_id_ext->att_key_type = SGX_LINKABLE_SIGNATURE;
+
+        return AESM_SUCCESS;
+    }
+
+    aesm_error_t get_att_key_id_num(uint32_t *att_key_id_num)
+    {
+        if(NULL == att_key_id_num)
+        {
+            return AESM_PARAMETER_ERROR;
+        }
+        *att_key_id_num = 2;
+        return AESM_SUCCESS;
+    }
 };
 
 class Activator : public BundleActivator
@@ -382,7 +528,7 @@ class Activator : public BundleActivator
   void Start(BundleContext ctx)
   {
     auto service = std::make_shared<EpidQuoteServiceImp>();
-    ctx.RegisterService<IEpidQuoteService>(service);
+    ctx.RegisterService<IEpidQuoteService, IQuoteProviderService>(service);
   }
 
   void Stop(BundleContext)

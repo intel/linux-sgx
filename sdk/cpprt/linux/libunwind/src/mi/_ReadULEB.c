@@ -12,7 +12,7 @@ _ReadULEB (unsigned char **dpp)
       byte = *bp++;
       result |= (byte & 0x7f) << shift;
       if ((byte & 0x80) == 0)
-	break;
+        break;
       shift += 7;
     }
   *dpp = bp;

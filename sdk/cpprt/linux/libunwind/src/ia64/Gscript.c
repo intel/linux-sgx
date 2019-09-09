@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2001-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -29,23 +29,23 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 enum ia64_script_insn_opcode
   {
-    IA64_INSN_INC_PSP,		/* psp += val */
-    IA64_INSN_LOAD_PSP,		/* psp = *psp_loc */
-    IA64_INSN_ADD_PSP,		/* s[dst] = (s.psp + val) */
-    IA64_INSN_ADD_PSP_NAT,	/* like above, but with NaT info */
-    IA64_INSN_ADD_SP,		/* s[dst] = (s.sp + val) */
-    IA64_INSN_ADD_SP_NAT,	/* like above, but with NaT info */
-    IA64_INSN_MOVE,		/* s[dst] = s[val] */
-    IA64_INSN_MOVE_NAT,		/* like above, but with NaT info */
-    IA64_INSN_MOVE_NO_NAT,	/* like above, but clear NaT info */
-    IA64_INSN_MOVE_STACKED,	/* s[dst] = rse_skip(*s.bsp_loc, val) */
-    IA64_INSN_MOVE_STACKED_NAT,	/* like above, but with NaT info */
-    IA64_INSN_MOVE_SCRATCH,	/* s[dst] = scratch reg "val" */
-    IA64_INSN_MOVE_SCRATCH_NAT,	/* like above, but with NaT info */
+    IA64_INSN_INC_PSP,          /* psp += val */
+    IA64_INSN_LOAD_PSP,         /* psp = *psp_loc */
+    IA64_INSN_ADD_PSP,          /* s[dst] = (s.psp + val) */
+    IA64_INSN_ADD_PSP_NAT,      /* like above, but with NaT info */
+    IA64_INSN_ADD_SP,           /* s[dst] = (s.sp + val) */
+    IA64_INSN_ADD_SP_NAT,       /* like above, but with NaT info */
+    IA64_INSN_MOVE,             /* s[dst] = s[val] */
+    IA64_INSN_MOVE_NAT,         /* like above, but with NaT info */
+    IA64_INSN_MOVE_NO_NAT,      /* like above, but clear NaT info */
+    IA64_INSN_MOVE_STACKED,     /* s[dst] = rse_skip(*s.bsp_loc, val) */
+    IA64_INSN_MOVE_STACKED_NAT, /* like above, but with NaT info */
+    IA64_INSN_MOVE_SCRATCH,     /* s[dst] = scratch reg "val" */
+    IA64_INSN_MOVE_SCRATCH_NAT, /* like above, but with NaT info */
     IA64_INSN_MOVE_SCRATCH_NO_NAT /* like above, but clear NaT info */
   };
 
-#ifdef HAVE___THREAD
+#if defined(HAVE___THREAD) && HAVE___THREAD
 static __thread struct ia64_script_cache ia64_per_thread_cache =
   {
 #ifdef HAVE_ATOMIC_OPS_H
@@ -56,11 +56,11 @@ static __thread struct ia64_script_cache ia64_per_thread_cache =
   };
 #endif
 
-static inline unw_hash_index_t
+static inline unw_hash_index_t CONST_ATTR
 hash (unw_word_t ip)
 {
   /* based on (sqrt(5)/2-1)*2^64 */
-# define magic	((unw_word_t) 0x9e3779b97f4a7c16ULL)
+# define magic  ((unw_word_t) 0x9e3779b97f4a7c16ULL)
 
   return (ip >> 4) * magic >> (64 - IA64_LOG_UNW_HASH_SIZE);
 }
@@ -84,7 +84,7 @@ flush_script_cache (struct ia64_script_cache *cache)
   for (i = 0; i < IA64_UNW_CACHE_SIZE; ++i)
     {
       if (i > 0)
-	cache->buckets[i].lru_chain = (i - 1);
+        cache->buckets[i].lru_chain = (i - 1);
       cache->buckets[i].coll_chain = -1;
       cache->buckets[i].ip = 0;
     }
@@ -105,7 +105,7 @@ get_script_cache (unw_addr_space_t as, intrmask_t *saved_maskp)
   if (!spin_trylock_irqsave (&cache->busy, *saved_maskp))
     return NULL;
 #else
-# ifdef HAVE___THREAD
+# if defined(HAVE___THREAD) && HAVE___THREAD
   if (as->caching_policy == UNW_CACHE_PER_THREAD)
     cache = &ia64_per_thread_cache;
 # endif
@@ -115,7 +115,7 @@ get_script_cache (unw_addr_space_t as, intrmask_t *saved_maskp)
 # else
   if (likely (caching == UNW_CACHE_GLOBAL))
     {
-      Debug (16, "%s: acquiring lock\n", __FUNCTION__);
+      Debug (16, "acquiring lock\n");
       lock_acquire (&cache->lock, *saved_maskp);
     }
 # endif
@@ -131,7 +131,7 @@ get_script_cache (unw_addr_space_t as, intrmask_t *saved_maskp)
 
 static inline void
 put_script_cache (unw_addr_space_t as, struct ia64_script_cache *cache,
-		  intrmask_t *saved_maskp)
+                  intrmask_t *saved_maskp)
 {
   assert (as->caching_policy != UNW_CACHE_NONE);
 
@@ -169,14 +169,14 @@ script_lookup (struct ia64_script_cache *cache, struct cursor *c)
   while (1)
     {
       if (cache_match (script, ip, pr))
-	{
-	  /* update hint; no locking needed: single-word writes are atomic */
-	  c->hint = cache->buckets[c->prev_script].hint =
-	    (script - cache->buckets);
-	  return script;
-	}
+        {
+          /* update hint; no locking needed: single-word writes are atomic */
+          c->hint = cache->buckets[c->prev_script].hint =
+            (script - cache->buckets);
+          return script;
+        }
       if (script->coll_chain >= IA64_UNW_HASH_SIZE)
-	return 0;
+        return 0;
       script = cache->buckets + script->coll_chain;
     }
 }
@@ -212,22 +212,22 @@ script_new (struct ia64_script_cache *cache, unw_word_t ip)
       tmp = cache->buckets + cache->hash[index];
       prev = 0;
       while (1)
-	{
-	  if (tmp == script)
-	    {
-	      if (prev)
-		prev->coll_chain = tmp->coll_chain;
-	      else
-		cache->hash[index] = tmp->coll_chain;
-	      break;
-	    }
-	  else
-	    prev = tmp;
-	  if (tmp->coll_chain >= IA64_UNW_CACHE_SIZE)
-	    /* old script wasn't in the hash-table */
-	    break;
-	  tmp = cache->buckets + tmp->coll_chain;
-	}
+        {
+          if (tmp == script)
+            {
+              if (prev)
+                prev->coll_chain = tmp->coll_chain;
+              else
+                cache->hash[index] = tmp->coll_chain;
+              break;
+            }
+          else
+            prev = tmp;
+          if (tmp->coll_chain >= IA64_UNW_CACHE_SIZE)
+            /* old script wasn't in the hash-table */
+            break;
+          tmp = cache->buckets + tmp->coll_chain;
+        }
     }
 
   /* enter new script in the hash table */
@@ -241,7 +241,7 @@ script_new (struct ia64_script_cache *cache, unw_word_t ip)
 
 static inline void
 script_finalize (struct ia64_script *script, struct cursor *c,
-		 struct ia64_state_record *sr)
+                 struct ia64_state_record *sr)
 {
   script->pr_mask = sr->pr_mask;
   script->pr_val = sr->pr_val;
@@ -254,7 +254,7 @@ script_emit (struct ia64_script *script, struct ia64_script_insn insn)
   if (script->count >= IA64_MAX_SCRIPT_LEN)
     {
       Dprintf ("%s: script exceeds maximum size of %u instructions!\n",
-	       __FUNCTION__, IA64_MAX_SCRIPT_LEN);
+               __FUNCTION__, IA64_MAX_SCRIPT_LEN);
       return;
     }
   script->insn[script->count++] = insn;
@@ -262,7 +262,7 @@ script_emit (struct ia64_script *script, struct ia64_script_insn insn)
 
 static void
 compile_reg (struct ia64_state_record *sr, int i, struct ia64_reg_info *r,
-	     struct ia64_script *script)
+             struct ia64_script *script)
 {
   enum ia64_script_insn_opcode opc;
   unsigned long val, rval;
@@ -280,94 +280,94 @@ compile_reg (struct ia64_state_record *sr, int i, struct ia64_reg_info *r,
     {
       /* Handle most common case first... */
       if (rval >= 32)
-	{
-	  /* register got spilled to a stacked register */
-	  if (is_preserved_gr)
-	    opc = IA64_INSN_MOVE_STACKED_NAT;
-	  else
-	    opc = IA64_INSN_MOVE_STACKED;
-	  val = rval;
-	}
+        {
+          /* register got spilled to a stacked register */
+          if (is_preserved_gr)
+            opc = IA64_INSN_MOVE_STACKED_NAT;
+          else
+            opc = IA64_INSN_MOVE_STACKED;
+          val = rval;
+        }
       else if (rval >= 4 && rval <= 7)
-	{
-	  /* register got spilled to a preserved register */
-	  val = IA64_REG_R4 + (rval - 4);
-	  if (is_preserved_gr)
-	    opc = IA64_INSN_MOVE_NAT;
-	}
+        {
+          /* register got spilled to a preserved register */
+          val = IA64_REG_R4 + (rval - 4);
+          if (is_preserved_gr)
+            opc = IA64_INSN_MOVE_NAT;
+        }
       else
-	{
-	  /* register got spilled to a scratch register */
-	  if (is_preserved_gr)
-	    opc = IA64_INSN_MOVE_SCRATCH_NAT;
-	  else
-	    opc = IA64_INSN_MOVE_SCRATCH;
-	  val = UNW_IA64_GR + rval;
-	}
+        {
+          /* register got spilled to a scratch register */
+          if (is_preserved_gr)
+            opc = IA64_INSN_MOVE_SCRATCH_NAT;
+          else
+            opc = IA64_INSN_MOVE_SCRATCH;
+          val = UNW_IA64_GR + rval;
+        }
     }
   else
     {
       switch (r->where)
-	{
-	case IA64_WHERE_FR:
-	  /* Note: There is no need to handle NaT-bit info here
-	     (indepent of is_preserved_gr), because for floating-point
-	     NaTs are represented as NaTVal, so the NaT-info never
-	     needs to be consulated.  */
-	  if (rval >= 2 && rval <= 5)
-	    val = IA64_REG_F2 + (rval - 2);
-	  else if (rval >= 16 && rval <= 31)
-	    val = IA64_REG_F16 + (rval - 16);
-	  else
-	    {
-	      opc = IA64_INSN_MOVE_SCRATCH;
-	      val = UNW_IA64_FR + rval;
-	    }
-	  break;
+        {
+        case IA64_WHERE_FR:
+          /* Note: There is no need to handle NaT-bit info here
+             (indepent of is_preserved_gr), because for floating-point
+             NaTs are represented as NaTVal, so the NaT-info never
+             needs to be consulated.  */
+          if (rval >= 2 && rval <= 5)
+            val = IA64_REG_F2 + (rval - 2);
+          else if (rval >= 16 && rval <= 31)
+            val = IA64_REG_F16 + (rval - 16);
+          else
+            {
+              opc = IA64_INSN_MOVE_SCRATCH;
+              val = UNW_IA64_FR + rval;
+            }
+          break;
 
-	case IA64_WHERE_BR:
-	  if (rval >= 1 && rval <= 5)
-	    {
-	      val = IA64_REG_B1 + (rval - 1);
-	      if (is_preserved_gr)
-		opc = IA64_INSN_MOVE_NO_NAT;
-	    }
-	  else
-	    {
-	      opc = IA64_INSN_MOVE_SCRATCH;
-	      if (is_preserved_gr)
-		opc = IA64_INSN_MOVE_SCRATCH_NO_NAT;
-	      val = UNW_IA64_BR + rval;
-	    }
-	  break;
+        case IA64_WHERE_BR:
+          if (rval >= 1 && rval <= 5)
+            {
+              val = IA64_REG_B1 + (rval - 1);
+              if (is_preserved_gr)
+                opc = IA64_INSN_MOVE_NO_NAT;
+            }
+          else
+            {
+              opc = IA64_INSN_MOVE_SCRATCH;
+              if (is_preserved_gr)
+                opc = IA64_INSN_MOVE_SCRATCH_NO_NAT;
+              val = UNW_IA64_BR + rval;
+            }
+          break;
 
-	case IA64_WHERE_SPREL:
-	  if (is_preserved_gr)
-	    opc = IA64_INSN_ADD_SP_NAT;
-	  else
-	    {
-	      opc = IA64_INSN_ADD_SP;
-	      if (i >= IA64_REG_F2 && i <= IA64_REG_F31)
-		val |= IA64_LOC_TYPE_FP;
-	    }
-	  break;
+        case IA64_WHERE_SPREL:
+          if (is_preserved_gr)
+            opc = IA64_INSN_ADD_SP_NAT;
+          else
+            {
+              opc = IA64_INSN_ADD_SP;
+              if (i >= IA64_REG_F2 && i <= IA64_REG_F31)
+                val |= IA64_LOC_TYPE_FP;
+            }
+          break;
 
-	case IA64_WHERE_PSPREL:
-	  if (is_preserved_gr)
-	    opc = IA64_INSN_ADD_PSP_NAT;
-	  else
-	    {
-	      opc = IA64_INSN_ADD_PSP;
-	      if (i >= IA64_REG_F2 && i <= IA64_REG_F31)
-		val |= IA64_LOC_TYPE_FP;
-	    }
-	  break;
+        case IA64_WHERE_PSPREL:
+          if (is_preserved_gr)
+            opc = IA64_INSN_ADD_PSP_NAT;
+          else
+            {
+              opc = IA64_INSN_ADD_PSP;
+              if (i >= IA64_REG_F2 && i <= IA64_REG_F31)
+                val |= IA64_LOC_TYPE_FP;
+            }
+          break;
 
-	default:
-	  Dprintf ("%s: register %u has unexpected `where' value of %u\n",
-		   __FUNCTION__, i, r->where);
-	  break;
-	}
+        default:
+          Dprintf ("%s: register %u has unexpected `where' value of %u\n",
+                   __FUNCTION__, i, r->where);
+          break;
+        }
     }
   insn.opc = opc;
   insn.dst = i;
@@ -377,8 +377,8 @@ compile_reg (struct ia64_state_record *sr, int i, struct ia64_reg_info *r,
   if (i == IA64_REG_PSP)
     {
       /* c->psp must contain the _value_ of the previous sp, not it's
-	 save-location.  We get this by dereferencing the value we
-	 just stored in loc[IA64_REG_PSP]: */
+         save-location.  We get this by dereferencing the value we
+         just stored in loc[IA64_REG_PSP]: */
       insn.opc = IA64_INSN_LOAD_PSP;
       script_emit (script, insn);
     }
@@ -400,8 +400,8 @@ sort_regs (struct ia64_state_record *sr, int regorder[])
   for (r = IA64_REG_BSP; r < IA64_NUM_PREGS; ++r)
     {
       if (sr->curr.reg[r].where == IA64_WHERE_NONE
-	  || sr->curr.reg[r].when >= sr->when_target)
-	continue;
+          || sr->curr.reg[r].when >= sr->when_target)
+        continue;
 
       regorder[num_regs++] = r;
     }
@@ -416,17 +416,17 @@ sort_regs (struct ia64_state_record *sr, int regorder[])
       max_when = sr->curr.reg[max_reg].when;
 
       for (j = i + 1; j < num_regs; ++j)
-	if (sr->curr.reg[regorder[j]].when > max_when)
-	  {
-	    max = j;
-	    max_reg = regorder[j];
-	    max_when = sr->curr.reg[max_reg].when;
-	  }
+        if (sr->curr.reg[regorder[j]].when > max_when)
+          {
+            max = j;
+            max_reg = regorder[j];
+            max_when = sr->curr.reg[max_reg].when;
+          }
       if (i != max)
-	{
-	  regorder[max] = regorder[i];
-	  regorder[i] = max_reg;
-	}
+        {
+          regorder[max] = regorder[i];
+          regorder[i] = max_reg;
+        }
     }
   return num_regs;
 }
@@ -457,7 +457,7 @@ build_script (struct cursor *c, struct ia64_script *script)
     {
       /* new psp is psp plus frame size */
       insn.opc = IA64_INSN_INC_PSP;
-      insn.val = sr.curr.reg[IA64_REG_PSP].val;	/* frame size */
+      insn.val = sr.curr.reg[IA64_REG_PSP].val; /* frame size */
       script_emit (script, insn);
     }
   else
@@ -469,18 +469,18 @@ build_script (struct cursor *c, struct ia64_script *script)
       || sr.when_target >= sr.curr.reg[IA64_REG_PRI_UNAT_MEM].when)
     {
       if (sr.when_target < sr.curr.reg[IA64_REG_PRI_UNAT_GR].when)
-	/* (primary) NaT bits were saved to memory only */
-	pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_MEM;
+        /* (primary) NaT bits were saved to memory only */
+        pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_MEM;
       else if (sr.when_target < sr.curr.reg[IA64_REG_PRI_UNAT_MEM].when)
-	/* (primary) NaT bits were saved to a register only */
-	pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_GR;
+        /* (primary) NaT bits were saved to a register only */
+        pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_GR;
       else if (sr.curr.reg[IA64_REG_PRI_UNAT_MEM].when >
-	       sr.curr.reg[IA64_REG_PRI_UNAT_GR].when)
-	/* (primary) NaT bits were last saved to memory */
-	pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_MEM;
+               sr.curr.reg[IA64_REG_PRI_UNAT_GR].when)
+        /* (primary) NaT bits were last saved to memory */
+        pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_MEM;
       else
-	/* (primary) NaT bits were last saved to a register */
-	pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_GR;
+        /* (primary) NaT bits were last saved to a register */
+        pri_unat = sr.curr.reg + IA64_REG_PRI_UNAT_GR;
 
       /* Note: we always store the final primary-UNaT location in UNAT_MEM.  */
       compile_reg (&sr, IA64_REG_PRI_UNAT_MEM, pri_unat, script);
@@ -501,7 +501,7 @@ build_script (struct cursor *c, struct ia64_script *script)
 
 static inline void
 set_nat_info (struct cursor *c, unsigned long dst,
-	      ia64_loc_t nat_loc, uint8_t bitnr)
+              ia64_loc_t nat_loc, uint8_t bitnr)
 {
   assert (dst >= IA64_REG_R4 && dst <= IA64_REG_R7);
 
@@ -538,79 +538,79 @@ run_script (struct ia64_script *script, struct cursor *c)
 
       /* This is by far the most common operation: */
       if (likely (opc == IA64_INSN_MOVE_STACKED))
-	{
-	  if ((ret = ia64_get_stacked (c, val, &loc, NULL)) < 0)
-	    return ret;
-	}
+        {
+          if ((ret = ia64_get_stacked (c, val, &loc, NULL)) < 0)
+            return ret;
+        }
       else
-	switch (opc)
-	  {
-	  case IA64_INSN_INC_PSP:
-	    c->psp += val;
-	    continue;
+        switch (opc)
+          {
+          case IA64_INSN_INC_PSP:
+            c->psp += val;
+            continue;
 
-	  case IA64_INSN_LOAD_PSP:
-	    if ((ret = ia64_get (c, c->loc[IA64_REG_PSP], &c->psp)) < 0)
-	      return ret;
-	    continue;
+          case IA64_INSN_LOAD_PSP:
+            if ((ret = ia64_get (c, c->loc[IA64_REG_PSP], &c->psp)) < 0)
+              return ret;
+            continue;
 
-	  case IA64_INSN_ADD_PSP:
-	    loc = IA64_LOC_ADDR (c->psp + val, (val & IA64_LOC_TYPE_FP));
-	    break;
+          case IA64_INSN_ADD_PSP:
+            loc = IA64_LOC_ADDR (c->psp + val, (val & IA64_LOC_TYPE_FP));
+            break;
 
-	  case IA64_INSN_ADD_SP:
-	    loc = IA64_LOC_ADDR (c->sp + val, (val & IA64_LOC_TYPE_FP));
-	    break;
+          case IA64_INSN_ADD_SP:
+            loc = IA64_LOC_ADDR (c->sp + val, (val & IA64_LOC_TYPE_FP));
+            break;
 
-	  case IA64_INSN_MOVE_NO_NAT:
-	    set_nat_info (c, dst, IA64_NULL_LOC, 0);
-	  case IA64_INSN_MOVE:
-	    loc = c->loc[val];
-	    break;
+          case IA64_INSN_MOVE_NO_NAT:
+            set_nat_info (c, dst, IA64_NULL_LOC, 0);
+          case IA64_INSN_MOVE:
+            loc = c->loc[val];
+            break;
 
-	  case IA64_INSN_MOVE_SCRATCH_NO_NAT:
-	    set_nat_info (c, dst, IA64_NULL_LOC, 0);
-	  case IA64_INSN_MOVE_SCRATCH:
-	    loc = ia64_scratch_loc (c, val, NULL);
-	    break;
+          case IA64_INSN_MOVE_SCRATCH_NO_NAT:
+            set_nat_info (c, dst, IA64_NULL_LOC, 0);
+          case IA64_INSN_MOVE_SCRATCH:
+            loc = ia64_scratch_loc (c, val, NULL);
+            break;
 
-	  case IA64_INSN_ADD_PSP_NAT:
-	    loc = IA64_LOC_ADDR (c->psp + val, 0);
-	    assert (!IA64_IS_REG_LOC (loc));
-	    set_nat_info (c, dst,
-			  c->loc[IA64_REG_PRI_UNAT_MEM],
-			  ia64_unat_slot_num (IA64_GET_ADDR (loc)));
-	    break;
+          case IA64_INSN_ADD_PSP_NAT:
+            loc = IA64_LOC_ADDR (c->psp + val, 0);
+            assert (!IA64_IS_REG_LOC (loc));
+            set_nat_info (c, dst,
+                          c->loc[IA64_REG_PRI_UNAT_MEM],
+                          ia64_unat_slot_num (IA64_GET_ADDR (loc)));
+            break;
 
-	  case IA64_INSN_ADD_SP_NAT:
-	    loc = IA64_LOC_ADDR (c->sp + val, 0);
-	    assert (!IA64_IS_REG_LOC (loc));
-	    set_nat_info (c, dst,
-			  c->loc[IA64_REG_PRI_UNAT_MEM],
-			  ia64_unat_slot_num (IA64_GET_ADDR (loc)));
-	    break;
+          case IA64_INSN_ADD_SP_NAT:
+            loc = IA64_LOC_ADDR (c->sp + val, 0);
+            assert (!IA64_IS_REG_LOC (loc));
+            set_nat_info (c, dst,
+                          c->loc[IA64_REG_PRI_UNAT_MEM],
+                          ia64_unat_slot_num (IA64_GET_ADDR (loc)));
+            break;
 
-	  case IA64_INSN_MOVE_NAT:
-	    loc = c->loc[val];
-	    set_nat_info (c, dst,
-			  c->loc[val - IA64_REG_R4 + IA64_REG_NAT4],
-			  c->nat_bitnr[val - IA64_REG_R4]);
-	    break;
+          case IA64_INSN_MOVE_NAT:
+            loc = c->loc[val];
+            set_nat_info (c, dst,
+                          c->loc[val - IA64_REG_R4 + IA64_REG_NAT4],
+                          c->nat_bitnr[val - IA64_REG_R4]);
+            break;
 
-	  case IA64_INSN_MOVE_STACKED_NAT:
-	    if ((ret = ia64_get_stacked (c, val, &loc, &nat_loc)) < 0)
-	      return ret;
-	    assert (!IA64_IS_REG_LOC (loc));
-	    set_nat_info (c, dst, nat_loc, rse_slot_num (IA64_GET_ADDR (loc)));
-	    break;
+          case IA64_INSN_MOVE_STACKED_NAT:
+            if ((ret = ia64_get_stacked (c, val, &loc, &nat_loc)) < 0)
+              return ret;
+            assert (!IA64_IS_REG_LOC (loc));
+            set_nat_info (c, dst, nat_loc, rse_slot_num (IA64_GET_ADDR (loc)));
+            break;
 
-	  case IA64_INSN_MOVE_SCRATCH_NAT:
-	    loc = ia64_scratch_loc (c, val, NULL);
-	    nat_loc = ia64_scratch_loc (c, val + (UNW_IA64_NAT - UNW_IA64_GR),
-					&nat_bitnr);
-	    set_nat_info (c, dst, nat_loc, nat_bitnr);
-	    break;
-	  }
+          case IA64_INSN_MOVE_SCRATCH_NAT:
+            loc = ia64_scratch_loc (c, val, NULL);
+            nat_loc = ia64_scratch_loc (c, val + (UNW_IA64_NAT - UNW_IA64_GR),
+                                        &nat_bitnr);
+            set_nat_info (c, dst, nat_loc, nat_bitnr);
+            break;
+          }
       c->loc[dst] = loc;
     }
   return 0;
@@ -629,8 +629,8 @@ uncached_find_save_locs (struct cursor *c)
   if ((ret = build_script (c, &script)) < 0)
     {
       if (ret != -UNW_ESTOPUNWIND)
-	Dprintf ("%s: failed to build unwind script for ip %lx\n",
-		 __FUNCTION__, (long) c->ip);
+        Dprintf ("%s: failed to build unwind script for ip %lx\n",
+                 __FUNCTION__, (long) c->ip);
       return ret;
     }
   return run_script (&script, c);
@@ -656,23 +656,23 @@ ia64_find_save_locs (struct cursor *c)
   {
     script = script_lookup (cache, c);
     Debug (8, "ip %lx %s in script cache\n", (long) c->ip,
-	   script ? "hit" : "missed");
+           script ? "hit" : "missed");
 
     if (!script || (script->count == 0 && !script->pi.unwind_info))
       {
-	if ((ret = ia64_fetch_proc_info (c, c->ip, 1)) < 0)
-	  goto out;
+        if ((ret = ia64_fetch_proc_info (c, c->ip, 1)) < 0)
+          goto out;
       }
 
     if (!script)
       {
-	script = script_new (cache, c->ip);
-	if (!script)
-	  {
-	    Dprintf ("%s: failed to create unwind script\n", __FUNCTION__);
-	    ret = -UNW_EUNSPEC;
-	    goto out;
-	  }
+        script = script_new (cache, c->ip);
+        if (!script)
+          {
+            Dprintf ("%s: failed to create unwind script\n", __FUNCTION__);
+            ret = -UNW_EUNSPEC;
+            goto out;
+          }
       }
     cache->buckets[c->prev_script].hint = script - cache->buckets;
 
@@ -686,10 +686,10 @@ ia64_find_save_locs (struct cursor *c)
 
     if (ret < 0)
       {
-	if (ret != -UNW_ESTOPUNWIND)
-	  Dprintf ("%s: failed to locate/build unwind script for ip %lx\n",
-		   __FUNCTION__, (long) c->ip);
-	goto out;
+        if (ret != -UNW_ESTOPUNWIND)
+          Dprintf ("%s: failed to locate/build unwind script for ip %lx\n",
+                   __FUNCTION__, (long) c->ip);
+        goto out;
       }
 
     ret = run_script (script, c);
@@ -723,7 +723,7 @@ ia64_cache_proc_info (struct cursor *c)
 
   cache = get_script_cache (c->as, &saved_mask);
   if (!cache)
-    return ret;	/* cache is busy */
+    return ret; /* cache is busy */
 
   /* Re-check to see if a cache entry has been added in the meantime: */
   script = script_lookup (cache, c);
@@ -754,7 +754,7 @@ ia64_get_cached_proc_info (struct cursor *c)
 
   cache = get_script_cache (c->as, &saved_mask);
   if (!cache)
-    return -UNW_ENOINFO;	/* cache is busy */
+    return -UNW_ENOINFO;        /* cache is busy */
   {
     script = script_lookup (cache, c);
     if (script)

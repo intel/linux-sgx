@@ -1,7 +1,7 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003-2004 Hewlett-Packard Co
    Copyright (C) 2007 David Mosberger-Tang
-	Contributed by David Mosberger-Tang <dmosberger@gmail.com>
+        Contributed by David Mosberger-Tang <dmosberger@gmail.com>
 
 This file is part of libunwind.
 
@@ -65,7 +65,6 @@ ltoa (char *buf, long val)
 static inline int
 maps_init (struct map_iterator *mi, pid_t pid)
 {
-#if !HAVE_SGX
   char path[sizeof ("/proc/0123456789/maps")], *cp;
 
   memcpy (path, "/proc/", 6);
@@ -78,24 +77,22 @@ maps_init (struct map_iterator *mi, pid_t pid)
     {
       /* Try to allocate a page-sized buffer.  */
       mi->buf_size = getpagesize ();
-      cp = mmap (0, mi->buf_size, PROT_READ | PROT_WRITE,
-		 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+      cp = mmap (NULL, mi->buf_size, PROT_READ | PROT_WRITE,
+                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
       if (cp == MAP_FAILED)
-	{
-	  close(mi->fd);
-	  mi->fd = -1;
-	  return -1;
-	}
+        {
+          close(mi->fd);
+          mi->fd = -1;
+          return -1;
+        }
       else
-	{
-	  mi->offset = 0;
-	  mi->buf = mi->buf_end = cp + mi->buf_size;
-	  return 0;
-	}
+        {
+          mi->offset = 0;
+          mi->buf = mi->buf_end = cp + mi->buf_size;
+          return 0;
+        }
     }
-#else
   return -1;
-#endif
 }
 
 static inline char *
@@ -122,13 +119,13 @@ scan_hex (char *cp, unsigned long *valp)
     {
       digit = *cp;
       if ((digit - '0') <= 9)
-	digit -= '0';
+        digit -= '0';
       else if ((digit - 'a') < 6)
-	digit -= 'a' - 10;
+        digit -= 'a' - 10;
       else if ((digit - 'A') < 6)
-	digit -= 'A' - 10;
+        digit -= 'A' - 10;
       else
-	break;
+        break;
       val = (val << 4) | digit;
       ++num_digits;
       ++cp;
@@ -151,12 +148,12 @@ scan_dec (char *cp, unsigned long *valp)
     {
       digit = *cp;
       if ((digit - '0') <= 9)
-	{
-	  digit -= '0';
-	  ++cp;
-	}
+        {
+          digit -= '0';
+          ++cp;
+        }
       else
-	break;
+        break;
       val = (10 * val) + digit;
       ++num_digits;
     }
@@ -193,7 +190,7 @@ scan_string (char *cp, char *valp, size_t buf_size)
   while (*cp != ' ' && *cp != '\t' && *cp != '\0')
     {
       if ((valp != NULL) && (i < buf_size - 1))
-	valp[i++] = *cp;
+        valp[i++] = *cp;
       ++cp;
     }
   if (i == 0 || i >= buf_size)
@@ -204,7 +201,7 @@ scan_string (char *cp, char *valp, size_t buf_size)
 
 static inline int
 maps_next (struct map_iterator *mi,
-	   unsigned long *low, unsigned long *high, unsigned long *offset)
+           unsigned long *low, unsigned long *high, unsigned long *offset)
 {
   char perm[16], dash = 0, colon = 0, *cp;
   unsigned long major, minor, inum;
@@ -219,45 +216,45 @@ maps_next (struct map_iterator *mi,
       char *eol = NULL;
 
       for (i = 0; i < bytes_left; ++i)
-	{
-	  if (mi->buf[i] == '\n')
-	    {
-	      eol = mi->buf + i;
-	      break;
-	    }
-	  else if (mi->buf[i] == '\0')
-	    break;
-	}
+        {
+          if (mi->buf[i] == '\n')
+            {
+              eol = mi->buf + i;
+              break;
+            }
+          else if (mi->buf[i] == '\0')
+            break;
+        }
       if (!eol)
-	{
-	  /* copy down the remaining bytes, if any */
-	  if (bytes_left > 0)
-	    memmove (mi->buf_end - mi->buf_size, mi->buf, bytes_left);
+        {
+          /* copy down the remaining bytes, if any */
+          if (bytes_left > 0)
+            memmove (mi->buf_end - mi->buf_size, mi->buf, bytes_left);
 
-	  mi->buf = mi->buf_end - mi->buf_size;
-	  nread = read (mi->fd, mi->buf + bytes_left,
-			mi->buf_size - bytes_left);
-	  if (nread <= 0)
-	    return 0;
-	  else if ((size_t) (nread + bytes_left) < mi->buf_size)
-	    {
-	      /* Move contents to the end of the buffer so we
-		 maintain the invariant that all bytes between
-		 mi->buf and mi->buf_end are valid.  */
-	      memmove (mi->buf_end - nread - bytes_left, mi->buf,
-		       nread + bytes_left);
-	      mi->buf = mi->buf_end - nread - bytes_left;
-	    }
+          mi->buf = mi->buf_end - mi->buf_size;
+          nread = read (mi->fd, mi->buf + bytes_left,
+                        mi->buf_size - bytes_left);
+          if (nread <= 0)
+            return 0;
+          else if ((size_t) (nread + bytes_left) < mi->buf_size)
+            {
+              /* Move contents to the end of the buffer so we
+                 maintain the invariant that all bytes between
+                 mi->buf and mi->buf_end are valid.  */
+              memmove (mi->buf_end - nread - bytes_left, mi->buf,
+                       nread + bytes_left);
+              mi->buf = mi->buf_end - nread - bytes_left;
+            }
 
-	  eol = mi->buf + bytes_left + nread - 1;
+          eol = mi->buf + bytes_left + nread - 1;
 
-	  for (i = bytes_left; i < bytes_left + nread; ++i)
-	    if (mi->buf[i] == '\n')
-	      {
-		eol = mi->buf + i;
-		break;
-	      }
-	}
+          for (i = bytes_left; i < bytes_left + nread; ++i)
+            if (mi->buf[i] == '\n')
+              {
+                eol = mi->buf + i;
+                break;
+              }
+        }
       cp = mi->buf;
       mi->buf = eol + 1;
       *eol = '\0';
@@ -274,10 +271,10 @@ maps_next (struct map_iterator *mi,
       cp = scan_dec (cp, &inum);
       cp = mi->path = skip_whitespace (cp);
       if (!cp)
-	continue;
+        continue;
       cp = scan_string (cp, NULL, 0);
       if (dash != '-' || colon != ':')
-	continue;	/* skip line with unknown or bad format */
+        continue;       /* skip line with unknown or bad format */
       return 1;
     }
   return 0;
@@ -286,7 +283,6 @@ maps_next (struct map_iterator *mi,
 static inline void
 maps_close (struct map_iterator *mi)
 {
-#if !HAVE_SGX
   if (mi->fd < 0)
     return;
   close (mi->fd);
@@ -294,9 +290,8 @@ maps_close (struct map_iterator *mi)
   if (mi->buf)
     {
       munmap (mi->buf_end - mi->buf_size, mi->buf_size);
-      mi->buf = mi->buf_end = 0;
+      mi->buf = mi->buf_end = NULL;
     }
-#endif
 }
 
 #endif /* os_linux_h */

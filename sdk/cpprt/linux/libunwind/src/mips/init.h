@@ -34,19 +34,20 @@ common_init (struct cursor *c, unsigned use_prev_instr)
   for (i = 32; i < DWARF_NUM_PRESERVED_REGS; ++i)
     c->dwarf.loc[i] = DWARF_NULL_LOC;
 
-  ret = dwarf_get (&c->dwarf, c->dwarf.loc[31], &c->dwarf.ip);
+  c->dwarf.loc[UNW_MIPS_PC] = DWARF_REG_LOC (&c->dwarf, UNW_MIPS_PC);
+
+  ret = dwarf_get (&c->dwarf, c->dwarf.loc[UNW_MIPS_PC], &c->dwarf.ip);
   if (ret < 0)
     return ret;
 
   ret = dwarf_get (&c->dwarf, DWARF_REG_LOC (&c->dwarf, UNW_MIPS_R29),
-		   &c->dwarf.cfa);
+                   &c->dwarf.cfa);
   if (ret < 0)
     return ret;
 
   /* FIXME: Initialisation for other registers.  */
 
   c->dwarf.args_size = 0;
-  c->dwarf.ret_addr_column = 0;
   c->dwarf.stash_frames = 0;
   c->dwarf.use_prev_instr = use_prev_instr;
   c->dwarf.pi_valid = 0;

@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2002-2003 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    Modified for x86_64 by Max Asbock <masbock@us.ibm.com>
 
@@ -30,7 +30,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #ifdef UNW_REMOTE_ONLY
 
-PROTECTED int
+int
 unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
 {
   return -UNW_EINVAL;
@@ -38,12 +38,12 @@ unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
 
 #else /* !UNW_REMOTE_ONLY */
 
-PROTECTED int
-unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
+static int
+unw_init_local_common (unw_cursor_t *cursor, ucontext_t *uc, unsigned use_prev_instr)
 {
   struct cursor *c = (struct cursor *) cursor;
 
-  if (unlikely (tdep_needs_initialization))
+  if (unlikely (!tdep_init_done))
     tdep_init ();
 
   Debug (1, "(cursor=%p)\n", c);
@@ -52,7 +52,30 @@ unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
   c->dwarf.as_arg = c;
   c->uc = uc;
   c->validate = 0;
-  return common_init (c, 1);
+  return common_init (c, use_prev_instr);
+}
+
+int
+unw_init_local (unw_cursor_t *cursor, ucontext_t *uc)
+{
+  return unw_init_local_common(cursor, uc, 1);
+}
+
+int
+unw_init_local2 (unw_cursor_t *cursor, ucontext_t *uc, int flag)
+{
+  if (!flag)
+    {
+      return unw_init_local_common(cursor, uc, 1);
+    }
+  else if (flag == UNW_INIT_SIGNAL_FRAME)
+    {
+      return unw_init_local_common(cursor, uc, 0);
+    }
+  else
+    {
+      return -UNW_EINVAL;
+    }
 }
 
 #endif /* !UNW_REMOTE_ONLY */

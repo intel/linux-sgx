@@ -101,7 +101,7 @@ typedef struct sample_ra_msg2_t
                                                   Little-Endian*/
     sample_spid_t               spid;       /* In little endian*/
     uint16_t                    quote_type; /* unlinkable Quote(0) or linkable Quote(0) in little endian*/
-    uint16_t                    kdf_id;     /* key derivation function id in little endian. 
+    uint16_t                    kdf_id;     /* key derivation function id in little endian.
                                              0x0001 for AES-CMAC Entropy Extraction and Key Derivation */
     sample_ec_sign256_t         sign_gb_ga; /* In little endian*/
     sample_mac_t                mac;        /* mac_smk(g_b||spid||quote_type||
@@ -120,7 +120,7 @@ typedef struct sample_ra_msg3_t
 } sample_ra_msg3_t;
 
 int sp_ra_proc_msg0_req(const sample_ra_msg0_t *p_msg0,
-    uint32_t msg0_size);
+    uint32_t msg0_size, ra_samp_response_header_t **pp_msg0_resp);
 
 int sp_ra_proc_msg1_req(const sample_ra_msg1_t *p_msg1,
 						uint32_t msg1_size,

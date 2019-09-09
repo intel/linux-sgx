@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2003 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    Modified for x86_64 by Max Asbock <masbock@us.ibm.com>
 
@@ -47,21 +47,21 @@ tdep_fetch_frame (struct dwarf_cursor *dw, unw_word_t ip, int need_unwind_info)
         dw->ip, dw->cfa, c->sigcontext_format);
 }
 
-HIDDEN void
-tdep_cache_frame (struct dwarf_cursor *dw, struct dwarf_reg_state *rs)
+HIDDEN int
+tdep_cache_frame (struct dwarf_cursor *dw)
 {
   struct cursor *c = (struct cursor *) dw;
-  rs->signal_frame = c->sigcontext_format;
 
   Debug(5, "cache frame ip=0x%lx cfa=0x%lx format=%d\n",
         dw->ip, dw->cfa, c->sigcontext_format);
+  return c->sigcontext_format;
 }
 
 HIDDEN void
-tdep_reuse_frame (struct dwarf_cursor *dw, struct dwarf_reg_state *rs)
+tdep_reuse_frame (struct dwarf_cursor *dw, int frame)
 {
   struct cursor *c = (struct cursor *) dw;
-  c->sigcontext_format = rs->signal_frame;
+  c->sigcontext_format = frame;
   if (c->sigcontext_format == X86_64_SCF_LINUX_RT_SIGFRAME)
   {
     c->frame_info.frame_type = UNW_X86_64_FRAME_SIGRETURN;
@@ -69,24 +69,22 @@ tdep_reuse_frame (struct dwarf_cursor *dw, struct dwarf_reg_state *rs)
     c->frame_info.cfa_reg_offset = 0;
     c->sigcontext_addr = dw->cfa;
   }
-  else
-    c->sigcontext_addr = 0;
 
   Debug(5, "reuse frame ip=0x%lx cfa=0x%lx format=%d addr=0x%lx offset=%+d\n",
         dw->ip, dw->cfa, c->sigcontext_format, c->sigcontext_addr,
-	(c->sigcontext_format == X86_64_SCF_LINUX_RT_SIGFRAME
-	 ? c->frame_info.cfa_reg_offset : 0));
+        (c->sigcontext_format == X86_64_SCF_LINUX_RT_SIGFRAME
+         ? c->frame_info.cfa_reg_offset : 0));
 }
 
-PROTECTED int
+int
 unw_is_signal_frame (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
   return c->sigcontext_format != X86_64_SCF_NONE;
 }
 
-PROTECTED int
-unw_handle_signal_frame (unw_cursor_t *cursor)
+HIDDEN int
+x86_64_handle_signal_frame (unw_cursor_t *cursor)
 {
 #if UNW_DEBUG /* To silence compiler warnings */
   /* Should not get here because we now use kernel-provided dwarf
@@ -96,7 +94,7 @@ unw_handle_signal_frame (unw_cursor_t *cursor)
      gating on unw_is_signal_frame() needs to be removed. */
   struct cursor *c = (struct cursor *) cursor;
   Debug(1, "old format signal frame? format=%d addr=0x%lx cfa=0x%lx\n",
-	c->sigcontext_format, c->sigcontext_addr, c->dwarf.cfa);
+        c->sigcontext_format, c->sigcontext_addr, c->dwarf.cfa);
 #endif
   return -UNW_EBADFRAME;
 }
@@ -140,14 +138,18 @@ x86_64_sigreturn (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
   struct sigcontext *sc = (struct sigcontext *) c->sigcontext_addr;
+  mcontext_t *sc_mcontext = &((ucontext_t*)sc)->uc_mcontext;
+  /* Copy in saved uc - all preserved regs are at the start of sigcontext */
+  memcpy(sc_mcontext, &c->uc->uc_mcontext,
+         DWARF_NUM_PRESERVED_REGS * sizeof(unw_word_t));
 
   Debug (8, "resuming at ip=%llx via sigreturn(%p)\n",
-	     (unsigned long long) c->dwarf.ip, sc);
+             (unsigned long long) c->dwarf.ip, sc);
   __asm__ __volatile__ ("mov %0, %%rsp;"
-			"mov %1, %%rax;"
-			"syscall"
-			:: "r"(sc), "i"(SYS_rt_sigreturn)
-			: "memory");
+                        "mov %1, %%rax;"
+                        "syscall"
+                        :: "r"(sc), "i"(SYS_rt_sigreturn)
+                        : "memory");
   abort();
 }
 

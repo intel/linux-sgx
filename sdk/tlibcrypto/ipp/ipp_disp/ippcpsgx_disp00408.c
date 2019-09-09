@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, l9_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, y8_ippsGFpSetElementRegular,(const IppsBigNumState* pBN, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, l9_ippsGFpSetElementRegular,(const IppsBigNumState* pBN, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, k0_ippsGFpSetElementRegular,(const IppsBigNumState* pBN, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementRegular,(const IppsBigNumState* pBN, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpSetElementRegular( pBN, pR, pGFp );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsGFpSetElementRegular( pBN, pR, pGFp );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsGFpSetElementRegular( pBN, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, h9_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, p8_ippsGFpSetElementRegular,(const IppsBigNumState* pBN, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, h9_ippsGFpSetElementRegular,(const IppsBigNumState* pBN, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementRegular,(const IppsBigNumState* pBN, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsGFpSetElementRegular( pBN, pR, pGFp );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsGFpSetElementRegular( pBN, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }

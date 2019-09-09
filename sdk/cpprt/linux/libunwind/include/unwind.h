@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2003 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -35,7 +35,7 @@ extern "C" {
 
 /* Minimal interface as per C++ ABI draft standard:
 
-	http://www.codesourcery.com/cxx-abi/abi-eh.html */
+        http://www.codesourcery.com/cxx-abi/abi-eh.html */
 
 typedef enum
   {
@@ -53,22 +53,22 @@ _Unwind_Reason_Code;
 
 typedef int _Unwind_Action;
 
-#define _UA_SEARCH_PHASE	1
-#define _UA_CLEANUP_PHASE	2
-#define _UA_HANDLER_FRAME	4
-#define _UA_FORCE_UNWIND	8
+#define _UA_SEARCH_PHASE        1
+#define _UA_CLEANUP_PHASE       2
+#define _UA_HANDLER_FRAME       4
+#define _UA_FORCE_UNWIND        8
 
-struct _Unwind_Context;		/* opaque data-structure */
-struct _Unwind_Exception;	/* forward-declaration */
+struct _Unwind_Context;         /* opaque data-structure */
+struct _Unwind_Exception;       /* forward-declaration */
 
 typedef void (*_Unwind_Exception_Cleanup_Fn) (_Unwind_Reason_Code,
-					      struct _Unwind_Exception *);
+                                              struct _Unwind_Exception *);
 
 typedef _Unwind_Reason_Code (*_Unwind_Stop_Fn) (int, _Unwind_Action,
-						uint64_t,
-						struct _Unwind_Exception *,
-						struct _Unwind_Context *,
-						void *);
+                                                uint64_t,
+                                                struct _Unwind_Exception *,
+                                                struct _Unwind_Context *,
+                                                void *);
 
 /* The C++ ABI requires exception_class, private_1, and private_2 to
    be of type uint64 and the entire structure to be
@@ -84,7 +84,7 @@ struct _Unwind_Exception
 
 extern _Unwind_Reason_Code _Unwind_RaiseException (struct _Unwind_Exception *);
 extern _Unwind_Reason_Code _Unwind_ForcedUnwind (struct _Unwind_Exception *,
-						 _Unwind_Stop_Fn, void *);
+                                                 _Unwind_Stop_Fn, void *);
 extern void _Unwind_Resume (struct _Unwind_Exception *);
 extern void _Unwind_DeleteException (struct _Unwind_Exception *);
 extern unsigned long _Unwind_GetGR (struct _Unwind_Context *, int);
@@ -100,17 +100,17 @@ extern unsigned long _Unwind_GetRegionStart (struct _Unwind_Context *);
 /* Callback for _Unwind_Backtrace().  The backtrace stops immediately
    if the callback returns any value other than _URC_NO_REASON. */
 typedef _Unwind_Reason_Code (*_Unwind_Trace_Fn) (struct _Unwind_Context *,
-						 void *);
+                                                 void *);
 
 /* See http://gcc.gnu.org/ml/gcc-patches/2001-09/msg00082.html for why
    _UA_END_OF_STACK exists.  */
-# define _UA_END_OF_STACK	16
+# define _UA_END_OF_STACK       16
 
 /* If the unwind was initiated due to a forced unwind, resume that
    operation, else re-raise the exception.  This is used by
    __cxa_rethrow().  */
 extern _Unwind_Reason_Code
-	  _Unwind_Resume_or_Rethrow (struct _Unwind_Exception *);
+          _Unwind_Resume_or_Rethrow (struct _Unwind_Exception *);
 
 /* See http://gcc.gnu.org/ml/gcc-patches/2003-09/msg00154.html for why
    _Unwind_GetBSP() exists.  */

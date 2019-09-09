@@ -1,5 +1,5 @@
 '\" t
-.\" Manual page created with latex2man on Thu Aug 16 09:44:45 MDT 2007
+.\" Manual page created with latex2man on Wed Aug 16 12:11:05 PDT 2017
 .\" NOTE: This file is generated, DO NOT EDIT.
 .de Vb
 .ft CW
@@ -10,7 +10,7 @@
 
 .fi
 ..
-.TH "UNW\\_INIT\\_LOCAL" "3" "16 August 2007" "Programming Library " "Programming Library "
+.TH "UNW\\_INIT\\_LOCAL" "3" "16 August 2017" "Programming Library " "Programming Library "
 .SH NAME
 unw_init_local
 \-\- initialize cursor for local unwinding 
@@ -25,6 +25,12 @@ int
 unw_init_local(unw_cursor_t *c,
 unw_context_t *ctxt);
 .br
+int
+unw_init_local2(unw_cursor_t *c,
+unw_context_t *ctxt,
+int
+flag);
+.br
 .PP
 .SH DESCRIPTION
 
@@ -37,7 +43,11 @@ pointed to by ctxt\&.
 As such, the machine\-state pointed to by 
 ctxt
 identifies the initial stack frame at which unwinding 
-starts. The machine\-state must remain valid for the duration for 
+starts. The machine\-state is expected to be one provided by a call to 
+unw_getcontext; as such, the instruction pointer may point to the 
+instruction after the last instruction of a function, and libunwind 
+will back\-up the instruction pointer before beginning a walk up the 
+call stack. The machine\-state must remain valid for the duration for 
 which the cursor c
 is in use. 
 .PP
@@ -46,17 +56,6 @@ routine can be used only for unwinding in
 the address space of the current process (i.e., for local unwinding). 
 For all other cases, unw_init_remote()
 must be used instead. 
-From a behavioral point of view, the call: 
-.PP
-.Vb
-    ret = unw_init_local(&cursor, &ucontext);
-.Ve
-is equivalent to: 
-.PP
-.Vb
-    ret = unw_init_remote(&cursor, unw_local_addr_space,
-                          &ucontext);
-.Ve
 However, unwind performance may be better when using 
 unw_init_local().
 Also, unw_init_local()
@@ -66,6 +65,12 @@ has been defined before
 including <libunwind.h>,
 whereas unw_init_remote()
 is not. 
+.PP
+If the unw_context_t is known to be a signal frame (i.e., from the 
+third argument in a sigaction handler on linux), 
+unw_init_local2()
+should be used for correct initialization 
+on some platforms, passing the UNW_INIT_SIGNAL_FRAME flag. 
 .PP
 .SH RETURN VALUE
 

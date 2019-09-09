@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
-IPPAPI(IppStatus, l9_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, y8_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, l9_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, k0_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsPRNGSetH0( pH0, pCtx );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsPRNGInit( seedBits, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsPRNGSetH0( pH0, pCtx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsPRNGInit( seedBits, pCtx );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsPRNGInit( seedBits, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
-IPPAPI(IppStatus, h9_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, p8_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, h9_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsPRNGSetH0( pH0, pCtx );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsPRNGInit( seedBits, pCtx );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsPRNGSetH0( pH0, pCtx );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsPRNGInit( seedBits, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

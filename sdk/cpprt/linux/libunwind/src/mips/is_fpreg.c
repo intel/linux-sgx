@@ -27,7 +27,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 /* FIXME: I'm not sure if libunwind's GP/FP register distinction is very useful
    on MIPS.  */
 
-PROTECTED int
+int
 unw_is_fpreg (int regnum)
 {
   /* FIXME: Support FP.  */

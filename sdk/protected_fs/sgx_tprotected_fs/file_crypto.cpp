@@ -67,18 +67,18 @@ bool protected_fs_file::generate_secure_blob(sgx_aes_gcm_128bit_key_t* key, cons
 
 	// index
 	// SP800-108:
-	// i – A counter, a binary string of length r that is an input to each iteration of a PRF in counter mode [...].
+	// i - A counter, a binary string of length r that is an input to each iteration of a PRF in counter mode [...].
 	buf.index = 0x01;
 
 	// label
 	// SP800-108:
-	// Label – A string that identifies the purpose for the derived keying material, which is encoded as a binary string. 
+	// Label - A string that identifies the purpose for the derived keying material, which is encoded as a binary string. 
 	//         The encoding method for the Label is defined in a larger context, for example, in the protocol that uses a KDF.
 	strncpy(buf.label, label, len);
 
 	// context and nonce
 	// SP800-108: 
-	// Context – A binary string containing the information related to the derived keying material.
+	// Context - A binary string containing the information related to the derived keying material.
 	//           It may include identities of parties who are deriving and / or using the derived keying material and, 
 	//           optionally, a nonce known by the parties who derive the keys.
 	buf.node_number = physical_node_number;
@@ -113,18 +113,18 @@ bool protected_fs_file::generate_secure_blob_from_user_kdk(bool restore)
 
 	// index
 	// SP800-108:
-	// i – A counter, a binary string of length r that is an input to each iteration of a PRF in counter mode [...].
+	// i - A counter, a binary string of length r that is an input to each iteration of a PRF in counter mode [...].
 	buf.index = 0x01;
 
 	// label
 	// SP800-108:
-	// Label – A string that identifies the purpose for the derived keying material, which is encoded as a binary string. 
+	// Label - A string that identifies the purpose for the derived keying material, which is encoded as a binary string. 
 	//         The encoding method for the Label is defined in a larger context, for example, in the protocol that uses a KDF.
 	strncpy(buf.label, METADATA_KEY_NAME, strlen(METADATA_KEY_NAME));
 
 	// context and nonce
 	// SP800-108: 
-	// Context – A binary string containing the information related to the derived keying material.
+	// Context - A binary string containing the information related to the derived keying material.
 	//           It may include identities of parties who are deriving and / or using the derived keying material and, 
 	//           optionally, a nonce known by the parties who derive the keys.
 	buf.node_number = 0;

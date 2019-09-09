@@ -173,7 +173,7 @@ EOF
 
 chmod +x $ECL_DST_PATH/cleanup.sh
 
-$AESM_PATH/cse_provision_tool || true
+$AESM_PATH/cse_provision_tool 2> /dev/null || true
 
 cat > $AESM_PATH/linksgx.sh <<EOF
 #!/usr/bin/env bash

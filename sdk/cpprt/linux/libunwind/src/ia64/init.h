@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2002-2005 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -29,35 +29,33 @@ static ALWAYS_INLINE int
 common_init (struct cursor *c, unw_word_t sp, unw_word_t bsp)
 {
   unw_word_t bspstore, rbs_base;
-  uint8_t *natp;
   int ret;
 
   if (c->as->caching_policy != UNW_CACHE_NONE)
     /* ensure cache doesn't have any stale contents: */
     ia64_validate_cache (c->as, c->as_arg);
 
-  c->cfm_loc =			IA64_REG_LOC (c, UNW_IA64_CFM);
-  c->loc[IA64_REG_BSP] =	IA64_NULL_LOC;
-  c->loc[IA64_REG_BSPSTORE] =	IA64_REG_LOC (c, UNW_IA64_AR_BSPSTORE);
-  c->loc[IA64_REG_PFS] =	IA64_REG_LOC (c, UNW_IA64_AR_PFS);
-  c->loc[IA64_REG_RNAT] =	IA64_REG_LOC (c, UNW_IA64_AR_RNAT);
-  c->loc[IA64_REG_IP] =		IA64_REG_LOC (c, UNW_IA64_IP);
+  c->cfm_loc =                  IA64_REG_LOC (c, UNW_IA64_CFM);
+  c->loc[IA64_REG_BSP] =        IA64_NULL_LOC;
+  c->loc[IA64_REG_BSPSTORE] =   IA64_REG_LOC (c, UNW_IA64_AR_BSPSTORE);
+  c->loc[IA64_REG_PFS] =        IA64_REG_LOC (c, UNW_IA64_AR_PFS);
+  c->loc[IA64_REG_RNAT] =       IA64_REG_LOC (c, UNW_IA64_AR_RNAT);
+  c->loc[IA64_REG_IP] =         IA64_REG_LOC (c, UNW_IA64_IP);
   c->loc[IA64_REG_PRI_UNAT_MEM] = IA64_NULL_LOC; /* no primary UNaT location */
-  c->loc[IA64_REG_UNAT] =	IA64_REG_LOC (c, UNW_IA64_AR_UNAT);
-  c->loc[IA64_REG_PR] =		IA64_REG_LOC (c, UNW_IA64_PR);
-  c->loc[IA64_REG_LC] =		IA64_REG_LOC (c, UNW_IA64_AR_LC);
-  c->loc[IA64_REG_FPSR] =	IA64_REG_LOC (c, UNW_IA64_AR_FPSR);
+  c->loc[IA64_REG_UNAT] =       IA64_REG_LOC (c, UNW_IA64_AR_UNAT);
+  c->loc[IA64_REG_PR] =         IA64_REG_LOC (c, UNW_IA64_PR);
+  c->loc[IA64_REG_LC] =         IA64_REG_LOC (c, UNW_IA64_AR_LC);
+  c->loc[IA64_REG_FPSR] =       IA64_REG_LOC (c, UNW_IA64_AR_FPSR);
 
   c->loc[IA64_REG_R4] = IA64_REG_LOC (c, UNW_IA64_GR + 4);
   c->loc[IA64_REG_R5] = IA64_REG_LOC (c, UNW_IA64_GR + 5);
   c->loc[IA64_REG_R6] = IA64_REG_LOC (c, UNW_IA64_GR + 6);
   c->loc[IA64_REG_R7] = IA64_REG_LOC (c, UNW_IA64_GR + 7);
 
-  natp = c->nat_bitnr;
-  c->loc[IA64_REG_NAT4] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 4, &natp[0]);
-  c->loc[IA64_REG_NAT5] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 5, &natp[1]);
-  c->loc[IA64_REG_NAT6] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 6, &natp[2]);
-  c->loc[IA64_REG_NAT7] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 7, &natp[3]);
+  c->loc[IA64_REG_NAT4] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 4, &c->nat_bitnr[0]);
+  c->loc[IA64_REG_NAT5] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 5, &c->nat_bitnr[1]);
+  c->loc[IA64_REG_NAT6] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 6, &c->nat_bitnr[2]);
+  c->loc[IA64_REG_NAT7] = IA64_REG_NAT_LOC (c, UNW_IA64_NAT + 7, &c->nat_bitnr[3]);
 
   c->loc[IA64_REG_B1] = IA64_REG_LOC (c, UNW_IA64_BR + 1);
   c->loc[IA64_REG_B2] = IA64_REG_LOC (c, UNW_IA64_BR + 2);
@@ -117,8 +115,8 @@ common_init (struct cursor *c, unw_word_t sp, unw_word_t bsp)
   c->rbs_area[0].size = bspstore - rbs_base;
   c->rbs_area[0].rnat_loc = IA64_REG_LOC (c, UNW_IA64_AR_RNAT);
   Debug (10, "initial rbs-area: [0x%llx-0x%llx), rnat@%s\n",
-	 (long long) rbs_base, (long long) c->rbs_area[0].end,
-	 ia64_strloc (c->rbs_area[0].rnat_loc));
+         (long long) rbs_base, (long long) c->rbs_area[0].end,
+         ia64_strloc (c->rbs_area[0].rnat_loc));
 
   c->pi.flags = 0;
 

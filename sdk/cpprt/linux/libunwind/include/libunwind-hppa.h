@@ -32,17 +32,17 @@ extern "C" {
 #include <inttypes.h>
 #include <ucontext.h>
 
-#define UNW_TARGET	hppa
-#define UNW_TARGET_HPPA	1
+#define UNW_TARGET      hppa
+#define UNW_TARGET_HPPA 1
 
-#define _U_TDEP_QP_TRUE	0	/* see libunwind-dynamic.h  */
+#define _U_TDEP_QP_TRUE 0       /* see libunwind-dynamic.h  */
 
 /* This needs to be big enough to accommodate "struct cursor", while
    leaving some slack for future expansion.  Changing this value will
    require recompiling all users of this library.  Stack allocation is
    relatively cheap and unwind-state copying is relatively rare, so we
    want to err on making it rather too big than too small.  */
-#define UNW_TDEP_CURSOR_LEN	511
+#define UNW_TDEP_CURSOR_LEN     511
 
 typedef uint32_t unw_word_t;
 typedef int32_t unw_sword_t;
@@ -61,13 +61,13 @@ typedef enum
        implementation of the C++ exception handling ABI.  See
        _Unwind_SetGR() and _Unwind_GetGR() for details.  */
     UNW_HPPA_GR = 0,
-     UNW_HPPA_RP = 2,			/* return pointer */
-     UNW_HPPA_FP = 3,			/* frame pointer */
+     UNW_HPPA_RP = 2,                   /* return pointer */
+     UNW_HPPA_FP = 3,                   /* frame pointer */
      UNW_HPPA_SP = UNW_HPPA_GR + 30,
 
     UNW_HPPA_FR = UNW_HPPA_GR + 32,
 
-    UNW_HPPA_IP = UNW_HPPA_FR + 32,	/* instruction pointer */
+    UNW_HPPA_IP = UNW_HPPA_FR + 32,     /* instruction pointer */
 
     /* other "preserved" registers (fpsr etc.)... */
 
@@ -76,10 +76,10 @@ typedef enum
        exception-handling registers which we then alias to the actual
        physical register.  */
 
-    UNW_HPPA_EH0 = UNW_HPPA_IP + 1,	/* alias for UNW_HPPA_GR + 20 */
-    UNW_HPPA_EH1 = UNW_HPPA_EH0 + 1,	/* alias for UNW_HPPA_GR + 21 */
-    UNW_HPPA_EH2 = UNW_HPPA_EH1 + 1,	/* alias for UNW_HPPA_GR + 22 */
-    UNW_HPPA_EH3 = UNW_HPPA_EH2 + 1,	/* alias for UNW_HPPA_GR + 31 */
+    UNW_HPPA_EH0 = UNW_HPPA_IP + 1,     /* alias for UNW_HPPA_GR + 20 */
+    UNW_HPPA_EH1 = UNW_HPPA_EH0 + 1,    /* alias for UNW_HPPA_GR + 21 */
+    UNW_HPPA_EH2 = UNW_HPPA_EH1 + 1,    /* alias for UNW_HPPA_GR + 22 */
+    UNW_HPPA_EH3 = UNW_HPPA_EH2 + 1,    /* alias for UNW_HPPA_GR + 31 */
 
     /* frame info (read-only) */
     UNW_HPPA_CFA,
@@ -92,7 +92,7 @@ typedef enum
   }
 hppa_regnum_t;
 
-#define UNW_TDEP_NUM_EH_REGS	4
+#define UNW_TDEP_NUM_EH_REGS    4
 
 typedef struct unw_tdep_save_loc
   {
@@ -103,7 +103,7 @@ unw_tdep_save_loc_t;
 /* On PA-RISC, we can directly use ucontext_t as the unwind context.  */
 typedef ucontext_t unw_tdep_context_t;
 
-#define unw_tdep_is_fpreg(r)		((unsigned) ((r) - UNW_HPPA_FR) < 32)
+#define unw_tdep_is_fpreg(r)            ((unsigned) ((r) - UNW_HPPA_FR) < 32)
 
 #include "libunwind-dynamic.h"
 
@@ -115,7 +115,7 @@ unw_tdep_proc_info_t;
 
 #include "libunwind-common.h"
 
-#define unw_tdep_getcontext		UNW_ARCH_OBJ (getcontext)
+#define unw_tdep_getcontext             UNW_ARCH_OBJ (getcontext)
 extern int unw_tdep_getcontext (unw_tdep_context_t *);
 
 #if defined(__cplusplus) || defined(c_plusplus)

@@ -1,5 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2008 CodeSourcery
+   Copyright (C) 2012 Tommi Rantala <tt.rantala@gmail.com>
 
 This file is part of libunwind.
 
@@ -37,8 +38,14 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
  sw $X, (LINUX_UC_MCONTEXT_GREGS + 8 * X + OFFSET) ($4); \
  sra $1, $X, 31; \
  sw $1, (LINUX_UC_MCONTEXT_GREGS + 8 * X + 4 - OFFSET) ($4)
+/* Yes, we save the return address to PC. */
+# define SPC \
+ sw $31, (LINUX_UC_MCONTEXT_PC + OFFSET) ($4); \
+ sra $1, $31, 31; \
+ sw $1, (LINUX_UC_MCONTEXT_PC + 4 - OFFSET) ($4)
 #else
 # define SREG(X) sd $X, (LINUX_UC_MCONTEXT_GREGS + 8 * X) ($4)
+# define SPC sd $31, (LINUX_UC_MCONTEXT_PC) ($4)
 #endif
 
 	.global _Umips_getcontext
@@ -79,6 +86,7 @@ _Umips_getcontext:
 	SREG (29)
 	SREG (30)
 	SREG (31)
+	SPC
 	li	$2, 0
 	j $31
 

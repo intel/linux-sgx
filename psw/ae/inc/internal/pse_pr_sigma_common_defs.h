@@ -141,7 +141,7 @@ typedef struct _SIGMA_VLR_HEADER
 } SIGMA_VLR_HEADER;
 
 // All variable and optional field in Sigma messages will use a VLR format
-// To simplify the FW code, the length of VLR data should be DWORD aligned. The data will be padded with 0’s at the end to make the VLR’s data DWORD aligned.  
+// To simplify the FW code, the length of VLR data should be DWORD aligned. The data will be padded with 0's at the end to make the VLR's data DWORD aligned.  
 
 
 // Supported VLR IDs in the Sigma message

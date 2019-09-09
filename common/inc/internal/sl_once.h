@@ -43,7 +43,7 @@
 #define STATE_CALLING       1
 #define STATE_CALLED        2
 
-#define SL_ONCE_INITIALIZER     { 0, 0}
+#define SL_ONCE_INITIALIZER     { STATE_NO_CALL, 0}
 
 typedef struct 
 {

@@ -31,6 +31,7 @@
 
 #include "sgx_tcrypto.h"
 #include "ippcp.h"
+#include "ipp_wrapper.h"
 #include "stdlib.h"
 #include "string.h"
 
@@ -56,9 +57,7 @@ sgx_status_t sgx_hmac_sha256_msg(const unsigned char *p_src, int src_len, const 
 
 	do {
 		ipp_ret = ippsHMACMessage_rmf(p_src, src_len, (const Ipp8u*)p_key, key_len, p_mac, mac_len, ippsHashMethod_SHA256_TT());
-		if (ipp_ret != ippStsNoErr) {
-			break;
-		}
+		ERROR_BREAK(ipp_ret);
 
 		ret = SGX_SUCCESS;
 	} while (0);
@@ -91,19 +90,15 @@ sgx_status_t sgx_hmac256_init(const unsigned char *p_key, int key_len, sgx_hmac_
 
 	do {
 		ipp_ret = ippsHMACGetSize_rmf(&size);
-		if (ipp_ret != ippStsNoErr) {
-			break;
-		}
+		ERROR_BREAK(ipp_ret);
 		pState = (IppsHMACState_rmf*) malloc(size);
-        if (NULL == pState)
-        {
-            ret = SGX_ERROR_OUT_OF_MEMORY;
-            break;
-        }
-		ipp_ret = ippsHMACInit_rmf(p_key, key_len, pState, ippsHashMethod_SHA256_TT());
-        if (ipp_ret != ippStsNoErr) {
+		if (NULL == pState)
+		{
+			ret = SGX_ERROR_OUT_OF_MEMORY;
 			break;
 		}
+		ipp_ret = ippsHMACInit_rmf(p_key, key_len, pState, ippsHashMethod_SHA256_TT());
+		ERROR_BREAK(ipp_ret);
 
 		*p_hmac_handle = pState;
 		ret = SGX_SUCCESS;
@@ -153,7 +148,7 @@ sgx_status_t sgx_hmac256_final(unsigned char *p_hash, int hash_len, sgx_hmac_sta
 
 	ipp_ret = ippsHMACFinal_rmf(p_hash, hash_len, (IppsHMACState_rmf*)hmac_handle);
 	if (ipp_ret != ippStsNoErr) {
-        memset_s(p_hash, hash_len, 0, hash_len);
+		memset_s(p_hash, hash_len, 0, hash_len);
 		return SGX_ERROR_UNEXPECTED;
 	}
 
@@ -177,11 +172,10 @@ sgx_status_t sgx_hmac256_close(sgx_hmac_state_handle_t hmac_handle)
 	
 	do {
 		ipp_ret = ippsHMACGetSize_rmf(&size);
-		if (ipp_ret != ippStsNoErr) {
-			break;
-		}
+		ERROR_BREAK(ipp_ret);
+		
 		memset_s(hmac_handle, size, 0, size);
-        free(hmac_handle);
+		free(hmac_handle);
 		hmac_handle = NULL;
 		
 		ret = SGX_SUCCESS;

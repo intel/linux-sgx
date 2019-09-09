@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSASign_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsRSASign_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsRSASign_PKCS1v15,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsRSASign_PKCS1v15,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, k0_ippsRSASign_PKCS1v15,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSASign_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSASign_PKCS1v15,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return l9_ippsRSASign_PKCS1v15_rmf( pMsg, msgLen, pSign, pPrvKey, pPubKey, pMethod, pBuffer );
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsRSASign_PKCS1v15( pMsg, msgLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return y8_ippsRSASign_PKCS1v15_rmf( pMsg, msgLen, pSign, pPrvKey, pPubKey, pMethod, pBuffer );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return l9_ippsRSASign_PKCS1v15( pMsg, msgLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
+      } else 
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return y8_ippsRSASign_PKCS1v15( pMsg, msgLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSASign_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsRSASign_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI(IppStatus, p8_ippsRSASign_PKCS1v15,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, h9_ippsRSASign_PKCS1v15,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSASign_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSASign_PKCS1v15,(const Ipp8u* pMsg, int msgLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) { /* HasweLl ia32=H9, x64=L9 */
-        return h9_ippsRSASign_PKCS1v15_rmf( pMsg, msgLen, pSign, pPrvKey, pPubKey, pMethod, pBuffer );
+      if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
+        return h9_ippsRSASign_PKCS1v15( pMsg, msgLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
-      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) { /* Nehalem or Westmer = PenrYn + SSE42 + ?CLMUL + ?AES + ?SHA */
-        return p8_ippsRSASign_PKCS1v15_rmf( pMsg, msgLen, pSign, pPrvKey, pPubKey, pMethod, pBuffer );
+      if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
+        return p8_ippsRSASign_PKCS1v15( pMsg, msgLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

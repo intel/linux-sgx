@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (c) 2003, 2005 Hewlett-Packard Development Company, L.P.
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
    Modified for x86_64 by Max Asbock <masbock@us.ibm.com>
 
@@ -33,26 +33,24 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 /* XXX need to verify if this value is correct */
 #ifdef CONFIG_MSABI_SUPPORT
-#define DWARF_NUM_PRESERVED_REGS	33
+#define DWARF_NUM_PRESERVED_REGS        33
 #else
-#define DWARF_NUM_PRESERVED_REGS	17
+#define DWARF_NUM_PRESERVED_REGS        17
 #endif 
 
-#define DWARF_REGNUM_MAP_LENGTH		DWARF_NUM_PRESERVED_REGS
+#define DWARF_REGNUM_MAP_LENGTH         DWARF_NUM_PRESERVED_REGS
 
 /* Return TRUE if the ADDR_SPACE uses big-endian byte-order.  */
-#define dwarf_is_big_endian(addr_space)	0
+#define dwarf_is_big_endian(addr_space) 0
 
 /* Convert a pointer to a dwarf_cursor structure to a pointer to
    unw_cursor_t.  */
-#define dwarf_to_cursor(c)	((unw_cursor_t *) (c))
+#define dwarf_to_cursor(c)      ((unw_cursor_t *) (c))
 
 typedef struct dwarf_loc
   {
     unw_word_t val;
-#ifndef UNW_LOCAL_ONLY
-    unw_word_t type;		/* see X86_LOC_TYPE_* macros.  */
-#endif
+    unw_word_t type;            /* see X86_LOC_TYPE_* macros.  */
   }
 dwarf_loc_t;
 

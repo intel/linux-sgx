@@ -32,14 +32,12 @@
 #include <stddef.h>
 #include <oal/uae_oal_api.h>
 #include <aesm_error.h>
-#include "sgx_ql_quote.h"
 #include "sgx_uae_service.h"
 #include "uae_service_internal.h"
 #include "config.h"
 
 #include "stdint.h"
 #include "se_sig_rl.h"
-#include "sgx_ql_core_wrapper.h"
 
 #if !defined(ntohl)
 #define ntohl(u32)                                      \
@@ -56,6 +54,7 @@
 #define SE_GET_QUOTE_TIMEOUT_MSEC(p_sig_rl) (IPC_LATENCY + ((p_sig_rl) ? 3*ntohl(((const se_sig_rl_t*)p_sig_rl)->sig_rl.n2) : 0))
 #define SE_GET_PS_CAP_TIMEOUT_MSEC (IPC_LATENCY)
 #define SE_REPORT_REMOTE_ATTESTATION_FAILURE_TIMEOUT_MSEC  (IPC_LATENCY)
+#define SE_CHECK_UPDATE_STATUS_TIMEOUT_MSEC  (IPC_LATENCY)
 
 #define GET_WHITE_LIST_SIZE_MSEC (IPC_LATENCY)
 #define GET_WHITE_LIST_MSEC (IPC_LATENCY)
@@ -63,6 +62,7 @@
 #define SGX_SWITCH_EXTENDED_GROUP_MSEC (IPC_LATENCY)
 #define REG_WL_CERT_CHAIN_MSEC (IPC_LATENCY)
 #define SE_CALC_QUOTE_SIZE_TIMEOUT_MSEC (IPC_LATENCY)
+#define SE_SELECT_ATT_KEY_ID_TIMEOUT_MSEC (IPC_LATENCY)
 
 extern "C" {
 
@@ -301,6 +301,65 @@ sgx_status_t sgx_report_attestation_status(
     return mapped;
 }
 
+#define CHECK_UPDATE_STATUS_EPID_PROV		0x2
+#define CHECK_UPDATE_STATUS_CERT_PROV_LTP	0x4
+sgx_status_t SGXAPI sgx_check_update_status(
+    const sgx_platform_info_t* p_platform_info,
+    sgx_update_info_bit_t* p_update_info,
+    uint32_t config,
+    uint32_t* p_status)
+{
+    if ((NULL == p_platform_info && NULL != p_update_info) ||  // can't determine update status w/o PIB
+        (NULL == p_platform_info && 0 == config)) {  // nothing to do without platform info
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    if (0 != (config & ~(CHECK_UPDATE_STATUS_EPID_PROV | CHECK_UPDATE_STATUS_CERT_PROV_LTP))) { // any unsupported bits in config input
+        return SGX_ERROR_UNSUPPORTED_CONFIG;
+    }
+
+    aesm_error_t    result = AESM_UNEXPECTED_ERROR;
+
+    uae_oal_status_t status = oal_check_update_status(p_platform_info, p_update_info, config, p_status,
+        SE_CHECK_UPDATE_STATUS_TIMEOUT_MSEC*1000, &result);
+
+    sgx_status_t mapped = oal_map_status(status);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
+    {
+        /*operation specific mapping */
+        if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
+        {
+            switch (result)
+            {
+                case AESM_BACKEND_SERVER_BUSY:
+                    mapped = SGX_ERROR_BUSY;
+                    break;
+                case AESM_PLATFORM_INFO_BLOB_INVALID_SIG:
+                    mapped = SGX_ERROR_INVALID_PARAMETER;
+                    break;
+                case AESM_EPIDBLOB_ERROR:
+                    mapped = SGX_ERROR_AE_INVALID_EPIDBLOB;
+                    break;
+                case AESM_OUT_OF_EPC:
+                    mapped = SGX_ERROR_OUT_OF_EPC;
+                    break;
+                case AESM_CONFIG_UNSUPPORTED:
+                    mapped = SGX_ERROR_UNSUPPORTED_CONFIG;
+                    break;
+                case AESM_SGX_PROVISION_FAILED:
+                default:
+                    mapped = SGX_ERROR_UNEXPECTED;
+            }
+        }
+    }
+
+    return mapped;
+}
+
 sgx_status_t create_session_ocall(
         uint32_t        *session_id,
     uint8_t         *se_dh_msg1,
@@ -331,7 +390,6 @@ sgx_status_t create_session_ocall(
                 case AESM_EPH_SESSION_FAILED:
                 case AESM_LONG_TERM_PAIRING_FAILED:
                 case AESM_PSDA_UNAVAILABLE:
-                case AESM_SERVICE_NOT_AVAILABLE:
                     mapped = SGX_ERROR_SERVICE_UNAVAILABLE;
                     break;
                 case AESM_OUT_OF_EPC:
@@ -385,7 +443,6 @@ sgx_status_t exchange_report_ocall(
                 case AESM_EPH_SESSION_FAILED:
                 case AESM_LONG_TERM_PAIRING_FAILED:
                 case AESM_PSDA_UNAVAILABLE:
-                case AESM_SERVICE_NOT_AVAILABLE:
                     mapped = SGX_ERROR_SERVICE_UNAVAILABLE;
                     break;
                 case AESM_OUT_OF_EPC:
@@ -428,7 +485,6 @@ sgx_status_t close_session_ocall(
                     break;
                 case AESM_EPH_SESSION_FAILED:
                 case AESM_LONG_TERM_PAIRING_FAILED:
-                case AESM_SERVICE_NOT_AVAILABLE:
                     mapped = SGX_ERROR_SERVICE_UNAVAILABLE;
                     break;
                 case AESM_OUT_OF_EPC:
@@ -477,7 +533,6 @@ sgx_status_t invoke_service_ocall(
                 case AESM_EPH_SESSION_FAILED:
                 case AESM_LONG_TERM_PAIRING_FAILED:
                 case AESM_PSDA_UNAVAILABLE:
-                case AESM_SERVICE_NOT_AVAILABLE:
                     mapped = SGX_ERROR_SERVICE_UNAVAILABLE;
                     break;
                 case AESM_OUT_OF_EPC:
@@ -657,39 +712,43 @@ sgx_status_t sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_ce
 }
 
 sgx_status_t sgx_select_att_key_id(const uint8_t *p_att_key_id_list, uint32_t att_key_id_list_size,
-                                                   sgx_att_key_id_t **pp_selected_key_id)
+                                   sgx_att_key_id_t *p_selected_key_id)
 {
-    sgx_status_t result = SGX_ERROR_UNEXPECTED;
-    quote3_error_t ret_val = SGX_QL_ERROR_UNEXPECTED;
-
-    if ((p_att_key_id_list == NULL && att_key_id_list_size != 0) ||
-        (p_att_key_id_list != NULL && att_key_id_list_size == 0))
+    if (((NULL == p_att_key_id_list) && (0 != att_key_id_list_size))
+        ||(NULL == p_selected_key_id))
         return SGX_ERROR_INVALID_PARAMETER;
 
-    ret_val = sgx_ql_select_att_key_id((sgx_ql_att_key_id_list_t*)p_att_key_id_list, (sgx_ql_att_key_id_t**)pp_selected_key_id);
+    aesm_error_t result = AESM_UNEXPECTED_ERROR;
+    uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
+    oal_ret = oal_select_att_key_id(p_att_key_id_list, att_key_id_list_size, p_selected_key_id,
+            SE_SELECT_ATT_KEY_ID_TIMEOUT_MSEC*1000, &result);
 
-    switch (ret_val)
+    //common mappings
+    sgx_status_t mapped = oal_map_status(oal_ret);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
     {
-    case SGX_QL_SUCCESS:
-        result = SGX_SUCCESS;
-        break;
-    case SGX_QL_ERROR_INVALID_PARAMETER:
-        result = SGX_ERROR_INVALID_PARAMETER;
-        break;
-    case SGX_QL_UNSUPPORTED_ATT_KEY_ID:
-        result = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
-        break;
-    default:
-        result = SGX_ERROR_UNEXPECTED;
-        break;
+        //operation specific mapping
+        if (mapped == SGX_ERROR_UNEXPECTED && result != AESM_UNEXPECTED_ERROR)
+        {
+            switch (result)
+            {
+            case AESM_UNSUPPORTED_ATT_KEY_ID:
+                mapped = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
+                break;
+            default:
+                mapped = SGX_ERROR_UNEXPECTED;
+            }
+        }
     }
-
-    return result ;
+    return mapped;
  }
 
 sgx_status_t sgx_init_quote_ex(const sgx_att_key_id_t* p_att_key_id,
                                             sgx_target_info_t *p_qe_target_info,
-                                            bool refresh_att_key,
                                             size_t* p_pub_key_id_size,
                                             uint8_t* p_pub_key_id)
 {
@@ -700,11 +759,9 @@ sgx_status_t sgx_init_quote_ex(const sgx_att_key_id_t* p_att_key_id,
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    sgx_ql_cert_key_type_t certification_key_type = SGX_QL_CERT_TYPE;
-
     aesm_error_t    result = AESM_UNEXPECTED_ERROR;
     uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
-    oal_ret = oal_init_quote_ex((sgx_ql_att_key_id_t*)p_att_key_id, certification_key_type, p_qe_target_info, refresh_att_key, p_pub_key_id_size, *p_pub_key_id_size, p_pub_key_id,
+    oal_ret = oal_init_quote_ex((sgx_att_key_id_t*)p_att_key_id, p_qe_target_info, p_pub_key_id_size, *p_pub_key_id_size, p_pub_key_id,
             SE_INIT_QUOTE_TIMEOUT_MSEC*1000, &result);
 
     //common mappings
@@ -726,6 +783,24 @@ sgx_status_t sgx_init_quote_ex(const sgx_att_key_id_t* p_att_key_id,
             case AESM_KEY_CERTIFICATION_ERROR:
                 mapped = SGX_ERROR_ATT_KEY_CERTIFICATION_FAILURE;
                 break;
+            case AESM_NO_PLATFORM_CERT_DATA:
+                mapped = SGX_ERROR_PLATFORM_CERT_UNAVAILABLE;
+                break;
+            case AESM_EPIDBLOB_ERROR:
+                mapped = SGX_ERROR_AE_INVALID_EPIDBLOB;
+                break;
+            case AESM_EPID_REVOKED_ERROR:
+                mapped = SGX_ERROR_EPID_MEMBER_REVOKED;
+                break;
+            case AESM_BACKEND_SERVER_BUSY:
+                mapped = SGX_ERROR_BUSY;
+                break;
+            case AESM_SGX_PROVISION_FAILED:
+                mapped = SGX_ERROR_UNEXPECTED;
+                break;
+            case AESM_OUT_OF_EPC:
+                mapped = SGX_ERROR_OUT_OF_EPC;
+                break;
             default:
                 mapped = SGX_ERROR_UNEXPECTED;
             }
@@ -744,12 +819,9 @@ sgx_status_t SGXAPI sgx_get_quote_size_ex(const sgx_att_key_id_t *p_att_key_id,
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    // Choose the certification key type supported by the reference.
-    sgx_ql_cert_key_type_t certification_key_type = SGX_QL_CERT_TYPE;
-
     aesm_error_t    result = AESM_UNEXPECTED_ERROR;
     uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
-    oal_ret = oal_get_quote_size_ex((sgx_ql_att_key_id_t*)p_att_key_id, certification_key_type, p_quote_size,
+    oal_ret = oal_get_quote_size_ex((sgx_att_key_id_t*)p_att_key_id, p_quote_size,
             SE_CALC_QUOTE_SIZE_TIMEOUT_MSEC*1000, &result);
 
     //common mappings
@@ -769,7 +841,7 @@ sgx_status_t SGXAPI sgx_get_quote_size_ex(const sgx_att_key_id_t *p_att_key_id,
                 mapped = SGX_ERROR_ATT_KEY_UNINITIALIZED;
                 break;
             case AESM_ATT_KEY_CERT_DATA_INVALID:
-                mapped = SGX_ERROR_INVALID_ATT_KEY_CERT_DATA;
+                mapped = SGX_ERROR_UNEXPECTED;
                 break;
             case AESM_UNSUPPORTED_ATT_KEY_ID:
                 mapped = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
@@ -798,7 +870,7 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
 
     aesm_error_t    result = AESM_UNEXPECTED_ERROR;
     uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
-    oal_ret = oal_get_quote_ex(p_app_report, (sgx_ql_att_key_id_t*)p_att_key_id, (sgx_ql_qe_report_info_t*)p_qe_report_info, quote_size, p_quote,
+    oal_ret = oal_get_quote_ex(p_app_report, (sgx_att_key_id_t*)p_att_key_id, p_qe_report_info, quote_size, p_quote,
             SE_GET_QUOTE_TIMEOUT_MSEC(NULL)*1000, &result);
 
     //common mappings
@@ -818,7 +890,7 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
                 mapped = SGX_ERROR_ATT_KEY_UNINITIALIZED;
                 break;
             case AESM_ATT_KEY_CERT_DATA_INVALID:
-                mapped = SGX_ERROR_INVALID_ATT_KEY_CERT_DATA;
+                mapped = SGX_ERROR_UNEXPECTED;
                 break;
             case AESM_UNSUPPORTED_ATT_KEY_ID:
                 mapped = SGX_ERROR_UNSUPPORTED_ATT_KEY_ID;
@@ -829,6 +901,21 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
                 break;
             case AESM_UNABLE_TO_GENERATE_QE_REPORT:
                 mapped = SGX_ERROR_UNEXPECTED;
+                break;
+            case AESM_EPIDBLOB_ERROR:
+                mapped = SGX_ERROR_AE_INVALID_EPIDBLOB;
+                break;
+            case AESM_EPID_REVOKED_ERROR:
+                mapped = SGX_ERROR_EPID_MEMBER_REVOKED;
+                break;
+            case AESM_BACKEND_SERVER_BUSY:
+                mapped = SGX_ERROR_BUSY;
+                break;
+            case AESM_SGX_PROVISION_FAILED:
+                mapped = SGX_ERROR_UNEXPECTED;
+                break;
+            case AESM_OUT_OF_EPC:
+                mapped = SGX_ERROR_OUT_OF_EPC;
                 break;
             default:
                 mapped = SGX_ERROR_UNEXPECTED;

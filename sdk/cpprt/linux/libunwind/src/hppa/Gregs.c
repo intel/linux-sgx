@@ -1,6 +1,6 @@
 /* libunwind - a platform-independent unwind library
    Copyright (C) 2004 Hewlett-Packard Co
-	Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
+        Contributed by David Mosberger-Tang <davidm@hpl.hp.com>
 
 This file is part of libunwind.
 
@@ -27,7 +27,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 HIDDEN int
 tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
-		 int write)
+                 int write)
 {
   struct dwarf_loc loc;
 
@@ -35,16 +35,16 @@ tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
     {
     case UNW_HPPA_IP:
       if (write)
-	c->dwarf.ip = *valp;		/* update the IP cache */
+        c->dwarf.ip = *valp;            /* update the IP cache */
       if (c->dwarf.pi_valid && (*valp < c->dwarf.pi.start_ip
-				|| *valp >= c->dwarf.pi.end_ip))
-	c->dwarf.pi_valid = 0;		/* new IP outside of current proc */
+                                || *valp >= c->dwarf.pi.end_ip))
+        c->dwarf.pi_valid = 0;          /* new IP outside of current proc */
       break;
 
     case UNW_HPPA_CFA:
     case UNW_HPPA_SP:
       if (write)
-	return -UNW_EREADONLYREG;
+        return -UNW_EREADONLYREG;
       *valp = c->dwarf.cfa;
       return 0;
 
@@ -71,7 +71,7 @@ tdep_access_reg (struct cursor *c, unw_regnum_t reg, unw_word_t *valp,
 
 HIDDEN int
 tdep_access_fpreg (struct cursor *c, unw_regnum_t reg, unw_fpreg_t *valp,
-		   int write)
+                   int write)
 {
   struct dwarf_loc loc;
 
