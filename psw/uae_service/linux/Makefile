@@ -162,7 +162,7 @@ $(IPC_SRC:.cpp=.o) : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
 AEServicesImpl.o : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
 
 messages.pb.o : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
-	$(CXX) $(filter-out -Wshadow, $(CXXFLAGS)) -c $< -o $@
+	$(CXX) $(filter-out -Wshadow, $(CXXFLAGS)) -Wno-array-bounds -c $< -o $@
 %.o :%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 %.o: %.c

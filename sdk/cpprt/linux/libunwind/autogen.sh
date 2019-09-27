@@ -11,9 +11,9 @@ test -n "$srcdir" || srcdir=.
 if [ "$1" = "1" ] 
 then
     #Build with "make DEBUG=1"
-    COMMON_FLAGS="$CFLAGS -ggdb -Og"
+    COMMON_FLAGS="-ggdb -Og"
 else
-    COMMON_FLAGS="$CFLAGS -g -O2"
+    COMMON_FLAGS="-g -O2"
 fi
 CFLAGS="$COMMON_FLAGS -std=c99 -fno-builtin -DHAVE_SGX=1 -fPIC -DUNW_LOCAL_ONLY -fdebug-prefix-map=$(pwd)=/libunwind"
 
