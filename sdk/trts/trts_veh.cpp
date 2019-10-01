@@ -49,6 +49,7 @@
 #include "util.h"
 #include "trts_util.h"
 #include "trts_shared_constants.h"
+#include "se_cdefs.h"
 
 
 typedef struct _handler_node_t
