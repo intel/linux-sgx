@@ -43,14 +43,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-/**
- * In SE, the page size is defined by macro `SE_PAGE_SIZE'.
- */
-int getpagesize(void)
-{
-    return SE_PAGE_SIZE;
-}
-
 char *strdup(const char *s)
 {
     size_t len = strlen(s) + 1;

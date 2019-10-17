@@ -37,7 +37,13 @@ ECL_INC_PATH=$(SOURCE_FOLDER)/$(INC_DIR)
 USR_INC_PATH=$(addprefix $(DESTDIR)/usr/, $(INC_DIR))
 USR_LIB_PATH=$(shell readlink -m $(addsuffix /$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null), $(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory)))))
 
+SPLIT_VERSION=$(word $2,$(subst ., ,$1))
+
 ECL_VER=1.0.0
+LCH_VER=1.0.0
+PLF_VER=1.0.0
+EPID_VER=1.0.0
+QEX_VER=1.0.0
 
 default:
 
@@ -46,4 +52,8 @@ install:
 	install $(ECL_INC_PATH)/* $(USR_INC_PATH)
 	install -d $(USR_LIB_PATH)
 	cd $(USR_LIB_PATH) && \
-	ln -fs libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_enclave_common.so
+	ln -fs libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1) libsgx_enclave_common.so && \
+	ln -fs libsgx_epid.so.$(call SPLIT_VERSION,$(EPID_VER),1) libsgx_epid.so && \
+	ln -fs libsgx_launch.so.$(call SPLIT_VERSION,$(LCH_VER),1) libsgx_launch.so && \
+	ln -fs libsgx_platform.so.$(call SPLIT_VERSION,$(PLF_VER),1) libsgx_platform.so && \
+	ln -fs libsgx_quote_ex.so.$(call SPLIT_VERSION,$(QEX_VER),1) libsgx_quote_ex.so

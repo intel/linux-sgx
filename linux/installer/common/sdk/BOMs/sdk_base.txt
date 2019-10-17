@@ -28,6 +28,10 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/common/inc/sgx_tseal.h	<installdir>/package/include/./sgx_tseal.h	0	main	STP
 <deliverydir>/common/inc/sgx_tstdc.edl	<installdir>/package/include/./sgx_tstdc.edl	0	main	STP
 <deliverydir>/common/inc/sgx_uae_service.h	<installdir>/package/include/./sgx_uae_service.h	0	main	STP
+<deliverydir>/common/inc/sgx_uae_epid.h	<installdir>/package/include/./sgx_uae_epid.h	0	main	STP
+<deliverydir>/common/inc/sgx_uae_launch.h	<installdir>/package/include/./sgx_uae_launch.h	0	main	STP
+<deliverydir>/common/inc/sgx_uae_platform.h	<installdir>/package/include/./sgx_uae_platform.h	0	main	STP
+<deliverydir>/common/inc/sgx_uae_quote_ex.h	<installdir>/package/include/./sgx_uae_quote_ex.h	0	main	STP
 <deliverydir>/common/inc/sgx_ukey_exchange.h	<installdir>/package/include/./sgx_ukey_exchange.h	0	main	STP
 <deliverydir>/common/inc/sgx_urts.h	<installdir>/package/include/./sgx_urts.h	0	main	STP
 <deliverydir>/common/inc/sgx_utils.h	<installdir>/package/include/./sgx_utils.h	0	main	STP

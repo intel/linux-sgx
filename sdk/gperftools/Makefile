@@ -40,25 +40,19 @@ else
     DEBUG_FLAG := NDEBUG
 endif
 
-# turn on stack protector for TCMALLOC
-CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
-ifeq ($(CC_BELOW_4_9), 1)
-    COMMON_FLAG := -fstack-protector
-else
-    COMMON_FLAG := -fstack-protector-strong
-endif
-# turn on cet
-ifeq ($(CC_GREAT_EQUAL_8), 1)
-    COMMON_FLAG += -fcf-protection
-endif
-
 .PHONY: all
 all: $(TCMALLOC) | $(BUILD_DIR)
 	$(CP) $(TCMALLOC) $|
 
 .PHONY: libtcmalloc
 libtcmalloc:
-	cd $(SRCDIR) && ( test -f Makefile || ./autogen.sh $(DEBUG_FLAG) $(COMMON_FLAG)) && $(MAKE)
+	cd $(SRCDIR) && \
+		( test -f Makefile || \
+			CFLAGS="$(CFLAGS)" \
+			CXXFLAGS="$(CXXFLAGS)" \
+			ENCLAVE_CFLAGS="$(ENCLAVE_CFLAGS)" \
+			ENCLAVE_CXXFLAGS="$(ENCLAVE_CXXFLAGS)" ./autogen.sh $(DEBUG_FLAG) ) \
+		&& $(MAKE)
 
 $(TCMALLOC): libtcmalloc
 	$(CP) $(SRCDIR)/.libs/libtcmalloc_minimal.a $(TCMALLOC)

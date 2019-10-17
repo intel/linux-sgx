@@ -35,7 +35,6 @@
 #include "aeerror.h"
 #include "sgx_utils.h"
 #include "sgx_lfence.h"
-#include "ipp_wrapper.h"
 #include "byte_order.h"
 #include "pve_qe_common.h"
 #include "arch.h"
@@ -172,7 +171,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
 
         //create RSA public key with le_n modulus and little_endian_e exponent
         //
-        if (sgx_create_rsa_pub_key(RSA_MOD_SIZE, RSA_E_SIZE, (const unsigned char *)le_n,
+        if (sgx_create_rsa_pub1_key(RSA_MOD_SIZE, RSA_E_SIZE, (const unsigned char *)le_n,
             (const unsigned char *)(&little_endian_e), &key) != SGX_SUCCESS) {
             ae_ret = AE_FAILURE;
             break;

@@ -38,9 +38,9 @@
 #include "aeerror.h"
 #include "tlv_common.h"
 #include "se_thread.h"
-#include "internal/se_stdio.h"
-#include "internal/se_memcpy.h"
-#include "internal/uncopyable.h"
+#include "se_stdio.h"
+#include "se_memcpy.h"
+#include "uncopyable.h"
 #include "oal/oal.h"
 #include <time.h>
 #include <string.h>

@@ -582,11 +582,6 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
         goto fail;
     }
 
-    if(get_enclave_creator()->use_se_hw() == true)
-    {
-        set_memory_protection(false);
-    }
-
     return SGX_SUCCESS;
 
 fail:
@@ -843,17 +838,16 @@ int CLoader::destroy_enclave()
     return get_enclave_creator()->destroy_enclave(ENCLAVE_ID_IOCTL, m_secs.size);
 }
 
-int CLoader::set_memory_protection(bool is_after_initialization)
+int CLoader::set_memory_protection()
 {
     int ret = 0;
     //set memory protection for segments
-    if(m_parser.set_memory_protection((uint64_t)m_start_addr, is_after_initialization) != true)
+    if(m_parser.set_memory_protection((uint64_t)m_start_addr) != true)
     {
         return SGX_ERROR_UNEXPECTED;
     }
 
-    if (is_after_initialization &&
-            (META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION) <= m_metadata->version) &&
+    if ((META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION) <= m_metadata->version) &&
             get_enclave_creator()->is_EDMM_supported(get_enclave_id()))
     {
         std::vector<std::tuple<uint64_t, uint64_t, uint32_t>> pages_to_protect;

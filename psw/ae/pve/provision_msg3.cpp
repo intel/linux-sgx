@@ -39,7 +39,6 @@
 #include "pve_hardcoded_tlv_data.h"
 #include "sgx_utils.h"
 #include "byte_order.h"
-#include <ipp_wrapper.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pek_pub_key.h"
@@ -467,7 +466,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
         le_n[i]=pek.n[sizeof(pek.n)/sizeof(pek.n[0])-i-1];
     }
 
-    sgx_status = sgx_create_rsa_pub_key(sizeof(pek.n), sizeof(pek.e),
+    sgx_status = sgx_create_rsa_pub1_key(sizeof(pek.n), sizeof(pek.e),
         reinterpret_cast<const unsigned char *>(le_n), reinterpret_cast<const unsigned char *>(&le_e), &pub_key);
     if (SGX_SUCCESS != sgx_status) {
         ret = sgx_error_to_pve_error(sgx_status);

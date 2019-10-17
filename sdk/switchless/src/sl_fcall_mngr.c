@@ -32,38 +32,47 @@
 #include <sgx_trts.h>
 #include "sl_fcall_mngr_common.h"
 
-int sl_fcall_mngr_clone(struct sl_fcall_mngr* mngr, struct sl_fcall_mngr* untrusted)
+// switchless call managers are allocated on untrusted side, then pointers to data structures are passed to the enclave.
+// the following function clones the data, performing all neccessary checks
+//
+// returns 0 on success
+int sl_call_mngr_clone(struct sl_call_mngr* mngr, const struct sl_call_mngr* untrusted)
 {
-    PANIC_ON(!sgx_is_outside_enclave(untrusted, sizeof(*untrusted)));
-    sgx_lfence();
-
+    // copies fields of untrusted structures ensuring that all the data resided on untrusted side
     BUG_ON(mngr == NULL);
     BUG_ON(untrusted == NULL);
 
-    sl_fcall_type_t type_u = untrusted->fmn_type;
-    PANIC_ON((type_u != SL_FCALL_TYPE_ECALL) && (type_u != SL_FCALL_TYPE_OCALL));
-    
-    mngr->fmn_type = type_u;
+    PANIC_ON(!sgx_is_outside_enclave(untrusted, sizeof(*untrusted)));
+    sgx_lfence();
 
-    int ret = sl_siglines_clone(&mngr->fmn_siglns,
-                                &untrusted->fmn_siglns,
-                                can_type_process(type_u) ? process_fcall : NULL);
+    sl_call_type_t type_u = untrusted->type;
+
+    // garbage data ? probably an attack
+    PANIC_ON((type_u != SL_TYPE_ECALL) && (type_u != SL_TYPE_OCALL));
+    
+    mngr->type = type_u;
+
+    // clone internal pointers to siglines structure
+    int ret = sl_siglines_clone(&mngr->siglns,
+                                &untrusted->siglns,
+                                can_type_process(type_u) ? process_switchless_call : NULL);
     if (ret) return ret;
 
-    //check that we have right call managers. 
-    //i.e ecall manager on untrusted or ocall manager on trusted side
-    PANIC_ON(fcall_type2direction(type_u) != sl_siglines_get_direction(&mngr->fmn_siglns));
+    // check that the call manager is properly initialized 
+    // if not, can indicate an attack 
+    PANIC_ON(call_type2direction(type_u) != sl_siglines_get_direction(&mngr->siglns));
 
-    uint32_t num_lines = sl_siglines_size(&mngr->fmn_siglns);
-    
-    BUG_ON(untrusted->fmn_bufs == NULL);
+    struct sl_call_task* tasks_u = untrusted->tasks;
 
-	struct sl_fcall_buf** bufs_u = untrusted->fmn_bufs;
-    PANIC_ON(!sgx_is_outside_enclave(bufs_u, sizeof(bufs_u[0]) * num_lines));
+    if (tasks_u == NULL)
+        return EINVAL;
+
+    // check that the array of task structures is outside enclave
+    PANIC_ON(!sgx_is_outside_enclave(tasks_u, sizeof(tasks_u[0]) * sl_siglines_size(&mngr->siglns)));
     sgx_lfence();
-    
-	mngr->fmn_bufs = bufs_u;
-	mngr->fmn_call_table = NULL;
-    
-	return 0;
+
+    mngr->tasks = tasks_u;
+    mngr->call_table = NULL;
+
+    return 0;
 }

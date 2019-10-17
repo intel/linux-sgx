@@ -41,7 +41,7 @@
 #include "aeerror.h"
 #include "se_thread.h"
 #include "provision_msg.h"
-#include "internal/se_rwlock.h"
+#include "se_rwlock.h"
 
 typedef struct _epid_blob_with_cur_psvn_t{
     uint8_t trusted_epid_blob[SGX_TRUSTED_EPID_BLOB_SIZE_SDK];

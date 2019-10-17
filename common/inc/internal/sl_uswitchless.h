@@ -63,15 +63,18 @@
  */
 struct sl_uswitchless 
 {
-    volatile uint64_t           us_has_new_ocall_fallback;
-    sgx_enclave_id_t            us_enclave_id;
-    const sgx_ocall_table_t*    us_ocall_table;
     sl_config_t                 us_config;
-    struct sl_fcall_mngr        us_focall_mngr;
-    struct sl_fcall_mngr        us_fecall_mngr;
+    const sgx_ocall_table_t*    us_ocall_table;
+    sgx_enclave_id_t            us_enclave_id;
+    volatile uint64_t           us_has_new_ocall_fallback;
+    struct sl_call_mngr         us_ocall_mngr;
+    struct sl_call_mngr         us_ecall_mngr;
+    volatile int64_t            us_should_stop;
     struct sl_workers           us_uworkers;
     struct sl_workers           us_tworkers;
+
 };
+
 
 
 /* Public APIs of sl_uswitchless */

@@ -54,6 +54,7 @@ retry:
     return 1;
 }
 
+//find a bit with value 1 and change it to 0, return bit index
 static inline int32_t extract_one_bit(volatile uint64_t* l)
 {
     uint64_t old_l;

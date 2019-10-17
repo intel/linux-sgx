@@ -47,43 +47,31 @@ CONFIG   := config.xml
 endif
 EDLFILE  := $(wildcard *.edl)
 
-LINUX_EPID := $(LINUX_EXTERNAL_DIR)/epid/lib/linux
-
-EXTERNAL_LIB_NO_CRYPTO = -lsgx_tstdc
+EPID_SDK_DIR := $(LINUX_EXTERNAL_DIR)/epid-sdk
 
 URTSLIB := -lsgx_urts
 TRTSLIB := -lsgx_trts
-EXTERNAL_LIB_NO_CRYPTO += -lsgx_tservice
+EXTERNAL_LIB := -lsgx_tservice
 
-TCRYPTO_LIBDIR := $(LINUX_SDK_DIR)/tlibcrypto
-EXTERNAL_LIB   = $(EXTERNAL_LIB_NO_CRYPTO) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
+EXTERNAL_LIB += -lsgx_tstdc -lsgx_tcrypto -lsgx_tcxx
 
-INCLUDE := -I$(LINUX_PSW_DIR)/ae/inc \
+INCLUDE := -I$(LINUX_PSW_DIR)/ae/inc                   \
+           -I$(SGX_HEADER_DIR)                         \
+           -I$(SGX_HEADER_DIR)/tlibc                   \
            -I$(COMMON_DIR)/inc                         \
-           -I$(COMMON_DIR)/inc/tlibc                   \
-           -I$(COMMON_DIR)/inc/internal                \
-           -I$(LINUX_SDK_DIR)/selib                    \
-           -I$(LINUX_SDK_DIR)/trts
+           -I$(COMMON_DIR)/inc/internal
 
-SIGNTOOL  := $(ROOT_DIR)/build/linux/sgx_sign
-SGXSIGN   := $(ROOT_DIR)/build/linux/sgx_sign
-
-KEYFILE   := $(LINUX_SDK_DIR)/sign_tool/sample_sec.pem
-EDGER8R   := $(LINUX_SDK_DIR)/edger8r/linux/_build/Edger8r.native
+SGXSIGN   := $(SGX_BIN_DIR)/sgx_sign
+EDGER8R   := $(SGX_BIN_DIR)/sgx_edger8r
 
 CXXFLAGS  += $(ENCLAVE_CXXFLAGS)
 CFLAGS    += $(ENCLAVE_CFLAGS)
 
-LDTFLAGS  = -L$(BUILD_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whole-archive \
-            -Wl,--start-group $(EXTERNAL_LIB) -Wl,--end-group                    \
-            -Wl,--version-script=$(ROOT_DIR)/build-scripts/enclave.lds $(ENCLAVE_LDFLAGS)
-
-LDTFLAGS_NO_CRYPTO = -L$(BUILD_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whole-archive \
-            -Wl,--start-group $(EXTERNAL_LIB_NO_CRYPTO) -Wl,--end-group                    \
+LDTFLAGS  = -L$(SGX_LIB_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whole-archive \
+            -Wl,--start-group $(EXTERNAL_LIB) -Wl,--end-group                      \
             -Wl,--version-script=$(ROOT_DIR)/build-scripts/enclave.lds $(ENCLAVE_LDFLAGS)
 
 LDTFLAGS += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map -Wl,--undefined=version -Wl,--gc-sections
-LDTFLAGS_NO_CRYPTO += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map -Wl,--undefined=version -Wl,--gc-sections
 
 DEFINES := -D__linux__
 

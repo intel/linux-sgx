@@ -32,6 +32,11 @@
 TOP_DIR  = ../../..
 include $(TOP_DIR)/buildenv.mk
 
+LAUNCH_VERSION:= $(shell awk '$$2 ~ /LAUNCH_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+PLATFORM_VERSION:= $(shell awk '$$2 ~ /PLATFORM_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+EPID_VERSION:= $(shell awk '$$2 ~ /EPID_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+QUOTE_EX_VERSION:= $(shell awk '$$2 ~ /QUOTE_EX_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+
 IPC_COMMON_DIR        := $(TOP_DIR)/psw/ae/aesm_service/source/core/ipc
 IPC_COMMON_SRC_DIR    := $(IPC_COMMON_DIR)
 IPC_COMMON_INC_DIR    := $(IPC_COMMON_DIR)
@@ -46,12 +51,12 @@ INCLUDE += -I$(COMMON_DIR)              \
            -I$(COMMON_DIR)/inc          \
            -I$(COMMON_DIR)/inc/internal \
 
-INCLUDE += -I$(LINUX_PSW_DIR)/ae/common \
-           -I$(LINUX_PSW_DIR)/ae/inc    \
-           -I$(LINUX_PSW_DIR)/ae/inc/internal    \
-           -I$(LINUX_SDK_DIR)/tseal
+INCLUDE += -I$(LINUX_PSW_DIR)/ae/common         \
+           -I$(LINUX_PSW_DIR)/ae/inc            \
+           -I$(LINUX_PSW_DIR)/ae/inc/internal   \
+           -I$(SGX_HEADER_DIR)
 
-INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk    \
+INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk \
            -I$(IPC_COMMON_INC_DIR) \
            -I$(UAE_INC_DIR) \
            -I$(IPC_COMMON_PROTO_DIR) \
@@ -61,7 +66,7 @@ INCLUDE += -I$(LINUX_EXTERNAL_DIR)/epid-sdk    \
 CXXFLAGS += -fPIC -Werror -Wno-unused-parameter -g -DPROTOBUF_INLINE_NOT_IN_HEADERS=0
 
 EXTERNAL_LIB += -lprotobuf 
- 
+
 vpath %.cpp .. $(COMMON_DIR)/src  $(IPC_COMMON_SRC_DIR) $(IPC_COMMON_PROTO_DIR) $(UAE_SRC_DIR) $(AE_COMMON_DIR)
 vpath %.c   $(COMMON_DIR)/src
 
@@ -114,73 +119,92 @@ IPC_SRC  := AECloseSessionRequest.cpp    \
 
 PROTOBUF_SRC  :=  messages.pb.cc
 
-
 SRC :=       AEServicesImpl.cpp \
              AEServicesProvider.cpp \
              tae_ocall_api.cpp \
              uae_api.cpp \
              se_sig_rl.cpp \
              sgx_uae_service.cpp \
-             uae_service_version.cpp \
-             uae_service_assert.cpp
+             uae_service_assert.cpp 
+
+LEGACY_SRC := legacy_uae_service.cpp \
+              uae_service_version.cpp
 
 OBJ := $(C_SRC:.c=.o) $(SRC:.cpp=.o) $(IPC_SRC:.cpp=.o)  $(PROTOBUF_SRC:.cc=.o) 
 
+LEGACY_OBJ := $(LEGACY_SRC:.cpp=.o)
+
 LDUFLAGS:= -pthread $(COMMON_LDFLAGS)
-LDUFLAGS += -Wl,--version-script=uae_service.lds -Wl,--gc-sections
 
-LIBNAME  = libsgx_uae_service.so
-LIBNAME_DEBUG  = libsgx_uae_service.so.debug
+LIBNAME  = libsgx_epid.so libsgx_launch.so libsgx_platform.so libsgx_quote_ex.so
+ifndef DEBUG
+LIBNAME_DEBUG  =  $(LIBNAME:.so=.so.debug)
+endif
 
+LEGACY_LIBNAME  = libsgx_uae_service.so
+LEGACY_LIBNAME_DEBUG  = libsgx_uae_service.so.debug
 
 .PHONY: all
 all:  install_lib
- 
 
 .PHONY: install_lib
-install_lib: $(LIBNAME) $(LIBNAME_DEBUG) | $(BUILD_DIR)
-	@$(CP) $(LIBNAME) $|
+install_lib: $(LIBNAME) $(LIBNAME_DEBUG) $(LEGACY_LIBNAME) $(LEGACY_LIBNAME_DEBUG) | $(BUILD_DIR)
+	@$(foreach lib,$(LIBNAME),$(CP) $(lib) $|;)
+	@$(CP) $(LEGACY_LIBNAME) $|
 ifndef DEBUG
-	@$(CP) $(LIBNAME_DEBUG) $|
+	@$(foreach lib,$(LIBNAME_DEBUG),$(CP) $(lib) $|;)
+	@$(CP) $(LEGACY_LIBNAME_DEBUG) $|
 endif
 
-$(LIBNAME): $(OBJ)
-	$(CXX) $(CXXFLAGS) $(OBJ) -shared $(LDUFLAGS) $(EXTERNAL_LIB) -Wl,-soname=$@ -o $@
-$(LIBNAME_DEBUG): $(LIBNAME)
-	((test -f $(LIBNAME_DEBUG)) || $(MAKE) separate_debug_info)
+libsgx_%.so: $(OBJ) %_version.o
+	$(CXX) $(CXXFLAGS) $^ -shared $(LDUFLAGS) -Wl,--version-script=$(@:.so=.lds) -Wl,--gc-sections $(EXTERNAL_LIB) -Wl,-soname=$@.$(call SPLIT_VERSION,$($(shell echo $(@:libsgx_%.so=%_version)|tr a-z A-Z)),1) -o $@
+%.so.debug: %.so
+ifndef DEBUG
+	((test -f $@) ||( \
+	$(CP) $< $<.orig &&\
+	$(OBJCOPY) --only-keep-debug $< $@ &&\
+	$(STRIP) -g $< &&\
+	$(OBJCOPY) --add-gnu-debuglink=$@ $< ))
+endif
+
+$(LEGACY_LIBNAME): $(LEGACY_OBJ)
+	$(CXX) $(CXXFLAGS) $^ -shared $(LDUFLAGS) -ldl -Wl,--version-script=uae_service.lds -Wl,--gc-sections -Wl,-soname=$@ -o $@
+$(LEGACY_LIBNAME_DEBUG): $(LEGACY_LIBNAME)
+	((test -f $(LEGACY_LIBNAME_DEBUG)) || $(MAKE) separate_debug_info)
 
 .PHONY: separate_debug_info
 separate_debug_info:
 ifndef DEBUG
-	$(CP) $(LIBNAME) $(LIBNAME).orig
-	$(OBJCOPY) --only-keep-debug $(LIBNAME) $(LIBNAME_DEBUG)
-	$(STRIP) -g $(LIBNAME)
-	$(OBJCOPY) --add-gnu-debuglink=$(LIBNAME_DEBUG) $(LIBNAME)
+	$(CP) $(LEGACY_LIBNAME) $(LEGACY_LIBNAME).orig
+	$(OBJCOPY) --only-keep-debug $(LEGACY_LIBNAME) $(LEGACY_LIBNAME_DEBUG)
+	$(STRIP) -g $(LEGACY_LIBNAME)
+	$(OBJCOPY) --add-gnu-debuglink=$(LEGACY_LIBNAME_DEBUG) $(LEGACY_LIBNAME)
 endif
 
 $(IPC_SRC:.cpp=.o) : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
 AEServicesImpl.o : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
 
 messages.pb.o : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
-	$(CXX) $(filter-out -Wshadow, $(CXXFLAGS)) -c $< -o $@
+	$(CXX) $(filter-out -Wshadow, $(CXXFLAGS)) -Wno-array-bounds -Wno-conversion -c $< -o $@
 %.o :%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDE) -Werror -fPIC -c $< -o $@
 
-
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
-$(IPC_COMMON_PROTO_DIR)/messages.pb.cc: $(IPC_COMMON_PROTO_DIR)/messages.proto 
-	$(MAKE) -C $(IPC_COMMON_PROTO_DIR) 
+$(IPC_COMMON_PROTO_DIR)/messages.pb.cc: $(IPC_COMMON_PROTO_DIR)/messages.proto
+	$(MAKE) -C $(IPC_COMMON_PROTO_DIR)
 
 .PHONY: clean
 clean:
 	$(MAKE) -C $(IPC_COMMON_PROTO_DIR) clean
-	@$(RM) $(OBJ) $(LIBNAME).orig
-	@$(RM) $(LIBNAME) $(BUILD_DIR)/$(LIBNAME) 
-	@$(RM) $(LIBNAME_DEBUG) $(BUILD_DIR)/$(LIBNAME_DEBUG)
+	@$(RM) $(OBJ) $(LEGACY_OBJ) *.orig
+	@$(RM) $(LIBNAME) $(addprefix $(BUILD_DIR)/,$(LIBNAME))
+	@$(RM) $(LIBNAME_DEBUG) $(addprefix $(BUILD_DIR)/,$(LIBNAME_DEBUG))
+	@$(RM) $(LEGACY_LIBNAME) $(BUILD_DIR)/$(LEGACY_LIBNAME)
+	@$(RM) $(LEGACY_LIBNAME_DEBUG) $(BUILD_DIR)/$(LEGACY_LIBNAME_DEBUG)
 
 .PHONY: rebuild
 rebuild:

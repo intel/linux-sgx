@@ -41,13 +41,15 @@
 extern "C" {
 #endif
 
-sl_siglines_dir_t fcall_type2direction(sl_fcall_type_t type); 
+sl_siglines_dir_t call_type2direction(sl_call_type_t type); 
 
-int can_type_process(sl_fcall_type_t type);
+//returns true if calling thread can process this type of calls
+int can_type_process(sl_call_type_t type);
 
-int can_type_call(sl_fcall_type_t type);
+//returns true if calling thread can initiate this type of calls
+int can_type_call(sl_call_type_t type);
 
-void process_fcall(struct sl_siglines* siglns, sl_sigline_t line);
+void process_switchless_call(struct sl_siglines* siglns, sl_sigline_t line);
 
 
 #ifdef __cplusplus

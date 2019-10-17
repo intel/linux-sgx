@@ -1,11 +1,10 @@
 get_filename_component(bundle ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 aux_source_directory(. _srcs)
-link_directories(${CMAKE_SOURCE_DIR}/../../../../build/linux)
 CreateBundle(${bundle} ${_srcs})
 
 target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/common
-	${PROJECT_SOURCE_DIR}/../../../../common/inc
+	${SGX_HEADER_DIR}
 	${PROJECT_SOURCE_DIR}/../../../../common/inc/internal
 	${PROJECT_SOURCE_DIR}/../../inc
 	${PROJECT_SOURCE_DIR}/../../inc/internal

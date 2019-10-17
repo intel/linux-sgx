@@ -16,9 +16,11 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+PACKAGE_PATH=@pkg_path@
 
 case "$1" in
     remove|upgrade|deconfigure)
+        [[ -x ${PACKAGE_PATH}/cleanup.sh ]] && ${PACKAGE_PATH}/cleanup.sh
     ;;
 
     failed-upgrade)

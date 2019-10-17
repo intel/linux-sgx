@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include "aesm_xegd_blob.h"
 #include "endpoint_select_info.h"
-#include "internal/se_memcpy.h"
+#include "se_memcpy.h"
 #include "oal/oal.h"
 #include "byte_order.h"
 #include "aesm_epid_blob.h"

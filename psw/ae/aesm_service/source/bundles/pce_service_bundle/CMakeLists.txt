@@ -7,7 +7,7 @@ CreateBundle(${bundle} ${_srcs} ${Edger8rOutputPCE})
 target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/common
 	${PROJECT_SOURCE_DIR}/../../../../common/inc/internal
-	${PROJECT_SOURCE_DIR}/../../../../common/inc
+	${SGX_HEADER_DIR}
 	${PROJECT_SOURCE_DIR}/../../inc
 	${PROJECT_SOURCE_DIR}/../../inc/internal
 	${PROJECT_SOURCE_DIR}/../../pve
@@ -16,7 +16,7 @@ target_include_directories(${bundle} PRIVATE
 
 add_custom_command(
     OUTPUT ${Edger8rOutputPCE}
-    COMMAND ${PROJECT_SOURCE_DIR}/../../../../build/linux/sgx_edger8r --untrusted --untrusted-dir ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/../../pce/pce.edl --search-path ${PROJECT_SOURCE_DIR}/../../../../common/inc
+    COMMAND ${EDGER8R} --untrusted --untrusted-dir ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/../../pce/pce.edl --search-path ${SGX_HEADER_DIR}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 

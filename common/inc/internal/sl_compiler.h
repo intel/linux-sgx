@@ -32,6 +32,8 @@
 #ifndef _SL_COMPILER_H_
 #define _SL_COMPILER_H_
 
+#include "se_cdefs.h"
+
 #ifndef __dead
 //#define __dead                  __attribute__((noreturn))
 #define __dead

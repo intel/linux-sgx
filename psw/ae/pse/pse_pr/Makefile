@@ -35,23 +35,17 @@ include ../../buildenv.mk
 CFLAGS   += -Werror
 #CXXFLAGS += -Werror
 
-EPID_SDK_DIR := $(TOP_DIR)/external/epid-sdk/
-
-INCLUDE += -I.                                   \
-           -I./include                           \
-           -I../pse_pr_2/                        \
-           -I$(TOP_DIR)/sdk/tlibcxx/include      \
-           -I$(LINUX_PSW_DIR)/ae/common          \
-           -I$(SGX_IPP_INC)/                     \
-           -I$(LINUX_SDK_DIR)/tseal              \
-           -I$(EPID_SDK_DIR)                     \
-           -I$(TOP_DIR)/common/inc               \
-           -I$(LINUX_PSW_DIR)/ae/inc/internal    \
+INCLUDE += -I./include                          \
+           -I../pse_pr_2                        \
+           -I$(LINUX_PSW_DIR)/ae/inc/internal   \
+           -I$(LINUX_PSW_DIR)/ae/common         \
+           -I$(SGX_HEADER_DIR)/libcxx           \
+           -I$(EPID_SDK_DIR)                    \
            -I$(LINUX_PSW_DIR)/ae/data/constants/linux
 
-EXTERNAL_LIB += -lsgx_tcxx -lsgx_tcrypto                \
+EXTERNAL_LIB += -lsgx_tcxx                                 \
                 -L$(EPID_SDK_DIR)/epid/verifier -lverifier \
-                -L$(EPID_SDK_DIR)/epid/common -lcommon 
+                -L$(EPID_SDK_DIR)/epid/common -lcommon
 
 SRC := $(wildcard *.cpp) $(wildcard ./X509_Parser/*.cpp)
 SRC += pse_pr_common.cpp   \
@@ -70,7 +64,7 @@ EPID:
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -lsgx_tstdc -L$(LINUX_EXTERNAL_DIR)/ippcp_internal/lib/linux/intel64/ -lsgx_disp -lippcp
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
 	$(STRIP)  --strip-unneeded $(SONAME)
 
 $(OBJ): $(AENAME)_t.c
@@ -78,7 +72,7 @@ $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --search-path ../../../../common/inc/ --trusted $<
+	$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 .PHONY: clean
 clean:

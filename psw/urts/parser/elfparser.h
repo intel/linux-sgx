@@ -90,7 +90,7 @@ public:
     void get_executable_sections(std::vector<const char *>& xsec_names) const;
     bool is_enclave_encrypted() const;
 
-    bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization);
+    bool set_memory_protection(uint64_t enclave_base_addr);
     void get_pages_to_protect(uint64_t enclave_base_addr, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const;
 
     bool has_init_section() const;

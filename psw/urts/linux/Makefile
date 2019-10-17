@@ -44,7 +44,7 @@ CFLAGS += $(ADDED_INC)
 
 VTUNE_DIR = $(LINUX_EXTERNAL_DIR)/vtune/linux
 
-INC += -I$(COMMON_DIR)/inc                \
+INC += -I$(SGX_HEADER_DIR)                \
        -I$(COMMON_DIR)/inc/internal       \
        -I$(COMMON_DIR)/inc/internal/linux \
        -I$(LINUX_PSW_DIR)/enclave_common  \
@@ -56,7 +56,7 @@ INC += -I$(COMMON_DIR)/inc                \
 
 LDFLAGS := -lwrapper
 INTERNAL_LDFLAGS := -lwrapper
-LDFLAGS += $(COMMON_LDFLAGS) -Wl,-Bdynamic -lsgx_enclave_common
+LDFLAGS += $(COMMON_LDFLAGS) -Wl,-Bdynamic -L$(BUILD_DIR) -lsgx_enclave_common
 INTERNAL_LDFLAGS += $(COMMON_LDFLAGS)
 LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
 INTERNAL_LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
@@ -69,8 +69,8 @@ DIR3 := $(LINUX_PSW_DIR)/urts/parser
 DIR4 := $(LINUX_PSW_DIR)/urts/parser/linux
 DIR5 := $(LINUX_PSW_DIR)/../common/src/linux
 
-LIB += -L$(COMMON_DIR)/se_wrapper \
-       -L$(BUILD_DIR)
+LIB += -L$(COMMON_DIR)/se_wrapper_psw \
+       -L$(SGX_LIB_DIR)
 
 OBJ1 := loader.o          \
         node.o            \
@@ -162,7 +162,7 @@ $(OBJ3): %.o: %.S
 	$(CC) -c $(CFLAGS) $(INC) $< -o $@
 
 $(LIBWRAPPER):
-	$(MAKE) -C $(COMMON_DIR)/se_wrapper/
+	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/
 
 $(LIBSGX_ENCLAVE_COMMON):
 	$(MAKE) -C $(LINUX_PSW_DIR)/enclave_common/
@@ -182,7 +182,7 @@ clean::
 	@$(RM) *.o $(LIBURTS) $(LIBURTS_INTERNAL) $(LIBURTS_DEBUG)
 	@$(RM) $(BUILD_DIR)/$(LIBURTS) $(BUILD_DIR)/$(LIBURTS_INTERNAL)
 	@$(RM) $(LIBURTS).orig $(BUILD_DIR)/$(LIBURTS_DEBUG)
-	$(MAKE) -C $(COMMON_DIR)/se_wrapper/                   clean
+	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/                   clean
 	$(MAKE) -C $(LINUX_PSW_DIR)/enclave_common/            clean
 	$(MAKE) -C $(LINUX_PSW_DIR)/uswitchless/               clean
 	$(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify              clean

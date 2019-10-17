@@ -58,7 +58,7 @@ CONFIG := config_linux.xml
 
 .PHONY: all
 all: $(SONAME) REF_WL_GEN | $(BUILD_DIR)
-	@$(SIGNTOOL) sign -key $(KEYS_DIR)/$(LE_PRIVATE_KEY) -enclave $(SONAME) -out $(BUILD_DIR)/$(SIGNED_NAME) -config $(CONFIG)
+	@$(SGXSIGN) sign -key $(KEYS_DIR)/$(LE_PRIVATE_KEY) -enclave $(SONAME) -out $(BUILD_DIR)/$(SIGNED_NAME) -config $(CONFIG)
 	@$(REF_WL_GEN_DIR)/$(REF_WL_GEN_NAME) gen-wl -out $(BUILD_DIR)/$(WHITE_LIST_NAME) -cfg $(KEYS_DIR)/$(WL_CFG_FILE) -key $(KEYS_DIR)/$(LE_PRIVATE_KEY) -ver $(WL_VERSION)
 
 .PHONY: REF_WL_GEN

@@ -34,7 +34,7 @@ include ../../buildenv.mk
 CFLAGS += -Werror -D_GNU_SOURCE -fPIC
 CFLAGS += $(ADDED_INC)
 
-CPPFLAGS := -I$(COMMON_DIR)/inc/ \
+CPPFLAGS := -I$(COMMON_DIR)/inc \
             -I$(COMMON_DIR)/inc/internal
 
 OBJS := se_memory.o \

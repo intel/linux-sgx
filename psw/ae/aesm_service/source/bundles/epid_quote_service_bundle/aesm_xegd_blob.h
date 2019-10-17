@@ -40,7 +40,7 @@
 #include "aeerror.h"
 #include "se_thread.h"
 #include "provision_msg.h"
-#include "internal/se_rwlock.h"
+#include "se_rwlock.h"
 #include "aesm_error.h"
 
 class XEGDBlob: public Singleton<XEGDBlob>{

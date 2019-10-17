@@ -36,24 +36,16 @@ CXXFLAGS  += -Werror
 CFLAGS	  += -Werror 
 AENAME = provision_enclave
 
-EPID_SDK_DIR := $(LINUX_EXTERNAL_DIR)/epid-sdk/
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux 
 
-INCLUDE += -I$(COMMON_DIR)/inc/tlibc                      \
-		   -I$(SGX_IPP_INC)/                              \
-		   -I$(EPID_SDK_DIR)                                \
-		   -I$(LINUX_SDK_DIR)/tseal                       \
-		   -I$(LINUX_PSW_DIR)/ae/common                   \
-		   -I$(LINUX_PSW_DIR)/ae/pve                      \
-		   -I$(LINUX_PSW_DIR)/ae/inc/internal             \
-		   -I$(LINUX_SDK_DIR)/tlibcxx/include
-
-TCRYPTO_LIBDIR := $(LINUX_SDK_DIR)/tlibcrypto
-EPID_LIBDIR	   := $(EPID_SDK_DIR)
+INCLUDE += -I$(EPID_SDK_DIR)                              \
+           -I$(LINUX_PSW_DIR)/ae/common                   \
+           -I$(LINUX_PSW_DIR)/ae/pve                      \
+           -I$(LINUX_PSW_DIR)/ae/inc/internal             \
+           -I$(SGX_HEADER_DIR)/libcxx
 
 EXTERNAL_LIB += -L$(EPID_LIBDIR)/epid/member -lmember \
-				-L$(EPID_LIBDIR)/epid/common -lcommon \
-				-L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -L$(LINUX_EXTERNAL_DIR)/ippcp_internal/lib/linux/intel64/ -lsgx_disp -lippcp 
+                -L$(EPID_LIBDIR)/epid/common -lcommon
 
 SRC := $(wildcard *.cpp)
 SRC += pve_qe_common.cpp             \
@@ -74,7 +66,7 @@ EPID:
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -fno-exceptions -fno-rtti $(EXTERNAL_LIB)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
 	$(STRIP)  --strip-unneeded $(SONAME)
 
 provision_enclave.o: $(AENAME)_t.c
@@ -83,7 +75,7 @@ provision_enclave.o: $(AENAME)_t.c
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -fno-exceptions -c $< -o $@
 
 $(AENAME)_t.c: $(AENAME).edl
-	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
+	@$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 .PHONY: clean
 clean:

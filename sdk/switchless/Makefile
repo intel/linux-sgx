@@ -59,8 +59,7 @@ CFLAGS_T := $(CFLAGS_COMMON)
 CFLAGS_T += $(ENCLAVE_CFLAGS)
 CFLAGS_T += -DSL_INSIDE_ENCLAVE
 #CFLAGS_T += -DSL_NO_PREEMPTION
-CFLAGS_T += -I$(COMMON_DIR)/inc/internal \
-          	-I$(COMMON_DIR)/inc/tlibc
+CFLAGS_T += -I$(COMMON_DIR)/inc/internal -I$(COMMON_DIR)/inc/tlibc -I$(LINUX_SDK_DIR)/trts
 
 # Primary build targets
 LIB_T := libsgx_tswitchless.a

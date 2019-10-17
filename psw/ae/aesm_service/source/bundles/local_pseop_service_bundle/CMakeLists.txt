@@ -8,7 +8,7 @@ CreateBundle(${bundle} ${_srcs} ${sqlite_src} ${Edger8rOutputOP})
 target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/common
 	${PROJECT_SOURCE_DIR}/../../../../common/inc/internal
-	${PROJECT_SOURCE_DIR}/../../../../common/inc
+	${SGX_HEADER_DIR}
 	${PROJECT_SOURCE_DIR}/../../inc
 	${PROJECT_SOURCE_DIR}/../../inc/internal
 	${PROJECT_SOURCE_DIR}/../../pse/pse_op
@@ -22,7 +22,7 @@ target_include_directories(${bundle} PRIVATE
 
 add_custom_command(
     OUTPUT ${Edger8rOutputOP}
-    COMMAND ${PROJECT_SOURCE_DIR}/../../../../build/linux/sgx_edger8r --untrusted --untrusted-dir ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/../../pse/pse_op/pse_op.edl --search-path ${PROJECT_SOURCE_DIR}/../../../../common/inc
+    COMMAND ${EDGER8R} --untrusted --untrusted-dir ${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_SOURCE_DIR}/../../pse/pse_op/pse_op.edl --search-path ${SGX_HEADER_DIR}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 

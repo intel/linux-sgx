@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include "aesm_epid_blob.h"
-#include "internal/se_memcpy.h"
+#include "se_memcpy.h"
 #include "oal/oal.h"
 #include "byte_order.h"
 

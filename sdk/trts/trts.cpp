@@ -198,7 +198,6 @@ void * sgx_ocalloc(size_t size)
 
     return reinterpret_cast<void *>(addr);
 }
-weak_alias(sgx_ocalloc, sgx_ocalloc_switchless);
 
 // sgx_ocfree()
 // Parameters:
@@ -226,7 +225,6 @@ void sgx_ocfree()
     }
     ssa_gpr->REG(sp_u) = usp;
 }
-weak_alias(sgx_ocfree, sgx_ocfree_switchless);
 
 #ifdef SE_SIM
 static sgx_spinlock_t g_seed_lock = SGX_SPINLOCK_INITIALIZER;

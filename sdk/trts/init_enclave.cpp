@@ -121,11 +121,11 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     system_features_t sys_features = *info;
     if(sys_features.system_feature_set[0] & (1ULL<< SYS_FEATURE_EXTEND))
     {
-        if(info->size < sizeof(sys_features))
+        if(sys_features.size < sizeof(sys_features))
         {
-            for(size_t i = 0; i < sizeof(sys_features) - info->size; i++)
+            for(size_t i = 0; i < sizeof(sys_features) - sys_features.size; i++)
             {
-                *((uint8_t *)&sys_features + info->size + i) = 0;
+                *((uint8_t *)&sys_features + sys_features.size + i) = 0;
             } 
         }
     }

@@ -51,7 +51,7 @@ CONFIG := config_linux.xml
 all: $(AENAME_OUT) 
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -lsgx_tstdc
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
 	$(STRIP)  --strip-unneeded $(SONAME)
 
 $(OBJ):$(AENAME)_t.c  
@@ -59,7 +59,7 @@ $(OBJ): %.o:%.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
+	@$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

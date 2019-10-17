@@ -42,7 +42,6 @@ sgx_status_t sl_uswitchless_do_switchless_ecall(struct sl_uswitchless* handle,
                                           void* ecall_ms,
                                           int* need_fallback)
 {
-    struct sl_fcall_buf buf;
     int error = 0;
 
     /* If no trusted workers are running, then fallback */
@@ -55,19 +54,19 @@ sgx_status_t sl_uswitchless_do_switchless_ecall(struct sl_uswitchless* handle,
         wake_all_threads(&handle->us_tworkers);
     }
 
+    struct sl_call_task call_task;
+    call_task.status = SL_INIT;
+    call_task.func_id = ecall_id;
+    call_task.func_data = ecall_ms;
+    call_task.ret_code = SGX_ERROR_UNEXPECTED;
 
-    buf.fbf_status = SL_FCALL_STATUS_INIT;
-    buf.fbf_ret = SGX_ERROR_UNEXPECTED;
-    buf.fbf_fn_id = ecall_id;
-    buf.fbf_ms_ptr = ecall_ms;
-
-    error = sl_fcall_mngr_call(&handle->us_fecall_mngr, &buf, handle->us_config.retries_before_fallback);
+    error = sl_call_mngr_call(&handle->us_ecall_mngr, &call_task, handle->us_config.retries_before_fallback);
     if (error) 
         goto on_fallback;
 
     *need_fallback = 0;
     lock_inc64(&handle->us_tworkers.stats.processed);
-    return buf.fbf_ret;
+    return call_task.ret_code;
 on_fallback:
     *need_fallback = 1;
     lock_inc64(&handle->us_tworkers.stats.missed);

@@ -119,6 +119,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
     /* Clear unused general registers */
     xor     %xdx, %xdx
     add     %xdx, %xdx          /* OF = SF = AF = CF = 0; ZF = PF = 1 */
+    cld                         /* DF = 0 */
 #if defined(LINUX64)
     xor     %r8, %r8
     xor     %r9, %r9
@@ -200,6 +201,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
 
     /* Set status flags to pre-defined values */
     add     %xdx, %xdx          /* OF = SF = AF = CF = 0; ZF = PF = 1 */
+    cld                         /* DF = 0 */
 
     /* EEXIT */
     mov     $SE_EEXIT, %xax     /* EEXIT leaf */
@@ -389,6 +391,7 @@ DECLARE_LOCAL_FUNC do_ocall
 
     /* Set status flags to pre-defined values */
     add     %xdx, %xdx          /* OF = SF = AF = CF = 0; ZF = PF = 1 */
+    cld                         /* DF = 0 */
 
     ENCLU
 

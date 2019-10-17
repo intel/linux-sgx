@@ -887,7 +887,7 @@ void ElfParser::get_executable_sections(std::vector<const char *>& xsec_names) c
     return;
 }
 
-bool ElfParser::set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization)
+bool ElfParser::set_memory_protection(uint64_t enclave_base_addr)
 {
     uint64_t len = 0;
     int ret = 0;
@@ -944,12 +944,6 @@ bool ElfParser::set_memory_protection(uint64_t enclave_base_addr, bool is_after_
             }
         }
         last_section_end = rva + len;
-    }
-    
-  
-    if(is_after_initialization == false)
-    {
-        return true;
     }
     
     const ElfW(Ehdr) *elf_hdr = (const ElfW(Ehdr) *)m_start_addr;

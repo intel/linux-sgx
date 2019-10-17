@@ -67,10 +67,7 @@
  * code. Then, the enclave code creates an trusted object out of the given,
  * untrusted object; this is called "clone". This clone operation will do all
  * proper security checks. Finally, the enclave code can access and manipuate
- * its cloned object securely. Note that the states of an (untrusted) original
- * object and its (trusted) cloned object are linked, e.g., updates on one
- * party can be observed by the other (yes, just like a pair of entanged
- * particles in quantum physics).
+ * its cloned object securely. 
  *
  */
 
@@ -78,12 +75,14 @@
 
 #pragma pack(push, 1)
 
-#define NBITS_PER_UINT64             ((uint32_t)(sizeof(uint64_t) * 8))
+#define NBITS_PER_LINE             ((uint32_t)(sizeof(uint64_t) * 8))
 
 /* ID of a signal line */
 typedef uint32_t                         sl_sigline_t;
 
 #define SL_INVALID_SIGLINE             ((sl_sigline_t)(-1))
+
+#define SL_FREE_LINE_INIT   ((uint64_t)(-1))
 
 typedef enum {
     SL_SIGLINES_DIR_T2U,
@@ -95,7 +94,7 @@ typedef void (*sl_sighandler_t)(struct sl_siglines* /*siglines*/,
                                 sl_sigline_t /*line*/);
 
 struct sl_siglines {
-    sl_siglines_dir_t               dir;
+    sl_siglines_dir_t               direction;
     uint32_t                        num_lines;
     uint64_t*                       event_lines; /* bitmap: 1 - event, 0 - no event  */
     uint64_t*                       free_lines; /* bitmap: 1 - free, 0 - occupied */
@@ -108,7 +107,7 @@ __BEGIN_DECLS
 
 
 int sl_siglines_init(struct sl_siglines* sglns,
-                     sl_siglines_dir_t dir,
+                     sl_siglines_dir_t direction,
                      uint32_t num_lines,
                      sl_sighandler_t handler);
 
@@ -117,19 +116,19 @@ void sl_siglines_destroy(struct sl_siglines* sglns);
 #else /* Trusted */
 
 int sl_siglines_clone(struct sl_siglines* sglns,
-                      struct sl_siglines* untrusted,
+                      const struct sl_siglines* untrusted,
                       sl_sighandler_t handler);
 
 #endif /* SL_INSIDE_ENCLAVE */
 
-int is_direction_sender(sl_siglines_dir_t dir); 
+int is_direction_sender(sl_siglines_dir_t direction); 
 
-static inline uint32_t sl_siglines_size(struct sl_siglines* sglns) {
+static inline uint32_t sl_siglines_size(const struct sl_siglines* sglns) {
     return sglns->num_lines;
 }
 
-static inline sl_siglines_dir_t sl_siglines_get_direction(struct sl_siglines* sglns) {
-    return sglns->dir;
+static inline sl_siglines_dir_t sl_siglines_get_direction(const struct sl_siglines* sglns) {
+    return sglns->direction;
 }
 
 sl_sigline_t sl_siglines_alloc_line(struct sl_siglines* sglns);

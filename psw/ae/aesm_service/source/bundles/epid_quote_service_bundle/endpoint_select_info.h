@@ -35,7 +35,7 @@
 #include "sgx_tseal.h"
 #include "aeerror.h"
 #include "se_thread.h"
-#include "internal/se_rwlock.h"
+#include "se_rwlock.h"
 #include "oal/oal.h"
 #include "se_wrapper.h"
 #include <time.h>

@@ -34,7 +34,7 @@ include ../../../../buildenv.mk
 
 TOOL_NAME := ref_wl_gen
 
-CPPFLAGS    += -I$(COMMON_DIR)/inc                         \
+CPPFLAGS    += -I$(SGX_HEADER_DIR)                      \
             -I$(COMMON_DIR)/inc/internal                \
             -I$(LINUX_PSW_DIR)/ae/data/constants/linux  \
             -I$(LINUX_PSW_DIR)/ae/inc/internal          \
@@ -48,7 +48,7 @@ CFLAGS += -Werror
 RDRAND_LIBDIR := $(LINUX_EXTERNAL_DIR)/rdrand/src
 RDRAND_MAKEFILE := $(RDRAND_LIBDIR)/Makefile
 
-EXTERNAL_LIB += -L$(RDRAND_LIBDIR) -lrdrand -L$(BUILD_DIR) -lsgx_tcrypto
+EXTERNAL_LIB += -L$(RDRAND_LIBDIR) -lrdrand -L$(SGX_LIB_DIR) -lsgx_tcrypto
 
 LOCAL_OBJS     := ref_wl.o ref_wl_gen.o parse_key_file.o
 COMMON_OBJS    := sgx_memset_s.o sgx_read_rand.o

@@ -36,10 +36,7 @@ CFLAGS   += -Werror
 CXXFLAGS += -Werror
 
 INCLUDE += -I$(COMMON_DIR)/inc/internal \
-           -I$(COMMON_DIR)/inc \
-           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/inc/ \
-           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
-           -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
+           -I$(COMMON_DIR)/inc 
 
 INCLUDE += -I$(SGX_IPP_INC)
 

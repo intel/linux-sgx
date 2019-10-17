@@ -55,7 +55,15 @@ python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=f
 
 # Create the tarball
 ECL_VER=$(awk '/ENCLAVE_COMMON_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+LCH_VER=$(awk '/LAUNCH_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+PLF_VER=$(awk '/PLATFORM_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+EPID_VER=$(awk '/EPID_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+QEX_VER=$(awk '/QUOTE_EX_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 pushd ${INSTALL_PATH} &> /dev/null
 sed -i "s/ECL_VER=.*/ECL_VER=${ECL_VER}/" Makefile
+sed -i "s/LCH_VER=.*/LCH_VER=${LCH_VER}/" Makefile
+sed -i "s/PLF_VER=.*/PLF_VER=${PLF_VER}/" Makefile
+sed -i "s/EPID_VER=.*/EPID_VER=${EPID_VER}/" Makefile
+sed -i "s/QEX_VER=.*/QEX_VER=${QEX_VER}/" Makefile
 tar -zcvf ${TARBALL_NAME} *
 popd &> /dev/null

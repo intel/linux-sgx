@@ -742,159 +742,159 @@ aesm_error_t PlatformInfoLogic::check_update_status(
     if (NULL != platform_info) {
         pibw.valid_info_blob = false;
         memcpy_s(&pibw.platform_info_blob, sizeof(pibw.platform_info_blob), platform_info, platform_info_size);
-    }
-    //
-    // contents of input platform info can get stale, but not by virtue of anything we do
-    // (the latest/current versions can change)
-    // therefore, we'll use the same platform info the whole time
-    //
-    bool pibSigGood = (AE_SUCCESS == pib_verify_signature(pibw));
-    //
-    // invalid pib is an error whenever it's provided
-    //
-    if (!pibSigGood) {
-        AESM_DBG_ERROR("pib verify signature failed");
-        return AESM_PLATFORM_INFO_BLOB_INVALID_SIG;
-    }
+	    
+	    //
+	    // contents of input platform info can get stale, but not by virtue of anything we do
+	    // (the latest/current versions can change)
+	    // therefore, we'll use the same platform info the whole time
+	    //
+	    bool pibSigGood = (AE_SUCCESS == pib_verify_signature(pibw));
+	    //
+	    // invalid pib is an error whenever it's provided
+	    //
+	    if (!pibSigGood) {
+	        AESM_DBG_ERROR("pib verify signature failed");
+	        return AESM_PLATFORM_INFO_BLOB_INVALID_SIG;
+	    }
 
-    if (!g_epid_service) {
-        AESM_DBG_ERROR("failed to get IEpidquoteService service");
-        return AESM_SERVICE_UNAVAILABLE;
-    }
-    uint32_t x_group_id;
+	    if (!g_epid_service) {
+	        AESM_DBG_ERROR("failed to get IEpidquoteService service");
+	        return AESM_SERVICE_UNAVAILABLE;
+	    }
+	    uint32_t x_group_id;
 
-    if (AESM_SUCCESS != g_epid_service->get_extended_epid_group_id(&x_group_id)) {
-        AESM_DBG_ERROR("get_extended_epid_group_id failed");
-        return AESM_UNEXPECTED_ERROR;
-    }
-    if (pibw.platform_info_blob.xeid != x_group_id) {
-        return AESM_UNEXPECTED_ERROR;
-    }
-    uint32_t gid_mt_result = g_epid_service->is_gid_matching_result_in_epid_blob(pibw.platform_info_blob.gid);
-    if (IEpidQuoteService::GIDMT_UNMATCHED == gid_mt_result ||
-        IEpidQuoteService::GIDMT_UNEXPECTED_ERROR == gid_mt_result) {
-        return AESM_UNEXPECTED_ERROR;
-    }
-    else if (IEpidQuoteService::GIDMT_NOT_AVAILABLE == gid_mt_result) {
-        return AESM_EPIDBLOB_ERROR;
-    }
+	    if (AESM_SUCCESS != g_epid_service->get_extended_epid_group_id(&x_group_id)) {
+	        AESM_DBG_ERROR("get_extended_epid_group_id failed");
+	        return AESM_UNEXPECTED_ERROR;
+	    }
+	    if (pibw.platform_info_blob.xeid != x_group_id) {
+	        return AESM_UNEXPECTED_ERROR;
+	    }
+	    uint32_t gid_mt_result = g_epid_service->is_gid_matching_result_in_epid_blob(pibw.platform_info_blob.gid);
+	    if (IEpidQuoteService::GIDMT_UNMATCHED == gid_mt_result ||
+	        IEpidQuoteService::GIDMT_UNEXPECTED_ERROR == gid_mt_result) {
+	        return AESM_UNEXPECTED_ERROR;
+	    }
+	    else if (IEpidQuoteService::GIDMT_NOT_AVAILABLE == gid_mt_result) {
+	        return AESM_EPIDBLOB_ERROR;
+	    }
 
-    ae_error_t nepStatus = need_epid_provisioning(&pibw);
-    AESM_DBG_TRACE("need_epid_provisioning return (ae%d)", nepStatus);
-    switch (nepStatus)
-    {
-    case AESM_NEP_DONT_NEED_EPID_PROVISIONING:
-    {
-        break;
-    }
-    case AESM_NEP_DONT_NEED_UPDATE_PVEQE:       // sure thing
-    {
-        if (NULL != status) {
-            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
-        }
-        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
-            if (!g_epid_service) {
-                AESM_DBG_ERROR("failed to get IEpidquoteService service");
-                ret_status = AESM_SERVICE_UNAVAILABLE;
-                break;
-            }
-            bool perfRekey = false;
-            ret_status = g_epid_service->provision(perfRekey, THREAD_TIMEOUT);
-            if (AESM_BUSY == ret_status || //thread timeout
-                AESM_PROXY_SETTING_ASSIST == ret_status || //uae service need to set up proxy info and retry
-                AESM_UPDATE_AVAILABLE == ret_status || //PSW need be updated
-                AESM_UNRECOGNIZED_PLATFORM == ret_status || //Platform not recognized by Provisioning backend
-                AESM_OUT_OF_EPC == ret_status) // out of EPC
-            {
-                return ret_status;//We should return to uae serivce directly
-            }
-            if (AESM_SUCCESS != ret_status &&
-                AESM_OUT_OF_MEMORY_ERROR != ret_status &&
-                AESM_BACKEND_SERVER_BUSY != ret_status &&
-                AESM_NETWORK_ERROR != ret_status &&
-                AESM_NETWORK_BUSY_ERROR != ret_status)
-            {
-                ret_status = AESM_SGX_PROVISION_FAILED;
-            }
-        }
-        break;
-    }
-    case AESM_NEP_PERFORMANCE_REKEY:
-    {
-        if (NULL != status) {
-            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
-        }
-        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
-            bool perfRekey = true;
-            if (!g_epid_service) {
-                AESM_DBG_ERROR("failed to get IEpidquoteService service");
-                ret_status = AESM_SERVICE_UNAVAILABLE;
-                break;
-            }
-            ret_status = g_epid_service->provision(perfRekey, THREAD_TIMEOUT);
-            if (AESM_BUSY == ret_status ||//thread timeout
-                AESM_PROXY_SETTING_ASSIST == ret_status ||//uae service need to set up proxy info and retry
-                AESM_UPDATE_AVAILABLE == ret_status ||
-                AESM_UNRECOGNIZED_PLATFORM == ret_status ||
-                AESM_OUT_OF_EPC == ret_status)
-            {
-                return ret_status;//We should return to uae serivce directly
-            }
-            if (AESM_SUCCESS != ret_status &&
-                AESM_OUT_OF_MEMORY_ERROR != ret_status &&
-                AESM_BACKEND_SERVER_BUSY != ret_status &&
-                AESM_NETWORK_ERROR != ret_status &&
-                AESM_NETWORK_BUSY_ERROR != ret_status)
-            {
-                ret_status = AESM_SGX_PROVISION_FAILED;
-            }
-        }
-        break;
-    }
-    default:
-    {
-        ret_status = AESM_UNEXPECTED_ERROR;
-        break;
-    }
-    }
+	    ae_error_t nepStatus = need_epid_provisioning(&pibw);
+	    AESM_DBG_TRACE("need_epid_provisioning return (ae%d)", nepStatus);
+	    switch (nepStatus)
+	    {
+	    case AESM_NEP_DONT_NEED_EPID_PROVISIONING:
+	    {
+	        break;
+	    }
+	    case AESM_NEP_DONT_NEED_UPDATE_PVEQE:       // sure thing
+	    {
+	        if (NULL != status) {
+	            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
+	        }
+	        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
+	            if (!g_epid_service) {
+	                AESM_DBG_ERROR("failed to get IEpidquoteService service");
+	                ret_status = AESM_SERVICE_UNAVAILABLE;
+	                break;
+	            }
+	            bool perfRekey = false;
+	            ret_status = g_epid_service->provision(perfRekey, THREAD_TIMEOUT);
+	            if (AESM_BUSY == ret_status || //thread timeout
+	                AESM_PROXY_SETTING_ASSIST == ret_status || //uae service need to set up proxy info and retry
+	                AESM_UPDATE_AVAILABLE == ret_status || //PSW need be updated
+	                AESM_UNRECOGNIZED_PLATFORM == ret_status || //Platform not recognized by Provisioning backend
+	                AESM_OUT_OF_EPC == ret_status) // out of EPC
+	            {
+	                return ret_status;//We should return to uae serivce directly
+	            }
+	            if (AESM_SUCCESS != ret_status &&
+	                AESM_OUT_OF_MEMORY_ERROR != ret_status &&
+	                AESM_BACKEND_SERVER_BUSY != ret_status &&
+	                AESM_NETWORK_ERROR != ret_status &&
+	                AESM_NETWORK_BUSY_ERROR != ret_status)
+	            {
+	                ret_status = AESM_SGX_PROVISION_FAILED;
+	            }
+	        }
+	        break;
+	    }
+	    case AESM_NEP_PERFORMANCE_REKEY:
+	    {
+	        if (NULL != status) {
+	            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
+	        }
+	        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
+	            bool perfRekey = true;
+	            if (!g_epid_service) {
+	                AESM_DBG_ERROR("failed to get IEpidquoteService service");
+	                ret_status = AESM_SERVICE_UNAVAILABLE;
+	                break;
+	            }
+	            ret_status = g_epid_service->provision(perfRekey, THREAD_TIMEOUT);
+	            if (AESM_BUSY == ret_status ||//thread timeout
+	                AESM_PROXY_SETTING_ASSIST == ret_status ||//uae service need to set up proxy info and retry
+	                AESM_UPDATE_AVAILABLE == ret_status ||
+	                AESM_UNRECOGNIZED_PLATFORM == ret_status ||
+	                AESM_OUT_OF_EPC == ret_status)
+	            {
+	                return ret_status;//We should return to uae serivce directly
+	            }
+	            if (AESM_SUCCESS != ret_status &&
+	                AESM_OUT_OF_MEMORY_ERROR != ret_status &&
+	                AESM_BACKEND_SERVER_BUSY != ret_status &&
+	                AESM_NETWORK_ERROR != ret_status &&
+	                AESM_NETWORK_BUSY_ERROR != ret_status)
+	            {
+	                ret_status = AESM_SGX_PROVISION_FAILED;
+	            }
+	        }
+	        break;
+	    }
+	    default:
+	    {
+	        ret_status = AESM_UNEXPECTED_ERROR;
+	        break;
+	    }
+	    }
 
-    // don't worry about pairing unless indication that PS being used
-    if (ps_collectively_not_uptodate(&pibw) && pibw.platform_info_blob.xeid == x_group_id)//only update for default extended epid group
-    {
-        if (NULL != status) {
-            *status |= CHECK_UPDATE_STATUS_CERT_PROV_LTP; // ps_collectively_not_uptodate is true represents PSE provisioning/long-term pairing is needed
-        }
-        uint32_t attestation_status = config & CHECK_UPDATE_STATUS_CERT_PROV_LTP; // attestation_status is 1 if caller also wants to trigger PSE provisioning/long-term pairing
-        ae_error_t ae_ret = start_update_pse_thread(&pibw, attestation_status);
-        switch (ae_ret)
-        {
-        case AE_SUCCESS:
-            break;
-        case OAL_THREAD_TIMEOUT_ERROR:
-            return AESM_BUSY;
-        case PVE_PROV_ATTEST_KEY_NOT_FOUND:
-            return AESM_UNRECOGNIZED_PLATFORM;
-        case PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE:
-            return AESM_UPDATE_AVAILABLE;
-        case OAL_PROXY_SETTING_ASSIST:
-            // don't log an error here
-            return AESM_PROXY_SETTING_ASSIST;
-        case PSW_UPDATE_REQUIRED:
-            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_PSWVER]);
-            return AESM_UPDATE_AVAILABLE;
-        case AESM_AE_OUT_OF_EPC:
-            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);
-            return AESM_OUT_OF_EPC;
-        case AESM_PSDA_PLATFORM_KEYS_REVOKED:
-            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PLATFORM_REVOKED]);
-            return AESM_EPID_REVOKED_ERROR;
-        case AESM_LTP_SIMPLE_LTP_ERROR:
-        default:
-            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);
-            break;
-        }
+	    // don't worry about pairing unless indication that PS being used
+	    if (ps_collectively_not_uptodate(&pibw) && pibw.platform_info_blob.xeid == x_group_id)//only update for default extended epid group
+	    {
+	        if (NULL != status) {
+	            *status |= CHECK_UPDATE_STATUS_CERT_PROV_LTP; // ps_collectively_not_uptodate is true represents PSE provisioning/long-term pairing is needed
+	        }
+	        uint32_t attestation_status = config & CHECK_UPDATE_STATUS_CERT_PROV_LTP; // attestation_status is 1 if caller also wants to trigger PSE provisioning/long-term pairing
+	        ae_error_t ae_ret = start_update_pse_thread(&pibw, attestation_status);
+	        switch (ae_ret)
+	        {
+	        case AE_SUCCESS:
+	            break;
+	        case OAL_THREAD_TIMEOUT_ERROR:
+	            return AESM_BUSY;
+	        case PVE_PROV_ATTEST_KEY_NOT_FOUND:
+	            return AESM_UNRECOGNIZED_PLATFORM;
+	        case PVE_PROV_ATTEST_KEY_TCB_OUT_OF_DATE:
+	            return AESM_UPDATE_AVAILABLE;
+	        case OAL_PROXY_SETTING_ASSIST:
+	            // don't log an error here
+	            return AESM_PROXY_SETTING_ASSIST;
+	        case PSW_UPDATE_REQUIRED:
+	            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_PSWVER]);
+	            return AESM_UPDATE_AVAILABLE;
+	        case AESM_AE_OUT_OF_EPC:
+	            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);
+	            return AESM_OUT_OF_EPC;
+	        case AESM_PSDA_PLATFORM_KEYS_REVOKED:
+	            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PLATFORM_REVOKED]);
+	            return AESM_EPID_REVOKED_ERROR;
+	        case AESM_LTP_SIMPLE_LTP_ERROR:
+	        default:
+	            AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_PS_INIT_FAIL_LTP]);
+	            break;
+	        }
+	    }
     }
-
     if (NULL != update_info)
     {
         sgx_update_info_bit_t* p_update_info = (sgx_update_info_bit_t*)update_info;

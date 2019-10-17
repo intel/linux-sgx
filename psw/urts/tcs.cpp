@@ -553,8 +553,20 @@ int CThreadPoolBindMode::garbage_collect()
             }
             else
             {
-                //the list only record the pointer of trust thread, so we can delete it first and then erase from map.
-                delete it->value;
+                /*
+                 * 2 situations:
+                 * 1:  In multiple threads situation, From "/proc/self/"task can't get all the threads number correctly in low probability.
+                 *      For exampe: If a new thread created and call ECALL, an another thread call ECALL immediately. And if there are no free tcs, this ECALL will enter garbage_collect().
+                 *      But the thread who enter garbage_collect() maybe can't find the new thread's number through "/proc/self/".
+                 *      So skip to next tcs directly.
+                 *
+                 * 2:  There must be some wrong termination in ECALL.
+                 *      Just leave this tcs in "m_thread_list" and don't delete it structure.
+                 *      If delete this tcs structure and remove it from "m_thread_list" will cause exception during enclave destroy.
+                 */
+                pre = it;
+                it = it->next;
+                continue;
             }
             tmp = it;
             it = it->next;

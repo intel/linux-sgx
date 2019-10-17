@@ -31,7 +31,7 @@
 
 
 #include "se_rwlock.h"
-#include "internal/util.h"
+#include "util.h"
 
 
 #include <stdlib.h>

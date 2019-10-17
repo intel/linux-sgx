@@ -67,7 +67,9 @@
     "   -ignore-init-sec-error  By default, sgx_sign provides an error for enclaves with .init section.\n" \
     "                           You can ignore the error and continue signing by providing this option.\n" \
     "                           But it is recommended you eliminate the section instead of bypassing\n" \
-    "                           the error with this option.\n\n" \
+    "                           the error with this option.\n" \
+    "   -resign                 By default, sgx_sign reports an error if an input enclave has already been signed.\n" \
+    "                           You can force sgx_sign to resign the enclave by providing this option.\n\n" \
     "Run \"sgx_sign -help\" to get this help and exit.\n" \
     "Run \"sgx_sign -version\" to output version information and exit.\n\n"
 

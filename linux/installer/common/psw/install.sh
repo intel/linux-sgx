@@ -31,7 +31,7 @@
 #
 
 
-set -e 
+set -e
 
 SCRIPT_DIR=$(dirname "$0")
 source ${SCRIPT_DIR}/installConfig
@@ -168,9 +168,17 @@ rm -fr /var/run/aesmd
 rm -f /usr/{lib,lib64}/libsgx_uae_service.so
 rm -f /usr/{lib,lib64}/libsgx_urts.so
 rm -f /usr/{lib,lib64}/libsgx_enclave_common.so*
+rm -f /usr/{lib,lib64}/libsgx_epid.so*
+rm -f /usr/{lib,lib64}/libsgx_launch.so*
+rm -f /usr/{lib,lib64}/libsgx_platform.so*
+rm -f /usr/{lib,lib64}/libsgx_quote_ex.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_uae_service.so
 rm -f /usr/lib/i386-linux-gnu/libsgx_urts.so
 rm -f /usr/lib/i386-linux-gnu/libsgx_enclave_common.so*
+rm -f /usr/lib/i386-linux-gnu/libsgx_epid.so*
+rm -f /usr/lib/i386-linux-gnu/libsgx_launch.so*
+rm -f /usr/lib/i386-linux-gnu/libsgx_platform.so*
+rm -f /usr/lib/i386-linux-gnu/libsgx_quote_ex.so*
 
 # Removing AESM user and group
 /usr/sbin/userdel aesmd 2> /dev/null
@@ -183,9 +191,6 @@ echo "Intel(R) SGX PSW uninstalled."
 EOF
 
 chmod +x $PSW_DST_PATH/uninstall.sh
-
-$AESM_PATH/cse_provision_tool 2> /dev/null || true
-rm $AESM_PATH/cse_provision_tool
 
 cat > $AESM_PATH/linksgx.sh <<EOF
 #!/usr/bin/env bash

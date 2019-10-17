@@ -7,16 +7,7 @@ test -n "$srcdir" || srcdir=.
   autoreconf --force -v --install
 ) || exit
 
-#CFLAGS="$CFLAGS -g -O0 -std=c99 -fno-builtin -DHAVE_SGX=1 -fPIC -DUNW_LOCAL_ONLY"
-if [ "$1" = "1" ] 
-then
-    #Build with "make DEBUG=1"
-    COMMON_FLAGS="$CFLAGS -ggdb -Og"
-else
-    COMMON_FLAGS="$CFLAGS -g -O2"
-fi
-CFLAGS="$COMMON_FLAGS -std=c99 -fno-builtin -DHAVE_SGX=1 -fPIC -DUNW_LOCAL_ONLY -fdebug-prefix-map=$(pwd)=/libunwind"
-
+CFLAGS="$CFLAGS -std=c99 -fno-builtin -DHAVE_SGX=1 -fPIC -DUNW_LOCAL_ONLY -fdebug-prefix-map=$(pwd)=/libunwind"
 # Remove duplicated compiler options and filter out `-nostdinc'
 CFLAGS=`echo $CFLAGS | tr ' ' '\n' | grep -v nostdinc | tr '\n' ' '`
 

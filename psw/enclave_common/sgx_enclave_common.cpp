@@ -361,15 +361,22 @@ extern "C" size_t COMM_API enclave_load_data(
         free(source);
 
     int prot = (int)(sec_info.flags & SI_MASK_MEM_ATTRIBUTE);
+    if (sec_info.flags & ENCLAVE_PAGE_THREAD_CONTROL)
+    {
+        prot = (int)(SI_FLAGS_RW & SI_MASK_MEM_ATTRIBUTE);
+    }
+
     // find the enclave base
     void* enclave_base = NULL;
 
+    se_mutex_lock(&s_enclave_mutex);
     for (auto rec : s_enclave_size) {
         if ((uint64_t)target_address >= (uint64_t)rec.first && (uint64_t)target_address < (uint64_t)rec.first + (uint64_t)rec.second) {
             enclave_base = (void*)rec.first;
             break;
         }
     }
+    se_mutex_unlock(&s_enclave_mutex);
 
     if (enclave_base == NULL) {
         if (enclave_error != NULL)

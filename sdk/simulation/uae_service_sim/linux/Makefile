@@ -42,9 +42,7 @@ INCLUDES := -I..                                            \
             -I$(LINUX_EXTERNAL_DIR)/rdrand/                 \
             -I$(LINUX_PSW_DIR)/ae/inc                       \
             -I$(LINUX_PSW_DIR)/ae/inc/internal              \
-            -I$(LINUX_PSW_DIR)/ae/common                    \
-            -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
-            -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
+            -I$(LINUX_PSW_DIR)/ae/common 
 
 CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g
 CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES)

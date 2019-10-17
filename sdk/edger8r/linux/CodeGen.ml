@@ -57,12 +57,12 @@ type enclave_content = Ast.enclave_content = {
  * sgx_ecall(). *)
 type sgx_fn_id = SGX_ECALL | SGX_OCALL | SGX_OCALLOC | SGX_OCFREE
 let get_sgx_fname fn_id is_switchless =
-    let func_name = match fn_id with
-                        SGX_ECALL -> "sgx_ecall"
-                      | SGX_OCALL -> "sgx_ocall"
-                      | SGX_OCALLOC -> "sgx_ocalloc"
-                      | SGX_OCFREE -> "sgx_ocfree" in
-    sprintf "%s%s" func_name (if is_switchless then "_switchless" else "")
+    let switchless_str = if is_switchless then "_switchless" else "" in
+    match fn_id with
+      SGX_ECALL -> "sgx_ecall" ^ switchless_str
+    | SGX_OCALL -> "sgx_ocall" ^ switchless_str
+    | SGX_OCALLOC -> "sgx_ocalloc"
+    | SGX_OCFREE -> "sgx_ocfree"
 
 (* Whether to prefix untrusted proxy with Enclave name *)
 let g_use_prefix = ref false
@@ -83,6 +83,9 @@ let get_tf_fname (tf: Ast.trusted_func) =
 
 let is_priv_ecall (tf: Ast.trusted_func) =
   tf.Ast.tf_is_priv
+
+let is_switchless_ecall (tf: Ast.trusted_func) =
+  tf.Ast.tf_is_switchless
 
 let get_uf_fname (uf: Ast.untrusted_func) =
   uf.Ast.uf_fdecl.Ast.fname
@@ -258,11 +261,15 @@ let get_tsource_name (file_shortnm: string) =
 let mk_struct_decl (fs: string) (name: string) =
   sprintf "typedef struct %s {\n%s} %s;\n" name fs name
 
-(* Construct the string of union definition *)
-let mk_union_decl (fs: string) (name: string) =
-  sprintf "typedef union %s {\n%s} %s;\n" name fs name
+(* Construct the string of structure definition with #ifndef surrounded *)
+let mk_struct_decl_with_macro (fs: string) (name: string) =
+  sprintf "#ifndef _%s\n#define _%s\ntypedef struct %s {\n%s} %s;\n#endif\n" name name name fs name
 
-(* Generate a definition of enum *)
+(* Construct the string of union definition with #ifndef surrounded *)
+let mk_union_decl_with_macro (fs: string) (name: string) =
+  sprintf "#ifndef _%s\n#define _%s\ntypedef union %s {\n%s} %s;\n#endif\n" name name name fs name
+
+(* Generate a definition of enum with #ifndef surrounded *)
 let mk_enum_def (e: Ast.enum_def) =
   let gen_enum_ele_str (ele: Ast.enum_ele) =
     let k, v = ele in
@@ -377,7 +384,13 @@ let check_structure (ec: enclave_content) =
                       in
                       if deep_copy then 
                         failwithf "the structure declaration \"%s\" specifies a deep copy is expected. Referenced by value in function \"%s\" detected."s fd.Ast.fname
-                      else ()
+                      else
+                        if List.exists (fun (pt, _) ->
+                           match pt with
+                             Ast.PTVal _        -> false
+                           | Ast.PTPtr _        -> true       )  struct_def.Ast.smlist
+                        then (eprintf "warning: the structure \"%s\" is referenced by value in function \"%s\". Part of the data may not be copied.\n"s fd.Ast.fname)
+                        else ()
                  else ()
             | Ast.PTPtr (Ast.Ptr(Ast.Struct(s)), attr) ->
                 if is_structure_defined s then
@@ -430,8 +443,8 @@ let gen_comp_def (st: Ast.composite_type) =
                 acc ^ mk_member_decl (Ast.get_param_atype pt) declr) "" mlist
   in
     match st with
-        Ast.StructDef s -> mk_struct_decl (gen_struct_member_list s.Ast.smlist) s.Ast.sname
-      | Ast.UnionDef  u -> mk_union_decl  (gen_union_member_list u.Ast.umlist) u.Ast.uname
+        Ast.StructDef s -> mk_struct_decl_with_macro (gen_struct_member_list s.Ast.smlist) s.Ast.sname
+      | Ast.UnionDef  u -> mk_union_decl_with_macro (gen_union_member_list u.Ast.umlist) u.Ast.uname
       | Ast.EnumDef   e -> mk_enum_def    e
 
 (* Generate a list of '#include' *)
@@ -484,28 +497,30 @@ let gen_parm_retval (rt: Ast.atype) =
        struct {
            void   *ecall_addr;
            uint8_t is_priv;
+           uint8_t is_switchless;
        } ecall_table [nr_ecall];
    } g_ecall_table = {
-       2, { {sgx_foo, 1}, {sgx_bar, 0} }
+       2, { {sgx_foo, 1, 0}, {sgx_bar, 0, 1} }
    };
 *)
 let gen_ecall_table (tfs: Ast.trusted_func list) =
   let ecall_table_name = "g_ecall_table" in
   let ecall_table_size = List.length tfs in
   let trusted_fds = tf_list_to_fd_list tfs in
-  let priv_bits = tf_list_to_priv_list tfs in
   let tbridge_names = List.map (fun (fd: Ast.func_decl) ->
                                   mk_tbridge_name fd.Ast.fname) trusted_fds in
+  let priv_switchless_bits = List.map (fun (tf: Ast.trusted_func ) ->
+                                  (is_priv_ecall tf, is_switchless_ecall tf) ) tfs in
   let ecall_table =
     let bool_to_int b = if b then 1 else 0 in
     let inner_table =
-      List.fold_left2 (fun acc s b ->
-        sprintf "%s\t\t{(void*)(uintptr_t)%s, %d},\n" acc s (bool_to_int b)) "" tbridge_names priv_bits
+      List.fold_left2 (fun acc s (b1, b2) ->
+        sprintf "%s\t\t{(void*)(uintptr_t)%s, %d, %d},\n" acc s (bool_to_int b1) (bool_to_int b2)) "" tbridge_names priv_switchless_bits
     in "\t{\n" ^ inner_table ^ "\t}\n"
   in
     sprintf "SGX_EXTERNC const struct {\n\
 \tsize_t nr_ecall;\n\
-\tstruct {void* ecall_addr; uint8_t is_priv;} ecall_table[%d];\n\
+\tstruct {void* ecall_addr; uint8_t is_priv; uint8_t is_switchless;} ecall_table[%d];\n\
 } %s = {\n\
 \t%d,\n\
 %s};\n" ecall_table_size

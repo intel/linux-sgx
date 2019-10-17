@@ -95,7 +95,9 @@ update_changelog_version() {
     INS_VERSION=$(echo $(dpkg-parsechangelog |grep "Version" | cut -d: -f2))
     DEB_VERSION=$(echo $INS_VERSION | cut -d- -f2)
 
-    sed -i "s/${INS_VERSION}/${SGX_VERSION}-$(lsb_release -cs)${DEB_VERSION}/" debian/changelog
+    sed -i "s#${INS_VERSION}#${SGX_VERSION}-$(lsb_release -cs)${DEB_VERSION}#" debian/changelog
+    sed -i "s#@pkg_path@#${ECL_PKG_PATH}/${ECL_PKG_NAME}#" debian/postinst
+    sed -i "s#@pkg_path@#${ECL_PKG_PATH}/${ECL_PKG_NAME}#" debian/prerm
 
     popd
 }
@@ -107,6 +109,7 @@ rename_tarball() {
 
 build_deb_package() {
     pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
+    ldconfig -n ${LINUX_BUILD_DIR}
     SOURCE_DATE_EPOCH="$(date +%s)" LINUX_BUILD_DIR="${LINUX_BUILD_DIR}" dpkg-buildpackage -us -uc
     popd
 }

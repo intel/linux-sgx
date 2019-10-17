@@ -48,20 +48,24 @@
  * Initialization
  *========================================================================*/
 
-static struct sl_fcall_mngr g_focall_mngr_t;
+static struct sl_call_mngr g_ocall_mngr;
 
-static sl_once_t g_init_ocall_mngr_done_t = SL_ONCE_INITIALIZER;
+static sl_once_t g_init_ocall_mngr_done = SL_ONCE_INITIALIZER;
 
 static uint64_t init_tswitchless_ocall_mngr(void) 
 {
-    if (sl_uswitchless_handle == NULL) return (uint64_t)(-1);
+    // check if switchless has been initialized
+    if (g_uswitchless_handle == NULL) return (uint64_t)(-1);
 
-    struct sl_fcall_mngr* mngr_u = &sl_uswitchless_handle->us_focall_mngr;
-    int ret = sl_fcall_mngr_clone(&g_focall_mngr_t, mngr_u);
+    // g_uswitchless_handle is checked in do_init_switchless()
+    struct sl_call_mngr* mngr_u = &g_uswitchless_handle->us_ocall_mngr;
+    // clone data from the untrusted side, ensuring all the relevant data is outside enclave
+    int ret = sl_call_mngr_clone(&g_ocall_mngr, mngr_u);
     if (ret) 
 		return (uint64_t)ret;
 
-    PANIC_ON(sl_fcall_mngr_get_type(&g_focall_mngr_t) != SL_FCALL_TYPE_OCALL);
+    // wrong manager type, attack ?
+    PANIC_ON(sl_call_mngr_get_type(&g_ocall_mngr) != SL_TYPE_OCALL);
     return 0;
 }
 
@@ -71,73 +75,48 @@ static uint64_t init_tswitchless_ocall_mngr(void)
 
 sgx_status_t sgx_ocall_switchless(const unsigned int index, void* ms) 
 {
-    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    struct sl_fcall_buf* buf_u = NULL;
     int error = 0;
+
+    if (sgx_is_enclave_crashed())
+        return SGX_ERROR_ENCLAVE_CRASHED;
 
     /* If Switchless SGX is not enabled at enclave creation, then switchless OCalls
      * fallback to the traditional OCalls */
-    if (sl_call_once(&g_init_ocall_mngr_done_t, init_tswitchless_ocall_mngr)) 
+    if (sl_call_once(&g_init_ocall_mngr_done, init_tswitchless_ocall_mngr)) 
         return sgx_ocall(index, ms);
 
-    /* If no untrusted workers are running, then fallback */ //
+    // g_uswitchless_handle is checked in do_init_switchless()
 
-    if (sl_uswitchless_handle->us_uworkers.num_running == 0) 
+    /* If no untrusted workers are running, then fallback */ 
+    if (g_uswitchless_handle->us_uworkers.num_running == 0) 
         goto on_fallback;
 
-    if (sl_uswitchless_handle->us_uworkers.num_sleeping > 0)
+    // if there are sleeping workers, wake them up
+    if (g_uswitchless_handle->us_uworkers.num_sleeping > 0)
     {
-        if (sgx_ocall(SL_WAKE_WORKERS, (void*)&sl_uswitchless_handle->us_uworkers) != SGX_SUCCESS)
+        if (sgx_ocall(SL_WAKE_WORKERS, (void*)&g_uswitchless_handle->us_uworkers) != SGX_SUCCESS)
             goto on_fallback;
     }
-    
-    if (ms) 
-    {
-        buf_u = CONTAINER_OF(ms, struct sl_fcall_buf, fbf_ms);
-    }
-    else 
-    {
-        buf_u = sgx_ocalloc(sizeof(*buf_u));
-        if (buf_u == NULL) 
-            goto on_fallback;
-    }
-    
-    buf_u->fbf_status = SL_FCALL_STATUS_INIT;
-    buf_u->fbf_ret = SGX_ERROR_UNEXPECTED;
-    buf_u->fbf_fn_id = index;
-    buf_u->fbf_ms_ptr = ms;
 
-    error = sl_fcall_mngr_call(&g_focall_mngr_t, buf_u, sl_uswitchless_handle->us_config.retries_before_fallback);
+    struct sl_call_task call_task;
+
+    call_task.status = SL_INIT;
+    call_task.func_id = index;
+    call_task.func_data = ms;
+    call_task.ret_code = SGX_ERROR_UNEXPECTED;
+
+    // perform switchless OCALL
+    error = sl_call_mngr_call(&g_ocall_mngr, &call_task, g_uswitchless_handle->us_config.retries_before_fallback);
     if (error) 
-    {
-        if (ms == NULL) 
-            sgx_ocfree_switchless();
-
         goto on_fallback;
-    }
+    
+    lock_inc64(&g_uswitchless_handle->us_uworkers.stats.processed);
 
-    ret = buf_u->fbf_ret;
+    return call_task.ret_code;
 
-    if (ms == NULL)
-        sgx_ocfree_switchless(); // buf_u is now freeed
-
-    lock_inc64(&sl_uswitchless_handle->us_uworkers.stats.processed);
-    return ret;
 on_fallback:
-    lock_inc64(&sl_uswitchless_handle->us_uworkers.stats.missed);
-    sl_uswitchless_handle->us_has_new_ocall_fallback = 1;
+    lock_inc64(&g_uswitchless_handle->us_uworkers.stats.missed);
+    g_uswitchless_handle->us_has_new_ocall_fallback = 1;
     return sgx_ocall(index, ms);
 }
 
-void* sgx_ocalloc_switchless(size_t size) 
-{
-    BUG_ON(size == 0);
-    struct sl_fcall_buf* buf = sgx_ocalloc(sizeof(*buf) + size);
-    if (buf == NULL) return NULL;
-    return &buf->fbf_ms;
-}
-
-void sgx_ocfree_switchless(void) 
-{
-    sgx_ocfree();
-}

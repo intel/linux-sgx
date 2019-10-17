@@ -43,9 +43,7 @@ LDFLAGS += $(COMMON_LDFLAGS)
 
 INC += -I$(COMMON_DIR)/inc                \
        -I$(COMMON_DIR)/inc/internal       \
-       -I$(COMMON_DIR)/inc/internal/linux \
-       -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
-       -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
+       -I$(COMMON_DIR)/inc/internal/linux 
 
 LIB += -L$(BUILD_DIR)
 

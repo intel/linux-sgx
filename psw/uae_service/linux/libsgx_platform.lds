@@ -1,0 +1,10 @@
+{
+global:
+    sgx_get_ps_cap;
+    create_session_ocall;
+    exchange_report_ocall;
+    close_session_ocall;
+    invoke_service_ocall;
+local:
+    *;
+};

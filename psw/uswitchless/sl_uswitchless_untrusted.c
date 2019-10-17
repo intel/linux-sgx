@@ -55,7 +55,9 @@ static inline bool check_switchless_params(const sgx_uswitchless_config_t* confi
     return true;
 }
 
-sgx_status_t sl_uswitchless_new(const sgx_uswitchless_config_t* config, const sgx_enclave_id_t enclave_id, struct sl_uswitchless** uswitchless_pp)
+sgx_status_t sl_uswitchless_new(const sgx_uswitchless_config_t* config, 
+                                const sgx_enclave_id_t enclave_id, 
+                                struct sl_uswitchless** uswitchless_pp)
 {
     BUG_ON(config == NULL);
     int ret = 0;
@@ -76,21 +78,25 @@ sgx_status_t sl_uswitchless_new(const sgx_uswitchless_config_t* config, const sg
     handle->us_ocall_table = NULL;
     handle->us_config = config ? *config : (sl_config_t) SL_CONFIG_INITIALIZER;
 	
-    handle->us_config.retries_before_fallback = (handle->us_config.retries_before_fallback == 0) ? SL_DEFAULT_FALLBACK_RETRIES : handle->us_config.retries_before_fallback;
-    handle->us_config.retries_before_sleep    = (handle->us_config.retries_before_sleep    == 0) ? SL_DEFAULT_SLEEP_RETRIES    : handle->us_config.retries_before_sleep;
+    handle->us_config.retries_before_fallback = (handle->us_config.retries_before_fallback == 0) ? 
+                                                SL_DEFAULT_FALLBACK_RETRIES : handle->us_config.retries_before_fallback;
 
-    uint32_t max_tasks = handle->us_config.switchless_calls_pool_size_qwords == 0 ? SL_DEFUALT_MAX_TASKS_QWORDS : handle->us_config.switchless_calls_pool_size_qwords;
+    handle->us_config.retries_before_sleep    = (handle->us_config.retries_before_sleep    == 0) ? 
+                                                SL_DEFAULT_SLEEP_RETRIES    : handle->us_config.retries_before_sleep;
 
-    max_tasks *= NBITS_PER_UINT64;
+    uint32_t max_tasks = handle->us_config.switchless_calls_pool_size_qwords == 0 ? 
+                         SL_DEFUALT_MAX_TASKS_QWORDS : handle->us_config.switchless_calls_pool_size_qwords;
 
-    ret = sl_fcall_mngr_init(&handle->us_focall_mngr,
-                            SL_FCALL_TYPE_OCALL,
+    max_tasks *= NBITS_PER_LINE;
+
+    ret = sl_call_mngr_init(&handle->us_ocall_mngr,
+                            SL_TYPE_OCALL,
 		                    max_tasks);
 
     if (ret) goto on_error_0;
 
-    ret = sl_fcall_mngr_init(&handle->us_fecall_mngr,
-                            SL_FCALL_TYPE_ECALL,
+    ret = sl_call_mngr_init(&handle->us_ecall_mngr,
+                            SL_TYPE_ECALL,
 		                    max_tasks);
 
     if (ret) goto on_error_1;
@@ -106,9 +112,9 @@ sgx_status_t sl_uswitchless_new(const sgx_uswitchless_config_t* config, const sg
 on_error_3:
     sl_workers_destroy(&handle->us_uworkers);
 on_error_2:
-    sl_fcall_mngr_destroy(&handle->us_fecall_mngr);
+    sl_call_mngr_destroy(&handle->us_ecall_mngr);
 on_error_1:
-    sl_fcall_mngr_destroy(&handle->us_focall_mngr);
+    sl_call_mngr_destroy(&handle->us_ocall_mngr);
 on_error_0:
     free(handle);
     return SGX_ERROR_OUT_OF_MEMORY;
@@ -118,8 +124,8 @@ void sl_uswitchless_free(struct sl_uswitchless* handle)
 {
     sl_workers_destroy(&handle->us_tworkers);
     sl_workers_destroy(&handle->us_uworkers);
-    sl_fcall_mngr_destroy(&handle->us_focall_mngr);
-    sl_fcall_mngr_destroy(&handle->us_fecall_mngr);
+    sl_call_mngr_destroy(&handle->us_ocall_mngr);
+    sl_call_mngr_destroy(&handle->us_ecall_mngr);
     free(handle);
 }
 
@@ -152,8 +158,8 @@ int sl_uswitchless_start_workers(struct sl_uswitchless* handle,
         return 0;
 
     /* switchless ocall_table to the sl_fcall_mngr for switchless Calls */
-    sl_fcall_mngr_register_calls(&handle->us_focall_mngr,
-                                 (const sl_fcall_table_t*)ocall_table);
+    sl_call_mngr_register_calls(&handle->us_ocall_mngr,
+                                 (const sl_call_table_t*)ocall_table);
 
     sl_workers_run_threads(&handle->us_uworkers);
     sl_workers_run_threads(&handle->us_tworkers);
@@ -162,6 +168,7 @@ int sl_uswitchless_start_workers(struct sl_uswitchless* handle,
 
 void sl_uswitchless_stop_workers(struct sl_uswitchless* handle) 
 {
+    handle->us_should_stop = 1;
     sl_workers_kill_threads(&handle->us_uworkers);
     sl_workers_kill_threads(&handle->us_tworkers);
 }

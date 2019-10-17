@@ -81,9 +81,13 @@ static inline long futex(volatile int32_t* futex_addr, int32_t futex_op, int32_t
     return syscall(__NR_futex, futex_addr, futex_op, futex_val, NULL, NULL, 0);
 }
 
-void sleep_this_thread(struct sl_workers* workers) 
+void sleep_this_thread(struct sl_workers* workers, bool notify) 
 {
    lock_inc64(&workers->num_sleeping);
+
+   if (notify)
+       sl_workers_notify_event(workers, SL_WORKER_EVENT_IDLE);
+
    futex(&workers->should_wake, FUTEX_WAIT, 0);
    lock_dec64(&workers->num_sleeping);
 }
@@ -127,17 +131,19 @@ static void* run_worker(void* thread_data)
      * EDL-generated ECall is called upon the enclave. This OCall table must be
      * given to trusted or untrusted workers so that they can function properly.
      * */
-    sleep_this_thread(workers);
+    sleep_this_thread(workers, false);
     BUG_ON(workers->handle->us_ocall_table == NULL);
         
     /* Main loop of worker thread */
-    while (!workers->should_stop)
-	{
+    while (!workers->handle->us_should_stop)
+    {
         /* Process calls until idle for some time */
         process_calls_fn(workers);
         /* Notify idle event */
-        sl_workers_notify_event(workers, SL_WORKER_EVENT_IDLE);
-        sleep_this_thread(workers);
+        if (!workers->handle->us_should_stop)
+        {
+            sleep_this_thread(workers, true);
+        }
     }
     
     /* Exit worker thread */
@@ -156,9 +162,15 @@ int sl_workers_init_threads(struct sl_workers* workers)
                              run_worker, (void*)workers);
         if (ret) goto on_error;
     }
+
+    while (workers->num_running != workers->num_all)
+    {
+        usleep(100);
+    }
     return 0;
 on_error:
-    workers->should_stop = 1;
+    workers->handle->us_should_stop = 1;
+    wake_all_threads(workers);
     for (; ti < num_started; ti++)
         pthread_join(workers->threads[ti], NULL);
     return ret;
@@ -173,7 +185,6 @@ int sl_workers_run_threads(struct sl_workers* workers)
 void sl_workers_kill_threads(struct sl_workers* workers) 
 {
     uint32_t ti = 0;
-    workers->should_stop = 1;
     workers->should_wake = 1;
     wake_all_threads(workers);
     for (; ti < workers->num_all; ti++)
@@ -217,15 +228,18 @@ static int tworker_process_calls(struct sl_workers* workers)
 static int uworker_process_calls(struct sl_workers* workers) 
 {
     struct sl_uswitchless* handle = workers->handle;
-    struct sl_fcall_mngr* focall_mngr = &handle->us_focall_mngr;
+    struct sl_call_mngr* ocall_mngr = &handle->us_ocall_mngr;
 
 	uint32_t max_retries = handle->us_config.retries_before_sleep;
 	uint32_t retries = 0;
 	
 	while (retries < max_retries)
 	{
-		if (sl_fcall_mngr_process(focall_mngr) == 0)
+		if (sl_call_mngr_process(ocall_mngr) == 0)
 		{
+            if (handle->us_should_stop)
+                break;
+
 			asm_pause();
 			retries++;
 		}

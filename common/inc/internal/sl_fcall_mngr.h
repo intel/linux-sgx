@@ -33,11 +33,11 @@
 #define _SL_FCALL_MNGR_H_
 
 /*
- * sl_fcall_mngr - switchless Call manager
+ * sl_call_mngr - switchless Call manager
  *
- * sl_fcall_mngr is a cross-enclave data structure. switchless OCall requests can be
- * made via a trusted object of sl_fcall_mngr, which is "cloned" from an
- * untrusted object of sl_fcall_mngr. The latter is created by the untrusted
+ * sl_call_mngr is a cross-enclave data structure. switchless OCall requests can be
+ * made via a trusted object of sl_call_mngr, which is "cloned" from an
+ * untrusted object of sl_call_mngr. The latter is created by the untrusted
  * code and are used by untrusted workers to process switchless OCall requests.
  * The same is true for switchless ECalls.
  *
@@ -53,10 +53,7 @@
  * code. Then, the enclave code creates an trusted object out of the given,
  * untrusted object; this is called "clone". This clone operation will do all
  * proper security checks. Finally, the enclave code can access and manipuate
- * its cloned object securely. Note that the states of an (untrusted) original
- * object and its (trusted) cloned object are linked, e.g., updates on one
- * party can be observed by the other (yes, just like a pair of entanged
- * particles in quantum physics).
+ * its cloned object securely. 
  *
  */
 
@@ -66,68 +63,148 @@
 #include <internal/routine.h>
 #endif
 
-typedef enum {
-    SL_FCALL_TYPE_OCALL,
-    SL_FCALL_TYPE_ECALL
-} sl_fcall_type_t;
 
-typedef sgx_status_t(*sl_fcall_func_t)(const void* /* ms */);
+typedef enum {
+    SL_TYPE_OCALL,
+    SL_TYPE_ECALL
+} sl_call_type_t;
+
+typedef sgx_status_t(*sl_call_func_t)(const void* /* ms */);
 
 typedef struct {
-    uint32_t                    ftb_size;
-    sl_fcall_func_t             ftb_func[];
-} sl_fcall_table_t; /* compatible with sgx_ocall_table_t */
+    uint32_t        size;
+    sl_call_func_t  funcs[];
+} sl_call_table_t; /* compatible with sgx_ocall_table_t */
+
 
 typedef enum {
-    SL_FCALL_STATUS_INIT,
-    SL_FCALL_STATUS_SUBMITTED,
-    SL_FCALL_STATUS_ACCEPTED,
-    SL_FCALL_STATUS_DONE
-} sl_fcall_status_t;
+    SL_INIT,
+    SL_SUBMITTED,
+    SL_ACCEPTED,
+    SL_DONE
+} sl_call_status_t;
 
-struct sl_fcall_buf {
-    volatile sl_fcall_status_t  fbf_status;
-    sgx_status_t                fbf_ret;
-    uint32_t                    fbf_fn_id;
-    /* For OCall, fbf_ms_ptr is NULL or &fbf_ms[0];
-     * For ECall, fbf_ms_ptr is the ms passed from sgx_ecall_switchless() */
-    void*                       fbf_ms_ptr;
-    char                        fbf_ms[0];
+#pragma pack(push, 1)
+
+struct sl_call_task {
+    volatile sl_call_status_t  status;        // status of the current task
+    uint32_t                   func_id;       // function id to be called (index to the call table)
+    void*                      func_data;     // data to be passed to the function 
+    sgx_status_t               ret_code;      // return code of the function 
 };
 
-struct sl_fcall_mngr {
-    sl_fcall_type_t             fmn_type;
-    struct sl_siglines          fmn_siglns;
-    struct sl_fcall_buf**       fmn_bufs;
-    const sl_fcall_table_t*     fmn_call_table;
+#define SL_INVALID_FUNC_ID ((uint32_t)-1)
+
+struct sl_call_mngr {
+    sl_call_type_t          type;           // type of the call manager (ECALL / OCALL)
+    struct sl_siglines      siglns;         // signal lines to pass task request from/to trusted/untrusted side
+    struct sl_call_task*    tasks;          // array of tasks  
+    const sl_call_table_t*  call_table;     // functions call table 
 };
+
+#pragma pack(pop)
+
+
+/********************************************************************************************************
+                                  ******    Call Manager   ******
+                     
+siglns:
+                            1==pending
+                      +———————————————————————————————————————————————————————+
+        event_lines - | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+                      +———————————————————————————————————————————————————————+
+                                ^
+                                |     bit index (i.e. line) as array index        
+                                |---------------------------------------------------
+                                |                                                  |
+                      +———————————————————————————————————————————————————————+    |
+        free_lines -  | 1 | 1 | 0 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 1 |    |
+                      +———————————————————————————————————————————————————————+    |
+                             0==line in use              1==line is free           |
+                                                                                   |
+                     ---------------------------------------------------------------
+                     |
+tasks:               |        array of tasks
+                     |     +——————————————————————+
+                     |     |                      |       
+                     |     +——————————————————————+   /+————————————————+
+                     |     |                      |  / |  status        |  
+                     |     +——————————————————————+ /  |  func_id == 0--|-----
+                     ----->|                      |<   |  func_data     |    |
+                           +——————————————————————+ \  |  ret_code      |    |
+                           |                      |  \ |                |    |
+                           +——————————————————————+   \+————————————————+    |
+                           |                      |                          |  
+                           +——————————————————————+                          | index to call_table
+                                                                             |
+                                                                             |    
+call_table.funcs[]                                                           |
+                          array of function pointers                         |
+                           +——————————————————————+                          |
+                           |       func1          |<--------------------------
+                           +——————————————————————+
+                           |        NULL          |
+                           +——————————————————————+
+                           |       func2          |
+                           +——————————————————————+
+                           |       func4          |
+                           +——————————————————————+
+                           |        NULL          |
+                           +——————————————————————+
+
+
+For ECALL manager all of the data is allocated outside the enclave, except call_table
+For OCALL manager all of the data is allocated outside the enclave, except siglines.free_lines
+
+Flow of the swtichless call request (sending threads): 
+      1) scan the free_lines bitmap for a bit with value==1, atomically change bit to 0, save the bit index => line
+      2) fill the data in tasks[line]
+      3) set status of tasks[line] to SL_SUBMITTED
+      4) set atomically bit[line] to 1 in event_lines bitmap. i.e. signal to other side that the task is ready 
+      5) start polling status of tasks[line] for specified number of tries
+         5.1) if tasks[line] status has not been changed, revoke signal by atomically changing bit[line] to 0 in event_lines bitmap
+         5.2) return to caller
+      6) wait till the status in tasks[line] changes to SL_DONE (polling)
+      7) get the return code from tasks[line]
+      8) set atomically bit[line] to 1 in free_lines bitmap
+
+Flow of processing the switchless call request (in the loop, worker threads):
+      1) scan the event_lines bitmap for a bit with value==1, atomically change bit to 0, save the bit index => line
+      2) set status of tasks[line] to SL_ACCEPTED
+      3) execute function using func_id as index to call_table.funcs[], save return code in tasks[line]
+      4) set status of tasks[line] to SL_DONE 
+
+
+**************************************************************************************************************/
+
 
 __BEGIN_DECLS
 
 #ifndef SL_INSIDE_ENCLAVE /* Untrusted */
 
-int sl_fcall_mngr_init(struct sl_fcall_mngr* mngr,
-                        sl_fcall_type_t type,
-                        uint32_t max_pending_ocalls);
-void sl_fcall_mngr_destroy(struct sl_fcall_mngr* mngr);
+int sl_call_mngr_init(struct sl_call_mngr* mngr,
+                       sl_call_type_t type,
+                       uint32_t max_pending_ocalls);
+
+void sl_call_mngr_destroy(struct sl_call_mngr* mngr);
 
 #else /* Trusted */
 
-int sl_fcall_mngr_clone(struct sl_fcall_mngr* mngr,
-                         struct sl_fcall_mngr* untrusted);
+int sl_call_mngr_clone(struct sl_call_mngr* mngr,
+                        const struct sl_call_mngr* untrusted);
 
 #endif /* SL_INSIDE_ENCLAVE */
 
-static inline sl_fcall_type_t sl_fcall_mngr_get_type(struct sl_fcall_mngr* mngr) {
-    return mngr->fmn_type;
+static inline sl_call_type_t sl_call_mngr_get_type(struct sl_call_mngr* mngr) {
+    return mngr->type;
 }
 
-void sl_fcall_mngr_register_calls(struct sl_fcall_mngr* mngr,
-                                  const sl_fcall_table_t* call_table);
+void sl_call_mngr_register_calls(struct sl_call_mngr* mngr,
+                                  const sl_call_table_t* call_table);
 
-uint32_t sl_fcall_mngr_process(struct sl_fcall_mngr* mngr);
+uint32_t sl_call_mngr_process(struct sl_call_mngr* mngr);
 
-int sl_fcall_mngr_call(struct sl_fcall_mngr* mngr, struct sl_fcall_buf* buf_u,
+int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_task* call_task,
                        uint32_t max_tries);
 
 __END_DECLS

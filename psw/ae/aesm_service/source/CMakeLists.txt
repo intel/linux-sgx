@@ -36,6 +36,41 @@ set(CMAKE_CXX_STANDARD_REQUIRED 1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_SKIP_BUILD_RPATH true)
 
+########## SGX SDK Settings ##########
+set(SGX_ARCH x64)
+execute_process (
+    COMMAND /usr/bin/getconf LONG_BIT
+    OUTPUT_VARIABLE LONG_BIT
+)
+
+if(${LONG_BIT} EQUAL 32)
+    set(SGX_ARCH x86)
+else()
+    string(FIND "${CMAKE_CXX_FLAGS}" "-m32" M32_FLAG)
+    if (${M32_FLAG} GREATER -1)
+        set(SGX_ARCH x86)
+    endif()
+endif()
+
+if(DEFINED ENV{SGX_SDK})
+    message ("SGX_SDK environment variable defined: " $ENV{SGX_SDK})
+else()
+    message ("SGX_SDK environment variable not defined, will be set to /opt/intel/sgxsdk")
+    set(ENV{SGX_SDK} /opt/intel/sgxsdk)
+endif()
+set(SGX_HEADER_DIR $ENV{SGX_SDK}/include)
+
+if(${SGX_ARCH} STREQUAL x86)
+    set(SGX_LIB_DIR $ENV{SGX_SDK}/lib)
+    set(SGX_BIN_DIR $ENV{SGX_SDK}/bin/x86)
+else()
+    set(SGX_LIB_DIR $ENV{SGX_SDK}/lib64)
+    set(SGX_BIN_DIR $ENV{SGX_SDK}/bin/x64)
+endif()
+set(SGXSIGN ${SGX_BIN_DIR}/sgx_sign)
+set(EDGER8R ${SGX_BIN_DIR}/sgx_edger8r)
+######################################
+
 set(ModularAESM_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(ModularAESM_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(ModularAESM_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")

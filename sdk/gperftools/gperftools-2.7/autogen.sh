@@ -10,17 +10,15 @@ autoreconf -i
 
 if [ "$1" = "DEBUG" ] 
 then
-    COMMON_FLAGS="-g3 -O0 -DTCMALLOC_SGX_DEBUG"
+    COMMON_FLAGS="-DTCMALLOC_SGX_DEBUG"
 else
-    COMMON_FLAGS="-g -O2 -D_FORTIFY_SOURCE=2"
+    COMMON_FLAGS="-D_FORTIFY_SOURCE=2"
 fi
 
-COMMON_FLAGS="$COMMON_FLAGS -DNO_HEAP_CHECK -DTCMALLOC_SGX -DTCMALLOC_NO_ALIASES $2 $3"
+COMMON_FLAGS="$COMMON_FLAGS -DNO_HEAP_CHECK -DTCMALLOC_SGX -DTCMALLOC_NO_ALIASES"
 
-ENCLAVE_CFLAGS="$COMMON_FLAGS -ffreestanding -nostdinc -fvisibility=hidden -fPIC"
-ENCLAVE_CXXFLAGS="$ENCLAVE_CFLAGS -nostdinc++ -std=c++11"
-CFLAGS="$CFLAGS $ENCLAVE_CFLAGS"
-CXXFLAGS="$CXXFLAGS $ENCLAVE_CXXFLAGS"
+CFLAGS="$CFLAGS $ENCLAVE_CFLAGS $COMMON_FLAGS"
+CXXFLAGS="$CXXFLAGS $ENCLAVE_CXXFLAGS $COMMON_FLAGS"
 CPPFLAGS="-I../../../common/inc -I../../../common/inc/tlibc -I../../../common/inc/internal/ -I../../../sdk/tlibcxx/include -I../../../sdk/trts/"
 
 #if echo $CFLAGS | grep -q -- '-m32'; then
@@ -31,6 +29,7 @@ export CFLAGS
 export CXXFLAGS
 export CPPFLAGS
 $srcdir/configure $HOST_OPT --enable-shared=no \
+   --with-pic \
    --disable-cpu-profiler \
    --disable-heap-profiler       \
    --disable-heap-checker \

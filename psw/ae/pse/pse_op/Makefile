@@ -36,9 +36,6 @@ CXXFLAGS  += -Werror
 CFLAGS    += -Werror 
 
 INCLUDE += -I.                                   \
-           -I$(SGX_IPP_INC)/                     \
-           -I$(LINUX_SDK_DIR)/tseal              \
-           -I$(TOP_DIR)/common/inc               \
            -I$(LINUX_PSW_DIR)/ae/inc/internal
 
 SRC := $(wildcard *.cpp)
@@ -53,7 +50,7 @@ OBJS := $(sort $(OBJ) version.o)
 all: $(SONAME) 
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -lsgx_tstdc
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
 	$(STRIP)  --strip-unneeded $(SONAME)
 
 $(OBJ): $(AENAME)_t.c
@@ -61,7 +58,7 @@ $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
+	@$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 .PHONY: clean
 clean:

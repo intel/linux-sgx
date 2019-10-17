@@ -35,152 +35,194 @@
 #endif
 
 
-sl_siglines_dir_t fcall_type2direction(sl_fcall_type_t type) 
+sl_siglines_dir_t call_type2direction(sl_call_type_t type) 
 {
     /* Use C99's designated initializers to make this conversion more readable */
     static sl_siglines_dir_t table[2] = {
-        [SL_FCALL_TYPE_OCALL] = SL_SIGLINES_DIR_T2U,
-        [SL_FCALL_TYPE_ECALL] = SL_SIGLINES_DIR_U2T
+        [SL_TYPE_OCALL] = SL_SIGLINES_DIR_T2U,
+        [SL_TYPE_ECALL] = SL_SIGLINES_DIR_U2T
     };
     return table[type];
 }
 
 //returns true if calling thread can process this type of calls
-int can_type_process(sl_fcall_type_t type) 
+int can_type_process(sl_call_type_t type) 
 {
 #ifdef SL_INSIDE_ENCLAVE /* Trusted */
-    return type == SL_FCALL_TYPE_ECALL;
+    return type == SL_TYPE_ECALL;
 #else /* Untrusted */
-    return type == SL_FCALL_TYPE_OCALL;
+    return type == SL_TYPE_OCALL;
 #endif
 }
 
 //returns true if calling thread can initiate this type of calls
-int can_type_call(sl_fcall_type_t type) 
+int can_type_call(sl_call_type_t type) 
 {
 #ifdef SL_INSIDE_ENCLAVE /* Trusted */
-    return type == SL_FCALL_TYPE_OCALL;
+    return type == SL_TYPE_OCALL;
 #else /* Untrusted */
-    return type == SL_FCALL_TYPE_ECALL;
+    return type == SL_TYPE_ECALL;
 #endif
 }
 
 
-void sl_fcall_mngr_register_calls(struct sl_fcall_mngr* mngr,
-                                  const sl_fcall_table_t* call_table)
+void sl_call_mngr_register_calls(struct sl_call_mngr* mngr,
+                                  const sl_call_table_t* call_table)
 {
     BUG_ON(call_table == NULL);
-    mngr->fmn_call_table = call_table;
+    mngr->call_table = call_table;
 }
 
 
-void process_fcall(struct sl_siglines* siglns, sl_sigline_t line) 
+void process_switchless_call(struct sl_siglines* siglns, sl_sigline_t line) 
 {
-    struct sl_fcall_mngr* mngr = CONTAINER_OF(siglns, struct sl_fcall_mngr, fmn_siglns);
+    /* 
 
-    const sl_fcall_table_t* call_table = mngr->fmn_call_table;
+      Main processing function which is called by a worker thread(trusted or untrusted) 
+      from sl_siglines_process_signals() function when there is a pending request for a switchless ECALL/OCALL.
+
+      siglns points to the untrusted data structure with pending requests bitmap,
+      siglns is checked by sl_siglines_clone() function before use by the enclave
+
+      line indicates which bit is set
+
+    */
+
+#ifdef SL_INSIDE_ENCLAVE /* trusted */
+    if (sgx_is_enclave_crashed())
+        return;
+#endif
+    
+    // siglns is a memeber of sl_call_mngr structure
+    // get the proper call manager (ECALL manager for trusted, OCALL manager for untrusted)
+    struct sl_call_mngr* mngr = CONTAINER_OF(siglns, struct sl_call_mngr, siglns);
+
+    // mngr structure and its content are checked by sl_call_mngr_clone() function before use. 
+    // see init_tswitchless_ecall_mngr(void)
+    const sl_call_table_t* call_table = mngr->call_table;
     BUG_ON(call_table == NULL);
 
-    struct sl_fcall_buf* buf_u = mngr->fmn_bufs[line]; 
-    BUG_ON(buf_u->fbf_status != SL_FCALL_STATUS_SUBMITTED);
-    buf_u->fbf_status = SL_FCALL_STATUS_ACCEPTED;
+    // get the pointer to the structure with the call request (function id and input params for call)
+    // tasks array resides outside enclave. checked by sl_call_mngr_clone() function before use.  
+    // see init_tswitchless_ecall_mngr(void)
+    struct sl_call_task *call_task_u = &mngr->tasks[line];
 
-	uint32_t func_id = buf_u->fbf_fn_id;
+    BUG_ON(call_task_u->status != SL_SUBMITTED);
+    call_task_u->status = SL_ACCEPTED;
+
+    uint32_t func_id = call_task_u->func_id;
 
     /* Get the function pointer */
-    sl_fcall_func_t fcall_func = NULL;
-    if (unlikely(func_id >= call_table->ftb_size)) 
-	{
-        buf_u->fbf_ret = SGX_ERROR_INVALID_FUNCTION;
-        goto on_done;
-    }
-	
-	sgx_lfence();
-
-    fcall_func = call_table->ftb_func[func_id];
-    if (unlikely(fcall_func == NULL)) 
-	{
-        buf_u->fbf_ret = mngr->fmn_type == SL_FCALL_TYPE_ECALL ?
-                            SGX_ERROR_ECALL_NOT_ALLOWED :
-                            SGX_ERROR_OCALL_NOT_ALLOWED ;
+    sl_call_func_t call_func_ptr = NULL;
+    if (unlikely(func_id >= call_table->size))
+    {
+        call_task_u->ret_code = SGX_ERROR_INVALID_FUNCTION;
         goto on_done;
     }
 
-	sgx_lfence();
-    /* Do the call */
-    buf_u->fbf_ret = fcall_func(buf_u->fbf_ms_ptr);
+    sgx_lfence();
+
+    call_func_ptr = call_table->funcs[func_id];
+    if (unlikely(call_func_ptr == NULL))
+    {
+        call_task_u->ret_code = mngr->type == SL_TYPE_ECALL ?
+            SGX_ERROR_ECALL_NOT_ALLOWED :
+            SGX_ERROR_OCALL_NOT_ALLOWED;
+        goto on_done;
+    }
+
+    // Do the call.
+    // func_data should point to untrusted buffer and should be checked by invoked function
+    // in our case, edre8r generated code is performing the check
+    call_task_u->ret_code = call_func_ptr(call_task_u->func_data);
 
 on_done:
-    /* Notify the caller that the Fast Call is done by updating the status.
-     * The memory barrier ensures that Fast Call results are visible to the
-     * caller when it finds out that the status becomes DONE. */
+    /* Notify the caller that the switchless is done by updating the status.
+    * The memory barrier ensures that switchless results are visible to the
+    * caller when it finds out that the status becomes SL_DONE. */
     sgx_mfence();
-    buf_u->fbf_status = SL_FCALL_STATUS_DONE;
+    call_task_u->status = SL_DONE;
 }
 
-uint32_t sl_fcall_mngr_process(struct sl_fcall_mngr* mngr) 
+uint32_t sl_call_mngr_process(struct sl_call_mngr* mngr) 
 {
-    BUG_ON(!can_type_process(mngr->fmn_type));
-    return sl_siglines_process_signals(&mngr->fmn_siglns);
+    BUG_ON(!can_type_process(mngr->type));
+    return sl_siglines_process_signals(&mngr->siglns);
 }
 
 
-int sl_fcall_mngr_call(struct sl_fcall_mngr* mngr, struct sl_fcall_buf* buf_u,
+int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_task* call_task,
                        uint32_t max_tries)
 {
-    BUG_ON(!can_type_call(mngr->fmn_type));
+    /*  
+        Used to make actual switchless call by both enclave & untrusted code
+        
+        mngr:      points to ECALL or OCALL manager. For enclave, OCALL mngr and all its content are checkeds in sl_mngr_clone() function
+                   see init_tswitchless_ocall_mngr()
+
+        call_task: contains all the information of function to be called,  
+                   when called by enclave to make OCALL, call_task resides on enclaves stack 
+    */
+
+    BUG_ON(!can_type_call(mngr->type));
 
     int ret = 0;
 
     /* Allocate a free signal line to send signal */
-    struct sl_siglines* siglns = &mngr->fmn_siglns;
+    struct sl_siglines* siglns = &mngr->siglns;
     sl_sigline_t line = sl_siglines_alloc_line(siglns);
     if (line == SL_INVALID_SIGLINE) 
         return -EAGAIN;
 
-    BUG_ON(buf_u->fbf_status != SL_FCALL_STATUS_INIT);
-    buf_u->fbf_status = SL_FCALL_STATUS_SUBMITTED;
+    BUG_ON(call_task->status != SL_INIT);
+    call_task->status = SL_SUBMITTED;
 
-    /* Send a signal so that workers will access the buffer for Fast Call
+    // copy task data to internal array accessable by both sides (trusted & untrusted)
+    mngr->tasks[line] = *call_task;
+
+    /* Send a signal so that workers will access the buffer for switchless call
      * requests. Here, a memory barrier is used to make sure the buffer is
      * visible when the signal is received on other CPUs. */
-    mngr->fmn_bufs[line] = buf_u;
     sgx_mfence();
 
     sl_siglines_trigger_signal(siglns, line);
 
-	while ((buf_u->fbf_status == SL_FCALL_STATUS_SUBMITTED) && (--max_tries > 0))
-	{
-        #ifdef SL_INSIDE_ENCLAVE /* trusted */
+    // wait till the other side has picked the task for processing
+    while ((mngr->tasks[line].status == SL_SUBMITTED) && (--max_tries > 0))
+    {
+#ifdef SL_INSIDE_ENCLAVE /* trusted */
         if (sgx_is_enclave_crashed())
             return SGX_ERROR_ENCLAVE_CRASHED;
-        #endif
-		asm_pause();
-	}
+#endif
+        asm_pause();
+    }
 
     if (unlikely(max_tries == 0))
-	{
-        if (sl_siglines_revoke_signal(siglns, line) == 0) 
-		{
+    {
+        if (sl_siglines_revoke_signal(siglns, line) == 0)
+        {
             ret = -EAGAIN;
             goto on_exit;
         }
         /* Otherwise, the signal is not revoked succesfully, meaning this
-         * call is being or has been processed by workers. So we continue. */
+        * call is being or has been processed by workers. So we continue. */
     }
 
     /* The request must has been accepted. Now wait for its completion */
-    while (buf_u->fbf_status != SL_FCALL_STATUS_DONE)
+    while (mngr->tasks[line].status != SL_DONE)
     {
-        #ifdef SL_INSIDE_ENCLAVE /* trusted */
+#ifdef SL_INSIDE_ENCLAVE /* trusted */
         if (sgx_is_enclave_crashed())
             return SGX_ERROR_ENCLAVE_CRASHED;
-        #endif
+#endif
         asm_pause();
     }
 
+    // copy the return code
+    call_task->ret_code = mngr->tasks[line].ret_code;
+
 on_exit:
-    mngr->fmn_bufs[line] = NULL;
+    mngr->tasks[line].func_id = SL_INVALID_FUNC_ID;
     sl_siglines_free_line(siglns, line);
     return ret;
 }

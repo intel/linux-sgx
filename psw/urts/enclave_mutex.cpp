@@ -34,7 +34,7 @@
 #include "enclave.h"
 #include "se_event.h"
 
-#include "internal/se_error_internal.h"
+#include "se_error_internal.h"
 
 /* wait on untrusted event */
 extern "C" int sgx_thread_wait_untrusted_event_ocall(const void *self)

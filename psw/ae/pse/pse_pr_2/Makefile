@@ -36,21 +36,16 @@ CFLAGS   += -Werror
 #CXXFLAGS += -Werror
 DEFINES  += -DPSE_PR_20
 
-EPID_SDK_DIR := $(TOP_DIR)/external/epid-sdk/
-
-INCLUDE += -I.                                   \
-           -I../pse_pr                           \
-           -I../pse_pr/include                   \
-           -I$(TOP_DIR)/sdk/tlibcxx/include      \
-           -I$(LINUX_PSW_DIR)/ae/common          \
-           -I$(SGX_IPP_INC)/                     \
-           -I$(LINUX_SDK_DIR)/tseal              \
-           -I$(EPID_SDK_DIR)                     \
-           -I$(TOP_DIR)/common/inc               \
-           -I$(LINUX_PSW_DIR)/ae/inc/internal    \
+INCLUDE += -I.                                  \
+           -I../pse_pr                          \
+           -I../pse_pr/include                  \
+           -I$(LINUX_PSW_DIR)/ae/inc/internal   \
+           -I$(LINUX_PSW_DIR)/ae/common         \
+           -I$(SGX_HEADER_DIR)/libcxx           \
+           -I$(EPID_SDK_DIR)                    \
            -I$(LINUX_PSW_DIR)/ae/data/constants/linux
 
-EXTERNAL_LIB += -lsgx_tcxx -lsgx_tcrypto                \
+EXTERNAL_LIB += -lsgx_tcxx                                 \
                 -L$(EPID_SDK_DIR)/epid/verifier -lverifier \
                 -L$(EPID_SDK_DIR)/epid/common -lcommon
 
@@ -78,7 +73,7 @@ $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --search-path ../../../../common/inc/ --trusted $<
+	$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 .PHONY: clean
 clean:

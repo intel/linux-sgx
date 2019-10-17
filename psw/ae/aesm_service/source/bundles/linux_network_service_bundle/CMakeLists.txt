@@ -11,7 +11,7 @@ CreateBundle(${bundle} ${_srcs})
 target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/common
 	${PROJECT_SOURCE_DIR}/common/oal
-	${PROJECT_SOURCE_DIR}/../../../../common/inc
+	${SGX_HEADER_DIR}
 	${PROJECT_SOURCE_DIR}/../../../../common/inc/internal
 	${PROJECT_SOURCE_DIR}/../../inc
 	${PROJECT_SOURCE_DIR}/../../inc/internal

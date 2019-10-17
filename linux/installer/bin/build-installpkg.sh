@@ -57,7 +57,14 @@ BUILD_DIR=${ROOT_DIR}/build/linux
 # Get the architecture of the build from generated binary
 get_arch()
 {
-    local a=$(readelf -h $BUILD_DIR/sgx_sign | sed -n '2p' | awk '{print $6}')
+    case "$INSTALLER_TYPE" in
+        psw)
+            local a=$(readelf -h $BUILD_DIR/aesm_service | sed -n '2p' | awk '{print $6}')
+        ;;
+        sdk)
+            local a=$(readelf -h $BUILD_DIR/sgx_sign | sed -n '2p' | awk '{print $6}')
+        ;;
+    esac
     test $a = 01 && echo 'x86' || echo 'x64'
 }
  

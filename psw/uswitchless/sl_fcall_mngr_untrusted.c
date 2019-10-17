@@ -31,34 +31,41 @@
 
 #include "sl_fcall_mngr_common.h"
 
-int sl_fcall_mngr_init(struct sl_fcall_mngr* mngr,
-                       sl_fcall_type_t type,
+int sl_call_mngr_init(struct sl_call_mngr* mngr,
+                       sl_call_type_t type,
                        uint32_t max_pending_calls)
 {
-    mngr->fmn_type = type;
+    uint32_t i;
+    mngr->type = type;
 
-    struct sl_fcall_buf** bufs = (struct sl_fcall_buf**)calloc(max_pending_calls, sizeof(bufs[0]));
-    if (bufs == NULL) 
+    struct sl_call_task* tasks = (struct sl_call_task*)calloc(max_pending_calls, sizeof(tasks[0]));
+    if (tasks == NULL) 
         return -ENOMEM;
-    
-    mngr->fmn_bufs = bufs;
 
-    int ret = sl_siglines_init(&mngr->fmn_siglns,
-                                fcall_type2direction(type),
+    // because zero is a valid function id, initialize struct field to a special value
+    for (i = 0; i < max_pending_calls; i++)
+    {
+        tasks[i].func_id = SL_INVALID_FUNC_ID;
+    }
+    
+    mngr->tasks = tasks;
+
+    int ret = sl_siglines_init(&mngr->siglns,
+                                call_type2direction(type),
                                 max_pending_calls,
-                                can_type_process(type) ? process_fcall : NULL);
+                                can_type_process(type) ? process_switchless_call : NULL);
     if (ret) 
     { 
-        free(bufs); 
+        free(tasks); 
         return ret; 
     }
 
-    mngr->fmn_call_table = NULL;
+    mngr->call_table = NULL;
     return 0;
 }
 
-void sl_fcall_mngr_destroy(struct sl_fcall_mngr* mngr) 
+void sl_call_mngr_destroy(struct sl_call_mngr* mngr) 
 {
-    sl_siglines_destroy(&mngr->fmn_siglns);
-    free(mngr->fmn_bufs);
+    sl_siglines_destroy(&mngr->siglns);
+    free(mngr->tasks);
 }

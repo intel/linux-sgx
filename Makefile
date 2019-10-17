@@ -29,14 +29,31 @@
 #
 #
 
-DCAP_VER?= 1.2
+DCAP_VER?= 1.3
 DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
+
+CHECK_OPT :=
+ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration)", "")
+CHECK_OPT := dcap_source
+endif
 
 include buildenv.mk
 .PHONY: all dcap_source psw sdk clean rebuild sdk_install_pkg psw_install_pkg
 .NOTPARALLEL: dcap_source sdk psw
 
-all: dcap_source sdk psw
+all: tips
+
+tips:
+	@echo "Tips:"
+	@echo "     This \"make\" command will show tips only and make nothing."
+	@echo "     1. If you want to build Intel(R) SGX SDK with default configuration, please take the following steps:"
+	@echo "        1) ensure that you have installed required tools described in README.md in same directory"
+	@echo "        2) enter the command: \"make sdk\""
+	@echo "     2. If you want to build Intel(R) SGX PSW with default configuration, please take the following steps:"
+	@echo "        1) ensure that you have installed additional required tools decribed in README.md in same directory"
+	@echo "        2) ensure that you have installed latest Intel(R) SGX SDK Installer which could be downloaded from: https://software.intel.com/en-us/sgx-sdk/download" and followed Installation Guide in the same page to finish installation.
+	@echo "        3) enter the commmand: \"make psw\""
+	@echo "     3. If you want to build other targets, please also follow README.md in same directory"
 
 dcap_source:
 ifeq ($(shell git rev-parse --is-inside-work-tree), true)
@@ -49,10 +66,10 @@ else
 	mv SGXDataCenterAttestationPrimitives-DCAP_${DCAP_VER} external/dcap_source
 endif
 
-psw: dcap_source sdk
+psw: $(CHECK_OPT)
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 
-sdk: dcap_source
+sdk: 
 	$(MAKE) -C sdk/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 
 # Generate SE SDK Install package

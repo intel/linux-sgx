@@ -13,7 +13,7 @@ The Linux\* Intel(R) SGX software stack is comprised of the Intel(R) SGX driver,
 
 The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. 
 
-The repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implemenation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
+The repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
 
 License
 -------
@@ -41,7 +41,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * Red Hat Enterprise Linux Server release 7.6 64bits
+  * Red Hat Enterprise Linux Server release 8.0 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -55,10 +55,10 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev
   ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0 and CentOS 7.5:
   ```
     $ sudo yum groupinstall 'Development Tools'
-    $ sudo yum install ocaml ocaml-ocamlbuild wget python openssl-devel
+    $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel
   ```
   * On Fedora 27:
   ```
@@ -70,60 +70,54 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo zypper install --type pattern devel_basis
     $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel
   ```
-- Use the following command to install additional required tools to build the Intel(R) SGX PSW:  
-  * On Ubuntu 16.04 and Ubuntu 18.04:
-  ```
-    $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake
-  ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6, CentOS 7.5 and Fedora 27:
-  ```
-    $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake
-  ```
-  * On SUSE Linux Enterprise Server 12:
-  ```
-    $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake
-  ```
+- Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:  
+  1)  To install the additional required tools:
+      * On Ubuntu 16.04 and Ubuntu 18.04:
+      ```
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake
+      ```
+      * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5 and Fedora 27:
+      ```
+        $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake
+      ```
+      * On SUSE Linux Enterprise Server 12:
+      ```
+        $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake
+      ```
+  2) To install latest Intel(R) SGX SDK Installer
+  Ensure that you have downloaded latest Intel(R) SGX SDK Installer from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and followed the Installation Guide in the same page to install latest Intel(R) SGX SDK Installer.
+  
 - Use the script ``download_prebuilt.sh`` inside source code package to download prebuilt binaries to prebuilt folder  
   You may need set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
 ```
   $ ./download_prebuilt.sh
 ```
 
-### Build the Intel(R) SGX SDK and Intel(R) SGX PSW
-The following steps describe how to build the Intel(R) SGX SDK and PSW. You can build the project according to your requirements.  
-- To build both Intel(R) SGX SDK and PSW with default configuration, enter the following command:  
+### Build the Intel(R) SGX SDK and Intel(R) SGX SDK Installer
+- To build Intel(R) SGX SDK with default configuration, enter the following command:
 ```
-  $ make  
+  $ make sdk
 ```  
-  You can find the tools and libraries generated in the `build/linux` directory.     
-  **Note**: You can also go to the `sdk` folder and use the `make` command to build the Intel(R) SGX SDK component only. However, building the PSW component is dependent on the result of building the Intel(R) SGX SDK.  
+You can find the tools and libraries generated in the `build/linux` directory.
+  **Note**: You can also go to the `sdk` folder and use the `make` command to build the Intel(R) SGX SDK component only. 
 
 - This repository supports to build the Intel(R) SGX SDK based on either precompiled optimized IPP/string/math libraries or open sourced version of SGXSSL/string/math libraries. 
   The default build uses precompiled optimized libraries, which are downloaded by the script ``./download_prebuilt.sh``.
   You can also use the open sourced version implementation instead by entering the following command:
 ```
-  $ make USE_OPT_LIBS=0
+  $ make sdk USE_OPT_LIBS=0
 ```
-  **Note**: Building the Intel(R) SGX PSW with open sourced SGXSSL/string/math libraries is not supported. The above command builds Intel(R) SGX SDK only and the build of PSW part will be skipped.
+  **Note**: Building the Intel(R) SGX PSW with open sourced SGXSSL/string/math libraries is not supported. 
 
-- To build Intel(R) SGX SDK and PSW with debug information, enter the following command:  
+- To build Intel(R) SGX SDK with debug information, enter the following command:
 ```
-  $ make DEBUG=1
+  $ make sdk DEBUG=1
 ```
-- To clean the files generated by previous `make` command, enter the following command:  
+- To clean the files generated by previous `make sdk` command, enter the following command:  
 ```
   $ make clean
 ```
-
-- The build above uses prebuilt Intel(R) Architecture Enclaves(LE/PvE/QE/PCE/PSE-OP/PSE-PR) and applet(PSDA) - the files ``psw/ae/data/prebuilt/libsgx_*.signed.so`` and ``psw/ae/data/prebuilt/PSDA.dalp``, which have been signed by Intel in advance.
-  To build those enclaves by yourself (without a signature), first you need to build both Intel(R) SGX SDK and PSW with the default configuration. After that, you can build each Architecture Enclave by using the `make` command from the corresponding folder:
-```
-  $ cd psw/ae/le
-  $ make
-``` 
-
-### Build the Intel(R) SGX SDK Installer
-To build the Intel(R) SGX SDK installer, enter the following command:
+- To build the Intel(R) SGX SDK installer, enter the following command:
 ```
 $ make sdk_install_pkg
 ```
@@ -134,10 +128,30 @@ You can find the generated Intel(R) SGX SDK installer ``sgx_linux_x64_sdk_${vers
 $ make sdk_install_pkg DEBUG=1
 ```
 
-### Build the Intel(R) SGX PSW Installer
-To build the Intel(R) SGX PSW installer, enter the following command:
-- On Ubuntu 16.04 and Ubuntu 18.04:
-  ```
+### Build the Intel(R) SGX PSW and Intel(R) SGX PSW Installer
+- To build Intel(R) SGX PSW with default configuration, enter the following command:
+```
+  $ make psw
+```
+You can find the tools and libraries generated in the `build/linux` directory.
+  **Note**: You can also go to the `psw` folder and use the `make` command to build the Intel(R) SGX PSW component only.  
+- To build Intel(R) SGX PSW with debug information, enter the following command:
+```
+  $ make psw DEBUG=1
+```
+- To clean the files generated by previous `make psw` command, enter the following command:  
+```
+  $ make clean
+```
+- The build above uses prebuilt Intel(R) Architecture Enclaves(LE/PvE/QE/PCE/PSE-OP/PSE-PR) and applet(PSDA) - the files ``psw/ae/data/prebuilt/libsgx_*.signed.so`` and ``psw/ae/data/prebuilt/PSDA.dalp``, which have been signed by Intel in advance.
+  To build those enclaves by yourself (without a signature), first you need to install latest Intel(R) SGX SDK from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and then build PSW with the default configuration. After that, you can build each Architecture Enclave by using the `make` command from the corresponding folder:
+```
+  $ cd psw/ae/le
+  $ make
+``` 
+- To build the Intel(R) SGX PSW installer, enter the following command:
+  * On Ubuntu 16.04 and Ubuntu 18.04:
+   ```
   $ make deb_pkg
   ```
   You can find the generated Intel(R) SGX PSW installer ``libsgx-urts_${version}-${revision}_amd64.deb`` and ``libsgx-enclave-common_${version}-${revision}_amd64.deb`` located under `linux/installer/deb`, where `${version}` refers to the version number and the `${revision}` refers to the revision number of the package.   
@@ -149,9 +163,9 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make deb_pkg DEBUG=1
   ```
-- On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
-- On Fedora 27:
-- On SUSE Linux Enterprise Server 12:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0 and CentOS 7.5:
+  * On Fedora 27:
+  * On SUSE Linux Enterprise Server 12:
   ```
   $ make psw_install_pkg
   ```
@@ -161,8 +175,8 @@ To build the Intel(R) SGX PSW installer, enter the following command:
   ```
   $ make psw_install_pkg DEBUG=1
   ```
-To build the Intel(R) SGX PSW development installer separately, enter the following command:
-- On Ubuntu 16.04 and Ubuntu 18.04:
+- To build the Intel(R) SGX PSW development installer separately, enter the following command:
+  * On Ubuntu 16.04 and Ubuntu 18.04:
   ```
   $ make deb_sgx_enclave_common_dev_pkg
   ```
@@ -177,7 +191,7 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * Red Hat Enterprise Linux Server release 7.6 64bits
+  * Red Hat Enterprise Linux Server release 8.0 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -186,7 +200,7 @@ Install the Intel(R) SGX SDK
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0 and CentOS 7.5:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python 
@@ -243,7 +257,7 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.4 64bits
-  * Red Hat Enterprise Linux Server release 7.6 64bits
+  * Red Hat Enterprise Linux Server release 8.0 64bits
   * CentOS 7.5 64bits
   * Fedora 27 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
@@ -256,7 +270,7 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6, CentOS 7.5 and Fedora 27:  
+  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5 and Fedora 27:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -277,7 +291,7 @@ To install the Intel(R) SGX PSW, invoke the installer with root privilege:
   $ cd linux/installer/deb
   $ sudo dpkg -i ./libsgx-enclave-common-dbgsym_${version}-${revision}_amd64.ddeb
   ```
-- On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 7.6 and CentOS 7.5:
+- On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0 and CentOS 7.5:
 - On Fedora 27:
 - On SUSE Linux Enterprise Server 12:
   ```
@@ -285,20 +299,18 @@ To install the Intel(R) SGX PSW, invoke the installer with root privilege:
   $ sudo ./sgx_linux_x64_psw_${version}.bin
   ```
 ### ECDSA attestation
-To enable ECDSA attestation
+To enable ECDSA attestation    
 - Ensure that you have the following required hardware:
   * 8th Generation Intel(R) Core(TM) Processor or newer with **Flexible Launch Control** support*
   * Intel(R) Atom(TM) Processor with **Flexible Launch Control** support*
-- To use ECDSA attestation, you must install Intel(R) Software Guard Extensions Driver for Data Center Attestation Primitives (Intel(R) SGX DCAP). Please follow the [Intel® SGX DCAP Installation Guide for Linux* OS](https://download.01.org/intel-sgx/latest/dcap-latest/linux/docs/Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf), section “Intel® SGX Driver”, to install the Intel(R) SGX DCAP driver.  
-**NOTE**: If you have already installed Intel(R) SGX driver without ECDSA attestation, please uninstall the driver firstly. Otherwise the newly installed ECDSA attestation enabled Intel(R) SGX driver will be unworkable.
+- To use ECDSA attestation, you must install Intel(R) Software Guard Extensions Driver for Data Center Attestation Primitives (Intel(R) SGX DCAP).
+Please follow the [Intel(R) SGX DCAP Installation Guide for Linux* OS](https://download.01.org/intel-sgx/latest/dcap-latest/linux/docs/Intel_SGX_DCAP_Linux_SW_Installation_Guide.pdf) to install the Intel(R) SGX DCAP driver.
+
+**NOTE**: If you had already installed Intel(R) SGX driver without ECDSA attestation, please uninstall the driver firstly and then install the Intel(R) SGX DCAP driver. Otherwise the newly installed Intel(R) SGX DCAP driver will be unworkable.
 
 - Install PCK Caching Service. For how to install and configure PCK Caching
 Service, please refer to [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration/pccs)
-- Ensure the PCK Caching Service is setup correctly by local administrator
-or data center administrator. Also make sure that the configure file of 
-quote provider library (/etc/sgx_default_qcnl.conf) needs to be consistent
-with the real environment, for example:
-PCS_URL=https://your_pcs_server:8081/sgx/certification/v1/
+- Ensure the PCK Caching Service is setup correctly by local administrator or data center administrator. Also make sure that the configure file of quote provider library (/etc/sgx_default_qcnl.conf) is consistent with the real environment, for example: PCS_URL=https://your_pcs_server:8081/sgx/certification/v1/
 
 ### Start or Stop aesmd Service
 The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.  

@@ -41,6 +41,10 @@ LINUX_INSTALLER_COMMON_ECL_DIR="${LINUX_INSTALLER_COMMON_DIR}/libsgx-enclave-com
 LINUX_OS_ID=$(grep "^ID=" /usr/lib/os-release 2> /dev/null | awk -F'=' '{print $2}')
 
 source ${LINUX_INSTALLER_COMMON_ECL_DIR}/installConfig.x64
+SGX_PKG_PATH=${ECL_PKG_PATH}
+if [ "${LINUX_OS_ID}" = "clear-linux-os" ]; then
+    SGX_PKG_PATH=/usr/share
+fi
 
 SGX_VERSION=$(awk '/STRFILEVER/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 PSW_PKG_NAME=sgxpsw
@@ -48,7 +52,7 @@ RPM_BUILD_FOLDER=${PSW_PKG_NAME}-${SGX_VERSION}
 
 main() {
     pre_build
-    update_version
+    update_spec
     create_upstream_tarball
     build_rpm_package
     post_build
@@ -67,9 +71,10 @@ post_build() {
     rm -fR ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
 }
 
-update_version() {
+update_spec() {
     pushd ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}
-    sed -i "s/@version@/${SGX_VERSION}/" SPECS/${PSW_PKG_NAME}.spec
+    sed -i "s#@version@#${SGX_VERSION}#" SPECS/${PSW_PKG_NAME}.spec
+    sed -i "s#@install_path@#${SGX_PKG_PATH}/${PSW_PKG_NAME}#" SPECS/${PSW_PKG_NAME}.spec
     popd
 }
 
@@ -78,12 +83,9 @@ create_upstream_tarball() {
     tar -xvf ${LINUX_INSTALLER_COMMON_ECL_DIR}/output/${TARBALL_NAME} -C ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}/SOURCES
     pushd ${SCRIPT_DIR}/${RPM_BUILD_FOLDER}/SOURCES
     # change the install path to /usr/share instead of /opt/intel
-    # only for clear linux
-    if [ "${LINUX_OS_ID}" = "clear-linux-os" ]; then
-        sed -i "s#\(ECL_PACKAGES_PATH=\).*#\1/usr/share#" scripts/installConfig
-    fi
     # change the package name to sgxpsw
     sed -i "s#\(ECL_PKG_NAME=\).*#\1${PSW_PKG_NAME}#" scripts/installConfig
+    sed -i "s#\(ECL_PKG_PATH=\).*#\1${SGX_PKG_PATH}#" scripts/installConfig
     tar -zcvf ${RPM_BUILD_FOLDER}$(echo ${TARBALL_NAME}|awk -F'.' '{print "."$(NF-1)"."$(NF)}') *
     popd
 }

@@ -36,7 +36,7 @@
 
 __BEGIN_DECLS
 
-extern struct sl_uswitchless* sl_uswitchless_handle;
+extern struct sl_uswitchless* g_uswitchless_handle;
 
 __END_DECLS
 

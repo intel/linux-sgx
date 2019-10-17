@@ -433,6 +433,14 @@ static int __create_enclave(BinParser &parser,
         }
     }
 
+    if(SGX_SUCCESS != (ret = loader.set_memory_protection()))
+    {
+        sgx_status_t status = SGX_SUCCESS;
+        generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
+        CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
+        goto fail;
+    }
+
     //fill tcs mini pool
     if (get_enclave_creator()->is_EDMM_supported(loader.get_enclave_id()))
     {
@@ -447,14 +455,6 @@ static int __create_enclave(BinParser &parser,
         }
     }
         
-    if(SGX_SUCCESS != (ret = loader.set_memory_protection(true)))
-    {
-        sgx_status_t status = SGX_SUCCESS;
-        generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
-        CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
-        goto fail;
-    }
-    
     if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_SWITCHLESS, ex_features, ex_features_p, (void **)&us_config) == -1)
     {
         ret = SGX_ERROR_INVALID_PARAMETER;

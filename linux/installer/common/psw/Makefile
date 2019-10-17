@@ -40,7 +40,13 @@ SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
 PSW_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
 USR_LIB_PATH=$(addprefix $(DESTDIR)/usr/, $(or $(notdir $(shell gcc -print-multi-os-directory 2> /dev/null)),$(if $(wildcard /usr/lib64/.*),lib64),lib))
 
+SPLIT_VERSION=$(word $2,$(subst ., ,$1))
+
 ECL_VER=1.0.0
+LCH_VER=1.0.0
+PLF_VER=1.0.0
+EPID_VER=1.0.0
+QEX_VER=1.0.0
 
 default:
 
@@ -51,10 +57,26 @@ install:
 	cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
 	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
 	mv $(PSW_LIB_PATH)/libsgx_uae_service.so $(USR_LIB_PATH)
+	mv $(PSW_LIB_PATH)/libsgx_epid.so $(USR_LIB_PATH)
+	mv $(PSW_LIB_PATH)/libsgx_launch.so $(USR_LIB_PATH)
+	mv $(PSW_LIB_PATH)/libsgx_platform.so $(USR_LIB_PATH)
+	mv $(PSW_LIB_PATH)/libsgx_quote_ex.so $(USR_LIB_PATH)
 	mv $(PSW_LIB_PATH)/libsgx_urts.so $(USR_LIB_PATH)
 	mv $(PSW_LIB_PATH)/libsgx_enclave_common.so $(USR_LIB_PATH)
 	rmdir $(PSW_LIB_PATH)
 	cd $(USR_LIB_PATH) && \
 	mv libsgx_enclave_common.so libsgx_enclave_common.so.$(ECL_VER) && \
-	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') && \
-	ln -fs libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}') libsgx_enclave_common.so
+	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1) && \
+	ln -fs libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1) libsgx_enclave_common.so && \
+	mv libsgx_launch.so libsgx_launch.so.$(LCH_VER) && \
+	ln -fs libsgx_launch.so.$(LCH_VER) libsgx_launch.so.$(call SPLIT_VERSION,$(LCH_VER),1) && \
+	ln -fs libsgx_launch.so.$(call SPLIT_VERSION,$(LCH_VER),1) libsgx_launch.so && \
+	mv libsgx_platform.so libsgx_platform.so.$(PLF_VER) && \
+	ln -fs libsgx_platform.so.$(PLF_VER) libsgx_platform.so.$(call SPLIT_VERSION,$(PLF_VER),1) && \
+	ln -fs libsgx_platform.so.$(call SPLIT_VERSION,$(PLF_VER),1) libsgx_platform.so && \
+	mv libsgx_epid.so libsgx_epid.so.$(EPID_VER) && \
+	ln -fs libsgx_epid.so.$(EPID_VER) libsgx_epid.so.$(call SPLIT_VERSION,$(EPID_VER),1) && \
+	ln -fs libsgx_epid.so.$(call SPLIT_VERSION,$(EPID_VER),1) libsgx_epid.so && \
+	mv libsgx_quote_ex.so libsgx_quote_ex.so.$(QEX_VER) && \
+	ln -fs libsgx_quote_ex.so.$(QEX_VER) libsgx_quote_ex.so.$(call SPLIT_VERSION,$(QEX_VER),1) && \
+	ln -fs libsgx_quote_ex.so.$(call SPLIT_VERSION,$(QEX_VER),1) libsgx_quote_ex.so

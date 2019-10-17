@@ -40,34 +40,37 @@
 
 
 int sl_siglines_init(struct sl_siglines* sglns,
-                     sl_siglines_dir_t dir,
+                     sl_siglines_dir_t direction,
                      uint32_t num_lines,
                      sl_sighandler_t handler)
 {
-    BUG_ON(is_direction_sender(dir) && (handler != NULL));
+    BUG_ON(is_direction_sender(direction) && (handler != NULL));
 
     if (num_lines <= 0) return -EINVAL;
-    num_lines = ALIGN_UP(num_lines, NBITS_PER_UINT64);
-    uint32_t nlong = num_lines / NBITS_PER_UINT64;
+    num_lines = ALIGN_UP(num_lines, NBITS_PER_LINE);
+    uint32_t nlong = num_lines / NBITS_PER_LINE;
 
     uint64_t *event_lines = NULL, *free_lines = NULL;
     uint32_t i = 0;
     event_lines = (uint64_t*)calloc(nlong, sizeof(uint64_t));
     if (event_lines == NULL) goto on_error;
 
-    if (is_direction_sender(dir))
+    if (is_direction_sender(direction))
 	{
         free_lines = (uint64_t*)malloc(sizeof(uint64_t) * nlong);
-        if (free_lines == NULL) goto on_error;
-        for (; i < nlong; i++) free_lines[i] = (uint64_t)(-1); // all 1's -> free
+        if (free_lines == NULL)
+            goto on_error;
+
+        for (; i < nlong; i++)
+            free_lines[i] = SL_FREE_LINE_INIT;
     }
 
-    sglns->dir = dir;
+    sglns->direction = direction;
     sglns->num_lines = num_lines;
     sglns->event_lines = event_lines;
     sglns->free_lines = free_lines;
-
     sglns->handler = handler;
+
     return 0;
 on_error:
     free(event_lines);

@@ -9,7 +9,7 @@ CreateBundle(${bundle} ${all_src} ${Edger8rOutputQE3})
 
 target_include_directories(${bundle} PRIVATE
 	${PROJECT_SOURCE_DIR}/common
-	${PROJECT_SOURCE_DIR}/../../../../common/inc
+	${SGX_HEADER_DIR}
 	${PROJECT_SOURCE_DIR}/../../../../common/inc/internal
 	${PROJECT_SOURCE_DIR}/../../inc
 	${PROJECT_SOURCE_DIR}/../../inc/internal
@@ -25,7 +25,7 @@ target_include_directories(${bundle} PRIVATE
 
 add_custom_command(
     OUTPUT ${Edger8rOutputQE3}
-    COMMAND ${PROJECT_SOURCE_DIR}/../../../../build/linux/sgx_edger8r --untrusted --untrusted-dir ${CMAKE_CURRENT_BINARY_DIR} qe3.edl --search-path ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/enclave
+    COMMAND ${EDGER8R} --untrusted --untrusted-dir ${CMAKE_CURRENT_BINARY_DIR} qe3.edl --search-path ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/enclave
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 )
 target_link_libraries(${bundle} oal utils urts_internal)

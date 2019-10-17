@@ -34,21 +34,21 @@
 #include <sl_debug.h>
 #include <sl_bitops.h>
 
-int is_direction_sender(sl_siglines_dir_t dir) 
+int is_direction_sender(sl_siglines_dir_t direction) 
 {
 #ifdef SL_INSIDE_ENCLAVE /* trusted */
-    return dir == SL_SIGLINES_DIR_T2U;
+    return direction == SL_SIGLINES_DIR_T2U;
 #else /* untrusted */
-    return dir == SL_SIGLINES_DIR_U2T;
+    return direction == SL_SIGLINES_DIR_U2T;
 #endif
 }
 
-static inline int is_direction_receiver(sl_siglines_dir_t dir) 
+static inline int is_direction_receiver(sl_siglines_dir_t direction) 
 {
 #ifdef SL_INSIDE_ENCLAVE /* trusted */
-    return dir == SL_SIGLINES_DIR_U2T;
+    return direction == SL_SIGLINES_DIR_U2T;
 #else /* untrusted */
-    return dir == SL_SIGLINES_DIR_T2U;
+    return direction == SL_SIGLINES_DIR_T2U;
 #endif
 }
 
@@ -59,9 +59,9 @@ static inline int is_line_valid(struct sl_siglines* sglns, sl_sigline_t line)
 
 sl_sigline_t sl_siglines_alloc_line(struct sl_siglines* sglns) 
 {
-    BUG_ON(!is_direction_sender(sglns->dir));
+    BUG_ON(!is_direction_sender(sglns->direction));
 
-    uint32_t i, max_i = (sglns->num_lines / NBITS_PER_UINT64);
+    uint32_t i, max_i = (sglns->num_lines / NBITS_PER_LINE);
     uint64_t* bits_p;
 
     for (i = 0; i < max_i; i++)
@@ -71,7 +71,7 @@ sl_sigline_t sl_siglines_alloc_line(struct sl_siglines* sglns)
         int32_t j = extract_one_bit(bits_p);
         if (j < 0) continue;
 
-        sl_sigline_t free_line = NBITS_PER_UINT64 * i + (uint32_t)j;
+        sl_sigline_t free_line = NBITS_PER_LINE * i + (uint32_t)j;
         return free_line;
 
     }
@@ -81,39 +81,39 @@ sl_sigline_t sl_siglines_alloc_line(struct sl_siglines* sglns)
 
 void sl_siglines_free_line(struct sl_siglines* sglns, sl_sigline_t line)
 {
-    BUG_ON(!is_direction_sender(sglns->dir));
+    BUG_ON(!is_direction_sender(sglns->direction));
     BUG_ON(!is_line_valid(sglns, line));
-	uint32_t i = line / NBITS_PER_UINT64;
-	uint32_t j = line % NBITS_PER_UINT64;
+	uint32_t i = line / NBITS_PER_LINE;
+	uint32_t j = line % NBITS_PER_LINE;
     set_bit(&sglns->free_lines[i], j);
 }
 
 
 int sl_siglines_trigger_signal(struct sl_siglines* sglns, sl_sigline_t line) 
 {
-    BUG_ON(!is_direction_sender(sglns->dir));
+    BUG_ON(!is_direction_sender(sglns->direction));
     BUG_ON(!is_line_valid(sglns, line));
-	uint32_t i = line / NBITS_PER_UINT64;
-	uint32_t j = line % NBITS_PER_UINT64;
+	uint32_t i = line / NBITS_PER_LINE;
+	uint32_t j = line % NBITS_PER_LINE;
     set_bit(&sglns->event_lines[i], j);
     return 0;
 }
 
 int sl_siglines_revoke_signal(struct sl_siglines* sglns, sl_sigline_t line) 
 {
-    BUG_ON(!is_direction_sender(sglns->dir));
+    BUG_ON(!is_direction_sender(sglns->direction));
     BUG_ON(!is_line_valid(sglns, line));
-	uint32_t i = line / NBITS_PER_UINT64;
-	uint32_t j = line % NBITS_PER_UINT64;
+	uint32_t i = line / NBITS_PER_LINE;
+	uint32_t j = line % NBITS_PER_LINE;
     return test_and_clear_bit(&sglns->event_lines[i], j) == 0;
 }
 
 uint32_t sl_siglines_process_signals(struct sl_siglines* sglns) 
 {
-    BUG_ON(!is_direction_receiver(sglns->dir));
+    BUG_ON(!is_direction_receiver(sglns->direction));
 
 	uint32_t nprocessed = 0;
-	uint32_t i, bit_n, start_bit, end_bit, max_i = (sglns->num_lines/ NBITS_PER_UINT64);
+	uint32_t i, bit_n, start_bit, end_bit, max_i = (sglns->num_lines/ NBITS_PER_LINE);
 	uint64_t* bits_p;
 	uint64_t  bits_value;
 
@@ -125,13 +125,13 @@ uint32_t sl_siglines_process_signals(struct sl_siglines* sglns)
 		if (bits_value != 0)
 		{
 			start_bit = (uint32_t)__builtin_ctzl(bits_value);
-			end_bit = NBITS_PER_UINT64 - (uint32_t)__builtin_clzl(bits_value);
+			end_bit = NBITS_PER_LINE - (uint32_t)__builtin_clzl(bits_value);
 
 			for (bit_n = start_bit; bit_n < end_bit; bit_n++)
 			{
 				if (unlikely(test_and_clear_bit(bits_p, bit_n) == 0)) continue;
 
-				sl_sigline_t line = NBITS_PER_UINT64 * i + bit_n;
+				sl_sigline_t line = NBITS_PER_LINE * i + bit_n;
 				sglns->handler(sglns, line);
 
 				nprocessed++;

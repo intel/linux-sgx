@@ -35,15 +35,16 @@
 #include <sl_debug.h>
 #include <sgx_trts.h>
 
-struct sl_uswitchless* sl_uswitchless_handle = NULL;
+struct sl_uswitchless* g_uswitchless_handle = NULL;
 
 /* Override the weak symbol defined in tRTS */
-sgx_status_t do_init_switchless(struct sl_uswitchless* handle) 
+sgx_status_t do_init_switchless(struct sl_uswitchless* handle_u)
 {
-    PANIC_ON(!sgx_is_outside_enclave(handle, sizeof(*handle)));
+    // ensure that the whole structure is outside enclave before coping pointer to global variable on trusted side
+    PANIC_ON(!sgx_is_outside_enclave(handle_u, sizeof(*handle_u)));
     sgx_lfence();
 
-	if (lock_cmpxchg64((uint64_t*)&sl_uswitchless_handle, (uint64_t)NULL, (uint64_t)handle) != (uint64_t)NULL)
+	if (lock_cmpxchg64((uint64_t*)&g_uswitchless_handle, (uint64_t)NULL, (uint64_t)handle_u) != (uint64_t)NULL)
 	{
 		return SGX_ERROR_UNEXPECTED;
 	}

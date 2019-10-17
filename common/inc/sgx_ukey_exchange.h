@@ -201,8 +201,6 @@ sgx_status_t SGXAPI sgx_ra_proc_msg2(
  * the attestation key from the list provided by the off-platform Quote verifier
  * before the untrusted code can invoke this function. It is designed to be
  * algorithm agnostic, it supports both EPID and ECDSA based remote attestation.
- * Currently, only ECDSA is supported in this API. If you want to use EPID
- * based attestation, please use sgx_ra_get_msg1.
  *
  * @param p_att_key_id  Selected attestation key ID returned from 
  *                      sgx_select_att_key_id
@@ -266,8 +264,7 @@ sgx_status_t SGXAPI sgx_ra_get_msg1_ex(
  * function to retrieve the negotiated keys and use sgx_ra_close function to
  * release the context of the remote attestation and key exchange process.
  * It is designed to be algorithm agnostic, it supports both EPID and ECDSA
- * based remote attestation. Currently, only ECDSA is supported in this API.
- * If you want to use EPID based attestation, please use sgx_ra_proc_msg2.
+ * based remote attestation.
  *
  * @param p_att_key_id  Selected attestation key ID returned from 
  *                      sgx_select_att_key_id

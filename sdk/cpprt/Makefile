@@ -81,7 +81,9 @@ $(CPPRT): $(OBJS) prepare-libunwind libunwind
 
 .PHONY: libunwind
 libunwind:
-	cd $(LIBUNWIND_DIR)/ && ( test -f Makefile || ./autogen.sh $(DEBUG)) && $(MAKE) -j5
+	cd $(LIBUNWIND_DIR)/ && \
+		( test -f Makefile || CFLAGS="$(CFLAGS)" ./autogen.sh ) && \
+		$(MAKE) -j5
 
 
 .PHONY: clean

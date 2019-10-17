@@ -8,6 +8,5 @@ Homepage: https://github.com/intel/linux-sgx
 
 Package: libsgx-enclave-common-dev
 Architecture: i386 ia64 amd64
-Pre-Depends: libsgx-enclave-common (= @dep_version@)
-Depends: dpkg-dev, ${shlibs:Depends}, ${misc:Depends}
+Depends: libsgx-enclave-common (= @dep_version@)
 Description: SGX Enclave Common Loader For Developers

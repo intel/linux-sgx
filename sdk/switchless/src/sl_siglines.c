@@ -37,45 +37,54 @@
 #include <errno.h>
 #include <stdlib.h>
 
+//
+// clones the signal lines structure
+// in case of OCALL manager, allocates part of structure used by enclave senders inside the enclave.
+//
+// returns 0 on success, error code otherwise
 int sl_siglines_clone(struct sl_siglines* sglns,
-                      struct sl_siglines* untrusted,
+                      const struct sl_siglines* untrusted,
                       sl_sighandler_t handler)
 {
+    // copies pointers to untrusted structures ensuring that all the data is outside enclave
     PANIC_ON(!sgx_is_outside_enclave(untrusted, sizeof(*untrusted)));
     sgx_lfence();
 
-    sl_siglines_dir_t dir = untrusted->dir;
-    PANIC_ON((dir != SL_SIGLINES_DIR_T2U) && (dir != SL_SIGLINES_DIR_U2T));
+    sl_siglines_dir_t direction = untrusted->direction;
+    PANIC_ON((direction != SL_SIGLINES_DIR_T2U) && (direction != SL_SIGLINES_DIR_U2T));
 
     BUG_ON(sglns == NULL);
 
-    sglns->dir = dir;
+    sglns->direction = direction;
 
-    BUG_ON(is_direction_sender(dir) && (handler != NULL));
+    BUG_ON(is_direction_sender(direction) && (handler != NULL));
 
     uint32_t num_lines = untrusted->num_lines;
-    if ((num_lines <= 0) || ((num_lines % NBITS_PER_UINT64) != 0))
+    if ((num_lines <= 0) || ((num_lines % NBITS_PER_LINE) != 0))
         return -EINVAL;
     sglns->num_lines = num_lines;
-    uint32_t nlong = num_lines / NBITS_PER_UINT64;
-
-
-    BUG_ON(untrusted->event_lines == NULL);
+    uint32_t nlong = num_lines / NBITS_PER_LINE;
 
     uint64_t* event_lines_u = untrusted->event_lines;
-    PANIC_ON(!sgx_is_outside_enclave(event_lines_u, sizeof(uint64_t) * nlong));
+    if (event_lines_u == NULL)
+        return EINVAL;
+
+     PANIC_ON(!sgx_is_outside_enclave(event_lines_u, sizeof(uint64_t) * nlong));
     sgx_lfence();
     sglns->event_lines = event_lines_u;
 
     uint64_t* free_lines = NULL;
-    if (is_direction_sender(dir)) 
+    if (is_direction_sender(direction)) 
     {
+        // OCALL manager, enclave is the sender
+        // free_lines is used by enclave threads only, so allocate it inside the enclave
+        // never gets freed, no global termination hooks defined
         free_lines = malloc(sizeof(uint64_t) * nlong);
         if (free_lines == NULL) 
             return -ENOMEM;
 		
-        for (uint32_t i = 0; i < nlong; i++) 
-            free_lines[i] = (uint64_t)(-1);// 1's -> free
+        for (uint32_t i = 0; i < nlong; i++)
+            free_lines[i] = SL_FREE_LINE_INIT;
     }
     sglns->free_lines = free_lines;
 

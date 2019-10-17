@@ -37,20 +37,12 @@ CFLAGS    += -Werror
 
 AENAME = pce
 
-LINUX_EPID := $(LINUX_EXTERNAL_DIR)/epid-sdk/
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux 
 
-INCLUDE += -I$(COMMON_DIR)/inc/tlibc                      \
-           -I$(SGX_IPP_INC)/                              \
-           -I$(LINUX_EPID)/                               \
-           -I$(LINUX_SDK_DIR)/tseal                       \
+INCLUDE += -I$(SGX_HEADER_DIR)/libcxx                      \
+           -I$(EPID_SDK_DIR)                              \
            -I$(LINUX_PSW_DIR)/ae/common                   \
-           -I$(LINUX_PSW_DIR)/ae/inc/internal             \
-           -I$(LINUX_SDK_DIR)/tlibcxx/include
-
-TCRYPTO_LIBDIR := $(LINUX_SDK_DIR)/tlibcrypto
-
-EXTERNAL_LIB += -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx
+           -I$(LINUX_PSW_DIR)/ae/inc/internal             
 
 SRC := $(wildcard *.cpp)
 
@@ -62,16 +54,16 @@ all: $(SONAME)
 
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -fno-exceptions -fno-rtti $(EXTERNAL_LIB)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
 	$(STRIP)  --strip-unneeded $(SONAME)
 
 pce.o: $(AENAME)_t.c
 
 %.o:%.cpp 
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -fno-exceptions -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(DEFINES) -fno-exceptions -fno-rtti -c $< -o $@
 
 $(AENAME)_t.c: $(AENAME).edl
-	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
+	@$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

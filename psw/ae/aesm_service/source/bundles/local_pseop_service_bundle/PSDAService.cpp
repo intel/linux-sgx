@@ -282,7 +282,7 @@ void PSDAService::stop_service()
         psda_session_handle = NULL;
         jhi_handle = NULL;
     }
-    catch (std::exception e)
+    catch (std::exception &e)
     {
     }
 }
@@ -344,7 +344,7 @@ bool PSDAService::is_session_active()
         }
         return false;
     }
-    catch (std::exception e)
+    catch (std::exception &e)
     {
         return false;
     }

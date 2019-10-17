@@ -62,7 +62,6 @@ struct sl_workers
     struct sl_uswitchless*              handle;
     sl_worker_type_t                    type;
     sl_worker_stats_t                   stats;
-    volatile int32_t                    should_stop;
 	volatile int32_t                    should_wake;
     uint64_t                            num_all;
     uint64_t                            num_running;
@@ -87,7 +86,7 @@ int32_t sl_workers_init_threads(struct sl_workers* workers);
 int32_t sl_workers_run_threads(struct sl_workers* workers);
 void sl_workers_kill_threads(struct sl_workers* workers);
 
-void sleep_this_thread(struct sl_workers* workers);
+void sleep_this_thread(struct sl_workers* workers, bool notify);
 
 void wake_all_threads(struct sl_workers* workers);
 

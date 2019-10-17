@@ -33,7 +33,6 @@
 #include "pce_cert.h"
 #include "aeerror.h"
 #include "sgx_utils.h"
-#include "ipp_wrapper.h"
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>

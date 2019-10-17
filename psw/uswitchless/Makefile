@@ -35,8 +35,9 @@ include ../../buildenv.mk
 CFLAGS += -Werror -D_GNU_SOURCE -fPIC -g
 CFLAGS += $(ADDED_INC)
 
-CFLAGS += -I$(COMMON_DIR)/inc/ \
-            -I$(COMMON_DIR)/inc/internal
+CFLAGS += -I$(SGX_HEADER_DIR)          \
+          -I$(COMMON_DIR)/inc          \
+          -I$(COMMON_DIR)/inc/internal
 
 OBJS := sl_fcall_mngr_untrusted.o \
 		sl_siglines_untrusted.o \

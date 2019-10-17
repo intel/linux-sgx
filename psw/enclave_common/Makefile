@@ -32,7 +32,6 @@
 include ../../buildenv.mk
 
 ECL_VER:= $(shell awk '$$2 ~ /ENCLAVE_COMMON_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-ECL_MAJOR_VER:= $(shell echo $(ECL_VER) |awk -F. '{print $$1}')
 
 ifndef DEBUG
 CXXFLAGS += -DDISABLE_TRACE
@@ -45,7 +44,7 @@ CXXFLAGS += $(ADDED_INC)
 CFLAGS += -fPIC -Werror -g
 CFLAGS += $(ADDED_INC)
 
-INC += -I$(COMMON_DIR)/inc                \
+INC += -I$(SGX_HEADER_DIR)                \
        -I$(COMMON_DIR)/inc/internal       \
        -I$(COMMON_DIR)/inc/internal/linux \
        -I$(LINUX_PSW_DIR)/urts/           \
@@ -53,14 +52,13 @@ INC += -I$(COMMON_DIR)/inc                \
        -I$(LINUX_PSW_DIR)/enclave_common
 
 LDFLAGS := -lwrapper
-LDFLAGS += -Wl,-Bdynamic -lsgx_uae_service
+LDFLAGS += -Wl,-Bdynamic -L$(BUILD_DIR) -lsgx_launch
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script=sgx_enclave_common.lds -Wl,--gc-sections
 
 DIR1 := $(LINUX_PSW_DIR)/enclave_common
 DIR2 := $(LINUX_PSW_DIR)/urts/linux
 
-LIB += -L$(COMMON_DIR)/se_wrapper \
-       -L$(BUILD_DIR)
+LIB += -L$(COMMON_DIR)/se_wrapper_psw
 
 OBJ := sgx_enclave_common.o edmm_utility.o
 
@@ -80,11 +78,11 @@ ifndef DEBUG
 	@$(CP) $(LIBSGX_ENCLAVE_COMMON_DEBUG)    $|
 endif
 
-$(LIBSGX_ENCLAVE_COMMON): $(OBJ) $(LIBWRAPPER) uae_service
-	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@.$(ECL_MAJOR_VER) $(LIB) -o $@  $(OBJ) $(LDFLAGS)
+$(LIBSGX_ENCLAVE_COMMON): $(OBJ) $(LIBWRAPPER) sgx_launch
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@.$(call SPLIT_VERSION,$(ECL_VER),1) $(LIB) -o $@  $(OBJ) $(LDFLAGS)
 
-$(LIBSGX_ENCLAVE_COMMON_STATIC): $(OBJ) $(LIBWRAPPER) uae_service
-	$(CP) $(COMMON_DIR)/se_wrapper/libwrapper.a $@
+$(LIBSGX_ENCLAVE_COMMON_STATIC): $(OBJ) $(LIBWRAPPER) sgx_launch
+	$(CP) $(COMMON_DIR)/se_wrapper_psw/libwrapper.a $@
 	$(AR) rcs $@ $(OBJ)
 
 $(LIBSGX_ENCLAVE_COMMON_DEBUG): $(LIBSGX_ENCLAVE_COMMON)
@@ -99,10 +97,10 @@ $(OBJ): %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
 
 $(LIBWRAPPER):
-	$(MAKE) -C $(COMMON_DIR)/se_wrapper/
+	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/
 
-.PHONY:uae_service
-uae_service:
+.PHONY:sgx_launch
+sgx_launch:
 	$(MAKE) -C $(LINUX_PSW_DIR)/uae_service/linux
 
 $(BUILD_DIR):
@@ -113,5 +111,5 @@ clean::
 	@$(RM) *.o $(LIBSGX_ENCLAVE_COMMON) $(LIBSGX_ENCLAVE_COMMON_DEBUG) $(LIBSGX_ENCLAVE_COMMON_STATIC)
 	@$(RM) $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON) $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON_DEBUG) $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON_STATIC)
 	@$(RM) $(LIBSGX_ENCLAVE_COMMON).orig $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON_DEBUG)
-	$(MAKE) -C $(COMMON_DIR)/se_wrapper/                   clean
+	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/                   clean
 	$(MAKE) -C $(LINUX_PSW_DIR)/uae_service/linux/         clean

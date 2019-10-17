@@ -39,7 +39,7 @@
 #include "cpusvn_util.h"
 #include "crypto_wrapper.h"
 
-/* The EPID group certificate */ 
+/* The EPID group certificate */
 static const uint8_t EPID_GROUP_CERT[] = {
     0x00, 0x00, 0x00, 0x0B, 0xB3, 0x6F, 0xFF, 0x81, 0xE2, 0x1B, 0x17, 0xEB,
     0x3D, 0x75, 0x3D, 0x61, 0x7E, 0x27, 0xB0, 0xCB, 0xD0, 0x6D, 0x8F, 0x9D,
@@ -64,6 +64,44 @@ static const uint8_t EPID_GROUP_CERT[] = {
     0x1F, 0x3D, 0xEA, 0xA2, 0xBA, 0x6B, 0xF0, 0xDA, 0x8E, 0x25, 0xC6, 0xAD,
     0x83, 0x7D, 0x3E, 0x31, 0xEE, 0x11, 0x40, 0xA9
 };
+
+const static sgx_att_key_id_t g_epid_unlinkable_att_key_id = {
+    {
+        0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0xec, 0x15,
+        0xb1, 0x07, 0x87, 0xd2, 0xf8, 0x46, 0x67, 0xce,
+        0xb0, 0xb5, 0x98, 0xff, 0xc4, 0x4a, 0x1f, 0x1c,
+        0xb8, 0x0f, 0x67, 0x0a, 0xae, 0x5d, 0xf9, 0xe8,
+        0xfa, 0x9f, 0x63, 0x76, 0xe1, 0xf8, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    }
+};
+
 
 /* The report key is the same as BASE_REPORT_KEY in
    /trunk/sdk/simulation/tinst/deriv.cpp, which is used in simulation
@@ -173,7 +211,7 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
 
     unsigned int report_data_len = sizeof(temp_qe_report.body.report_data);
 
-    if(SGX_SUCCESS != (sgx_ret = sgx_EVP_Digest(EVP_sha256(), p_msg, (unsigned int)msg_size, 
+    if(SGX_SUCCESS != (sgx_ret = sgx_EVP_Digest(EVP_sha256(), p_msg, (unsigned int)msg_size,
                     (uint8_t *)&temp_qe_report.body.report_data, &report_data_len)))
     {
         if(sgx_ret != SGX_ERROR_OUT_OF_MEMORY)
@@ -181,7 +219,7 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
         free(p_msg);
         return sgx_ret;
     }
-    
+
     free(p_msg);
 
     /* calculate CMAC using the report key, same as BASE_REPORT_KEY in
@@ -206,7 +244,7 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
     if(memcpy_s(&dd.ddrk.key_id, sizeof(dd.ddrk.key_id),
                 &temp_qe_report.key_id, sizeof(sgx_key_id_t)))
         return SGX_ERROR_UNEXPECTED;
-    
+
     sgx_key_128bit_t tmp_report_key;
     if(SGX_SUCCESS != (sgx_ret = sgx_cmac128_msg(BASE_REPORT_KEY, dd.ddbuf, dd.size, &tmp_report_key)))
     {
@@ -214,10 +252,10 @@ static sgx_status_t create_qe_report(const sgx_report_t *p_report,
             sgx_ret = SGX_ERROR_UNEXPECTED;
         return sgx_ret;
     }
-    
+
     // call cryptographic CMAC function
     // CMAC data are *NOT* including MAC and KEYID
-    if(SGX_SUCCESS != (sgx_ret = sgx_cmac128_msg(tmp_report_key, (const uint8_t *)&temp_qe_report.body, 
+    if(SGX_SUCCESS != (sgx_ret = sgx_cmac128_msg(tmp_report_key, (const uint8_t *)&temp_qe_report.body,
                     sizeof(temp_qe_report.body), &temp_qe_report.mac)))
     {
         if(sgx_ret != SGX_ERROR_OUT_OF_MEMORY)
@@ -343,7 +381,7 @@ sgx_status_t sgx_get_quote(
         goto CLEANUP;
     }
 
-    /* Copy the data in the report into quote body. */ 
+    /* Copy the data in the report into quote body. */
     memset(p_quote, 0xEE, quote_size);
     p_quote->version = 2;
     p_quote->sign_type = (uint16_t)quote_type;
@@ -461,9 +499,17 @@ sgx_status_t SGXAPI sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_
 sgx_status_t SGXAPI sgx_select_att_key_id(const uint8_t *p_att_key_id_list, uint32_t att_key_id_list_size,
                                                    sgx_att_key_id_t *p_selected_key_id)
 {
-    UNUSED(p_att_key_id_list);
-    UNUSED(att_key_id_list_size);
-    UNUSED(p_selected_key_id);
+    if (NULL == p_selected_key_id)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (NULL == p_att_key_id_list && att_key_id_list_size != 0)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (NULL != p_att_key_id_list && att_key_id_list_size == 0)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if(memcpy_s(p_selected_key_id, sizeof(*p_selected_key_id),
+             &g_epid_unlinkable_att_key_id, sizeof(g_epid_unlinkable_att_key_id)))
+    {
+        return SGX_ERROR_UNEXPECTED;
+    }
     return SGX_SUCCESS;
 }
 
@@ -472,19 +518,24 @@ sgx_status_t SGXAPI sgx_init_quote_ex(const sgx_att_key_id_t* p_att_key_id,
                                             size_t* p_pub_key_id_size,
                                             uint8_t* p_pub_key_id)
 {
-    UNUSED(p_att_key_id);
-    UNUSED(p_qe_target_info);
-    UNUSED(p_pub_key_id_size);
-    UNUSED(p_pub_key_id);
-    return SGX_SUCCESS;
+    if(NULL == p_pub_key_id_size || NULL == p_qe_target_info || NULL == p_att_key_id ||
+        (NULL != p_pub_key_id && sizeof(sgx_epid_group_id_t) != *p_pub_key_id_size))
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    if(NULL == p_pub_key_id)
+    {
+        *p_pub_key_id_size = sizeof(sgx_epid_group_id_t);
+        return SGX_SUCCESS;
+    }
+    return sgx_init_quote(p_qe_target_info, (sgx_epid_group_id_t *)p_pub_key_id);
 }
 
 sgx_status_t SGXAPI sgx_get_quote_size_ex(const sgx_att_key_id_t *p_att_key_id,
                                                 uint32_t* p_quote_size)
 {
-    UNUSED(p_att_key_id);
-    UNUSED(p_quote_size);
-    return SGX_SUCCESS;
+    if (NULL ==p_att_key_id || NULL == p_quote_size)
+        return SGX_ERROR_INVALID_PARAMETER;
+    return sgx_calc_quote_size(NULL, 0, p_quote_size);
 }
 
 sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
@@ -493,10 +544,16 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
                                            uint8_t *p_quote,
                                            uint32_t quote_size)
 {
-    UNUSED(p_app_report);
-    UNUSED(p_att_key_id);
-    UNUSED(p_qe_report_info);
-    UNUSED(p_quote);
-    UNUSED(quote_size);
-    return SGX_SUCCESS;
+    if(NULL ==p_att_key_id || NULL == p_app_report || NULL == p_quote)
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    sgx_spid_t spid = {{0}};
+
+    return sgx_get_quote(p_app_report,
+            SGX_UNLINKABLE_SIGNATURE,
+            &spid,
+            p_qe_report_info ? &p_qe_report_info->nonce:NULL,
+            NULL, 0,
+            p_qe_report_info ? &p_qe_report_info->qe_report:NULL,
+            (sgx_quote_t *)p_quote, quote_size);
 }

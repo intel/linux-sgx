@@ -34,7 +34,7 @@
 #include "sgx_key.h"
 #include "se_thread.h"
 #include "sgx_urts.h"
-#include "internal/se_stdio.h"
+#include "se_stdio.h"
 #include "oal/oal.h"
 #include "aeerror.h"
 #include <stdlib.h>
