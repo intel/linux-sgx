@@ -37,7 +37,7 @@
 extern void *_intel_fast_memset(void *, void *, size_t);
 #endif
 
-void *
+void * __attribute__((optimize("O0")))
 __memset(void *dst, int c, size_t n)
 {
 	if (n != 0) {
