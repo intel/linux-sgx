@@ -94,9 +94,8 @@ elif [ -d /etc/init/ ]; then
     /sbin/initctl reload-configuration
     retval=$?
 else
-    echo " failed."
-    echo "Unsupported platform - neither systemctl nor initctl is found."
-    exit 5
+    echo "Neither systemctl nor initctl is found. Please start aesm service manually."
+    retval=0
 fi
 
 if test $retval -ne 0; then
