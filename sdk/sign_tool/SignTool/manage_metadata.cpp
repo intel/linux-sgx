@@ -514,6 +514,7 @@ bool CMetadata::update_layout_entries()
     if(m_rva == 0)
     {
         se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Sections size is 0\n");
         return false;
     }
 
@@ -616,7 +617,8 @@ bool CMetadata::build_layout_entries()
     layout_t *layout_table = (layout_t *) alloc_buffer_from_metadata(size);
     if(layout_table == NULL)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Layout table could not be allocated\n");
         return false;
     }
     m_metadata->dirs[DIR_LAYOUT].offset = (uint32_t)PTR_DIFF(layout_table, m_metadata);
@@ -858,7 +860,8 @@ bool CMetadata::build_layout_table()
     // tcs template
     if(false == build_tcs_template(tcs_template))
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not build TCS template\n");
         return false;
     }
     return true;
@@ -870,7 +873,8 @@ bool CMetadata::build_patch_entries(std::vector<patch_entry_t> &patches)
     patch_entry_t *patch_table = (patch_entry_t *) alloc_buffer_from_metadata(size);
     if(patch_table == NULL)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not allocate patch table");
         return false;
     }
     m_metadata->dirs[DIR_PATCH].offset = (uint32_t)PTR_DIFF(patch_table, m_metadata);
@@ -901,7 +905,8 @@ bool CMetadata::build_patch_table()
     uint64_t rva = m_parser->get_symbol_rva("g_global_data");
     if(0 == rva)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not find g_global_data\n");
          return false;
     }
 
@@ -915,7 +920,8 @@ bool CMetadata::build_patch_table()
     uint8_t *zero = (uint8_t *)alloc_buffer_from_metadata(0);  // get addr only, size will be determined later
     if(zero == NULL)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not allocate 0 bytes\n");
         return false;
     }
     bin_fmt_t bf = m_parser->get_bin_format();
