@@ -172,7 +172,7 @@ $(LIBUSWITCHLESS):
 
 .PHONY: ittnotify
 ittnotify:
-	$(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify
+	CFLAGS= CXXFLAGS= $(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify
 
 $(BUILD_DIR):
 	@$(MKDIR) $@
