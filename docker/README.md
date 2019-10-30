@@ -45,7 +45,8 @@ Dockerfile is a multi-stage docker file that specifies 3 image build targets:
 3. sample: takes sdk installer from build, build and run the SampleEnclave app
 
 build_and_run_aesm.sh shows how to build and run the aesm image. This will start an aesm service listening to named socket, mounted to /var/run/aesmd in the container from host /tmp/aesmd
-build_and_run_sample.sh shows how to build and run 
+
+build_and_run_sample.sh shows how to build and run the SampleEnclave app inside container with locally built sgx_sample image.
 
 ### Docker composer files
 
@@ -54,11 +55,13 @@ compose_and_run.sh demostrate its usage.
 
 ## Kubernates deployments
 
-There are 3 different deployment files and they can be used to test for a minikube node started with "minikube start --vm-driver=none".
+There are 3 different deployment files and they can be used to test on a minikube node started with "minikube start --vm-driver=none".
 
 1. aesm-deployment.yaml: start aesm container/pod using local docker sgx_aesm image
 2. sample-deploymen.yaml:start sample container/pod using local docker sgx_sample image. Note this deployment will wait for /tmp/aemsd/aesm.socket created by aesm
 3. all-in-one.yaml: start both aesm and sample containers in one pod. 
+
+Please refer to [minikube docs](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installation, startup, managing deployments.
 
 
 
