@@ -2,7 +2,7 @@
 
 Files in this directory demostrate how to deploy SGX enclave applications in docker containers.
 
-## General concerns to run SGX enclave apps inside containers
+## General considerations on running SGX enclave apps inside containers
 
 ### Handling AESM dependency
 
@@ -17,10 +17,12 @@ It is not recommended, but in any case you want to run AESM and application toge
 SGX KVM support is not yet available yet. This means we can only have SGX applications isolated at container (process boundary) level.
 This demo does not show how to deploy SGX app containers into different VMs.
 
-Another potential issue to support VMs: to connect to AESM running in separate VM, we need expose its Unix socket as TCP/IP port listening for incoming requests. 
+Another potential issue to support VMs: to connect to AESM running in separate VM, we need expose its Unix socket as TCP/IP port listening for incoming requests.
+
 Potential solution: Use a proxy server container (e.g., socat) on the same VM as AESM to do the listening and forwarding of the requests. On the application VM, also a proxy client container (e.g., socat) to forward the request to the proxy server.
 
-### Scale deployment to multi-host cluster
+### Scale deployment to multi-host clusters
+
 To scale an SGX application that is stateless should be straightforward: just create more instances of containers on more nodes.
 
 To scale a stateful SGX application, particular if the enclave it hosts need to access shared states with its peers, one needs to carefully design a approach to handle shared states among enclave instances. This may be application specific and not included in this demo.
@@ -35,7 +37,7 @@ All SGX applications need access to the SGX device nodes exposed by kernel space
 
 Note docker can pass devices nodes to mount from command line, but kubernetes requires containers running with "priviledged" mode
 
-## Files to build and run docker container directly
+## Build and run docker container directly
 
 ### Docker files
 
