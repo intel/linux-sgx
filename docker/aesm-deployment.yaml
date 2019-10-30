@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aesm
+  labels:
+    app: aesm
+spec:
+  selector:
+    matchLabels:
+      app: aesm
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: aesm
+    spec:
+      containers:
+      - image: sgx_aesm
+        imagePullPolicy: Never
+        name: aesm
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/bash", "-c", "rm -f /var/run/aesmd/aesm.socket"]
+        resources: {}
+        stdin: true
+        tty: true
+        volumeMounts:
+        - mountPath: /var/run/aesmd
+          name: aesm-vol
+        - mountPath: /dev/sgx
+          name: sgx-dev
+      restartPolicy: Always
+      volumes:
+      - name: aesm-vol
+        hostPath:
+            path: /tmp/aesmd
+            type: Directory
+      - name: sgx-dev
+        hostPath:
+            path: /dev/sgx
+            type: CharDevice

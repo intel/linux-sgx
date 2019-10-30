@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample
+  labels:
+    app: sample
+spec:
+  selector:
+    matchLabels:
+      app: sample
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sample
+    spec:
+      containers:
+      - image: sgx_sample
+        imagePullPolicy: Never
+        name: sample
+        securityContext:
+          privileged: true
+        resources: {}
+        stdin: true
+        tty: true
+        volumeMounts:
+        - mountPath: /var/run/aesmd/aesm.socket
+          name: aesm-sock
+        - mountPath: /dev/sgx
+          name: sgx-dev
+      restartPolicy: Always
+      volumes:
+      - name: aesm-sock
+        hostPath:
+            path: /tmp/aesmd/aesm.socket
+            type: Socket
+      - name: sgx-dev
+        hostPath:
+            path: /dev/sgx
+            type: CharDevice

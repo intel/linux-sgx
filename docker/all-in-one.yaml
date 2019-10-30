@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-all-in-one
+  labels:
+    app: sample-all-in-one
+spec:
+  selector:
+    matchLabels:
+      app: sample-aesm
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: sample-aesm
+    spec:
+      containers:
+      - image: sgx_aesm
+        imagePullPolicy: Never
+        name: aesm
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/bash", "-c", "rm -f /var/run/aesmd/aesm.socket"]
+        resources: {}
+        stdin: true
+        tty: true
+        volumeMounts:
+        - mountPath: /var/run/aesmd
+          name: aesm-vol
+        - mountPath: /dev/sgx
+          name: sgx-dev
+
+      - image: sgx_sample
+        imagePullPolicy: Never
+        name: sample
+        securityContext:
+          privileged: true
+        resources: {}
+        stdin: true
+        tty: true
+        volumeMounts:
+        - mountPath: /var/run/aesmd
+          name: aesm-vol
+        - mountPath: /dev/sgx
+          name: sgx-dev
+      volumes:
+      - name: aesm-vol
+        hostPath:
+            path: /tmp/aesmd
+            type: Directory
+      - name: sgx-dev
+        hostPath:
+            path: /dev/sgx
+            type: CharDevice
+      restartPolicy: Always
