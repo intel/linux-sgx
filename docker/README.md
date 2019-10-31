@@ -25,9 +25,16 @@ Potential solution: Use a proxy server container (e.g., socat) on the same VM as
 
 ### Scale deployment to multi-host clusters
 
+This demo is designed for single physical node only.
+
 To scale an SGX application that is stateless should be straightforward: just create more instances of containers on more nodes.
 
 To scale a stateful SGX application, particularly if the enclave it hosts need to access states shared  with its peers, one needs to carefully design a approach to handle shared states among enclave instances. This is more application specific and not included in this demo.
+
+To handle AESM dependency in mulit-host cluster scenarios, one needs ensure app containers only communicate AESM containers on the same physical machine as quotes and launch token are only valid on the same physical machine. 
+
+Similarly for applications with enclaves doing local attestation, one must bundle those containers (possible in the same k8s pod) to run on the same physical machine.
+
 
 ### Handling SGX device node
 
@@ -48,9 +55,9 @@ Dockerfile is a multi-stage docker file that specifies 3 image build targets:
 2. aesm: takes psw installer from builder, install and run the aesm deamon.
 3. sample: takes sdk installer from build, build and run the SampleEnclave app
 
-build_and_run_aesm.sh shows how to build and run the aesm image. This will start an aesm service listening to named socket, mounted to /var/run/aesmd in the container from host /tmp/aesmd
+build_and_run_aesm_docker.sh shows how to build and run the aesm image. This will start an aesm service listening to named socket, mounted to /var/run/aesmd in the container from host /tmp/aesmd
 
-build_and_run_sample.sh shows how to build and run the SampleEnclave app inside container with locally built sgx_sample image.
+build_and_run_sample_docker.sh shows how to build and run the SampleEnclave app inside container with locally built sgx_sample image.
 
 ### Docker composer files
 
