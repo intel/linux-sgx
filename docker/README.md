@@ -8,7 +8,7 @@ Files in this directory demostrate how to deploy SGX enclave applications in doc
 
 On CPUs with no flexible launch control support (Kabe Lake, Skylake CPUs), or systems with [SGX out-of-tree driver](https://github.com/intel/linux-sgx-driver), the AESM service is needed to run and host the launch enclave.
 
-Also for applications requiring remote attestation, AESM with a quoting enclave is needed to generate quote or a quote generation library such as the one provided by [Intel DCAP project](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration)
+Also for applications requiring remote attestation, AESM with a quoting enclave or a quote generation library such as the one provided by [Intel DCAP project](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration) is needed to generate quote for the enclave to be attested. In case of quote generation library, it needs be compiled in with the app hosting the attestee enclave. Please refer to [Intel SGX SDK documentation](https://software.intel.com/sgx) for details on remote attestation
 
 It is recommended to either run AESM in separate container or directly on the host and expose the named socket to application containers by mounting the same Socket file on the host filesystem, /tmp/aesmd in this demo.
 
