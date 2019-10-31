@@ -16,18 +16,18 @@ It is not recommended, but in any case you want to run AESM and application toge
 
 ### Support for containers in different VMs on the same host
 
-SGX KVM support is not yet available yet. This means we can only have SGX applications isolated at container (process boundary) level.
+SGX KVM support is not yet available. This means we can only have SGX applications isolated at container (process boundary) level.
 This demo does not show how to deploy SGX app containers into different VMs.  
 
-Another potential issue to support VMs: to connect to AESM running in separate VM, we need expose its Unix socket as TCP/IP port listening for incoming requests.
+Another potential issue to support VMs: to connect to AESM running in separate VM, we need expose its Unix socket as TCP sockt listening for incoming requests.
 
-Potential solution: Use a proxy server container (e.g., socat) on the same VM as AESM to do the listening and forwarding of the requests. On the application VM, also a proxy client container (e.g., socat) to forward the request to the proxy server.
+Potential solution: Use a proxy server container (e.g., socat) on the same VM as AESM to do the listening and forwarding of the requests to the AESM socket. On the application VM, also a proxy client container (e.g., socat) to forward the request to the proxy server.
 
 ### Scale deployment to multi-host clusters
 
 To scale an SGX application that is stateless should be straightforward: just create more instances of containers on more nodes.
 
-To scale a stateful SGX application, particularly if the enclave it hosts need to access states shared  with its peers, one needs to carefully design a approach to handle shared states among enclave instances. This may be application specific and not included in this demo.
+To scale a stateful SGX application, particularly if the enclave it hosts need to access states shared  with its peers, one needs to carefully design a approach to handle shared states among enclave instances. This is more application specific and not included in this demo.
 
 ### Handling SGX device node
 
@@ -37,7 +37,7 @@ All SGX applications need access to the SGX device nodes exposed by kernel space
 2. OOT driver: /dev/isgx
 3. Inkernel: /dev/sgx/enclave (for all SGX app containers), /dev/sgx/provision (for apps with enclaves accessing the SGX provisioning keys)
 
-Note docker can pass devices nodes to mount from command line, but kubernetes requires containers running with "priviledged" mode
+Note docker can pass devices nodes to container from "docker run" command line, but kubernetes requires containers running with "priviledged" mode, which is the approach used in this demo for minikube deployments.
 
 ## Build and run docker container directly
 
@@ -59,7 +59,7 @@ compose_and_run.sh demostrate its usage.
 
 ## Kubernates deployments
 
-There are 3 different deployment files and they can be used to test on a minikube node started with "minikube start --vm-driver=none".
+There are 3 different deployment files and they can be used to test on a minikube node started with "minikube start --vm-driver=none". Note in future when KVM supports SGX, we can remove the option "--vm-driver=none).
 
 1. aesm-deployment.yaml: start aesm container/pod using local docker sgx_aesm image
 2. sample-deploymen.yaml:start sample container/pod using local docker sgx_sample image. Note this deployment will wait for /tmp/aemsd/aesm.socket created by aesm
