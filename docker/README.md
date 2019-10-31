@@ -1,4 +1,4 @@
-# SGX enclave in containers
+# Deploy SGX enclaves in containers
 
 Files in this directory demostrate how to deploy SGX enclave applications in docker containers.
 
