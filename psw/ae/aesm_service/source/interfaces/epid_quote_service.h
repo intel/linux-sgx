@@ -29,6 +29,15 @@ struct IEpidQuoteService : public IQuoteService
     enum {GIDMT_UNMATCHED, GIDMT_NOT_AVAILABLE, GIDMT_MATCHED,GIDMT_UNEXPECTED_ERROR};
     virtual uint32_t is_gid_matching_result_in_epid_blob(
         const GroupId& gid) = 0;
+    virtual aesm_error_t report_attestation_status(
+        uint8_t* platform_info, uint32_t platform_info_size,
+        uint32_t attestation_status,
+        uint8_t* update_info, uint32_t update_info_size) = 0;
+    
+    virtual aesm_error_t check_update_status(
+        uint8_t* platform_info, uint32_t platform_info_size,
+        uint8_t* update_info, uint32_t update_info_size,
+        uint32_t attestation_status, uint32_t* status) = 0;        
 };
 
 #endif /* EPID_QUOTE_SERVICE_EXPORT_H */
