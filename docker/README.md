@@ -27,9 +27,9 @@ Potential solution: Use a proxy server container (e.g., socat) on the same VM as
 
 This demo is designed for single physical node only.
 
-To scale an SGX application that is stateless should be straightforward: just create more instances of containers on more nodes.
+It should be straightforward to scale an SGX application that is stateless: just create more instances of containers on more nodes.
 
-To scale a stateful SGX application, particularly if the enclave it hosts need to access states shared  with its peers, one needs to carefully design a approach to handle shared states among enclave instances. This is more application specific and not included in this demo.
+To scale a stateful SGX application, particularly if the enclave it hosts need to access states shared  with its peers, one needs to carefully design a strategy to handle shared states among enclave instances. In addition to address general stateful application scaling issues, the enclaves need to establish trust and protected channels before sharing state between each other. This can become very application specific and is out of scope of this demo.
 
 To handle AESM dependency in mulit-host cluster scenarios, one needs ensure app containers only communicate AESM containers on the same physical machine as quotes and launch token are only valid on the same physical machine. 
 
