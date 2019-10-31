@@ -428,7 +428,7 @@ aesm_error_t AESMLogicWrapper::reportAttestationStatus(uint8_t *platform_info, u
 {
     uint8_t *output_update_info = new uint8_t[update_info_size]();
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
-    std::shared_ptr<IPseopService> service;
+    std::shared_ptr<IEpidQuoteService> service;
     if (!get_service_wrapper(service, g_fw_ctx))
     {
         delete[] output_update_info;
@@ -457,7 +457,7 @@ aesm_error_t AESMLogicWrapper::checkUpdateStatus(uint8_t* platform_info, uint32_
 
 {
 	aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
-	std::shared_ptr<IPseopService> service;
+	std::shared_ptr<IEpidQuoteService> service;
 	if (!get_service_wrapper(service, g_fw_ctx))
 	{
 		return AESM_SERVICE_UNAVAILABLE;

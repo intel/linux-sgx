@@ -29,6 +29,7 @@
 #include "service_enclave_mrsigner.hh"
 #include "sgx_ql_quote.h"
 #include "se_sig_rl.h"
+#include "platform_info_logic.h"
 
 using namespace cppmicroservices;
 std::shared_ptr<INetworkService> g_network_service;
@@ -520,6 +521,34 @@ public:
         }
         *att_key_id_num = 2;
         return AESM_SUCCESS;
+    }
+
+    aesm_error_t report_attestation_status(
+        uint8_t* platform_info, uint32_t platform_info_size,
+        uint32_t attestation_status,
+        uint8_t* update_info, uint32_t update_info_size)
+    {
+        AESM_DBG_INFO("LocalPseopServiceImp::report_attestation_status");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        AESMLogicLock lock(_qe_pve_mutex);
+        return  PlatformInfoLogic::report_attestation_status(platform_info,platform_info_size,
+            attestation_status,
+            update_info, update_info_size);
+    }
+
+    aesm_error_t check_update_status(
+        uint8_t* platform_info, uint32_t platform_info_size,
+        uint8_t* update_info, uint32_t update_info_size,
+        uint32_t config, uint32_t* status)
+    {
+        AESM_DBG_INFO("LocalPseopServiceImp::check_update_status");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        AESMLogicLock lock(_qe_pve_mutex);
+        return  PlatformInfoLogic::check_update_status(platform_info,platform_info_size,
+            update_info, update_info_size,
+            config, status);
     }
 };
 
