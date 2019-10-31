@@ -8,6 +8,8 @@ Files in this directory demostrate how to deploy SGX enclave applications in doc
 
 On CPUs with no flexible launch control support (Kabe Lake, Skylake CPUs), or systems with [SGX out-of-tree driver](https://github.com/intel/linux-sgx-driver), the AESM service is needed to run and host the launch enclave.
 
+Also for applications requiring remote attestation, AESM with a quoting enclave is needed to generate quote or a quote generation library such as the one provided by [Intel DCAP project](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/QuoteGeneration)
+
 It is recommended to either run AESM in separate container or directly on the host and expose the named socket to application containers by mounting the same Socket file on the host filesystem, /tmp/aesmd in this demo.
 
 It is not recommended, but in any case you want to run AESM and application together in the same container, please refer to docker documentation on [multi-service container](https://docs.docker.com/config/containers/multi-service_container/)
@@ -15,7 +17,7 @@ It is not recommended, but in any case you want to run AESM and application toge
 ### Support for containers in different VMs on the same host
 
 SGX KVM support is not yet available yet. This means we can only have SGX applications isolated at container (process boundary) level.
-This demo does not show how to deploy SGX app containers into different VMs.
+This demo does not show how to deploy SGX app containers into different VMs.  
 
 Another potential issue to support VMs: to connect to AESM running in separate VM, we need expose its Unix socket as TCP/IP port listening for incoming requests.
 
