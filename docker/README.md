@@ -19,9 +19,9 @@ It is not recommended, but in any case you want to run AESM and application toge
 SGX KVM support is not yet available. This means we can only have SGX applications isolated at container (process boundary) level.
 This demo does not show how to deploy SGX app containers into different VMs.  
 
-Another potential issue to support VMs: to connect to AESM running in separate VM, we need expose its Unix socket as TCP sockt listening for incoming requests.
+Another issue to support VMs: to connect to AESM running in separate VM, we need expose its Unix socket as TCP sockt listening for incoming requests.
 
-Potential solution: Use a proxy server container (e.g., socat) on the same VM as AESM to do the listening and forwarding of the requests to the AESM socket. On the application VM, also a proxy client container (e.g., socat) to forward the request to the proxy server.
+Potential solution: Use a proxy server container (e.g., socat) on the same VM as AESM to do the listening and forwarding of the requests to the AESM socket. On the application VM, also a proxy client container (e.g., socat) to forward the request to the proxy server. This is demostrated in util/set_up_aesm_socat.sh and util/run_sample_with_socat.sh scripts.
 
 ### Scale deployment to multi-host clusters
 
@@ -74,7 +74,13 @@ There are 3 different deployment files and they can be used to test on a minikub
 
 Please refer to [minikube docs](https://kubernetes.io/docs/tasks/tools/install-minikube/) for installation, startup, managing deployments.
 
-
-
-
+After installing minikube, kubectl following instructions, here are typical steps to deploy pods of aesm and sample app to the minikube.
+```
+$ sudo minikube start --vm-driver=none
+$ sudo minikube dashboard # to start the dashboard, optional, useful to see status of pods, deployments
+$ sudo kubectl apply -f aesm-deployment.yaml
+$ sudo kubectl apply -f sample-deployment.yaml #order does not matter
+```
+To deploy the all-in-one pod, replace the last two commands with:
+```$ sudo kubectl apply -f all-in-one.yaml```
 
