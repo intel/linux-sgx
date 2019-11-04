@@ -156,7 +156,7 @@ endif
 
 Enclave_C_Flags += $(Enclave_Include_Paths)
 Enclave_Cxx_Flags := $(Enclave_C_Flags) $(SGX_COMMON_CXXFLAGS) -nostdinc++
-Enclave_C_Flasg += $(SGX_COMMON_CFLAGS)
+Enclave_C_Flags += $(SGX_COMMON_CFLAGS)
 
 # Enable the security flags
 Enclave_Security_Link_Flags := -Wl,-z,relro,-z,now,-z,noexecstack
