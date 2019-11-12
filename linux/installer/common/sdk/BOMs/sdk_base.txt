@@ -39,6 +39,8 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/common/inc/sgx_tprotected_fs.h	<installdir>/package/include/./sgx_tprotected_fs.h	0	main	STP
 <deliverydir>/common/inc/sgx_tprotected_fs.edl	<installdir>/package/include/./sgx_tprotected_fs.edl	0	main	STP
 <deliverydir>/common/inc/sgx_pcl_guid.h	<installdir>/package/include/./sgx_pcl_guid.h	0	main	STP
+<deliverydir>/common/inc/sgx_secure_align.h	<installdir>/package/include/./sgx_secure_align.h	0	main	STP
+<deliverydir>/common/inc/sgx_secure_align_api.h	<installdir>/package/include/./sgx_secure_align_api.h	0	main	STP
 <deliverydir>/common/inc/stdc++/exception	<installdir>/package/include/stdc++/exception	0	main	STP
 <deliverydir>/common/inc/stdc++/linux/exception	<installdir>/package/include/stdc++/linux/exception	0	main	STP
 <deliverydir>/common/inc/stdc++/linux/typeinfo	<installdir>/package/include/stdc++/linux/typeinfo	0	main	STP

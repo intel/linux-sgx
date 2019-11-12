@@ -29,7 +29,7 @@
  *
  */
 
-
+#include "sgx_secure_align.h"
 #include "se_types.h"
 #include "sgx_trts.h"
 #include "sgx_utils.h"
@@ -185,7 +185,12 @@ static sgx_status_t create_pse_session_within_mutex()
 
     //for dh session
     sgx_dh_session_t dh_session_context;
-    sgx_key_128bit_t dh_aek;
+    //
+    // securely align aek
+    //
+    //sgx_key_128bit_t dh_aek;
+    sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)> odh_aek;
+    sgx_key_128bit_t& dh_aek = odh_aek.v;
     sgx_dh_session_enclave_identity_t dh_id;
 
     memset(&se_dh_msg1, 0, sizeof(se_dh_msg1));

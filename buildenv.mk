@@ -180,10 +180,7 @@ COMMON_LDFLAGS := -Wl,-z,relro,-z,now,-z,noexecstack
 # When `pie' is enabled, the linker (both BFD and Gold) under Ubuntu 14.04
 # will hide all symbols from dynamic symbol table even if they are marked
 # as `global' in the LD version script.
-ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie
-ifeq ($(CC_GREAT_EQUAL_8), 1)
-    ENCLAVE_CFLAGS += -fcf-protection
-endif
+ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie -fno-strict-overflow -fno-delete-null-pointer-checks
 ENCLAVE_CXXFLAGS = $(ENCLAVE_CFLAGS) -nostdinc++
 ENCLAVE_LDFLAGS  = $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \

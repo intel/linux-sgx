@@ -113,3 +113,24 @@
     mov      \tcs, %xax
     sub      $SE_GUARD_PAGE_SIZE, %xax
 .endm
+
+#define FLAGS_AC_BIT     0x40000   /* bit 18 */
+#define FLAGS_CLEAR_BITS FLAGS_AC_BIT
+
+.macro CLEAN_XFLAGS
+
+#if defined(LINUX64)
+    pushfq
+    notq     (%xsp)
+    orq      $FLAGS_CLEAR_BITS, (%xsp)
+    notq     (%xsp)
+    popfq
+#else
+    pushfl
+    notl     (%xsp)
+    orl      $FLAGS_CLEAR_BITS, (%xsp)
+    notl     (%xsp)
+    popfl
+#endif
+
+.endm

@@ -29,7 +29,7 @@
  *
  */
 
-
+#include <sgx_secure_align.h>
 #include "sigma_crypto_layer.h"
 #include "sgx_ecc256_internal.h"
 #include "pse_pr_inc.h"
@@ -78,7 +78,13 @@ ae_error_t SigmaCryptoLayer::DeriveSkMk(/* In  */ sgx_ecc_state_handle_t ecc_han
     uint8_t Gab[SGX_ECP256_KEY_SIZE*2] = {0};
     uint8_t Gab_Wth_00[SGX_ECP256_KEY_SIZE*2+1] = {0};
     uint8_t Gab_Wth_01[SGX_ECP256_KEY_SIZE*2+1] = {0};
-    uint8_t GabHMACSha256[SGX_SHA256_HASH_SIZE] = { 0 };
+    //
+    // securely align - need to zero
+    // [SK,MK] = GabHMACSha256
+    //
+    //uint8_t GabHMACSha256[SGX_SHA256_HASH_SIZE] = { 0 };
+    sgx::custom_alignment_aligned<uint8_t[SGX_SHA256_HASH_SIZE], SGX_SHA256_HASH_SIZE, 0, SGX_SHA256_HASH_SIZE> oGabHMACSha256;
+    uint8_t (&GabHMACSha256)[SGX_SHA256_HASH_SIZE] = oGabHMACSha256.v;
 
     /* convert m_remotePublicKey_ga_big_endian to little endian format */
     uint8_t public_key_little_endian[SIGMA_SESSION_PUBKEY_LENGTH];
@@ -182,7 +188,12 @@ ae_error_t SigmaCryptoLayer::calc_s3_hmac(
 
 ae_error_t SigmaCryptoLayer::ComputePR(SIGMA_SECRET_KEY* oldSK, uint8_t byteToAdd, SIGMA_HMAC* hmac)
 {
-    uint8_t Sk_Wth_Added_Byte[sizeof(SIGMA_SIGN_KEY)+1];
+    //
+    // securely align
+    //
+    //uint8_t Sk_Wth_Added_Byte[sizeof(SIGMA_SIGN_KEY)+1];
+    sgx::custom_alignment_aligned<uint8_t[sizeof(SIGMA_SIGN_KEY)+1], sizeof(SIGMA_SIGN_KEY), 0, sizeof(SIGMA_SIGN_KEY)> oSk_Wth_Added_Byte;
+    uint8_t (&Sk_Wth_Added_Byte)[sizeof(SIGMA_SIGN_KEY) + 1] = oSk_Wth_Added_Byte.v;
 
     ae_error_t ae_status = PSE_PR_PR_CALC_ERROR;
 

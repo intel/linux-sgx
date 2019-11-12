@@ -29,7 +29,7 @@
 #
 #
 
-DCAP_VER?= 1.3
+DCAP_VER?= 1.3.1
 DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
 
 CHECK_OPT :=

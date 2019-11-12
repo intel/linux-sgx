@@ -36,7 +36,7 @@
 *
 * Wrap functions to get PPID, PWK, PSID, PSVN, PSK and seal/unseal function
 */
-
+#include <sgx_secure_align.h>
 #include "helper.h"
 #include "string.h"
 #include "sgx_error.h"
@@ -128,11 +128,13 @@ pve_status_t get_pwk2(
         return PVEC_PARAMETER_ERROR;
     uint8_t content[32];
     sgx_status_t sgx_status = SGX_SUCCESS;
-    sgx_key_128bit_t key_tmp;
+    //sgx_key_128bit_t key_tmp;
+    sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)> okey_tmp;
+    sgx_key_128bit_t* pkey_tmp = &okey_tmp.v;
     pve_status_t status = PVEC_SUCCESS;
 
-    memset(&key_tmp, 0, sizeof(key_tmp));
-    status = get_provision_key(&key_tmp, psvn); //Generate Provisioning Key with respect to the psvn
+    memset(pkey_tmp, 0, sizeof(*pkey_tmp));
+    status = get_provision_key(pkey_tmp, psvn); //Generate Provisioning Key with respect to the psvn
     if(status != PVEC_SUCCESS)
         goto ret_point;
 
@@ -144,9 +146,9 @@ pve_status_t get_pwk2(
     content[OFF_BYTE_0X80] = 0x80; //fill 0x80 in byte offset 31
 
     //get the cmac of provision key as PWK2
-    se_static_assert(sizeof(sgx_cmac_128bit_key_t)==sizeof(key_tmp)); /*size of sgx_cmac_128bit_key_t should be same as sgx_key_128bit_t*/
+    se_static_assert(sizeof(sgx_cmac_128bit_key_t)==sizeof(*pkey_tmp)); /*size of sgx_cmac_128bit_key_t should be same as sgx_key_128bit_t*/
     se_static_assert(sizeof(sgx_cmac_128bit_tag_t)==sizeof(sgx_key_128bit_t)); /*size of sgx_cmac_128bit_tag_t should be same as sgx_key_128bit_t*/
-    if((sgx_status = sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(&key_tmp), 
+    if((sgx_status = sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(pkey_tmp), 
         reinterpret_cast<const uint8_t *>(content), sizeof(content),
         reinterpret_cast<sgx_cmac_128bit_tag_t *>(wrap_key)))!=SGX_SUCCESS){
             status = sgx_error_to_pve_error(sgx_status);
@@ -154,7 +156,7 @@ pve_status_t get_pwk2(
         status = PVEC_SUCCESS;
     }
 ret_point:
-    (void)memset_s(&key_tmp,sizeof(key_tmp), 0 ,sizeof(key_tmp)); //clear provisioninig key in stack
+    (void)memset_s(pkey_tmp,sizeof(*pkey_tmp), 0 ,sizeof(*pkey_tmp)); //clear provisioninig key in stack
     return status;
 }
 

@@ -36,7 +36,8 @@ CXXFLAGS  += -Werror
 CFLAGS    += -Werror 
 
 INCLUDE += -I.                                   \
-           -I$(LINUX_PSW_DIR)/ae/inc/internal
+           -I$(LINUX_PSW_DIR)/ae/inc/internal    \
+           -I$(SGX_HEADER_DIR)/libcxx
 
 SRC := $(wildcard *.cpp)
 SRC += dh.cpp              \

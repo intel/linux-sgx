@@ -29,6 +29,8 @@
  *
  */
 
+#include <sgx_secure_align.h>
+
 #include <stdlib.h>
 #include "launch_enclave.h"
 #include "byte_order.h"
@@ -100,7 +102,13 @@ static ae_error_t le_calc_lic_token(token_t* lictoken)
     //calculate launch token
 
     sgx_key_request_t key_request;
-    sgx_key_128bit_t launch_key;
+
+    //
+    // securely align launch key
+    //
+    // sgx_key_128bit_t launch_key;
+    sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)> olaunch_key;
+    sgx_key_128bit_t& launch_key = olaunch_key.v;
 
     if(SGX_SUCCESS != sgx_read_rand((uint8_t*)&lictoken->key_id,
                                     sizeof(sgx_key_id_t)))

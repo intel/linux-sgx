@@ -29,21 +29,65 @@
  *
  */
 
-
+#include <sgx_secure_align.h>
 #include "utility.h"
 #include "session_mgr.h"
 #include "pse_op_t.h"
 #include "sgx_dh.h"
 
 // ISV enclave <-> pse-op sessions
-static pse_session_t        g_session[SESSION_CONNECTION];
+//
+// securely align all ISV enclave - pse sessions' secrets
+//
+static sgx::custom_alignment_aligned<pse_session_t, 16, __builtin_offsetof(pse_session_t, active.AEK), 16> og_session[SESSION_CONNECTION];
+//
+// following allows existing references to g_session[index]
+// to not have to change
+//
+class CSessions
+{
+public:
+    pse_session_t& operator[](int index) {
+        return og_session[index].v;
+    }
+};
+static CSessions g_session;
 static uint32_t             g_session_count = 0;
 
 // ephemeral session global variables
 static uint8_t              g_nonce_r_pse[EPH_SESSION_NONCE_SIZE] = {0};      // nonce R(PSE) for ephemeral session establishment
 static uint8_t              g_nonce_r_cse[EPH_SESSION_NONCE_SIZE] = {0};      // nonce R(CSE) for ephemeral session establishment
-static pairing_data_t       g_pairing_data;                       // unsealed pairing data
-eph_session_t               g_eph_session;                        // ephemeral session information
+
+//
+// securely align pairing data
+// Id_pse and Id_cse aren't secrets
+// I don't think pairingNonce is a secret and even if it is, we can't align
+// all of [mk, sk, pairingID, pairingNonce]
+//
+//static pairing_data_t       g_pairing_data;                       // unsealed pairing data
+static sgx::custom_alignment<pairing_data_t,
+    //__builtin_offsetof(pairing_data_t, secret_data.Id_pse), sizeof(((pairing_data_t*)0)->secret_data.Id_pse),
+    //__builtin_offsetof(pairing_data_t, secret_data.Id_cse), sizeof(((pairing_data_t*)0)->secret_data.Id_cse),
+    __builtin_offsetof(pairing_data_t, secret_data.mk), sizeof(((pairing_data_t*)0)->secret_data.mk),
+    __builtin_offsetof(pairing_data_t, secret_data.sk), sizeof(((pairing_data_t*)0)->secret_data.sk),
+    __builtin_offsetof(pairing_data_t, secret_data.pairingID), sizeof(((pairing_data_t*)0)->secret_data.pairingID)
+    //__builtin_offsetof(pairing_data_t, secret_data.pairingNonce), sizeof(((pairing_data_t*)0)->secret_data.pairingNonce)
+    > opairing_data;
+pairing_data_t& g_pairing_data = opairing_data.v;
+//
+// securely align pse - cse/psda ephemeral session secrets
+//
+//eph_session_t               g_eph_session;                        // ephemeral session information
+sgx::custom_alignment<eph_session_t,
+    __builtin_offsetof(eph_session_t, TSK), sizeof(((eph_session_t*)0)->TSK),
+    __builtin_offsetof(eph_session_t, TMK), sizeof(((eph_session_t*)0)->TMK)
+> oeph_session;
+//
+// this reference trick requires change to declaration
+// in other files, but still cleaner than changing
+// all references
+//
+eph_session_t& g_eph_session = oeph_session.v;
 
 /**
  * @brief Check the status of the ephemeral session
@@ -417,7 +461,12 @@ pse_op_error_t pse_exchange_report(uint64_t tick,
 {
     pse_op_error_t status = OP_SUCCESS;
     sgx_dh_session_t sgx_dh_session;
-    sgx_key_128bit_t aek;
+    //
+    // securely align aek
+    //
+    //sgx_key_128bit_t aek;
+    sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)> oaek;
+    sgx_key_128bit_t& aek = oaek.v;
     sgx_dh_session_enclave_identity_t initiator_identity;
     cse_sec_prop_t * pcse_sec = NULL;
     secu_info_t* psec_info = NULL;
@@ -624,7 +673,13 @@ pse_op_error_t ephemeral_session_m4(
 {
     uint32_t msg_len;
     uint8_t* msg_buf = NULL;
-    uint8_t  mac_buf[SGX_SHA256_HASH_SIZE];
+    //
+    // securely align mac_buf
+    // [TSK,TMK] = mac_buf
+    //
+    //uint8_t  mac_buf[SGX_SHA256_HASH_SIZE];
+    sgx::custom_alignment_aligned<uint8_t[SGX_SHA256_HASH_SIZE], SGX_SHA256_HASH_SIZE, 0, SGX_SHA256_HASH_SIZE> omac_buf;
+    uint8_t (&mac_buf)[SGX_SHA256_HASH_SIZE] = omac_buf.v;
     pse_op_error_t op_ret = OP_SUCCESS;
 
     // check session state

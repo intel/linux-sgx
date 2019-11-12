@@ -29,7 +29,7 @@
  *
  */
  
- 
+#include "sgx_secure_align.h" 
 #include "t_certificate_provisioning.h"
 #include <cstddef>
 
@@ -93,7 +93,9 @@ ae_error_t prepare_for_certificate_provisioning
     ae_error_t status = AE_FAILURE;
 
     pairing_data_t pairingData;
-    EcDsaPrivKey privateKey;
+    //EcDsaPrivKey privateKey;
+    sgx::custom_alignment_aligned<EcDsaPrivKey, sizeof(EcDsaPrivKey), 0, sizeof(EcDsaPrivKey)> oprivateKey;
+    EcDsaPrivKey& privateKey = oprivateKey.v;
     EcDsaPubKey publicKey;
     uint8_t     temp_instance_id[16];
 

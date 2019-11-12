@@ -37,6 +37,7 @@
  */
 
 #include <sgx_random_buffers.h>
+#include <sgx_secure_align.h>
 #include "sgx_utils.h"
 #include "util.h"
 #include <stdlib.h>
@@ -67,8 +68,13 @@ sgx_status_t sgx_verify_report(const sgx_report_t *report)
     key_request.key_name = SGX_KEYSELECT_REPORT;
     memcpy_s(&key_request.key_id, sizeof(key_request.key_id), &report->key_id, sizeof(report->key_id));
 
-    randomly_placed_buffer<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0x800> report_key_buf{};
-    auto *report_key = report_key_buf.randomize_object();
+    //randomly_placed_buffer<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0x800> report_key_buf{};
+    //auto *report_key = report_key_buf.randomize_object();
+    using creport_key800 = randomly_placed_object<sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)>, 0x800>;
+    creport_key800 oreport_key_buf;
+    auto* oreport_key = oreport_key_buf.instantiate_object();
+    auto* report_key = &oreport_key->v;
+
     //get the report key
     // Since the key_request is not an input parameter by caller,
     // we suppose sgx_get_key would never return the following error code:

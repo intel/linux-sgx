@@ -150,6 +150,9 @@ DECLARE_GLOBAL_FUNC enclave_entry
     mov     %xsp, %xbp
     .cfi_def_cfa_register xbp
 
+    CLEAN_XFLAGS
+
+
     /* Save the registers */
     sub     $(6*SE_WORDSIZE), %xsp
     mov     %xax, -1*SE_WORDSIZE(%xbp)  /* xsp_u */

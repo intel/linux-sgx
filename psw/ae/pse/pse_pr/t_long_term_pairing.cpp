@@ -29,7 +29,7 @@
  *
  */
 
-
+#include <sgx_secure_align.h>
 #include <cstddef>
 #include "sgx_trts.h"
 #include "sgx_utils.h"
@@ -260,9 +260,19 @@ ae_error_t TEpidSigmaVerifier::GenM7
     ae_error_t status = AE_FAILURE;
     bool bResult;
 
-
-    pairing_data_t pairing_data;
-    memset(&pairing_data, 0, sizeof(pairing_data));
+    //
+    // impossible to securely align all the secret data in the blob
+    //
+    sgx::custom_alignment<pairing_data_t,
+        // __builtin_offsetof(pairing_data_t, secret_data.Id_pse), sizeof(((pairing_data_t*)0)->secret_data.Id_pse),
+        //__builtin_offsetof(pairing_data_t, secret_data.Id_cse), sizeof(((pairing_data_t*)0)->secret_data.Id_cse),
+        __builtin_offsetof(pairing_data_t, secret_data.mk), sizeof(((pairing_data_t*)0)->secret_data.mk),
+        __builtin_offsetof(pairing_data_t, secret_data.sk), sizeof(((pairing_data_t*)0)->secret_data.sk),
+        __builtin_offsetof(pairing_data_t, secret_data.pairingID), sizeof(((pairing_data_t*)0)->secret_data.pairingID)
+        //__builtin_offsetof(pairing_data_t, secret_data.pairingNonce), sizeof(((pairing_data_t*)0)->secret_data.pairingNonce)
+    > opairing_data;
+    pairing_data_t* ppairing_data = &opairing_data.v;
+    memset(ppairing_data, 0, sizeof(*ppairing_data));
 
     sgx_ecc_state_handle_t sigma_ecc_handle = NULL;
 
@@ -344,8 +354,13 @@ ae_error_t TEpidSigmaVerifier::GenM7
         BREAK_IF_TRUE((SGX_SUCCESS != sgx_status), status, PSE_PR_KEY_PAIR_GENERATION_ERROR);
 
         /* Get private key b and public key g^b, in little-endian format */
-        uint8_t Publickey_little_endian[SIGMA_SESSION_PUBKEY_LENGTH];
-        uint8_t Privatekey_b_little_endian[SIGMA_SESSION_PRIVKEY_LENGTH];
+        uint8_t Publickey_little_endian[SIGMA_SESSION_PUBKEY_LENGTH] = {0};
+        //
+        // securely align private key, b - need to zero
+        //
+        //uint8_t Privatekey_b_little_endian[SIGMA_SESSION_PRIVKEY_LENGTH] = {0};
+        sgx::custom_alignment_aligned<uint8_t[SIGMA_SESSION_PRIVKEY_LENGTH], SIGMA_SESSION_PRIVKEY_LENGTH, 0, SIGMA_SESSION_PRIVKEY_LENGTH> oPrivatekey_b_little_endian;
+        uint8_t (&Privatekey_b_little_endian)[SIGMA_SESSION_PRIVKEY_LENGTH] = oPrivatekey_b_little_endian.v;
         if (SGX_SUCCESS != sgx_ecc256_create_key_pair((sgx_ec256_private_t *)Privatekey_b_little_endian,
                                                 (sgx_ec256_public_t*)Publickey_little_endian, sigma_ecc_handle))
         {
@@ -385,7 +400,7 @@ ae_error_t TEpidSigmaVerifier::GenM7
         //*********************************************************************
         // Unseal pairing blob
         //*********************************************************************
-        tmp_status = UnsealPairingBlob(pPairingBlob, &pairing_data);
+        tmp_status = UnsealPairingBlob(pPairingBlob, ppairing_data);
         BREAK_IF_TRUE(AE_SUCCESS != tmp_status, status, tmp_status);
 
         //*************************************************************
@@ -393,13 +408,13 @@ ae_error_t TEpidSigmaVerifier::GenM7
         //*************************************************************
 
         //        OutputOctets("::GenM7:: Verifier PrivateKey", unsealedBlobData.VerifierPrivateKey, ECDSA_PRIVKEY_LEN);
-        memcpy(m_verifierPrivateKey, pairing_data.secret_data.VerifierPrivateKey, ECDSA_PRIVKEY_LEN);
+        memcpy(m_verifierPrivateKey, ppairing_data->secret_data.VerifierPrivateKey, ECDSA_PRIVKEY_LEN);
 
         //*************************************************************
         // Extract pairing data
         //*************************************************************
-        memcpy(m_pairingID,    pairing_data.secret_data.pairingID,    sizeof(m_pairingID));
-        memcpy(m_pairingNonce, pairing_data.secret_data.pairingNonce, sizeof(m_pairingNonce));
+        memcpy(m_pairingID,    ppairing_data->secret_data.pairingID,    sizeof(m_pairingID));
+        memcpy(m_pairingNonce, ppairing_data->secret_data.pairingNonce, sizeof(m_pairingNonce));
 
         //        OutputOctets("::GenM7:: m_pairingID", m_pairingID, sizeof(m_pairingID));
         //        OutputOctets("::GenM7:: m_pairingNonce", m_pairingNonce, sizeof(m_pairingNonce));
@@ -488,7 +503,7 @@ ae_error_t TEpidSigmaVerifier::GenM7
 
         if (SGX_SUCCESS == sgx_ecdsa_sign(combined_pubkeys,
             sizeof(combined_pubkeys),
-            (sgx_ec256_private_t *)pairing_data.secret_data.VerifierPrivateKey,
+            (sgx_ec256_private_t *)ppairing_data->secret_data.VerifierPrivateKey,
             (sgx_ec256_signature_t *)ecc_sig,
             sigma_ecc_handle))
         {
@@ -523,7 +538,7 @@ ae_error_t TEpidSigmaVerifier::GenM7
     } while (false);
 
     /* Defense-in-depth: clear the data on stack that contains enclave secret.*/
-    memset_s(&pairing_data, sizeof(pairing_data), 0, sizeof(pairing_data));
+    memset_s(ppairing_data, sizeof(*ppairing_data), 0, sizeof(*ppairing_data));
 
     /* close ecc context handle, the generic crypto lib will free the context memory */
     if (sigma_ecc_handle != NULL) sgx_ecc256_close_context(sigma_ecc_handle);
@@ -549,7 +564,23 @@ ae_error_t TEpidSigmaVerifier::VerifyM8
     // S3 -->  [TaskInfo || g^a || EpidCert || EpidSig(g^a || g^b) || SIG-RL]SMK
 
     ae_error_t status = AE_FAILURE;
-    pairing_data_t pairing_data;
+    //
+    // securely align pairing data
+    //
+    // pairing_data_t pairing_data;
+    //
+    // Id_pse and Id_cse aren't secrets, not sure about pairingNonce
+    // but we can't align all of [mk,sk,pairingID,pairingNonce] anyway
+    //
+    sgx::custom_alignment<pairing_data_t,
+        //__builtin_offsetof(pairing_data_t, secret_data.Id_pse), sizeof(((pairing_data_t*)0)->secret_data.Id_pse),
+        //__builtin_offsetof(pairing_data_t, secret_data.Id_cse), sizeof(((pairing_data_t*)0)->secret_data.Id_cse),
+        __builtin_offsetof(pairing_data_t, secret_data.mk), sizeof(((pairing_data_t*)0)->secret_data.mk),
+        __builtin_offsetof(pairing_data_t, secret_data.sk), sizeof(((pairing_data_t*)0)->secret_data.sk),
+        __builtin_offsetof(pairing_data_t, secret_data.pairingID), sizeof(((pairing_data_t*)0)->secret_data.pairingID)
+        //__builtin_offsetof(pairing_data_t, secret_data.pairingNonce), sizeof(((pairing_data_t*)0)->secret_data.pairingNonce)
+    > opairing_data;
+    pairing_data_t& pairing_data = opairing_data.v;
 
     //
     // This is misleading, PR_PSE_T isn't part of SIGMA, S3, it's part of our (sgx) m8.

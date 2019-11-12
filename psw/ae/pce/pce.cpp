@@ -29,6 +29,7 @@
  *
  */
 
+#include <sgx_secure_align.h>
 #include <sgx_random_buffers.h>
 #include "pce_cert.h"
 #include "pce_t.c"
@@ -251,8 +252,10 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
     ae_error_t ae_ret = AE_FAILURE;
     sgx_ecc_state_handle_t handle=NULL;
 
-    randomly_placed_buffer<sgx_ec256_private_t, sizeof(sgx_ec256_private_t)> ec_prv_key_buf{};
-    auto* pec_prv_key = ec_prv_key_buf.randomize_object();
+    using cec_prv_key = randomly_placed_object<sgx::custom_alignment_aligned < sgx_ec256_private_t, sizeof(sgx_ec256_private_t), 0, sizeof(sgx_ec256_private_t)>>;
+    cec_prv_key oec_prv_key_buf;	
+    auto* oec_prv_key = oec_prv_key_buf.instantiate_object();	
+    auto* pec_prv_key = &oec_prv_key->v;
 
     sgx_status_t sgx_status = SGX_SUCCESS;
 
