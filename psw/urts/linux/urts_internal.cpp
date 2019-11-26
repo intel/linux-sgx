@@ -59,11 +59,11 @@ extern "C" sgx_status_t sgx_create_le(const char* file_name, const char* prd_css
         return SGX_ERROR_ENCLAVE_FILE_ACCESS;
     }
     se_file_t file = {NULL, 0, false};
-    char resolved_path[PATH_MAX];
+    char resolved_path[PATH_MAX] = {0};
     file.name = realpath(file_name, resolved_path);
     file.name_len = (uint32_t)strlen(resolved_path);
 
-    char css_real_path[PATH_MAX];
+    char css_real_path[PATH_MAX] = {0};
 
     le_prd_css_file_t prd_css_file = {NULL, false};
     prd_css_file.prd_css_name = realpath(prd_css_file_name, css_real_path);
