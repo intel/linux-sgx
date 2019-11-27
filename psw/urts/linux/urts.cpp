@@ -92,7 +92,7 @@ extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name,
         return SGX_ERROR_ENCLAVE_FILE_ACCESS;
     }
     se_file_t file = {NULL, 0, false};
-    char resolved_path[PATH_MAX];
+    char resolved_path[PATH_MAX] = {0};
     file.name = realpath(file_name, resolved_path);
     file.name_len = (uint32_t)strnlen_s(resolved_path, PATH_MAX);
 
