@@ -239,7 +239,7 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
     }
     else
     {
-        SE_TRACE(SE_TRACE_WARNING, "initialize enclave failed\n");
+        SE_TRACE(SE_TRACE_WARNING, "initialize enclave failed: 0x%0x\n", status);
         return SGX_ERROR_UNEXPECTED;
     }
 }
