@@ -89,9 +89,9 @@ AEMessage* AECheckUpdateStatusResponse::serialize()
         aesm::message::Response::CheckUpdateStatusResponse* mutableRes = msg.mutable_checkupdatestatusres();
         mutableRes->CopyFrom(*m_response);
 
-        if (msg.ByteSize() <= INT_MAX) {
+        if (msg.ByteSizeLong() <= INT_MAX) {
             ae_msg = new AEMessage;
-            ae_msg->size = (unsigned int)msg.ByteSize();
+            ae_msg->size = (unsigned int)msg.ByteSizeLong();
             ae_msg->data = new char[ae_msg->size];
             msg.SerializeToArray(ae_msg->data, ae_msg->size);
         }
