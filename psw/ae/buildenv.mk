@@ -31,6 +31,8 @@
 
 ENV := $(strip $(wildcard $(TOP_DIR)/buildenv.mk))
 
+SGX_MODE ?= HW
+
 ifeq ($(ENV),)
     $(error "Can't find $(TOP_DIR)/buildenv.mk")
 endif
@@ -49,8 +51,13 @@ EDLFILE  := $(wildcard *.edl)
 
 EPID_SDK_DIR := $(LINUX_EXTERNAL_DIR)/epid-sdk
 
-URTSLIB := -lsgx_urts
-TRTSLIB := -lsgx_trts
+ifneq ($(SGX_MODE), HW)
+	URTSLIB := -lsgx_urts_sim
+	TRTSLIB := -lsgx_trts_sim
+else
+	URTSLIB := -lsgx_urts
+	TRTSLIB := -lsgx_trts
+endif
 EXTERNAL_LIB := -lsgx_tservice
 
 EXTERNAL_LIB += -lsgx_tstdc -lsgx_tcrypto -lsgx_tcxx
