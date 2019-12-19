@@ -50,8 +50,12 @@ OBJ := $(SRC:.cpp=.o)
 OBJS := $(sort $(OBJ) version.o)
 
 .PHONY: all
-all: $(SONAME) 
+all: $(SONAME)
 
+ifneq ($(SGX_MODE), HW)
+all: pce_sim_private_key.pem
+	$(SGXSIGN) sign -key pce_sim_private_key.pem -enclave $(SONAME) -out libsgx_$(AENAME).signed.so -config $(CONFIG)
+endif
 
 $(SONAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
