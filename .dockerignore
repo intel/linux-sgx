@@ -1,0 +1,8 @@
+linux/installer/docker
+linux/installer/docker/*
+docker
+docker/*
+docker/util/*
+*.md
+.git*
+*/*/.git*

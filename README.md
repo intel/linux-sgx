@@ -28,6 +28,14 @@ Documentation
 - [Intel(R) SGX for Linux\* OS](https://01.org/intel-softwareguard-extensions) project home page on [01.org](https://01.org)
 - [Intel(R) SGX Programming Reference](https://software.intel.com/sites/default/files/managed/7c/f1/332831-sdm-vol-3d.pdf)
 
+Quick Start
+-----------------------------------------
+### Use Docker and Docker Compose
+```
+$ cd docker/build && ./build_compose_run.sh
+```
+See this [README](docker/build/README.md) for details.
+
 Build and Install the Intel(R) SGX Driver
 -----------------------------------------
 Follow the instructions in the [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project to build and install the Intel(R) SGX driver.
