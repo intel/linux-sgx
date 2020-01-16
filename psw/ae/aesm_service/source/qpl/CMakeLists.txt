@@ -5,6 +5,7 @@ target_include_directories(dcap_quoteprov PRIVATE
     ${SGX_HEADER_DIR}
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qpl/inc
+    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/pce_wrapper/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/common/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal
 )

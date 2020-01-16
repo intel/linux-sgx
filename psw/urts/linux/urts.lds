@@ -9,10 +9,14 @@
         sgx_thread_set_untrusted_event_ocall;
         sgx_thread_setwait_untrusted_events_ocall;
         sgx_thread_set_multiple_untrusted_events_ocall;
+        pthread_create_ocall;
+        pthread_wait_timeout_ocall;
+        pthread_wakeup_ocall;
         sgx_oc_cpuidex;
         sgx_get_target_info;
         sgx_create_encrypted_enclave;
         sgx_create_enclave_from_buffer_ex;
+        sgx_set_switchless_itf;
     local:
         *;
 };

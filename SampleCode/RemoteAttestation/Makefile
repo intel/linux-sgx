@@ -106,9 +106,9 @@ App_Cpp_Flags := $(App_C_Flags)
 App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -L. -lsgx_ukey_exchange -lpthread -lservice_provider -Wl,-rpath=$(CURDIR)/sample_libcrypto -Wl,-rpath=$(CURDIR)
 
 ifneq ($(SGX_MODE), HW)
-	App_Link_Flags += -lsgx_uae_service_sim
+	App_Link_Flags += -lsgx_epid_sim -lsgx_quote_ex_sim
 else
-	App_Link_Flags += -lsgx_uae_service
+	App_Link_Flags += -lsgx_epid -lsgx_quote_ex
 endif
 
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)

@@ -113,12 +113,6 @@ App_Cpp_Flags := $(App_C_Flags) $(SGX_COMMON_CXXFLAGS)
 App_C_Flags += $(SGX_COMMON_CFLAGS) 
 App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread 
 
-ifneq ($(SGX_MODE), HW)
-	App_Link_Flags += -lsgx_uae_service_sim
-else
-	App_Link_Flags += -lsgx_uae_service
-endif
-
 App_Cpp_Objects := $(App_Cpp_Files:.cpp=.o)
 
 App_Name := app

@@ -5,6 +5,7 @@
 #include "aeerror.h"
 #include "es_info.h"
 #include "tlv_common.h"
+#include "platform_info_blob.h"
 
 
 struct IEpidQuoteService : public IQuoteService
@@ -19,6 +20,8 @@ struct IEpidQuoteService : public IQuoteService
         uint32_t x_group_id) = 0;
     virtual uint32_t endpoint_selection(
         endpoint_selection_infos_t& es_info) = 0;
+    virtual ae_error_t need_epid_provisioning(
+        const platform_info_blob_wrapper_t* p_platform_info_blob) = 0;
     virtual aesm_error_t provision(
         bool performance_rekey_used,
         uint32_t timeout_usec) = 0;
@@ -26,9 +29,6 @@ struct IEpidQuoteService : public IQuoteService
         aesm_network_server_enum_type_t type) = 0;
     virtual const char *get_pse_provisioning_url(
         const endpoint_selection_infos_t& es_info) = 0;
-    enum {GIDMT_UNMATCHED, GIDMT_NOT_AVAILABLE, GIDMT_MATCHED,GIDMT_UNEXPECTED_ERROR};
-    virtual uint32_t is_gid_matching_result_in_epid_blob(
-        const GroupId& gid) = 0;
     virtual aesm_error_t report_attestation_status(
         uint8_t* platform_info, uint32_t platform_info_size,
         uint32_t attestation_status,

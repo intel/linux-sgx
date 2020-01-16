@@ -59,7 +59,7 @@ endif
 
 $(SONAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
-	$(STRIP)  --strip-unneeded $(SONAME)
+	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 pce.o: $(AENAME)_t.c
 

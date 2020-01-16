@@ -32,7 +32,13 @@
 #ifndef _SGX_UAE_SERVICE_H_
 #define _SGX_UAE_SERVICE_H_
 
-#include "sgx_uae_platform.h"
+#ifdef __DEPRECATED
+#warning This header is deprecated. \
+Please consider using one of the 3 headers \
+"sgx_uae_launch.h", "sgx_uae_epid.h" and "sgx_uae_quote_ex.h". \
+To disable this warning use -Wno-deprecated.
+#endif
+
 #include "sgx_uae_launch.h"
 #include "sgx_uae_epid.h"
 #include "sgx_uae_quote_ex.h"

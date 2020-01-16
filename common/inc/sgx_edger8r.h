@@ -67,7 +67,6 @@ extern "C" {
  *     NULL - fail to allocate
 */
 void* SGXAPI sgx_ocalloc(size_t size);
-void* SGXAPI sgx_ocalloc_switchless(size_t size);
 
 /* sgx_ocfree()
  * Parameters:
@@ -76,7 +75,6 @@ void* SGXAPI sgx_ocalloc_switchless(size_t size);
  *      N/A
 */
 void SGXAPI sgx_ocfree(void);
-void SGXAPI sgx_ocfree_switchless(void);
 
 /* sgx_ecall()
  * Parameters:

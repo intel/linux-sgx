@@ -36,7 +36,7 @@ if [[ $? != "0" ]]; then
     if [[ $? != "0" ]]; then
         /sbin/modinfo intel_sgx &> /dev/null
         if [[ $? != "0" ]]; then
-            lsmod | grep 'isgx\|intel_sgx' &> /dev/null
+            /sbin/lsmod 2> /dev/null | grep 'isgx\|intel_sgx'
             if [[ $? = "0" ]]; then
                 echo "Warning: You did not follow the document to install the driver package."
                 echo
@@ -125,7 +125,7 @@ make install
 
 popd
 
-${SGX_PACKAGES_PATH}/${PSW_PKG_NAME}/scripts/install.sh
+${SGX_PACKAGES_PATH}/${PSW_PKG_NAME}/scripts/install.sh "$@"
 
 rm -fr ${PSW_TEMP_FOLDER}
 

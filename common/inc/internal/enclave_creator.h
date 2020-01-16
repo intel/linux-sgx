@@ -72,7 +72,6 @@ public:
     virtual bool use_se_hw() const = 0;
     virtual bool is_EDMM_supported(sgx_enclave_id_t enclave_id) = 0;
     virtual bool is_driver_compatible() = 0;
-    virtual bool is_in_kernel_driver() = 0;
 
     virtual int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag) = 0;
     virtual bool get_plat_cap(sgx_misc_attribute_t *se_attr) = 0;

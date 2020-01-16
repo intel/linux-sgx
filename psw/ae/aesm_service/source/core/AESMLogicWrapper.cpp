@@ -39,12 +39,17 @@
 #include <cppmicroservices/FrameworkFactory.h>
 #include <cppmicroservices/FrameworkEvent.h>
 
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <dlfcn.h>
+#include <dirent.h>
+#include <iostream>
+
 #include "sgx_quote.h"
 #include "launch_service.h"
-#include "pseop_service.h"
 #include "epid_quote_service.h"
 #include "quote_proxy_service.h"
-#include "psepr_service.h"
 #include "pce_service.h"
 #include "network_service.h"
 #include "cppmicroservices_util.h"
@@ -57,16 +62,112 @@ static cppmicroservices::BundleContext g_fw_ctx;
 using namespace cppmicroservices;
 static Framework g_fw = FrameworkFactory().NewFramework();
 
-extern "C" sgx_status_t get_launch_token(const enclave_css_t *signature,
-                                         const sgx_attributes_t *attribute,
-                                         sgx_launch_token_t *launch_token)
+
+#ifdef US_PLATFORM_POSIX
+#define PATH_SEPARATOR "/"
+#else
+#define PATH_SEPARATOR "\\"
+#endif
+
+#define BUNDLE_SUBFOLDER "bundles"
+
+static std::vector<std::string> get_bundles()
 {
-    std::shared_ptr<ILaunchService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    static std::string bundle_dir;
+    std::vector<std::string> files;
+    if (bundle_dir.empty())
     {
-        return SGX_ERROR_SERVICE_UNAVAILABLE;
+        char buf[PATH_MAX] = {0};
+        Dl_info dl_info;
+        if (0 == dladdr(__builtin_return_address(0), &dl_info) ||
+            NULL == dl_info.dli_fname)
+        return files;
+        if (strnlen(dl_info.dli_fname, sizeof(buf)) >= sizeof(buf))
+        return files;
+        (void)strncpy(buf, dl_info.dli_fname, sizeof(buf));
+        std::string aesm_path(buf);
+
+        size_t i = aesm_path.rfind(PATH_SEPARATOR, aesm_path.length());
+        if (i != std::string::npos)
+        {
+            bundle_dir = aesm_path.substr(0, i);
+            size_t j = bundle_dir.rfind(PATH_SEPARATOR, bundle_dir.length());
+            if (j != std::string::npos && bundle_dir.substr(j, i) == BUNDLE_SUBFOLDER)
+                bundle_dir  += PATH_SEPARATOR;
+            else
+                bundle_dir = bundle_dir + PATH_SEPARATOR + BUNDLE_SUBFOLDER;
+        }
+        else
+            bundle_dir = aesm_path;
     }
-    return service->get_launch_token(signature, attribute, launch_token);
+    std::shared_ptr<DIR> directory_ptr(opendir(bundle_dir.c_str()), [](DIR *dir) { dir &&closedir(dir); });
+    struct dirent *dirent_ptr;
+    if (!directory_ptr)
+    {
+        std::cout << "Error opening : " << std::strerror(errno) << bundle_dir << std::endl;
+        return files;
+    }
+
+    while ((dirent_ptr = readdir(directory_ptr.get())) != nullptr)
+    {
+        std::string file_name = std::string(dirent_ptr->d_name);
+        size_t length = file_name.length();
+        if (file_name.length() <= strlen(US_LIB_EXT))
+            continue;
+        else if (file_name.substr(length - strlen(US_LIB_EXT), length) != US_LIB_EXT)
+            continue;
+        files.push_back(bundle_dir + PATH_SEPARATOR + file_name);
+    }
+    return files;
+}
+
+static void intall_bundles()
+{
+    for (auto name : get_bundles())
+    {
+        if (g_fw_ctx.GetBundles(name).empty())
+        {
+            auto bundles = g_fw_ctx.InstallBundles(name);
+            for (auto &bundle : bundles)
+            {
+                bundle.Start();
+            }
+        }
+    }
+}
+
+template <class S>
+static bool intall_and_get_service(std::shared_ptr<S>& service)
+{
+    try
+    {
+        if (!g_fw_ctx)
+            return false;
+        auto ref = g_fw_ctx.GetServiceReference<S>();
+        if (!ref) {
+            intall_bundles();
+            ref = g_fw_ctx.GetServiceReference<S>();
+            if (!ref)
+                return false;
+        }
+        auto bundle = ref.GetBundle();
+        if (!bundle)
+            return false;
+        if (S::VERSION != bundle.GetVersion().GetMajor())
+            return false;
+        service = g_fw_ctx.GetService(ref);
+        if (AE_SUCCESS == service->start())
+        {
+            return true;
+        }
+        intall_bundles();
+        return AE_SUCCESS == service->start();
+
+    }
+    catch(...)
+    {
+        return false;
+    }
 }
 
 AESMLogicWrapper::AESMLogicWrapper()
@@ -84,22 +185,40 @@ aesm_error_t AESMLogicWrapper::select_att_key_id(uint32_t att_key_id_list_size,
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
 
     std::shared_ptr<IQuoteProxyService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    for (int retry = 1 ;retry >= 0; retry--)
     {
-        delete[] output_att_key_id;
-        return AESM_SERVICE_UNAVAILABLE;
-    }
+        if (!intall_and_get_service(service))
+        {
+            delete[] output_att_key_id;
+            return AESM_SERVICE_UNAVAILABLE;
+        }
 
-    result = service->select_att_key_id(att_key_id_list, att_key_id_list_size,
-        output_att_key_id, output_att_key_id_size);
-    if (result == AESM_SUCCESS)
-    {
-        *select_key_id = output_att_key_id;
-        *select_att_key_id_size = output_att_key_id_size;
-    }
-    else
-    {
-        delete[] output_att_key_id;
+        result = service->select_att_key_id(att_key_id_list, att_key_id_list_size,
+            output_att_key_id, output_att_key_id_size);
+        if (result == AESM_SUCCESS)
+        {
+            *select_key_id = output_att_key_id;
+            *select_att_key_id_size = output_att_key_id_size;
+            break;
+        }
+        else
+        {
+            //Try to install quoting bundle when unsupported attestation key id found
+            if (result == AESM_UNSUPPORTED_ATT_KEY_ID && retry > 0)
+            {
+                try
+                {
+                    intall_bundles();
+                    continue;
+                }
+                catch(...)
+                {
+                    continue;
+                }
+            }
+            delete[] output_att_key_id;
+            break;
+        }
     }
     return result;
 }
@@ -122,7 +241,7 @@ aesm_error_t AESMLogicWrapper::init_quote_ex(
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
 
     std::shared_ptr<IQuoteProxyService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         delete[] output_target_info;
         if (b_pub_key_id)
@@ -153,7 +272,7 @@ aesm_error_t AESMLogicWrapper::get_quote_size_ex(
     uint32_t *quote_size)
 {
     std::shared_ptr<IQuoteProxyService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         return AESM_SERVICE_UNAVAILABLE;
     }
@@ -172,7 +291,7 @@ aesm_error_t AESMLogicWrapper::get_quote_ex(
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
 
     std::shared_ptr<IQuoteProxyService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         delete[] output_quote;
         return AESM_SERVICE_UNAVAILABLE;
@@ -203,7 +322,7 @@ aesm_error_t AESMLogicWrapper::initQuote(uint8_t **target_info,
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
 
     std::shared_ptr<IEpidQuoteService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         delete[] output_target_info;
         delete[] output_gid;
@@ -245,7 +364,7 @@ aesm_error_t AESMLogicWrapper::getQuote(uint32_t reportLength, const uint8_t *re
     }
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
     std::shared_ptr<IEpidQuoteService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         delete[] output_quote;
         if (output_qe_report)
@@ -276,72 +395,6 @@ aesm_error_t AESMLogicWrapper::getQuote(uint32_t reportLength, const uint8_t *re
     return result;
 }
 
-aesm_error_t AESMLogicWrapper::closeSession(uint32_t sessionId)
-{
-    std::shared_ptr<IPseopService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
-    {
-        return AESM_SERVICE_UNAVAILABLE;
-    }
-    return service->close_session(sessionId);
-}
-
-aesm_error_t AESMLogicWrapper::createSession(uint32_t *session_id,
-                                             uint8_t **se_dh_msg1,
-                                             uint32_t se_dh_msg1_size)
-{
-    uint8_t *output_se_dh_msg1 = new uint8_t[se_dh_msg1_size]();
-    aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
-    std::shared_ptr<IPseopService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
-    {
-        delete[] output_se_dh_msg1;
-        return AESM_SERVICE_UNAVAILABLE;
-    }
-
-    result = service->create_session(session_id, output_se_dh_msg1, se_dh_msg1_size);
-    if (result == AESM_SUCCESS)
-    {
-        *se_dh_msg1 = output_se_dh_msg1;
-    }
-    else
-    {
-        delete[] output_se_dh_msg1;
-    }
-    return result;
-}
-
-aesm_error_t AESMLogicWrapper::exchangeReport(uint32_t session_id,
-                                              const uint8_t *se_dh_msg2,
-                                              uint32_t se_dh_msg2_size,
-                                              uint8_t **se_dh_msg3,
-                                              uint32_t se_dh_msg3_size)
-{
-    uint8_t *output_se_dh_msg3 = new uint8_t[se_dh_msg3_size]();
-    aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
-    std::shared_ptr<IPseopService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
-    {
-        delete[] output_se_dh_msg3;
-        return AESM_SERVICE_UNAVAILABLE;
-    }
-
-    result = service->exchange_report(session_id,
-                                      se_dh_msg2,
-                                      se_dh_msg2_size,
-                                      output_se_dh_msg3,
-                                      se_dh_msg3_size);
-    if (result == AESM_SUCCESS)
-    {
-        *se_dh_msg3 = output_se_dh_msg3;
-    }
-    else
-    {
-        delete[] output_se_dh_msg3;
-    }
-    return result;
-}
-
 aesm_error_t AESMLogicWrapper::getLaunchToken(const uint8_t *measurement,
                                               uint32_t measurement_size,
                                               const uint8_t *mrsigner,
@@ -355,7 +408,7 @@ aesm_error_t AESMLogicWrapper::getLaunchToken(const uint8_t *measurement,
     uint8_t *output_launch_token = new uint8_t[sizeof(token_t)]();
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
     std::shared_ptr<ILaunchService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         delete[] output_launch_token;
         return AESM_SERVICE_UNAVAILABLE;
@@ -381,46 +434,6 @@ aesm_error_t AESMLogicWrapper::getLaunchToken(const uint8_t *measurement,
     return result;
 }
 
-aesm_error_t AESMLogicWrapper::invokeService(const uint8_t *pse_message_req,
-                                             uint32_t pse_message_req_size,
-                                             uint8_t **pse_message_resp,
-                                             uint32_t pse_message_resp_size)
-{
-    uint8_t *output_pse_message_resp = new uint8_t[pse_message_resp_size]();
-    aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
-    std::shared_ptr<IPseopService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
-    {
-        delete[] output_pse_message_resp;
-        return AESM_SERVICE_UNAVAILABLE;
-    }
-
-    result = service->invoke_service(pse_message_req,
-                                     pse_message_req_size,
-                                     output_pse_message_resp,
-                                     pse_message_resp_size);
-    if (result == AESM_SUCCESS)
-    {
-        *pse_message_resp = output_pse_message_resp;
-    }
-    else
-    {
-        delete[] output_pse_message_resp;
-    }
-    return result;
-}
-
-aesm_error_t AESMLogicWrapper::getPsCap(uint64_t *ps_cap)
-{
-    std::shared_ptr<IPseopService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
-    {
-        return AESM_SERVICE_UNAVAILABLE;
-    }
-
-    return service->get_ps_cap(ps_cap);
-}
-
 aesm_error_t AESMLogicWrapper::reportAttestationStatus(uint8_t *platform_info, uint32_t platform_info_size,
                                                        uint32_t attestation_error_code,
                                                        uint8_t **update_info, uint32_t update_info_size)
@@ -429,12 +442,11 @@ aesm_error_t AESMLogicWrapper::reportAttestationStatus(uint8_t *platform_info, u
     uint8_t *output_update_info = new uint8_t[update_info_size]();
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
     std::shared_ptr<IEpidQuoteService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         delete[] output_update_info;
         return AESM_SERVICE_UNAVAILABLE;
     }
-
     result = service->report_attestation_status(platform_info, platform_info_size,
                                                 attestation_error_code,
                                                 output_update_info, update_info_size);
@@ -458,11 +470,10 @@ aesm_error_t AESMLogicWrapper::checkUpdateStatus(uint8_t* platform_info, uint32_
 {
 	aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
 	std::shared_ptr<IEpidQuoteService> service;
-	if (!get_service_wrapper(service, g_fw_ctx))
+	if (!intall_and_get_service(service))
 	{
 		return AESM_SERVICE_UNAVAILABLE;
 	}
-
 	uint8_t* output_update_info = NULL;
 	if (update_info != NULL && update_info_size != 0)
 		output_update_info = new uint8_t[update_info_size]();
@@ -487,7 +498,7 @@ aesm_error_t AESMLogicWrapper::checkUpdateStatus(uint8_t* platform_info, uint32_
 aesm_error_t AESMLogicWrapper::getWhiteListSize(uint32_t* white_list_size)
 {
     std::shared_ptr<ILaunchService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         return AESM_SERVICE_UNAVAILABLE;
     }
@@ -502,7 +513,7 @@ aesm_error_t AESMLogicWrapper::getWhiteList(uint8_t **white_list,
     uint8_t *output_white_list = NULL;
     aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
     std::shared_ptr<ILaunchService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         return AESM_SERVICE_UNAVAILABLE;
     }
@@ -532,7 +543,7 @@ aesm_error_t AESMLogicWrapper::getWhiteList(uint8_t **white_list,
 aesm_error_t AESMLogicWrapper::sgxGetExtendedEpidGroupId(uint32_t *x_group_id)
 {
     std::shared_ptr<IEpidQuoteService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         return AESM_SERVICE_UNAVAILABLE;
     }
@@ -543,7 +554,7 @@ aesm_error_t AESMLogicWrapper::sgxGetExtendedEpidGroupId(uint32_t *x_group_id)
 aesm_error_t AESMLogicWrapper::sgxSwitchExtendedEpidGroup(uint32_t x_group_id)
 {
     std::shared_ptr<IEpidQuoteService> service;
-    if (!get_service_wrapper(service, g_fw_ctx))
+    if (!intall_and_get_service(service))
     {
         return AESM_SERVICE_UNAVAILABLE;
     }
@@ -556,7 +567,7 @@ aesm_error_t AESMLogicWrapper::sgxRegister(uint8_t *buf, uint32_t buf_size, uint
     if (data_type == SGX_REGISTER_WHITE_LIST_CERT)
     {
         std::shared_ptr<ILaunchService> service;
-        if (!get_service_wrapper(service, g_fw_ctx))
+        if (!intall_and_get_service(service))
         {
             return AESM_SERVICE_UNAVAILABLE;
         }
@@ -569,45 +580,7 @@ aesm_error_t AESMLogicWrapper::sgxRegister(uint8_t *buf, uint32_t buf_size, uint
     }
 }
 
-#include <sys/stat.h>
-#include <unistd.h>
-#include <errno.h>
-#include <dlfcn.h>
-#include <dirent.h>
-#include "cppmicroservices/GlobalConfig.h"
-
-#ifdef US_PLATFORM_POSIX
-#define PATH_SEPARATOR "/"
-#else
-#define PATH_SEPARATOR "\\"
-#endif
-
-#define BUNDLE_SUBFOLDER "bundles"
 #include "ssl_compat_wrapper.h"
-
-std::vector<std::string> get_bundles(const std::string &dir_name)
-{
-    std::vector<std::string> files;
-    std::shared_ptr<DIR> directory_ptr(opendir(dir_name.c_str()), [](DIR *dir) { dir &&closedir(dir); });
-    struct dirent *dirent_ptr;
-    if (!directory_ptr)
-    {
-        std::cout << "Error opening : " << std::strerror(errno) << dir_name << std::endl;
-        return files;
-    }
-
-    while ((dirent_ptr = readdir(directory_ptr.get())) != nullptr)
-    {
-        std::string file_name = std::string(dirent_ptr->d_name);
-        size_t length = file_name.length();
-        if (file_name.length() <= strlen(US_LIB_EXT))
-            continue;
-        else if (file_name.substr(length - strlen(US_LIB_EXT), length) != US_LIB_EXT)
-            continue;
-        files.push_back(dir_name + PATH_SEPARATOR + file_name);
-    }
-    return files;
-}
 
 ae_error_t AESMLogicWrapper::service_start()
 {
@@ -636,30 +609,14 @@ ae_error_t AESMLogicWrapper::service_start()
         std::cout << "The path of system bundle: " << g_fw.GetLocation() << std::endl;
     }
 
-    char buf[PATH_MAX] = {0};
-    Dl_info dl_info;
-    if (0 == dladdr(__builtin_return_address(0), &dl_info) ||
-        NULL == dl_info.dli_fname)
-        return AE_FAILURE;
-    if (strnlen(dl_info.dli_fname, sizeof(buf)) >= sizeof(buf))
-        return AE_FAILURE;
-    (void)strncpy(buf, dl_info.dli_fname, sizeof(buf));
-    std::string aesm_path(buf);
-    std::string bundle_dir("");
-
-    size_t i = aesm_path.rfind(PATH_SEPARATOR, aesm_path.length());
-    if (i != std::string::npos)
-    {
-        bundle_dir = aesm_path.substr(0, i) + PATH_SEPARATOR + BUNDLE_SUBFOLDER;
-    }
     // Install all bundles contained in the shared libraries
     // given as command line arguments.
 #if defined(US_BUILD_SHARED_LIBS)
     try
     {
-        for (auto name : get_bundles(bundle_dir))
+        for (auto name : get_bundles())
         {
-            g_fw.GetBundleContext().InstallBundles(name);
+            g_fw_ctx.InstallBundles(name);
         }
     }
     catch (const std::exception &e)
@@ -697,16 +654,6 @@ ae_error_t AESMLogicWrapper::service_start()
             service->start();
     }
     {
-        std::shared_ptr<IPseopService> service;
-        if (get_service_wrapper(service, g_fw_ctx))
-            service->start();
-    }
-    {
-        std::shared_ptr<IQuoteProxyService> service;
-        if (get_service_wrapper(service, g_fw_ctx))
-            service->start();
-    }
-    {
         ae_error_t ret = AE_SUCCESS;
         std::shared_ptr<ILaunchService> service;
         if (get_service_wrapper(service, g_fw_ctx))
@@ -717,6 +664,11 @@ ae_error_t AESMLogicWrapper::service_start()
             return AE_FAILURE;
         }
     }
+    {
+        std::shared_ptr<IQuoteProxyService> service;
+        if (get_service_wrapper(service, g_fw_ctx))
+            service->start();
+    }
     AESM_DBG_INFO("aesm service started");
 
     return AE_SUCCESS;
@@ -725,12 +677,6 @@ ae_error_t AESMLogicWrapper::service_start()
 void AESMLogicWrapper::service_stop()
 {
     AESM_DBG_INFO("AESMLogicWrapper::service_stop");
-    std::shared_ptr<IPseopService> pseop_service;
-    if (get_service_wrapper(pseop_service, g_fw_ctx))
-        pseop_service->stop();
-    std::shared_ptr<IPseprService> psepr_service;
-    if (get_service_wrapper(psepr_service, g_fw_ctx))
-        psepr_service->stop();
     std::shared_ptr<IQuoteProxyService> quote_ex_service;
     if (get_service_wrapper(quote_ex_service, g_fw_ctx))
         quote_ex_service->stop();
@@ -755,7 +701,5 @@ CPPMICROSERVICES_IMPORT_BUNDLE(pce_service_bundle_name)
 CPPMICROSERVICES_IMPORT_BUNDLE(epid_quote_service_bundle_name)
 CPPMICROSERVICES_IMPORT_BUNDLE(ecdsa_quote_service_bundle_name)
 CPPMICROSERVICES_IMPORT_BUNDLE(le_launch_service_bundle_name)
-CPPMICROSERVICES_IMPORT_BUNDLE(local_pseop_service_bundle_name)
-CPPMICROSERVICES_IMPORT_BUNDLE(psepr_service_bundle_name)
 CPPMICROSERVICES_IMPORT_BUNDLE(linux_network_service_bundle_name)
 #endif

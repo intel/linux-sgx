@@ -30,9 +30,7 @@
  */
 
 enclave {
-
-from "sgx_tae_service.edl" import *;
-
+    from "sgx_tstdc.edl" import *;
     untrusted {
 		void*   u_sgxprotectedfs_exclusive_file_open([in, string] const char* filename, uint8_t read_only, [out] int64_t* file_size, [out] int32_t* error_code);
 		uint8_t u_sgxprotectedfs_check_if_file_exists([in, string] const char* filename);

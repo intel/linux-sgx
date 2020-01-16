@@ -50,15 +50,17 @@
 #include "trts_util.h"
 #include "se_memcpy.h"
 #include "se_cpu_feature.h"
+#include "se_page_attr.h"
 
 // The global cpu feature bits from uRTS
 uint64_t g_cpu_feature_indicator __attribute__((section(RELRO_SECTION_NAME))) = 0;
 int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
 sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
 
-const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6,
+const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6, 0, 0,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
+uint32_t g_cpu_core_num __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 extern "C" {
 uintptr_t __stack_chk_guard __attribute__((section(RELRO_SECTION_NAME)))= 0;
@@ -70,6 +72,33 @@ __weak_alias(__intel_security_cookie, __stack_chk_guard);
 
 extern sgx_status_t pcl_entry(void* enclave_base,void* ms) __attribute__((weak));
 extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section(".nipx")));
+
+extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
+extern sgx_status_t do_save_tcs(void *ptcs);
+
+static int __attribute__((section(".nipx"))) add_static_threads(const volatile layout_t *layout_start, const volatile layout_t *layout_end, size_t offset)
+{
+    int ret = -1;
+    for (const volatile layout_t *layout = layout_start; layout < layout_end; layout++)
+    {
+        if (!IS_GROUP_ID(layout->group.id) && (layout->entry.si_flags & SI_FLAGS_TCS) && layout->entry.attributes == (PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND))
+        {
+            uintptr_t tcs_addr = (uintptr_t)layout->entry.rva + offset + (uintptr_t)get_enclave_base();
+            if (do_save_tcs(reinterpret_cast<void *>(tcs_addr)) != SGX_SUCCESS)
+		    return (-1);
+        }
+        else if (IS_GROUP_ID(layout->group.id)){
+            size_t step = 0;
+            for(uint32_t j = 0; j < layout->group.load_times; j++)
+            {
+                step += (size_t)layout->group.load_step;
+                if(0 != (ret = add_static_threads(&layout[-layout->group.entry_count], layout, step)))
+                    return ret;
+            }
+        }
+    }
+    return 0;
+}
 
 // init_enclave()
 //      Initialize enclave.
@@ -119,23 +148,26 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     sgx_lfence();
 
     system_features_t sys_features = *info;
+    size_t offset = 0;
     if(sys_features.system_feature_set[0] & (1ULL<< SYS_FEATURE_EXTEND))
     {
-        if(sys_features.size < sizeof(sys_features))
-        {
-            for(size_t i = 0; i < sizeof(sys_features) - sys_features.size; i++)
-            {
-                *((uint8_t *)&sys_features + sys_features.size + i) = 0;
-            } 
-        }
+        offset = (sys_features.size < sizeof(sys_features)) ? sys_features.size : sizeof(sys_features);
     }
     else
     {
-        // old urts is used to load the enclave and size/cpu_feature_ext is not set by urts.
-        // So clear these new fields
-        sys_features.size = 0;
-        sys_features.cpu_features_ext = 0;
+        // old urts is used to load the enclave and size is not set by urts.
+        // So clear these new fields including 'size'
+        //
+        offset = offsetof(system_features_t, size);
     }
+    for(size_t i = 0; i < sizeof(sys_features) - offset; i++)
+    {
+        // Clean the fields that cannot be recognized by trts
+        *((uint8_t *)&sys_features + offset + i) = 0;
+    }
+
+
+    g_cpu_core_num = sys_features.cpu_core_num;
     g_sdk_version = sys_features.version;
     if (g_sdk_version == SDK_VERSION_1_5)
     {
@@ -180,7 +212,14 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
             return -1;
         }
     }
-	
+
+    if ( get_rsrv_size() != 0)
+    {
+        if(rsrv_mem_init(get_rsrv_base(), get_rsrv_size(), get_rsrv_min_size()) != SGX_SUCCESS)
+            return -1;
+    }
+
+    
     if(SGX_SUCCESS != sgx_read_rand((unsigned char*)&__stack_chk_guard,
                                      sizeof(__stack_chk_guard)))
     {
@@ -193,6 +232,8 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
 #ifndef SE_SIM
 int accept_post_remove(const volatile layout_t *layout_start, const volatile layout_t *layout_end, size_t offset);
 #endif
+
+extern size_t rsrv_mem_min_size;
 
 sgx_status_t do_init_enclave(void *ms, void *tcs)
 {
@@ -223,11 +264,22 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
 
         size_t heap_min_size = get_heap_min_size();
         memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), heap_min_size, 0, heap_min_size);
+
+        memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), rsrv_mem_min_size, 0, rsrv_mem_min_size);
+        // save all the static threads into the thread table. These TCS would be trimmed in the uninit flow
+        if (add_static_threads(
+            &g_global_data.layout_table[0],
+            &g_global_data.layout_table[0] + g_global_data.layout_entry_num,
+            0) != 0)
+        {
+            return SGX_ERROR_UNEXPECTED;
+        }
     }
     else
 #endif
     {
         memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
+        memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
     }
 
     g_enclave_state = ENCLAVE_INIT_DONE;

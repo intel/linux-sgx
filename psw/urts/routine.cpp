@@ -39,7 +39,7 @@
 static
 sgx_status_t _sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, const bool is_switchless)
 {
-    if ((proc != ECMD_RUN_SWITCHLESS_TWORKER) &&  (proc < 0))
+    if (proc < 0)
     {
         return SGX_ERROR_INVALID_FUNCTION;
     }

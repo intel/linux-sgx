@@ -1,0 +1,10 @@
+prefix=/opt/intel/sgxsdk
+includedir=${prefix}/include
+libdir=${prefix}/@LIB_FOLDER_NAME@
+
+Name: libsgx_quote_ex
+Description: SGX quote extension library
+Version: @SGX_VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsgx_quote_ex
+Libs.private: -lsgx_quote_ex

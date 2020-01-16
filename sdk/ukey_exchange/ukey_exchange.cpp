@@ -42,7 +42,8 @@
 
 #include "se_memcpy.h"
 #include "sgx_ukey_exchange.h"
-#include "sgx_uae_service.h"
+#include "sgx_uae_epid.h"
+#include "sgx_uae_quote_ex.h"
 #include "sgx_ecp_types.h"
 #include "se_lock.hpp"
 

@@ -35,10 +35,10 @@
 #include <memory.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sgx_uae_service.h>
 #include <sgx_capable.h>
 
 #include "se_cdefs.h"
+#include "se_types.h"
 SGX_ACCESS_VERSION(capable, 1);
 
 /* __cpuid(unsinged int info[4], unsigned int leaf, unsigned int subleaf); */

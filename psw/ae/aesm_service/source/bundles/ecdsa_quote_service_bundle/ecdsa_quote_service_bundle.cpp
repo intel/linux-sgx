@@ -217,6 +217,7 @@ public:
 
     ae_error_t start()
     {
+        AESMLogicLock lock(ecdsa_quote_mutex);
         if (initialized == true)
         {
             AESM_DBG_INFO("ecdsa bundle has been started");

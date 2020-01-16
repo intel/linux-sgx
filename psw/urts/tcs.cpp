@@ -40,8 +40,8 @@
 #include "enclave_creator.h"
 #include "rts.h"
 #include "enclave.h"
+#include "get_thread_id.h"
 
-extern se_thread_id_t get_thread_id();
 int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
 
 
@@ -66,7 +66,7 @@ CTrustThread::~CTrustThread()
 
 se_handle_t CTrustThread::get_event()
 {
-    if (m_event == NULL)
+    if(m_event == NULL)
         m_event = se_event_init();
 
     return m_event;
@@ -173,6 +173,12 @@ int CTrustThreadPool::bind_thread(const se_thread_id_t thread_id,  CTrustThread 
     return TRUE;
 }
 
+int CTrustThreadPool::bind_pthread(const se_thread_id_t thread_id,  CTrustThread * const trust_thread)
+{
+    //This is used by sgx pthread_create()
+    LockGuard lock(&m_thread_mutex);
+    return bind_thread(thread_id, trust_thread);
+}
 
 void CTrustThreadPool::unbind_thread(const se_thread_id_t thread_id)
 {
@@ -304,6 +310,52 @@ void CTrustThreadPool::wake_threads()
     }
 }
 
+CTrustThread * CTrustThreadPool::_acquire_free_thread()
+{
+    CTrustThread *trust_thread = NULL;
+    //try get tcs from free list;
+    trust_thread = get_free_thread();
+    //if there is no free tcs, collect useless tcs.
+    if(NULL == trust_thread)
+    {
+        if(!garbage_collect())
+            return NULL;
+        //get tcs from free list again.
+        trust_thread = get_free_thread();
+        assert(NULL != trust_thread);
+    }
+    return trust_thread;
+}
+
+CTrustThread * CTrustThreadPool::acquire_free_thread()
+{
+    LockGuard lock(&m_thread_mutex);
+    CTrustThread *trust_thread = _acquire_free_thread();
+    // for edmm feature, we don't support simulation mode yet
+    // m_utility_thread will be NULL in simulation mode
+    if(NULL == trust_thread && NULL != m_utility_thread)
+    {
+        m_need_to_wait_for_new_thread_cond.lock();
+        m_utility_thread->get_enclave()->fill_tcs_mini_pool_fn();
+        m_need_to_wait_for_new_thread = true;
+        while(m_need_to_wait_for_new_thread != false)
+        {
+            m_need_to_wait_for_new_thread_cond.wait();
+        }
+        m_need_to_wait_for_new_thread_cond.unlock();
+        trust_thread = _acquire_free_thread();
+    }
+    if(trust_thread)
+    {
+        trust_thread->reset_ref();
+    }
+    if(need_to_new_thread() == true)
+    {
+        m_utility_thread->get_enclave()->fill_tcs_mini_pool_fn();
+    }	
+    return trust_thread;
+}
+
 CTrustThread * CTrustThreadPool::_acquire_thread()
 {
     //try to get tcs from thread cache
@@ -334,7 +386,6 @@ CTrustThread * CTrustThreadPool::acquire_thread(int ecall_cmd)
     LockGuard lock(&m_thread_mutex);
     CTrustThread *trust_thread = NULL;
     bool is_special_ecall = (ecall_cmd == ECMD_INIT_ENCLAVE) || (ecall_cmd == ECMD_UNINIT_ENCLAVE) ;
-    
 
     if(is_special_ecall == true)
     {
@@ -375,7 +426,7 @@ CTrustThread * CTrustThreadPool::acquire_thread(int ecall_cmd)
             trust_thread = _acquire_thread();
         }
     }
-    
+
     if(trust_thread)
     {
         trust_thread->increase_ref();
@@ -388,15 +439,6 @@ CTrustThread * CTrustThreadPool::acquire_thread(int ecall_cmd)
     }
     return trust_thread;
 }
-
-//Do nothing for bind mode, the tcs is always bound to a thread.
-void CTrustThreadPool::release_thread(CTrustThread * const trust_thread)
-{
-    LockGuard lock(&m_thread_mutex);
-    trust_thread->decrease_ref();
-    return;
-}
-
 
 bool CTrustThreadPool::is_dynamic_thread_exist()
 {
@@ -544,29 +586,27 @@ int CThreadPoolBindMode::garbage_collect()
         //if the thread has exited
         if(FALSE == find_thread(thread_vector, thread_id))
         {
-            //if the reference is not 0, there must be some wrong termination, so we can't recycle such trust thread.
-            //return to free_tcs list
             if(0 == it->value->get_reference())
             {
                 add_to_free_thread_vector(it->value);
-                nr_free++;
+                nr_free++; 
             }
             else
             {
-                /*
-                 * 2 situations:
-                 * 1:  In multiple threads situation, From "/proc/self/"task can't get all the threads number correctly in low probability.
-                 *      For exampe: If a new thread created and call ECALL, an another thread call ECALL immediately. And if there are no free tcs, this ECALL will enter garbage_collect().
-                 *      But the thread who enter garbage_collect() maybe can't find the new thread's number through "/proc/self/".
-                 *      So skip to next tcs directly.
-                 *
-                 * 2:  There must be some wrong termination in ECALL.
-                 *      Just leave this tcs in "m_thread_list" and don't delete it structure.
-                 *      If delete this tcs structure and remove it from "m_thread_list" will cause exception during enclave destroy.
-                 */
+                 /*
+                   * If the reference is not 0, 2 situations:
+                   * 1:  In multiple threads situation, From "/proc/self/"task can't get all the threads number correctly in low probability.
+                   *       For exampe: If a new thread created and call ECALL, an another thread call ECALL immediately. And if there are no free tcs, this ECALL will enter garbage_collect().
+                   *       But the thread who enter garbage_collect() maybe can't find the new thread's number through "/proc/self/".
+                   *       So skip to next tcs directly.
+                   *
+                   * 2:  There must be some wrong termination in ECALL.
+                   *      Just leave this tcs in "m_thread_list" and don't delete it structure.
+                   *      If delete this tcs structure and remove it from "m_thread_list" will cause exception during enclave destroy.
+                   */
                 pre = it;
                 it = it->next;
-                continue;
+                continue;            
             }
             tmp = it;
             it = it->next;
@@ -582,7 +622,7 @@ int CThreadPoolBindMode::garbage_collect()
             pre = it;
             it = it->next;
         }
-    }
+    }	
 
     return nr_free;
 }

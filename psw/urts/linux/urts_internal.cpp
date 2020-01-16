@@ -39,10 +39,19 @@
 #include "file.h"
 #include "se_wrapper.h"
 #include "se_map.h"
-#include "enclave_creator.h"
+#include "edmm_utility.h"
+#include "uae_service_internal.h"
 
 
 extern sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr);
+
+extern func_get_launch_token_t get_launch_token_func;
+
+extern "C" void init_get_launch_token(const func_get_launch_token_t func)
+{
+    get_launch_token_func = func;
+}
+
 
 extern "C" sgx_status_t sgx_create_le(const char* file_name, const char* prd_css_file_name, const int debug, sgx_launch_token_t *launch_token, int *launch_token_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr, int *production_loaded)
 {
@@ -78,10 +87,12 @@ extern "C" sgx_status_t sgx_create_le(const char* file_name, const char* prd_css
     return ret;
 }
 
-extern "C" bool is_in_kernel_driver()
+extern "C" bool is_launch_token_required()
 {
-    return get_enclave_creator()->is_in_kernel_driver();
+    //noly out of tree driver need to get launch token
+    return is_out_of_tree_driver();
 }
+
 
 #include "binparser.h"
 #ifndef PARSER

@@ -35,11 +35,11 @@ DIRS := assembly   \
         uinst      \
         tinst      \
         driver_api \
-        tae_service_sim \
         uae_service_sim/linux \
         urtssim    \
         trtssim    \
-        SEConfigureCPUSVN/linux
+        SEConfigureCPUSVN/linux \
+		tservice_sim
 
 TARGETS := all clean
 .PHONY: $(TARGETS)

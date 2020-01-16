@@ -37,15 +37,30 @@
 extern "C" {
 #endif
 
-/* open_se_device()
+/* get_driver_type()
  * Parameters:
+ *      driver_type [out] - Indicate the SGX device which was opened.  Can be:
+ *            SGX_DRIVER_IN_KERNEL   (0x1) - using kernel driver
+ *            SGX_DRIVER_OUT_OF_TREE (0x2) - using out-of-tree driver
+ *            SGX_DRIVER_DCAP        (0x3) - using DCAP driver
+ * Return Value:
+ *      true - The function succeeds - driver_type is valid
+ *      false - The function fails.
+*/
+ bool get_driver_type(int *driver_type);
+    
+ /* open_se_device()
+ * Parameters:
+ *      driver_type [in] - Indicate the SGX driver type.  Can be:
+ *            SGX_DRIVER_IN_KERNEL   (0x1) - using kernel driver
+ *            SGX_DRIVER_OUT_OF_TREE (0x2) - using out-of-tree driver
+ *            SGX_DRIVER_DCAP        (0x3) - using DCAP driver
  *      hdevice [out] - The device handle as returned from the open_se_device API.
- *      in_kernel_driver [out] - Indicate it is in-kernel driver or not.
  * Return Value:
  *      true - The function succeeds.
  *      false - The function fails.
 */
-bool open_se_device(int *hdevice, bool *in_kernel_driver);
+bool open_se_device(int driver_type, int *hdevice);
 
 /* close_se_device()
  * Parameters:
@@ -82,6 +97,15 @@ bool is_driver_support_edmm(int hdevice);
  *      false - Either of CPU/driver/uRTS does not support EDMM.
 */
 bool is_support_edmm();
+
+/* is_out_of_tree_driver()
+ * Parameters:
+ *      None.
+ * Return Value:
+ *      true - out-of-tree driver.
+ *      false - in-kernel driver or DCAP driver.
+*/
+bool is_out_of_tree_driver();
 
 #ifdef __cplusplus
 }

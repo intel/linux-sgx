@@ -43,11 +43,13 @@ CPPFLAGS += -I.                          \
             -I$(LINUX_SDK_DIR)/trts      \
             -I./gdtoa
 
-ifneq ($(USE_OPT_LIBS), 0)
+ifeq ($(USE_OPT_LIBS), 1)
+# Use optimized string/math
 CFLAGS += -D_TLIBC_USE_INTEL_FAST_STRING_
 CXXFLAGS += -D_TLIBC_USE_INTEL_FAST_STRING_
 LIBC_C_SRCS := $(wildcard gen/*.c gdtoa/*.c locale/*.c math/*.c stdlib/*.c string/*.c stdio/*.c time/*.c) 
 else
+# Use source code version string/math
 LIBC_C_SRCS := $(wildcard gen/*.c gdtoa/*.c locale/*.c stdlib/*.c string/*.c stdio/*.c time/*.c)
 endif
 

@@ -375,7 +375,3 @@ const char *EndpointSelectionInfo::get_server_url(aesm_network_server_enum_type_
     }
 }
 
-const char *EndpointSelectionInfo::get_pse_provisioning_url(const endpoint_selection_infos_t& es_info)
-{
-    return es_info.provision_url;
-}

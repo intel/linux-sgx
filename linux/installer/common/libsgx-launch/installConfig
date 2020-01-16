@@ -1,0 +1,8 @@
+LAUNCH_VERSION="1.0"
+TARBALL_NAME=libsgx-launch_1.0.orig.tar.gz
+
+LAUNCH_PACKAGE_NAME=libsgx-launch
+LAUNCH_DEV_PACKAGE_NAME=libsgx-launch-dev
+
+LIB_DIR=lib
+INC_DIR=include

@@ -32,35 +32,37 @@
 
 top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
-openssl_ver_name=openssl-1.1.0j
+openssl_ver=1.1.1d
+openssl_ver_name=openssl-$openssl_ver
 sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_ver_name=v2.4.1
-sgxssl_ver=2.4.1
+sgxssl_ver=2.5
+sgxssl_ver_name=v$sgx_ver
+sgxssl_file_name=lin_$sgxssl_ver\_$openssl_ver
 build_script=$top_dir/Linux/build_openssl.sh
-server_url_path=https://www.openssl.org/source/
+server_url_path=https://www.openssl.org/source
 full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
 full_openssl_url_old=$server_url_path/old/1.1.0/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=f2233e077201f61ce8a07cd7481fca4509774bc3b446b59273b5b224d8aa5a7b
-openssl_chksum=31bec6c203ce1a8e93d5994f4ed304c63ccf07676118b6634edded12ad1b3246
+sgxssl_chksum=abadc61c92c0488027dcb0a3681c6be0316c931461e887a728f64d3178149098
+openssl_chksum=1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
-	wget $sgxssl_github_archive/$sgxssl_ver_name.zip -P $top_dir || exit 1
-	sha256sum $top_dir/$sgxssl_ver_name.zip > check_sum_sgxssl.txt
+	wget $sgxssl_github_archive/$sgxssl_file_name.zip -P $top_dir || exit 1
+	sha256sum $top_dir/$sgxssl_file_name.zip > check_sum_sgxssl.txt
 	grep $sgxssl_chksum check_sum_sgxssl.txt
 	if [ $? -ne 0 ]; then 
-    	echo "File $top_dir/$sgxssl_ver_name.zip checksum failure"
-        rm -f $top_dir/$sgxssl_ver_name.zip
+    	echo "File $top_dir/$sgxssl_file_name.zip checksum failure"
+        rm -f $top_dir/$sgxssl_file_name.zip
     	exit -1
 	fi
-	unzip -qq $top_dir/$sgxssl_ver_name.zip -d $top_dir || exit 1
-	mv $top_dir/intel-sgx-ssl-$sgxssl_ver/* $top_dir || exit 1
-	rm $top_dir/$sgxssl_ver_name.zip || exit 1
-	rm -rf $top_dir/intel-sgx-ssl-$sgxssl_ver || exit 1
+	unzip -qq $top_dir/$sgxssl_file_name -d $top_dir || exit 1
+	mv $top_dir/intel-sgx-ssl-$sgxssl_file_name/* $top_dir || exit 1
+	rm $top_dir/$sgxssl_file_name.zip || exit 1
+	rm -rf $top_dir/intel-sgx-ssl-$sgxssl_file_name || exit 1
 fi
 
 if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
-	wget $full_openssl_url_old -P $openssl_out_dir || wget $full_openssl_url -P $openssl_out_dir || exit 1
+	wget $full_openssl_url -P $openssl_out_dir || exit 1
 	sha256sum $openssl_out_dir/$openssl_ver_name.tar.gz > check_sum_openssl.txt
 	grep $openssl_chksum check_sum_openssl.txt
 	if [ $? -ne 0 ]; then 

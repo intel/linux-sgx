@@ -433,6 +433,15 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
         }
     }
 
+   if(parameter[RSRVEXECUTABLE].flag != 0)
+   {
+       if(parameter[RSRVEXECUTABLE].value != 0 && parameter[RSRVEXECUTABLE].value != 1)
+       {
+           se_trace(SE_TRACE_ERROR, SET_RSRV_EXECUTABLE_ERROR);
+           return false;
+       }
+   }
+
     // LE setting:  HW != 0, Licensekey = 1
     // Other enclave setting: HW = 0, Licensekey = 0
     if((parameter[HW].value == 0 && parameter[LAUNCHKEY].value != 0) ||
@@ -478,6 +487,7 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     m_create_param.rsrv_init_size = parameter[RSRVINITSIZE].flag ? parameter[RSRVINITSIZE].value : parameter[RSRVMAXSIZE].value;
     m_create_param.rsrv_min_size = parameter[RSRVMINSIZE].value;
     m_create_param.rsrv_max_size = parameter[RSRVMAXSIZE].value;
+    m_create_param.rsrv_executable = parameter[RSRVEXECUTABLE].flag ? parameter[RSRVEXECUTABLE].value : 0;
     m_create_param.stack_max_size = parameter[STACKMAXSIZE].value;
     m_create_param.stack_min_size = parameter[STACKMINSIZE].value;
     m_create_param.tcs_num = (uint32_t)parameter[TCSNUM].value;
@@ -820,6 +830,7 @@ bool CMetadata::build_layout_table()
         layout.group.load_times = m_create_param.tcs_max_num - tcs_min_pool - 1;
         m_layouts.push_back(layout);
     }
+
     // RSRV region
     if (m_create_param.rsrv_min_size > 0 ||
         m_create_param.rsrv_init_size > 0 ||
@@ -829,7 +840,7 @@ bool CMetadata::build_layout_table()
         layout.entry.id = LAYOUT_ID_RSRV_MIN;
         layout.entry.page_count = (uint32_t)(m_create_param.rsrv_min_size >> SE_PAGE_SHIFT);
         layout.entry.attributes = PAGE_ATTR_EADD;
-        layout.entry.si_flags = SI_FLAGS_RW;
+        layout.entry.si_flags = m_create_param.rsrv_executable ? SI_FLAGS_RWX : SI_FLAGS_RW;
         m_layouts.push_back(layout);
 
         if (m_create_param.rsrv_init_size > m_create_param.rsrv_min_size)
@@ -837,7 +848,7 @@ bool CMetadata::build_layout_table()
             layout.entry.id = LAYOUT_ID_RSRV_INIT;
             layout.entry.page_count = (uint32_t)((m_create_param.rsrv_init_size - m_create_param.rsrv_min_size) >> SE_PAGE_SHIFT);
             layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_POST_REMOVE | PAGE_ATTR_POST_ADD;
-            layout.entry.si_flags = SI_FLAGS_RW;
+            layout.entry.si_flags = m_create_param.rsrv_executable ? SI_FLAGS_RWX : SI_FLAGS_RW;
             m_layouts.push_back(layout);
         }
 

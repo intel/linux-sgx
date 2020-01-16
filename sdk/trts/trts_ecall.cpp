@@ -43,11 +43,23 @@
 #include "trts_internal.h"
 #include "trts_inst.h"
 #include "trts_emodpr.h"
+#include "trts_util.h"
 #include "metadata.h"
 #  include "linux/elf_parser.h"
 #  define GET_TLS_INFO  elf_tls_info
 
+#include "pthread_imp.h"
 #include "sgx_random_buffers.h"
+#include "se_page_attr.h"
+
+__attribute__((weak)) sgx_status_t _pthread_thread_run(void* ms) {UNUSED(ms); return SGX_SUCCESS;}
+__attribute__((weak)) bool _pthread_enabled() {return false;}
+__attribute__((weak)) void _pthread_tls_store_state(sgx_status_t state) {UNUSED(state);}
+__attribute__((weak)) sgx_status_t _pthread_tls_get_state(void) {return SGX_SUCCESS;}
+__attribute__((weak)) void _pthread_tls_store_context(void* context) {UNUSED(context);}
+__attribute__((weak)) void _pthread_wakeup_join(void* ms) {UNUSED(ms);}
+__attribute__((weak)) void _pthread_tls_destructors(void) {}
+
 // is_ecall_allowed()
 // check the index in the dynamic entry table
 static sgx_status_t is_ecall_allowed(uint32_t ordinal)
@@ -90,30 +102,11 @@ static sgx_status_t is_ecall_allowed(uint32_t ordinal)
 //
 static sgx_status_t get_func_addr(uint32_t ordinal, void **addr)
 {
-	// Special ECalls for Switchless SGX
-	if ((unlikely(ordinal == (uint32_t)ECMD_INIT_SWITCHLESS)) ||
-        (unlikely(ordinal == (uint32_t)ECMD_RUN_SWITCHLESS_TWORKER)))
-	{
-		//check if it is ROOT ECALL
-		thread_data_t *thread_data = get_thread_data();
-        if(thread_data->last_sp != thread_data->stack_base_addr) 
-		{
-			return SGX_ERROR_UNEXPECTED;
-        }
-		
-        if (ordinal == (uint32_t)ECMD_INIT_SWITCHLESS)
-	    {
-            *addr = (void*) do_init_switchless;
-            return SGX_SUCCESS;
-        }
-        else if (ordinal == (uint32_t)ECMD_RUN_SWITCHLESS_TWORKER) 
-	    {
-            *addr = (void*) do_run_switchless_tworker;
-            return SGX_SUCCESS;
-        } 
-			
-	}
-		
+    if(ordinal == (uint32_t)ECMD_ECALL_PTHREAD)
+    {
+        *addr = (void*) _pthread_thread_run;
+        return SGX_SUCCESS;
+    }
 
     // Normal user-defined ECalls
     sgx_status_t status = is_ecall_allowed(ordinal);
@@ -131,15 +124,6 @@ static sgx_status_t get_func_addr(uint32_t ordinal, void **addr)
     return SGX_SUCCESS;
 }
 
-static bool is_utility_thread()
-{
-    thread_data_t *thread_data = get_thread_data();
-    if ((thread_data != NULL) && (thread_data->flags & SGX_UTILITY_THREAD))
-    {
-        return true;
-    }
-    return false;
-}
 
 typedef struct _tcs_node_t
 {
@@ -160,7 +144,7 @@ static uintptr_t g_tcs_cookie = 0;
 //     zero - success
 //     non-zero - fail
 //
-static sgx_status_t do_save_tcs(void *ptcs)
+sgx_status_t do_save_tcs(void *ptcs)
 {
     if(!is_utility_thread())
         return SGX_ERROR_UNEXPECTED;
@@ -320,7 +304,7 @@ sgx_status_t do_init_thread(void *tcs, bool enclave_init)
     thread_data->flags = thread_flags;
     init_static_stack_canary(tcs);
 
-    if (enclave_init)
+    if (EDMM_supported && enclave_init)
     {
         thread_data->flags = SGX_UTILITY_THREAD;
     }
@@ -363,7 +347,11 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
         return status;
     }
     thread_data_t *thread_data = get_thread_data();
-    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
+    if( (NULL == thread_data) || 
+            ((thread_data->stack_base_addr == thread_data->last_sp) && 
+                    ( (0 != g_global_data.thread_policy) ||
+                       (SGX_PTHREAD_EXIT == _pthread_tls_get_state()) ||    /*Force do initial thread if previous ECALL is exited by pthread_exit()*/
+                        (index == ECMD_ECALL_PTHREAD))))  /*Force do initial thread if this thread is created by SGX pthread_create() */
     {
         status = do_init_thread(tcs, false);
         if(0 != status)
@@ -372,7 +360,39 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
         }
     }
     thread_data = get_thread_data();
-    status = thread_data->stack_base_addr == thread_data->last_sp ? random_stack_advance<0x800>(trts_ecall, index, ms) : trts_ecall(index, ms);
+    if(thread_data->stack_base_addr == thread_data->last_sp)
+    {
+        //root ecall
+        if(_pthread_enabled())
+        {
+            jmp_buf     buf = {0};
+            if(0 == setjmp(buf))
+            {
+                _pthread_tls_store_context((void*)buf);
+                status = random_stack_advance<0x800>(trts_ecall, index, ms);
+            }
+            else
+            {
+                //Enter here if pthread_exit() is called inside ECALL functions.
+                _pthread_tls_store_state(SGX_PTHREAD_EXIT);
+                //Important: manually reset the last_sp
+                thread_data->last_sp = thread_data->stack_base_addr;
+                status = SGX_PTHREAD_EXIT;
+            }
+            //-- execute some resource recycle function here, such as tls resource recycle
+            _pthread_tls_destructors();
+            _pthread_wakeup_join(ms); 
+        }
+        else 
+        {
+            //sgx pthread lib isn't linked
+            status = random_stack_advance<0x800>(trts_ecall, index, ms);
+        }
+    }
+    else
+    {
+        status = trts_ecall(index, ms);
+    }
     return status;
 }
 
@@ -419,6 +439,7 @@ sgx_status_t do_ecall_add_thread(void *ms)
     return status;
 }
 
+uint32_t volatile g_uninit_flag = 0;
 // do_uninit_enclave()
 //      Run the global uninitialized functions when the enclave is destroyed.
 // Parameters:
@@ -430,9 +451,26 @@ sgx_status_t do_ecall_add_thread(void *ms)
 sgx_status_t do_uninit_enclave(void *tcs)
 {
 #ifndef SE_SIM
-    if(EDMM_supported && !is_utility_thread())
+    // This function should only be called when
+    //  1. EDMM is enabled
+    //  2. on HW mode
+    // urts would not call this ECALL either on simulation mode
+    // or on non-EDMM supported platform.
+    if (!EDMM_supported)
+    {
+        set_enclave_state(ENCLAVE_CRASHED);
         return SGX_ERROR_UNEXPECTED;
-#endif
+    }
+
+    if(!is_utility_thread() && is_dynamic_thread_exist())
+    {
+        set_enclave_state(ENCLAVE_CRASHED);
+        return SGX_ERROR_UNEXPECTED;
+    }
+
+    // Set uninit_flag to indicate the do_uninit_enclave is called
+    __sync_or_and_fetch(&g_uninit_flag, 1);
+
     tcs_node_t *tcs_node = g_tcs_node;
     g_tcs_node = NULL;
     while (tcs_node != NULL)
@@ -450,6 +488,7 @@ sgx_status_t do_uninit_enclave(void *tcs)
         int rc = sgx_accept_forward(SI_FLAG_TRIM | SI_FLAG_MODIFIED, start, end);
         if(rc != 0)
         {
+            set_enclave_state(ENCLAVE_CRASHED);
             return SGX_ERROR_UNEXPECTED;
         }
 
@@ -464,7 +503,9 @@ sgx_status_t do_uninit_enclave(void *tcs)
         uninit_global_object();
     }
     sgx_spin_unlock(&g_ife_lock);
-
+#else
+    UNUSED(tcs);
+#endif    
     set_enclave_state(ENCLAVE_CRASHED);
 
     return SGX_SUCCESS;

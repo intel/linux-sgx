@@ -30,6 +30,7 @@
  */
 
 
+#include "sgx_uae_launch.h"
 #include "se_memcpy.h"
 #include "util.h"
 #include "uae_service_internal.h"
@@ -47,7 +48,6 @@ static sgx_status_t get_launch_token_internal(
         sizeof(p_token->reserved2));
 
     p_token->body.valid = 1;
-    // In spec, lic_token.cpu_svn = 1, which 1 should be the least significate one.
     memset(&p_token->cpu_svn_le, 0, sizeof(p_token->cpu_svn_le));
     memset(&p_token->cpu_svn_le, 1, 1);
     p_token->isv_svn_le = 1;
@@ -91,4 +91,29 @@ sgx_status_t get_launch_token(
     return get_launch_token_internal(p_signature,
         p_attribute,
         (token_t *)p_launch_token);
+}
+
+sgx_status_t SGXAPI sgx_get_whitelist_size(uint32_t* p_whitelist_size)
+{
+    if (p_whitelist_size == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
+    *p_whitelist_size = 0;
+    return SGX_SUCCESS;
+}
+
+sgx_status_t SGXAPI sgx_get_whitelist(uint8_t* p_whitelist, uint32_t whitelist_size)
+{
+    UNUSED(p_whitelist);
+    if(whitelist_size!=0){
+          return SGX_ERROR_INVALID_PARAMETER;
+    }else{
+          return SGX_SUCCESS;
+    }
+}
+
+sgx_status_t SGXAPI sgx_register_wl_cert_chain(uint8_t* p_wl_cert_chain, uint32_t wl_cert_chain_size)
+{
+    UNUSED(p_wl_cert_chain);
+    UNUSED(wl_cert_chain_size);
+    return SGX_SUCCESS;
 }

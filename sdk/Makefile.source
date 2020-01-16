@@ -41,6 +41,7 @@
 #        - tprotected_fs: libsgx_tprotected_fs.a
 #        - tcmalloc:      libsgx_tcmalloc.a
 #        - sgx_pcl:       libsgx_pcl.a
+#        - openmp:        libsgx_omp.a
 #  - Untrtusted libraries
 #        - ukey_exchange: libsgx_ukey_exchange.a
 #        - uprotected_fs: libsgx_uprotected_fs.a
@@ -55,14 +56,13 @@
 #  - Simulation libraries and tools
 #        - simulation:    libsgx_trts_sim.a, libsgx_tservice_sim.a, libsgx_urts_sim.so, libsgx_uae_service_sim.so, sgx_config_cpusvn
 #
-include ../buildenv.mk
 
 LIBTLIBC   := $(BUILD_DIR)/libsgx_tstdc.a
 LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt switchless
+components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp
 
 # ---------------------------------------------------
 #  tstdc
@@ -71,22 +71,25 @@ components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotec
 .PHONY: tstdc
 tstdc: $(LIBTLIBC)
 
-$(LIBTLIBC): tlibthread compiler-rt tsafecrt sgx_libm tsetjmp
+$(LIBTLIBC): tlibthread compiler-rt tsafecrt sgx_libm tsetjmp tmm_rsrv
 	$(MAKE) -C tlibc/ -j4 2> /dev/null
-	@$(MKDIR) $(BUILD_DIR)/.libm  $(BUILD_DIR)/.tlibc   $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp
+	@$(MKDIR) $(BUILD_DIR)/.libm  $(BUILD_DIR)/.tlibc   $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 	@$(RM) -f $(BUILD_DIR)/.libm/*          && cd $(BUILD_DIR)/.libm       && $(AR) x $(LINUX_EXTERNAL_DIR)/sgx_libm/libm.a
 	@$(RM) -f $(BUILD_DIR)/.tlibc/*         && cd $(BUILD_DIR)/.tlibc      && $(AR) x $(LINUX_SDK_DIR)/tlibc/libtlibc.a
 	@$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
 	@$(RM) -f $(BUILD_DIR)/.tsafecrt/*      && cd $(BUILD_DIR)/.tsafecrt   && $(AR) x $(LINUX_SDK_DIR)/tsafecrt/libsgx_tsafecrt.a
 	@$(RM) -f $(BUILD_DIR)/.tsetjmp/*.o     && cd $(BUILD_DIR)/.tsetjmp    && $(AR) x $(LINUX_SDK_DIR)/tsetjmp/libsgx_tsetjmp.a
+	@$(RM) -f $(BUILD_DIR)/.tmm_rsrv/*.o    && cd $(BUILD_DIR)/.tmm_rsrv   && $(AR) x $(LINUX_SDK_DIR)/tmm_rsrv/libsgx_tmm_rsrv.a
 	$(CP) compiler-rt/libcompiler-rt.a $@
 	$(AR) qD $@ $(BUILD_DIR)/.libm/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tlibc/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tlibthread/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tsafecrt/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tsetjmp/*.o
+	$(AR) qD $@ $(BUILD_DIR)/.tmm_rsrv/*.o
 	@$(RM) -rf $(BUILD_DIR)/.libm $(BUILD_DIR)/.tlibc
-	@$(RM) -rf $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp
+	@$(RM) -rf $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt 
+	@$(RM) -rf $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 
 .PHONY: tlibthread
 tlibthread:
@@ -115,6 +118,18 @@ sgx_libm:
 tsetjmp:
 	$(MAKE) -C tsetjmp/
 
+.PHONY: tmm_rsrv
+tmm_rsrv:
+	$(MAKE) -C tmm_rsrv/
+
+# ---------------------------------------------------
+#  pthread
+#      includes: pthread
+# ---------------------------------------------------
+.PHONY: pthread
+pthread: edger8r
+	$(MAKE) -C pthread/
+
 # ---------------------------------------------------
 #  tcxx
 #      includes: cpprt, tlibcxx
@@ -141,16 +156,16 @@ tlibcxx: $(BUILD_DIR)
 
 # ---------------------------------------------------
 #  tse
-#      includes: selib, tseal, tae_service, ec_dh_lib
+#      includes: selib, tseal, ec_dh_lib
 # ---------------------------------------------------
 .PHONY: tservice
 tservice: $(LIBTSE)
 
-$(LIBTSE): selib tseal tae_service
+$(LIBTSE): selib tseal ec_dh_lib
 	@$(MKDIR) $(BUILD_DIR)/.tservice
 	@$(RM) -f $(BUILD_DIR)/.tservice/*
 	cd $(BUILD_DIR)/.tservice && $(AR) x $(LINUX_SDK_DIR)/tseal/linux/libtSeal.a
-	cd $(BUILD_DIR)/.tservice && $(AR) x $(LINUX_SDK_DIR)/tae_service/libtae_service.a
+	cd $(BUILD_DIR)/.tservice && $(AR) x $(LINUX_SDK_DIR)/ec_dh_lib/libsgx_dh.a
 	$(CP) $(LINUX_SDK_DIR)/selib/linux/libselib.a $@
 	$(AR) rsD $@ $(BUILD_DIR)/.tservice/*.o
 	@$(RM) -rf  $(BUILD_DIR)/.tservice
@@ -163,9 +178,9 @@ selib:
 tseal:
 	$(MAKE) -C tseal/linux/
 
-.PHONY: tae_service
-tae_service: edger8r
-	$(MAKE) -C tae_service
+.PHONY: ec_dh_lib
+ec_dh_lib:
+	$(MAKE) -C ec_dh_lib/
 
 # ---------------------------------------------------
 #  Other trusted libraries
@@ -175,7 +190,7 @@ trts:
 	$(MAKE) -C trts/
 
 .PHONY: tcrypto
-tcrypto:
+tcrypto: edger8r
 	$(MAKE) -C tlibcrypto/
 
 .PHONY: tkey_exchange
@@ -193,6 +208,10 @@ tprotected_fs: edger8r
 .PHONY: sgx_pcl
 sgx_pcl:
 	$(MAKE) -C protected_code_loader
+
+.PHONY: openmp
+openmp:
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/openmp
 # ---------------------------------------------------
 #  Untrusted libraries
 # ---------------------------------------------------
@@ -222,9 +241,13 @@ libcapable:
 # ---------------------------------------------------
 #  Switchless
 # ---------------------------------------------------
-.PHONY: switchless
-switchless: trts tlibc edger8r
-	$(MAKE) -C switchless/
+.PHONY: sgx_tswitchless
+sgx_tswitchless: trts tlibc edger8r
+	$(MAKE) -C switchless/sgx_tswitchless
+
+.PHONY: sgx_uswitchless
+sgx_uswitchless: edger8r
+	$(MAKE) -C switchless/sgx_uswitchless
 
 # ---------------------------------------------------
 #  simualtion libraries and tools
@@ -261,7 +284,6 @@ clean:
 	$(MAKE) -C tlibcxx/                            clean
 	$(MAKE) -C tseal/linux/                        clean
 	$(MAKE) -C selib/linux/                        clean
-	$(MAKE) -C tae_service/                        clean
 	$(MAKE) -C trts/                               clean
 	$(MAKE) -C tsetjmp/                            clean
 	$(MAKE) -C tsafecrt/                           clean
@@ -279,6 +301,10 @@ clean:
 	$(MAKE) -C edger8r/linux                       clean
 	$(MAKE) -C protected_code_loader               clean
 	$(MAKE) -C encrypt_enclave                     clean
-	$(MAKE) -C switchless/                         clean
+	$(MAKE) -C switchless/sgx_tswitchless          clean
+	$(MAKE) -C switchless/sgx_uswitchless          clean
+	$(MAKE) -C tmm_rsrv/                           clean
+	$(MAKE) -C pthread                             clean
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/openmp        clean
 	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt

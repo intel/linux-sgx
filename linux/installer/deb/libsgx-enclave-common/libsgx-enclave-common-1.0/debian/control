@@ -7,6 +7,13 @@ Standards-Version: 3.9.4
 Homepage: https://github.com/intel/linux-sgx
 
 Package: libsgx-enclave-common
-Architecture: i386 ia64 amd64
+Architecture: amd64
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: SGX Enclave Common Loader
+Recommends: libsgx-launch (>= @dep_version@)
+Description: Intel(R) Software Guard Extensions Enclave Common Loader
+
+Package: libsgx-enclave-common-dev
+Section: devel
+Architecture: amd64
+Depends: libsgx-enclave-common (= @dep_version@)
+Description: Intel(R) Software Guard Extensions Enclave Common Loader for Developers

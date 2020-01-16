@@ -17,11 +17,12 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+
 PACKAGE_PATH=@pkg_path@
 
 case "$1" in
     configure)
-        [[ -x ${PACKAGE_PATH}/startup.sh ]] && ${PACKAGE_PATH}/startup.sh
+        udevadm trigger &> /dev/null || true
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

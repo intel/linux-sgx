@@ -38,8 +38,6 @@
 
 #include <sgx_report.h>
 #include <sgx_tcrypto.h>
-#include <sgx_tae_service.h>
-
 #pragma pack(push, 1)
 
 #define NODE_SIZE 4096
@@ -76,6 +74,10 @@ typedef struct _meta_data_plain
 #define FILENAME_MAX_LEN  260
 #define MD_USER_DATA_SIZE (NODE_SIZE*3/4)  // 3072
 COMPILE_TIME_ASSERT(md_user_data_size, MD_USER_DATA_SIZE == 3072);
+
+typedef struct _mc_uuid {
+    uint8_t mc_uuid[16];
+} sgx_mc_uuid_t;
 
 typedef struct _meta_data_encrypted
 {

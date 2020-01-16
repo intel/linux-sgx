@@ -7,6 +7,8 @@
 #include <cppmicroservices/BundleActivator.h>
 #include "cppmicroservices/BundleContext.h"
 #include <cppmicroservices/GetBundleContext.h>
+#include <cppmicroservices/Constants.h>
+#include <cppmicroservices/ServiceEvent.h>
 
 #include <iostream>
 #include "aesm_logic.h"
@@ -32,12 +34,15 @@ private:
     uint32_t default_quoting_type;
     std::vector<available_key_id_t> available_key_ids;
     std::vector<quote_provider_t> available_providers;
+    ListenerToken listenerToken;
+    AESMLogicMutex quote_ex_mutex;
 
 public:
     QuoteExServiceImp():initialized(false), default_quoting_type(AESM_QUOTING_DEFAULT_VALUE) {}
 
     ae_error_t start()
     {
+        AESMLogicLock lock(quote_ex_mutex);
         aesm_config_infos_t info = {0};
         if (initialized == true)
         {
@@ -68,11 +73,11 @@ public:
 
                 available_providers.push_back(service);
                 if (AESM_SUCCESS != service->get_att_key_id_num(&num))
-                    return AE_FAILURE;
+                    continue;
                 if (num > BUNLE_ATT_KEY_NUM_MAX)
-                    return AE_FAILURE;
+                    continue;
                 if (AESM_SUCCESS != service->get_att_key_id((uint8_t *)att_key_id_ext_list, sizeof(att_key_id_ext_list)))
-                    return AE_FAILURE;
+                    continue;
                 for (int i = 0; i <num; i++)
                 {
                     available_key_id_t temp = {0};
@@ -83,8 +88,6 @@ public:
                 }
             }
         }
-        if (available_key_ids.empty())
-             return AE_FAILURE;
 
         if(true == read_aesm_config(info))
         {
@@ -94,10 +97,64 @@ public:
             default_quoting_type = AESM_QUOTING_DEFAULT_VALUE;
 
         AESM_DBG_INFO("default quoting type is %d", default_quoting_type);
+
+        // Listen for events pertaining to IQuoteProviderService.
+        listenerToken = context.AddServiceListener(std::bind(&QuoteExServiceImp::ServiceChanged, this, std::placeholders::_1),
+            std::string("(") + Constants::OBJECTCLASS + "=" + us_service_interface_iid<IQuoteProviderService>()+ ")" );
+
         initialized = true;
         AESM_DBG_INFO("quote_ex bundle started");
         return AE_SUCCESS;
     }
+
+    void ServiceChanged(const ServiceEvent& event)
+    {
+        AESMLogicLock lock(quote_ex_mutex);
+        if (false == initialized)
+            return;
+        auto context = cppmicroservices::GetBundleContext();
+        if (!context)
+            return;
+        std::string objectClass = ref_any_cast<std::vector<std::string>>(event.GetServiceReference().GetProperty(Constants::OBJECTCLASS)).front();
+
+        if (event.GetType() == ServiceEvent::SERVICE_REGISTERED)
+        {
+            AESM_DBG_INFO(" Service of type  %s is  registered.", objectClass.c_str());
+            ServiceReference<IQuoteProviderService> sr = event.GetServiceReference();
+            auto bundle = sr.GetBundle();
+            if (!bundle)
+                return;
+            if (IQuoteProviderService::VERSION != bundle.GetVersion().GetMajor())
+                return;
+            auto service = context.GetService(sr);
+            if (service && (AE_SUCCESS == service->start()))
+            {
+                uint32_t num = 0;
+                sgx_att_key_id_ext_t att_key_id_ext_list[BUNLE_ATT_KEY_NUM_MAX] = { 0 };
+
+                available_providers.push_back(service);
+                if (AESM_SUCCESS != service->get_att_key_id_num(&num))
+                    return;
+                if (num > BUNLE_ATT_KEY_NUM_MAX)
+                    return;
+                if (AESM_SUCCESS != service->get_att_key_id((uint8_t *)att_key_id_ext_list, sizeof(att_key_id_ext_list)))
+                    return;
+                for (int i = 0; i < num; i++)
+                {
+                    available_key_id_t temp = { 0 };
+                    memcpy_s(&temp.key_id, sizeof(temp.key_id), &att_key_id_ext_list[i], sizeof(att_key_id_ext_list[i]));
+                    temp.service = service;
+                    available_key_ids.push_back(temp);
+                    AESM_DBG_INFO("quote type %d available", temp.key_id.base.algorithm_id);
+                }
+            }
+        }
+        else if (event.GetType() == ServiceEvent::SERVICE_UNREGISTERING) {
+            AESM_DBG_INFO(" Service of type  %s is  unregistered.", objectClass.c_str());
+            //aesm_service is stopping. Nothing to do.
+        }
+    }
+
     void stop()
     {
         for (auto it : available_providers)

@@ -33,7 +33,6 @@ TOP_DIR  = ../../..
 include $(TOP_DIR)/buildenv.mk
 
 LAUNCH_VERSION:= $(shell awk '$$2 ~ /LAUNCH_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-PLATFORM_VERSION:= $(shell awk '$$2 ~ /PLATFORM_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 EPID_VERSION:= $(shell awk '$$2 ~ /EPID_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 QUOTE_EX_VERSION:= $(shell awk '$$2 ~ /QUOTE_EX_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 
@@ -72,19 +71,9 @@ vpath %.c   $(COMMON_DIR)/src
 
 C_SRC   := se_trace.c
 
-IPC_SRC  := AECloseSessionRequest.cpp    \
-             AEGetQuoteResponse.cpp \
-             AECloseSessionResponse.cpp  \
+IPC_SRC  :=  AEGetQuoteResponse.cpp \
              AEInitQuoteRequest.cpp \
-             AECreateSessionRequest.cpp  \
              AEInitQuoteResponse.cpp \
-             AECreateSessionResponse.cpp  \
-             AEInvokeServiceRequest.cpp \
-             AEExchangeReportRequest.cpp   \
-             AEInvokeServiceResponse.cpp \
-             AEExchangeReportResponse.cpp \
-             AEGetPsCapRequest.cpp \
-             AEGetPsCapResponse.cpp \
              AEReportAttestationRequest.cpp \
              AEReportAttestationResponse.cpp \
              AECheckUpdateStatusRequest.cpp \
@@ -121,7 +110,6 @@ PROTOBUF_SRC  :=  messages.pb.cc
 
 SRC :=       AEServicesImpl.cpp \
              AEServicesProvider.cpp \
-             tae_ocall_api.cpp \
              uae_api.cpp \
              se_sig_rl.cpp \
              sgx_uae_service.cpp \
@@ -136,7 +124,7 @@ LEGACY_OBJ := $(LEGACY_SRC:.cpp=.o)
 
 LDUFLAGS:= -pthread $(COMMON_LDFLAGS)
 
-LIBNAME  = libsgx_epid.so libsgx_launch.so libsgx_platform.so libsgx_quote_ex.so
+LIBNAME  := libsgx_epid.so libsgx_launch.so libsgx_quote_ex.so
 ifndef DEBUG
 LIBNAME_DEBUG  =  $(LIBNAME:.so=.so.debug)
 endif
@@ -185,9 +173,9 @@ $(IPC_SRC:.cpp=.o) : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
 AEServicesImpl.o : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
 
 messages.pb.o : $(IPC_COMMON_PROTO_DIR)/messages.pb.cc
-	$(CXX) $(filter-out -Wshadow, $(CXXFLAGS)) -Wno-array-bounds -Wno-conversion -c $< -o $@
+	$(CXX) $(filter-out -Wshadow -Wredundant-decls, $(CXXFLAGS)) -Wno-array-bounds -Wno-conversion -c $< -o $@
 %.o :%.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDE) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -Wno-deprecated-declarations $(INCLUDE) -c $< -o $@
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCLUDE) -Werror -fPIC -c $< -o $@
 

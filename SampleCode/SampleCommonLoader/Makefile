@@ -34,7 +34,7 @@ SGX_SDK ?= /opt/intel/sgxsdk
 App_Objects := App/sample.o App/enclave_entry.o
 
 sample: $(App_Objects)
-	@$(CXX) $^ -o $@  -L. -lsgx_enclave_common
+	@$(CXX) $^ -o $@ -z noexecstack -L. -lsgx_enclave_common
 	@echo "LINK =>  $@"
 
 App/%.o: App/%.cpp

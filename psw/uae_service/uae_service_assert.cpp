@@ -37,7 +37,7 @@
 */
 
 #include "aeerror.h"
-#include "sgx_uae_service.h"
+#include "sgx_quote.h"
 #include "platform_info_blob.h"
 #include "arch.h"
 

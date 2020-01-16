@@ -57,7 +57,6 @@ public:
     bool use_se_hw() const;
     bool is_EDMM_supported(sgx_enclave_id_t enclave_id);
     bool is_driver_compatible();
-    bool is_in_kernel_driver();
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
     bool get_plat_cap(sgx_misc_attribute_t *se_attr);
     int emodpr(uint64_t addr, uint64_t size, uint64_t flag);
@@ -75,7 +74,6 @@ private:
     Mutex               m_dev_mutex;
     bool                m_sig_registered;
     se_mutex_t          m_sig_mutex;
-    bool                m_is_kernel_driver;
 };
 
 #endif

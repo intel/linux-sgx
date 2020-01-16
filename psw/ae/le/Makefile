@@ -53,7 +53,7 @@ all: $(AENAME_OUT)
 
 $(SONAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
-	$(STRIP)  --strip-unneeded $(SONAME)
+	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 $(OBJ):$(AENAME)_t.c  
 $(OBJ): %.o:%.cpp

@@ -1,0 +1,1 @@
+SUBSYSTEM=="sgx",KERNEL=="sgx/provision",GROUP="sgx_prv",MODE="0660"

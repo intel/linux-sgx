@@ -28,13 +28,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#define STRFILEVER    "2.7.101.3"
-#define COPYRIGHT      "Copyright (C) 2019 Intel Corporation"
+#define STRFILEVER    "2.8.100.3"
+#define COPYRIGHT      "Copyright (C) 2020 Intel Corporation"
 
-#define UAE_SERVICE_VERSION       "1.2.102.3"
-#define URTS_VERSION              "1.1.103.3"
-#define ENCLAVE_COMMON_VERSION    "1.0.106.3"
-#define LAUNCH_VERSION            "1.0.101.3"
-#define PLATFORM_VERSION          "1.0.101.3"
-#define EPID_VERSION              "1.0.101.3"
-#define QUOTE_EX_VERSION          "1.0.101.3"
+#define UAE_SERVICE_VERSION       "2.2.201.3"
+#define URTS_VERSION              "1.1.105.3"
+#define ENCLAVE_COMMON_VERSION    "1.0.108.3"
+#define LAUNCH_VERSION            "1.0.103.3"
+#define EPID_VERSION              "1.0.103.3"
+#define QUOTE_EX_VERSION          "1.0.103.3"

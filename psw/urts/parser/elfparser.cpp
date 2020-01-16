@@ -227,12 +227,12 @@ bool check_symbol_table(const ElfW(Ehdr) *elf_hdr, const ElfW(Dyn) *dyn_info,
     uint32_t sym_num = (uint32_t)(sh_symtab->sh_size/sh_symtab->sh_entsize);
     const char *strtab = get_section_raw_data<char>(elf_hdr, dyn_info[DT_STRTAB].d_un.d_ptr);
 
-    // We only store "enclave_entry", "g_global_data_sim" and "g_peak_heap_used".
+    // We only store "enclave_entry", "g_global_data", "g_blobal_data_sim", "g_peak_heap_used" and "g_peak_rsrv_mem_committed".
     // To export new symbols, add them here.
     //
     // "g_global_data_sim" is needed so that we can check that whether
     // an simulated enclave is given when running an HW loader.
-    const char* str[] = { "enclave_entry", "g_global_data_sim", "g_peak_heap_used", "g_global_data" };
+    const char* str[] = { "enclave_entry", "g_global_data_sim", "g_peak_heap_used", "g_global_data", "g_peak_rsrv_mem_committed" };
 
     // The first entry is reserved, and must be all zeros
     for (uint32_t idx = 1; idx < sym_num; ++idx)

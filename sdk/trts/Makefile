@@ -34,7 +34,8 @@ include ../../buildenv.mk
 CPPFLAGS += -I$(COMMON_DIR)/inc          \
             -I$(COMMON_DIR)/inc/internal \
             -I$(COMMON_DIR)/inc/tlibc    \
-            -I$(LINUX_SDK_DIR)/tlibcxx/include
+            -I$(LINUX_SDK_DIR)/tlibcxx/include \
+            -I$(LINUX_SDK_DIR)/pthread
 
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) \
             -Werror         \
@@ -50,7 +51,6 @@ OBJS1 := init_enclave.o  \
         trts_util.o      \
         trts_veh.o       \
         trts_xsave.o     \
-        trts_switchless.o    \
         init_optimized_lib.o \
         trts_version.o \
         trts_trim.o \

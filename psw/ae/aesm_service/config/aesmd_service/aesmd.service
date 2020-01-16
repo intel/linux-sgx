@@ -1,7 +1,6 @@
 [Unit]
 Description=Intel(R) Architectural Enclave Service Manager 
 After=syslog.target network.target auditd.service
-Wants=jhi.service
 
 [Service]
 User=aesmd
@@ -25,6 +24,5 @@ RestartSec=15s
 DevicePolicy=closed
 DeviceAllow=/dev/isgx rw
 DeviceAllow=/dev/sgx rw
-DeviceAllow=/dev/mei0 rw
 [Install]
 WantedBy=multi-user.target

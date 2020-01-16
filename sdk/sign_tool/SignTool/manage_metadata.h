@@ -68,6 +68,7 @@ typedef enum _para_type_t
     RSRVMAXSIZE,
     RSRVMINSIZE,
     RSRVINITSIZE,
+    RSRVEXECUTABLE,
     MISCSELECT,
     MISCMASK,
     ENABLEKSS,

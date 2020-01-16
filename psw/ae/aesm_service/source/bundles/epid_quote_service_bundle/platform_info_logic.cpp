@@ -33,9 +33,9 @@
 #include "platform_info_logic.h"
 #include "sgx_quote.h"
 #include "aesm_encode.h"
-#include "epid_quote_service.h"
 #include "pve_logic.h"
 #include "aesm_epid_blob.h"
+#include "helper.h"
 #include "le2be_macros.h"
 #include "pibsk_pub.hh"
 #include "sgx_sha256_128.h"
@@ -48,7 +48,25 @@
 #include "cppmicroservices_util.h"
 using namespace cppmicroservices;
 
-static std::shared_ptr<IEpidQuoteService> g_epid_service;
+
+
+enum {GIDMT_UNMATCHED, GIDMT_NOT_AVAILABLE, GIDMT_MATCHED,GIDMT_UNEXPECTED_ERROR};
+
+static uint32_t is_gid_matching_result_in_epid_blob(
+        const GroupId& gid)
+    {
+        EPIDBlob& epid_blob = EPIDBlob::instance();
+        uint32_t le_gid;
+        if(epid_blob.get_sgx_gid(&le_gid)!=AE_SUCCESS){//get littlen endian gid
+            return GIDMT_UNEXPECTED_ERROR;
+        }
+        le_gid=_htonl(le_gid);//use bigendian gid
+        se_static_assert(sizeof(le_gid)==sizeof(gid));
+        if(memcmp(&le_gid,&gid,sizeof(gid))!=0){
+            return GIDMT_UNMATCHED;
+        }
+        return GIDMT_MATCHED;
+    }
 
 ae_error_t pib_verify_signature(platform_info_blob_wrapper_t& piBlobWrapper)
 {
@@ -170,27 +188,18 @@ aesm_error_t PlatformInfoLogic::check_update_status(
 	        return AESM_PLATFORM_INFO_BLOB_INVALID_SIG;
 	    }
 
-        auto context = cppmicroservices::GetBundleContext();
-        get_service_wrapper(g_epid_service, context);
-	    if (!g_epid_service) {
-	        AESM_DBG_ERROR("failed to get IEpidquoteService service");
-	        return AESM_SERVICE_UNAVAILABLE;
-	    }
-	    uint32_t x_group_id;
+        uint32_t get_active_extended_epid_group_id_internal();
+        uint32_t x_group_id = get_active_extended_epid_group_id_internal();
 
-	    if (AESM_SUCCESS != g_epid_service->get_extended_epid_group_id(&x_group_id)) {
-	        AESM_DBG_ERROR("get_extended_epid_group_id failed");
-	        return AESM_UNEXPECTED_ERROR;
-	    }
 	    if (pibw.platform_info_blob.xeid != x_group_id) {
 	        return AESM_UNEXPECTED_ERROR;
 	    }
-	    uint32_t gid_mt_result = g_epid_service->is_gid_matching_result_in_epid_blob(pibw.platform_info_blob.gid);
-	    if (IEpidQuoteService::GIDMT_UNMATCHED == gid_mt_result ||
-	        IEpidQuoteService::GIDMT_UNEXPECTED_ERROR == gid_mt_result) {
+	    uint32_t gid_mt_result = is_gid_matching_result_in_epid_blob(pibw.platform_info_blob.gid);
+	    if (GIDMT_UNMATCHED == gid_mt_result ||
+	        GIDMT_UNEXPECTED_ERROR == gid_mt_result) {
 	        return AESM_UNEXPECTED_ERROR;
 	    }
-	    else if (IEpidQuoteService::GIDMT_NOT_AVAILABLE == gid_mt_result) {
+	    else if (GIDMT_NOT_AVAILABLE == gid_mt_result) {
 	        return AESM_EPIDBLOB_ERROR;
 	    }
 
@@ -205,7 +214,7 @@ aesm_error_t PlatformInfoLogic::check_update_status(
 	    case AESM_NEP_DONT_NEED_UPDATE_PVEQE:       // sure thing
 	    {
 	        if (NULL != status) {
-	            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is�or was�needed/pending
+	            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
 	        }
 	        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
 	            bool perfRekey = false;
@@ -232,7 +241,7 @@ aesm_error_t PlatformInfoLogic::check_update_status(
 	    case AESM_NEP_PERFORMANCE_REKEY:
 	    {
 	        if (NULL != status) {
-	            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is�or was�needed/pending
+	            *status |= CHECK_UPDATE_STATUS_EPID_PROV; // EPID provisioning is or was needed/pending
 	        }
 	        if (0 != (config & CHECK_UPDATE_STATUS_EPID_PROV)) {
 	            bool perfRekey = true;
@@ -299,23 +308,9 @@ aesm_error_t PlatformInfoLogic::check_update_status(
             *status |= CHECK_UPDATE_STATUS_NEED_UPDATE;
         }
         ret_status = AESM_UPDATE_AVAILABLE;
-
-        //
-        // IAS will provide latest PSDA SVN value => avoid ambiguity like one above
-        // we may not be able to get current PSDA SVN (and we can know that we didn't get it),
-        // for several reasons (no applet file present, no heci, no jhi)
-        // i don't really want to further complicate this code, but
-        // if we can't get the value in the case here, we should return that
-        // "Intel Platform SW" may need to be re-installed
-        //
-
-        //
-        // what if MEI/HECI, JHI, iCLS isn't present/installed?
-        // none of these are in our TCB, but they are necessary to
-        // get properties of our TCB, when PS being used =>
-        // at least need to document this dependency
-        //
     }
+
+
     return ret_status;
 }
 
@@ -362,27 +357,18 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
         return AESM_PLATFORM_INFO_BLOB_INVALID_SIG;
     }
 
-    auto context = cppmicroservices::GetBundleContext();
-    get_service_wrapper(g_epid_service, context);
-    if(!g_epid_service){
-        AESM_DBG_ERROR("failed to get IEpidquoteService service");
-        return AESM_SERVICE_UNAVAILABLE;
-    }
-    uint32_t x_group_id;
+    uint32_t get_active_extended_epid_group_id_internal();
+    uint32_t x_group_id = get_active_extended_epid_group_id_internal();
 
-    if(AESM_SUCCESS != g_epid_service->get_extended_epid_group_id(&x_group_id)){
-        AESM_DBG_ERROR("get_extended_epid_group_id failed");
-        return AESM_UNEXPECTED_ERROR;
-    }
     if(pibw.platform_info_blob.xeid != x_group_id){
         return AESM_UNEXPECTED_ERROR;
     }
-    uint32_t gid_mt_result = g_epid_service->is_gid_matching_result_in_epid_blob( pibw.platform_info_blob.gid);
-    if(IEpidQuoteService::GIDMT_UNMATCHED == gid_mt_result||
-        IEpidQuoteService::GIDMT_UNEXPECTED_ERROR == gid_mt_result){
+    uint32_t gid_mt_result = is_gid_matching_result_in_epid_blob( pibw.platform_info_blob.gid);
+    if(GIDMT_UNMATCHED == gid_mt_result||
+        GIDMT_UNEXPECTED_ERROR == gid_mt_result){
             return AESM_UNEXPECTED_ERROR;
     }
-    else if (IEpidQuoteService::GIDMT_NOT_AVAILABLE == gid_mt_result) {
+    else if (GIDMT_NOT_AVAILABLE == gid_mt_result) {
             return AESM_EPIDBLOB_ERROR;
     }
 
@@ -478,5 +464,6 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
             status = AESM_UPDATE_AVAILABLE;
         }
     }
+
     return status;
 }

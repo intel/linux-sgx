@@ -89,26 +89,7 @@ class AESMLogicWrapper :public IAESMLogic {
                 uint32_t att_key_id_size, const uint8_t *att_key_id,
                 uint32_t qe_report_info_size, uint8_t *qe_report_info,
                 uint32_t quote_size, uint8_t **quote);
-
-        virtual aesm_error_t closeSession(uint32_t sessionId);
-
-        virtual aesm_error_t createSession(uint32_t *session_id,
-                uint8_t **se_dh_msg1,
-                uint32_t se_dh_msg1_size);
-
-        virtual aesm_error_t exchangeReport(uint32_t session_id,
-                const uint8_t* se_dh_msg2,
-                uint32_t se_dh_msg2_size,
-                uint8_t** se_dh_msg3,
-                uint32_t se_dh_msg3_size);
-
-
-        virtual aesm_error_t invokeService(const uint8_t  *pse_message_req,
-                uint32_t pse_message_req_size,
-                uint8_t  **pse_message_resp,
-                uint32_t pse_message_resp_size);
-
-        virtual aesm_error_t getPsCap(uint64_t* ps_cap);
+        
         virtual aesm_error_t reportAttestationStatus(uint8_t* platform_info, uint32_t platform_info_size,
                 uint32_t attestation_error_code,
                 uint8_t** update_info, uint32_t update_info_size);

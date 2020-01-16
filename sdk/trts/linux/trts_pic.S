@@ -161,9 +161,22 @@ DECLARE_GLOBAL_FUNC enclave_entry
     mov     %xsi, -5*SE_WORDSIZE(%xbp)  /* XSI */
     mov     %xdi, -6*SE_WORDSIZE(%xbp)  /* XDI */
 
+    /* clean extended feature registers */
+    sub     $(4*SE_WORDSIZE), %xsp
+
+    lea_pic SYNTHETIC_STATE, %xdi
+#ifdef LINUX32
+    mov     %xdi, (%xsp)
+#endif
+    call    restore_xregs
+    add     $(4*SE_WORDSIZE), %xsp
+
+    /* switch to C code */
 #ifdef LINUX64
-    mov     %rdx, %rcx
-    mov     %rbx, %rdx
+    mov     -6*SE_WORDSIZE(%xbp), %xdi  /* index */
+    mov     -5*SE_WORDSIZE(%xbp), %xsi  /* ms */
+    mov     -4*SE_WORDSIZE(%xbp), %xdx  /* TCS */
+    mov     -3*SE_WORDSIZE(%xbp), %xcx  /* cssa */
 #endif
     call    enter_enclave
     mov     %xax, %xbx

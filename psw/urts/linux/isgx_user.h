@@ -60,10 +60,45 @@
 #ifndef _UAPI_ASM_X86_SGX_H
 #define _UAPI_ASM_X86_SGX_H
 
+
 #include <linux/types.h>
 #include <linux/ioctl.h>
 
 #define SGX_MAGIC 0xA4
+
+/**
+ * enum sgx_epage_flags - page control flags
+ * %SGX_PAGE_MEASURE:	Measure the page contents with a sequence of
+ *			ENCLS[EEXTEND] operations.
+ */
+enum sgx_page_flags {
+	SGX_PAGE_MEASURE	= 0x01,
+};
+
+
+/**
+ * Driver Type Definitions
+ *   SGX_DRIVER_UNKNOWN     0x0   - uninitialized
+ *   SGX_DRIVER_IN_KERNEL   0x1   - in-kernel driver: supports the new IOCTL interface
+ *              /dev/sgx/enclave  - for enclave loading IOCTLs using the filehandle
+ *                                     requires SGX_IOC_ENCLAVE_SET_ATTRIBUTE to get access to provision key
+ *              /dev/sgx/provision- for provision key configuration
+ *   SGX_DRIVER_OUT_OF_TREE 0x2   - out-of-tree driver which uses legacy launch and supports EDMM
+ *              /dev/isgx         - for enclave loading IOCTLs
+ *   SGX_DRIVER_DCAP        0x3   - DCAP driver which partially supports in-kernel interface in that it:
+ *                                1) Does not take a launch token for init - uses SGX_IOC_ENCLAVE_INIT_IN_KERNEL
+ *                                2) Takes SGX_IOC_ENCLAVE_SET_ATTRIBUTE, but also whitelists a specific signing key
+ *                                Eventually, this driver will switch to support the same interface as SGX_DRIVER_IN_KERNEL
+ *              /dev/sgx          - for enclave loading IOCTLs
+ *              /dev/??           - for provision key configuration
+ */
+#define SGX_DRIVER_UNKNOWN      0x0
+#define SGX_DRIVER_IN_KERNEL    0x1
+#define SGX_DRIVER_OUT_OF_TREE  0x2
+#define SGX_DRIVER_DCAP         0x3
+
+
+
 
 #define SGX_IOC_ENCLAVE_CREATE \
 	_IOW(SGX_MAGIC, 0x00, struct sgx_enclave_create)
@@ -71,8 +106,6 @@
 	_IOW(SGX_MAGIC, 0x01, struct sgx_enclave_add_page)
 #define SGX_IOC_ENCLAVE_INIT \
 	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init)
-#define SGX_IOC_ENCLAVE_INIT_IN_KERNEL \
-	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init_in_kernel)
 #define SGX_IOC_ENCLAVE_SET_ATTRIBUTE \
 	_IOW(SGX_MAGIC, 0x03, struct sgx_enclave_set_attribute)
 #define SGX_IOC_ENCLAVE_EMODPR \
@@ -85,6 +118,20 @@
 	_IOW(SGX_MAGIC, 0x0c, struct sgx_range)
 #define SGX_IOC_ENCLAVE_PAGE_REMOVE \
 	_IOW(SGX_MAGIC, 0x0d, unsigned long)
+
+//Note: SGX_IOC_ENCLAVE_CREATE is the same for in-kernel except that it returns a file handle for in-kernel
+#define SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL \
+	_IOWR(SGX_MAGIC, 0x01, struct sgx_enclave_add_pages_in_kernel)
+#define SGX_IOC_ENCLAVE_INIT_IN_KERNEL \
+	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init_in_kernel)
+#define SGX_IOC_ENCLAVE_SET_ATTRIBUTE_IN_KERNEL \
+	_IOW(SGX_MAGIC, 0x03, struct sgx_enclave_set_attribute_in_kernel)
+
+
+
+#define SGX_IOC_ENCLAVE_INIT_DCAP \
+	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init_dcap)
+
 
 /* SGX leaf instruction return values */
 #define SGX_INVALID_SIG_STRUCT		1
@@ -129,16 +176,36 @@ struct sgx_enclave_create  {
 /**
  * struct sgx_enclave_add_page - parameter structure for the
  *                               %SGX_IOC_ENCLAVE_ADD_PAGE ioctl
- * @addr:	address in the ELRANGE
+ * @addr:	address within the ELRANGE
  * @src:	address for the page data
  * @secinfo:	address for the SECINFO data
- * @mrmask:	bitmask for the 256 byte chunks that are to be measured
+ * @mrmask:	bitmask for the measured 256 byte chunks
+ * @reserved:	reserved for future use
  */
 struct sgx_enclave_add_page {
 	__u64	addr;
 	__u64	src;
 	__u64	secinfo;
 	__u16	mrmask;
+} __attribute__((packed));
+
+/**
+ * struct sgx_enclave_add_pages_in_kernel - parameter structure for the
+ *                                %SGX_IOC_ENCLAVE_ADD_PAGE ioctl
+ * @src:	start address for the page data
+ * @offset:	starting page offset
+ * @length:	length of the data (multiple of the page size)
+ * @secinfo:address for the SECINFO data
+ * @flags:	page control flags
+ * @count:	number of bytes added (multiple of the page size)
+ */
+struct sgx_enclave_add_pages_in_kernel {
+	__u64	src;
+	__u64	offset;
+	__u64	length;
+	__u64	secinfo;
+	__u64	flags;
+	__u64	count;
 } __attribute__((packed));
 
 /**
@@ -155,15 +222,27 @@ struct sgx_enclave_init {
 } __attribute__((packed));
 
 /**
- * struct sgx_enclave_init_in_kernel - parameter structure for the in-kernel
+ * struct sgx_enclave_init_in_kernel - parameter structure for the dcap
  *                           %SGX_IOC_ENCLAVE_INIT ioctl
  * @addr:	address in the ELRANGE
- * @sigstruct:	address for the page data
+ * @sigstruct:	address for SIGSTRUCT data
  */
-struct sgx_enclave_init_in_kernel {
+struct sgx_enclave_init_dcap {
 	__u64	addr;
 	__u64	sigstruct;
 };
+
+
+/**
+ * struct sgx_enclave_init_in_kernel - parameter structure for the in-kernel
+ *                           %SGX_IOC_ENCLAVE_INIT ioctl
+ * @sigstruct:	address for SIGSTRUCT data
+ */
+
+struct sgx_enclave_init_in_kernel {
+	__u64	sigstruct;
+};
+
 
 /**
  * struct sgx_enclave_set_attribute - parameter structure for the
@@ -172,9 +251,15 @@ struct sgx_enclave_init_in_kernel {
  * @attribute_fd:       file handle of the attribute file in the securityfs
  */
 struct sgx_enclave_set_attribute {
-        __u64   addr;
-        __u64   attribute_fd;
+    __u64   addr;
+    __u64   attribute_fd;
 };
+
+
+struct sgx_enclave_set_attribute_in_kernel {
+    __u64   attribute_fd;
+};
+
 
 struct sgx_enclave_destroy {
 	__u64	addr;

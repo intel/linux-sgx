@@ -50,6 +50,7 @@ SGX_ACCESS_VERSION(tkey_exchange, 1)
 #define ERROR_BREAK(sgx_status)  if(SGX_SUCCESS!=sgx_status){break;}
 #define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
 
+
 #pragma pack(push, 1)
 
 // any call to sgx_ra_init will reset the input pubkey related ra_db_item_t.ra_state to ra_inited
@@ -592,6 +593,7 @@ sgx_status_t sgx_ra_init_ex(
     sgx_ra_derive_secret_keys_t derive_key_cb,
     sgx_ra_context_t *p_context)
 {
+	UNUSED(b_pse);
     int valid = 0;
     sgx_status_t ret = SGX_SUCCESS;
     sgx_ecc_state_handle_t ecc_state = NULL;
@@ -662,17 +664,6 @@ sgx_status_t sgx_ra_init_ex(
     }
     memset(new_item,0, sizeof(ra_db_item_t));
     memcpy(&new_item->sp_pubkey, p_pub_key, sizeof(new_item->sp_pubkey));
-    if(b_pse)
-    {
-        //sgx_create_pse_session() must have been called
-        ret = sgx_get_ps_sec_prop(&new_item->ps_sec_prop);
-        if (ret!=SGX_SUCCESS)
-        {
-            SAFE_FREE(new_item);
-            return ret;
-        }
-    }
-
     new_item->derive_key_cb = ENC_KDF_POINTER(derive_key_cb);
     new_item->state = ra_inited;
 

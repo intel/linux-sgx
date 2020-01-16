@@ -38,6 +38,7 @@
 typedef void * se_handle_t;
 
 #include "sgx_defs.h"
+#include "se_types.h"
 
 #define SE_MUTEX_SUCCESS    0x0
 #define SE_MUTEX_INVALID    0x1
@@ -52,6 +53,7 @@ se_handle_t SGXAPI se_event_init(void);
 void SGXAPI se_event_destroy(se_handle_t);
 
 int SGXAPI se_event_wait(se_handle_t);
+int SGXAPI se_event_wait_timeout(se_handle_t se_event, uint64_t timeout);
 int SGXAPI se_event_wake(se_handle_t);
 
 #ifdef __cplusplus

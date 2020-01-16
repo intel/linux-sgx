@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/libsgx_epid.so	<installdir>/lib/libsgx_epid.so	0	main	STP

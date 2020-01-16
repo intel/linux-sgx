@@ -49,7 +49,7 @@
 
 #include "default_url_info.hh"
 
-const uint32_t THREAD_TIMEOUT = 5000;
+const uint32_t THREAD_TIMEOUT = 60000;   // milli-seconds
 
 class AESMLogicMutex{
     CLASS_UNCOPYABLE(AESMLogicMutex)

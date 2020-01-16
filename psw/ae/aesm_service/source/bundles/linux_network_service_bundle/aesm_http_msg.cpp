@@ -163,6 +163,15 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
         headers=tmp;
         AESM_DBG_TRACE("ocsp request");
     }
+    else{
+        tmp = curl_slist_append(headers, "Content-Type: text/plain");
+        if(tmp == NULL){
+           AESM_DBG_ERROR("fail in add content type text/plain");
+           ae_ret = AE_FAILURE;
+           goto fini;
+        }
+        headers=tmp;
+    }
     char buf[50];
     num_bytes = snprintf(buf,sizeof(buf), "Content-Length: %u", (unsigned int)msg_size);
     if(num_bytes<0 || num_bytes>=(int)sizeof(buf)){

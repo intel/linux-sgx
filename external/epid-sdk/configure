@@ -1941,6 +1941,21 @@ main ()
   ;
   return 0;
 }
+
+#pragma GCC push_options
+#pragma GCC optimize ("-fomit-frame-pointer")
+
+void __x86_return_thunk()
+{
+    __asm__("ret\n\t");
+}
+
+void __x86_indirect_thunk_rax()
+{
+    __asm__("jmp *%rax\n\t");
+}
+#pragma GCC pop_options
+
 _ACEOF
 ac_clean_files_save=$ac_clean_files
 ac_clean_files="$ac_clean_files a.out a.out.dSYM a.exe b.out"
@@ -2083,6 +2098,21 @@ FILE *f = fopen ("conftest.out", "w");
   ;
   return 0;
 }
+
+#pragma GCC push_options
+#pragma GCC optimize ("-fomit-frame-pointer")
+
+void __x86_return_thunk()
+{
+    __asm__("ret\n\t");
+}
+
+void __x86_indirect_thunk_rax()
+{
+    __asm__("jmp *%rax\n\t");
+}
+#pragma GCC pop_options
+
 _ACEOF
 ac_clean_files="$ac_clean_files conftest.out"
 # Check that the compiler produces executables we can run.  If not, either

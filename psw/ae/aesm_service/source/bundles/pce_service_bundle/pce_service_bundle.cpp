@@ -1,5 +1,4 @@
 #include <pce_service.h>
-#include <launch_service.h>
 
 #include <cppmicroservices/BundleActivator.h>
 #include <cppmicroservices/BundleContext.h>
@@ -7,20 +6,22 @@
 #include "cppmicroservices_util.h"
 
 #include <iostream>
+#include "aesm_logic.h"
 #include "PCEClass.h"
 
 using namespace cppmicroservices;
-std::shared_ptr<ILaunchService> g_launch_service;
 
 class PceServiceImp : public IPceService
 {
 private:
     bool initialized;
+    AESMLogicMutex pce_mutex;
 public:
     PceServiceImp():initialized(false){}
 
     ae_error_t start()
     {
+        AESMLogicLock lock(pce_mutex);
         if (initialized == true)
         {
             AESM_DBG_INFO("pce bundle has been started");
@@ -28,10 +29,7 @@ public:
         }
         AESM_DBG_INFO("Starting pce bundle");
         auto context = cppmicroservices::GetBundleContext();
-        get_service_wrapper(g_launch_service, context);
 
-        if (g_launch_service)
-            g_launch_service->start();
         if (AE_SUCCESS != load_enclave())
         {
             AESM_DBG_INFO("failed to load pce");
@@ -44,6 +42,7 @@ public:
     void stop()
     {
         unload_enclave();
+        initialized = false;
         AESM_DBG_INFO("pce bundle stopped");
     }
 

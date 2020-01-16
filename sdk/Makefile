@@ -29,11 +29,16 @@
 #
 #
 
+include ../buildenv.mk
 
-ifneq ($(USE_OPT_LIBS), 0)
+ifeq ($(USE_OPT_LIBS), 1)
 include Makefile.opt_lib
-else
+else ifeq ($(USE_OPT_LIBS), 0)
 include Makefile.source
+else ifeq ($(USE_OPT_LIBS), 2)
+include Makefile.source
+else
+$(error ERROR: only 0,1,2 is acceptable for macro USE_OPT_LIBS setting)
 endif
 
 # SDK requires prebuilt IPP libraries.

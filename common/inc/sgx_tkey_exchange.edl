@@ -30,7 +30,6 @@
  */
 
 enclave {
-    from "sgx_tae_service.edl" import *;
     trusted {
         public sgx_status_t sgx_ra_get_ga(sgx_ra_context_t context,
             [out] sgx_ec256_public_t *g_a);

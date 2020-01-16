@@ -158,6 +158,34 @@ static int check_heap_dyn_range(void *addr, size_t page_count, struct dynamic_fl
     }
 }
 
+extern void *rsrv_mem_base;
+extern size_t rsrv_mem_size;
+extern size_t rsrv_mem_min_size;
+
+static int check_rsrv_dyn_range(void *addr, size_t page_count, struct dynamic_flags_attributes *fa)
+{
+    size_t rsrv_mem_dyn_start, rsrv_mem_dyn_size;
+
+    rsrv_mem_dyn_start = (size_t)rsrv_mem_base + rsrv_mem_min_size;
+    rsrv_mem_dyn_size = rsrv_mem_size - rsrv_mem_min_size;
+
+    if ((size_t)addr >= rsrv_mem_dyn_start
+            && (size_t)addr + (page_count << SE_PAGE_SHIFT) <= rsrv_mem_dyn_start + rsrv_mem_dyn_size)
+    {
+        if (fa != NULL)
+        {
+            fa->si_flags = SI_FLAGS_RW;
+            fa->attributes = PAGE_ATTR_POST_ADD;
+        }
+        return 0;
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+
 static int check_dynamic_entry_range(void *addr, size_t page_count, uint16_t entry_id, size_t entry_offset, struct dynamic_flags_attributes *fa)
 {
     const volatile layout_t *layout = NULL;
@@ -209,6 +237,9 @@ static int check_dynamic_range(void *addr, size_t page_count, size_t *offset, st
 
     // check dynamic stack within utility thread
     if (0 == check_utility_thread_dynamic_stack(addr, page_count, fa))
+        return 0;
+
+    if (0 == check_rsrv_dyn_range(addr, page_count, fa))
         return 0;
 
     // check dynamic thread entries range

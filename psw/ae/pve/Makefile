@@ -44,8 +44,8 @@ INCLUDE += -I$(EPID_SDK_DIR)                              \
            -I$(LINUX_PSW_DIR)/ae/inc/internal             \
            -I$(SGX_HEADER_DIR)/libcxx
 
-EXTERNAL_LIB += -L$(EPID_LIBDIR)/epid/member -lmember \
-                -L$(EPID_LIBDIR)/epid/common -lcommon
+EXTERNAL_LIB += -L$(EPID_SDK_DIR)/epid/member -lmember \
+                -L$(EPID_SDK_DIR)/epid/common -lcommon
 
 SRC := $(wildcard *.cpp)
 SRC += pve_qe_common.cpp             \
@@ -56,18 +56,21 @@ OBJS := $(sort $(OBJ) version.o)
 
 AENAME_OUT := $(AENAME).so
 
+EPID_FILTER = -Werror -nostdinc -nostdinc++
+EPID_CFLAGS = $(filter-out $(EPID_FILTER),$(ENCLAVE_CFLAGS))
+EPID_CXXFLAGS = $(filter-out $(EPID_FILTER),$(ENCLAVE_CXXFLAGS))
 
 .PHONY: all
 all: $(SONAME) 
 
 .PHONY: EPID
 EPID:
-	cd $(EPID_SDK_DIR) && ./configure prefix=/usr/local
+	cd $(EPID_SDK_DIR) && CFLAGS="$(EPID_CFLAGS)" CXXFLAGS="$(EPID_CXXFLAGS)" ./configure prefix=/usr/local
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
 	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
-	$(STRIP)  --strip-unneeded $(SONAME)
+	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 provision_enclave.o: $(AENAME)_t.c
 

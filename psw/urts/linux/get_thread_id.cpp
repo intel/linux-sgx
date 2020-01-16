@@ -29,8 +29,7 @@
  *
  */
 
-
-#include "se_thread.h"
+#include "get_thread_id.h"
 #include <stdlib.h>
 
 static pthread_key_t g_tid_key;

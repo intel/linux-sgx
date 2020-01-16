@@ -42,8 +42,6 @@
 #include <AEGetLaunchTokenRequest.h>
 #include <AEGetLaunchTokenResponse.h>
 
-#include <AEGetPsCapRequest.h>
-#include <AEGetPsCapResponse.h>
 
 #include <AEReportAttestationRequest.h>
 #include <AEReportAttestationResponse.h>
@@ -82,7 +80,10 @@
 #include <sgx_report.h>
 #include <arch.h>
 #include <sgx_urts.h>
-#include <sgx_uae_service.h>
+#include <sgx_uae_launch.h>
+#include <sgx_uae_epid.h>
+#include <sgx_uae_quote_ex.h>
+
 
 #include <oal/uae_oal_api.h>
 #include <aesm_error.h>
@@ -198,28 +199,6 @@ uae_oal_status_t SGXAPI oal_get_quote(
 }
 
 
-extern "C"
-uae_oal_status_t SGXAPI oal_get_ps_cap(uint64_t* ps_cap, uint32_t timeout_usec, aesm_error_t *result)
-{
-    TRY_CATCH_BAD_ALLOC({
-        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
-        if (servicesProvider == NULL)
-            return UAE_OAL_ERROR_UNEXPECTED;
-
-        AEGetPsCapRequest getPsCapRequest(timeout_usec/1000);
-
-        AEGetPsCapResponse getPsCapResponse;
-        uae_oal_status_t ret = servicesProvider->InternalInterface(&getPsCapRequest, &getPsCapResponse, timeout_usec / 1000);
-        if (ret == UAE_OAL_SUCCESS)
-        {
-            bool valid = getPsCapResponse.GetValues((uint32_t*)result, ps_cap);
-            if (!valid)
-                ret = UAE_OAL_ERROR_UNEXPECTED;
-        }
-        return ret;
-    });
-
-}
 
 extern "C"
 uae_oal_status_t SGXAPI oal_report_attestation_status(

@@ -74,7 +74,6 @@ all: $(APPNAME) $(APPNAME_DEBUG) copy_data_file | $(BUILD_DIR)
 
 copy_data_file:
 	@$(MKDIR) -p data
-	@$(CP) $(LINUX_PSW_DIR)/ae/pse/pse_op/vmc_db_generator/prebuild_pse_vmc.db data
 	@$(CP) $(WHITE_LIST_FILE) data/white_list_cert_to_be_verify.bin
 
 $(APPNAME): $(CPPMICROSERVICES) source/build/CMakeCache.txt urts RDRAND

@@ -115,14 +115,6 @@ sgx_status_t SGXLaunchToken::update_launch_token(
 {
     sgx_status_t status = SGX_SUCCESS;
 
-    if (get_enclave_creator()->is_in_kernel_driver() == true)
-    {
-        memset(&m_launch, 0, sizeof(m_launch));
-        m_launch_updated = false;
-
-        return status;
-    }
-
     if (force_update_tok ||
             SE_ERROR_INVALID_LAUNCH_TOKEN == chk_launch_token(m_css, m_secs_attr, &m_launch))
     {

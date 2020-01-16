@@ -360,6 +360,19 @@ let is_structure_deep_copy (s:Ast.struct_def) =
     in
     List.exists is_deep_copy s.Ast.smlist
 
+
+let is_foreign_a_structure (pt: Ast.parameter_type) =
+  let rec is_foreign_atype (atype: Ast.atype) =
+      match atype with
+        | Ast.Ptr(ptr)      -> is_foreign_atype ptr
+        | Ast.Foreign(name) -> (is_structure_defined name, name)
+        | _                 -> (false, "")
+  in
+  match pt with
+    | Ast.PTVal(atype)
+    | Ast.PTPtr(atype, _) -> is_foreign_atype atype
+    | _                   -> (false, "")
+
 (* Check duplicated structure definition and illegal usage.
  *)
 let check_structure (ec: enclave_content) =
@@ -400,7 +413,16 @@ let check_structure (ec: enclave_content) =
                         failwithf "the structure declaration \"%s\" specifies a deep copy, should not be used with an `out' attribute in function \"%s\"."s fd.Ast.fname
                       else ()
                  else ()
-              | _ -> ()
+            | a -> let (found, name) = is_foreign_a_structure a
+                in
+                    if found then
+                      let (_, deep_copy) = get_struct_def name
+                      in
+                      if deep_copy then
+                        failwithf "`%s' in function `%s' is a structure and it specifies a deep copy. Use `struct %s' instead." name fd.Ast.fname name
+                      else
+                        (eprintf "warning: `%s' in function `%s' is a structure. Use `struct %s' instead.\n" name fd.Ast.fname name)
+                else ()
             ) fd.Ast.plist
         ) (trusted_fds @ untrusted_fds)
 

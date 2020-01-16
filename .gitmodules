@@ -1,3 +1,11 @@
 [submodule "external/dcap_source"]
 	path = external/dcap_source
 	url = https://github.com/intel/SGXDataCenterAttestationPrimitives.git
+[submodule "openmp"]
+	path = external/openmp/openmp_code
+	url = https://github.com/llvm-mirror/openmp.git
+	branch = svn-tags/RELEASE_801
+[submodule "dnnl"]
+	path = external/dnnl/dnnl
+	url = https://github.com/intel/mkl-dnn.git
+	branch = rls-v1.1

@@ -52,7 +52,9 @@ typedef struct _global_data_t
     sys_word_t     heap_size;
     sys_word_t     rsrv_offset;
     sys_word_t     rsrv_size;
+    sys_word_t     rsrv_executable;
     sys_word_t     thread_policy;
+    sys_word_t     tcs_max_num;
     thread_data_t  td_template;
     uint8_t        tcs_template[TCS_TEMPLATE_SIZE];
     uint32_t       layout_entry_num;

@@ -121,7 +121,7 @@ typedef void (*sgx_uswitchless_worker_callback_t)(
 
 typedef struct 
 {
-	uint32_t                            switchless_calls_pool_size_qwords; //number of qwords to use for outstanding calls. (actaul number is x 64)
+	uint32_t                            switchless_calls_pool_size_qwords; //number of qwords to use for outstanding calls. (actual number is x 64)
 
     uint32_t                            num_uworkers;  //number of untrusted (for ocalls) worker threads
 

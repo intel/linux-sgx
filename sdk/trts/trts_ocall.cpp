@@ -65,7 +65,7 @@ sgx_status_t sgx_ocall(const unsigned int index, void *ms)
 
     return status;
 }
-weak_alias(sgx_ocall, sgx_ocall_switchless);
+
 
 extern "C"
 uintptr_t update_ocall_lastsp(ocall_context_t* context)

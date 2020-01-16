@@ -389,12 +389,7 @@ static long int get_regs(pid_t pid, void* addr, void* data)
     if(is_eresume(pid, regs))
     {
         //If it is ERESUME instruction, set the real register value
-        if(-1 == get_enclave_gregs(pid, regs, regs->REG(bx)))
-            return -1;
-        else
-        {
-            return ret;
-        }
+        get_enclave_gregs(pid, regs, regs->REG(bx));
     }
 
     return ret;

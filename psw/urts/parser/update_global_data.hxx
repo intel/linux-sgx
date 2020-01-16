@@ -57,20 +57,21 @@ namespace {
         if (NULL == layout_rsrv)
         {
             global_data->rsrv_offset = (sys_word_t)0;
-	    global_data->rsrv_size = (sys_word_t)0;
+            global_data->rsrv_size = (sys_word_t)0;
+            global_data->rsrv_executable = (sys_word_t)0;
         }
         else
         {
             global_data->rsrv_offset = (sys_word_t)(layout_rsrv->rva);
-	    global_data->rsrv_size = (sys_word_t)(create_param->rsrv_init_size);
+            global_data->rsrv_size = (sys_word_t)(create_param->rsrv_init_size);
+            global_data->rsrv_executable = (sys_word_t)(create_param->rsrv_executable);
         }
 
         global_data->enclave_size = (sys_word_t)metadata->enclave_size;
         global_data->heap_offset = (sys_word_t)layout_heap->rva;
         global_data->heap_size = (sys_word_t)(create_param->heap_init_size);
-        //global_data->rsrv_offset = (sys_word_t)(layout_rsrv->rva);
-        //global_data->rsrv_size = (sys_word_t)(create_param->rsrv_init_size);
         global_data->thread_policy = (sys_word_t)metadata->tcs_policy;
+        global_data->tcs_max_num = (sys_word_t)create_param->tcs_max_num;
         thread_data_t *thread_data = &global_data->td_template;
 
         thread_data->stack_limit_addr = (sys_word_t)create_param->stack_limit_addr;
@@ -102,8 +103,8 @@ namespace {
         se_trace(SE_TRACE_DEBUG, "\tEnclave size     = 0x%016llX\n", global_data->enclave_size);
         se_trace(SE_TRACE_DEBUG, "\tHeap Offset      = 0x%016llX\n", global_data->heap_offset);
         se_trace(SE_TRACE_DEBUG, "\tHeap Size        = 0x%016llX\n", global_data->heap_size);
-        se_trace(SE_TRACE_DEBUG, "\tRsrv Offset      = 0x%016llX\n", global_data->rsrv_offset);
-        se_trace(SE_TRACE_DEBUG, "\tRsrv Size        = 0x%016llX\n", global_data->rsrv_size);
+        se_trace(SE_TRACE_DEBUG, "\tReserved Mem Offset      = 0x%016llX\n", global_data->rsrv_offset);
+        se_trace(SE_TRACE_DEBUG, "\tReserved Mem Size        = 0x%016llX\n", global_data->rsrv_size);
         se_trace(SE_TRACE_DEBUG, "\tThread Policy    = 0x%016llX\n", global_data->thread_policy);
         se_trace(SE_TRACE_DEBUG, "\tLayout Table:\n");
 

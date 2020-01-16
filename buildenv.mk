@@ -82,12 +82,6 @@ else
     COMMON_FLAGS += -fstack-protector-strong
 endif
 
-# turn on cet
-CC_GREAT_EQUAL_8 := $(shell expr "`$(CC) -dumpversion`" \>= "8")
-ifeq ($(CC_GREAT_EQUAL_8), 1)
-    COMMON_FLAGS += -fcf-protection
-endif
-
 ifdef DEBUG
     COMMON_FLAGS += -O0 -ggdb -DDEBUG -UNDEBUG
     COMMON_FLAGS += -DSE_DEBUG_LEVEL=SE_TRACE_DEBUG
@@ -187,11 +181,15 @@ ENCLAVE_LDFLAGS  = $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefi
                    -Wl,--defsym,__ImageBase=0
 
 
-# Choose to use the optimized libraries (IPP/String/Math) by default.
-# Users could also use the source code version (SGXSSL/String/Math) by
-# explicitly specifying 'USE_OPT_LIBS=0'
-USE_OPT_LIBS ?= 1
-
+# Three build combinations are supported to build SGX SDK:
+#   'USE_OPT_LIBS=0' --- build SDK using SGXSSL + open sourced String/Math
+#   'USE_OPT_LIBS=1' --- build SDK using optimized IPP crypto + optimized String/Math
+#   'USE_OPT_LIBS=2' --- build SDK using optimized IPP crypto + open sourced String/Math
+#
+# It allows users to build SGX SDK with different library combination by 
+# setting different value to 'USE_OPT_LIBS'.
+# By default, choose to build SDK using optimized IPP crypto and open sourced String/Math
+USE_OPT_LIBS ?= 2
 
 ifeq ($(ARCH), x86_64)
 IPP_SUBDIR = intel64

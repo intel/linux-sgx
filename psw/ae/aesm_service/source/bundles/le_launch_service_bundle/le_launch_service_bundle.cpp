@@ -1,6 +1,6 @@
 #include <launch_service.h>
 
-
+#include "uae_service_internal.h"
 #include "aesm_logic.h"
 #include "service_enclave_mrsigner.hh"
 #include "LEClass.h"
@@ -14,11 +14,22 @@ using namespace cppmicroservices;
 
 AESMLogicMutex _le_mutex;
 std::shared_ptr<INetworkService> g_network_service;
+std::shared_ptr<ILaunchService>  g_launch_service;
 
 
-extern "C" bool is_in_kernel_driver();
+extern "C" bool is_launch_token_required();
 extern ae_error_t start_white_list_thread(unsigned long timeout=THREAD_TIMEOUT);
 extern ThreadStatus white_list_thread;
+
+extern "C" void init_get_launch_token(const func_get_launch_token_t func);
+
+extern "C" sgx_status_t get_launch_token(const enclave_css_t *signature,
+                                         const sgx_attributes_t *attribute,
+                                         sgx_launch_token_t *launch_token)
+{
+    return g_launch_service->get_launch_token(signature, attribute, launch_token);
+}
+
 
 class LeLaunchServiceImp : public ILaunchService
 {
@@ -144,6 +155,7 @@ private:
 
     ae_error_t start()
     {
+        AESMLogicLock lock(_le_mutex);
         ae_error_t ae_ret = AE_SUCCESS;
         if (initialized == true)
         {
@@ -161,6 +173,8 @@ private:
         }
         auto context = cppmicroservices::GetBundleContext();
         get_service_wrapper(g_network_service, context);
+        get_service_wrapper(g_launch_service, context);
+        init_get_launch_token(::get_launch_token);
         start_white_list_thread(0);
         initialized = true;
         AESM_DBG_INFO("le bundle started");
@@ -196,7 +210,7 @@ private:
             AESM_DBG_TRACE("Invalid parameter");
             return AESM_PARAMETER_ERROR;
         }
-        if (is_in_kernel_driver())
+        if (!is_launch_token_required())
         {
             //Should not be called
             AESM_LOG_ERROR("InKernel LE loaded");
@@ -257,7 +271,7 @@ private:
         ae_error_t ret_le = AE_SUCCESS;
         uint32_t mrsigner_index = UINT32_MAX;
 
-        if (is_in_kernel_driver())
+        if (!is_launch_token_required())
         {
             //Should not be called
             AESM_LOG_ERROR("InKernel LE loaded");
@@ -335,7 +349,7 @@ private:
         if (NULL == white_list_cert)
             return AESM_PARAMETER_ERROR;
         AESMLogicLock lock(_le_mutex);
-        if (is_in_kernel_driver())
+        if (!is_launch_token_required())
         {
             AESM_LOG_INFO("InKernel LE loaded");
             return AESM_SERVICE_UNAVAILABLE;
@@ -365,7 +379,7 @@ private:
         if (NULL == white_list_cert_size)
             return AESM_PARAMETER_ERROR;
         AESMLogicLock lock(_le_mutex);
-                if (is_in_kernel_driver())
+                if (!is_launch_token_required())
         {
             AESM_LOG_INFO("InKernel LE loaded");
             return AESM_SERVICE_UNAVAILABLE;
@@ -394,7 +408,7 @@ private:
                 AESM_LOG_ERROR_ADMIN("%s", g_admin_event_string_table[SGX_ADMIN_EVENT_WL_UPDATE_FAIL]);
                 return AESM_PARAMETER_ERROR;
             }
-            if (is_in_kernel_driver())
+            if (!is_launch_token_required())
             {
                 AESM_DBG_INFO("InKernel LE loaded");
                 return AESM_SERVICE_UNAVAILABLE;

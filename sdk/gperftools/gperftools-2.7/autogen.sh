@@ -20,14 +20,34 @@ COMMON_FLAGS="$COMMON_FLAGS -DNO_HEAP_CHECK -DTCMALLOC_SGX -DTCMALLOC_NO_ALIASES
 CFLAGS="$CFLAGS $ENCLAVE_CFLAGS $COMMON_FLAGS"
 CXXFLAGS="$CXXFLAGS $ENCLAVE_CXXFLAGS $COMMON_FLAGS"
 CPPFLAGS="-I../../../common/inc -I../../../common/inc/tlibc -I../../../common/inc/internal/ -I../../../sdk/tlibcxx/include -I../../../sdk/trts/"
-
 #if echo $CFLAGS | grep -q -- '-m32'; then
    HOST_OPT='--host=i386-linux-gnu'
 #fi
-
 export CFLAGS
 export CXXFLAGS
 export CPPFLAGS
+ 
+#Insert following codes into configure after add "-mfunction-return=thunk-extern -mindirect-branch=thunk-extern" option, Or the "checking whether the C compiler works..." check will fail
+#  #pragma GCC push_options
+#  #pragma GCC optimize ("-fomit-frame-pointer")
+#  void __x86_return_thunk()
+#  {
+#      __asm__("ret\n\t");
+#  }
+#  void __x86_indirect_thunk_rax()
+#  {
+#      __asm__("jmp *%rax\n\t");
+#  }
+#  #pragma GCC pop_options 
+line=`grep -n "__x86_return_thunk()" ./configure | cut -d: -f 1`
+if [ -n "$line" ]; then
+  echo "__x86_return_thunk() already exist..."
+else
+  line_end=`grep -n "\"checking whether the C compiler works... \"" ./configure | cut -d: -f 1`
+  line_start=`expr $line_end - 30`  #Search an scope
+  sed -i "${line_start},${line_end} s/^_ACEOF/#pragma GCC push_options\r\n#pragma GCC optimize (\"-fomit-frame-pointer\")\r\nvoid __x86_return_thunk(){__asm__(\"ret\\\n\\\t\");}\r\nvoid __x86_indirect_thunk_rax(){__asm__(\"jmp \*%rax\\\n\\\t\");}\r\n#pragma GCC pop_options\r\n_ACEOF/" ./configure
+fi
+
 $srcdir/configure $HOST_OPT --enable-shared=no \
    --with-pic \
    --disable-cpu-profiler \

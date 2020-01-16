@@ -180,3 +180,18 @@ bool is_valid_sp(uintptr_t sp)
            && is_stack_addr((void*)sp, 0) );   // sp points to the top/bottom of stack are accepted
 }
 
+
+bool is_utility_thread()
+{
+    thread_data_t *thread_data = get_thread_data();
+    if ((thread_data != NULL) && (thread_data->flags & SGX_UTILITY_THREAD))
+    {
+        return true;
+    }
+    return false;
+}
+
+extern "C" size_t get_max_tcs_num()
+{
+    return (size_t)g_global_data.tcs_max_num;
+}

@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/bundles/lible_launch_service_bundle.so	<installdir>/aesm/bundles/lible_launch_service_bundle.so	0	main	STP
+<deliverydir>/psw/ae/aesm_service/data/white_list_cert_to_be_verify.bin	<installdir>/aesm/data/white_list_cert_to_be_verify.bin	0	main	STP

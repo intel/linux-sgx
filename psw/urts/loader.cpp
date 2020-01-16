@@ -44,6 +44,7 @@
 #include "se_detect.h"
 #include "binparser.h"
 #include "metadata.h"
+#include "edmm_utility.h"
 #include <assert.h>
 #include <vector>
 #include <tuple>
@@ -272,7 +273,7 @@ int CLoader::build_partial_page(const uint64_t rva, const uint64_t size, const v
     // Initialize the page with '0', this serves as both the padding at the start
     // of the page (if it's not aligned) as well as the fill for any unitilized
     // bytes at the end of the page, e.g. .bss data.
-    uint8_t page_data[SE_PAGE_SIZE];
+    uint8_t page_data[SE_PAGE_SIZE]  __attribute__ ((aligned(4096)));
     memset(page_data, 0, SE_PAGE_SIZE);
 
     // The amount of raw data may be less than the number of bytes on the page,
@@ -368,7 +369,7 @@ int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_en
 int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
 {
     int ret = SGX_ERROR_UNEXPECTED;
-    uint8_t added_page[SE_PAGE_SIZE];
+    uint8_t added_page[SE_PAGE_SIZE] __attribute__ ((aligned(4096)));
     sec_info_t sinfo;
     memset(added_page, 0, SE_PAGE_SIZE);
     memset(&sinfo, 0, sizeof(sinfo));
@@ -860,6 +861,20 @@ int CLoader::set_memory_protection()
             if (ret != SGX_SUCCESS)
                 return SGX_ERROR_UNEXPECTED;
         }
+
+        //On EDMM supported platform, force set <ReservedMemMinSize> rsrv memory region's attribute to RW although it's was set to RWX by <ReservedMemExecutable>1</ReservedMemExecutable>
+        layout_t *layout_start = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset);
+        layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
+        for (layout_t *layout = layout_start; layout < layout_end; layout++)
+        {
+            if(layout->entry.id ==  LAYOUT_ID_RSRV_MIN && layout->entry.si_flags == SI_FLAGS_RWX)
+            {
+                ret = get_enclave_creator()->emodpr((uint64_t)m_start_addr + layout->entry.rva, layout->entry.page_count << SE_PAGE_SHIFT, (uint64_t)(SI_FLAG_R |SI_FLAG_W ));
+                if (ret != SGX_SUCCESS)
+                    return SGX_ERROR_UNEXPECTED;
+                break;
+            }
+        }
     }
 
     //set memory protection for context
@@ -869,7 +884,7 @@ int CLoader::set_memory_protection()
     if (SGX_SUCCESS != ret)
     {
         return ret;
-    } 
+    }
     
     return SGX_SUCCESS;
 
@@ -882,6 +897,11 @@ int CLoader::set_context_protection(layout_t *layout_start, layout_t *layout_end
     {
         if (!IS_GROUP_ID(layout->group.id))
         {
+            if(!get_enclave_creator()->is_EDMM_supported(get_enclave_id()) && (layout->entry.id == LAYOUT_ID_RSRV_MIN ||layout->entry.id ==  LAYOUT_ID_RSRV_INIT))
+                 //Don't change the rsrv memory's attributes if platform isn't support EDMM
+                 continue;
+             //Here: URTS will change rsrv memory's attributes to RW forcely although it's signed by sign_tool as RWX (<ReservedMemExecutable>1</ReservedMemExecutable>).
+
             int prot = 0 ;
             if(layout->entry.si_flags == SI_FLAG_NONE)
             {

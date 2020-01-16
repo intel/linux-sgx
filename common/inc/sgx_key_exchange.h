@@ -35,11 +35,15 @@
 #include <stdint.h>
 #include "sgx_quote.h"
 #include "sgx_ecp_types.h"
-#include "sgx_tae_service.h"
 
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+typedef struct _ps_sec_prop_desc
+{
+    uint8_t  sgx_ps_sec_prop_desc[256];
+} sgx_ps_sec_prop_desc_t;
 
 typedef uint32_t sgx_ra_context_t;
 
@@ -74,7 +78,7 @@ typedef struct _ra_msg3_t
 {
     sgx_mac_t                mac;         /* mac_smk(g_a||ps_sec_prop||quote) */
     sgx_ec256_public_t       g_a;         /* the Endian-ness of Ga is Little-Endian */
-    sgx_ps_sec_prop_desc_t   ps_sec_prop;
+    sgx_ps_sec_prop_desc_t   ps_sec_prop; /* reserved Must be 0 */
     uint8_t                  quote[];
 } sgx_ra_msg3_t;
 

@@ -52,17 +52,21 @@ SRC += se_sig_rl.cpp                  \
 OBJ := $(SRC:.cpp=.o)
 OBJS := $(sort $(OBJ) version.o)
 
+EPID_FILTER = -Werror -nostdinc -nostdinc++
+EPID_CFLAGS = $(filter-out $(EPID_FILTER),$(ENCLAVE_CFLAGS))
+EPID_CXXFLAGS = $(filter-out $(EPID_FILTER),$(ENCLAVE_CXXFLAGS))
+
 .PHONY: all
 all: $(SONAME) 
 
 .PHONY: EPID
 EPID:
-	cd $(EPID_SDK_DIR) && ./configure prefix=/usr/local
+	cd $(EPID_SDK_DIR) && CFLAGS="$(EPID_CFLAGS)" CXXFLAGS="$(EPID_CXXFLAGS)" ./configure prefix=/usr/local
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
-	$(STRIP)  --strip-unneeded $(SONAME)
+	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 $(OBJ): $(AENAME)_t.c
 $(OBJ): %.o: %.cpp

@@ -53,7 +53,8 @@
 #include "sgx_urts.h"
 
 // Needed to query extended epid group id.
-#include "sgx_uae_service.h"
+#include "sgx_uae_epid.h"
+#include "sgx_uae_quote_ex.h"
 
 #include "service_provider.h"
 

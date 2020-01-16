@@ -43,31 +43,21 @@ License:        BSD License
 URL:            https://github.com/intel/linux-sgx
 Source0:        %{name}-%{version}.tar.gz
 
-%if 0%{?rhel} > 0 || 0%{?fedora} > 0 || 0%{?centos} > 0
-Requires:       python 
-%endif
-
-%if 0%{?suse_version} > 0
-Requires:       devel_basis python 
-%endif
-
-Requires:       sgxpsw-debuginfo == %{version}-%{release}
-
 %description
 Intel(R) SGX SDK
-
-%debug_package
 
 %prep
 %setup -qc
 
 %install
 make DESTDIR=%{?buildroot} install
-rm -f %{_specdir}/listfiles
-for f in $(find %{?buildroot} -type f -o -type l); do lf=$(echo $f | sed -e "s#%{?buildroot}##"); [[ $lf = %{_install_path}* ]] || echo $lf >> %{_specdir}/listfiles; done
+echo "%{_install_path}" > %{_specdir}/listfiles
+find %{?buildroot} | sort | \
+awk '$0 !~ last "/" {print last} {last=$0} END {print last}' | \
+sed -e "s#^%{?buildroot}##" | \
+grep -v "^%{_install_path}" >> %{_specdir}/listfiles || :
 %{_helper_command}
 
 %files -f %{_specdir}/listfiles
-%{_install_path}
 
 %changelog

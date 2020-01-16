@@ -50,6 +50,7 @@ typedef struct _create_param_t
     uint64_t          heap_offset;
     uint64_t          rsrv_init_size;
     uint64_t          rsrv_offset;
+    uint64_t          rsrv_executable;
     uint64_t          first_ssa_gpr;
     uint64_t          td_addr;
     uint64_t          tls_addr;

@@ -31,7 +31,7 @@
 #
 
 
-set -e
+set -e 
 
 SCRIPT_DIR=$(dirname "$0")
 source ${SCRIPT_DIR}/installConfig
@@ -40,7 +40,6 @@ PSW_DST_PATH=${SGX_PACKAGES_PATH}/${PSW_PKG_NAME}
 AESM_PATH=$PSW_DST_PATH/aesm
 
 # Install the AESM service
-
 id -u aesmd &> /dev/null || \
     /usr/sbin/useradd -r -U -c "User for aesmd" \
     -d /var/opt/aesmd -s /sbin/nologin aesmd
@@ -93,19 +92,31 @@ elif [ -d /etc/init/ ]; then
     rm -f $AESM_PATH/aesmd.service
     /sbin/initctl reload-configuration
     retval=$?
+fi
+
+if [ "X$retval" != "X" ]; then
+    if [ $retval -ne 0 ]; then
+        echo " failed."
+        echo "Error: Failed to install $AESMD_NAME."
+        exit 6
+    fi
+    echo " done."
 else
-    echo " failed."
-    echo "Unsupported platform - neither systemctl nor initctl is found."
-    exit 5
+    # Check the parameter
+    for param; do
+        if [ "${param}" == "--no-start-aesm" ]; then
+            NO_START_AESM=true
+            break
+        fi
+    done
+
+    if [ "${NO_START_AESM}" == true ]; then
+        echo "Warning: No systemctl/initctl to start AESM. You may start AESM manually, e.g., /opt/intel/sgxpsw/aesm/aesm_service --no-daemon"
+    else
+        echo "Error: Unsupported platform - neither systemctl nor initctl is found."
+        exit 5
+    fi
 fi
-
-if test $retval -ne 0; then
-    echo "$rcmngr failed to install $AESMD_NAME."
-    exit 6
-fi
-
-echo " done."
-
 
 cat > $PSW_DST_PATH/uninstall.sh <<EOF
 #!/usr/bin/env bash
@@ -170,14 +181,12 @@ rm -f /usr/{lib,lib64}/libsgx_urts.so
 rm -f /usr/{lib,lib64}/libsgx_enclave_common.so*
 rm -f /usr/{lib,lib64}/libsgx_epid.so*
 rm -f /usr/{lib,lib64}/libsgx_launch.so*
-rm -f /usr/{lib,lib64}/libsgx_platform.so*
 rm -f /usr/{lib,lib64}/libsgx_quote_ex.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_uae_service.so
 rm -f /usr/lib/i386-linux-gnu/libsgx_urts.so
 rm -f /usr/lib/i386-linux-gnu/libsgx_enclave_common.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_epid.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_launch.so*
-rm -f /usr/lib/i386-linux-gnu/libsgx_platform.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_quote_ex.so*
 
 # Removing AESM user and group
@@ -191,6 +200,9 @@ echo "Intel(R) SGX PSW uninstalled."
 EOF
 
 chmod +x $PSW_DST_PATH/uninstall.sh
+
+$AESM_PATH/cse_provision_tool 2> /dev/null || true
+rm -f $AESM_PATH/cse_provision_tool
 
 cat > $AESM_PATH/linksgx.sh <<EOF
 #!/usr/bin/env bash
@@ -230,6 +242,8 @@ if test \$(id -u) -ne 0; then
     echo "Root privilege is required."
     exit 1
 fi
+
+/usr/sbin/usermod -aG sgx_prv aesmd &> /dev/null
 
 if [ -e /dev/sgx ]; then
     chmod 666 /dev/sgx &> /dev/null

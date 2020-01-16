@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/libsgx_launch.so	<installdir>/lib/libsgx_launch.so	0	main	STP

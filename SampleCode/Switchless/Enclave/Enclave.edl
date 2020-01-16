@@ -33,6 +33,7 @@
 
 enclave {
     from "sgx_tstdc.edl" import *;
+    from "sgx_tswitchless.edl" import *;
 
     trusted {
         public void ecall_repeat_ocalls(unsigned long nrepeats, int use_switchless);

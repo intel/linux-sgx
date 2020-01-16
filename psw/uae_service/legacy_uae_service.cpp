@@ -30,7 +30,9 @@
  */
 
 #include <dlfcn.h>
-#include "sgx_uae_service.h"
+#include "sgx_uae_launch.h"
+#include "sgx_uae_epid.h"
+#include "sgx_uae_quote_ex.h"
 #include "uae_service_internal.h"
 
 template<class T>
@@ -144,17 +146,6 @@ protected:
 	};
 };
 
-const static char PLATFORM_LIB[] = _CONCAT("libsgx_platform.so.", MAJOR_VER);
-
-class PlatformLib:public SharedLibProxy<PlatformLib>
-{
-protected:	
-    const char* GetLibraryPath(void) const
-	{
-		return PLATFORM_LIB;
-	};
-};
-
 const static char QUOTE_EX_LIB[] = _CONCAT("libsgx_quote_ex.so.", MAJOR_VER);
 
 class QuoteExLib:public SharedLibProxy<QuoteExLib>
@@ -258,15 +249,6 @@ sgx_status_t sgx_get_quote(
     return SGX_ERROR_SERVICE_UNAVAILABLE;
 }
 
-sgx_status_t sgx_get_ps_cap(sgx_ps_cap_t* p_sgx_ps_cap)
-{
-    sgx_status_t (*p_sgx_get_ps_cap)(sgx_ps_cap_t* p_sgx_ps_cap) = NULL;
-    if (PlatformLib::instance().findSymbol(__FUNCTION__, (void**)&p_sgx_get_ps_cap))
-    {
-        return p_sgx_get_ps_cap(p_sgx_ps_cap);
-    }
-    return SGX_ERROR_SERVICE_UNAVAILABLE;
-}
 
 sgx_status_t sgx_report_attestation_status(
     const sgx_platform_info_t*  p_platform_info,
@@ -298,80 +280,6 @@ sgx_status_t SGXAPI sgx_check_update_status(
     if (EPIDLib::instance().findSymbol(__FUNCTION__, (void**)&p_sgx_check_update_status))
     {
         return p_sgx_check_update_status(p_platform_info, p_update_info, config, p_status);
-    }
-    return SGX_ERROR_SERVICE_UNAVAILABLE;
-}
-
-sgx_status_t create_session_ocall(
-    uint32_t        *session_id,
-    uint8_t         *se_dh_msg1,
-    uint32_t        dh_msg1_size,
-    uint32_t timeout)
-{
-	sgx_status_t (*p_create_session_ocall)(
-		uint32_t        *session_id,
-		uint8_t         *se_dh_msg1,
-		uint32_t        dh_msg1_size,
-		uint32_t timeout) = NULL;
-    if (PlatformLib::instance().findSymbol(__FUNCTION__, (void**)&p_create_session_ocall))
-    {
-        return p_create_session_ocall(session_id, se_dh_msg1, dh_msg1_size, timeout);
-    }
-    return SGX_ERROR_SERVICE_UNAVAILABLE;
-}
-
-sgx_status_t exchange_report_ocall(
-    uint32_t        session_id,
-    const uint8_t   *se_dh_msg2,
-    uint32_t        dh_msg2_size,
-    uint8_t         *se_dh_msg3,
-    uint32_t        dh_msg3_size,
-    uint32_t        timeout)
-{
-	sgx_status_t (*p_exchange_report_ocall)(
-		uint32_t        session_id,
-		const uint8_t   *se_dh_msg2,
-		uint32_t        dh_msg2_size,
-		uint8_t         *se_dh_msg3,
-		uint32_t        dh_msg3_size,
-		uint32_t        timeout) = NULL;
-    if (PlatformLib::instance().findSymbol(__FUNCTION__, (void**)&p_exchange_report_ocall))
-    {
-        return p_exchange_report_ocall(session_id, se_dh_msg2, dh_msg2_size, se_dh_msg3, dh_msg3_size, timeout);
-    }
-    return SGX_ERROR_SERVICE_UNAVAILABLE;
-}
-
-sgx_status_t close_session_ocall(
-    uint32_t        session_id,
-    uint32_t        timeout)
-{
-	sgx_status_t (*p_close_session_ocall)(
-		uint32_t        session_id,
-		uint32_t        timeout) = NULL;
-    if (PlatformLib::instance().findSymbol(__FUNCTION__, (void**)&p_close_session_ocall))
-    {
-        return p_close_session_ocall(session_id, timeout);
-    }
-    return SGX_ERROR_SERVICE_UNAVAILABLE;
-}
-
-sgx_status_t invoke_service_ocall(
-    const uint8_t   *pse_message_req,
-    uint32_t        pse_message_req_size,
-    uint8_t         *pse_message_resp,
-    uint32_t        pse_message_resp_size,
-    uint32_t        timeout)
-{
-	sgx_status_t (*p_invoke_service_ocall)(
-		const uint8_t   *pse_message_req,
-		uint32_t        pse_message_req_size,
-		uint8_t         *pse_message_resp,
-		uint32_t        pse_message_resp_size,
-		uint32_t        timeout) = NULL;
-    if (PlatformLib::instance().findSymbol(__FUNCTION__, (void**)&p_invoke_service_ocall))
-    {
-        return p_invoke_service_ocall(pse_message_req, pse_message_req_size, pse_message_resp, pse_message_resp_size, timeout);
     }
     return SGX_ERROR_SERVICE_UNAVAILABLE;
 }

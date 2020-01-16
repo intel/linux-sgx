@@ -1,0 +1,5 @@
+UAE_SERVICE_VERSION="1.0"
+TARBALL_NAME=libsgx-uae-service_1.0.orig.tar.gz
+
+UAE_SERVICE_PACKAGE_NAME=libsgx-uae-service
+LIB_DIR=lib

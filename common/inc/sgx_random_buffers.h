@@ -39,9 +39,10 @@
 #include <utility>
 #include <string.h>
 #include <stdlib.h>
-#include <trts_inst.h>
 
+#if defined(MAXIMAL_CALLSTACK)
 extern int EDMM_supported;
+#endif
 
 /*
  * This function is equivalent to __builtin_rdrand16/32/64_step() except it
@@ -85,12 +86,12 @@ R random_stack_advance(R(*f)(Ps...), Qs&&... args)
 #endif
     volatile char dummy_vla[size];
 
-    // Notify the GDB about the random stack info, so that GDB can zero that
-    // area. For platforms with EDMM support, different method is used to
-    // measure the peak stack usage and is not affected by random stack, hence
-    // no need to send notification.
+#if defined(MAXIMAL_CALLSTACK)
     if (!EDMM_supported)
-        random_stack_notify_gdb((void *)dummy_vla, (size_t)size);
+        memset((void *)dummy_vla, 0, size);
+#else
+    (void)(dummy_vla);
+#endif
 
     return _random_stack_noinline_wrapper(f, std::forward<Qs>(args)...);
 }

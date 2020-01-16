@@ -2,7 +2,6 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/libsgx_uae_service.so	<installdir>/package/lib64/libsgx_uae_service.so	0	main	STP
 <deliverydir>/build/linux/libsgx_epid.so	<installdir>/package/lib64/libsgx_epid.so	0	main	STP
 <deliverydir>/build/linux/libsgx_launch.so	<installdir>/package/lib64/libsgx_launch.so	0	main	STP
-<deliverydir>/build/linux/libsgx_platform.so	<installdir>/package/lib64/libsgx_platform.so	0	main	STP
 <deliverydir>/build/linux/libsgx_quote_ex.so	<installdir>/package/lib64/libsgx_quote_ex.so	0	main	STP
 <deliverydir>/build/linux/libsgx_urts.so	<installdir>/package/lib64/libsgx_urts.so	0	main	STP
 <deliverydir>/build/linux/libsgx_enclave_common.so	<installdir>/package/lib64/libsgx_enclave_common.so	0	main	STP

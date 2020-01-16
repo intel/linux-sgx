@@ -260,11 +260,6 @@ bool EnclaveCreatorSim::is_driver_compatible()
     return true;
 }
 
-bool EnclaveCreatorSim::is_in_kernel_driver()
-{
-    return false;
-}
-
 bool EnclaveCreatorSim::get_plat_cap(sgx_misc_attribute_t *se_attr)
 {
     UNUSED(se_attr);

@@ -1,0 +1,10 @@
+prefix=/opt/intel/sgxsdk
+includedir=${prefix}/include
+libdir=${prefix}/@LIB_FOLDER_NAME@
+
+Name: libsgx_launch_sim
+Description: SGX launch simulation library
+Version: @SGX_VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsgx_launch_sim
+Libs.private: -lsgx_launch_sim

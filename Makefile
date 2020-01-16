@@ -29,7 +29,7 @@
 #
 #
 
-DCAP_VER?= 1.3.1
+DCAP_VER?= 1.4
 DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
 
 CHECK_OPT :=
@@ -79,66 +79,128 @@ sdk_install_pkg: sdk
 psw_install_pkg: psw
 	./linux/installer/bin/build-installpkg.sh psw
 
-deb_sgx_urts_pkg: psw
-	./linux/installer/deb/libsgx-urts/build.sh
+.PHONY: deb_libsgx_ae_qe3
+deb_libsgx_ae_qe3:
+ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so)", "")
+	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+endif
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_ae_qe3_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-qe3/libsgx-ae-qe3*.deb ./linux/installer/deb/sgx-aesm-service/
 
-deb_sgx_enclave_common_pkg: psw
+.PHONY: deb_libsgx_dcap_default_qpl
+deb_libsgx_dcap_default_qpl: 
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_dcap_default_qpl_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-default-qpl/libsgx-dcap-default-qpl*deb ./linux/installer/deb/sgx-aesm-service/
+
+.PHONY: deb_libsgx_dcap_pccs
+deb_libsgx_dcap_pccs: 
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_dcap_pccs_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/sgx-dcap-pccs/sgx-dcap-pccs*deb ./linux/installer/deb/sgx-aesm-service/
+
+.PHONY: deb_sgx_aesm_service
+deb_sgx_aesm_service: psw
+	./linux/installer/deb/sgx-aesm-service/build.sh
+
+.PHONY: deb_libsgx_epid
+deb_libsgx_epid: psw
+	./linux/installer/deb/libsgx-epid/build.sh
+
+.PHONY: deb_libsgx_launch
+deb_libsgx_launch: psw
+	./linux/installer/deb/libsgx-launch/build.sh
+
+.PHONY: deb_libsgx_quote_ex
+deb_libsgx_quote_ex: psw
+	./linux/installer/deb/libsgx-quote-ex/build.sh
+
+.PHONY: deb_libsgx_uae_service
+deb_libsgx_uae_service: psw
+	./linux/installer/deb/libsgx-uae-service/build.sh
+
+.PHONY: deb_libsgx_enclave_common
+deb_libsgx_enclave_common: psw
 	./linux/installer/deb/libsgx-enclave-common/build.sh
 
-deb_sgx_enclave_common_dev_pkg:
-	./linux/installer/deb/libsgx-enclave-common-dev/build.sh
+.PHONY: deb_libsgx_urts
+deb_libsgx_urts: psw
+	./linux/installer/deb/libsgx-urts/build.sh
 
-deb_pkg: deb_sgx_urts_pkg deb_sgx_enclave_common_pkg deb_sgx_enclave_common_dev_pkg
-	@$(RM) -f ./linux/installer/deb/*.deb ./linux/installer/deb/*.ddeb
-	cp `find ./linux/installer/deb/ -name "*.deb" -o -name "*.ddeb"` ./linux/installer/deb/
+.PHONY: deb_psw_pkg
+deb_psw_pkg: deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs
 
+.PHONY: deb_local_repo
+deb_local_repo: deb_psw_pkg
+	./linux/installer/common/local_repo_builder/local_repo_builder.sh debian build
+
+.PHONY: rpm_libsgx_ae_qe3
+rpm_libsgx_ae_qe3:
+ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so)", "")
+	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+endif
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_ae_qe3_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qe3/libsgx-ae-qe3*.rpm ./linux/installer/rpm/sgx-aesm-service/
+
+.PHONY: rpm_sgx_aesm_service
+rpm_sgx_aesm_service: psw
+	./linux/installer/rpm/sgx-aesm-service/build.sh
+
+.PHONY: rpm_libsgx_epid
+rpm_libsgx_epid: psw
+	./linux/installer/rpm/libsgx-epid/build.sh
+
+.PHONY: rpm_libsgx_launch
+rpm_libsgx_launch: psw
+	./linux/installer/rpm/libsgx-launch/build.sh
+
+.PHONY: rpm_libsgx_quote_ex
+rpm_libsgx_quote_ex: psw
+	./linux/installer/rpm/libsgx-quote-ex/build.sh
+
+.PHONY: rpm_libsgx_uae_service
+rpm_libsgx_uae_service: psw
+	./linux/installer/rpm/libsgx-uae-service/build.sh
+
+.PHONY: rpm_libsgx_enclave_common
+rpm_libsgx_enclave_common: psw
+	./linux/installer/rpm/libsgx-enclave-common/build.sh
+
+.PHONY: rpm_libsgx_urts
+rpm_libsgx_urts: psw
+	./linux/installer/rpm/libsgx-urts/build.sh
+
+.PHONY: rpm_sdk_pkg
 rpm_sdk_pkg: sdk
 	./linux/installer/rpm/sdk/build.sh
 
-rpm_psw_pkg: psw
-	./linux/installer/rpm/psw/build.sh
+.PHONY: rpm_psw_pkg
+rpm_psw_pkg: rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3
 
-rpm_psw_dev_pkg:
-	./linux/installer/rpm/psw-dev/build.sh
-
-rpm_pkg: rpm_sdk_pkg rpm_psw_pkg rpm_psw_dev_pkg
-	@$(RM) -f ./linux/installer/rpm/*.rpm
-	cp `find ./linux/installer/rpm/ -name "*.rpm"` ./linux/installer/rpm/
+.PHONY: rpm_local_repo
+rpm_local_repo: rpm_psw_pkg
+	./linux/installer/common/local_repo_builder/local_repo_builder.sh rpm build
 
 clean:
 	@$(MAKE) -C sdk/                                clean
 	@$(MAKE) -C psw/                                clean
 	@$(RM)   -r $(ROOT_DIR)/build
 	@$(RM)   -r linux/installer/bin/sgx_linux*.bin
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common-dbgsym_*
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common_*.tar.*
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common_*_amd64.*
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common/libsgx-enclave-common_*.dsc
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common-dev/libsgx-enclave-common-dev*.deb
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common-dev/libsgx-enclave-common_*.tar.*
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common-dev/libsgx-enclave-common_*_amd64.*
-	@$(RM)   -r linux/installer/deb/libsgx-enclave-common-dev/libsgx-enclave-common_*.dsc
-	@$(RM)   -r linux/installer/deb/libsgx-urts/libsgx-enclave-common_*.tar.*
-	@$(RM)   -r linux/installer/deb/libsgx-urts/libsgx-enclave-common_*_amd64.*
-	@$(RM)   -r linux/installer/deb/libsgx-urts/libsgx-urts_*.deb
-	@$(RM)   -r linux/installer/deb/*.deb
-	@$(RM)   -r linux/installer/deb/*.ddeb
-	@$(RM)   -r linux/installer/rpm/sdk/sgxsdk*.rpm
-	@$(RM)   -r linux/installer/rpm/psw/sgxpsw*.rpm
-	@$(RM)   -r linux/installer/rpm/psw-dev/sgxpsw-dev*.rpm
-	@$(RM)   -r linux/installer/rpm/*.rpm
-	@$(RM)   -rf linux/installer/common/psw/output
-	@$(RM)   -rf linux/installer/common/psw/gen_source.py
-	@$(RM)   -rf linux/installer/common/libsgx-enclave-common/output
-	@$(RM)   -rf linux/installer/common/libsgx-enclave-common/gen_source.py
-	@$(RM)   -rf linux/installer/common/libsgx-enclave-common-dev/output
-	@$(RM)   -rf linux/installer/common/libsgx-enclave-common-dev/gen_source.py
-	@$(RM)   -rf linux/installer/common/libsgx-urts/output
-	@$(RM)   -rf linux/installer/common/libsgx-urts/gen_source.py
-	@$(RM)   -rf linux/installer/common/sdk/output
-	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x64
-	@$(RM)   -rf linux/installer/common/sdk/pkgconfig/x86
-	@$(RM)   -rf linux/installer/common/sdk/gen_source.py
+	./linux/installer/deb/sgx-aesm-service/clean.sh
+	./linux/installer/deb/libsgx-epid/clean.sh
+	./linux/installer/deb/libsgx-launch/clean.sh
+	./linux/installer/deb/libsgx-quote-ex/clean.sh
+	./linux/installer/deb/libsgx-uae-service/clean.sh
+	./linux/installer/deb/libsgx-enclave-common/clean.sh
+	./linux/installer/deb/libsgx-urts/clean.sh
+	./linux/installer/common/local_repo_builder/local_repo_builder.sh debian clean
+	./linux/installer/rpm/sgx-aesm-service/clean.sh
+	./linux/installer/rpm/libsgx-epid/clean.sh
+	./linux/installer/rpm/libsgx-launch/clean.sh
+	./linux/installer/rpm/libsgx-quote-ex/clean.sh
+	./linux/installer/rpm/libsgx-uae-service/clean.sh
+	./linux/installer/rpm/libsgx-enclave-common/clean.sh
+	./linux/installer/rpm/libsgx-urts/clean.sh
+	./linux/installer/rpm/sdk/clean.sh
+	./linux/installer/common/local_repo_builder/local_repo_builder.sh rpm clean
 
 rebuild:
 	$(MAKE) clean

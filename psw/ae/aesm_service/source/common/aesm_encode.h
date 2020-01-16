@@ -38,7 +38,6 @@ extern "C"{
 #endif
 
 #include <stdint.h>
-uint32_t certPseSvn();
 
 /*Function to provide an upper bound of buffer size of encoded message for an input request
  *@param req, the header for the input request such as ProvMsg1 or ProvMsg3

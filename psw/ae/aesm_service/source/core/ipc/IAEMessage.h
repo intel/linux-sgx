@@ -37,6 +37,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 #include "messages.pb.h"
 #pragma GCC diagnostic pop
 

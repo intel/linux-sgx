@@ -21,7 +21,6 @@
 #include "QEClass.h"
 #include "PVEClass.h"
 #include "util.h"
-#include "launch_service.h"
 #include "pce_service.h"
 #include "es_info.h"
 #include "endpoint_select_info.h"
@@ -34,7 +33,6 @@
 using namespace cppmicroservices;
 std::shared_ptr<INetworkService> g_network_service;
 std::shared_ptr<IPceService> g_pce_service;
-std::shared_ptr<ILaunchService> g_launch_service;
 
 
 extern ThreadStatus epid_thread;
@@ -181,11 +179,17 @@ public:
         AESM_DBG_INFO("Starting epid bundle");
         auto context = cppmicroservices::GetBundleContext();
         get_service_wrapper(g_network_service, context);
-        get_service_wrapper(g_launch_service, context);
+        if (g_network_service == nullptr || g_network_service->start())
+        {
+            AESM_DBG_ERROR("Starting epid bundle failed because network service is not available");
+            return AE_FAILURE;
+        }
         get_service_wrapper(g_pce_service, context);
-
-        if (g_launch_service)
-            g_launch_service->start();
+        if (g_pce_service == nullptr || g_pce_service->start())
+        {
+            AESM_DBG_ERROR("Starting epid bundle failed because pce service is not available");
+            return AE_FAILURE;
+        }
 
         ae_ret = read_global_extended_epid_group_id(&active_extended_epid_group_id);
         if (AE_SUCCESS != ae_ret){
@@ -363,6 +367,13 @@ public:
         SGX_DBGPRINT_ONE_STRING_TWO_INTS_ENDPOINT_SELECTION(__FUNCTION__" (line, 0)", __LINE__, 0);
         return EndpointSelectionInfo::instance().start_protocol(es_info);
     }
+
+    ae_error_t need_epid_provisioning(
+        const platform_info_blob_wrapper_t* p_platform_info_blob)
+    {
+        return PlatformInfoLogic::need_epid_provisioning(p_platform_info_blob);
+    }
+
     aesm_error_t provision(
         bool performance_rekey_used,
         uint32_t timeout_usec)
@@ -381,23 +392,8 @@ public:
     const char *get_pse_provisioning_url(
         const endpoint_selection_infos_t& es_info)
     {
-        return EndpointSelectionInfo::instance().get_pse_provisioning_url(es_info);
-    }
-    uint32_t is_gid_matching_result_in_epid_blob(
-        const GroupId& gid)
-    {
-        AESMLogicLock lock(_qe_pve_mutex);
-        EPIDBlob& epid_blob = EPIDBlob::instance();
-        uint32_t le_gid;
-        if(epid_blob.get_sgx_gid(&le_gid)!=AE_SUCCESS){//get littlen endian gid
-            return GIDMT_UNEXPECTED_ERROR;
-        }
-        le_gid=_htonl(le_gid);//use bigendian gid
-        se_static_assert(sizeof(le_gid)==sizeof(gid));
-        if(memcmp(&le_gid,&gid,sizeof(gid))!=0){
-            return GIDMT_UNMATCHED;
-        }
-        return GIDMT_MATCHED;
+        return NULL;
+
     }
 
     aesm_error_t init_quote_ex(
@@ -528,7 +524,7 @@ public:
         uint32_t attestation_status,
         uint8_t* update_info, uint32_t update_info_size)
     {
-        AESM_DBG_INFO("LocalPseopServiceImp::report_attestation_status");
+        AESM_DBG_INFO("report_attestation_status");
         if (false == initialized)
             return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_qe_pve_mutex);
@@ -542,7 +538,7 @@ public:
         uint8_t* update_info, uint32_t update_info_size,
         uint32_t config, uint32_t* status)
     {
-        AESM_DBG_INFO("LocalPseopServiceImp::check_update_status");
+        AESM_DBG_INFO("check_update_status");
         if (false == initialized)
             return AESM_SERVICE_UNAVAILABLE;
         AESMLogicLock lock(_qe_pve_mutex);

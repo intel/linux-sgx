@@ -532,6 +532,21 @@ sgx_status_t change_protection(void *enclave_base)
         }
     }
 
+    //The <ReservedMemMinSize> memory region's attributes has been set to RW if EDMM is supported by URTS.
+    //So do_eaccept() to accept these pages.
+    uint32_t i = 0;
+    for (i = 0; i < g_global_data.layout_entry_num; i++)
+    {
+        if (g_global_data.layout_table[i].entry.id == LAYOUT_ID_RSRV_MIN && g_global_data.layout_table[i].entry.si_flags ==  SI_FLAGS_RWX)
+        {
+            if((status = trts_mprotect((size_t)((size_t)enclave_base + g_global_data.layout_table[i].entry.rva), 
+                                                                     g_global_data.layout_table[i].entry.page_count << SE_PAGE_SHIFT, 
+                                                                           SI_FLAG_R|SI_FLAG_W)) != SGX_SUCCESS)
+                return status;
+            break;
+        }
+    }
+
     return SGX_SUCCESS;
 }
 

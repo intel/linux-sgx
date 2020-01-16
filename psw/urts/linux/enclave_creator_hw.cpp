@@ -60,8 +60,7 @@ static uint64_t g_eid = 0x1;
 
 EnclaveCreatorHW::EnclaveCreatorHW():
     m_hdevice(-1),
-    m_sig_registered(false),
-    m_is_kernel_driver(false)
+    m_sig_registered(false)
 {
     se_mutex_init(&m_sig_mutex);
 }
@@ -254,7 +253,23 @@ bool EnclaveCreatorHW::open_device()
     if(-1 != m_hdevice)
         return true;
 
-    return ::open_se_device(&m_hdevice, &m_is_kernel_driver);
+    //todo: probably should add an interface to the enclave common loader so that edmm_utility does not need to:
+    //  - provide the driver type - the enclave common loader can provide properties
+    //  - open the device - if needed, the enclave common loader can share the file handle
+    int driver_type = 0;
+    if (!::get_driver_type(&driver_type))
+    {
+        SE_TRACE(SE_TRACE_ERROR, "open_device() - could not get driver typed\n");
+        return false;
+    }
+
+    if(driver_type == SGX_DRIVER_OUT_OF_TREE)
+    {
+        return ::open_se_device(driver_type, &m_hdevice);
+    }
+    
+    return true;
+    
 }
 
 void EnclaveCreatorHW::close_device()
@@ -385,8 +400,4 @@ bool EnclaveCreatorHW::is_driver_compatible()
     return is_driver_support_edmm(m_hdevice);
 }
 
-bool EnclaveCreatorHW::is_in_kernel_driver()
-{
-    open_device();
-    return m_is_kernel_driver;
-}
+

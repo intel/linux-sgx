@@ -43,6 +43,5 @@
 
 #define LE_RETRY_TIMES 3
 #define QE_RETRY_TIMES 3
-#define PSE_RETRY_TIMES 3
 
 #endif

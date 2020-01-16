@@ -8,33 +8,43 @@
 //===----------------------------------------------------------------------===//
 
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 #if defined(_LIBCPP_USING_WIN32_RANDOM)
 // Must be defined before including stdlib.h to enable rand_s().
 #define _CRT_RAND_S
 #endif // defined(_LIBCPP_USING_WIN32_RANDOM)
+#endif
 
 #include "random"
 #include "system_error"
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 #if defined(__sun__)
 #define rename solaris_headers_are_broken
 #endif // defined(__sun__)
+#endif
 
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 #if defined(_LIBCPP_USING_DEV_RANDOM)
 #include <fcntl.h>
 #include <unistd.h>
 #elif defined(_LIBCPP_USING_NACL_RANDOM)
 #include <nacl/nacl_random.h>
 #endif
+#else
+#include <sgx_trts.h>
+#include <util.h>
+#endif
 
 
 _LIBCPP_BEGIN_NAMESPACE_STD
+
+#if !defined(_LIBCPP_SGX_CONFIG)
 
 #if defined(_LIBCPP_USING_ARC4_RANDOM)
 
@@ -146,6 +156,26 @@ random_device::operator()()
 #error "Random device not implemented for this architecture"
 #endif
 
+#else   /*#if !defined(_LIBCPP_SGX_CONFIG)*/
+random_device::random_device(const string& __token)
+{
+    UNUSED(__token);
+}
+
+random_device::~random_device()
+{
+}
+
+unsigned
+random_device::operator()()
+{
+    unsigned result;
+    sgx_read_rand(reinterpret_cast<unsigned char*>(&result), sizeof(result));
+    return result;
+}
+
+#endif  /*#if !defined(_LIBCPP_SGX_CONFIG)*/
+
 double
 random_device::entropy() const _NOEXCEPT
 {
@@ -154,4 +184,3 @@ random_device::entropy() const _NOEXCEPT
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)

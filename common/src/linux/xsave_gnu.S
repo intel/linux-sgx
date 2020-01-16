@@ -69,8 +69,8 @@
     lea     g_xsave_mask_low, %eax
     lea     g_xsave_mask_high, %edx
 #else
-    mov     g_xsave_mask_low@GOTPCREL(%rip), %rax
-    mov     g_xsave_mask_high@GOTPCREL(%rip), %rdx
+    lea_pic g_xsave_mask_low, %rax
+    lea_pic g_xsave_mask_high, %rdx
 #endif
     movl    (%xax), %eax
     movl    (%xdx), %edx
@@ -89,7 +89,7 @@ DECLARE_LOCAL_FUNC restore_xregs
     lea     g_xsave_enabled, %eax
 #else
     mov     %rdi, %rcx
-    mov     g_xsave_enabled@GOTPCREL(%rip), %rax
+    lea_pic g_xsave_enabled, %rax
 #endif
     movl    (%xax), %eax
     cmpl    $0, %eax
@@ -108,7 +108,7 @@ DECLARE_LOCAL_FUNC save_xregs
     lea     g_xsave_enabled, %eax
 #else
     mov     %rdi, %rcx
-    mov     g_xsave_enabled@GOTPCREL(%rip), %rax
+    lea_pic g_xsave_enabled, %rax
 #endif
     fwait
     movl    (%xax), %eax

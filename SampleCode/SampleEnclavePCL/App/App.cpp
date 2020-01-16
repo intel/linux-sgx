@@ -287,7 +287,9 @@ int SGX_CDECL main(int argc, char *argv[])
 
 
     /* Initialize the enclave */
-    if ( initialize_enclave ( ENCLAVE_FILENAME, &global_eid ) < 0 ){
+    if ( initialize_enclave ( ENCLAVE_FILENAME, &global_eid ) != SGX_SUCCESS ){
+        printf("Enter a character before exit ...\n");
+        getchar();
         return -1; 
     }
  

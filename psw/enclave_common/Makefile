@@ -51,8 +51,7 @@ INC += -I$(SGX_HEADER_DIR)                \
        -I$(LINUX_PSW_DIR)/urts/linux      \
        -I$(LINUX_PSW_DIR)/enclave_common
 
-LDFLAGS := -lwrapper
-LDFLAGS += -Wl,-Bdynamic -L$(BUILD_DIR) -lsgx_launch
+LDFLAGS := -lwrapper -ldl
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script=sgx_enclave_common.lds -Wl,--gc-sections
 
 DIR1 := $(LINUX_PSW_DIR)/enclave_common
