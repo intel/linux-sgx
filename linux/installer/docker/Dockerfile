@@ -61,6 +61,9 @@ RUN apt-get install -y --no-install-recommends libsgx-launch libsgx-urts
 
 COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/SampleEnclave/app .
 COPY --from=sgx_sample_builder /opt/intel/sgxsdk/SampleCode/SampleEnclave/enclave.signed.so .
+
+RUN adduser -q --disabled-password --gecos "" --no-create-home sgxuser
+USER sgxuser
 CMD ./app
 
 FROM sgxbase as aesm 

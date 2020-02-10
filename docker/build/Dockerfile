@@ -98,5 +98,8 @@ RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
 WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
 
+RUN adduser -q --disabled-password --gecos "" --no-create-home sgxuser
+USER sgxuser
+
 CMD ./app
 
