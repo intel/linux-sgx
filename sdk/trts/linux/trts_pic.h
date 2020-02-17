@@ -82,7 +82,7 @@
 #define dtv    SE_WORDSIZE
 #define tls    0 
 .macro READ_TD_DATA offset
-#ifdef SE_SIM
+#ifdef SE_SIM_NO
 /* TLS support in simulation mode
  * see "sdk/simulation/uinst/linux/set_tls.c"
  * and "sdk/simulation/assembly/linux/gnu_tls.h"

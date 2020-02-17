@@ -48,8 +48,8 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/         \
 
 CXXFLAGS += -Werror -fPIC
 
-OBJ1 := linux/set_tls.o \
-        linux/restore_tls.o
+# OBJ1 := linux/set_tls.o \
+#         linux/restore_tls.o
 
 LIBSESIMU_U := libsesimu_u.a
 
@@ -65,11 +65,11 @@ enclave_mngr.o: enclave_mngr.cpp
 u_instructions.o: u_instructions.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -O0 -Wno-error=cpp -c $< -o $@
 
-$(LIBSESIMU_U): u_instructions.o enclave_mngr.o $(OBJ1)
+$(LIBSESIMU_U): u_instructions.o enclave_mngr.o #$(OBJ1)
 	$(AR) rcs $@ $^
 
-$(OBJ1):
-	$(MAKE) -C linux
+# $(OBJ1):
+# 	$(MAKE) -C linux
 
 .PHONY: clean
 clean:
