@@ -75,7 +75,7 @@ SGX_COMMON_CFLAGS := -I$(SGX_SDK)/include
 
 UntrustedEnclaveMessageExchange.o: UntrustedEnclaveMessageExchange.cpp
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
-	@echo "CC   <=  $<"
+	@echo "CXX   <=  $<"
 
 App.o: App.cpp
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
