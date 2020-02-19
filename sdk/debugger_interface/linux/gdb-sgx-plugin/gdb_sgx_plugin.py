@@ -610,7 +610,7 @@ class UpdateOcallFrame(gdb.Breakpoint):
                 return False
             ret_addr_tuple = struct.unpack_from(ret_addr_of_fmt, ret_addr_str)
 
-            gdb.execute("set language c")
+            gdb.execute("set language c++")
             gdb_cmd = "set *(uintptr_t *)%#x = 0" %(int(ocall_frame))
             gdb.execute(gdb_cmd, False, True)
             gdb_cmd = "set *(uintptr_t *)%#x = %#x" %(int(ocall_frame+(2*SIZE)), xbp)
