@@ -389,7 +389,7 @@ def retrieve_enclave_info(info_addr = 0):
         return None
 
     stacksize = 0;
-    while tcs_info_addr is not 0:
+    while tcs_info_addr != 0:
         tcs_info_str = read_from_memory(tcs_info_addr, 3*SIZE)
         if tcs_info_str == None:
             return None
@@ -428,7 +428,7 @@ def retrieve_enclave_info(info_addr = 0):
 
         #print ("last_ocall_frame = {0:x}".format(last_ocall_frame))
 
-        while last_ocall_frame is not 0:
+        while last_ocall_frame != 0:
             if SIZE == 4:
                 of_fmt = '4I'
             elif SIZE == 8:
