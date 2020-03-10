@@ -15,11 +15,26 @@ How to Build/Execute the Sample Code
     $ source ${sgx-sdk-install-path}/environment
 3. Build the project with the prepared Makefile:
     a. Hardware Mode, Debug build:
-        $ make
+        1) Enclave with no mitigation:
+            $ make
+        2) Enclave with mitigations for indirects and returns only:
+            $ make MITIGATION-CVE-2020-0551=CF
+        3) Enclave with full mitigation:
+            $ make MITIGATION-CVE-2020-0551=LOAD
     b. Hardware Mode, Pre-release build:
-        $ make SGX_PRERELEASE=1 SGX_DEBUG=0
+        1) Enclave with no mitigation:
+            $ make SGX_PRERELEASE=1 SGX_DEBUG=0
+        2) Enclave with mitigations for indirects and returns only:
+            $ make SGX_PRERELEASE=1 SGX_DEBUG=0 MITIGATION-CVE-2020-0551=CF
+        3) Enclave with full mitigation:
+            $ make SGX_PRERELEASE=1 SGX_DEBUG=0 MITIGATION-CVE-2020-0551=LOAD
     c. Hardware Mode, Release build:
-        $ make SGX_DEBUG=0
+        1) Enclave with no mitigation:
+            $ make SGX_DEBUG=0
+        2) Enclave with mitigations for indirects and returns only:
+            $ make SGX_DEBUG=0 MITIGATION-CVE-2020-0551=CF
+        3) Enclave with full mitigation:
+            $ make SGX_DEBUG=0 MITIGATION-CVE-2020-0551=LOAD
     d. Simulation Mode, Debug build:
         $ make SGX_MODE=SIM
     e. Simulation Mode, Pre-release build:

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -74,7 +74,7 @@ SGX_INC := -I$(SGX_SDK)/include
 
 App.o: App.cpp
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
-	@echo "CC   <=  $<"
+	@echo "CXX   <=  $<"
 
 UntrustedEnclaveMessageExchange.o: UntrustedEnclaveMessageExchange.cpp
 	@$(CXX) $(CXXFLAGS) -c $< -o $@

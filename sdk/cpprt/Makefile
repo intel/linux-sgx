@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -101,5 +101,6 @@ endif
               $(LIBUNWIND_DIR)/doc/Makefile.in     \
               $(LIBUNWIND_DIR)/include/pthread_compat.h \
               $(LIBUNWIND_DIR)/src/Makefile.in   \
-              $(LIBUNWIND_DIR)/Makefile
+              $(LIBUNWIND_DIR)/Makefile          \
+              $(LIBUNWIND_DIR)/m4
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -895,4 +895,21 @@ encip_ret_e gcm_encrypt(
 Label_gcm_cleanup:
     EVP_CIPHER_CTX_free(ctx);
     return ret;
+}
+
+extern "C" 
+{
+#pragma GCC push_options
+#pragma GCC optimize ("-fomit-frame-pointer")
+
+void __x86_return_thunk()
+{
+    __asm__("ret\n\t");
+}
+
+void __x86_indirect_thunk_rax()
+{
+    __asm__("jmp *%rax\n\t");
+}
+#pragma GCC pop_options
 }

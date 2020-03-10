@@ -1,1 +1,2 @@
+SUBSYSTEM=="misc",KERNEL=="provision",GROUP="sgx_prv",MODE="0660"
 SUBSYSTEM=="sgx",KERNEL=="sgx/provision",GROUP="sgx_prv",MODE="0660"

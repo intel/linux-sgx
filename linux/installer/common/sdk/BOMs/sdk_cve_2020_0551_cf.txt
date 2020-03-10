@@ -1,0 +1,13 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linuxCF/libsgx_tcrypto.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tcrypto.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_tkey_exchange.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tkey_exchange.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_trts.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_trts.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_tservice.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tservice.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_tstdc.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tstdc.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_tcxx.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tcxx.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_tcmalloc.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tcmalloc.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_tswitchless.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tswitchless.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_tprotected_fs.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tprotected_fs.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_pcl.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_pcl.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_omp.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_omp.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_pthread.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_pthread.a	0	main	STP

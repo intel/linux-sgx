@@ -34,9 +34,9 @@ include ../../buildenv.mk
 OMP_DIR = openmp_code
 LIBOMP = $(OMP_DIR)/final/build/runtime/src/libomp.a
 
-OMP_CONFIG = -DCMAKE_BUILD_TYPE=Release
+OMP_CONFIG = -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE
 ifdef DEBUG
-	OMP_CONFIG = -DCMAKE_BUILD_TYPE=Debug
+	OMP_CONFIG = -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE
 endif
 ENC_CXXFLAGS = $(patsubst -fpie, -fpic, $(ENCLAVE_CXXFLAGS))
 OMP_CONFIG += -DCMAKE_CXX_FLAGS="$(ENC_CXXFLAGS)"
@@ -56,12 +56,13 @@ $(BUILD_DIR):
 
 .PHONY: omp_code
 omp_code:
-ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-	git submodule update -f --init --recursive --remote -- $(OMP_DIR)
-else
+## Need to enable below code when release
+#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+#	git submodule update -f --init --recursive --remote -- $(OMP_DIR)
+#else
 	$(RM) -rf openmp_code
 	git clone -b svn-tags/RELEASE_801  https://github.com/llvm-mirror/openmp.git --depth 1 $(OMP_DIR)
-endif
+#endif
 
 
 $(LIBOMP): $(CHECK_SOURCE)

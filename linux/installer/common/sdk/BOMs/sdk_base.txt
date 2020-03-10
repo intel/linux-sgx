@@ -435,3 +435,4 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/sdk/tlibcxx/include/utility	<installdir>/package/include/libcxx/utility	0	main	STP
 <deliverydir>/sdk/tlibcxx/include/valarray	<installdir>/package/include/libcxx/valarray	0	main	STP
 <deliverydir>/sdk/tlibcxx/include/vector	<installdir>/package/include/libcxx/vector	0	main	STP
+<deliverydir>/common/buildenv.mk	<installdir>/package/buildenv.mk	0	main	STP

@@ -12,8 +12,8 @@ CFLAGS="$CFLAGS -std=c99 -fno-builtin -DHAVE_SGX=1 -fPIC -DUNW_LOCAL_ONLY -fdebu
 CFLAGS=`echo $CFLAGS | tr ' ' '\n' | grep -v nostdinc | tr '\n' ' '`
 export CFLAGS
 
-#Insert following codes into configure after add "-mfunction-return=thunk-extern -mindirect-branch=thunk-extern" option, Or the "checking whether the C compiler works..." check will fail
-#Insert following codes into configure after add "-mfunction-return=thunk-extern -mindirect-branch=thunk-extern" option, Or the "checking whether we are cross compiling... " check will fail
+#Insert following codes into configure after add "-mfunction-return=thunk-extern -mindirect-branch-register" option, Or the "checking whether the C compiler works..." check will fail
+#Insert following codes into configure after add "-mfunction-return=thunk-extern -mindirect-branch-register" option, Or the "checking whether we are cross compiling... " check will fail
 #  #pragma GCC push_options
 #  #pragma GCC optimize ("-fomit-frame-pointer")
 #  void __x86_return_thunk()

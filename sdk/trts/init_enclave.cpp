@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -185,6 +185,10 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     if (heap_init(get_heap_base(), get_heap_size(), get_heap_min_size(), EDMM_supported) != SGX_SUCCESS)
         return -1;
 
+#ifdef SE_SIM
+    memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
+    memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
+#endif
     // xsave
     uint64_t xfrm = get_xfeature_state();
 
@@ -276,11 +280,11 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
         }
     }
     else
-#endif
     {
         memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
         memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
     }
+#endif
 
     g_enclave_state = ENCLAVE_INIT_DONE;
     return SGX_SUCCESS;

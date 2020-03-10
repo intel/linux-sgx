@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -166,6 +166,55 @@ CXXFLAGS += $(COMMON_FLAGS)
 # Enable the security flags
 COMMON_LDFLAGS := -Wl,-z,relro,-z,now,-z,noexecstack
 
+# mitigation options
+MITIGATION_INDIRECT ?= 0
+MITIGATION_RET ?= 0
+MITIGATION_C ?= 0
+MITIGATION_ASM ?= 0
+MITIGATION_AFTERLOAD ?= 0
+MITIGATION_LIB_PATH :=
+
+ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
+    MITIGATION_C := 1
+    MITIGATION_ASM := 1
+    MITIGATION_INDIRECT := 1
+    MITIGATION_RET := 1
+    MITIGATION_AFTERLOAD := 1
+    MITIGATION_LIB_PATH := cve_2020_0551_load
+else ifeq ($(MITIGATION-CVE-2020-0551), CF)
+    MITIGATION_C := 1
+    MITIGATION_ASM := 1
+    MITIGATION_INDIRECT := 1
+    MITIGATION_RET := 1
+    MITIGATION_AFTERLOAD := 0
+    MITIGATION_LIB_PATH := cve_2020_0551_cf
+endif
+
+MITIGATION_CFLAGS :=
+MITIGATION_ASFLAGS :=
+ifeq ($(MITIGATION_C), 1)
+ifeq ($(MITIGATION_INDIRECT), 1)
+    MITIGATION_CFLAGS += -mindirect-branch-register
+endif
+ifeq ($(MITIGATION_RET), 1)
+    MITIGATION_CFLAGS += -mfunction-return=thunk-extern
+endif
+endif
+
+ifeq ($(MITIGATION_ASM), 1)
+    MITIGATION_ASFLAGS += -fno-plt
+ifeq ($(MITIGATION_AFTERLOAD), 1)
+    MITIGATION_ASFLAGS += -Wa,-mlfence-after-load=yes
+else
+    MITIGATION_ASFLAGS += -Wa,-mlfence-before-indirect-branch=register
+endif
+ifeq ($(MITIGATION_RET), 1)
+    MITIGATION_ASFLAGS += -Wa,-mlfence-before-ret=not
+endif
+endif
+
+MITIGATION_CFLAGS += $(MITIGATION_ASFLAGS)
+
 # Compiler and linker options for an Enclave
 #
 # We are using '--export-dynamic' so that `g_global_data_sim' etc.
@@ -180,26 +229,29 @@ ENCLAVE_LDFLAGS  = $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefi
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
                    -Wl,--defsym,__ImageBase=0
 
+ENCLAVE_CFLAGS += $(MITIGATION_CFLAGS)
+ENCLAVE_ASFLAGS = $(MITIGATION_ASFLAGS)
 
-# Three build combinations are supported to build SGX SDK:
+# Two build combinations are supported to build SGX SDK:
 #   'USE_OPT_LIBS=0' --- build SDK using SGXSSL + open sourced String/Math
-#   'USE_OPT_LIBS=1' --- build SDK using optimized IPP crypto + optimized String/Math
-#   'USE_OPT_LIBS=2' --- build SDK using optimized IPP crypto + open sourced String/Math
+#   'USE_OPT_LIBS=1' --- build SDK using optimized IPP crypto + open sourced String/Math
 #
-# It allows users to build SGX SDK with different library combination by 
-# setting different value to 'USE_OPT_LIBS'.
-# By default, choose to build SDK using optimized IPP crypto and open sourced String/Math
-USE_OPT_LIBS ?= 2
+# By default, choose to build SDK using optimized IPP crypto and open sourced String/Math.
+# Users could build the SDK using SGXSSL + open sourced String/Math by explicitly 
+# specifying 'USE_OPT_LIBS=0'
+USE_OPT_LIBS ?= 1
 
-ifeq ($(ARCH), x86_64)
-IPP_SUBDIR = intel64
-else
-IPP_SUBDIR = ia32
+IPP_SUBDIR = no_mitigation
+ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
+    IPP_SUBDIR = cve_2020_0551_load
+else ifeq ($(MITIGATION-CVE-2020-0551), CF)
+    IPP_SUBDIR = cve_2020_0551_cf
 endif
+
 
 SGX_IPP_DIR     := $(ROOT_DIR)/external/ippcp_internal
 SGX_IPP_INC     := $(SGX_IPP_DIR)/inc
-IPP_LIBS_DIR    := $(SGX_IPP_DIR)/lib/linux/$(IPP_SUBDIR)
+IPP_LIBS_DIR    := $(SGX_IPP_DIR)/lib/linux/intel64/$(IPP_SUBDIR)
 LD_IPP          := -lippcp
 
 ######## SGX SDK Settings ########
@@ -212,7 +264,7 @@ ifeq ($(ARCH), x86)
 	SGX_BIN_DIR := $(SGX_SDK)/bin/x86
 else
 	SGX_COMMON_CFLAGS := -m64
-	SGX_LIB_DIR := $(SGX_SDK)/lib64
+	SGX_LIB_DIR := $(SGX_SDK)/lib64/$(MITIGATION_LIB_PATH)
 	SGX_BIN_DIR := $(SGX_SDK)/bin/x64
 endif
 

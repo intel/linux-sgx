@@ -10,15 +10,13 @@ The project demonstrates how to use these Enclave Common Loader Layer APIs:
 ------------------------------------
 How to Build/Execute the Sample Code
 ------------------------------------
-1. Install Intel(R) Software Guard Extensions (Intel(R) SGX) PSW and Intel(R) SGX SDK for Linux* OS
-2. Make sure your environment is set:
-    $ source ${sgx-sdk-install-path}/environment
-3. Build the project with the prepared Makefile:
+1. Install Intel(R) Software Guard Extensions (Intel(R) SGX) Enclave Common Loader and its development package for Linux* OS
+2. Build the project with the prepared Makefile:
     a. Build the project
         $ make
     b. Clean the project
         $ make clean
     c. Re-build the project
         $ make rebuild
-4. Execute the binary directly:
+3. Execute the binary directly:
     $ ./sample

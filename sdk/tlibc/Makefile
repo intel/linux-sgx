@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
 
 include ../../buildenv.mk
 
-CFLAGS   += $(ENCLAVE_CFLAGS)
+CFLAGS   += $(ENCLAVE_CFLAGS) -D_TLIBC_GNU_
 ASFLAGS  := $(CFLAGS)
 CFLAGS   += -std=c99
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) -fno-exceptions -fno-rtti
@@ -43,18 +43,9 @@ CPPFLAGS += -I.                          \
             -I$(LINUX_SDK_DIR)/trts      \
             -I./gdtoa
 
-ifeq ($(USE_OPT_LIBS), 1)
-# Use optimized string/math
-CFLAGS += -D_TLIBC_USE_INTEL_FAST_STRING_
-CXXFLAGS += -D_TLIBC_USE_INTEL_FAST_STRING_
 LIBC_C_SRCS := $(wildcard gen/*.c gdtoa/*.c locale/*.c math/*.c stdlib/*.c string/*.c stdio/*.c time/*.c) 
-else
-# Use source code version string/math
-LIBC_C_SRCS := $(wildcard gen/*.c gdtoa/*.c locale/*.c stdlib/*.c string/*.c stdio/*.c time/*.c)
-endif
-
 LIBC_CPP_SRCS := $(wildcard gen/*.cpp) tstdc_version.cpp
-LIBC_ASM_SRCS := $(wildcard gen/*.S)
+LIBC_ASM_SRCS := $(wildcard gen/*.S math/*.S)
 
 LIBC_OBJS := $(LIBC_C_SRCS:.c=.o)
 LIBC_OBJS += $(LIBC_CPP_SRCS:.cpp=.o)

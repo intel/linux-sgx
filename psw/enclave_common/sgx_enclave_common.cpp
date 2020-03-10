@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -227,45 +227,58 @@ static void __attribute__((destructor)) enclave_fini(void)
     se_mutex_destroy(&s_enclave_mutex);
 }
 
-static uint32_t error_driver2api(int driver_error)
+static uint32_t error_driver2api(int driver_error, int err_no)
 {
     uint32_t ret = ENCLAVE_UNEXPECTED;
 
-    switch (driver_error) {
-    case SGX_INVALID_SIG_STRUCT:
-        ret = ENCLAVE_INVALID_SIG_STRUCT;
-        break;
-    case SGX_INVALID_SIGNATURE:
-        ret = ENCLAVE_INVALID_SIGNATURE;
-        break;
-    case SGX_INVALID_ATTRIBUTE:
-        ret = ENCLAVE_INVALID_ATTRIBUTE;
-        break;
-    case SGX_INVALID_MEASUREMENT:
-        ret = ENCLAVE_INVALID_MEASUREMENT;
-        break;
-    case (int)SGX_POWER_LOST_ENCLAVE:
-        ret = ENCLAVE_LOST;
-        break;
-    case SGX_UNMASKED_EVENT:
-        ret = ENCLAVE_RETRY;
-        break;
-    case SGX_INVALID_PRIVILEGE:
-        ret = ENCLAVE_NOT_AUTHORIZED;
-        break;
-    case (int)-ENOMEM:
-        ret = ENCLAVE_OUT_OF_MEMORY;
-        break;
-    case (int)-EINVAL:
-        ret = ENCLAVE_INVALID_PARAMETER;
-        break;
-    case (int)-EEXIST:
-        ret = ENCLAVE_INVALID_ADDRESS;
-        break;
-    default:
-        SE_TRACE(SE_TRACE_WARNING, "unexpected error %#x from driver, should be driver bug\n", driver_error);
-        ret = ENCLAVE_UNEXPECTED;
-        break;
+    if(driver_error == -1){
+        switch(err_no) {
+        case (int)ENOMEM:
+            ret = ENCLAVE_OUT_OF_MEMORY;
+            break;
+        case (int)EINVAL:
+            ret = ENCLAVE_INVALID_PARAMETER;
+            break;
+        case (int)EEXIST:
+            ret = ENCLAVE_INVALID_ADDRESS;
+            break;
+        case (int)EACCES:
+            ret = ENCLAVE_NOT_AUTHORIZED;
+            break;
+        default:
+            SE_TRACE(SE_TRACE_WARNING, "unexpected errno %#x from driver, might be a driver bug\n", err_no);
+            ret = ENCLAVE_UNEXPECTED;
+            break;
+        }
+    }
+    else{
+       switch (driver_error) {
+        case SGX_INVALID_SIG_STRUCT:
+            ret = ENCLAVE_INVALID_SIG_STRUCT;
+            break;
+        case SGX_INVALID_SIGNATURE:
+            ret = ENCLAVE_INVALID_SIGNATURE;
+            break;
+        case SGX_INVALID_ATTRIBUTE:
+            ret = ENCLAVE_INVALID_ATTRIBUTE;
+            break;
+        case SGX_INVALID_MEASUREMENT:
+            ret = ENCLAVE_INVALID_MEASUREMENT;
+            break;
+        case (int)SGX_POWER_LOST_ENCLAVE:
+            ret = ENCLAVE_LOST;
+            break;
+        case SGX_UNMASKED_EVENT:
+            ret = ENCLAVE_RETRY;
+            break;
+        case SGX_INVALID_PRIVILEGE:
+            ret = ENCLAVE_NOT_AUTHORIZED;
+            break;
+        default:
+            SE_TRACE(SE_TRACE_WARNING, "unexpected return value %#x from driver, might be a driver bug\n", driver_error);
+            ret = ENCLAVE_UNEXPECTED;
+            break;
+       }
     }
 
     return ret;
@@ -427,9 +440,9 @@ extern "C" void* COMM_API enclave_create(
 
     int ret = ioctl(hdevice_temp, SGX_IOC_ENCLAVE_CREATE, &param);
     if (ret) {
-        SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_CREATE failed: errno = %d\n", errno);
+        SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_CREATE failed: ret = %d\n", ret);
         if (enclave_error != NULL)
-            *enclave_error = error_driver2api(ret);
+            *enclave_error = error_driver2api(ret, errno);
 
         //if in-kernel driver then close the file handle
         if (s_driver_type == SGX_DRIVER_IN_KERNEL)
@@ -613,7 +626,7 @@ extern "C" size_t COMM_API enclave_load_data(
         if (ret) {
             SE_TRACE(SE_TRACE_WARNING, "\nAdd Page - %p to %p... FAIL\n", source, target_address);
             if (enclave_error != NULL)
-                *enclave_error = error_driver2api(ret);
+                *enclave_error = error_driver2api(ret, errno);
             if(source_buffer == NULL)
             {
                 free(source);
@@ -658,7 +671,7 @@ extern "C" size_t COMM_API enclave_load_data(
                 SE_TRACE(SE_TRACE_WARNING, "\nAdd Page - %p to %p... FAIL\n", source, target_address);
 
                 if (enclave_error != NULL)
-                    *enclave_error = error_driver2api(ret);
+                    *enclave_error = error_driver2api(ret, errno);
                 return SE_PAGE_SIZE * i;
             }
         }
@@ -824,7 +837,7 @@ extern "C" bool COMM_API enclave_initialize(
     if (ret) {
         SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_INIT failed error = %d\n", ret);
         if (enclave_error != NULL)
-            *enclave_error = error_driver2api(ret);
+            *enclave_error = error_driver2api(ret, errno);
         return false;
     }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -48,7 +48,15 @@ ifeq ($(ARCH), x86_64)
 else
 	$(error SGXSSL doesn't support 32bit)
 endif #($(ARCH), x86_64)
-OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/
+
+ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
+OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_load
+else ifeq ($(MITIGATION-CVE-2020-0551), CF)
+OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_cf
+else
+OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64
+endif
+
 ifdef DEBUG
 	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
 	SGXSSL_Library_Name := sgx_tsgxssld

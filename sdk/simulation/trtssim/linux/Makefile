@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -81,7 +81,8 @@ TLS_OBJS     := get_tcs.o \
 
 TLDR_ASM_OBJS := trts_pic.o \
                 metadata_sec.o \
-                xsave_gnu.o
+                xsave_gnu.o \
+                thunk.o
 
 TLDR_C_OBJS  := elf_parser.o  \
                 global_init.o \

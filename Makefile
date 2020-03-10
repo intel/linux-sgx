@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -29,7 +29,7 @@
 #
 #
 
-DCAP_VER?= 1.4
+DCAP_VER?= 1.5
 DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
 
 CHECK_OPT :=
@@ -69,12 +69,23 @@ endif
 psw: $(CHECK_OPT)
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 
-sdk: 
+sdk_no_mitigation: 
 	$(MAKE) -C sdk/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 
+sdk:
+	$(MAKE) -C sdk/ clean
+	$(MAKE) -C sdk/ MODE=$(MODE) MITIGATION-CVE-2020-0551=LOAD
+	$(MAKE) -C sdk/ clean
+	$(MAKE) -C sdk/ MODE=$(MODE) MITIGATION-CVE-2020-0551=CF
+	$(MAKE) -C sdk/ clean
+	$(MAKE) -C sdk/ MODE=$(MODE)
+
 # Generate SE SDK Install package
-sdk_install_pkg: sdk
+sdk_install_pkg_no_mitigation: sdk_no_mitigation
 	./linux/installer/bin/build-installpkg.sh sdk
+
+sdk_install_pkg: sdk
+	./linux/installer/bin/build-installpkg.sh sdk cve-2020-0551
 
 psw_install_pkg: psw
 	./linux/installer/bin/build-installpkg.sh psw

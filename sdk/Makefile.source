@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -66,28 +66,26 @@ components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotec
 
 # ---------------------------------------------------
 #  tstdc
-#      includes: tlibc, libm, tlibthread, compiler-rt, tsafecrt
+#      includes: tlibc, tlibthread, compiler-rt, tsafecrt
 # ---------------------------------------------------
 .PHONY: tstdc
 tstdc: $(LIBTLIBC)
 
-$(LIBTLIBC): tlibthread compiler-rt tsafecrt sgx_libm tsetjmp tmm_rsrv
+$(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp tmm_rsrv
 	$(MAKE) -C tlibc/ -j4 2> /dev/null
-	@$(MKDIR) $(BUILD_DIR)/.libm  $(BUILD_DIR)/.tlibc   $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
-	@$(RM) -f $(BUILD_DIR)/.libm/*          && cd $(BUILD_DIR)/.libm       && $(AR) x $(LINUX_EXTERNAL_DIR)/sgx_libm/libm.a
+	@$(MKDIR) $(BUILD_DIR)/.tlibc   $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 	@$(RM) -f $(BUILD_DIR)/.tlibc/*         && cd $(BUILD_DIR)/.tlibc      && $(AR) x $(LINUX_SDK_DIR)/tlibc/libtlibc.a
 	@$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
 	@$(RM) -f $(BUILD_DIR)/.tsafecrt/*      && cd $(BUILD_DIR)/.tsafecrt   && $(AR) x $(LINUX_SDK_DIR)/tsafecrt/libsgx_tsafecrt.a
 	@$(RM) -f $(BUILD_DIR)/.tsetjmp/*.o     && cd $(BUILD_DIR)/.tsetjmp    && $(AR) x $(LINUX_SDK_DIR)/tsetjmp/libsgx_tsetjmp.a
 	@$(RM) -f $(BUILD_DIR)/.tmm_rsrv/*.o    && cd $(BUILD_DIR)/.tmm_rsrv   && $(AR) x $(LINUX_SDK_DIR)/tmm_rsrv/libsgx_tmm_rsrv.a
 	$(CP) compiler-rt/libcompiler-rt.a $@
-	$(AR) qD $@ $(BUILD_DIR)/.libm/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tlibc/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tlibthread/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tsafecrt/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tsetjmp/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tmm_rsrv/*.o
-	@$(RM) -rf $(BUILD_DIR)/.libm $(BUILD_DIR)/.tlibc
+	@$(RM) -rf $(BUILD_DIR)/.tlibc
 	@$(RM) -rf $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt 
 	@$(RM) -rf $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 
@@ -102,17 +100,6 @@ tsafecrt:
 .PHONY: compiler-rt
 compiler-rt:
 	$(MAKE) -C compiler-rt/ 2> /dev/null
-
-LIBM_PATH = $(LINUX_EXTERNAL_DIR)/sgx_libm/
-
-M_ARCH = intel64
-ifneq ($(ARCH), x86_64)
-	M_ARCH := ia32
-endif
-
-.PHONY: sgx_libm
-sgx_libm:
-	$(MAKE) -C $(LIBM_PATH) ARCH=$(M_ARCH) 2> /dev/null
 
 .PHONY: tsetjmp
 tsetjmp:
@@ -276,7 +263,6 @@ $(BUILD_DIR):
 
 .PHONY: clean
 clean:
-	$(MAKE) -C $(LIBM_PATH) ARCH=$(M_ARCH)         clean 
 	$(MAKE) -C tlibc/                              clean
 	$(MAKE) -C tlibthread/                         clean
 	$(MAKE) -C compiler-rt/                        clean

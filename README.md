@@ -111,16 +111,11 @@ You can find the tools and libraries generated in the `build/linux` directory.
 
 - This repository supports to build the Intel(R) SGX SDK with below three combinations:
   * `USE_OPT_LIBS=0` --- build SDK using SGXSSL and open sourced String/Math
-  * `USE_OPT_LIBS=1` --- build SDK using optimized IPP crypto and optimized String/Math
-  * `USE_OPT_LIBS=2` --- build SDK using optimized IPP crypto and open sourced String/Math  
-  The default build uses `USE_OPT_LIBS=2`, if you directly type `$ make sdk` as above.
-  You can switch to other build combinations instead by entering the following command:
+  * `USE_OPT_LIBS=1` --- build SDK using optimized IPP crypto and open sourced String/Math
+  The default build uses `USE_OPT_LIBS=1`, if you directly type `$ make sdk` as above.
+  You can switch to the other build combination instead by entering the following command:
 ```
   $ make sdk USE_OPT_LIBS=0
-```
-or
-```
-  $ make sdk USE_OPT_LIBS=1
 ```
   **Note**: Building the Intel(R) SGX PSW with open sourced SGXSSL/string/math libraries is not supported. 
 

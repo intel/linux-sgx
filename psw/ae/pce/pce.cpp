@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -231,6 +231,23 @@ uint32_t get_pc_info(const sgx_report_t* report,
     }
     return ae_ret;
 }
+
+uint32_t get_pc_info_without_ppid(pce_info_t *pce_info)
+{
+    if (pce_info == NULL) {
+        return AE_INVALID_PARAMETER;
+    }
+
+    ae_error_t ae_ret = AE_FAILURE;
+    if ((ae_ret = get_isv_svn(&pce_info->pce_isvn)) != AE_SUCCESS) {
+        return ae_ret;
+    }
+
+    pce_info->pce_id = CUR_PCE_ID;
+    
+    return ae_ret;
+}
+
 
 uint32_t certify_enclave(const psvn_t* cert_psvn,
                          const sgx_report_t* report,

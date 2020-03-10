@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -295,8 +295,7 @@ aesm_error_t PlatformInfoLogic::check_update_status(
             goto set_update_available;
         }
         if (qe_svn_out_of_date(&pibw) ||
-            pce_svn_out_of_date(&pibw) ||
-            platform_configuration_needed(&pibw))
+            pce_svn_out_of_date(&pibw))
         {
             p_update_info->pswUpdate = 1;
             goto set_update_available;
@@ -457,8 +456,7 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
             status = AESM_UPDATE_AVAILABLE;
         }
         if (qe_svn_out_of_date(&pibw) ||
-            pce_svn_out_of_date(&pibw) ||
-            platform_configuration_needed(&pibw))
+            pce_svn_out_of_date(&pibw))
         {
             p_update_info->pswUpdate = 1;
             status = AESM_UPDATE_AVAILABLE;

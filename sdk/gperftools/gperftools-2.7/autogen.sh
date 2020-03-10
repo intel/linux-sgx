@@ -27,7 +27,7 @@ export CFLAGS
 export CXXFLAGS
 export CPPFLAGS
  
-#Insert following codes into configure after add "-mfunction-return=thunk-extern -mindirect-branch=thunk-extern" option, Or the "checking whether the C compiler works..." check will fail
+#Insert following codes into configure after add "-mfunction-return=thunk-extern -mindirect-branch-register" option, Or the "checking whether the C compiler works..." check will fail
 #  #pragma GCC push_options
 #  #pragma GCC optimize ("-fomit-frame-pointer")
 #  void __x86_return_thunk()

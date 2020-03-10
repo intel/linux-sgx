@@ -130,7 +130,6 @@ size_t  _TLIBC_CDECL_ wcstombs(char *, const wchar_t *, size_t);
 /*
  * Deprecated C99.
  */
-_TLIBC_DEPRECATED_FUNCTION_(int     _TLIBC_CDECL_, atexit, void (_TLIBC_CDECL_ *)(void));
 _TLIBC_DEPRECATED_FUNCTION_(int     _TLIBC_CDECL_, rand, void);
 _TLIBC_DEPRECATED_FUNCTION_(void    _TLIBC_CDECL_, srand, unsigned);
 _TLIBC_DEPRECATED_FUNCTION_(void    _TLIBC_CDECL_, exit, int);

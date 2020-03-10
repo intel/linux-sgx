@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -29,20 +29,18 @@
 #
 #
 
-SGX_SDK ?= /opt/intel/sgxsdk
-
 App_Objects := App/sample.o App/enclave_entry.o
 
 sample: $(App_Objects)
-	@$(CXX) $^ -o $@ -z noexecstack -L. -lsgx_enclave_common
+	@$(CXX) $^ -o $@ -z noexecstack -lsgx_enclave_common
 	@echo "LINK =>  $@"
 
 App/%.o: App/%.cpp
-	@$(CXX) -c $< -o $@ -I./Include -I$(SGX_SDK)/include
+	@$(CXX) -c $< -o $@ -I./Include
 	@echo "GEN  =>  $@"
 
 App/%.o: App/%.S
-	@$(CC) -c $< -o $@ -I./Include -I$(SGX_SDK)/include
+	@$(CC) -c $< -o $@ -I./Include
 	@echo "GEN  =>  $@"
 
 .PHONY: clean
