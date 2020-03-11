@@ -35,7 +35,7 @@ openssl_out_dir=$top_dir/openssl_source
 openssl_ver=1.1.1d
 openssl_ver_name=openssl-$openssl_ver
 sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_ver=2.5
+sgxssl_ver=2.9
 sgxssl_ver_name=v$sgx_ver
 sgxssl_file_name=lin_$sgxssl_ver\_$openssl_ver
 build_script=$top_dir/Linux/build_openssl.sh
@@ -43,17 +43,17 @@ server_url_path=https://www.openssl.org/source
 full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
 full_openssl_url_old=$server_url_path/old/1.1.0/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=abadc61c92c0488027dcb0a3681c6be0316c931461e887a728f64d3178149098
+sgxssl_chksum=1ae9eb81175530b1e23eb513dd0627b7efe3eba49a3e952200996a150fff38a6
 openssl_chksum=1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
 	wget $sgxssl_github_archive/$sgxssl_file_name.zip -P $top_dir || exit 1
 	sha256sum $top_dir/$sgxssl_file_name.zip > check_sum_sgxssl.txt
 	grep $sgxssl_chksum check_sum_sgxssl.txt
-	if [ $? -ne 0 ]; then 
-    	echo "File $top_dir/$sgxssl_file_name.zip checksum failure"
+	if [ $? -ne 0 ]; then
+	echo "File $top_dir/$sgxssl_file_name.zip checksum failure"
         rm -f $top_dir/$sgxssl_file_name.zip
-    	exit -1
+	exit -1
 	fi
 	unzip -qq $top_dir/$sgxssl_file_name -d $top_dir || exit 1
 	mv $top_dir/intel-sgx-ssl-$sgxssl_file_name/* $top_dir || exit 1
@@ -73,6 +73,5 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 fi
 
 pushd $top_dir/Linux/
-make clean all LINUX_SGX_BUILD=1
-make clean all LINUX_SGX_BUILD=1 DEBUG=1
+make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
 popd
