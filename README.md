@@ -292,6 +292,7 @@ NOTE: You need to set up the needed environment variables before compiling your 
 ```
   $ cd SampleCode/LocalAttestation
   $ make SGX_MODE=SIM
+  $ cd bin
   $ ./app
 ```
    Use similar commands for other sample codes.
@@ -305,6 +306,7 @@ See the later topic, *Install Intel(R) SGX PSW*, for information on how to insta
 ```
   $ cd SampleCode/LocalAttestation
   $ make
+  $ cd bin
   $ ./app
 ```
    Use similar commands for other code samples.
