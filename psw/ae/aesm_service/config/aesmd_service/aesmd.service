@@ -24,5 +24,7 @@ RestartSec=15s
 DevicePolicy=closed
 DeviceAllow=/dev/isgx rw
 DeviceAllow=/dev/sgx rw
+DeviceAllow=/dev/sgx/enclave rw
+DeviceAllow=/dev/sgx/provision rw
 [Install]
 WantedBy=multi-user.target
