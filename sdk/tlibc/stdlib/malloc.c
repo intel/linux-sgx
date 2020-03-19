@@ -4875,7 +4875,7 @@ void* Xlcalloc(size_t n_elements, size_t elem_size) {
 
 void* dlcalloc(size_t n_elements, size_t elem_size) {
   malloc_count++;
-  return dlcalloc(n_elements, elem_size);
+  return Xlcalloc(n_elements, elem_size);
 }
 
 #endif /* !ONLY_MSPACES */
