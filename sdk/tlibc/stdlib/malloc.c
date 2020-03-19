@@ -880,6 +880,7 @@ extern "C" {
   cases less than the maximum representable value of a size_t.
 */
 DLMALLOC_EXPORT void* dlmalloc(size_t);
+DLMALLOC_EXPORT uint64_t malloc_count;
 
 /*
   free(void* p)
@@ -4598,7 +4599,7 @@ static void* tmalloc_small(mstate m, size_t nb) {
 
 #if !ONLY_MSPACES
 
-void* dlmalloc(size_t bytes) {
+void* Xlmalloc(size_t bytes) {
   /*
      Basic algorithm:
      If a small request (< 256 bytes minus per-chunk overhead):
@@ -4735,9 +4736,15 @@ void* dlmalloc(size_t bytes) {
   return 0;
 }
 
+uint64_t malloc_count = 0;
+void* dlmalloc(size_t bytes) {
+  malloc_count++;
+  return Xlmalloc(bytes);
+}
+
 /* ---------------------------- free --------------------------- */
 
-void dlfree(void* mem) {
+void Xlfree(void* mem) {
   /*
      Consolidate freed chunks with preceeding or succeeding bordering
      free chunks, if they exist, and then place in a bin.  Intermixed
@@ -4846,7 +4853,12 @@ void dlfree(void* mem) {
 #endif /* FOOTERS */
 }
 
-void* dlcalloc(size_t n_elements, size_t elem_size) {
+void dlfree(void* mem) {
+  malloc_count--;
+  return Xlfree(mem);
+}
+
+void* Xlcalloc(size_t n_elements, size_t elem_size) {
   void* mem;
   size_t req = 0;
   if (n_elements != 0) {
@@ -4859,6 +4871,11 @@ void* dlcalloc(size_t n_elements, size_t elem_size) {
   if (mem != 0 && calloc_must_clear(mem2chunk(mem)))
     memset(mem, 0, req);
   return mem;
+}
+
+void* dlcalloc(size_t n_elements, size_t elem_size) {
+  malloc_count++;
+  return dlcalloc(n_elements, elem_size);
 }
 
 #endif /* !ONLY_MSPACES */
