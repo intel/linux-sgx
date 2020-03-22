@@ -10,6 +10,7 @@ Environment=AESM_PATH=@aesm_folder@
 Environment=LD_LIBRARY_PATH=@aesm_folder@
 WorkingDirectory=@aesm_folder@
 PermissionsStartOnly=true
+ExecStartPre=/bin/mount -o remount,exec /dev
 ExecStartPre=@aesm_folder@/linksgx.sh
 ExecStartPre=/bin/mkdir -p /var/run/aesmd/
 ExecStartPre=/bin/chown -R aesmd:aesmd /var/run/aesmd/
