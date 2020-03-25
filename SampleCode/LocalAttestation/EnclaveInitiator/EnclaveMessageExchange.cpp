@@ -99,7 +99,7 @@ ATTESTATION_STATUS create_session(dh_session_t *session_info)
     {
             return status;
     }
-    
+
     //Ocall to request for a session with the destination enclave and obtain session id and Message 1 if successful
     status = session_request_ocall(&retstatus, &dh_msg1, &session_id);
     if (status == SGX_SUCCESS)
@@ -189,9 +189,9 @@ ATTESTATION_STATUS send_request_receive_response(dh_session_t *session_info,
     if(!req_message)
         return MALLOC_ERROR;
     memset(req_message, 0, sizeof(secure_message_t)+ inp_buff_len);
-    
+
     const uint32_t data2encrypt_length = (uint32_t)inp_buff_len;
-    
+
     //Set the payload size to data to encrypt length
     req_message->message_aes_gcm_data.payload_size = data2encrypt_length;
 
@@ -205,7 +205,7 @@ ATTESTATION_STATUS send_request_receive_response(dh_session_t *session_info,
     status = sgx_rijndael128GCM_encrypt(&session_info->active.AEK, (uint8_t*)inp_buff, data2encrypt_length,
                 reinterpret_cast<uint8_t *>(&(req_message->message_aes_gcm_data.payload)),
                 reinterpret_cast<uint8_t *>(&(req_message->message_aes_gcm_data.reserved)),
-                sizeof(req_message->message_aes_gcm_data.reserved), plaintext, plaintext_length, 
+                sizeof(req_message->message_aes_gcm_data.reserved), plaintext, plaintext_length,
                 &(req_message->message_aes_gcm_data.payload_tag));
 
     if(SGX_SUCCESS != status)
@@ -213,7 +213,7 @@ ATTESTATION_STATUS send_request_receive_response(dh_session_t *session_info,
         SAFE_FREE(req_message);
         return status;
     }
-    
+
     //Allocate memory for the response payload to be copied
     *out_buff = (char*)malloc(max_out_buff_size);
     if(!*out_buff)
@@ -278,12 +278,12 @@ ATTESTATION_STATUS send_request_receive_response(dh_session_t *session_info,
     memset(decrypted_data, 0, decrypted_data_length);
 
     //Decrypt the response message payload
-    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, resp_message->message_aes_gcm_data.payload, 
+    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, resp_message->message_aes_gcm_data.payload,
                 decrypted_data_length, decrypted_data,
                 reinterpret_cast<uint8_t *>(&(resp_message->message_aes_gcm_data.reserved)),
-                sizeof(resp_message->message_aes_gcm_data.reserved), &(resp_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length, 
+                sizeof(resp_message->message_aes_gcm_data.reserved), &(resp_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length,
                 &resp_message->message_aes_gcm_data.payload_tag);
-    
+
     if(SGX_SUCCESS != status)
     {
         SAFE_FREE(req_message);
@@ -293,7 +293,7 @@ ATTESTATION_STATUS send_request_receive_response(dh_session_t *session_info,
     }
 
     // Verify if the nonce obtained in the response is equal to the session nonce + 1 (Prevents replay attacks)
-    if(*(resp_message->message_aes_gcm_data.reserved) != (session_info->active.counter + 1 ))
+    if(*((uint32_t*)resp_message->message_aes_gcm_data.reserved) != (session_info->active.counter + 1 ))
     {
         SAFE_FREE(req_message);
         SAFE_FREE(resp_message);
@@ -318,7 +318,7 @@ ATTESTATION_STATUS close_session(dh_session_t *session_info)
 {
     sgx_status_t status;
     uint32_t retstatus;
-    
+
     if(!session_info)
     {
         return INVALID_PARAMETER_ERROR;
