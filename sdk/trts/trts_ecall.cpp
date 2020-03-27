@@ -350,7 +350,7 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
     if( (NULL == thread_data) || 
             ((thread_data->stack_base_addr == thread_data->last_sp) && 
                     ( (0 != g_global_data.thread_policy) ||
-                       (SGX_PTHREAD_EXIT == _pthread_tls_get_state()) ||    /*Force do initial thread if previous ECALL is exited by pthread_exit()*/
+                       (SGX_PTHREAD_EXIT == _pthread_tls_get_state()) ||    /*Force do initial thread if previous ECALL is exited by pthread_exit() or _pthread_thread_run() returns */
                         (index == ECMD_ECALL_PTHREAD))))  /*Force do initial thread if this thread is created by SGX pthread_create() */
     {
         status = do_init_thread(tcs, false);
@@ -374,12 +374,12 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
             else
             {
                 //Enter here if pthread_exit() is called inside ECALL functions.
-                _pthread_tls_store_state(SGX_PTHREAD_EXIT);
                 //Important: manually reset the last_sp
                 thread_data->last_sp = thread_data->stack_base_addr;
                 status = SGX_PTHREAD_EXIT;
             }
             //-- execute some resource recycle function here, such as tls resource recycle
+            _pthread_tls_store_state(SGX_PTHREAD_EXIT);
             _pthread_tls_destructors();
             _pthread_wakeup_join(ms); 
         }
