@@ -40,7 +40,7 @@ sgxssl_ver_name=v$sgx_ver
 sgxssl_file_name=lin_$sgxssl_ver\_$openssl_ver
 build_script=$top_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
-full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
+full_openssl_url=$server_url_path/old/1.1.1/$openssl_ver_name.tar.gz
 full_openssl_url_old=$server_url_path/old/1.1.0/$openssl_ver_name.tar.gz
 
 sgxssl_chksum=2f132c316d893bfcc972e36bd1fe379d0b34f20d4ac4b13fce8f3597afe730f4
