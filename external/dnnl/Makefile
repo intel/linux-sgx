@@ -76,15 +76,15 @@ $(SGX_DNNL_INCLUDE):
 
 .PHONY: dnnl_src
 dnnl_src:
-#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-#	@$(RM) -r $(DNNL_DIR)/*
-#	git submodule update -f --init dnnl
-#	cd $(DNNL_DIR) && git am ../sgx_dnnl.patch
-#else
+ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+	@$(RM) -r $(DNNL_DIR)/*
+	git submodule update -f --init dnnl
+	cd $(DNNL_DIR) && git am ../sgx_dnnl.patch
+else
 	@$(RM) -r $(DNNL_DIR)
 	git clone https://github.com/intel/mkl-dnn.git -b v1.1.1 --depth 1  $(DNNL_DIR)
 	cd $(DNNL_DIR) && git am ../sgx_dnnl.patch
-#endif
+endif
 
 $(LIBDNNL):$(CHECK_SOURCE)
 	mkdir -p $(DNNL_DIR)/build && cd $(DNNL_DIR)/build && cmake -DCMAKE_CXX_ENCLAVE_FLAGS="$(CXX_ENCLAVE_FLAGS)" -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" $(DNNL_CONFIG) .. && make
