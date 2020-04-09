@@ -88,3 +88,8 @@ sgx_status_t pthread_wakeup_ocall()
     return SGX_ERROR_UNEXPECTED;
 }
 
+sgx_status_t sgx_get_metadata()
+{
+    printf("Please use the correct uRTS library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}

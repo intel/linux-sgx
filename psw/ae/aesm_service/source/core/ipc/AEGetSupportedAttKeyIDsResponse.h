@@ -28,45 +28,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#pragma once
+#ifndef __AE_GET_SUPPORTED_ATT_KEY_IDS_RESPONSE_H
+#define __AE_GET_SUPPORTED_ATT_KEY_IDS_RESPONSE_H
 
-#include "AEClass.h"
-#include "aeerror.h"
-#include "provision_msg.h"
-#include "pce_cert.h"
-#include "sgx_report.h"
-#include "epid_pve_type.h"
-#include "se_sig_rl.h"
+#include <IAEResponse.h>
+#include <stdint.h>
 
-class CPCEClass: public SingletonEnclave<CPCEClass>
+namespace aesm
 {
-    friend class Singleton<CPCEClass>;
-    friend class SingletonEnclave<CPCEClass>;
-    static aesm_enclave_id_t get_enclave_fid(){return PCE_ENCLAVE_FID;}
-protected:
-    CPCEClass(){};
-    ~CPCEClass(){};
-    virtual void before_enclave_load();
-    virtual int get_debug_flag() { return 0;}
-
-public:
-    uint32_t pce_get_target(sgx_target_info_t *p_target,
-                        sgx_isv_svn_t *p_isvsvn);
-    uint32_t get_pce_info(const sgx_report_t *p_report,
-                        const uint8_t *p_pek,
-                        uint32_t pek_size,
-                        uint8_t crypto_suite,
-                        uint8_t *p_encrypted_ppid,
-                        uint32_t encrypted_ppid_size,
-                        uint32_t *p_encrypted_ppid_out_size,
-                        sgx_isv_svn_t* p_pce_isvsvn,
-                        uint16_t* p_pce_id,
-                        uint8_t *p_signature_scheme);
-    uint32_t pce_sign_report(const sgx_isv_svn_t *p_isv_svn,
-                        const sgx_cpu_svn_t *p_cpu_svn,
-                        const sgx_report_t *p_report,
-                        uint8_t *p_sig,
-                        uint32_t sig_size,
-                        uint32_t *p_sig_out_size);
+    namespace message
+    {
+            class Response_GetSupportedAttKeyIDsResponse;
+    };
 };
 
+
+class AEGetSupportedAttKeyIDsResponse : public IAEResponse
+{
+    public:
+        AEGetSupportedAttKeyIDsResponse();  //default ... will prepare a response that will later be inflated
+
+        AEGetSupportedAttKeyIDsResponse(aesm::message::Response_GetSupportedAttKeyIDsResponse& response);
+
+        AEGetSupportedAttKeyIDsResponse(uint32_t errorCode, uint32_t att_key_ids_size, const uint8_t * att_key_ids);
+        AEGetSupportedAttKeyIDsResponse(const AEGetSupportedAttKeyIDsResponse& other);
+
+        ~AEGetSupportedAttKeyIDsResponse();
+
+        //inflater
+        bool inflateWithMessage(AEMessage* message);
+
+        //getters
+        AEMessage*  serialize();
+
+        bool GetValues(uint32_t* errorCode, uint32_t att_key_ids_size, uint8_t * att_key_ids) const;
+        //operators
+        AEGetSupportedAttKeyIDsResponse& operator=(const AEGetSupportedAttKeyIDsResponse &other);
+
+        //checks
+        bool check();
+
+    protected:
+        void ReleaseMemory();
+        aesm::message::Response_GetSupportedAttKeyIDsResponse* m_response;
+};
+
+#endif

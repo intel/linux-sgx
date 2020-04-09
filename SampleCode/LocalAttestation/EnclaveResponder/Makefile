@@ -45,7 +45,7 @@ ENCLAVE_NAME := libenclave_responder.so
 SIGNED_ENCLAVE_NAME := libenclave_responder.signed.so
 
 $(SIGNED_ENCLAVE_NAME) : $(ENCLAVE_NAME)
-	@$(SGX_ENCLAVE_SIGNER) sign -key EnclaveResponder_private.pem -enclave $(ENCLAVE_NAME) -out $@ -config EnclaveResponder.config.xml
+	@$(SGX_ENCLAVE_SIGNER) sign -key EnclaveResponder_private_test.pem -enclave $(ENCLAVE_NAME) -out $@ -config EnclaveResponder.config.xml
 	@cp $(SIGNED_ENCLAVE_NAME) $(TOPDIR)/$(OUTDIR)/
 	@echo "SIGN =>  $@"
 

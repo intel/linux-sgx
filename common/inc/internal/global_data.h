@@ -47,6 +47,7 @@
 #define LAYOUT_ENTRY_NUM 42
 typedef struct _global_data_t
 {
+    sys_word_t     sdk_version;
     sys_word_t     enclave_size;
     sys_word_t     heap_offset;
     sys_word_t     heap_size;

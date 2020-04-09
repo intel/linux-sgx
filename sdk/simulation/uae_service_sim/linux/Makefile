@@ -115,10 +115,10 @@ else
 endif
 
 libsgx_%_deploy.so: ../libsgx_%_deploy.c
-	$(CC) -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so.$(call SPLIT_VERSION,$($(shell echo $(@:libsgx_%_deploy.so=%_version)|tr a-z A-Z)),1)) $< -o $@
+	$(CC) -I$(COMMON_DIR)/inc -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so.$(call SPLIT_VERSION,$($(shell echo $(@:libsgx_%_deploy.so=%_version)|tr a-z A-Z)),1)) $< -o $@
 
 libsgx_uae_service_deploy.so: $(wildcard ../*_deploy.c)
-	$(CC) -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so) $^ -o $@
+	$(CC) -I$(COMMON_DIR)/inc -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so) $^ -o $@
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

@@ -274,7 +274,7 @@ $(Enclave_Seal_Name): $(Enclave_Seal_Objects)
 	@echo "LINK =>  $@"
 
 $(Signed_Enclave_Seal_Name): $(Enclave_Seal_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave_Seal/Enclave_private.pem -enclave $(Enclave_Seal_Name) -out $@ -config $(Enclave_Seal_Config_File)
+	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave_Seal/Enclave_private_test.pem -enclave $(Enclave_Seal_Name) -out $@ -config $(Enclave_Seal_Config_File)
 	@echo "SIGN =>  $@"
 
 
@@ -298,7 +298,7 @@ $(Enclave_Unseal_Name): $(Enclave_Unseal_Objects)
 	@echo "LINK =>  $@"
 
 $(Signed_Enclave_Unseal_Name): $(Enclave_Unseal_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave_Seal/Enclave_private.pem -enclave $(Enclave_Unseal_Name) -out $@ -config $(Enclave_Unseal_Config_File)
+	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave_Seal/Enclave_private_test.pem -enclave $(Enclave_Unseal_Name) -out $@ -config $(Enclave_Unseal_Config_File)
 	@echo "SIGN =>  $@"
 
 

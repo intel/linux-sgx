@@ -713,14 +713,32 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
     {
         // No need to set option '-resign' for dump command
         se_trace(SE_TRACE_ERROR, GIVE_INVALID_OPTION_ERROR, "-resign", mode_m[tempmode]);
-	return false;
+        return false;
     }
-
+    
+    for(unsigned int i = 0; i < params_count-1; i++)
+    {
+        if(params[tempmode][i].value == NULL)
+            continue;
+        for(unsigned int j=i+1; j < params_count; j++)
+        {
+            if(params[tempmode][j].value == NULL)
+                continue;
+            if(strlen(params[tempmode][i].value) == strlen(params[tempmode][j].value) &&
+                !STRNCMP(params[tempmode][i].value, params[tempmode][j].value, strlen(params[tempmode][i].value)))
+            {
+                se_trace(SE_TRACE_ERROR, DUPLICATED_FILE_NAME_ERROR, params[tempmode][i].name, params[tempmode][j].name);
+                return false;
+            }
+        }
+    }
     // Set output parameters
     for(unsigned int i = 0; i < params_count; i++)
     {
         path[i] = params[tempmode][i].value;
     }
+    
+
     *mode = tempmode;
     *option_flag_bits = pf_bits;
     return true;

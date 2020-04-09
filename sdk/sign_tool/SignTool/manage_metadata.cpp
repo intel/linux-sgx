@@ -46,6 +46,8 @@
 #include "se_page_attr.h"
 #include "elf_util.h"
 #include "crypto_wrapper.h"
+#include "global_data.h"
+#include "se_version.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -920,8 +922,16 @@ bool CMetadata::build_patch_table()
         se_trace(SE_TRACE_ERROR, "Could not find g_global_data\n");
          return false;
     }
+    
+    // Check whether the same SDK is used for enclave building and signing
+    global_data_t *gdata = (global_data_t *)get_rawdata_by_rva(rva);
+    if (gdata -> sdk_version != VERSION_UINT)
+    {
+        se_trace(SE_TRACE_ERROR, SDK_VERSION_ERROR);
+	return false;
+    }
 
-    patch.dst = (uint64_t)PTR_DIFF(get_rawdata_by_rva(rva), base_addr);
+    patch.dst = (uint64_t)PTR_DIFF(gdata, base_addr);
     patch.src = (uint32_t)PTR_DIFF(m_gd_template, m_metadata);
     patch.size = m_gd_size;
     patches.push_back(patch);

@@ -36,11 +36,12 @@
 #include "sgx_trts.h"
 #include "internal/util.h"
 
-SGX_WEAK void* SGXAPI operator new[] (size_t dwBytes, void* ptr)
+//This function is replaced by inline function in common/inc/stdc++/new to boost the performance
+/*SGX_WEAK void* SGXAPI operator new[] (size_t dwBytes, void* ptr)
 {
 	if( !sgx_is_within_enclave(ptr, dwBytes) ){
 		//compiler will check the pointer before call object construct, so it is OK to return NULL here
 		return NULL;
 	}
 	return ptr;
-}
+}*/

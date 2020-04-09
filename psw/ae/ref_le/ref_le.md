@@ -43,8 +43,8 @@ The ref-LE is part of the PSW source tree and located in the ref-le directory, i
       |- ref_wl_gen.h/cpp                - A white list generation class
    |- ref_keys [DIR]                     - Contains a set of testing keys used by default in the build process 
       |- wl_cfg.csv                      - A sample CSV file to define the white list
-      |- le_private/public_key.pem       - RSA 3072 key pair used for signing the ref-LE and white list
-      |- encalve_private/public_key.pem  - RSA 3072 key pair included in the white list and enables signing of an arbitrary enclave
+      |- le_private/public_test_key.pem       - RSA 3072 key pair used for signing the ref-LE and white list
+      |- encalve_private/public_test_key.pem  - RSA 3072 key pair included in the white list and enables signing of an arbitrary enclave
 ~~~
 **Note**: the ref_keys directory is meant only for testing purposes and **must not** be used on a production build
 

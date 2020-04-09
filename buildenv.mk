@@ -190,8 +190,6 @@ else ifeq ($(MITIGATION-CVE-2020-0551), CF)
     MITIGATION_LIB_PATH := cve_2020_0551_cf
 endif
 
-MITIGATION_CFLAGS :=
-MITIGATION_ASFLAGS :=
 ifeq ($(MITIGATION_C), 1)
 ifeq ($(MITIGATION_INDIRECT), 1)
     MITIGATION_CFLAGS += -mindirect-branch-register

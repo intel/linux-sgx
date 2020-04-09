@@ -11,7 +11,8 @@ Intel(R) Software Guard Extensions (Intel(R) SGX) is an Intel technology for app
 
 The Linux\* Intel(R) SGX software stack is comprised of the Intel(R) SGX driver, the Intel(R) SGX SDK, and the Intel(R) SGX Platform Software (PSW). The Intel(R) SGX SDK and Intel(R) SGX PSW are hosted in the [linux-sgx](https://github.com/01org/linux-sgx) project.
 
-The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. 
+The [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project maintains an out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used on the platforms with *Flexible Launch Control* and *Intel(R) AES New Instructions* support and could support both Elliptic Curve Digital Signature algorithm (ECDSA) based attestation and Enhanced Privacy Identification (EPID) based attestation.      
+The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the other out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used to support Enhanced Privacy Identification (EPID) based attestation on the platforms without *Flexible Launch Control*. 
 
 The repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
 
@@ -28,9 +29,18 @@ Documentation
 - [Intel(R) SGX for Linux\* OS](https://01.org/intel-softwareguard-extensions) project home page on [01.org](https://01.org)
 - [Intel(R) SGX Programming Reference](https://software.intel.com/sites/default/files/managed/7c/f1/332831-sdm-vol-3d.pdf)
 
+Quick Start
+-----------------------------------------
+### Use Docker and Docker Compose
+```
+$ cd docker/build && ./build_compose_run.sh
+```
+See this [README](docker/build/README.md) for details.
+
 Build and Install the Intel(R) SGX Driver
 -----------------------------------------
-Follow the instructions in the [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project to build and install the Intel(R) SGX driver.
+Follow the [README.md](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/master/driver/linux/README.md) in the [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project to build and install the Intel(R) SGX driver.     
+**NOTE**: The above Intel(R) SGX driver requires *Flexible Launch Control* and *Intel(R) AES New Instructions* support. If your platform doesn't meet the requirement, please follow  the instructions in the [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project to build and install this version of Intel(R) SGX driver.
 
 Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
@@ -49,26 +59,26 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
   * On Ubuntu 16.04:
   ```
-    $ sudo apt-get install build-essential ocaml automake autoconf libtool wget python libssl-dev git
+    $ sudo apt-get install build-essential ocaml automake autoconf libtool wget python libssl-dev git cmake perl
   ```
   * On Ubuntu 18.04:
   ```
-    $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git
+    $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git cmake perl
   ```
   * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0 and CentOS 7.5:
   ```
     $ sudo yum groupinstall 'Development Tools'
-    $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel git
+    $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel git cmake perl
   ```
   * On Fedora 27:
   ```
     $ sudo yum groupinstall 'C Development Tools and Libraries'
-    $ sudo yum install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget python rpm-build git
+    $ sudo yum install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget python rpm-build git cmake perl
   ```
   * On SUSE Linux Enterprise Server 12:
   ```
     $ sudo zypper install --type pattern devel_basis
-    $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel rpm-build git
+    $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel rpm-build git cmake perl
   ```
    **Note**:  To build Intel(R) SGX SDK, GNU binutils version is required to be 2.26 or above. For Red Hat Enterprise Linux 7.4, you may need to update GNU binutils version using below command:
    ```

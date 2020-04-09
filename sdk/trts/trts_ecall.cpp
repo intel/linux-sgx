@@ -350,8 +350,8 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
     if( (NULL == thread_data) || 
             ((thread_data->stack_base_addr == thread_data->last_sp) && 
                     ( (0 != g_global_data.thread_policy) ||
-                       (SGX_PTHREAD_EXIT == _pthread_tls_get_state()) ||    /*Force do initial thread if previous ECALL is exited by pthread_exit() or _pthread_thread_run() returns */
-                        (index == ECMD_ECALL_PTHREAD))))  /*Force do initial thread if this thread is created by SGX pthread_create() */
+                       (SGX_PTHREAD_EXIT == _pthread_tls_get_state()) ||    /*Force do initial this tcs if it was used by pthread() created thread previously.*/
+                        (index == ECMD_ECALL_PTHREAD))))  /*Force do initial this tcs if it used by pthread() created thread. */
     {
         status = do_init_thread(tcs, false);
         if(0 != status)
@@ -378,8 +378,23 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
                 thread_data->last_sp = thread_data->stack_base_addr;
                 status = SGX_PTHREAD_EXIT;
             }
+            if(ECMD_ECALL_PTHREAD == index || SGX_PTHREAD_EXIT == status)
+            {
+                /* 
+                  * Set the TCS's tls state variable to "SGX_PTHREAD_EXIT":
+                  *  1. Pthread() create thread exits normally.
+                  *  2. ECALL() is exited by calling pthread_exit().
+                  *
+                  * In future, the TCS will always be initialized no matter it's used by a new normal root ECALL() or it's used by a new pthread() create thread.
+                  *
+                  * As example: (In bind mode)
+                  * 1. This TCS is used by pthread created thread. So the TCS's state will be set as "SGX_PTHREAD_EXIT" after the thread exits.
+                  * 2. Then the same TCS is used by a normal root ECALL, the TCS will still be initialized because it's state was set as "SGX_PTHREAD_EXIT".
+                  *
+                */
+                _pthread_tls_store_state(SGX_PTHREAD_EXIT);
+            }
             //-- execute some resource recycle function here, such as tls resource recycle
-            _pthread_tls_store_state(SGX_PTHREAD_EXIT);
             _pthread_tls_destructors();
             _pthread_wakeup_join(ms); 
         }

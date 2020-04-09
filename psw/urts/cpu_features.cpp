@@ -76,7 +76,7 @@ void get_cpu_features(uint64_t *__intel_cpu_feature_indicator)
     unsigned int cpuid7_eax, cpuid7_ebx, cpuid7_ecx, cpuid7_edx;
     unsigned int ecpuid1_eax, ecpuid1_ebx, ecpuid1_ecx, ecpuid1_edx;
     uint64_t cpu_feature_indicator = CPU_FEATURE_GENERIC_IA32;
-    bool is_intel;
+    bool is_intel = false;
 
     sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
     if(cpuid0_eax == 0)

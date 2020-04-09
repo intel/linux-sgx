@@ -64,6 +64,8 @@
 #define REG_WL_CERT_CHAIN_MSEC (IPC_LATENCY)
 #define SE_CALC_QUOTE_SIZE_TIMEOUT_MSEC (IPC_LATENCY)
 #define SE_SELECT_ATT_KEY_ID_TIMEOUT_MSEC (IPC_LATENCY)
+#define SE_GET_SUPPORTED_ATT_ID_NUM_TIMEOUT_MSEC  (IPC_LATENCY)
+#define SE_GET_SUPPORTED_ATT_IDS_TIMEOUT_MSEC (IPC_LATENCY)
 
 extern "C" {
 
@@ -696,7 +698,60 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
     return mapped;
 }
 
+sgx_status_t SGXAPI sgx_get_supported_att_key_id_num(uint32_t *p_att_key_id_num)
+{
+    //Verify inputs
+    if (NULL == p_att_key_id_num)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
 
+    aesm_error_t    result = AESM_UNEXPECTED_ERROR;
+    uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
+    oal_ret = oal_get_supported_att_key_id_num(p_att_key_id_num,
+        SE_GET_SUPPORTED_ATT_ID_NUM_TIMEOUT_MSEC * 1000, &result);
+
+    //common mappings
+    sgx_status_t mapped = oal_map_status(oal_ret);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
+    {
+         //No specific error code mapping
+    }
+    return mapped;
+
+}
+
+sgx_status_t SGXAPI sgx_get_supported_att_key_ids(sgx_att_key_id_ext_t *p_att_key_id_list, uint32_t att_key_id_num)
+{
+    //Verify inputs
+    if (NULL == p_att_key_id_list || 0 == att_key_id_num ||
+        UINT32_MAX / sizeof(sgx_att_key_id_ext_t) < att_key_id_num)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    uint32_t  att_key_id_list_size = (uint32_t)(att_key_id_num * sizeof(sgx_att_key_id_ext_t));
+
+    aesm_error_t    result = AESM_UNEXPECTED_ERROR;
+    uae_oal_status_t oal_ret = UAE_OAL_ERROR_UNEXPECTED;
+    oal_ret = oal_get_supported_att_key_ids(p_att_key_id_list, att_key_id_list_size,
+        SE_GET_SUPPORTED_ATT_IDS_TIMEOUT_MSEC * 1000, &result);
+
+    //common mappings
+    sgx_status_t mapped = oal_map_status(oal_ret);
+    if (mapped != SGX_SUCCESS)
+        return mapped;
+
+    mapped = oal_map_result(result);
+    if (mapped != SGX_SUCCESS)
+    {
+        //No specific error code mapping
+    }
+    return mapped;
+}
 
 
 // common mapper function for all OAL specific error codes

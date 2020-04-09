@@ -29,10 +29,46 @@
  *
  */
 
-void sgx_get_quote(){}
-void sgx_get_quote_size(){}
-void sgx_init_quote(){}
-void sgx_get_extended_epid_group_id(){}
-void sgx_report_attestation_status(){}
-void sgx_check_update_status(){}
-void sgx_calc_quote_size(){}
+#include <stdio.h>
+#include "sgx_error.h"
+
+sgx_status_t sgx_get_quote()
+{
+    printf("Please use the correct SGX EPID library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_get_quote_size()
+{
+    printf("Please use the correct SGX EPID library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_init_quote()
+{
+    printf("Please use the correct SGX EPID library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_get_extended_epid_group_id()
+{
+    printf("Please use the correct SGX EPID library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_report_attestation_status()
+{
+    printf("Please use the correct SGX EPID library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_check_update_status()
+{
+    printf("Please use the correct SGX EPID library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+sgx_status_t sgx_calc_quote_size()
+{
+    printf("Please use the correct SGX EPID library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}

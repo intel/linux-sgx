@@ -55,15 +55,15 @@ void* SGXAPI operator new (size_t);
 void* SGXAPI operator new[] (size_t);
 
 void* SGXAPI operator new (size_t, const std::nothrow_t&);
-void* SGXAPI operator new (size_t, void*);
+inline void* SGXAPI operator new (size_t, void* __p)  {return __p;};
 void* SGXAPI operator new[] (size_t, const std::nothrow_t&);
-void* SGXAPI operator new[] (size_t, void*);
+inline void* SGXAPI operator new[] (size_t, void* __p)  {return __p;};
 
 void SGXAPI operator delete (void*);
 void SGXAPI operator delete (void*, const std::nothrow_t&);
-void SGXAPI operator delete (void*, void*);
+inline void SGXAPI operator delete (void*, void*){};
 void SGXAPI operator delete[] (void*);
 void SGXAPI operator delete[] (void*, const std::nothrow_t&);
-void SGXAPI operator delete[] (void*, void*);
+inline void SGXAPI operator delete[] (void*, void*){};
 
 #endif /* _NEW_ */

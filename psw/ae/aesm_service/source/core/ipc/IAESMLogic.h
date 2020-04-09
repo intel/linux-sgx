@@ -74,7 +74,7 @@ class IAESMLogic {
                 uint32_t att_key_id_size, const uint8_t *att_key_id,
                 uint32_t qe_report_info_size, uint8_t *qe_report_info,
                 uint32_t quote_size, uint8_t **quote) = 0;
-				
+
 
         virtual aesm_error_t reportAttestationStatus(uint8_t* platform_info, uint32_t platform_info_size,
                                            uint32_t attestation_error_code,
@@ -86,9 +86,12 @@ class IAESMLogic {
         virtual aesm_error_t getWhiteList(uint8_t** white_list, uint32_t mWhiteListSize) = 0;
         virtual aesm_error_t sgxGetExtendedEpidGroupId(uint32_t* x_group_id) = 0;
         virtual aesm_error_t sgxSwitchExtendedEpidGroup(uint32_t x_group_id) = 0;
-		virtual aesm_error_t sgxRegister(uint8_t* buf, uint32_t buf_size, uint32_t data_type) = 0;
+        virtual aesm_error_t sgxRegister(uint8_t* buf, uint32_t buf_size, uint32_t data_type) = 0;
 
-		virtual void service_stop() = 0;
+        virtual aesm_error_t get_supported_att_key_id_num(uint32_t *att_key_id_num) = 0;
+        virtual aesm_error_t get_supported_att_key_ids(uint8_t **att_key_ids, uint32_t att_key_ids_size) = 0;
+
+        virtual void service_stop() = 0;
         virtual ~IAESMLogic(){};
 };
 

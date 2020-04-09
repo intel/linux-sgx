@@ -198,6 +198,32 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
                                            uint8_t *p_quote,
                                            uint32_t quote_size);
 
+/**
+ * The application needs to call this function before getting supported_attestation key IDs.  The number is variable
+ * depending on the platform. Once the application calls this API, it will use the returned p_att_key_id_num to allocate
+ * the buffer required to hold the supported_attestation key IDs.  A pointer to this buffer is provided to the
+ * sgx_get_supported_att_key_ids() API.
+ *
+ * @param p_att_key_id_num Pointer to the location where the required number will be returned. Must not be NULL.
+ *
+ * @return SGX_SUCCESS Successfully calculated the required number.
+ * @return SGX_ERROR_INVALID_PARAMETER Invalid parameter. p_att_key_id_num must not be NULL.
+ */
+sgx_status_t SGXAPI sgx_get_supported_att_key_id_num(uint32_t *p_att_key_id_num);
+
+/**
+ * The function will generate an array of all supported attestation key IDs.
+ * The application needs to call sgx_get_supported_att_key_id_num() API first to get the number of key IDs. Then
+ * the application needs to allocate the buffer whose size is sizeof sgx_att_key_id_ext_t * att_key_id_num.
+ *
+ * @param p_att_key_id_list Pointer to the buffer that will contain supported_attestation key IDs. It cannot be NULL.
+ * @param att_key_id_num  the number of supported key IDs.
+ *
+ * @return SGX_SUCCESS Successfully generated the supported attestation key IDs.
+ * @return SGX_ERROR_INVALID_PARAMETER Invalid parameter. p_att_key_id_list must not be NULL.
+ */
+sgx_status_t SGXAPI sgx_get_supported_att_key_ids(sgx_att_key_id_ext_t *p_att_key_id_list,
+                                                    uint32_t att_key_id_num);
 
 #ifdef  __cplusplus
 }

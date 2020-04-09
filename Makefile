@@ -29,7 +29,7 @@
 #
 #
 
-DCAP_VER?= 1.5
+DCAP_VER?= 1.6
 DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
 
 CHECK_OPT :=
@@ -97,6 +97,14 @@ ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/li
 endif
 	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_ae_qe3_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-qe3/libsgx-ae-qe3*.deb ./linux/installer/deb/sgx-aesm-service/
+.PHONY: deb_libsgx_qe3_logic
+deb_libsgx_qe3_logic: psw
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_qe3_logic_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-qe3-logic/libsgx-qe3-logic*deb ./linux/installer/deb/sgx-aesm-service/
+.PHONY: deb_libsgx_pce_logic
+deb_libsgx_pce_logic: psw
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_pce_logic_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-pce-logic/libsgx-pce-logic*deb ./linux/installer/deb/sgx-aesm-service/
 
 .PHONY: deb_libsgx_dcap_default_qpl
 deb_libsgx_dcap_default_qpl: 
@@ -137,7 +145,7 @@ deb_libsgx_urts: psw
 	./linux/installer/deb/libsgx-urts/build.sh
 
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs
+deb_psw_pkg: deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs
 
 .PHONY: deb_local_repo
 deb_local_repo: deb_psw_pkg
@@ -150,6 +158,14 @@ ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/li
 endif
 	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_ae_qe3_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qe3/libsgx-ae-qe3*.rpm ./linux/installer/rpm/sgx-aesm-service/
+.PHONY: rpm_libsgx_pce_logic
+rpm_libsgx_pce_logic: psw
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_pce_logic_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-pce-logic/libsgx-pce-logic*.rpm ./linux/installer/rpm/sgx-aesm-service/
+.PHONY: rpm_libsgx_qe3_logic
+rpm_libsgx_qe3_logic: psw
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_qe3_logic_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-qe3-logic/libsgx-qe3-logic*.rpm ./linux/installer/rpm/sgx-aesm-service/
 
 .PHONY: rpm_sgx_aesm_service
 rpm_sgx_aesm_service: psw
@@ -184,7 +200,7 @@ rpm_sdk_pkg: sdk
 	./linux/installer/rpm/sdk/build.sh
 
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3
+rpm_psw_pkg: rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3
 
 .PHONY: rpm_local_repo
 rpm_local_repo: rpm_psw_pkg

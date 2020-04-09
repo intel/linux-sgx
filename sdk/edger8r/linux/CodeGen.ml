@@ -225,12 +225,12 @@ let mk_in_var2 name1 name2 = "_in_" ^ name1 ^ "_" ^ name2
 let mk_ocall_table_name enclave_name = "ocall_table_" ^ enclave_name
 
 (* Un-trusted bridge name is prefixed with enclave file short name. *)
-let mk_ubridge_name (file_shortnm: string) (funcname: string) =
-  sprintf "%s_%s" file_shortnm funcname
+let mk_ubridge_name (enclave_name: string) (funcname: string) =
+  sprintf "%s_%s" enclave_name funcname
 
-let mk_ubridge_proto (file_shortnm: string) (funcname: string) =
+let mk_ubridge_proto (enclave_name: string) (funcname: string) =
   sprintf "static sgx_status_t SGX_CDECL %s(void* %s)"
-          (mk_ubridge_name file_shortnm funcname) ms_ptr_name
+          (mk_ubridge_name enclave_name funcname) ms_ptr_name
 
 (* Common macro definitions. *)
 let common_macros = "#include <stdlib.h> /* for size_t */\n\n\
@@ -801,10 +801,10 @@ let gen_func_invoking (fd: Ast.func_decl)
                                acc ^ ", " ^ mk_parm_name pty dlr) p0 ps)
 
 (* Generate untrusted bridge code for a given untrusted function. *)
-let gen_func_ubridge (file_shortnm: string) (ufunc: Ast.untrusted_func) =
+let gen_func_ubridge (enclave_name: string) (ufunc: Ast.untrusted_func) =
   let fd = ufunc.Ast.uf_fdecl in
   let propagate_errno = ufunc.Ast.uf_propagate_errno in
-  let func_open = sprintf "%s\n{\n" (mk_ubridge_proto file_shortnm fd.Ast.fname) in
+  let func_open = sprintf "%s\n{\n" (mk_ubridge_proto enclave_name fd.Ast.fname) in
   let func_close = "\treturn SGX_SUCCESS;\n}\n" in
   let set_errno = if propagate_errno then "\tms->ocall_errno = errno;" else "" in
   let ms_struct_name = mk_ms_struct_name fd.Ast.fname in
@@ -2174,7 +2174,7 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
 let gen_ocall_table (ec: enclave_content) =
   let func_proto_ubridge = List.map (fun (uf: Ast.untrusted_func) ->
                                        let fd : Ast.func_decl = uf.Ast.uf_fdecl in
-                                         mk_ubridge_name ec.file_shortnm fd.Ast.fname)
+                                         mk_ubridge_name ec.enclave_name fd.Ast.fname)
                                     ec.ufunc_decls in
   let nr_ocall = List.length ec.ufunc_decls in
   let ocall_table_name = mk_ocall_table_name ec.enclave_name in
@@ -2205,7 +2205,7 @@ let gen_untrusted_source (ec: enclave_content) =
       (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
   in
   let ubridge_list =
-    List.map (fun fd -> gen_func_ubridge ec.file_shortnm fd)
+    List.map (fun fd -> gen_func_ubridge ec.enclave_name fd)
       (ec.ufunc_decls) in
   let out_chan = open_out code_fname in
     output_string out_chan (include_hd ^ include_errno ^ "\n");

@@ -43,12 +43,6 @@ id -u aesmd &> /dev/null || \
     /usr/sbin/useradd -r -U -c "User for aesmd" \
     -d /var/opt/aesmd -s /sbin/nologin aesmd
 
-# Add sgx_prv for in-kernel driver.
-if [ -c /dev/sgx/provision ]; then
-    /usr/sbin/groupadd sgx_prv || true
-    udevadm trigger || true
-fi
-
 # Start the AESMD service
 if [ -d /run/systemd/system ]; then
     systemctl enable aesmd

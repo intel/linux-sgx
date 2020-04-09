@@ -29,7 +29,42 @@
  *
  */
 
-void sgx_get_quote_ex(){}
-void sgx_get_quote_size_ex(){}
-void sgx_init_quote_ex(){}
-void sgx_select_att_key_id(){}
+#include <stdio.h>
+#include "sgx_error.h"
+
+sgx_status_t sgx_get_quote_ex()
+{
+    printf("Please use the correct SGX quote-ex library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_get_quote_size_ex()
+{
+    printf("Please use the correct SGX quote-ex library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_init_quote_ex()
+{
+    printf("Please use the correct SGX quote-ex library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_select_att_key_id()
+{
+    printf("Please use the correct SGX quote-ex library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_get_supported_att_key_id_num()
+{
+    printf("Please use the correct SGX quote-ex library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_get_supported_att_key_ids()
+{
+    printf("Please use the correct SGX quote-ex library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+ 

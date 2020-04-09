@@ -34,16 +34,16 @@ top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
 openssl_ver=1.1.1d
 openssl_ver_name=openssl-$openssl_ver
-sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_ver=2.9
+sgxssl_github_archive=https://github.com/intel/intel-sgx-ssl/archive
+sgxssl_ver=2.9.1
 sgxssl_ver_name=v$sgx_ver
 sgxssl_file_name=lin_$sgxssl_ver\_$openssl_ver
 build_script=$top_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
-full_openssl_url=$server_url_path/old/1.1.1/$openssl_ver_name.tar.gz
+full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
 full_openssl_url_old=$server_url_path/old/1.1.0/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=1ae9eb81175530b1e23eb513dd0627b7efe3eba49a3e952200996a150fff38a6
+sgxssl_chksum=2f132c316d893bfcc972e36bd1fe379d0b34f20d4ac4b13fce8f3597afe730f4
 openssl_chksum=1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then

@@ -57,7 +57,7 @@ $(BUILD_DIR):
 .PHONY: omp_code
 omp_code:
 ## Need to enable below code when release
-#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+#ifeq ($(shell git rev-parse --is-inside-work-tree 2> /dev/null), true)
 #	git submodule update -f --init --recursive --remote -- $(OMP_DIR)
 #else
 	$(RM) -rf openmp_code

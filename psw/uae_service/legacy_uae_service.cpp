@@ -402,4 +402,26 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
     return SGX_ERROR_SERVICE_UNAVAILABLE;
 }
 
+sgx_status_t SGXAPI sgx_get_supported_att_key_id_num(uint32_t *p_att_key_id_num)
+{
+	sgx_status_t (*p_sgx_get_supported_att_key_id_num)(uint32_t *p_att_key_id_num) = NULL;
+    if (QuoteExLib::instance().findSymbol(__FUNCTION__, (void**)&p_sgx_get_supported_att_key_id_num))
+    {
+		return p_sgx_get_supported_att_key_id_num(p_att_key_id_num);
+    }
+    return SGX_ERROR_SERVICE_UNAVAILABLE;
+}
+
+sgx_status_t SGXAPI sgx_get_supported_att_key_ids(sgx_att_key_id_ext_t *p_att_key_id_list,
+												   uint32_t att_key_id_num)
+{
+    sgx_status_t (*p_sgx_get_supported_att_key_ids)(sgx_att_key_id_ext_t *p_att_key_id_list,
+												   uint32_t att_key_id_num) = NULL;
+    if (QuoteExLib::instance().findSymbol(__FUNCTION__, (void**)&p_sgx_get_supported_att_key_ids))
+    {
+		return p_sgx_get_supported_att_key_ids(p_att_key_id_list, att_key_id_num);
+    }
+    return SGX_ERROR_SERVICE_UNAVAILABLE;
+}
+
 } /* extern "C" */

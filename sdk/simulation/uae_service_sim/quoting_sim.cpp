@@ -536,3 +536,23 @@ sgx_status_t SGXAPI  sgx_get_quote_ex(const sgx_report_t *p_app_report,
             p_qe_report_info ? &p_qe_report_info->qe_report:NULL,
             (sgx_quote_t *)p_quote, quote_size);
 }
+
+sgx_status_t SGXAPI sgx_get_supported_att_key_id_num(uint32_t *p_att_key_id_num)
+{
+    if (NULL == p_att_key_id_num)
+        return SGX_ERROR_INVALID_PARAMETER;
+    *p_att_key_id_num = 1;
+    return SGX_SUCCESS;
+}
+
+sgx_status_t SGXAPI sgx_get_supported_att_key_ids(sgx_att_key_id_ext_t *p_att_key_id_list, uint32_t att_key_id_num)
+{
+    if (NULL == p_att_key_id_list || 1 != att_key_id_num)
+        return SGX_ERROR_INVALID_PARAMETER;
+    if (memcpy_s(p_att_key_id_list, sizeof(*p_att_key_id_list),
+        &g_epid_unlinkable_att_key_id, sizeof(g_epid_unlinkable_att_key_id)))
+    {
+        return SGX_ERROR_UNEXPECTED;
+    }
+    return SGX_SUCCESS;
+}

@@ -457,7 +457,7 @@ public:
         // att_key_id_ext has been checked by caller
         if((NULL == app_report && sizeof(sgx_report_t) != app_report_size)
            || (NULL != qe_report_info && sizeof(sgx_ql_qe_report_info_t) != qe_report_info_size)
-           || (NULL == qe_report_info && !qe_report_info_size))
+           || (NULL == qe_report_info && 0 != qe_report_info_size))
         {
             return AESM_PARAMETER_ERROR;
         }

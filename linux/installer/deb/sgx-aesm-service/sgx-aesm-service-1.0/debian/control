@@ -37,12 +37,12 @@ Description: Unified Quote Plugin for Intel(R) Software Guard Extensions AESM Se
 
 Package: libsgx-aesm-ecdsa-plugin
 Architecture: amd64
-Depends: ${shlibs:Depends}, ${misc:Depends}, sgx-aesm-service(>= @dep_version@), libsgx-ae-qe3(>= 1.4), libsgx-aesm-pce-plugin(>= @dep_version@)
+Depends: ${shlibs:Depends}, ${misc:Depends}, sgx-aesm-service(>= @dep_version@), libsgx-qe3-logic(>= 1.5), libsgx-aesm-pce-plugin(>= @dep_version@)
 Description: ECDSA Quote Plugin for Intel(R) Software Guard Extensions AESM Service
 
 Package: libsgx-aesm-pce-plugin
 Architecture: amd64
-Depends: ${shlibs:Depends}, ${misc:Depends}, sgx-aesm-service(>= @dep_version@), libsgx-ae-pce(>= @dep_version@)
+Depends: ${shlibs:Depends}, ${misc:Depends}, sgx-aesm-service(>= @dep_version@), libsgx-pce-logic(>= 1.5), libsgx-ae-pce(>= @dep_version@)
 Description: PCE Plugin for Intel(R) Software Guard Extensions AESM Service
 
 Package: libsgx-ae-pce

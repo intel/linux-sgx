@@ -44,7 +44,7 @@ void CQEClass::before_enclave_load() {
     CPVEClass::instance().unload_enclave();
 }
 
-extern "C" bool get_metadata(const char* enclave_file, metadata_t *metadata);
+extern "C" sgx_status_t sgx_get_metadata(const char* enclave_file, metadata_t *metadata);
 
 uint32_t CQEClass::get_qe_target(
     sgx_target_info_t *p_target,
@@ -66,7 +66,7 @@ uint32_t CQEClass::get_qe_target(
         AESM_DBG_ERROR("fail to get QE pathname");
         return AE_FAILURE;
     }
-    if (!get_metadata(enclave_path, &metadata))
+    if (SGX_SUCCESS != sgx_get_metadata(enclave_path, &metadata))
         return AE_FAILURE;
     *p_isvsvn = metadata.enclave_css.body.isv_svn;
     return AE_SUCCESS;

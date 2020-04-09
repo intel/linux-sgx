@@ -111,6 +111,7 @@
 #define LACK_REQUIRED_OPTION_ERROR          "Option \"%s\" is required for the command \"%s\".\n"
 #define GIVE_INVALID_OPTION_ERROR           "Option \"%s\" is invalid for the command \"%s\".\n"
 #define UNREC_OPTION_ERROR                  "Cannot recognize the option \"%s\".\n"
+#define DUPLICATED_FILE_NAME_ERROR          "Option \"%s\" and option \"%s\" are using the same file path.\n"
 
 // error message for generate_output()
 #define LACK_PRI_KEY_ERROR                  "Private key is required for the \"sign\" command.\n"
@@ -138,11 +139,15 @@
 #define SET_RSRV_SIZE_INIT_MAX_ERROR        "Reserved memory size setting is not correct: init value should not be larger than max value.\n"
 #define SET_RSRV_SIZE_INIT_MIN_ERROR        "Reserved memory size setting is not correct: min value should not be larger than init value.\n"
 #define SET_RSRV_SIZE_MAX_MIN_ERROR         "Reserved memory size setting is not correct: max value should not be smaller than min value.\n"
-#define SET_RSRV_EXECUTABLE_ERROR         "Reserved memory executable setting is not correct: the executable value should be set to 1 or 0.\n"
+#define SET_RSRV_EXECUTABLE_ERROR           "Reserved memory executable setting is not correct: the executable value should be set to 1 or 0.\n"
 #define SET_HW_LE_ERROR                     "Conflicting setting between the 'HW' and 'LaunchKey'.\n"
 #define SET_TCS_MAX_NUM_ERROR               "Maximum number of TCS is not correct.\n"
 #define SET_TCS_MIN_POOL_ERROR              "Minimum number of TCS Pool is not correct.\n"
 #define SET_ENABLE_KSS_ERROR                "KSS must be enabled if ISVEXTPRODID or ISVFAMILYID is set.\n"
+
+#define SDK_VERSION_ERROR                   "SDK version is not correct. The same SDK should be used for enclave building and signing.\n"\
+                                            "The SDK version for building enclave could be obtained by below command:\n\n"\
+                                            "           $ strings {Enclave.so} | grep SGX_TSTDC_VERSION \n\n"
 
 
 // error message for parse_key_file()

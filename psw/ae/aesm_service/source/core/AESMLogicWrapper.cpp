@@ -223,6 +223,64 @@ aesm_error_t AESMLogicWrapper::select_att_key_id(uint32_t att_key_id_list_size,
     return result;
 }
 
+
+aesm_error_t AESMLogicWrapper::get_supported_att_key_id_num(
+    uint32_t *att_key_id_num)
+{
+    aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
+    std::shared_ptr<IQuoteProxyService> service;
+    if (!get_service_wrapper(service, g_fw_ctx))
+    {
+        return AESM_SERVICE_UNAVAILABLE;
+    }
+
+    result = service->get_att_key_id_num(
+        att_key_id_num);
+    if (0 == *att_key_id_num)
+    {
+        return AESM_SERVICE_UNAVAILABLE;
+    }
+    return result;
+}
+
+aesm_error_t AESMLogicWrapper::get_supported_att_key_ids(
+    uint8_t **att_key_ids, uint32_t att_key_ids_size)
+{
+    uint32_t local_att_key_id_num = 0;
+    uint8_t *output_att_key_ids = NULL;
+
+    aesm_error_t result = AESM_SERVICE_UNAVAILABLE;
+    std::shared_ptr<IQuoteProxyService> service;
+    if (!get_service_wrapper(service, g_fw_ctx))
+    {
+        return AESM_SERVICE_UNAVAILABLE;
+    }
+
+    result = service->get_att_key_id_num(&local_att_key_id_num);
+    if (result != AESM_SUCCESS)
+    {
+        return result;
+    }
+    if (att_key_ids_size % sizeof(sgx_att_key_id_ext_t) != 0 ||
+        att_key_ids_size / sizeof(sgx_att_key_id_ext_t) != local_att_key_id_num)
+    {
+        return AESM_PARAMETER_ERROR;
+    }
+
+    output_att_key_ids = new uint8_t[att_key_ids_size]();
+    result = service->get_att_key_id(
+        output_att_key_ids, att_key_ids_size);
+    if (result == AESM_SUCCESS)
+    {
+        *att_key_ids = output_att_key_ids;
+    }
+    else
+    {
+        delete[] output_att_key_ids;
+    }
+    return result;
+}
+
 aesm_error_t AESMLogicWrapper::init_quote_ex(
     uint32_t att_key_id_size, const uint8_t *att_key_id,
     uint8_t **target_info, uint32_t *target_info_size,

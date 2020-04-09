@@ -103,6 +103,29 @@ typedef struct _att_key_id_t {
     uint8_t     att_key_id[256];
 }sgx_att_key_id_t;
 
+/** Describes a single attestation key.  Contains both QE identity and the attestation algorithm ID. */
+typedef struct _sgx_ql_att_key_id_t {
+    uint16_t    id;                              ///< Structure ID
+    uint16_t    version;                         ///< Structure version
+    uint16_t    mrsigner_length;                 ///< Number of valid bytes in MRSIGNER.
+    uint8_t     mrsigner[48];                    ///< SHA256 or SHA384 hash of the Public key that signed the QE.
+                                                 ///< The lower bytes contain MRSIGNER.  Bytes beyond mrsigner_length '0'
+    uint32_t    prod_id;                         ///< Legacy Product ID of the QE
+    uint8_t     extended_prod_id[16];            ///< Extended Product ID or the QE. All 0's for legacy format enclaves.
+    uint8_t     config_id[64];                   ///< Config ID of the QE.
+    uint8_t     family_id[16];                   ///< Family ID of the QE.
+    uint32_t    algorithm_id;                    ///< Identity of the attestation key algorithm.
+}sgx_ql_att_key_id_t;
+
+/** Describes an extended attestation key.  Contains sgx_ql_att_key_id_t, spid and quote_type */
+typedef struct _sgx_att_key_id_ext_t {
+    sgx_ql_att_key_id_t base;
+    uint8_t             spid[16];                ///< Service Provider ID, should be 0s for ECDSA quote
+    uint16_t            att_key_type;            ///< For non-EPID quote, it should be 0
+                                                 ///< For EPID quote, it equals to sgx_quote_sign_type_t
+    uint8_t             reserved[80];            ///< It should have the same size of sgx_att_key_id_t
+}sgx_att_key_id_ext_t;
+
 typedef struct _qe_report_info_t {
     sgx_quote_nonce_t nonce;
     sgx_target_info_t app_enclave_target_info;

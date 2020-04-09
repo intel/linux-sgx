@@ -104,7 +104,11 @@ IPC_SRC  :=  AEGetQuoteResponse.cpp \
              AEGetQuoteExRequest.cpp \
              AEGetQuoteExResponse.cpp \
              AEGetQuoteSizeExRequest.cpp \
-             AEGetQuoteSizeExResponse.cpp
+             AEGetQuoteSizeExResponse.cpp \
+             AEGetSupportedAttKeyIDNumRequest.cpp \
+             AEGetSupportedAttKeyIDNumResponse.cpp \
+             AEGetSupportedAttKeyIDsRequest.cpp \
+             AEGetSupportedAttKeyIDsResponse.cpp
 
 PROTOBUF_SRC  :=  messages.pb.cc
 

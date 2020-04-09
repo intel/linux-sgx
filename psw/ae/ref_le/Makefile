@@ -35,7 +35,7 @@ include ../buildenv.mk
 
 SIGNED_NAME      = libsgx_$(AENAME).signed.so
 KEYS_DIR         = ./ref_keys
-LE_PRIVATE_KEY   = le_private_key.pem
+LE_PRIVATE_KEY   = le_private_test_key.pem
 WL_CFG_FILE      = wl_cfg.csv
 WHITE_LIST_NAME  = ref_white_list.bin
 REF_WL_GEN_NAME  = ref_wl_gen

@@ -17,6 +17,7 @@
         sgx_create_encrypted_enclave;
         sgx_create_enclave_from_buffer_ex;
         sgx_set_switchless_itf;
+        sgx_get_metadata;
     local:
         *;
 };

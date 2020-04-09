@@ -64,6 +64,10 @@
 
 #include <AESelectAttKeyIDRequest.h>
 
+#include <AEGetSupportedAttKeyIDNumRequest.h>
+
+#include <AEGetSupportedAttKeyIDsRequest.h>
+
 
 IAERequest* ProtobufSerializer::inflateRequest(AEMessage* message) {
     if (message == NULL || message->data == NULL)
@@ -101,6 +105,10 @@ IAERequest* ProtobufSerializer::inflateRequest(AEMessage* message) {
         request = new AEGetQuoteExRequest(reqMsg->getquoteexreq());
     else if(reqMsg->has_selectattkeyidreq() == true)
         request = new AESelectAttKeyIDRequest(reqMsg->selectattkeyidreq());
+    else if(reqMsg->has_getsupportedattkeyidnumreq() == true)
+        request = new AEGetSupportedAttKeyIDNumRequest(reqMsg->getsupportedattkeyidnumreq());
+    else if(reqMsg->has_getsupportedattkeyidsreq() == true)
+        request = new AEGetSupportedAttKeyIDsRequest(reqMsg->getsupportedattkeyidsreq());
 
     delete reqMsg;
     return request;

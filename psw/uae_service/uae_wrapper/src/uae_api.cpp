@@ -76,6 +76,12 @@
 #include <AESelectAttKeyIDRequest.h>
 #include <AESelectAttKeyIDResponse.h>
 
+#include <AEGetSupportedAttKeyIDNumRequest.h>
+#include <AEGetSupportedAttKeyIDNumResponse.h>
+
+#include <AEGetSupportedAttKeyIDsRequest.h>
+#include <AEGetSupportedAttKeyIDsResponse.h>
+
 ////////THE COMMON STUFF aka INTEGRATION with Linux API
 #include <sgx_report.h>
 #include <arch.h>
@@ -468,6 +474,55 @@ uae_oal_status_t SGXAPI oal_get_quote_ex(
         if (ret == UAE_OAL_SUCCESS)
         {
             bool valid = getQuoteExResponse.GetValues((uint32_t*)result, quote_size, (uint8_t*)p_quote, sizeof(sgx_qe_report_info_t), (uint8_t *)qe_report_info);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
+}
+
+extern "C"
+uae_oal_status_t oal_get_supported_att_key_id_num(
+        uint32_t *p_att_key_id_num,
+        uint32_t timeout_usec, aesm_error_t *result)
+{
+    TRY_CATCH_BAD_ALLOC({
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
+
+        AEGetSupportedAttKeyIDNumRequest getSupportedAttKeyIDNumRequest(timeout_usec / 1000);
+
+        AEGetSupportedAttKeyIDNumResponse getSupportedAttKeyIDNumResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&getSupportedAttKeyIDNumRequest, &getSupportedAttKeyIDNumResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = getSupportedAttKeyIDNumResponse.GetValues((uint32_t*)result, p_att_key_id_num);
+            if (!valid)
+                ret = UAE_OAL_ERROR_UNEXPECTED;
+        }
+        return ret;
+    });
+}
+
+extern "C"
+uae_oal_status_t oal_get_supported_att_key_ids(
+        sgx_att_key_id_ext_t *p_att_key_id_list,
+        uint32_t             att_key_id_list_size,
+        uint32_t timeout_usec, aesm_error_t *result)
+{
+    TRY_CATCH_BAD_ALLOC({
+        AEServices* servicesProvider = AEServicesProvider::GetServicesProvider();
+        if (servicesProvider == NULL)
+            return UAE_OAL_ERROR_UNEXPECTED;
+
+        AEGetSupportedAttKeyIDsRequest getSupportedAttKeyIDsRequest(att_key_id_list_size, timeout_usec / 1000);
+
+        AEGetSupportedAttKeyIDsResponse getSupportedAttKeyIDsResponse;
+        uae_oal_status_t ret = servicesProvider->InternalInterface(&getSupportedAttKeyIDsRequest, &getSupportedAttKeyIDsResponse, timeout_usec / 1000);
+        if (ret == UAE_OAL_SUCCESS)
+        {
+            bool valid = getSupportedAttKeyIDsResponse.GetValues((uint32_t*)result, att_key_id_list_size, (uint8_t*)p_att_key_id_list);
             if (!valid)
                 ret = UAE_OAL_ERROR_UNEXPECTED;
         }

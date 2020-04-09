@@ -120,6 +120,13 @@ message Request{
         optional    uint32  timeout         = 9;
     }
 
+    message GetSupportedAttKeyIDNumRequest{
+        optional    uint32  timeout         = 9;
+    }
+    message GetSupportedAttKeyIDsRequest{
+        required    uint32  buf_size        = 1;
+        optional    uint32  timeout         = 9;
+    }
     optional    InitQuoteRequest initQuoteReq                 = 1;
     optional    GetQuoteRequest getQuoteReq                   = 2;
     optional    GetLaunchTokenRequest getLicTokenReq          = 3;
@@ -134,6 +141,8 @@ message Request{
     optional    GetQuoteExRequest getQuoteExReq               = 17;
     optional    CheckUpdateStatusRequest checkUpdateStatusReq = 18;
     optional    SelectAttKeyIDRequest selectAttKeyIDReq       = 19;
+    optional    GetSupportedAttKeyIDNumRequest getSupportedAttKeyIDNumReq       = 21;
+    optional    GetSupportedAttKeyIDsRequest getSupportedAttKeyIDsReq       	= 22;
 }
 
 message Response{
@@ -212,6 +221,20 @@ message Response{
         optional    bytes  qe_report_info = 3;
     }
 
+    message UnsupportedRequestResponse
+    {
+        required uint32 errorCode = 1 [default = 1];
+    }
+
+    message GetSupportedAttKeyIDNumResponse{
+        required    uint32  errorCode      = 1 [default = 1];
+        optional    uint32  att_key_id_num = 2;
+    }
+	
+    message GetSupportedAttKeyIDsResponse{
+        required    uint32  errorCode      = 1 [default = 1];
+        optional    bytes   att_key_ids    = 2;
+    }
     optional    InitQuoteResponse initQuoteRes              = 1;
     optional    GetQuoteResponse getQuoteRes                = 2;
     optional    GetLaunchTokenResponse getLicTokenRes       = 3;
@@ -226,4 +249,7 @@ message Response{
     optional    GetQuoteExResponse getQuoteExRes            = 17;
     optional    CheckUpdateStatusResponse checkUpdateStatusRes = 18;
     optional    SelectAttKeyIDResponse selectAttKeyIDRes    = 19;
+    optional    UnsupportedRequestResponse unsupportedRequestResponse = 20;
+    optional    GetSupportedAttKeyIDNumResponse getSupportedAttKeyIDNumRes = 21;
+    optional    GetSupportedAttKeyIDsResponse getSupportedAttKeyIDsRes = 22;
 }

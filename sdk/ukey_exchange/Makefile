@@ -44,7 +44,7 @@ vpath %.cpp $(COMMON_DIR)/src
 
 vpath %.c $(TOP_DIR)/common/src
 
-KE_DEFINITIONS = -DAESM_ECDSA_BUNDLE
+KE_DEFINITIONS = 
 CXXFLAGS += -fPIC -fno-exceptions -fno-rtti $(KE_DEFINITIONS) $(INCLUDE)
 CFLAGS += -fPIC $(KE_DEFINITIONS) $(INCLUDE)
 

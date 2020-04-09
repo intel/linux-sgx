@@ -52,8 +52,8 @@ fi
 /usr/sbin/userdel aesmd 2> /dev/null || true
 /usr/sbin/groupdel aesmd 2> /dev/null || true
 
-# Remove sgx_prv for in-kernel driver
-if [ -c /dev/sgx/provision ]; then
+# Keep the group if the driver still exists
+if [ ! -c /dev/sgx/provision ]; then
     /usr/sbin/groupdel sgx_prv 2> /dev/null || true
 fi
 

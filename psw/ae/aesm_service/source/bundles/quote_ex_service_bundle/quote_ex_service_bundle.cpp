@@ -318,6 +318,38 @@ public:
         }
         return AESM_UNSUPPORTED_ATT_KEY_ID;
     }
+    aesm_error_t get_att_key_id_num(
+        uint32_t *att_key_id_num)
+    {
+        AESM_DBG_INFO("get_att_key_id_num");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        if (NULL == att_key_id_num)
+            return AESM_PARAMETER_ERROR;
+        *att_key_id_num = (uint32_t)available_key_ids.size();
+        return AESM_SUCCESS;
+    }
+    aesm_error_t get_att_key_id(
+        uint8_t *att_key_id,
+        uint32_t att_key_id_size)
+    {
+        AESM_DBG_INFO("get_att_key_id");
+        if (false == initialized)
+            return AESM_SERVICE_UNAVAILABLE;
+        if ((NULL == att_key_id)
+            || (0 == att_key_id_size))
+            return AESM_PARAMETER_ERROR;
+        auto num = available_key_ids.size();
+        if ((att_key_id_size / sizeof(sgx_att_key_id_ext_t)) < num)
+            return AESM_PARAMETER_ERROR;
+        sgx_att_key_id_ext_t *p = (sgx_att_key_id_ext_t *)att_key_id;
+        for (auto it : available_key_ids)
+        {
+            memcpy(p, &it.key_id, sizeof(it.key_id));
+            p++;
+        }
+        return AESM_SUCCESS;
+    }
 };
 
 class Activator : public BundleActivator

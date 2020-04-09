@@ -298,7 +298,7 @@ $(Seal_Enclave_Name): Seal/Seal_t.o $(Seal_Enclave_Cpp_Objects)
 	@echo "LINK =>  $@"
 
 $(Signed_Seal_Enclave_Name): $(Seal_Enclave_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key Seal/Seal_private.pem -enclave $(Seal_Enclave_Name) -out $@ -config $(Seal_Enclave_Config_File)
+	@$(SGX_ENCLAVE_SIGNER) sign -key Seal/Seal_private_test.pem -enclave $(Seal_Enclave_Name) -out $@ -config $(Seal_Enclave_Config_File)
 	@echo "SIGN =>  $@"
 
 ######## Enclave Objects ########
@@ -335,7 +335,7 @@ $(Signed_Enclave_Name): $(Encrypted_Enclave_Name)
 else
 $(Signed_Enclave_Name): $(Enclave_Name)
 endif
-	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave/Enclave_private.pem -enclave $< -out $@ -config $(Enclave_Config_File)
+	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave/Enclave_private_test.pem -enclave $< -out $@ -config $(Enclave_Config_File)
 	@echo "SIGN =>  $@"
 
 .PHONY: clean

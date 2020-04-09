@@ -36,9 +36,10 @@
 #include "sgx_trts.h"
 #include "internal/util.h"
 
-SGX_WEAK void SGXAPI operator delete[] (void* ptr, void* voidptr2)
+//This function is replaced by inline function in common/inc/stdc++/new to boost the performance
+/*SGX_WEAK void SGXAPI operator delete[] (void* ptr, void* voidptr2)
 {
     UNUSED(ptr);
     UNUSED(voidptr2);
     //doing nothing here
-}
+}*/

@@ -66,15 +66,14 @@ void get_cpu_features_ext(uint64_t *__intel_cpu_feature_indicator)
     bool is_intel = false;
     FeatureId curr_feature;
 
-	uint64_t cpu_feature_indicator = get_bit_from_feature_id(c_feature_generic_ia32);
+    uint64_t cpu_feature_indicator = get_bit_from_feature_id(c_feature_generic_ia32);
 
-	sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
-	if (cpuid0_eax == 0)
-	{
-		*__intel_cpu_feature_indicator = cpu_feature_indicator;
-		return;
-	}
-
+    sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
+    if (cpuid0_eax == 0)
+    {
+        *__intel_cpu_feature_indicator = cpu_feature_indicator;
+        return;
+    }
 
     is_intel = (cpuid0_ebx == CPU_GENU_VAL && cpuid0_edx == CPU_INEI_VAL &&
                 cpuid0_ecx == CPU_NTEL_VAL);

@@ -29,7 +29,29 @@
  *
  */
 
-void sgx_get_whitelist_size(){}
-void sgx_get_whitelist(){}
-void get_launch_token(){}
-void sgx_register_wl_cert_chain(){}
+#include <stdio.h>
+#include "sgx_error.h"
+
+sgx_status_t sgx_get_whitelist_size()
+{
+    printf("Please use the correct SGX launch library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_get_whitelist()
+{
+    printf("Please use the correct SGX launch library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t get_launch_token()
+{
+    printf("Please use the correct SGX launch library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}
+
+sgx_status_t sgx_register_wl_cert_chain()
+{
+    printf("Please use the correct SGX launch library from PSW package.\n");
+    return SGX_ERROR_UNEXPECTED;
+}

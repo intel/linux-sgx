@@ -45,7 +45,6 @@ endif
 ifeq ($(BUILD_REF_LE), 1)
      AESM_CONFIG += -DREF_LE=ON
 endif
-AESM_CONFIG += -DAESM_ECDSA_BUNDLE=ON
 
 ifeq ($(ARCH), x86)
 	SQLITECFLAGS += -m32

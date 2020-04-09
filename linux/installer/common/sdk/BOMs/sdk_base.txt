@@ -106,7 +106,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.cpp	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.cpp	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.edl	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.edl	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.lds	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.lds	0	main	STP
-<deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator_private.pem	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator_private.pem	0	main	STP
+<deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator_private_test.pem	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveMessageExchange.cpp	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveMessageExchange.cpp	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveMessageExchange.h	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveMessageExchange.h	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/Makefile	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/Makefile	0	main	STP
@@ -120,7 +120,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder.cpp	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder.cpp	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder.edl	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder.edl	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder.lds	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder.lds	0	main	STP
-<deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder_private.pem	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder_private.pem	0	main	STP
+<deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder_private_test.pem	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/EnclaveResponder_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/Makefile	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/Makefile	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/ReadMe.txt	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/ReadMe.txt	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveResponder/Utility_E2.cpp	<installdir>/package/SampleCode/LocalAttestation/EnclaveResponder/Utility_E2.cpp	0	main	STP
@@ -145,7 +145,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/PowerTransition/Enclave/Enclave.cpp	<installdir>/package/SampleCode/PowerTransition/Enclave/Enclave.cpp	0	main	STP
 <deliverydir>/SampleCode/PowerTransition/Enclave/Enclave.edl	<installdir>/package/SampleCode/PowerTransition/Enclave/Enclave.edl	0	main	STP
 <deliverydir>/SampleCode/PowerTransition/Enclave/Enclave.lds	<installdir>/package/SampleCode/PowerTransition/Enclave/Enclave.lds	0	main	STP
-<deliverydir>/SampleCode/PowerTransition/Enclave/Enclave_private.pem	<installdir>/package/SampleCode/PowerTransition/Enclave/Enclave_private.pem	0	main	STP
+<deliverydir>/SampleCode/PowerTransition/Enclave/Enclave_private_test.pem	<installdir>/package/SampleCode/PowerTransition/Enclave/Enclave_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/PowerTransition/Makefile	<installdir>/package/SampleCode/PowerTransition/Makefile	0	main	STP
 <deliverydir>/SampleCode/PowerTransition/.project	<installdir>/package/SampleCode/PowerTransition/.project	0	main	STP
 <deliverydir>/SampleCode/PowerTransition/README.txt	<installdir>/package/SampleCode/PowerTransition/README.txt	0	main	STP
@@ -157,7 +157,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/RemoteAttestation/isv_enclave/isv_enclave.cpp	<installdir>/package/SampleCode/RemoteAttestation/isv_enclave/isv_enclave.cpp	0	main	STP
 <deliverydir>/SampleCode/RemoteAttestation/isv_enclave/isv_enclave.edl	<installdir>/package/SampleCode/RemoteAttestation/isv_enclave/isv_enclave.edl	0	main	STP
 <deliverydir>/SampleCode/RemoteAttestation/isv_enclave/isv_enclave.lds	<installdir>/package/SampleCode/RemoteAttestation/isv_enclave/isv_enclave.lds	0	main	STP
-<deliverydir>/SampleCode/RemoteAttestation/isv_enclave/isv_enclave_private.pem	<installdir>/package/SampleCode/RemoteAttestation/isv_enclave/isv_enclave_private.pem	0	main	STP
+<deliverydir>/SampleCode/RemoteAttestation/isv_enclave/isv_enclave_private_test.pem	<installdir>/package/SampleCode/RemoteAttestation/isv_enclave/isv_enclave_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/RemoteAttestation/Makefile	<installdir>/package/SampleCode/RemoteAttestation/Makefile	0	main	STP
 <deliverydir>/SampleCode/RemoteAttestation/README.txt	<installdir>/package/SampleCode/RemoteAttestation/README.txt	0	main	STP
 <deliverydir>/SampleCode/RemoteAttestation/.project	<installdir>/package/SampleCode/RemoteAttestation/.project	0	main	STP
@@ -198,7 +198,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave.edl	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave.edl	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave.h	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave.h	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave.lds	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave.lds	0	main	STP
-<deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave_private.pem	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave_private.pem	0	main	STP
+<deliverydir>/SampleCode/SampleEnclave/Enclave/Enclave_private_test.pem	<installdir>/package/SampleCode/SampleEnclave/Enclave/Enclave_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/TrustedLibrary/Libc.cpp	<installdir>/package/SampleCode/SampleEnclave/Enclave/TrustedLibrary/Libc.cpp	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/TrustedLibrary/Libc.edl	<installdir>/package/SampleCode/SampleEnclave/Enclave/TrustedLibrary/Libc.edl	0	main	STP
 <deliverydir>/SampleCode/SampleEnclave/Enclave/TrustedLibrary/Libcxx.cpp	<installdir>/package/SampleCode/SampleEnclave/Enclave/TrustedLibrary/Libcxx.cpp	0	main	STP
@@ -231,7 +231,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/SampleEnclavePCL/Enclave/Enclave.edl	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/Enclave.edl	0	main	STP
 <deliverydir>/SampleCode/SampleEnclavePCL/Enclave/Enclave.h	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/Enclave.h	0	main	STP
 <deliverydir>/SampleCode/SampleEnclavePCL/Enclave/Enclave.lds	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/Enclave.lds	0	main	STP
-<deliverydir>/SampleCode/SampleEnclavePCL/Enclave/Enclave_private.pem	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/Enclave_private.pem	0	main	STP
+<deliverydir>/SampleCode/SampleEnclavePCL/Enclave/Enclave_private_test.pem	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/Enclave_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/SampleEnclavePCL/Enclave/TrustedLibrary/Libc.cpp	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/TrustedLibrary/Libc.cpp	0	main	STP
 <deliverydir>/SampleCode/SampleEnclavePCL/Enclave/TrustedLibrary/Libc.edl	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/TrustedLibrary/Libc.edl	0	main	STP
 <deliverydir>/SampleCode/SampleEnclavePCL/Enclave/TrustedLibrary/Libcxx.cpp	<installdir>/package/SampleCode/SampleEnclavePCL/Enclave/TrustedLibrary/Libcxx.cpp	0	main	STP
@@ -246,7 +246,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/SampleEnclavePCL/Seal/Seal.cpp	<installdir>/package/SampleCode/SampleEnclavePCL/Seal/Seal.cpp	0	main	STP
 <deliverydir>/SampleCode/SampleEnclavePCL/Seal/Seal.edl	<installdir>/package/SampleCode/SampleEnclavePCL/Seal/Seal.edl	0	main	STP
 <deliverydir>/SampleCode/SampleEnclavePCL/Seal/Seal.lds	<installdir>/package/SampleCode/SampleEnclavePCL/Seal/Seal.lds	0	main	STP
-<deliverydir>/SampleCode/SampleEnclavePCL/Seal/Seal_private.pem	<installdir>/package/SampleCode/SampleEnclavePCL/Seal/Seal_private.pem	0	main	STP
+<deliverydir>/SampleCode/SampleEnclavePCL/Seal/Seal_private_test.pem	<installdir>/package/SampleCode/SampleEnclavePCL/Seal/Seal_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/App/App.cpp	<installdir>/package/SampleCode/Cxx11SGXDemo/App/App.cpp	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/App/App.h	<installdir>/package/SampleCode/Cxx11SGXDemo/App/App.h	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/App/TrustedLibrary/Libcxx.cpp	<installdir>/package/SampleCode/Cxx11SGXDemo/App/TrustedLibrary/Libcxx.cpp	0	main	STP
@@ -256,7 +256,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/Cxx11SGXDemo/Enclave/Enclave.h	<installdir>/package/SampleCode/Cxx11SGXDemo/Enclave/Enclave.h	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/Enclave/Enclave_debug.lds	<installdir>/package/SampleCode/Cxx11SGXDemo/Enclave/Enclave_debug.lds	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/Enclave/Enclave.lds	<installdir>/package/SampleCode/Cxx11SGXDemo/Enclave/Enclave.lds	0	main	STP
-<deliverydir>/SampleCode/Cxx11SGXDemo/Enclave/Enclave_private.pem	<installdir>/package/SampleCode/Cxx11SGXDemo/Enclave/Enclave_private.pem	0	main	STP
+<deliverydir>/SampleCode/Cxx11SGXDemo/Enclave/Enclave_private_test.pem	<installdir>/package/SampleCode/Cxx11SGXDemo/Enclave/Enclave_private_test.pem	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/Enclave/TrustedLibrary/Libcxx.cpp	<installdir>/package/SampleCode/Cxx11SGXDemo/Enclave/TrustedLibrary/Libcxx.cpp	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/Enclave/TrustedLibrary/Libcxx.edl	<installdir>/package/SampleCode/Cxx11SGXDemo/Enclave/TrustedLibrary/Libcxx.edl	0	main	STP
 <deliverydir>/SampleCode/Cxx11SGXDemo/Makefile	<installdir>/package/SampleCode/Cxx11SGXDemo/Makefile	0	main	STP
@@ -273,7 +273,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/Switchless/Enclave/Enclave.edl	<installdir>/package/SampleCode/Switchless/Enclave/Enclave.edl	0	N/A	N/A
 <deliverydir>/SampleCode/Switchless/Enclave/Enclave.lds	<installdir>/package/SampleCode/Switchless/Enclave/Enclave.lds	0	N/A	N/A
 <deliverydir>/SampleCode/Switchless/Enclave/Enclave.config.xml	<installdir>/package/SampleCode/Switchless/Enclave/Enclave.config.xml	0	N/A	N/A
-<deliverydir>/SampleCode/Switchless/Enclave/Enclave_private.pem	<installdir>/package/SampleCode/Switchless/Enclave/Enclave_private.pem	0	N/A	N/A
+<deliverydir>/SampleCode/Switchless/Enclave/Enclave_private_test.pem	<installdir>/package/SampleCode/Switchless/Enclave/Enclave_private_test.pem	0	N/A	N/A
 <deliverydir>/SampleCode/SampleCommonLoader/Makefile	<installdir>/package/SampleCode/SampleCommonLoader/Makefile	0	N/A	N/A
 <deliverydir>/SampleCode/SampleCommonLoader/README.txt	<installdir>/package/SampleCode/SampleCommonLoader/README.txt	0	N/A	N/A
 <deliverydir>/SampleCode/SampleCommonLoader/App/enclave_entry.S	<installdir>/package/SampleCode/SampleCommonLoader/App/enclave_entry.S	0	N/A	N/A
@@ -287,7 +287,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/SealUnseal/App/App.cpp	<installdir>/package/SampleCode/SealUnseal/App/App.cpp	0	N/A	N/A
 <deliverydir>/SampleCode/SealUnseal/App/ErrorSupport.cpp	<installdir>/package/SampleCode/SealUnseal/App/ErrorSupport.cpp	0	N/A	N/A
 <deliverydir>/SampleCode/SealUnseal/App/ErrorSupport.h	<installdir>/package/SampleCode/SealUnseal/App/ErrorSupport.h	0	N/A	N/A
-<deliverydir>/SampleCode/SealUnseal/Enclave_Seal/Enclave_private.pem	<installdir>/package/SampleCode/SealUnseal/Enclave_Seal/Enclave_private.pem	0	N/A	N/A
+<deliverydir>/SampleCode/SealUnseal/Enclave_Seal/Enclave_private_test.pem	<installdir>/package/SampleCode/SealUnseal/Enclave_Seal/Enclave_private_test.pem	0	N/A	N/A
 <deliverydir>/SampleCode/SealUnseal/Enclave_Seal/Enclave_Seal.config.xml	<installdir>/package/SampleCode/SealUnseal/Enclave_Seal/Enclave_Seal.config.xml	0	N/A	N/A
 <deliverydir>/SampleCode/SealUnseal/Enclave_Seal/Enclave_Seal.cpp	<installdir>/package/SampleCode/SealUnseal/Enclave_Seal/Enclave_Seal.cpp	0	N/A	N/A
 <deliverydir>/SampleCode/SealUnseal/Enclave_Seal/Enclave_Seal.edl	<installdir>/package/SampleCode/SealUnseal/Enclave_Seal/Enclave_Seal.edl	0	N/A	N/A

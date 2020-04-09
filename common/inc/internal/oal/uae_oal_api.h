@@ -144,6 +144,14 @@ uae_oal_status_t oal_get_quote_ex(
                 uint32_t timeout_usec,
                 aesm_error_t *result);
 
+uae_oal_status_t oal_get_supported_att_key_id_num(
+    uint32_t *p_att_key_id_num,
+    uint32_t timeout_usec, aesm_error_t *result);
+
+uae_oal_status_t oal_get_supported_att_key_ids(
+    sgx_att_key_id_ext_t *p_att_key_id_list,
+    uint32_t att_key_id_list_size,
+    uint32_t timeout_usec, aesm_error_t *result);
 
 sgx_status_t    oal_map_status(uae_oal_status_t status);
 sgx_status_t    oal_map_result(aesm_error_t result);
