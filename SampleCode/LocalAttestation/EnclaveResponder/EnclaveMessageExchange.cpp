@@ -88,7 +88,7 @@ extern "C" ATTESTATION_STATUS session_request(sgx_dh_msg1_t *dh_msg1,
     {
         return status;
     }
-    
+
     //get a new SessionID
     if ((status = (sgx_status_t)generate_session_id(session_id)) != SUCCESS)
         return status; //no more sessions available
@@ -114,7 +114,7 @@ extern "C" ATTESTATION_STATUS session_request(sgx_dh_msg1_t *dh_msg1,
     memcpy(&session_info.in_progress.dh_session, &sgx_dh_session, sizeof(sgx_dh_session_t));
     //Store the session information under the correspoding source enlave id key
     g_dest_session_info_map.insert(std::pair<uint32_t, dh_session_t>(*session_id, session_info));
-    
+
     return status;
 }
 
@@ -160,10 +160,10 @@ extern "C" ATTESTATION_STATUS exchange_report(sgx_dh_msg2_t *dh_msg2,
 
         dh_msg3->msg3_body.additional_prop_length = 0;
         //Process message 2 from source enclave and obtain message 3
-        sgx_status_t se_ret = sgx_dh_responder_proc_msg2(dh_msg2, 
-                                                       dh_msg3, 
-                                                       &sgx_dh_session, 
-                                                       &dh_aek, 
+        sgx_status_t se_ret = sgx_dh_responder_proc_msg2(dh_msg2,
+                                                       dh_msg3,
+                                                       &sgx_dh_session,
+                                                       &dh_aek,
                                                        &initiator_identity);
         if(SGX_SUCCESS != se_ret)
         {
@@ -263,10 +263,10 @@ extern "C" ATTESTATION_STATUS generate_response(secure_message_t* req_message,
     memset(decrypted_data, 0, decrypted_data_length);
 
     //Decrypt the request message payload from source enclave
-    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, req_message->message_aes_gcm_data.payload, 
+    status = sgx_rijndael128GCM_decrypt(&session_info->active.AEK, req_message->message_aes_gcm_data.payload,
                 decrypted_data_length, decrypted_data,
                 reinterpret_cast<uint8_t *>(&(req_message->message_aes_gcm_data.reserved)),
-                sizeof(req_message->message_aes_gcm_data.reserved), &(req_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length, 
+                sizeof(req_message->message_aes_gcm_data.reserved), &(req_message->message_aes_gcm_data.payload[plain_text_offset]), plaintext_length,
                 &req_message->message_aes_gcm_data.payload_tag);
 
     if(SGX_SUCCESS != status)
@@ -279,7 +279,7 @@ extern "C" ATTESTATION_STATUS generate_response(secure_message_t* req_message,
     ms = (ms_in_msg_exchange_t *)decrypted_data;
 
     // Verify if the nonce obtained in the request is equal to the session nonce
-    if((uint32_t)*(req_message->message_aes_gcm_data.reserved) != session_info->active.counter || *(req_message->message_aes_gcm_data.reserved) > ((2^32)-2))
+    if(*((uint32_t*)req_message->message_aes_gcm_data.reserved) != session_info->active.counter || *((uint32_t*)req_message->message_aes_gcm_data.reserved) > ((uint32_t)-2))
     {
         SAFE_FREE(decrypted_data);
         return INVALID_PARAMETER_ERROR;
@@ -301,7 +301,7 @@ extern "C" ATTESTATION_STATUS generate_response(secure_message_t* req_message,
         SAFE_FREE(decrypted_data);
         return INVALID_REQUEST_TYPE_ERROR;
     }
-    
+
 
     if(resp_data_length > max_payload_size)
     {
@@ -343,7 +343,7 @@ extern "C" ATTESTATION_STATUS generate_response(secure_message_t* req_message,
     status = sgx_rijndael128GCM_encrypt(&session_info->active.AEK, (uint8_t*)resp_data, data2encrypt_length,
                 reinterpret_cast<uint8_t *>(&(temp_resp_message->message_aes_gcm_data.payload)),
                 reinterpret_cast<uint8_t *>(&(temp_resp_message->message_aes_gcm_data.reserved)),
-                sizeof(temp_resp_message->message_aes_gcm_data.reserved), plaintext, plaintext_length, 
+                sizeof(temp_resp_message->message_aes_gcm_data.reserved), plaintext, plaintext_length,
                 &(temp_resp_message->message_aes_gcm_data.payload_tag));
 
     if(SGX_SUCCESS != status)
