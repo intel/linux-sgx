@@ -389,7 +389,7 @@ extern "C" void* COMM_API enclave_create(
         hdevice_temp = s_hdevice;
     }
     
-    void* enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED, hdevice_temp, 0);
+    void* enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (enclave_base == MAP_FAILED) {
         SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
         if (enclave_error != NULL)
@@ -565,11 +565,11 @@ extern "C" size_t COMM_API enclave_load_data(
         
     if (sec_info.flags & ENCLAVE_PAGE_UNVALIDATED)
         sec_info.flags ^= ENCLAVE_PAGE_UNVALIDATED;
-
+    int hfile = -1;
     size_t pages = target_size / SE_PAGE_SIZE;
     if (s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        int hfile = get_file_handle_from_address(target_address);
+        hfile = get_file_handle_from_address(target_address);
 
         //todo - may need to check EADD parameters for better error reporting since the driver 
         //  may not do this (the driver will just take a fault on EADD)
@@ -699,8 +699,15 @@ extern "C" size_t COMM_API enclave_load_data(
     void* next_page = (void*)((uint64_t)enclave_mem_region->addr + (uint64_t)enclave_mem_region->len);
     if ((enclave_mem_region->prot != prot) || (target_address != next_page)) {
         if (enclave_mem_region->addr != 0) {
-            //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect the range stored in memory region structure
-            int ret = mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
+            //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
+            int ret = 0;
+            if (hfile != -1) {
+                if (MAP_FAILED == mmap(enclave_mem_region->addr, enclave_mem_region->len,
+                    enclave_mem_region->prot, MAP_SHARED | MAP_FIXED, hfile, 0))
+                    ret=-1;
+            }
+            else
+                ret = mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
             if (0 != ret) {
                 if (enclave_error != NULL)
                     *enclave_error = ENCLAVE_UNEXPECTED;
@@ -742,6 +749,18 @@ extern "C" bool COMM_API enclave_initialize(
             *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return false;
     }
+    int hfile = -1;
+    if (s_driver_type == SGX_DRIVER_IN_KERNEL)
+    {
+        hfile = get_file_handle_from_address(base_address);
+        if (hfile == -1)
+        {
+            SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_INIT failed - %p is not a valid enclave \n", base_address);
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_INVALID_ADDRESS;
+            return false;
+        }
+    }
 
     const enclave_init_sgx_t* enclave_init_sgx = (const enclave_init_sgx_t*)info;
     if (info_size == 0 || sizeof(*enclave_init_sgx) != info_size) {
@@ -755,8 +774,15 @@ extern "C" bool COMM_API enclave_initialize(
     auto enclave_mem_region = &s_enclave_mem_region[base_address];
     se_mutex_unlock(&s_enclave_mutex);
     if (enclave_mem_region->addr != 0) {
-        //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect the range stored in memory region structure
-        if (0 != mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot)) {
+       //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
+       int ret = 0;
+       if (hfile != -1) {
+           if (MAP_FAILED == mmap(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot, MAP_SHARED | MAP_FIXED, hfile, 0))
+               ret=-1;
+       }
+       else
+           ret= mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
+       if (0 != ret) {
             if (enclave_error != NULL)
                 *enclave_error = ENCLAVE_UNEXPECTED;
             return 0;
@@ -818,15 +844,6 @@ extern "C" bool COMM_API enclave_initialize(
     }
     else
     {
-        int hfile = get_file_handle_from_address(base_address);
-        if (hfile == -1)
-        {
-            SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_INIT failed - %p is not a valid enclave \n", base_address);
-            if (enclave_error != NULL)
-                *enclave_error = ENCLAVE_INVALID_ADDRESS;
-            return false;
-        }
-
         //in-kernel driver does not need a launch token or the enclave address
         struct sgx_enclave_init_in_kernel initp = { 0 };
         initp.sigstruct = POINTER_TO_U64(enclave_init_sgx->sigstruct);
