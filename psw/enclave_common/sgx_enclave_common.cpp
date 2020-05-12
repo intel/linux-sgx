@@ -338,6 +338,7 @@ extern "C" void* COMM_API enclave_create(
     UNUSED(initial_commit);
     int hdevice_temp = -1;
     size_t enclave_size = virtual_size;
+    void* enclave_base = NULL;
 
     if ((type != ENCLAVE_TYPE_SGX1 && type != ENCLAVE_TYPE_SGX2) || info == NULL) {
         if (enclave_error != NULL)
@@ -389,7 +390,15 @@ extern "C" void* COMM_API enclave_create(
         hdevice_temp = s_hdevice;
     }
     
-    void* enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if(s_driver_type == SGX_DRIVER_IN_KERNEL)
+    {
+        enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+    }
+    else 
+    {
+        enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED, hdevice_temp, 0);
+    }
+    
     if (enclave_base == MAP_FAILED) {
         SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
         if (enclave_error != NULL)
