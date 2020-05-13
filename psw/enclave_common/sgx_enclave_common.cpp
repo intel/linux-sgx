@@ -392,7 +392,7 @@ extern "C" void* COMM_API enclave_create(
     
     if(s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+        enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     }
     else 
     {
