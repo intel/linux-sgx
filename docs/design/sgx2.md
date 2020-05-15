@@ -31,6 +31,7 @@ compliment SGX hardware
 **PSW**: Platform Software
 
 **SDM**: Intel Software Developer Manual, refer to the latest in this context.
+
 **SECS**: Secure Enclave Control structure
 
 **TCS**: Thread control structure
@@ -45,7 +46,7 @@ Attributes, each of which is described in a dedicated subsection. As we are prop
 
 ## <span id="anchor-59"></span>Dynamic Page Allocation/Deallocation
 
-EDMM introduces an instruction – EAUG to add EPC pages to an existing
+EDMM introduces an instruction, EAUG to add EPC pages to an existing
 enclave after EINIT. All pages added by EAUG are required to be accepted
 by the enclave explicitly using EACCEPT as a security measure. More
 details are available in the SDM.
@@ -62,7 +63,7 @@ same virtual address again. More details are available in the SDM.
 It is a better use of EPC pages to expand/shrink heap/stacks dynamically
 at runtime, than to prepopulate the whole heap/stacks at enclave load
 time. SGX has introduced 2 EDMM instructions for allocating EPC pages
-for an enclave at runtime – EAUG and EACCEPT. EAUG is a privileged
+for an enclave at runtime, EAUG and EACCEPT. EAUG is a privileged
 instruction for adding an EPC page to an initialized enclave, while
 EACCEPT is an enclave instruction for an enclave to accept a newly added
 page. It is provided as a facility to enable an enclave to disallow 2 or
@@ -70,8 +71,7 @@ more different EPC pages to be mapped at the same linear address, in
 order to prevent the replay attack that 2 versions of the same page are
 kept in 2 physical EPC pages and allowed to be switched back and forth
 by an adversary. \#PF will result from accesses to EAUG’ed but not
-EACCEPT’ed pages. See the SDM for more information on attacks as well as
-SGX facilities to defeat them.
+EACCEPT’ed pages.
 
 Because of the EAUG/EACCEPT protocol, dynamic page allocation is a
 collaborative task between the requesting enclave and privileged
@@ -99,8 +99,7 @@ As discussed earlier, no more than 1 (one) EPC page is allowed at any
 given linear address within ELRANGE as a security measurement. SGX has
 provided a facility to make sure any EPC page can be mapped at its
 “desired address” only (i.e. an EPC page can only be mapped to the
-linear address specified in its EPCM entry, see SDM for more
-details), but it remains as a responsibility of the enclave to make sure
+linear address specified in its EPCM entry), but it remains as a responsibility of the enclave to make sure
 no 2 EPC pages would have the same “desired address”. In general, an
 enclave shall be able to distinguish populated addresses versus
 unpopulated ones and issue EACCEPTs on unpopulated addresses only.
@@ -130,22 +129,13 @@ by the 1<sup>st</sup> EACCEPT) and allow the rest of EACCEPTs to succeed
 right away. That leads to “Dynamic Regions” as described in the
 following section.
 
-**NOTE:** Privileged software is required to understand the enclave
-memory layout (expressed in the form of “Dynamic Region”) to some
-extent, which however doesn’t constitute dependencies between the tRTS
-and the privileged software. In other words, privileged software assumes
-an enclave to request memory in a “certain” way (as conveyed via
-“Dynamic Regions”), which if not followed by an enclave, would lead to
-subpar performance or crash of the enclave, but otherwise wouldn’t break
-the privileged software anyhow.
-
 #### Dynamic Regions
 
-**Note:** This part is not yet implemented.
+**Note:** This part is not yet implemented, although page fault based allocation is implemened in current OOT driver. The dynamic region is proposed here as concept to optimize performance. The exact form and shape of its implementation may be impacted by SGX patches for mainline kernel. One possible alternative is reusing or mimicing mmap interface to define dynamic-region-like structure to track dynamic enclave memory allocation.
  
-The idea of an ideal page allocation protocol/flow is depicted in
+An ideal page allocation protocol/flow is depicted in
 [the figure \#PF Based Page Allocation](#anchor-69) below. In the
-process of allocating *n* pages, the 1<sup>st</sup> EACCEPT (i.e.
+process of allocating *n* pages, the 1st EACCEPT (i.e.
 EACCEPT<sub>0</sub>) triggers a \#PF, privileged software responses by
 EAUG’ing all *n* pages, then the enclave is resumed and the whole
 sequence of EACCEPTs succeed right away.
@@ -191,9 +181,7 @@ enclave may redefine the list of regions if deemed necessary. See TBD
 for tRTS APIs to redefine dynamic regions at runtime.
 
 **NOTE: **Page attributes are NOT specified in region definitions for
-now because RW is the only page attribute used by SGX SDK. Given that
-EACCEPT may be able to change page attributes directly in future, page
-attributes may never need to be known by privileged software.
+now because RW is the only page attribute used by SGX SDK.
 
 *start\_addr* data member defines the start address of the region. Bits
 0-11 should be all zeroes since value should be page aligned.
@@ -326,7 +314,7 @@ enclave to accept a new page at the same linear address again at a later
 time.
 
 Given that privileged software will never know which pages aren’t needed
-anymore by any enclaves, the page deallocation flow must be initiated by
+anymore by any "live" enclaves, the page deallocation flow must be initiated by
 the owner enclave and done with following sequences.
 
 1.  Enclave determines the range of pages to free (deallocate), and makes an
@@ -346,8 +334,7 @@ of page removal flow.
 
 ### <span id="anchor-80"></span>Compatibility with Older SGX Architectures
 
-Dynamic Page Allocation/Deallocation is a system-friendly feature
-because it makes more efficient use of EPC pages. It is desirable to
+Dynamic Page Allocation/Deallocation makes more efficient use of EPC pages. However, it is desirable to
 allow an enclave to take advantage of EDMM if available while still
 being compatible with older SGX architectures, and ideally with the same
 MR\_ENCLAVE (and hence, the enclave signature).
@@ -563,7 +550,7 @@ could happen.
 <td>**How to Handle**</td>
 </tr>
 <tr class="even">
-<td>PA not in EPC, ENCLAVE SECS mismatche or LA mismatched</td>
+<td>PA not in EPC, ENCLAVE SECS mismatche or LA mismatch</td>
 <td>No valid scenarios in current SGX architecture.</td>
 <td><p>Considered software bugs. Notify/Kill application. Check for bugs in the privileged software.</p></td>
 </tr>
@@ -758,6 +745,8 @@ SGX requires privileged software to collaborate in managing EPC pages.
 SGX driver is provided as part of SGX runtime to support enclaves on
 non-SGX-aware operating systems. This section describes in detail the
 interface exposed by SGX driver on Linux to support EDMM usages.
+
+**Note:** The dynamic region is not yet implemented in current SGX OOT driver. It simply EAUGs one page on \#PF caused by read access, or inject SIGBUS for \#PF caused by write access. 
 
 ## <span id="anchor-137"></span>Dynamic Regions and \#PF Handling
 
@@ -1560,7 +1549,7 @@ void *sbrk(intptr_t n) {
 
 ```
 Privileged software must know the heap range before the pseudo-code
-above could work. A heap range is a dynamic region with a negative
+above could work in optimal way. A heap range is a dynamic region with a negative
 *granularity *(A grow up region where new pages are typically populated
 from the lower bound of the region). The uRTS is responsible for setting
 up all the dynamic regions for an enclave, typically right after EINIT
