@@ -746,7 +746,7 @@ SGX driver is provided as part of SGX runtime to support enclaves on
 non-SGX-aware operating systems. This section describes in detail the
 interface exposed by SGX driver on Linux to support EDMM usages.
 
-**Note:** The dynamic region is not yet implemented in current SGX OOT driver. It simply EAUGs one page on \#PF caused by read access, or inject SIGBUS for \#PF caused by write access. 
+**Note:** The dynamic region is not yet implemented in current SGX OOT driver. It simply EAUGs one page on \#PF and inject SIGBUS if \#PF caused by write access. The latter case is for user space to do [stack expansion](#anchor-267).
 
 ## <span id="anchor-137"></span>Dynamic Regions and \#PF Handling
 
