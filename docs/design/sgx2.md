@@ -1960,9 +1960,6 @@ thread context being destroyed is inactive before freeing any
 components, which could be easily done by always “trimming” the TCS page
 first.
 
-When to destroy thread contexts is still an
-open.
-
 ## <span id="anchor-318"></span>Dynamic Page Permissions
 
 |![Dynamic Permissions](images/image43.svg)|
