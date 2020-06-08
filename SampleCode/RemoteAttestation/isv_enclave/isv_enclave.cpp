@@ -43,7 +43,7 @@
 // attestation secure channel binding. The public EC key should be hardcoded in
 // the enclave or delivered in a trustworthy manner. The use of a spoofed public
 // EC key in the remote attestation with secure channel binding session may lead
-// to a security compromise. Every different SP the enlcave communicates to
+// to a security compromise. Every different SP the enclave communicates to
 // must have a unique SP public key. Delivery of the SP public key is
 // determined by the ISV. The TKE SIGMA protocl expects an Elliptical Curve key
 // based on NIST P-256

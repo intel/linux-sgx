@@ -287,7 +287,7 @@ int main(int argc, char* argv[])
             }
             fprintf(OUTPUT, "\nCall sgx_select_att_key_id success.");
         }
-        // Remote attestation will be initiated the ISV server challenges the ISV
+        // Remote attestation will be initiated if the ISV server challenges the ISV
         // app or if the ISV app detects it doesn't have the credentials
         // (shared secret) from a previous attestation required for secure
         // communication with the server.
@@ -741,4 +741,3 @@ int main(int argc, char* argv[])
     getchar();
     return ret;
 }
-
