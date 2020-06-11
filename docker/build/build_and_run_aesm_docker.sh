@@ -41,7 +41,7 @@ docker build --target aesm --build-arg https_proxy=$https_proxy \
 mkdir -p -m 777 /tmp/aesmd
 chmod -R -f 777 /tmp/aesmd || sudo chmod -R -f 777 /tmp/aesmd || true
 
-# If you use the DCAP driver, replace /dev/isgx with /dev/sgx/enclave, and add
+# If you use the Legacy Launch Control driver, replace /dev/sgx/enclave with /dev/isgx, and remove
 # --device=/dev/sgx/provision
 
-docker run --env http_proxy --env https_proxy --device=/dev/isgx -v /dev/log:/dev/log -v /tmp/aesmd:/var/run/aesmd -it sgx_aesm
+docker run --env http_proxy --env https_proxy --device=/dev/sgx --device=/dev/sgx/provision -v /dev/log:/dev/log -v /tmp/aesmd:/var/run/aesmd -it sgx_aesm
