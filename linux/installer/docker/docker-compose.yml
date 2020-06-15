@@ -27,8 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# If you use the DCAP driver, replace /dev/isgx with /dev/sgx/enclave for both
-# sample and aesm, and add /dev/sgx/provision in "devices" list for aesm
+# If you use the Legacy Launch Control driver, replace /dev/sgx/enclave with /dev/isgx for both
+# sample and aesm, and remove /dev/sgx/provision in "devices" list for aesm
 #
 version: '3'
 
@@ -36,7 +36,8 @@ services:
   aesm:
     image: sgx_aesm
     devices:
-      - /dev/isgx
+      - /dev/sgx/enclave
+      - /dev/sgx/provision
     volumes:
       - /tmp/aesmd:/var/run/aesmd
     stdin_open: true
@@ -50,7 +51,7 @@ services:
     depends_on:
       - aesm
     devices:
-      - /dev/isgx
+      - /dev/sgx/enclave
     volumes:
       - /tmp/aesmd:/var/run/aesmd
     stdin_open: true
