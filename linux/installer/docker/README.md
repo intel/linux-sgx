@@ -46,7 +46,7 @@ The sample scripts and Compose files are compatible with the Flexible Launch Con
 1. Replace "/dev/sgx/enclave" device with "/dev/isgx" and **remove** "/dev/sgx/provision" device for AESM in docker-compose.yml and build_and_run_aesm_docker.sh
 2. Replace "/dev/sgx/enclave" with "/dev/isgx" for the sample container in docker-compose.yml and build_and_run_sample_docker.sh
 
-**Note**: When you switch between drivers, make sure you uninstall the previous driver and reset the OS before installing the other one.
+**Note**: When you switch between drivers, make sure you uninstall the previous driver and reboot the system before installing the other one.
 
 **Note**: Earlier versions of the Flexible Launch Control driver and kernel patches may expose the SGX device as a single node at "/dev/sgx".
 
