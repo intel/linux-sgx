@@ -44,4 +44,4 @@ chmod -R -f 777 /tmp/aesmd || sudo chmod -R -f 777 /tmp/aesmd || true
 # If you use the Legacy Launch Control driver, replace /dev/sgx/enclave with /dev/isgx, and remove
 # --device=/dev/sgx/provision
 
-docker run --env http_proxy --env https_proxy --device=/dev/sgx --device=/dev/sgx/provision -v /dev/log:/dev/log -v /tmp/aesmd:/var/run/aesmd -it sgx_aesm
+docker run --env http_proxy --env https_proxy --device=/dev/sgx/enclave --device=/dev/sgx/provision -v /dev/log:/dev/log -v /tmp/aesmd:/var/run/aesmd -it sgx_aesm
