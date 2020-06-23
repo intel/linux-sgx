@@ -74,7 +74,7 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
 
     int status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
     //free the tcs used by initialization;
-    enclave->get_thread_pool()->reset();
+    if(enclave->get_thread_pool()) enclave->get_thread_pool()->reset();
 
     //Enclave initialization may fail caused by power transition.
     //The upper layer code will re-create enclave based on SGX_ERROR_ENCLAVE_LOST.
