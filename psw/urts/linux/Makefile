@@ -59,7 +59,7 @@ INTERNAL_LDFLAGS := -lwrapper
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,-Bdynamic -L$(BUILD_DIR) -lsgx_enclave_common -lpthread
 INTERNAL_LDFLAGS += $(COMMON_LDFLAGS) -lpthread
 LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
-INTERNAL_LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
+INTERNAL_LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -lsgx_launch
 LDFLAGS += -Wl,--version-script=urts.lds -Wl,--gc-sections
 INTERNAL_LDFLAGS += -Wl,--version-script=urts_internal.lds -Wl,--gc-sections
 
@@ -70,7 +70,8 @@ DIR4 := $(LINUX_PSW_DIR)/urts/parser/linux
 DIR5 := $(LINUX_PSW_DIR)/../common/src/linux
 
 LIB += -L$(COMMON_DIR)/se_wrapper_psw \
-       -L$(SGX_LIB_DIR)
+       -L$(SGX_LIB_DIR) \
+       -L$(LINUX_PSW_DIR)/uae_service/linux
 
 OBJ1 := loader.o          \
         node.o            \

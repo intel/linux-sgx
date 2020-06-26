@@ -51,13 +51,13 @@ INC += -I$(SGX_HEADER_DIR)                \
        -I$(LINUX_PSW_DIR)/urts/linux      \
        -I$(LINUX_PSW_DIR)/enclave_common
 
-LDFLAGS := -lwrapper -ldl
+LDFLAGS := -lwrapper -lsgx_launch
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script=sgx_enclave_common.lds -Wl,--gc-sections
 
 DIR1 := $(LINUX_PSW_DIR)/enclave_common
 DIR2 := $(LINUX_PSW_DIR)/urts/linux
 
-LIB += -L$(COMMON_DIR)/se_wrapper_psw
+LIB += -L$(COMMON_DIR)/se_wrapper_psw -L$(LINUX_PSW_DIR)/uae_service/linux
 
 OBJ := sgx_enclave_common.o edmm_utility.o
 

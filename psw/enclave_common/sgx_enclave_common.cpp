@@ -48,14 +48,6 @@
 
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
 
-#define SGX_LAUNCH_SO "libsgx_launch.so.1"
-#define SGX_GET_LAUNCH_TOKEN "get_launch_token"
-
-func_get_launch_token_t get_launch_token_func = NULL;
-
-static void* s_hdlopen = NULL;
-static se_mutex_t s_dlopen_mutex;
-
 static se_mutex_t s_device_mutex;
 static se_mutex_t s_enclave_mutex;
 
@@ -176,54 +168,16 @@ extern "C" void* get_enclave_base_address_from_address(void* target_address)
 
 }
 
-static func_get_launch_token_t get_launch_token_function(void)
-{
-    if (get_launch_token_func == NULL) {
-        se_mutex_lock(&s_dlopen_mutex);
-        if (get_launch_token_func != NULL)
-        {
-            se_mutex_unlock(&s_dlopen_mutex);
-            return get_launch_token_func;
-        }
-
-        if (s_hdlopen == NULL) {
-            s_hdlopen = dlopen(SGX_LAUNCH_SO, RTLD_LAZY);
-            if (s_hdlopen == NULL) {
-                se_mutex_unlock(&s_dlopen_mutex);
-                return NULL;
-            }
-        }
-
-        get_launch_token_func = (func_get_launch_token_t)dlsym(s_hdlopen, SGX_GET_LAUNCH_TOKEN);
-        se_mutex_unlock(&s_dlopen_mutex);
-    }
-
-    return get_launch_token_func;
-}
-
-static void close_sofile(void)
-{
-    se_mutex_lock(&s_dlopen_mutex);
-    if (s_hdlopen != NULL) {
-        dlclose(s_hdlopen);
-        s_hdlopen = NULL;
-    }
-    se_mutex_unlock(&s_dlopen_mutex);
-}
-
 static void __attribute__((constructor)) enclave_init(void)
 {
     se_mutex_init(&s_device_mutex);
-    se_mutex_init(&s_dlopen_mutex);
     se_mutex_init(&s_enclave_mutex);
 }
 
 static void __attribute__((destructor)) enclave_fini(void)
 {
     close_device();
-    close_sofile();
     se_mutex_destroy(&s_device_mutex);
-    se_mutex_destroy(&s_dlopen_mutex);
     se_mutex_destroy(&s_enclave_mutex);
 }
 
@@ -819,15 +773,7 @@ extern "C" bool COMM_API enclave_initialize(
 
         enclave_css_t* enclave_css = (enclave_css_t*)enclave_init_sgx->sigstruct;
         if (0 == enclave_css->header.hw_version) {
-            func_get_launch_token_t func = get_launch_token_function();
-            if (func == NULL) {
-                SE_TRACE(SE_TRACE_WARNING, "Failed to get sysmbol %s from %s.\n", SGX_GET_LAUNCH_TOKEN, SGX_LAUNCH_SO);
-                if (enclave_error != NULL)
-                    *enclave_error = ENCLAVE_UNEXPECTED;
-                return false;
-            }
-
-            sgx_status_t status = func(enclave_css, &it->second, &launch_token);
+            sgx_status_t status = get_launch_token(enclave_css, &it->second, &launch_token);
             if (status != SGX_SUCCESS) {
                 if (enclave_error != NULL)
                     *enclave_error = error_aesm2api(status);

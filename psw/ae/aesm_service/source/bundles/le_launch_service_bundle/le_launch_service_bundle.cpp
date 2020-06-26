@@ -21,8 +21,6 @@ extern "C" bool is_launch_token_required();
 extern ae_error_t start_white_list_thread(unsigned long timeout=THREAD_TIMEOUT);
 extern ThreadStatus white_list_thread;
 
-extern "C" void init_get_launch_token(const func_get_launch_token_t func);
-
 extern "C" sgx_status_t get_launch_token(const enclave_css_t *signature,
                                          const sgx_attributes_t *attribute,
                                          sgx_launch_token_t *launch_token)
@@ -174,7 +172,6 @@ private:
         auto context = cppmicroservices::GetBundleContext();
         get_service_wrapper(g_network_service, context);
         get_service_wrapper(g_launch_service, context);
-        init_get_launch_token(::get_launch_token);
         start_white_list_thread(0);
         initialized = true;
         AESM_DBG_INFO("le bundle started");
