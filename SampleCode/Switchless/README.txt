@@ -1,5 +1,5 @@
 ------------------------
-Purpose of Switchlesss
+Purpose of Switchless
 ------------------------
 The project demonstrates how to use Fast OCalls provided by sgx_switchless.
 

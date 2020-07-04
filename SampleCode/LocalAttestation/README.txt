@@ -20,7 +20,7 @@ How to Build the Sample Code
 		$ make SGX_MODE=SIM SGX_DEBUG=0
         g. Use Local Attestation 2.0 protocol, Hardware Mode, Debug build:
         $ make LAv2=1
-           Note: Local Attestaion 2.0 protocol will be used if 'LAv2' is defined.
+           Note: Local Attestation 2.0 protocol will be used if 'LAv2' is defined.
 
 
 When build is successful, you can find executable binaries in "bin" sub-folder.
