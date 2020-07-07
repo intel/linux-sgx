@@ -13,3 +13,11 @@ Architectures: amd64
 Components: main
 Description: ubuntu/bionic repository for SGX PSW
 DebIndices: Packages .
+
+Origin: Intel Corporation
+Label: Intel Corporation
+Codename: focal
+Architectures: amd64
+Components: main
+Description: ubuntu/focal repository for SGX PSW
+DebIndices: Packages .

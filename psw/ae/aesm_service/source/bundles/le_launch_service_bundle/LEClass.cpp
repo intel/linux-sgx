@@ -31,6 +31,7 @@
 
 
 #include <assert.h>
+#include <memory>
 #include "LEClass.h"
 #include "aeerror.h"
 #include "arch.h"
@@ -51,10 +52,6 @@ extern "C" sgx_status_t sgx_create_le(const char *file_name, const char *prd_css
 extern "C" bool is_launch_token_required();
 
 #endif
-
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
 
 extern AESMLogicMutex _le_mutex;
 extern std::shared_ptr<INetworkService> g_network_service;

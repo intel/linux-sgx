@@ -45,7 +45,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <dlfcn.h>
-
+#include "se_memcpy.h"
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
 
 #define SGX_LAUNCH_SO "libsgx_launch.so.1"
@@ -402,7 +402,11 @@ extern "C" void* COMM_API enclave_create(
     if (enclave_base == MAP_FAILED) {
         SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
         if (enclave_error != NULL)
-            *enclave_error = ENCLAVE_OUT_OF_MEMORY;
+            *enclave_error = error_driver2api(-1, errno);
+        if(s_driver_type == SGX_DRIVER_IN_KERNEL)
+        {
+            close_file(&hdevice_temp);
+        }
         return NULL;
     }
     
@@ -485,6 +489,7 @@ extern "C" void* COMM_API enclave_create(
                     SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_SET_ATTRIBUTE, failed: errno = %d\n", errno);
                 }
             }
+            close(hdev_prov);
         }
         else
         {
@@ -507,10 +512,9 @@ extern "C" void* COMM_API enclave_create(
                     //Therefore we will continue here instead of returning error code
                     //The initialization could fail if the driver requires the provision file access
                 }
+                close(hdev_prov);
             }
-        }
-        
-        close(hdev_prov);
+        }        
        
     }
 
@@ -525,7 +529,7 @@ extern "C" void* COMM_API enclave_create(
 
     sgx_attributes_t secs_attr;
     memset(&secs_attr, 0, sizeof(sgx_attributes_t));
-    memcpy(&secs_attr, &secs->attributes, sizeof(sgx_attributes_t));
+    memcpy_s(&secs_attr, sizeof(sgx_attributes_t), &secs->attributes, sizeof(sgx_attributes_t));
     s_secs_attr[enclave_base] = secs_attr;
 
     s_enclave_mem_region[enclave_base].addr = 0;
@@ -574,6 +578,7 @@ extern "C" size_t COMM_API enclave_load_data(
         
     if (sec_info.flags & ENCLAVE_PAGE_UNVALIDATED)
         sec_info.flags ^= ENCLAVE_PAGE_UNVALIDATED;
+
     int hfile = -1;
     size_t pages = target_size / SE_PAGE_SIZE;
     if (s_driver_type == SGX_DRIVER_IN_KERNEL)
@@ -719,7 +724,7 @@ extern "C" size_t COMM_API enclave_load_data(
                 ret = mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
             if (0 != ret) {
                 if (enclave_error != NULL)
-                    *enclave_error = ENCLAVE_UNEXPECTED;
+                    *enclave_error = error_driver2api(-1, errno);
                 return 0;
             }
         }
@@ -758,6 +763,7 @@ extern "C" bool COMM_API enclave_initialize(
             *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return false;
     }
+
     int hfile = -1;
     if (s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
@@ -770,7 +776,7 @@ extern "C" bool COMM_API enclave_initialize(
             return false;
         }
     }
-
+    
     const enclave_init_sgx_t* enclave_init_sgx = (const enclave_init_sgx_t*)info;
     if (info_size == 0 || sizeof(*enclave_init_sgx) != info_size) {
         if (enclave_error != NULL)
@@ -783,7 +789,7 @@ extern "C" bool COMM_API enclave_initialize(
     auto enclave_mem_region = &s_enclave_mem_region[base_address];
     se_mutex_unlock(&s_enclave_mutex);
     if (enclave_mem_region->addr != 0) {
-       //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
+        //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
        int ret = 0;
        if (hfile != -1) {
            if (MAP_FAILED == mmap(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot, MAP_SHARED | MAP_FIXED, hfile, 0))
@@ -793,7 +799,7 @@ extern "C" bool COMM_API enclave_initialize(
            ret= mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
        if (0 != ret) {
             if (enclave_error != NULL)
-                *enclave_error = ENCLAVE_UNEXPECTED;
+                *enclave_error = error_driver2api(-1, errno);
             return 0;
         }
         //record the current load of enclave data in the memory region structure

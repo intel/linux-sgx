@@ -112,7 +112,9 @@ clean:
 	$(MAKE) -C ./epid/common/ clean
 	$(MAKE) -C ./epid/member/ clean
 	$(MAKE) -C ./epid/verifier/ clean
-	$(MAKE) -C ./ext/gtest/ clean
+ifeq ("$(shell test -f ./ext/gtest/Makefile && echo Makefile exists)", "Makefile exists")
+	$(MAKE) -C ./ext/gtest clean
+endif
 	$(MAKE) -C ./epid/common-testhelper/ clean
 	$(MAKE) -C ./ext/argtable3/ clean
 ifneq ("$(wildcard ./ext/google_benchmark)","")

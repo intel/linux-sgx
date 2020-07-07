@@ -74,7 +74,8 @@ install: $(PACKAGES)
 	cd $(shell readlink -m $(DESTDIR)/$(AESM_ECDSA_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm) && \
 	ln -fs $(shell readlink -m $(USR_LIB_PATH)/libsgx_qe3.signed.so) && \
 	cd $(shell readlink -m $(DESTDIR)/$(AESM_PCE_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm) && \
-	ln -fs $(shell readlink -m $(USR_LIB_PATH)/libsgx_pce.signed.so)
+	ln -fs $(shell readlink -m $(USR_LIB_PATH)/libsgx_pce.signed.so) && \
+	ln -fs liburts_internal.so libsgx_urts.so
 	
 $(PACKAGES):
 	install -d $(shell readlink -m $(DESTDIR)/$@)

@@ -18,11 +18,11 @@ set -e
 # the debian-policy package
 
 
-PACKAGE_PATH=@pkg_path@
-
 case "$1" in
     configure)
         udevadm trigger &> /dev/null || true
+        systemctl enable remount-dev-exec &> /dev/null || true
+        systemctl start remount-dev-exec &> /dev/null || true
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

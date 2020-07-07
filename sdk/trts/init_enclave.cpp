@@ -50,7 +50,6 @@
 #include "trts_util.h"
 #include "se_memcpy.h"
 #include "se_cpu_feature.h"
-#include "se_page_attr.h"
 #include "se_version.h"
 
 // The global cpu feature bits from uRTS
@@ -75,31 +74,6 @@ extern sgx_status_t pcl_entry(void* enclave_base,void* ms) __attribute__((weak))
 extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section(".nipx")));
 
 extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
-extern sgx_status_t do_save_tcs(void *ptcs);
-
-static int __attribute__((section(".nipx"))) add_static_threads(const volatile layout_t *layout_start, const volatile layout_t *layout_end, size_t offset)
-{
-    int ret = -1;
-    for (const volatile layout_t *layout = layout_start; layout < layout_end; layout++)
-    {
-        if (!IS_GROUP_ID(layout->group.id) && (layout->entry.si_flags & SI_FLAGS_TCS) && layout->entry.attributes == (PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND))
-        {
-            uintptr_t tcs_addr = (uintptr_t)layout->entry.rva + offset + (uintptr_t)get_enclave_base();
-            if (do_save_tcs(reinterpret_cast<void *>(tcs_addr)) != SGX_SUCCESS)
-		    return (-1);
-        }
-        else if (IS_GROUP_ID(layout->group.id)){
-            size_t step = 0;
-            for(uint32_t j = 0; j < layout->group.load_times; j++)
-            {
-                step += (size_t)layout->group.load_step;
-                if(0 != (ret = add_static_threads(&layout[-layout->group.entry_count], layout, step)))
-                    return ret;
-            }
-        }
-    }
-    return 0;
-}
 
 // init_enclave()
 //      Initialize enclave.
@@ -194,7 +168,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     uint64_t xfrm = get_xfeature_state();
 
     // Unset conflict cpu feature bits for legacy cpu features.
-    uint64_t cpu_features = (sys_features.cpu_features | INCOMPAT_FEATURE_BIT);
+    uint64_t cpu_features = (sys_features.cpu_features & ~(INCOMPAT_FEATURE_BIT));
 
     if (sys_features.system_feature_set[0] & ((uint64_t)(1ULL << SYS_FEATURE_EXTEND)))
     {
@@ -271,14 +245,6 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
         memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), heap_min_size, 0, heap_min_size);
 
         memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), rsrv_mem_min_size, 0, rsrv_mem_min_size);
-        // save all the static threads into the thread table. These TCS would be trimmed in the uninit flow
-        if (add_static_threads(
-            &g_global_data.layout_table[0],
-            &g_global_data.layout_table[0] + g_global_data.layout_entry_num,
-            0) != 0)
-        {
-            return SGX_ERROR_UNEXPECTED;
-        }
     }
     else
     {

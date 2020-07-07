@@ -39,10 +39,7 @@
 #include "sgx_read_rand.h"
 #include "ssl_crypto.h"
 #include <time.h>
-
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
+#include <memory>
 
 extern std::shared_ptr<INetworkService> g_network_service;
 

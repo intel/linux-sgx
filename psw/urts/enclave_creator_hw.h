@@ -68,7 +68,7 @@ private:
     virtual bool open_device();
     virtual void close_device();
     int try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch);
-    int error_driver2urts(int driver_error);
+    int error_driver2urts(int driver_error, int err_no);
     int error_api2urts(uint32_t api_error);
     se_file_handle_t    m_hdevice;
     Mutex               m_dev_mutex;

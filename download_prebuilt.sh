@@ -33,11 +33,11 @@
 
 top_dir=`dirname $0`
 out_dir=$top_dir
-optlib_name=optimized_libs_2.9.1.tar.gz
-ae_file_name=prebuilt_ae_2.9.1.tar.gz
-binutils_file_name=as.ld.objdump.gold.r1.tar.gz
-checksum_file=SHA256SUM_prebuilt_2.9.1.txt
-server_url_path=https://download.01.org/intel-sgx/sgx-linux/2.9.1/
+optlib_name=optimized_libs_2.10.tar.gz
+ae_file_name=prebuilt_ae_2.10.tar.gz
+binutils_file_name=as.ld.objdump.gold.r2.tar.gz
+checksum_file=SHA256SUM_prebuilt_2.10.txt
+server_url_path=https://download.01.org/intel-sgx/sgx-linux/2.10/
 server_optlib_url=$server_url_path/$optlib_name
 server_ae_url=$server_url_path/$ae_file_name
 server_binutils_url=$server_url_path/$binutils_file_name

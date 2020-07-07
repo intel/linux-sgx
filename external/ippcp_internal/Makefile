@@ -31,7 +31,11 @@
 
 include ../../buildenv.mk
 
-IPP_CONFIG = -Bbuild -DCMAKE_VERBOSE_MAKEFILE=on 
+DIR = $(CURDIR)
+
+IPP_CONFIG = -Bbuild -DCMAKE_VERBOSE_MAKEFILE=on
+# Set the mitigation version assembler for IPP assembly code build
+IPP_CONFIG += -DCMAKE_ASM-ATT_COMPILER="$(BINUTILS_DIR)/as"
 # Ignore the CMAKE C/C++ compiler check to avoid conflicts with mitigation options
 IPP_CONFIG += -DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE 
 IPP_SOURCE = ipp-crypto
@@ -61,10 +65,14 @@ OUT_DIR = lib/linux/$(ARCH)/$(SUB_DIR)/
 
 PATCH_LOG = $(shell cd ./$(IPP_SOURCE) && git log --oneline --grep='Add mitigation support to assembly code' | cut -d' ' -f 3)
 CHECK_PATCHED :=
+# For reproducibility build in docker, the code should be 
+# prepared before build. So skip the code check to avoid
+# triggering network request 
+ifneq ($(origin NIX_PATH), environment)
 ifneq ($(PATCH_LOG), mitigation)
 CHECK_PATCHED:= ipp_source
 endif
-
+endif
 
 .PHONY: all build_ipp
 all: build_ipp

@@ -53,9 +53,10 @@ $(PACKAGES):
 	install -d $(shell readlink -m $(DESTDIR)/$@)
 	$(if $(wildcard $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR)/.*), \
 		install -d $(shell readlink -m $(DESTDIR)/$@/$(USR_LIB_PATH)) && \
-		mv $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR)/*.so $(DESTDIR)/$@/$(USR_LIB_PATH))
+		mv $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR)/*.so $(DESTDIR)/$@/$(USR_LIB_PATH) && \
+		rm -fr $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR))
 	$(if $(wildcard $(PACKAGE_ROOT_FOLDER)/$@/$(INC_DIR)/.*), \
 		install -d $(shell readlink -m $(DESTDIR)/$@/$(USR_INC_PATH)) && \
 		install -d $(shell readlink -m $(DESTDIR)/$@/$(USR_LIB_PATH)) && \
 		mv $(PACKAGE_ROOT_FOLDER)/$@/$(INC_DIR)/* $(DESTDIR)/$@/$(USR_INC_PATH))
-	mv $(PACKAGE_ROOT_FOLDER)/$@/* $(DESTDIR)/$@/
+	cp -r $(PACKAGE_ROOT_FOLDER)/$@/* $(DESTDIR)/$@/

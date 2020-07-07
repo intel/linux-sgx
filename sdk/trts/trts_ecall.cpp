@@ -144,11 +144,8 @@ static uintptr_t g_tcs_cookie = 0;
 //     zero - success
 //     non-zero - fail
 //
-sgx_status_t do_save_tcs(void *ptcs)
+static sgx_status_t do_save_tcs(void *ptcs)
 {
-    if(!is_utility_thread())
-        return SGX_ERROR_UNEXPECTED;
-
     if(unlikely(g_tcs_cookie == 0))
     {
         uintptr_t rand = 0;
@@ -220,6 +217,30 @@ static void do_del_tcs(void *ptcs)
     }
 }
 
+static int add_static_threads(const volatile layout_t *layout_start, const volatile layout_t *layout_end, size_t offset)
+{
+    int ret = -1;
+    for (const volatile layout_t *layout = layout_start; layout < layout_end; layout++)
+    {
+        if (!IS_GROUP_ID(layout->group.id) && (layout->entry.si_flags & SI_FLAGS_TCS) && layout->entry.attributes == (PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND))
+        {
+            uintptr_t tcs_addr = (uintptr_t)layout->entry.rva + offset + (uintptr_t)get_enclave_base();
+            if (do_save_tcs(reinterpret_cast<void *>(tcs_addr)) != SGX_SUCCESS)
+		    return (-1);
+        }
+        else if (IS_GROUP_ID(layout->group.id)){
+            size_t step = 0;
+            for(uint32_t j = 0; j < layout->group.load_times; j++)
+            {
+                step += (size_t)layout->group.load_step;
+                if(0 != (ret = add_static_threads(&layout[-layout->group.entry_count], layout, step)))
+                    return ret;
+            }
+        }
+    }
+    return 0;
+}
+
 static volatile bool           g_is_first_ecall = true;
 static volatile sgx_spinlock_t g_ife_lock       = SGX_SPINLOCK_INITIALIZER;
 
@@ -243,6 +264,15 @@ static sgx_status_t trts_ecall(uint32_t ordinal, void *ms)
 #ifndef SE_SIM
             if(EDMM_supported)
             {
+                // save all the static threads into the thread table. These TCS would be trimmed in the uninit flow
+                if (add_static_threads(
+                            &g_global_data.layout_table[0],
+                            &g_global_data.layout_table[0] + g_global_data.layout_entry_num,
+                            0) != 0)
+                {
+                    return SGX_ERROR_UNEXPECTED;
+                }
+
                 //change back the page permission
                 size_t enclave_start = (size_t)&__ImageBase;
                 if((status = change_protection((void *)enclave_start)) != SGX_SUCCESS)

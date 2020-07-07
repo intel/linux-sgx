@@ -55,10 +55,10 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 7.4 64bits
-  * Red Hat Enterprise Linux Server release 8.0 64bits
-  * CentOS 7.5 64bits
-  * Fedora 27 Server 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
+  * Red Hat Enterprise Linux Server release 8.1 64bits
+  * CentOS 8.1 64bits
+  * Fedora 31 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
@@ -70,12 +70,19 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git cmake perl
   ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel git cmake perl
+    $ sudo alternatives --set python /usr/bin/python2
   ```
-  * On Fedora 27:
+  * On CentOS 8.1:
+  ```
+    $ sudo dnf group install 'Development Tools'
+    $ sudo dnf --enablerepo=PowerTools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python2
+    $ sudo alternatives --set python /usr/bin/python2
+  ```
+  * On Fedora 31:
   ```
     $ sudo yum groupinstall 'C Development Tools and Libraries'
     $ sudo yum install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget python rpm-build git cmake perl
@@ -85,29 +92,25 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo zypper install --type pattern devel_basis
     $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel rpm-build git cmake perl
   ```
-   **Note**:  To build Intel(R) SGX SDK, GNU binutils version is required to be 2.26 or above. For Red Hat Enterprise Linux 7.4, you may need to update GNU binutils version using below command:
-   ```
-    $ sudo yum update binutils
-   ```
-   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above. For Ubuntu 16.04, Red Hat Enterprise Linux 7.4, CentOS 7.5, Fedora 27, SUSE Linux Enterprise Server 12, you may need to update gcc and glibc version.
+   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above. For Ubuntu 16.04, Red Hat Enterprise Linux 7.6 and SUSE Linux Enterprise Server 12, you may need to update gcc and glibc version manually.
 - Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:  
   1)  To install the additional required tools:
       * On Ubuntu 16.04 and Ubuntu 18.04:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro
       ```
-      * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5 and Fedora 27:
+      * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1 and Fedora 31:
       ```
         $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
+      ```
+      * On CentOS 8.1:
+      ```
+        $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
       ```
       * On SUSE Linux Enterprise Server 12:
       ```
         $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo
       ```
-      **Note**:  To build Intel(R) SGX PSW, GNU binutils version is required to be 2.26 or above. For Red Hat Enterprise Linux 7.4, you may need to update GNU binutils version using below command:  
-       ```
-        $ sudo yum update binutils
-       ```  
   2) To install latest Intel(R) SGX SDK Installer
   Ensure that you have downloaded latest Intel(R) SGX SDK Installer from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and followed the Installation Guide in the same page to install latest Intel(R) SGX SDK Installer.
   
@@ -117,11 +120,13 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   $ ./download_prebuilt.sh
 ```
 
-- Copy the mitigation tools from external/toolset to /usr/local/bin and make sure they have execute permission:
+- Copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
   ```
-    $ sudo cp external/toolset/{as,ld,ld.gold,objdump} /usr/local/bin
+    $ sudo cp external/toolset/{current_distr}/{as,ld,ld.gold,objdump} /usr/local/bin
     $ which as ld ld.gold objdump
   ```
+    **Note**: The above action is a must even if you copied the previous mitigation tools to /usr/local/bin before. It ensures the updated mitigation tools are used in the later build.
+
 
 ### Build the Intel(R) SGX SDK and Intel(R) SGX SDK Installer
 - To build Intel(R) SGX SDK with default configuration, enter the following command:
@@ -192,11 +197,13 @@ You can find the tools and libraries generated in the `build/linux` directory.
    ```
    $ export DEB_BUILD_OPTIONS="nostrip"
    ```
+  **Note**: Starting with the 2.10 release, besides the Intel(R) SGX PSW installer, the above command generates [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) installers on OS newer than Ubuntu 16.04. Ubuntu 16.04 is not included because of GCC version.
+
   **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer without optimization and with full debug information kept in the tools and libraries, enter the following command:
   ```
   $ make deb_psw_pkg DEBUG=1
   ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5, Fedora 27 and SUSE Linux Enterprise Server 12:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31 and SUSE Linux Enterprise Server 12:
   ```
   $ make rpm_psw_pkg
   ```
@@ -240,7 +247,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. Since the local package repository is not signed with GPG, you should ignore the gpgcheck when installing the packages.
 
   - To add the local RPM package repository to the system repository configuration, you can use the following command. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5, Fedora 27:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31:
   ```
   $ sudo yum-config-manager --add-repo file://PATH_TO_LOCAL_REPO
   ```
@@ -249,7 +256,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ sudo zypper addrepo PATH_TO_LOCAL_REPO LOCAL_REPO_ALIAS
   ```
   - To ignore the gpgcheck when you install the package, enter the following command:
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5, Fedora 27:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31:
   ```
   $ sudo yum --nogpgcheck install <package>
   ```
@@ -266,22 +273,23 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 7.4 64bits
-  * Red Hat Enterprise Linux Server release 8.0 64bits
-  * CentOS 7.5 64bits
-  * Fedora 27 Server 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
+  * Red Hat Enterprise Linux Server release 8.1 64bits
+  * CentOS 8.1 64bits
+  * Fedora 31 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 16.04 and Ubuntu 18.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0 and CentOS 7.5:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1 and CentOS 8.1:
   ```
      $ sudo yum groupinstall 'Development Tools'
-     $ sudo yum install python 
+     $ sudo yum install python2
+     $ sudo alternatives --set python /usr/bin/python2 
   ```
-  * On Fedora 27:
+  * On Fedora 31:
   ```
      $ sudo yum groupinstall 'C Development Tools and Libraries'
   ```
@@ -326,10 +334,6 @@ See the later topic, *Install Intel(R) SGX PSW*, for information on how to insta
 ```
    Use similar commands for other code samples.
 
-   **Note**: GNU binutils version is required to be 2.26 or above to build SGX Enclaves starting from Linux 2.8 release. For Red Hat Enterprise Linux 7.4, you may need to update GNU binutils version using below command:  
-       ```
-        $ sudo yum update binutils
-       ```
 
 Install the Intel(R) SGX PSW
 ----------------------------
@@ -339,10 +343,10 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 7.4 64bits
-  * Red Hat Enterprise Linux Server release 8.0 64bits
-  * CentOS 7.5 64bits
-  * Fedora 27 Server 64bits
+  * Red Hat Enterprise Linux Server release 7.6 64bits
+  * Red Hat Enterprise Linux Server release 8.1 64bits
+  * CentOS 8.1 64bits
+  * Fedora 31 Server 64bits
   * SUSE Linux Enterprise Server 12 64bits
 - Ensure that you have a system with the following required hardware:  
   * 6th Generation Intel(R) Core(TM) Processor or newer
@@ -353,9 +357,13 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5 and Fedora 27:  
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1 and Fedora 31:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
+  ```
+  * On CentOS 8.1:
+  ```
+    $ sudo dnf --enablerepo=PowerTools install libcurl-devel protobuf-devel
   ```
   * On SUSE Linux Enterprise Server 12:  
   ```
@@ -367,11 +375,12 @@ Install the Intel(R) SGX PSW
 
   #### Using the local repo(recommended)
 
-  |   |Ubuntu 16.04 and Ubuntu 18.04|Red Hat Enterprise Linux 7.4, Red Hat Enterprise Linux 8.0, CentOS 7.5, Fedora 27|SUSE Linux Enterprise Server 12|
+  |   |Ubuntu 16.04, Ubuntu 18.04|Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31|SUSE Linux Enterprise Server 12|
   | ------------ | ------------ | ------------ | ------------ |
   |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
   |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts||
   |algorithm agnostic attestation service|apt-get install libsgx-quote-ex libsgx-urts|yum install libsgx-quote-ex libsgx-urts|zypper install libsgx-quote-ex libsgx-urts|
+  |DCAP ECDSA-based service(Ubuntu16.04 not included)|apt-get install libsgx-dcap-ql|yum install libsgx-dcap-ql|zypper install libsgx-dcap-ql|
 
   Optionally, you can install *-dbgsym or *-debuginfo packages to get the debug symbols, and install *-dev or *-devel packages to get the header files for development.
 
@@ -389,7 +398,7 @@ Install the Intel(R) SGX PSW
   ```
   #### Configure the installation
   Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-  * On Ubuntu 16.04 and Ubuntu 18.04:
+  * On Ubuntu 16.04, Ubuntu 18.04:
   ```
     --no-install-recommends
   ```
@@ -423,3 +432,7 @@ If a proxy is required for the HTTP protocol, you may need to manually set up th
 You should manually edit the file `/etc/aesmd.conf` (refer to the comments in the file) to set the proxy for the aesmd service.  
 After you configure the proxy, you need to restart the service to enable the proxy.
 
+Reproducibility
+-----------------------------------------
+Intel(R) SGX is providing several prebuilt binaries. All the prebuilt binaries are built from a reproducible environment in SGX docker container. To reproduce the prebuilt binaries, please follow the [reproducibility README.md](linux/reproducibility/README.md) to prepare the SGX docker container and build out the binaries you want to verify.
+Most of the binaries could be verified utilizing Linux system command `diff`, except Intel(R) AEs. Please refer to the [README.md](linux/reproducibility/ae_reproducibility_verifier/README.md) for how to verify the reproducibililty of the built out AEs.

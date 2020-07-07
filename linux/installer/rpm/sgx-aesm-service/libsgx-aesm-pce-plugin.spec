@@ -31,13 +31,14 @@
 
 
 %define _install_path @install_path@
+%define _license_file COPYING
 
 Name:           libsgx-aesm-pce-plugin
 Version:        @version@
 Release:        1%{?dist}
 Summary:        PCE Plugin for Intel(R) Software Guard Extensions AESM Service
 Group:          Development/System
-Requires:       sgx-aesm-service >= %{version}-%{release} libsgx-pce-logic >= 1.5
+Requires:       sgx-aesm-service >= %{version}-%{release} libsgx-pce-logic >= 1.7
 
 License:        BSD License
 URL:            https://github.com/intel/linux-sgx
@@ -53,6 +54,8 @@ PCE Plugin for Intel(R) Software Guard Extensions AESM Service
 make DESTDIR=%{?buildroot} install
 pushd %{?buildroot}
 rm -fr $(ls | grep -xv "%{name}")
+install -d %{name}%{_docdir}/%{name}
+find %{?_sourcedir}/package/licenses/ -type f -print0 | xargs -0 -n1 cat >> %{name}%{_docdir}/%{name}/%{_license_file}
 popd
 echo "%{_install_path}" > %{_specdir}/list-%{name}
 find %{?buildroot}/%{name} | sort | \

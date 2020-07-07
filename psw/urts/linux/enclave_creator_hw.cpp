@@ -70,51 +70,69 @@ EnclaveCreatorHW::~EnclaveCreatorHW()
     close_device();
 }
 
-int EnclaveCreatorHW::error_driver2urts(int driver_error)
+int EnclaveCreatorHW::error_driver2urts(int driver_error, int err_no)
 {
-    int ret = SGX_ERROR_UNEXPECTED;
+    int ret = SGX_ERROR_UNEXPECTED;\
+    
+    if(driver_error == -1){
+        switch(err_no) {
+        case (int)ENOMEM:
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        case (int)EINVAL:
+            ret = SGX_ERROR_INVALID_PARAMETER;
+            break;
+        case (int)ENOSYS:
+            ret = SGX_ERROR_FEATURE_NOT_SUPPORTED;
+            break;
+        default:
+            SE_TRACE(SE_TRACE_WARNING, "unexpected errno %#x from driver, might be a driver bug\n", err_no);
+            ret = ENCLAVE_UNEXPECTED;
+            break;
+        }
+    }
+    else{
+        switch(driver_error){
+        case SGX_INVALID_ATTRIBUTE:
+            ret = SGX_ERROR_INVALID_ATTRIBUTE;
+            break;
+        case SGX_INVALID_PRIVILEGE:
+            ret = SGX_ERROR_SERVICE_INVALID_PRIVILEGE;
+            break;
+        case SGX_INVALID_MEASUREMENT:
+            ret = SE_ERROR_INVALID_MEASUREMENT;
+            break;
+        case SGX_INVALID_SIG_STRUCT:
+        case SGX_INVALID_SIGNATURE:
+            ret = SGX_ERROR_INVALID_SIGNATURE;
+            break;
+        case SGX_INVALID_LICENSE:
+            ret = SE_ERROR_INVALID_LAUNCH_TOKEN;
+            break;
+        case SGX_INVALID_CPUSVN:
+            ret = SGX_ERROR_INVALID_CPUSVN;
+            break;
+        case SGX_INVALID_ISVSVN:
+            ret = SGX_ERROR_INVALID_ISVSVN;
+            break;
+        case SGX_UNMASKED_EVENT:
+            ret = SGX_ERROR_DEVICE_BUSY;
+            break;
+        case (int)SGX_POWER_LOST_ENCLAVE: // [-Wc++11-narrowing]
+            ret = SGX_ERROR_ENCLAVE_LOST;
+            break;
+        case (int)SGX_LE_ROLLBACK:
+            ret = SE_ERROR_INVALID_ISVSVNLE;
+            break;
+        default:
+            SE_TRACE(SE_TRACE_WARNING, "unexpected error %#x from driver, should be uRTS/driver bug\n", driver_error);
+            ret = SGX_ERROR_UNEXPECTED;
+            break;
+        }
+    }
 
-    switch(driver_error)
-    {
-     case SGX_INVALID_ATTRIBUTE:
-         ret = SGX_ERROR_INVALID_ATTRIBUTE;
-         break;
-     case SGX_INVALID_PRIVILEGE:
-         ret = SGX_ERROR_SERVICE_INVALID_PRIVILEGE;
-         break;
-     case SGX_INVALID_MEASUREMENT:
-         ret = SE_ERROR_INVALID_MEASUREMENT;
-         break;
-     case SGX_INVALID_SIG_STRUCT:
-     case SGX_INVALID_SIGNATURE:
-         ret = SGX_ERROR_INVALID_SIGNATURE;
-         break;
-     case SGX_INVALID_LICENSE:
-         ret = SE_ERROR_INVALID_LAUNCH_TOKEN;
-         break;
-     case SGX_INVALID_CPUSVN:
-         ret = SGX_ERROR_INVALID_CPUSVN;
-         break;
-     case SGX_INVALID_ISVSVN:
-         ret = SGX_ERROR_INVALID_ISVSVN;
-         break;
-     case SGX_UNMASKED_EVENT:
-         ret = SGX_ERROR_DEVICE_BUSY;
-         break;
-     case (int)SGX_POWER_LOST_ENCLAVE: // [-Wc++11-narrowing]
-         ret = SGX_ERROR_ENCLAVE_LOST;
-         break;
-     case (int)SGX_LE_ROLLBACK:
-         ret = SE_ERROR_INVALID_ISVSVNLE;
-         break;
-     default:
-         SE_TRACE(SE_TRACE_WARNING, "unexpected error %#x from driver, should be uRTS/driver bug\n", driver_error);
-         ret = SGX_ERROR_UNEXPECTED;
-         break;
-     }
-
-     return ret;
- }
+    return ret;
+}
 
 int EnclaveCreatorHW::error_api2urts(uint32_t api_error)
 {
@@ -292,7 +310,7 @@ int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_EMODPR failed %d\n", errno);
-        return error_driver2urts(ret);
+        return error_driver2urts(ret, errno);
     }
 
     return SGX_SUCCESS;
@@ -309,7 +327,7 @@ int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "MODIFY_TYPE failed %d\n", errno);
-        return error_driver2urts(ret);
+        return error_driver2urts(ret, errno);
     }
 
     return SGX_SUCCESS;
@@ -326,7 +344,7 @@ int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_TRIM failed %d\n", errno);
-        return error_driver2urts(ret);
+        return error_driver2urts(ret, errno);
     }
 
     return SGX_SUCCESS;
@@ -346,7 +364,7 @@ int EnclaveCreatorHW::trim_accept(uint64_t addr)
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "TRIM_RANGE_COMMIT failed %d\n", errno);
-        return error_driver2urts(ret);
+        return error_driver2urts(ret, errno);
     }
 
     return SGX_SUCCESS;
@@ -365,7 +383,7 @@ int EnclaveCreatorHW::remove_range(uint64_t fromaddr, uint64_t numpages)
         if (ret)
         {
             SE_TRACE(SE_TRACE_ERROR, "PAGE_REMOVE failed %d\n", errno);
-            return error_driver2urts(ret);
+            return error_driver2urts(ret, errno);
         }
     }
 

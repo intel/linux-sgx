@@ -171,7 +171,7 @@ static tlv_status_t tlv_msg_init_one_tlv(tlv_info_t* infos, const tlv_msg_t& tlv
     if(infos->header_size == UNKNOWN_TLV_HEADER_SIZE)
         hsize = get_tlv_header_size_from_payload_size(infos->size); //TLV header size
     else
-        hsize = (uint8_t)infos->header_size;
+        hsize = infos->header_size;
     uint32_t tsize = hsize+infos->size; //size of header and payload
     if(tlv_msg.msg_size<tsize)return TLV_INSUFFICIENT_MEMORY;
     if((status=write_tlv_header(tlv_msg.msg_buf , infos))!=TLV_SUCCESS)

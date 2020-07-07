@@ -107,6 +107,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
     if(SGX_SUCCESS != sgx_verify_report(report)){
         return PCE_INVALID_REPORT;
     }
+    //only PvE and QE3 could use the interface which has flag SGX_FLAGS_PROVISION_KEY
     if((report->body.attributes.flags & SGX_FLAGS_PROVISION_KEY) != SGX_FLAGS_PROVISION_KEY){
         return PCE_INVALID_PRIVILEGE;
     }
@@ -279,7 +280,7 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
     if(SGX_SUCCESS != sgx_verify_report(report)){
         return PCE_INVALID_REPORT;
     }
-    //only PvE could use the interface which has flag SGX_FLAGS_PROVISION_KEY
+    //only PvE and QE3 could use the interface which has flag SGX_FLAGS_PROVISION_KEY
     if((report->body.attributes.flags & SGX_FLAGS_PROVISION_KEY) != SGX_FLAGS_PROVISION_KEY){
         return PCE_INVALID_PRIVILEGE;
     }

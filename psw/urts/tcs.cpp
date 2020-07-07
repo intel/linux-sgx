@@ -349,10 +349,10 @@ CTrustThread * CTrustThreadPool::acquire_free_thread()
     {
         trust_thread->reset_ref();
     }
-    if(need_to_new_thread() == true)
+    if(need_to_new_thread() == true && NULL != m_utility_thread)
     {
         m_utility_thread->get_enclave()->fill_tcs_mini_pool_fn();
-    }	
+    }
     return trust_thread;
 }
 

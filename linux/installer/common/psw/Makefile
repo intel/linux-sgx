@@ -75,3 +75,5 @@ install:
 	mv libsgx_quote_ex.so libsgx_quote_ex.so.$(QEX_VER) && \
 	ln -fs libsgx_quote_ex.so.$(QEX_VER) libsgx_quote_ex.so.$(call SPLIT_VERSION,$(QEX_VER),1) && \
 	ln -fs libsgx_quote_ex.so.$(call SPLIT_VERSION,$(QEX_VER),1) libsgx_quote_ex.so
+	cd $(INSTALL_PATH)/aesm && \
+	ln -fs liburts_internal.so libsgx_urts.so

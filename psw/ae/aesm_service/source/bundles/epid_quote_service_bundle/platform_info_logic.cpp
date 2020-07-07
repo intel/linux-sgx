@@ -43,12 +43,6 @@
 #include "sgx_profile.h"
 #include "aesm_long_lived_thread.h"
 
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-#include "cppmicroservices_util.h"
-using namespace cppmicroservices;
-
-
 
 enum {GIDMT_UNMATCHED, GIDMT_NOT_AVAILABLE, GIDMT_MATCHED,GIDMT_UNEXPECTED_ERROR};
 

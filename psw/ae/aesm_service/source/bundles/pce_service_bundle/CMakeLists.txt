@@ -21,6 +21,6 @@ add_custom_command(OUTPUT ${pce_logic}
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/pce_wrapper/linux"
 )
 add_custom_target(pce_logic_lib DEPENDS ${pce_logic})
-target_link_libraries(${bundle} ${pce_logic} oal urts_internal)
+target_link_libraries(${bundle} oal ${pce_logic})
 add_dependencies(${bundle} pce_logic_lib)
 set_property(TARGET ${bundle} APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")

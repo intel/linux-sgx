@@ -31,6 +31,7 @@
 
 
 %define _install_path @install_path@
+%define _license_file COPYING
 
 Name:           libsgx-ae-pce
 Version:        @version@
@@ -52,6 +53,8 @@ Intel(R) Software Guard Extensions PCE
 make DESTDIR=%{?buildroot} install
 pushd %{?buildroot}
 rm -fr $(ls | grep -xv "%{name}")
+install -d %{name}%{_docdir}/%{name}
+find %{?_sourcedir}/package/licenses/ -type f -print0 | xargs -0 -n1 cat >> %{name}%{_docdir}/%{name}/%{_license_file}
 popd
 find %{?buildroot}/%{name} | sort | \
 awk '$0 !~ last "/" {print last} {last=$0} END {print last}' | \

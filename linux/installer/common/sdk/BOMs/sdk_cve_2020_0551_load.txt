@@ -11,3 +11,4 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linuxLOAD/libsgx_pcl.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_pcl.a	0	main	STP
 <deliverydir>/build/linuxLOAD/libsgx_omp.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_omp.a	0	main	STP
 <deliverydir>/build/linuxLOAD/libsgx_pthread.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_pthread.a	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/build/linuxLOAD/libsgx_dcap_tvl.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_dcap_tvl.a	0	main	STP

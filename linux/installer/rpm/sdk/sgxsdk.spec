@@ -32,6 +32,7 @@
 %define _unpackaged_files_terminate_build 0
 %define _install_path @install_path@
 %define _helper_command @helper_command@
+%define _license_file COPYING
 
 Name:           sgxsdk
 Version:        @version@
@@ -51,6 +52,8 @@ Intel(R) SGX SDK
 
 %install
 make DESTDIR=%{?buildroot} install
+install -d %{?buildroot}%{_docdir}/%{name}
+find %{?_sourcedir}/package/licenses/ -type f -print0 | xargs -0 -n1 cat >> %{?buildroot}%{_docdir}/%{name}/%{_license_file}
 echo "%{_install_path}" > %{_specdir}/listfiles
 find %{?buildroot} | sort | \
 awk '$0 !~ last "/" {print last} {last=$0} END {print last}' | \

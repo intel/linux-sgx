@@ -287,7 +287,14 @@ extern "C" sgx_status_t sgx_get_metadata(const char* enclave_file, metadata_t *m
         close(fd);
         return SGX_ERROR_INVALID_METADATA;
     }
-    memcpy(metadata, p_metadata, sizeof(metadata_t));
+    
+    if(memcpy_s(metadata, sizeof(metadata_t), p_metadata, sizeof(metadata_t)))
+    {
+        unmap_file(mh);
+        close(fd);
+        return SGX_ERROR_UNEXPECTED;
+    }
+    
     unmap_file(mh);
     close(fd);
     return SGX_SUCCESS;

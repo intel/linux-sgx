@@ -1,6 +1,8 @@
 [Unit]
 Description=Intel(R) Architectural Enclave Service Manager 
 After=syslog.target network.target auditd.service
+After=remount-dev-exec.service
+Wants=remount-dev-exec.service
 
 [Service]
 User=aesmd

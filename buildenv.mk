@@ -49,6 +49,7 @@ ROOT_DIR              := $(call my-dir)
 ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
   $(error main directory cannot contain spaces nor colons)
 endif
+
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
 LINUX_PSW_DIR         := $(ROOT_DIR)/psw
@@ -74,8 +75,13 @@ INCLUDE :=
 # this will return the path to the file that included the buildenv.mk file
 CUR_DIR := $(realpath $(call parent-dir,$(lastword $(wordlist 2,$(words $(MAKEFILE_LIST)),x $(MAKEFILE_LIST)))))
 
+CC_VERSION := $(shell $(CC) -dumpversion)
+CC_VERSION_MAJOR := $(shell echo $(CC_VERSION) | cut -f1 -d.)
+CC_VERSION_MINOR := $(shell echo $(CC_VERSION) | cut -f2 -d.)
+CC_BELOW_4_9 := $(shell [ $(CC_VERSION_MAJOR) -lt 4 -o \( $(CC_VERSION_MAJOR) -eq 4 -a $(CC_VERSION_MINOR) -le 9 \) ] && echo 1)
+CC_BELOW_5_2 := $(shell [ $(CC_VERSION_MAJOR) -lt 5 -o \( $(CC_VERSION_MAJOR) -eq 5 -a $(CC_VERSION_MINOR) -le 2 \) ] && echo 1)
+
 # turn on stack protector for SDK
-CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
 ifeq ($(CC_BELOW_4_9), 1)
     COMMON_FLAGS += -fstack-protector
 else
@@ -190,11 +196,24 @@ else ifeq ($(MITIGATION-CVE-2020-0551), CF)
     MITIGATION_LIB_PATH := cve_2020_0551_cf
 endif
 
+ifneq ($(origin NIX_PATH), environment)
+BINUTILS_DIR = /usr/local/bin
+else
+BINUTILS_DIR = $(ROOT_DIR)/external/toolset/nix/
+endif
+
+# enable -B option for all the build
+MITIGATION_CFLAGS += -B$(BINUTILS_DIR)
+
 ifeq ($(MITIGATION_C), 1)
 ifeq ($(MITIGATION_INDIRECT), 1)
     MITIGATION_CFLAGS += -mindirect-branch-register
 endif
 ifeq ($(MITIGATION_RET), 1)
+CC_NO_LESS_THAN_8 := $(shell expr $(CC_VERSION) \>\= "8")
+ifeq ($(CC_NO_LESS_THAN_8), 1)
+    MITIGATION_CFLAGS += -fcf-protection=none
+endif
     MITIGATION_CFLAGS += -mfunction-return=thunk-extern
 endif
 endif
@@ -202,12 +221,12 @@ endif
 ifeq ($(MITIGATION_ASM), 1)
     MITIGATION_ASFLAGS += -fno-plt
 ifeq ($(MITIGATION_AFTERLOAD), 1)
-    MITIGATION_ASFLAGS += -Wa,-mlfence-after-load=yes
+    MITIGATION_ASFLAGS += -Wa,-mlfence-after-load=yes -Wa,-mlfence-before-indirect-branch=memory
 else
-    MITIGATION_ASFLAGS += -Wa,-mlfence-before-indirect-branch=register
+    MITIGATION_ASFLAGS += -Wa,-mlfence-before-indirect-branch=all
 endif
 ifeq ($(MITIGATION_RET), 1)
-    MITIGATION_ASFLAGS += -Wa,-mlfence-before-ret=not
+    MITIGATION_ASFLAGS += -Wa,-mlfence-before-ret=shl
 endif
 endif
 
@@ -223,7 +242,7 @@ MITIGATION_CFLAGS += $(MITIGATION_ASFLAGS)
 # as `global' in the LD version script.
 ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie -fno-strict-overflow -fno-delete-null-pointer-checks
 ENCLAVE_CXXFLAGS = $(ENCLAVE_CFLAGS) -nostdinc++
-ENCLAVE_LDFLAGS  = $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
+ENCLAVE_LDFLAGS  = -B$(BINUTILS_DIR) $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
                    -Wl,--defsym,__ImageBase=0
 

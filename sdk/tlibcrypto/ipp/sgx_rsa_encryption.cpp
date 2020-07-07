@@ -326,7 +326,7 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
     return ret_code;
 }
 
-sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
+sgx_status_t sgx_rsa_pub_encrypt_sha256(const void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
     const size_t pin_len) {
     if (rsa_key == NULL || pout_len == NULL || pin_data == NULL || pin_len < 1 || pin_len >= INT_MAX) {
         return SGX_ERROR_INVALID_PARAMETER;
@@ -402,7 +402,7 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data,
     sgx_ipp_secure_free_BN(p_modulus, MAX_IPP_BN_LENGTH);
     return ret_code;
 }
-sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
+sgx_status_t sgx_rsa_priv_decrypt_sha256(const void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data,
     const size_t pin_len) {
     (void)(pin_len);
     if (rsa_key == NULL || pout_len == NULL || pin_data == NULL) {

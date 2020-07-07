@@ -48,20 +48,13 @@
  *========================================================================*/
 
 
-// call table size is only known at runtime
-typedef struct 
-{
-    size_t          nr_ecall;
-    ecall_addr_t    ecall_table[0];
-} sl_ecall_table_t;
-
-extern const sl_ecall_table_t g_ecall_table;
+extern const ecall_table_t g_ecall_table;
 //
 // create swtichless call table the same size as generated ECALLs table
 // for every function in global ecall table check if it can be invoked by "switchless" call,
 // if so, copy the function pointer, otherwise set to NULL
 // 
-static sl_call_table_t* new_ecall_table(void) 
+static sl_call_table_t* __attribute__((optimize("O0"))) new_ecall_table(void) 
 {
     uint32_t num_ecalls = (uint32_t)g_ecall_table.nr_ecall;
 

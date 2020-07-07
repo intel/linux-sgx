@@ -577,51 +577,22 @@ bool CMetadata::build_layout_entries()
     }
 
     // Add extra EPC pages to round the enclave size to power of 2
-    // We may add a guard pages or increase the size of the memory region reserved for NUMA
+    // We add a layout of guard pages
     if (m_metadata->enclave_size - m_rva > 0)
     {
-        layout_t layout = m_layouts[m_layouts.size() - 1];
         uint32_t extra_pages = (uint32_t)((m_metadata->enclave_size - m_rva) >> SE_PAGE_SHIFT);
+        layout_t layout;
+        memset(&layout, 0, sizeof(layout));
+        layout.entry.id = LAYOUT_ID_GUARD;
+        layout.entry.rva = m_rva;
+        layout.entry.page_count = extra_pages;
+        m_layouts.push_back(layout);
 
-        if (((layout.entry.id == LAYOUT_ID_RSRV_INIT) || (layout.entry.id == LAYOUT_ID_RSRV_MAX)) ||
-            ((layout.entry.id == LAYOUT_ID_RSRV_MIN) && (layout.entry.page_count > 0)))
-        {
-            m_layouts[m_layouts.size() - 1].entry.page_count += extra_pages;
-
-            layout = m_layouts[m_layouts.size() - 1];
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
-            se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout.entry.page_count);
-            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout.entry.attributes);
-            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout.entry.si_flags);
-            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout.entry.rva, m_metadata->enclave_size - 1);
-
-            if (layout.entry.id == LAYOUT_ID_RSRV_MAX)
-            {
-                m_create_param.rsrv_max_size += (extra_pages << SE_PAGE_SHIFT);
-            }
-            else if (LAYOUT_ID_RSRV_INIT)
-            {
-                m_create_param.rsrv_init_size += (extra_pages << SE_PAGE_SHIFT);
-            }
-            else /* (layout.entry.id == LAYOUT_ID_RSRV_MIN) */
-            {
-                m_create_param.rsrv_min_size += (extra_pages << SE_PAGE_SHIFT);
-            }
-        }
-        else
-        {
-            memset(&layout, 0, sizeof(layout));
-            layout.entry.id = LAYOUT_ID_GUARD;
-            layout.entry.rva = m_rva;
-            layout.entry.page_count = extra_pages;
-            m_layouts.push_back(layout);
-
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
-            se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout.entry.page_count);
-            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout.entry.attributes);
-            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout.entry.si_flags);
-            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout.entry.rva, m_metadata->enclave_size - 1);
-        }
+        se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
+        se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout.entry.page_count);
+        se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout.entry.attributes);
+        se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout.entry.si_flags);
+        se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout.entry.rva, m_metadata->enclave_size - 1);
     }
 
     uint32_t size = (uint32_t)(m_layouts.size() * sizeof(layout_t));

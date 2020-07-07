@@ -107,6 +107,7 @@ ATTESTATION_STATUS exchange_report_ocall(sgx_dh_msg2_t *dh_msg2, sgx_dh_msg3_t *
 
 	if (client_send_receive(msg2, msg2size, &msg3, &msg3size) != 0)
 	{
+		free(msg2);
 		printf("failed to send and receive message.\n");
 		return INVALID_SESSION;
 	}
@@ -115,7 +116,7 @@ ATTESTATION_STATUS exchange_report_ocall(sgx_dh_msg2_t *dh_msg2, sgx_dh_msg3_t *
 	memcpy(dh_msg3, &msg3_body->dh_msg3, sizeof(sgx_dh_msg3_t));
 
 	free(msg3);
-        free(msg2);
+	free(msg2);
 	
 	return (ATTESTATION_STATUS)0;
 }
@@ -157,6 +158,7 @@ ATTESTATION_STATUS send_request_ocall(uint32_t session_id, secure_message_t* req
 
 	if (client_send_receive(msgreq, reqsize, &msgresp, &respsize) != 0)
 	{
+		free(msgreq);
 		printf("fail to send and receive message.\n");
 		return INVALID_SESSION;
 	}
@@ -197,10 +199,12 @@ ATTESTATION_STATUS end_session_ocall(uint32_t session_id)
 
 	if (client_send_receive(closemsg, reqsize, &msgresp, &respsize) != 0)
 	{
+		free(closemsg);
 		printf("fail to send and receive message.\n");
 		return INVALID_SESSION;
 	}
 
+	free(closemsg);
 	free(msgresp);
 
 	return (ATTESTATION_STATUS)0;

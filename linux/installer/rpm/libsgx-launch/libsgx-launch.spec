@@ -29,6 +29,8 @@
 #
 #
 
+%define _license_file COPYING
+
 Name:           libsgx-launch
 Version:        @version@
 Release:        1%{?dist}
@@ -56,6 +58,8 @@ Intel(R) Software Guard Extensions Launch Service for Developers
 
 %install
 make DESTDIR=%{?buildroot} install
+install -d %{?buildroot}/%{name}%{_docdir}/%{name}
+find %{?_sourcedir}/package/licenses/ -type f -print0 | xargs -0 -n1 cat >> %{?buildroot}/%{name}%{_docdir}/%{name}/%{_license_file}
 rm -f %{_specdir}/list-%{name}
 for f in $(find %{?buildroot}/%{name} -type f -o -type l); do
     echo $f | sed -e "s#%{?buildroot}/%{name}##" >> %{_specdir}/list-%{name}

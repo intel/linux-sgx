@@ -636,8 +636,8 @@ extern "C" {
     *           sgx_ec256_public_t *p_public_ga - Pointer to the remote public key - LITTLE ENDIAN
     *   Output: sgx_ec256_dh_shared_t *p_shared_key - Pointer to the shared DH key - LITTLE ENDIAN
     */
-    sgx_status_t SGXAPI sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
-                                                    sgx_ec256_public_t *p_public_ga,
+    sgx_status_t SGXAPI sgx_ecc256_compute_shared_dhkey(const sgx_ec256_private_t *p_private_b,
+                                                    const sgx_ec256_public_t *p_public_ga,
                                                     sgx_ec256_dh_shared_t *p_shared_key,
                                                     sgx_ecc_state_handle_t ecc_handle);
 
@@ -673,7 +673,7 @@ extern "C" {
     */
     sgx_status_t SGXAPI sgx_ecdsa_sign(const uint8_t *p_data,
                                     uint32_t data_size,
-                                    sgx_ec256_private_t *p_private,
+                                    const sgx_ec256_private_t *p_private,
                                     sgx_ec256_signature_t *p_signature,
                                     sgx_ecc_state_handle_t ecc_handle);
 
@@ -707,7 +707,7 @@ extern "C" {
     sgx_status_t SGXAPI sgx_ecdsa_verify(const uint8_t *p_data,
                                         uint32_t data_size,
                                         const sgx_ec256_public_t *p_public,
-                                        sgx_ec256_signature_t *p_signature,
+                                        const sgx_ec256_signature_t *p_signature,
                                         uint8_t *p_result,
                                         sgx_ecc_state_handle_t ecc_handle);
 
@@ -737,7 +737,7 @@ extern "C" {
     */
     sgx_status_t SGXAPI sgx_ecdsa_verify_hash(const uint8_t *p_data,
                                         const sgx_ec256_public_t *p_public,
-                                        sgx_ec256_signature_t *p_signature,
+                                        const sgx_ec256_signature_t *p_signature,
                                         uint8_t *p_result,
                                         sgx_ecc_state_handle_t ecc_handle);
 
@@ -811,7 +811,7 @@ extern "C" {
     *           pout_len - Pointer to amount of data written.
     *
     */
-    sgx_status_t sgx_rsa_priv_decrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data, const size_t pin_len);
+    sgx_status_t sgx_rsa_priv_decrypt_sha256(const void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data, const size_t pin_len);
 
     /** Encrypt input data [pin_data] using RSA public key, with OAEP SHA-256
     *
@@ -825,7 +825,7 @@ extern "C" {
     *           pout_len - Pointer to amount of data (ciphertext) written.
     *
     */
-    sgx_status_t sgx_rsa_pub_encrypt_sha256(void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data, const size_t pin_len);
+    sgx_status_t sgx_rsa_pub_encrypt_sha256(const void* rsa_key, unsigned char* pout_data, size_t* pout_len, const unsigned char* pin_data, const size_t pin_len);
 
     /** Create RSA private key using input buffer factors in little endian.
     *

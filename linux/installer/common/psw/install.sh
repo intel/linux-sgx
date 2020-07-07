@@ -40,17 +40,12 @@ PSW_DST_PATH=${SGX_PACKAGES_PATH}/${PSW_PKG_NAME}
 AESM_PATH=$PSW_DST_PATH/aesm
 
 # Install the AESM service
-id -u aesmd &> /dev/null || \
-    /usr/sbin/useradd -r -U -c "User for aesmd" \
-    -d /var/opt/aesmd -s /sbin/nologin aesmd
-
 mkdir -p /var/opt/aesmd
 cp -rf $AESM_PATH/data /var/opt/aesmd/
 rm -rf $AESM_PATH/data
 cp -rf $AESM_PATH/conf/aesmd.conf /etc/aesmd.conf
 rm -rf $AESM_PATH/conf
-chmod  0644 /etc/aesmd.conf
-chown -R aesmd:aesmd /var/opt/aesmd
+chmod 0644 /etc/aesmd.conf
 chmod 0750 /var/opt/aesmd
 
 # By default the AESM's communication socket will be created in
@@ -59,7 +54,6 @@ chmod 0750 /var/opt/aesmd
 # mount a volume at /var/run/aesmd and thus expose the socket to
 # a different filesystem or namespace, e.g. a Docker container.
 mkdir -p /var/run/aesmd
-chown -R aesmd:aesmd /var/run/aesmd
 chmod 0755 /var/run/aesmd
 
 if [ -d /run/systemd/system ]; then
@@ -77,7 +71,6 @@ if [ -d /run/systemd/system ]; then
     chmod 0644 $AESMD_DEST
     rm -f $AESMD_TEMP
     rm -f $AESM_PATH/aesmd.conf
-    systemctl enable aesmd
     retval=$?
 elif [ -d /etc/init/ ]; then
     /sbin/initctl stop aesmd &> /dev/null || echo
@@ -90,7 +83,6 @@ elif [ -d /etc/init/ ]; then
     chmod 0644 $AESMD_DEST
     rm -f $AESMD_TEMP
     rm -f $AESM_PATH/aesmd.service
-    /sbin/initctl reload-configuration
     retval=$?
 fi
 
@@ -116,6 +108,22 @@ else
         echo "Error: Unsupported platform - neither systemctl nor initctl is found."
         exit 5
     fi
+fi
+
+#Install the assistance scripts
+cp -rf $PSW_DST_PATH/udev /etc
+rm -rf $PSW_DST_PATH/udev
+
+if [ -d /run/systemd/system ]; then
+    systemctl stop remount-dev-exec &> /dev/null || echo
+    REMOUNT_DEV_EXEC_NAME=remount-dev-exec.service
+    if [ -d /lib/systemd/system ]; then
+        REMOUNT_DEV_EXEC_DEST=/lib/systemd/system/$REMOUNT_DEV_EXEC_NAME
+    else
+        REMOUNT_DEV_EXEC_DEST=/usr/lib/systemd/system/$REMOUNT_DEV_EXEC_NAME
+    fi
+    mv $PSW_DST_PATH/$REMOUNT_DEV_EXEC_NAME $REMOUNT_DEV_EXEC_DEST
+    chmod 0644 $REMOUNT_DEV_EXEC_DEST
 fi
 
 cat > $PSW_DST_PATH/uninstall.sh <<EOF
@@ -157,14 +165,12 @@ if test \$(id -u) -ne 0; then
     exit 1
 fi
 
-# Killing AESM service
+$PSW_DST_PATH/cleanup.sh
+
+# Stop and disable remount-dev-exec service
 if [ -d /run/systemd/system ]; then
-    systemctl daemon-reload
-    systemctl stop aesmd
-    systemctl disable aesmd 2> /dev/null
-elif [ -d /etc/init/ ]; then
-    /sbin/initctl reload-configuration
-    /sbin/initctl stop aesmd
+    systemctl stop remount-dev-exec
+    systemctl disable remount-dev-exec
 fi
 
 # Removing AESM configuration files
@@ -189,9 +195,10 @@ rm -f /usr/lib/i386-linux-gnu/libsgx_epid.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_launch.so*
 rm -f /usr/lib/i386-linux-gnu/libsgx_quote_ex.so*
 
-# Removing AESM user and group
-/usr/sbin/userdel aesmd 2> /dev/null
-/usr/sbin/groupdel aesmd 2> /dev/null
+# Removing the assistance scripts
+rm -f /etc/udev/rules.d/91-sgx-enclave.rules
+rm -f /etc/udev/rules.d/92-sgx-provision.rules
+rm -f $REMOUNT_DEV_EXEC_DEST
 
 # Removing AESM folder
 rm -fr $PSW_DST_PATH
@@ -200,68 +207,21 @@ echo "Intel(R) SGX PSW uninstalled."
 EOF
 
 chmod +x $PSW_DST_PATH/uninstall.sh
-
-$AESM_PATH/cse_provision_tool 2> /dev/null || true
-rm -f $AESM_PATH/cse_provision_tool
-
-cat > $AESM_PATH/linksgx.sh <<EOF
-#!/usr/bin/env bash
-#
-# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-#
-#   * Redistributions of source code must retain the above copyright
-#     notice, this list of conditions and the following disclaimer.
-#   * Redistributions in binary form must reproduce the above copyright
-#     notice, this list of conditions and the following disclaimer in
-#     the documentation and/or other materials provided with the
-#     distribution.
-#   * Neither the name of Intel Corporation nor the names of its
-#     contributors may be used to endorse or promote products derived
-#     from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-#
-
-
-if test \$(id -u) -ne 0; then
-    echo "Root privilege is required."
-    exit 1
-fi
-
-/usr/sbin/usermod -aG sgx_prv aesmd &> /dev/null
-
-if [ -e /dev/sgx ]; then
-    chmod 666 /dev/sgx &> /dev/null
-    /sbin/modprobe -r isgx &> /dev/null
-else
-    /sbin/modprobe isgx &> /dev/null || /sbin/modprobe --allow-unsupported isgx &> /dev/null
-fi
-echo ""
-EOF
+chmod +x $PSW_DST_PATH/cleanup.sh
 
 chmod +x $AESM_PATH/linksgx.sh
 
-# Start the aesmd service
+chmod +x $PSW_DST_PATH/startup.sh
+$PSW_DST_PATH/startup.sh
+
+# Enable and start remount-dev-exec service
 if [ -d /run/systemd/system ]; then
-    systemctl start aesmd
-elif [ -d /etc/init/ ]; then
-    /sbin/initctl start aesmd
+    systemctl enable remount-dev-exec
+    systemctl start remount-dev-exec
 fi
+
+$AESM_PATH/cse_provision_tool 2> /dev/null || true
+rm -f $AESM_PATH/cse_provision_tool
 
 echo -e "\nuninstall.sh script generated in $PSW_DST_PATH\n"
 
@@ -270,4 +230,3 @@ echo -e "Installation is successful!"
 rm -fr $PSW_DST_PATH/scripts
 
 exit 0
-

@@ -21,6 +21,7 @@
 #include <sys/cdefs.h>
 #include <sys/ieee.h>
 #include <float.h>
+#include <math.h>
 
 int
 __isnan(double d)

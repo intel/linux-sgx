@@ -450,7 +450,7 @@ public:
     }
     ~DemoBuffer()
     {
-        delete buffer;
+        delete [] buffer;
     }
 
 };

@@ -49,7 +49,7 @@ asinf(float x)
 	} else if (ix<0x3f000000) {	/* |x|<0.5 */
 	    if(ix<0x32000000) {		/* if |x| < 2**-27 */
 		if(huge+x>one) return x;/* return x with inexact if x!=0*/
-	    } else 
+	    }
 	    t = x*x;
 	    p = t*(pS0+t*(pS1+t*(pS2+t*(pS3+t*(pS4+t*pS5)))));
 	    q = one+t*(qS1+t*(qS2+t*(qS3+t*qS4)));

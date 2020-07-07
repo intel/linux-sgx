@@ -104,7 +104,8 @@ int client_send_receive(FIFO_MSG *fiforequest, size_t fiforequest_size, FIFO_MSG
         if (!response)
         {
             printf("memory allocation failure.\n");
-            return -1;
+            ret = -1;
+            goto CLEAN;
         }
         memset(response, 0, (size_t)byte_num);
 

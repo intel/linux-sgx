@@ -26,6 +26,6 @@ add_custom_command(OUTPUT ${qe3_logic}
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/linux"
 )
 add_custom_target(qe3_logic_lib DEPENDS ${qe3_logic})
-target_link_libraries(${bundle} ${qe3_logic} oal utils urts_internal)
+target_link_libraries(${bundle} oal utils ${qe3_logic})
 add_dependencies(${bundle} qe3_logic_lib)
 set_property(TARGET ${bundle} APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")

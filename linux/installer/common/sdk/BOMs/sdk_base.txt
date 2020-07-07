@@ -81,6 +81,13 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/external/ippcp_internal/inc/sgx_ippcp.h	<installdir>/package/include/ipp/sgx_ippcp.h	0	main	STP
 <deliverydir>/linux/installer/common/sdk/install.sh	<installdir>/scripts/install.sh	0	main	STP
 <deliverydir>/linux/installer/common/sdk/Makefile	<installdir>/Makefile	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h	<installdir>/package/include/./sgx_ql_lib_common.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/pce_wrapper/inc/sgx_pce.h	<installdir>/package/include/./sgx_pce.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h	<installdir>/package/include/./sgx_quote_3.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_quote.h	<installdir>/package/include/./sgx_ql_quote.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteVerification/QvE/Include/sgx_qve_header.h	<installdir>/package/include/./sgx_qve_header.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteVerification/dcap_tvl/sgx_dcap_tvl.h	<installdir>/package/include/./sgx_dcap_tvl.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteVerification/dcap_tvl/sgx_dcap_tvl.edl	<installdir>/package/include/./sgx_dcap_tvl.edl	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/App/App.cpp	<installdir>/package/SampleCode/LocalAttestation/App/App.cpp	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/AppInitiator/App.cpp	<installdir>/package/SampleCode/LocalAttestation/AppInitiator/App.cpp	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/AppInitiator/datatypes.h	<installdir>/package/SampleCode/LocalAttestation/AppInitiator/datatypes.h	0	main	STP

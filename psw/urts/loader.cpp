@@ -461,19 +461,6 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
     for(layout_t *layout = layout_start; layout < layout_end; layout++)
     {
         se_trace(SE_TRACE_DEBUG, "%s, step = 0x%016llX\n", __FUNCTION__, delta);
-        if (!IS_GROUP_ID(layout->entry.id)) {
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id]);
-            se_trace(SE_TRACE_DEBUG, "Page Count = %5u, ", layout->entry.page_count);
-            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X, ", layout->entry.attributes);
-            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX, ", layout->entry.si_flags);
-            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX + 0x%016llX\n", layout->entry.rva, delta);
-        }
-        else {
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id & ~(GROUP_FLAG)]);
-            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u, ", layout->group.entry_count);
-            se_trace(SE_TRACE_DEBUG, "Load Times = %u,    ", layout->group.load_times);
-            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout->group.load_step);
-        }
 
         if (!IS_GROUP_ID(layout->group.id))
         {
@@ -484,6 +471,11 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
         }
         else
         {
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id & ~(GROUP_FLAG)]);
+            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u, ", layout->group.entry_count);
+            se_trace(SE_TRACE_DEBUG, "Load Times = %u,    ", layout->group.load_times);
+            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout->group.load_step);
+
             uint64_t step = 0;
             for(uint32_t j = 0; j < layout->group.load_times; j++)
             {
@@ -867,7 +859,7 @@ int CLoader::set_memory_protection()
         layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
         for (layout_t *layout = layout_start; layout < layout_end; layout++)
         {
-            if(layout->entry.id ==  LAYOUT_ID_RSRV_MIN && layout->entry.si_flags == SI_FLAGS_RWX)
+            if (layout->entry.id ==  LAYOUT_ID_RSRV_MIN && layout->entry.si_flags == SI_FLAGS_RWX && layout->entry.page_count > 0)
             {
                 ret = get_enclave_creator()->emodpr((uint64_t)m_start_addr + layout->entry.rva, layout->entry.page_count << SE_PAGE_SHIFT, (uint64_t)(SI_FLAG_R |SI_FLAG_W ));
                 if (ret != SGX_SUCCESS)

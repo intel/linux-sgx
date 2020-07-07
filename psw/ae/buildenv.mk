@@ -75,7 +75,7 @@ CXXFLAGS  += $(ENCLAVE_CXXFLAGS)
 CFLAGS    += $(ENCLAVE_CFLAGS)
 
 LDTFLAGS  = -L$(SGX_LIB_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whole-archive \
-            -Wl,--start-group $(EXTERNAL_LIB) -Wl,--end-group                      \
+            -Wl,--start-group $(EXTERNAL_LIB) -Wl,--end-group -Wl,--build-id       \
             -Wl,--version-script=$(ROOT_DIR)/build-scripts/enclave.lds $(ENCLAVE_LDFLAGS)
 
 LDTFLAGS += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map -Wl,--undefined=version -Wl,--gc-sections
