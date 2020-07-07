@@ -125,7 +125,7 @@ prepare_sgx_src()
         rm -rf $sgx_repo
     fi
 
-    git clone https://github.com/intel/linux-sgx.git $sgx_repo
+    git clone -b sgx_2.10_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
     cd $sgx_repo && ./download_prebuilt.sh && cd -
 }
 
@@ -143,7 +143,7 @@ prepare_openmp_src()
 {
     openmp_dir="$sgx_repo/external/openmp/"
     if [ ! -d $openmp_dir/openmp_code/final ]; then
-        cd $openmp_dir && git clone -b svn-tags/RELEASE_801 https://github.com/llvm-mirror/openmp.git --depth 1 openmp_code && cd -
+        cd $openmp_dir && git submodule update -f --init --recursive -- openmp_code && cd -
     fi
     if [ ! -f $openmp_dir/openmp_code/final/runtime/src/sgx_stub.h ]; then
         cd $openmp_dir/openmp_code && git apply ../0001-Enable-OpenMP-in-SGX.patch && cd -
@@ -154,8 +154,8 @@ prepare_ipp_src()
 {
     pushd .
     ipp_dir="$sgx_repo/external/ippcp_internal"
-    if [ ! -d $ipp_dir/ipp-crypto ]; then
-        git clone -b ipp-crypto_2019_update5  https://github.com/intel/ipp-crypto.git --depth 1 $ipp_dir/ipp-crypto
+    if [ -z "$(ls -A $ipp_dir/ipp-crypto)" ]; then
+        cd $ipp_dir && git submodule update -f --init --recursive -- ipp-crypto
     fi
 
     patch_log="$( cd $ipp_dir/ipp-crypto && git log --oneline --grep='Add mitigation support to assembly code' | cut -d' ' -f 3)"
@@ -182,8 +182,8 @@ prepare_binutils_src()
 prepare_sdk_installer()
 {
     # Used for 'ae' type repreducibility.
-    sdk_installer=sgx_linux_x64_sdk_2.10.100.2.bin
-    sdk_url=https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu18.04-server/$sdk_installer
+    sdk_installer=sgx_linux_x64_sdk_reproducible_2.10.100.1.bin
+    sdk_url=https://download.01.org/intel-sgx/sgx-linux/2.10/distro/nix_reproducibility/$sdk_installer
     cd $code_dir && wget $sdk_url && chmod +x $sdk_installer && cd -
 }
 
