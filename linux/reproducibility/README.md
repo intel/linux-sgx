@@ -31,3 +31,21 @@ In order to reproduce the enclave build, there are three requirements:1. stable 
     ```
     $ ./build_and_launch_docker.sh
     ```
+
+
+**Note**:
+To reproduce QVE, you need to apply below patch to the [build_and_launch_docker.sh](./build_and_launch_docker.sh) before start the reproducible build with the script.
+```
+diff --git a/linux/reproducibility/build_and_launch_docker.sh b/linux/reproducibility/build_and_launch_docker.sh
+index c43c76af..bb49b48b 100755
+--- a/linux/reproducibility/build_and_launch_docker.sh
++++ b/linux/reproducibility/build_and_launch_docker.sh
+@@ -136,6 +136,7 @@ prepare_dcap_src()
+         exit -1
+     fi
+     cd ${sgx_repo} && make dcap_source && cd -
++    cd $sgx_repo && mkdir dcap-trunk/ && mv external/dcap_source/ dcap-trunk/  && ln -sfr dcap-trunk/dcap_source external/dcap_source && cd -
+     $sgx_repo/external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
+ } 
+```
+    
