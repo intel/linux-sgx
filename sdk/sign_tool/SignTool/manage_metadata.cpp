@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -46,6 +46,8 @@
 #include "se_page_attr.h"
 #include "elf_util.h"
 #include "crypto_wrapper.h"
+#include "global_data.h"
+#include "se_version.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -433,6 +435,15 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
         }
     }
 
+   if(parameter[RSRVEXECUTABLE].flag != 0)
+   {
+       if(parameter[RSRVEXECUTABLE].value != 0 && parameter[RSRVEXECUTABLE].value != 1)
+       {
+           se_trace(SE_TRACE_ERROR, SET_RSRV_EXECUTABLE_ERROR);
+           return false;
+       }
+   }
+
     // LE setting:  HW != 0, Licensekey = 1
     // Other enclave setting: HW = 0, Licensekey = 0
     if((parameter[HW].value == 0 && parameter[LAUNCHKEY].value != 0) ||
@@ -478,6 +489,7 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     m_create_param.rsrv_init_size = parameter[RSRVINITSIZE].flag ? parameter[RSRVINITSIZE].value : parameter[RSRVMAXSIZE].value;
     m_create_param.rsrv_min_size = parameter[RSRVMINSIZE].value;
     m_create_param.rsrv_max_size = parameter[RSRVMAXSIZE].value;
+    m_create_param.rsrv_executable = parameter[RSRVEXECUTABLE].flag ? parameter[RSRVEXECUTABLE].value : 0;
     m_create_param.stack_max_size = parameter[STACKMAXSIZE].value;
     m_create_param.stack_min_size = parameter[STACKMINSIZE].value;
     m_create_param.tcs_num = (uint32_t)parameter[TCSNUM].value;
@@ -514,6 +526,7 @@ bool CMetadata::update_layout_entries()
     if(m_rva == 0)
     {
         se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Sections size is 0\n");
         return false;
     }
 
@@ -564,51 +577,22 @@ bool CMetadata::build_layout_entries()
     }
 
     // Add extra EPC pages to round the enclave size to power of 2
-    // We may add a guard pages or increase the size of the memory region reserved for NUMA
+    // We add a layout of guard pages
     if (m_metadata->enclave_size - m_rva > 0)
     {
-        layout_t layout = m_layouts[m_layouts.size() - 1];
         uint32_t extra_pages = (uint32_t)((m_metadata->enclave_size - m_rva) >> SE_PAGE_SHIFT);
+        layout_t layout;
+        memset(&layout, 0, sizeof(layout));
+        layout.entry.id = LAYOUT_ID_GUARD;
+        layout.entry.rva = m_rva;
+        layout.entry.page_count = extra_pages;
+        m_layouts.push_back(layout);
 
-        if (((layout.entry.id == LAYOUT_ID_RSRV_INIT) || (layout.entry.id == LAYOUT_ID_RSRV_MAX)) ||
-            ((layout.entry.id == LAYOUT_ID_RSRV_MIN) && (layout.entry.page_count > 0)))
-        {
-            m_layouts[m_layouts.size() - 1].entry.page_count += extra_pages;
-
-            layout = m_layouts[m_layouts.size() - 1];
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
-            se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout.entry.page_count);
-            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout.entry.attributes);
-            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout.entry.si_flags);
-            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout.entry.rva, m_metadata->enclave_size - 1);
-
-            if (layout.entry.id == LAYOUT_ID_RSRV_MAX)
-            {
-                m_create_param.rsrv_max_size += (extra_pages << SE_PAGE_SHIFT);
-            }
-            else if (LAYOUT_ID_RSRV_INIT)
-            {
-                m_create_param.rsrv_init_size += (extra_pages << SE_PAGE_SHIFT);
-            }
-            else /* (layout.entry.id == LAYOUT_ID_RSRV_MIN) */
-            {
-                m_create_param.rsrv_min_size += (extra_pages << SE_PAGE_SHIFT);
-            }
-        }
-        else
-        {
-            memset(&layout, 0, sizeof(layout));
-            layout.entry.id = LAYOUT_ID_GUARD;
-            layout.entry.rva = m_rva;
-            layout.entry.page_count = extra_pages;
-            m_layouts.push_back(layout);
-
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
-            se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout.entry.page_count);
-            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout.entry.attributes);
-            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout.entry.si_flags);
-            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout.entry.rva, m_metadata->enclave_size - 1);
-        }
+        se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", 0, layout.entry.id, layout_id_str[layout.entry.id]);
+        se_trace(SE_TRACE_DEBUG, "Page Count = %5u,  ", layout.entry.page_count);
+        se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X,  ", layout.entry.attributes);
+        se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX,  ", layout.entry.si_flags);
+        se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", layout.entry.rva, m_metadata->enclave_size - 1);
     }
 
     uint32_t size = (uint32_t)(m_layouts.size() * sizeof(layout_t));
@@ -616,7 +600,8 @@ bool CMetadata::build_layout_entries()
     layout_t *layout_table = (layout_t *) alloc_buffer_from_metadata(size);
     if(layout_table == NULL)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Layout table could not be allocated\n");
         return false;
     }
     m_metadata->dirs[DIR_LAYOUT].offset = (uint32_t)PTR_DIFF(layout_table, m_metadata);
@@ -818,6 +803,7 @@ bool CMetadata::build_layout_table()
         layout.group.load_times = m_create_param.tcs_max_num - tcs_min_pool - 1;
         m_layouts.push_back(layout);
     }
+
     // RSRV region
     if (m_create_param.rsrv_min_size > 0 ||
         m_create_param.rsrv_init_size > 0 ||
@@ -827,7 +813,7 @@ bool CMetadata::build_layout_table()
         layout.entry.id = LAYOUT_ID_RSRV_MIN;
         layout.entry.page_count = (uint32_t)(m_create_param.rsrv_min_size >> SE_PAGE_SHIFT);
         layout.entry.attributes = PAGE_ATTR_EADD;
-        layout.entry.si_flags = SI_FLAGS_RW;
+        layout.entry.si_flags = m_create_param.rsrv_executable ? SI_FLAGS_RWX : SI_FLAGS_RW;
         m_layouts.push_back(layout);
 
         if (m_create_param.rsrv_init_size > m_create_param.rsrv_min_size)
@@ -835,7 +821,7 @@ bool CMetadata::build_layout_table()
             layout.entry.id = LAYOUT_ID_RSRV_INIT;
             layout.entry.page_count = (uint32_t)((m_create_param.rsrv_init_size - m_create_param.rsrv_min_size) >> SE_PAGE_SHIFT);
             layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_POST_REMOVE | PAGE_ATTR_POST_ADD;
-            layout.entry.si_flags = SI_FLAGS_RW;
+            layout.entry.si_flags = m_create_param.rsrv_executable ? SI_FLAGS_RWX : SI_FLAGS_RW;
             m_layouts.push_back(layout);
         }
 
@@ -858,7 +844,8 @@ bool CMetadata::build_layout_table()
     // tcs template
     if(false == build_tcs_template(tcs_template))
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not build TCS template\n");
         return false;
     }
     return true;
@@ -870,7 +857,8 @@ bool CMetadata::build_patch_entries(std::vector<patch_entry_t> &patches)
     patch_entry_t *patch_table = (patch_entry_t *) alloc_buffer_from_metadata(size);
     if(patch_table == NULL)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not allocate patch table");
         return false;
     }
     m_metadata->dirs[DIR_PATCH].offset = (uint32_t)PTR_DIFF(patch_table, m_metadata);
@@ -901,11 +889,20 @@ bool CMetadata::build_patch_table()
     uint64_t rva = m_parser->get_symbol_rva("g_global_data");
     if(0 == rva)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not find g_global_data\n");
          return false;
     }
+    
+    // Check whether the same SDK is used for enclave building and signing
+    global_data_t *gdata = (global_data_t *)get_rawdata_by_rva(rva);
+    if (gdata -> sdk_version != VERSION_UINT)
+    {
+        se_trace(SE_TRACE_ERROR, SDK_VERSION_ERROR);
+	return false;
+    }
 
-    patch.dst = (uint64_t)PTR_DIFF(get_rawdata_by_rva(rva), base_addr);
+    patch.dst = (uint64_t)PTR_DIFF(gdata, base_addr);
     patch.src = (uint32_t)PTR_DIFF(m_gd_template, m_metadata);
     patch.size = m_gd_size;
     patches.push_back(patch);
@@ -915,7 +912,8 @@ bool CMetadata::build_patch_table()
     uint8_t *zero = (uint8_t *)alloc_buffer_from_metadata(0);  // get addr only, size will be determined later
     if(zero == NULL)
     {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR); 
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Could not allocate 0 bytes\n");
         return false;
     }
     bin_fmt_t bf = m_parser->get_bin_format();

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -35,6 +35,7 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/         \
             -I$(COMMON_DIR)/inc/tlibc/   \
             -I$(COMMON_DIR)/inc/internal \
             -I$(LINUX_SDK_DIR)/trts/     \
+            -I$(LINUX_SDK_DIR)/pthread/  \
             -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 CFLAGS   += $(ENCLAVE_CFLAGS)
@@ -66,7 +67,6 @@ TRTS1_OBJS  := init_enclave.o \
                trts_xsave.o   \
                init_optimized_lib.o \
                trts_emodpr.o  \
-               trts_switchless.o \
                trts_add_trim.o
 TRTS2_OBJS  := trts_nsp.o
 TRTS_OBJS := $(TRTS1_OBJS) $(TRTS2_OBJS)
@@ -81,7 +81,8 @@ TLS_OBJS     := get_tcs.o \
 
 TLDR_ASM_OBJS := trts_pic.o \
                 metadata_sec.o \
-                xsave_gnu.o
+                xsave_gnu.o \
+                thunk.o
 
 TLDR_C_OBJS  := elf_parser.o  \
                 global_init.o \

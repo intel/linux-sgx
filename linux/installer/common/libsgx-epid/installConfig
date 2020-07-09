@@ -1,0 +1,8 @@
+EPID_VERSION="1.0"
+TARBALL_NAME=libsgx-epid_1.0.orig.tar.gz
+
+EPID_PACKAGE_NAME=libsgx-epid
+EPID_DEV_PACKAGE_NAME=libsgx-epid-dev
+
+LIB_DIR=lib
+INC_DIR=include

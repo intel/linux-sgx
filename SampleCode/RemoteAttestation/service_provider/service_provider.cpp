@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -244,7 +244,8 @@ int sp_ra_proc_msg0_req(const sample_ra_msg0_t *p_msg0,
         msg0_resp_size = (uint32_t)sizeof(g_epid_unlinkable_att_key_id_list);
     }
 
-    p_msg0_resp_full = (ra_samp_response_header_t*)malloc(msg0_resp_size);
+    p_msg0_resp_full = (ra_samp_response_header_t*)malloc(msg0_resp_size
+        + sizeof(ra_samp_response_header_t));
     if(!p_msg0_resp_full)
     {
         fprintf(stderr, "\nError, out of memory in [%s].", __FUNCTION__);
@@ -252,7 +253,7 @@ int sp_ra_proc_msg0_req(const sample_ra_msg0_t *p_msg0,
     }
     else
     {
-        memset(p_msg0_resp_full, 0, msg0_resp_size);
+        memset(p_msg0_resp_full, 0, msg0_resp_size + sizeof(ra_samp_response_header_t));
 
         if (g_return_ecdsa_att_key_id)
         {

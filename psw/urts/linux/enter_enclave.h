@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,11 +51,14 @@ lea     \symbol, \reg
 .endm
 
 /* macro for enter_enclave
- * There is no .cfi_xxx to describe unwind information, because we want c++ exception can't across enclave boundary
 */
 .macro EENTER_PROLOG
+.cfi_startproc
 push    %xbp
+.cfi_def_cfa_offset   2 * SE_WORDSIZE
+.cfi_offset           xbp, -2 * SE_WORDSIZE
 mov     %xsp, %xbp
+.cfi_def_cfa_register xbp
 
 /* save GPRs */
 #ifdef __i386__
@@ -128,6 +131,7 @@ mov     -SE_WORDSIZE*2(%rbp),   %r15
 mov     %xbp, %xsp
 pop     %xbp
 ret
+.cfi_endproc
 .endm
 
 #if defined(__i386__)

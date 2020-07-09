@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include "aesm_xegd_blob.h"
 #include "endpoint_select_info.h"
-#include "internal/se_memcpy.h"
+#include "se_memcpy.h"
 #include "oal/oal.h"
 #include "byte_order.h"
 #include "aesm_epid_blob.h"

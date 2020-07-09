@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,9 +38,9 @@
 #include "aeerror.h"
 #include "tlv_common.h"
 #include "se_thread.h"
-#include "internal/se_stdio.h"
-#include "internal/se_memcpy.h"
-#include "internal/uncopyable.h"
+#include "se_stdio.h"
+#include "se_memcpy.h"
+#include "uncopyable.h"
 #include "oal/oal.h"
 #include <time.h>
 #include <string.h>
@@ -49,7 +49,7 @@
 
 #include "default_url_info.hh"
 
-const uint32_t THREAD_TIMEOUT = 5000;
+const uint32_t THREAD_TIMEOUT = 60000;   // milli-seconds
 
 class AESMLogicMutex{
     CLASS_UNCOPYABLE(AESMLogicMutex)

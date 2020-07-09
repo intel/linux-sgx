@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,12 @@
  *
  */
 
+/**
+* File: epid_provision_msg2.cpp
+* Description: Provide the untrusted implementation of code to process ProvMsg2
+*
+* Untrusted Code for EPID Provision
+*/
 #include "type_length_value.h"
 #include "epid_utility.h"
 #include "aesm_xegd_blob.h"
@@ -36,13 +42,8 @@
 #include "PVEClass.h"
 #include "pce_service.h"
 #include "aesm_rand.h"
+#include <memory>
 
-/**
-* File: epid_provision_msg2.cpp
-* Description: Provide the untrusted implementation of code to process ProvMsg2
-*
-* Untrusted Code for EPID Provision
-*/
 #define MSG2_TOP_FIELDS_COUNT_WITH_SIGRL    4
 #define MSG2_TOP_FIELDS_COUNT_WITHOUT_SIGRL 3
 #define MSG2_TOP_FIELD_NONCE tlvs_msg2[0]
@@ -59,9 +60,6 @@
 #define MSG2_FIELD1_PREV_GID    tlvs_field1[PREV_GID_INDEX]
 #define MSG2_FIELD1_PLAT_INFO   tlvs_field1[alt_index+3]
 
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
 extern std::shared_ptr<IPceService> g_pce_service;
 
 //Function to verify that EPID SigRl type and version is correct for sigrl

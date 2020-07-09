@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -45,7 +45,6 @@ endif
 ifeq ($(BUILD_REF_LE), 1)
      AESM_CONFIG += -DREF_LE=ON
 endif
-AESM_CONFIG += -DAESM_ECDSA_BUNDLE=ON
 
 ifeq ($(ARCH), x86)
 	SQLITECFLAGS += -m32
@@ -74,7 +73,6 @@ all: $(APPNAME) $(APPNAME_DEBUG) copy_data_file | $(BUILD_DIR)
 
 copy_data_file:
 	@$(MKDIR) -p data
-	@$(CP) $(LINUX_PSW_DIR)/ae/pse/pse_op/vmc_db_generator/prebuild_pse_vmc.db data
 	@$(CP) $(WHITE_LIST_FILE) data/white_list_cert_to_be_verify.bin
 
 $(APPNAME): $(CPPMICROSERVICES) source/build/CMakeCache.txt urts RDRAND

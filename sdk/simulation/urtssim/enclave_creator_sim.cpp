@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -239,7 +239,7 @@ int EnclaveCreatorSim::initialize(sgx_enclave_id_t enclave_id)
     }
     else
     {
-        SE_TRACE(SE_TRACE_WARNING, "initialize enclave failed\n");
+        SE_TRACE(SE_TRACE_WARNING, "initialize enclave failed: 0x%0x\n", status);
         return SGX_ERROR_UNEXPECTED;
     }
 }
@@ -258,11 +258,6 @@ bool EnclaveCreatorSim::is_EDMM_supported(sgx_enclave_id_t enclave_id)
 bool EnclaveCreatorSim::is_driver_compatible()
 {
     return true;
-}
-
-bool EnclaveCreatorSim::is_in_kernel_driver()
-{
-    return false;
 }
 
 bool EnclaveCreatorSim::get_plat_cap(sgx_misc_attribute_t *se_attr)

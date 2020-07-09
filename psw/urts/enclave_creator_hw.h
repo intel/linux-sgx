@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,7 +57,6 @@ public:
     bool use_se_hw() const;
     bool is_EDMM_supported(sgx_enclave_id_t enclave_id);
     bool is_driver_compatible();
-    bool is_in_kernel_driver();
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
     bool get_plat_cap(sgx_misc_attribute_t *se_attr);
     int emodpr(uint64_t addr, uint64_t size, uint64_t flag);
@@ -69,13 +68,12 @@ private:
     virtual bool open_device();
     virtual void close_device();
     int try_init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, token_t *launch);
-    int error_driver2urts(int driver_error);
+    int error_driver2urts(int driver_error, int err_no);
     int error_api2urts(uint32_t api_error);
     se_file_handle_t    m_hdevice;
     Mutex               m_dev_mutex;
     bool                m_sig_registered;
     se_mutex_t          m_sig_mutex;
-    bool                m_is_kernel_driver;
 };
 
 #endif

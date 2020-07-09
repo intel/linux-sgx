@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,19 +31,11 @@
 
 
 #include "aesm_long_lived_thread.h"
-#if 0
-#include "pve_logic.h"
-#include "pse_op_logic.h"
-#include "platform_info_logic.h"
-#endif
 #include "oal/internal_log.h"
 #include "se_time.h"
 #include "se_wrapper.h"
 #include <time.h>
 #include <assert.h>
-//#include "LEClass.h"
-
-
 
 ae_error_t BaseThreadIOCache::start(BaseThreadIOCache *&out_ioc, uint32_t timeout_value)
 {
@@ -319,8 +311,6 @@ static time_t get_timeout_via_ae_error(ae_error_t ae)
     case OAL_NETWORK_RESEND_REQUIRED:
         return cur-1;//always timeout, the error code will never be reused
     case PVE_INTEGRITY_CHECK_ERROR:
-    case PSE_OP_ERROR_EPH_SESSION_ESTABLISHMENT_INTEGRITY_ERROR:
-    case AESM_PSDA_LT_SESSION_INTEGRITY_ERROR:
     case OAL_NETWORK_UNAVAILABLE_ERROR:
     case OAL_NETWORK_BUSY:
     case PVE_SERVER_BUSY_ERROR:
@@ -329,8 +319,6 @@ static time_t get_timeout_via_ae_error(ae_error_t ae)
     case PVE_REVOKED_ERROR:
     case PVE_MSG_ERROR:
     case PVE_PERFORMANCE_REKEY_NOT_SUPPORTED:
-    case AESM_PSDA_PLATFORM_KEYS_REVOKED:
-    case AESM_PSDA_PROTOCOL_NOT_SUPPORTED:
     case PSW_UPDATE_REQUIRED:
         return cur+TIMEOUT_LONG_TIME;
     default:

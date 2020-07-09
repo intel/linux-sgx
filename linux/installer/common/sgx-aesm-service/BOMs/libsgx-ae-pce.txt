@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/libsgx_pce.signed.so	<installdir>/lib/libsgx_pce.signed.so	0	main	STP

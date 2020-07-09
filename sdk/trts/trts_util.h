@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -56,6 +56,8 @@ bool is_valid_sp(uintptr_t sp);
 
 int heap_init(void *_heap_base, size_t _heap_size, size_t _heap_min_size, int _is_edmm_supported);
 int feature_supported(const uint64_t *feature_set, uint32_t feature_shift);
+bool is_utility_thread();
+size_t get_max_tcs_num();
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,8 @@
+ENCLAVE_COMMON_VERSION="1.0"
+TARBALL_NAME=libsgx-enclave-common_1.0.orig.tar.gz
+
+ENCLAVE_COMMON_PACKAGE_NAME=libsgx-enclave-common
+ENCLAVE_COMMON_DEV_PACKAGE_NAME=libsgx-enclave-common-dev
+
+LIB_DIR=lib
+INC_DIR=include

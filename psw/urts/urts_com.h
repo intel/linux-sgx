@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -314,7 +314,7 @@ static int __create_enclave(BinParser &parser,
 
     debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
 
-    enclave->set_extra_debug_info(const_cast<secs_t &>(loader.get_secs()), loader.get_symbol_address("g_peak_heap_used"));
+    enclave->set_extra_debug_info(const_cast<secs_t &>(loader.get_secs()), loader);
 
     //add enclave to enclave pool before init_enclave because in simualtion
     //mode init_enclave will rely on CEnclavePool to get Enclave instance.
@@ -433,6 +433,14 @@ static int __create_enclave(BinParser &parser,
         }
     }
 
+    if(SGX_SUCCESS != (ret = loader.set_memory_protection()))
+    {
+        sgx_status_t status = SGX_SUCCESS;
+        generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
+        CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
+        goto fail;
+    }
+
     //fill tcs mini pool
     if (get_enclave_creator()->is_EDMM_supported(loader.get_enclave_id()))
     {
@@ -447,14 +455,6 @@ static int __create_enclave(BinParser &parser,
         }
     }
         
-    if(SGX_SUCCESS != (ret = loader.set_memory_protection(true)))
-    {
-        sgx_status_t status = SGX_SUCCESS;
-        generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
-        CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
-        goto fail;
-    }
-    
     if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_SWITCHLESS, ex_features, ex_features_p, (void **)&us_config) == -1)
     {
         ret = SGX_ERROR_INVALID_PARAMETER;
@@ -653,7 +653,8 @@ extern "C" sgx_status_t sgx_destroy_enclave(const sgx_enclave_id_t enclave_id)
             debug_enclave_info_t *debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
             generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
             enclave->destroy_uswitchless();
-            enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL);
+            if (get_enclave_creator()->is_EDMM_supported(enclave->get_enclave_id()))
+                enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL);
             CEnclavePool::instance()->unref_enclave(enclave);
         }
     }

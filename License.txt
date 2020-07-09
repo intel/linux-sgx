@@ -1,6 +1,6 @@
 BSD License
 
-Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions
@@ -39,7 +39,7 @@ http://www.eclipse.org/legal/epl-v10.html
 
 libsgx_le.signed.so, libsgx_pce.signed.so, libsgx_pve.signed.so, libsgx_qe.signed.so, libsgx_pse_pr.signed.so, libsgx_pse_pr_2.signed.so and libsgx_pse_op.signed.so are licensed as Intel redistributable binary firmware and other blobs.
 
- 
+
 Copyright (c) Intel Corporation.
 
 Redistribution.  Redistribution and use in binary form, without
@@ -93,16 +93,16 @@ All rights reserved.
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- 
+
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 
 2. compiler_rt and libc++
 
-The compiler_rt library is dual licensed under both the University of Illinois 
-"BSD-Like" license and the MIT license.  As a user of this code you may choose 
-to use it under either license.  As a contributor, you agree to allow your code 
+The compiler_rt library is dual licensed under both the University of Illinois
+"BSD-Like" license and the MIT license.  As a user of this code you may choose
+to use it under either license.  As a contributor, you agree to allow your code
 to be used under both.
 
 The libc++ library is dual licensed under both the University of Illinois
@@ -191,7 +191,7 @@ applies to all code in the LLVM Distribution, and nothing in any of the
 other licenses gives permission to use the names of the LLVM Team or the
 University of Illinois to endorse or promote products derived from this
 Software.
- 
+
 
 
 
@@ -203,98 +203,98 @@ http://g.oswego.edu/dl/html/malloc.html
 
 CC0 1.0 Universal
 
-CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT PROVIDE LEGAL SERVICES. 
-DISTRIBUTION OF THIS DOCUMENT DOES NOT CREATE AN ATTORNEY-CLIENT RELATIONSHIP. 
-CREATIVE COMMONS PROVIDES THIS INFORMATION ON AN "AS-IS" BASIS. CREATIVE COMMONS 
-MAKES NO WARRANTIES REGARDING THE USE OF THIS DOCUMENT OR THE INFORMATION OR WORKS 
-PROVIDED HEREUNDER, AND DISCLAIMS LIABILITY FOR DAMAGES RESULTING FROM THE USE OF 
+CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT PROVIDE LEGAL SERVICES.
+DISTRIBUTION OF THIS DOCUMENT DOES NOT CREATE AN ATTORNEY-CLIENT RELATIONSHIP.
+CREATIVE COMMONS PROVIDES THIS INFORMATION ON AN "AS-IS" BASIS. CREATIVE COMMONS
+MAKES NO WARRANTIES REGARDING THE USE OF THIS DOCUMENT OR THE INFORMATION OR WORKS
+PROVIDED HEREUNDER, AND DISCLAIMS LIABILITY FOR DAMAGES RESULTING FROM THE USE OF
 THIS DOCUMENT OR THE INFORMATION OR WORKS PROVIDED HEREUNDER.
 
 Statement of Purpose
-The laws of most jurisdictions throughout the world automatically confer exclusive 
-Copyright and Related Rights (defined below) upon the creator and subsequent owner(s) 
-(each and all, an "owner") of an original work of authorship and/or a database (each, 
+The laws of most jurisdictions throughout the world automatically confer exclusive
+Copyright and Related Rights (defined below) upon the creator and subsequent owner(s)
+(each and all, an "owner") of an original work of authorship and/or a database (each,
 a "Work").
-Certain owners wish to permanently relinquish those rights to a Work for the purpose 
-of contributing to a commons of creative, cultural and scientific works ("Commons") 
-that the public can reliably and without fear of later claims of infringement build 
-upon, modify, incorporate in other works, reuse and redistribute as freely as possible 
-in any form whatsoever and for any purposes, including without limitation commercial 
-purposes. These owners may contribute to the Commons to promote the ideal of a free 
-culture and the further production of creative, cultural and scientific works, or to 
-gain reputation or greater distribution for their Work in part through the use and 
+Certain owners wish to permanently relinquish those rights to a Work for the purpose
+of contributing to a commons of creative, cultural and scientific works ("Commons")
+that the public can reliably and without fear of later claims of infringement build
+upon, modify, incorporate in other works, reuse and redistribute as freely as possible
+in any form whatsoever and for any purposes, including without limitation commercial
+purposes. These owners may contribute to the Commons to promote the ideal of a free
+culture and the further production of creative, cultural and scientific works, or to
+gain reputation or greater distribution for their Work in part through the use and
 efforts of others.
-For these and/or other purposes and motivations, and without any expectation of 
-additional consideration or compensation, the person associating CC0 with a Work 
-(the "Affirmer"), to the extent that he or she is an owner of Copyright and Related 
-Rights in the Work, voluntarily elects to apply CC0 to the Work and publicly distribute 
-the Work under its terms, with knowledge of his or her Copyright and Related Rights 
+For these and/or other purposes and motivations, and without any expectation of
+additional consideration or compensation, the person associating CC0 with a Work
+(the "Affirmer"), to the extent that he or she is an owner of Copyright and Related
+Rights in the Work, voluntarily elects to apply CC0 to the Work and publicly distribute
+the Work under its terms, with knowledge of his or her Copyright and Related Rights
 in the Work and the meaning and intended legal effect of CC0 on those rights.
-1. Copyright and Related Rights. A Work made available under CC0 may be protected by 
-copyright and related or neighboring rights ("Copyright and Related Rights"). 
+1. Copyright and Related Rights. A Work made available under CC0 may be protected by
+copyright and related or neighboring rights ("Copyright and Related Rights").
 Copyright and Related Rights include, but are not limited to, the following:
 i.	the right to reproduce, adapt, distribute, perform, display, communicate,
  and translate a Work;
 ii.	moral rights retained by the original author(s) and/or performer(s);
-iii.	publicity and privacy rights pertaining to a person's image or likeness 
+iii.	publicity and privacy rights pertaining to a person's image or likeness
 depicted in a Work;
-iv.	rights protecting against unfair competition in regards to a Work, subject 
+iv.	rights protecting against unfair competition in regards to a Work, subject
 to the limitations in paragraph 4(a), below;
 v.	rights protecting the extraction, dissemination, use and reuse of data in a Work;
-vi.	database rights (such as those arising under Directive 96/9/EC of the European 
-Parliament and of the Council of 11 March 1996 on the legal protection of databases, 
-and under any national implementation thereof, including any amended or successor 
+vi.	database rights (such as those arising under Directive 96/9/EC of the European
+Parliament and of the Council of 11 March 1996 on the legal protection of databases,
+and under any national implementation thereof, including any amended or successor
 version of such directive); and
-vii.	other similar, equivalent or corresponding rights throughout the world based on 
+vii.	other similar, equivalent or corresponding rights throughout the world based on
 applicable law or treaty, and any national implementations thereof.
-2. Waiver. To the greatest extent permitted by, but not in contravention of, applicable 
-law, Affirmer hereby overtly, fully, permanently, irrevocably and unconditionally waives, 
-abandons, and surrenders all of Affirmer's Copyright and Related Rights and associated 
-claims and causes of action, whether now known or unknown (including existing as well as 
-future claims and causes of action), in the Work (i) in all territories worldwide, (ii) for 
+2. Waiver. To the greatest extent permitted by, but not in contravention of, applicable
+law, Affirmer hereby overtly, fully, permanently, irrevocably and unconditionally waives,
+abandons, and surrenders all of Affirmer's Copyright and Related Rights and associated
+claims and causes of action, whether now known or unknown (including existing as well as
+future claims and causes of action), in the Work (i) in all territories worldwide, (ii) for
 the maximum duration provided by applicable law or treaty (including future time extensions),
  (iii) in any current or future medium and for any number of copies, and (iv) for any purpose
- whatsoever, including without limitation commercial, advertising or promotional purposes 
-(the "Waiver"). Affirmer makes the Waiver for the benefit of each member of the public at 
-large and to the detriment of Affirmer's heirs and successors, fully intending that such 
-Waiver shall not be subject to revocation, rescission, cancellation, termination, or any 
-other legal or equitable action to disrupt the quiet enjoyment of the Work by the public 
+ whatsoever, including without limitation commercial, advertising or promotional purposes
+(the "Waiver"). Affirmer makes the Waiver for the benefit of each member of the public at
+large and to the detriment of Affirmer's heirs and successors, fully intending that such
+Waiver shall not be subject to revocation, rescission, cancellation, termination, or any
+other legal or equitable action to disrupt the quiet enjoyment of the Work by the public
 as contemplated by Affirmer's express Statement of Purpose.
-3. Public License Fallback. Should any part of the Waiver for any reason be judged legally 
-invalid or ineffective under applicable law, then the Waiver shall be preserved to the 
-maximum extent permitted taking into account Affirmer's express Statement of Purpose. In 
-addition, to the extent the Waiver is so judged Affirmer hereby grants to each affected 
-person a royalty-free, non transferable, non sublicensable, non exclusive, irrevocable 
-and unconditional license to exercise Affirmer's Copyright and Related Rights in the 
-Work (i) in all territories worldwide, (ii) for the maximum duration provided by applicable 
-law or treaty (including future time extensions), (iii) in any current or future medium and 
-for any number of copies, and (iv) for any purpose whatsoever, including without limitation 
-commercial, advertising or promotional purposes (the "License"). The License shall be deemed 
-effective as of the date CC0 was applied by Affirmer to the Work. Should any part of the 
-License for any reason be judged legally invalid or ineffective under applicable law, such 
-partial invalidity or ineffectiveness shall not invalidate the remainder of the License, 
-and in such case Affirmer hereby affirms that he or she will not (i) exercise any of his 
-or her remaining Copyright and Related Rights in the Work or (ii) assert any associated 
-claims and causes of action with respect to the Work, in either case contrary to Affirmer's 
+3. Public License Fallback. Should any part of the Waiver for any reason be judged legally
+invalid or ineffective under applicable law, then the Waiver shall be preserved to the
+maximum extent permitted taking into account Affirmer's express Statement of Purpose. In
+addition, to the extent the Waiver is so judged Affirmer hereby grants to each affected
+person a royalty-free, non transferable, non sublicensable, non exclusive, irrevocable
+and unconditional license to exercise Affirmer's Copyright and Related Rights in the
+Work (i) in all territories worldwide, (ii) for the maximum duration provided by applicable
+law or treaty (including future time extensions), (iii) in any current or future medium and
+for any number of copies, and (iv) for any purpose whatsoever, including without limitation
+commercial, advertising or promotional purposes (the "License"). The License shall be deemed
+effective as of the date CC0 was applied by Affirmer to the Work. Should any part of the
+License for any reason be judged legally invalid or ineffective under applicable law, such
+partial invalidity or ineffectiveness shall not invalidate the remainder of the License,
+and in such case Affirmer hereby affirms that he or she will not (i) exercise any of his
+or her remaining Copyright and Related Rights in the Work or (ii) assert any associated
+claims and causes of action with respect to the Work, in either case contrary to Affirmer's
 express Statement of Purpose.
 4. Limitations and Disclaimers.
-a.	No trademark or patent rights held by Affirmer are waived, abandoned, surrendered, 
+a.	No trademark or patent rights held by Affirmer are waived, abandoned, surrendered,
 licensed or otherwise affected by this document.
-b.	Affirmer offers the Work as-is and makes no representations or warranties of any 
-kind concerning the Work, express, implied, statutory or otherwise, including without limitation 
-warranties of title, merchantability, fitness for a particular purpose, non infringement, or 
-the absence of latent or other defects, accuracy, or the present or absence of errors, whether 
+b.	Affirmer offers the Work as-is and makes no representations or warranties of any
+kind concerning the Work, express, implied, statutory or otherwise, including without limitation
+warranties of title, merchantability, fitness for a particular purpose, non infringement, or
+the absence of latent or other defects, accuracy, or the present or absence of errors, whether
 or not discoverable, all to the greatest extent permissible under applicable law.
-c.	Affirmer disclaims responsibility for clearing rights of other persons that may apply 
+c.	Affirmer disclaims responsibility for clearing rights of other persons that may apply
 
-to the Work or any use thereof, including without limitation any person's Copyright and Related 
-Rights in the Work. Further, Affirmer disclaims responsibility for obtaining any necessary 
+to the Work or any use thereof, including without limitation any person's Copyright and Related
+Rights in the Work. Further, Affirmer disclaims responsibility for obtaining any necessary
 consents, permissions or other rights required for any use of the Work.
-d.	Affirmer understands and acknowledges that Creative Commons is not a party to this 
+d.	Affirmer understands and acknowledges that Creative Commons is not a party to this
 document and has no duty or obligation with respect to this CC0 or use of the Work.
 
 
- 
+
 
 4. FreeBSD
 
@@ -302,27 +302,27 @@ http://www.freebsd.org/
 
 The FreeBSD* Copyright
 Copyright 1992-2013 The FreeBSD Project. All rights reserved.
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
-1.	Redistributions of source code must retain the above copyright notice, 
+1.	Redistributions of source code must retain the above copyright notice,
 this list of conditions and the following disclaimer.
-2.	Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation and/or 
+2.	Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation and/or
 other materials provided with the distribution.
-THIS SOFTWARE IS PROVIDED BY THE FREEBSD PROJECT ``AS IS'' AND ANY EXPRESS OR 
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF 
-MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
-SHALL THE FREEBSD PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR 
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
-WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+THIS SOFTWARE IS PROVIDED BY THE FREEBSD PROJECT ``AS IS'' AND ANY EXPRESS OR
+IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE FREEBSD PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-The views and conclusions contained in the software and documentation are those 
-of the authors and should not be interpreted as representing official policies, 
+The views and conclusions contained in the software and documentation are those
+of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
- 
+
 
 
 
@@ -332,30 +332,30 @@ The BSD License
 
 Copyright 2010-2011 PathScale, Inc. All rights reserved.
 
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
 
-1. Redistributions of source code must retain the above copyright notice, this list 
+1. Redistributions of source code must retain the above copyright notice, this list
    of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice, this 
-   list of conditions and the following disclaimer in the documentation and/or other 
+2. Redistributions in binary form must reproduce the above copyright notice, this
+   list of conditions and the following disclaimer in the documentation and/or other
     materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS'' AND ANY
- EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
-SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED 
-TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
-ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH 
+ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
 DAMAGE.
 
-The views and conclusions contained in the software and documentation are those of 
-the authors and should not be interpreted as representing official policies, either 
+The views and conclusions contained in the software and documentation are those of
+the authors and should not be interpreted as representing official policies, either
 expressed or implied, of PathScale, Inc.
- 
+
 
 
 
@@ -369,7 +369,7 @@ expressed or implied, of PathScale, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
- * by 
+ * by
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -395,7 +395,7 @@ expressed or implied, of PathScale, Inc.
 ________________________________________
 For complete copyright and licensing terms, see: http://www.netbsd.org/about/redistribution.html
 
- 
+
 
 
 7. OpenBSD
@@ -405,20 +405,20 @@ http://openbsd.org/
 OpenBSD* Copyright Policy
 ________________________________________
 -	Goal
-Copyright law is complex, OpenBSD* policy is simple - OpenBSD strives to maintain the spirit 
+Copyright law is complex, OpenBSD* policy is simple - OpenBSD strives to maintain the spirit
 of the original Berkeley Unix copyrights.
-OpenBSD can exist as it does today because of the example set by the Computer Systems Research 
-Group at Berkeley and the battles which they and others fought to create a relatively 
+OpenBSD can exist as it does today because of the example set by the Computer Systems Research
+Group at Berkeley and the battles which they and others fought to create a relatively
 un-encumbered Unix source distribution.
-The ability of a freely redistributable "Berkeley" Unix to move forward on a competitive 
-basis with other operating systems depends on the willingness of the various development 
-groups to exchange code amongst themselves and with other projects. Understanding the legal 
-issues surrounding copyright is fundamental to the ability to exchange and re-distribute code, 
-while honoring the spirit of the copyright and concept of attribution is fundamental to 
+The ability of a freely redistributable "Berkeley" Unix to move forward on a competitive
+basis with other operating systems depends on the willingness of the various development
+groups to exchange code amongst themselves and with other projects. Understanding the legal
+issues surrounding copyright is fundamental to the ability to exchange and re-distribute code,
+while honoring the spirit of the copyright and concept of attribution is fundamental to
 promoting the cooperation of the people involved.
 -	The Berkeley* Copyright
-The Berkeley* copyright poses no restrictions on private or commercial use of the software 
-and imposes only simple and uniform requirements for maintaining copyright notices in 
+The Berkeley* copyright poses no restrictions on private or commercial use of the software
+and imposes only simple and uniform requirements for maintaining copyright notices in
 redistributed versions and crediting the originator of the material only in advertising.
 For instance:
  * Copyright (c) 1982, 1986, 1990, 1991, 1993
@@ -452,20 +452,20 @@ For instance:
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
-Berkeley rescinded the 3rd term (the advertising term) on 22 July 1999. Verbatim copies 
-of the Berkeley license in the OpenBSD tree have that term removed. In addition, many 
+Berkeley rescinded the 3rd term (the advertising term) on 22 July 1999. Verbatim copies
+of the Berkeley license in the OpenBSD tree have that term removed. In addition, many
 3rd-party BSD-style licenses consist solely of the first two terms.
-Because the OpenBSD copyright imposes no conditions beyond those imposed by the Berkeley 
-copyright, OpenBSD can hope to share the same wide distribution and applicability as the 
-Berkeley distributions. It follows however, that OpenBSD cannot include material which 
-includes copyrights which are more restrictive than the Berkeley copyright, or must 
-relegate this material to a secondary status, i.e. OpenBSD as a whole is freely 
+Because the OpenBSD copyright imposes no conditions beyond those imposed by the Berkeley
+copyright, OpenBSD can hope to share the same wide distribution and applicability as the
+Berkeley distributions. It follows however, that OpenBSD cannot include material which
+includes copyrights which are more restrictive than the Berkeley copyright, or must
+relegate this material to a secondary status, i.e. OpenBSD as a whole is freely
 redistributable, but some optional components may not be.
 -	Copyright Law
-While the overall subject of copyright law is far beyond the scope of this document, some 
-basics are in order. Under the current copyright law, copyrights are implicit in the 
-creation of a new work and reside with the creator, unless otherwise assigned. In general 
-the copyright applies only to the new work, not the material the work was derived from, 
+While the overall subject of copyright law is far beyond the scope of this document, some
+basics are in order. Under the current copyright law, copyrights are implicit in the
+creation of a new work and reside with the creator, unless otherwise assigned. In general
+the copyright applies only to the new work, not the material the work was derived from,
 nor those portions of the derivative material included in the new work.
 Copyright law admits to three general categories of works:
 Original Work
@@ -474,145 +474,145 @@ Derivative Work
 Work that is derived from, includes or amends existing works.
 Compilations
 A work that is a compilation of existing new and derivative works.
-The fundamental concept is that there is primacy of the copyright, that is a copyright of a 
-derivative work does not affect the rights held by the owner of the copyright of the original 
-work, rather only the part added. Likewise the copyright of a compilation does not affect the 
+The fundamental concept is that there is primacy of the copyright, that is a copyright of a
+derivative work does not affect the rights held by the owner of the copyright of the original
+work, rather only the part added. Likewise the copyright of a compilation does not affect the
 rights of the owner of the included works, only the compilation as an entity.
-It is vitally important to understand that copyrights are broad protections as defined by 
-national and international copyright law. The "copyright notices" usually included in source 
-files are not copyrights, but rather notices that a party asserts that they hold copyright 
-to the material or to part of the material. Typically these notices are associated with 
-license terms which grant permissions subject to copyright law and with disclaimers that 
-state the position of the copyright holder/distributor with respect to liability surrounding 
+It is vitally important to understand that copyrights are broad protections as defined by
+national and international copyright law. The "copyright notices" usually included in source
+files are not copyrights, but rather notices that a party asserts that they hold copyright
+to the material or to part of the material. Typically these notices are associated with
+license terms which grant permissions subject to copyright law and with disclaimers that
+state the position of the copyright holder/distributor with respect to liability surrounding
 use of the material.
 -	Permissions - the flip side
-Because copyrights arise from the creation of a work, rather than through a registration process, 
-there needs to be a practical way to extend permission to use a work beyond what might be allowed 
+Because copyrights arise from the creation of a work, rather than through a registration process,
+there needs to be a practical way to extend permission to use a work beyond what might be allowed
 by "fair use" provisions of the copyright laws.
-This permission typically takes the form of a "release" or "license" included in the work, which 
-grants the additional uses beyond those granted by copyright law, usually subject to a variety of 
-conditions. At one extreme sits "public domain" where the originator asserts that he imposes no 
-restrictions on use of the material, at the other restrictive clauses that actually grant no 
-additional rights or impose restrictive, discriminatory or impractical conditions on use of the 
+This permission typically takes the form of a "release" or "license" included in the work, which
+grants the additional uses beyond those granted by copyright law, usually subject to a variety of
+conditions. At one extreme sits "public domain" where the originator asserts that he imposes no
+restrictions on use of the material, at the other restrictive clauses that actually grant no
+additional rights or impose restrictive, discriminatory or impractical conditions on use of the
 work.
-Again, an important point to note is that the release and conditions can only apply to the 
-portion of the work that was originated by the copyright holder - the holder of a copyright 
-on a derivative work can neither grant additional permissions for use of the original work, 
+Again, an important point to note is that the release and conditions can only apply to the
+portion of the work that was originated by the copyright holder - the holder of a copyright
+on a derivative work can neither grant additional permissions for use of the original work,
 nor impose more restrictive conditions for use of that work.
-Because copyright arises from the creation of a work and not the text or a registration process, 
-removing or altering a copyright notice or associated release terms has no bearing on the 
-existence of the copyright, rather all that is accomplished is to cast doubt upon whatever rights 
-the person making the modifications had to use the material in the first place. Likewise, adding 
-terms and conditions in conflict with the original terms and conditions does not supersede them, 
-rather it casts doubts on the rights of the person making the amendments to use the material and 
+Because copyright arises from the creation of a work and not the text or a registration process,
+removing or altering a copyright notice or associated release terms has no bearing on the
+existence of the copyright, rather all that is accomplished is to cast doubt upon whatever rights
+the person making the modifications had to use the material in the first place. Likewise, adding
+terms and conditions in conflict with the original terms and conditions does not supersede them,
+rather it casts doubts on the rights of the person making the amendments to use the material and
 creates confusion as to whether anyone can use the amended version or derivatives thereof.
-Finally, releases are generally binding on the material that they are distributed with. This means 
-that if the originator of a work distributes that work with a release granting certain permissions, 
-those permissions apply as stated, without discrimination, to all persons legitimately possessing 
-a copy of the work. That means that having granted a permission, the copyright holder can not 
-retroactively say that an individual or class of individuals are no longer granted those permissions. 
-Likewise should the copyright holder decide to "go commercial" he can not revoke permissions already 
-granted for the use of the work as distributed, though he may impose more restrictive permissions in 
+Finally, releases are generally binding on the material that they are distributed with. This means
+that if the originator of a work distributes that work with a release granting certain permissions,
+those permissions apply as stated, without discrimination, to all persons legitimately possessing
+a copy of the work. That means that having granted a permission, the copyright holder can not
+retroactively say that an individual or class of individuals are no longer granted those permissions.
+Likewise should the copyright holder decide to "go commercial" he can not revoke permissions already
+granted for the use of the work as distributed, though he may impose more restrictive permissions in
 his future distributions of that work.
 -	Specific Cases
-This section attempts to summarize the position of OpenBSD relative to some commonly encountered 
+This section attempts to summarize the position of OpenBSD relative to some commonly encountered
 copyrights.
 Berkeley*
-The Berkeley copyright is the model for the OpenBSD copyright. It retains the rights of the 
-copyright holder, while imposing minimal conditions on the use of the copyrighted material. 
-Material with Berkeley copyrights, or copyrights closely adhering to the Berkeley model can 
+The Berkeley copyright is the model for the OpenBSD copyright. It retains the rights of the
+copyright holder, while imposing minimal conditions on the use of the copyrighted material.
+Material with Berkeley copyrights, or copyrights closely adhering to the Berkeley model can
 generally be included in OpenBSD.
 AT&amp;T*
-As part of its settlement with AT&amp;T*, Berkeley included an AT&amp;T copyright notice on some of the 
-files in 4.4BSD lite and lite2. The terms of this license are identical to the standard Berkeley 
+As part of its settlement with AT&amp;T*, Berkeley included an AT&amp;T copyright notice on some of the
+files in 4.4BSD lite and lite2. The terms of this license are identical to the standard Berkeley
 license.
-Additionally, OpenBSD includes some other AT&amp;T code with non-restrictive copyrights, such as the 
+Additionally, OpenBSD includes some other AT&amp;T code with non-restrictive copyrights, such as the
 reference implementation of awk.
 Caldera*
-Caldera* (now known as the SCO group) is the current owner of the Unix code copyrights. On 23 
-January 2002, the original Unix code (versions 1 through seven, including 32V) was freed by Caldera. 
-This code is now available under a 4-term BSD-style license. As a result, it is now possible to 
-incorporate real Unix code into OpenBSD (though this code is quite old and generally requires significant 
+Caldera* (now known as the SCO group) is the current owner of the Unix code copyrights. On 23
+January 2002, the original Unix code (versions 1 through seven, including 32V) was freed by Caldera.
+This code is now available under a 4-term BSD-style license. As a result, it is now possible to
+incorporate real Unix code into OpenBSD (though this code is quite old and generally requires significant
 changes to bring it up to date).
 DEC*, Sun*, other manufacturers/software houses.
-In general OpenBSD does not include material copyrighted by manufacturers or software houses. 
-Material may be included where the copyright owner has granted general permission for reuse 
-without conditions, with terms similar to the Berkeley copyright, or where the material is the 
-product of an employee and the employer's copyright notice effectively releases any rights they 
+In general OpenBSD does not include material copyrighted by manufacturers or software houses.
+Material may be included where the copyright owner has granted general permission for reuse
+without conditions, with terms similar to the Berkeley copyright, or where the material is the
+product of an employee and the employer's copyright notice effectively releases any rights they
 might have to the work.
 Carnegie-Mellon* (CMU, Mach)
-The Carnegie-Mellon copyright is similar to the Berkeley copyright, except that it requests that 
-derivative works be made available to Carnegie-Mellon. Because this is only a request and not a 
-condition, such material can still be included in OpenBSD. It should be noted that existing 
-versions of Mach are still subject to AT&amp;T copyrights, which prevents the general distribution 
+The Carnegie-Mellon copyright is similar to the Berkeley copyright, except that it requests that
+derivative works be made available to Carnegie-Mellon. Because this is only a request and not a
+condition, such material can still be included in OpenBSD. It should be noted that existing
+versions of Mach are still subject to AT&amp;T copyrights, which prevents the general distribution
 of Mach sources.
 Apache*
-The original Apache* copyright is similar to the Berkeley copyright, except that it stipulates 
-that products derived from the code may not have "Apache" in their name. The purpose of this 
-clause is to avoid a situation in which another party releases a modified version of the code 
-named in such a way to make users think that it is the "official" version. This is not an issue 
-with OpenBSD because OpenBSD is a Compilation, and not a Derived Work. Source code published under 
-version 2 of the Apache license cannot be included into OpenBSD. As a consequence, OpenBSD now 
-maintains its own version of Apache based on version 1.3.29. The OpenBSD version includes many 
+The original Apache* copyright is similar to the Berkeley copyright, except that it stipulates
+that products derived from the code may not have "Apache" in their name. The purpose of this
+clause is to avoid a situation in which another party releases a modified version of the code
+named in such a way to make users think that it is the "official" version. This is not an issue
+with OpenBSD because OpenBSD is a Compilation, and not a Derived Work. Source code published under
+version 2 of the Apache license cannot be included into OpenBSD. As a consequence, OpenBSD now
+maintains its own version of Apache based on version 1.3.29. The OpenBSD version includes many
 enhancements and bugfixes.
 ISC*
-The ISC* copyright is functionally equivalent to a two-term BSD copyright with language removed 
-that is made unnecessary by the Berne convention. This is the preferred license for new code 
-incorporated into OpenBSD. A sample license is included in the source tree as 
+The ISC* copyright is functionally equivalent to a two-term BSD copyright with language removed
+that is made unnecessary by the Berne convention. This is the preferred license for new code
+incorporated into OpenBSD. A sample license is included in the source tree as
 /usr/src/share/misc/license.template.
 GNU* General Public License, GPL, LGPL, copyleft, etc.
-The GNU* Public License and licenses modeled on it impose the restriction that source code must 
+The GNU* Public License and licenses modeled on it impose the restriction that source code must
 be distributed or made available for all works that are derivatives of the GNU copyrighted code.
-While this may be a noble strategy in terms of software sharing, it is a condition that is 
-typically unacceptable for commercial use of software. As a consequence, software bound by the 
+While this may be a noble strategy in terms of software sharing, it is a condition that is
+typically unacceptable for commercial use of software. As a consequence, software bound by the
 GPL terms can not be included in the kernel or "runtime" of OpenBSD, though software subject to
- GPL terms may be included as development tools or as part of the system that are "optional" as 
+ GPL terms may be included as development tools or as part of the system that are "optional" as
 long as such use does not result in OpenBSD as a whole becoming subject to the GPL terms.
-As an example, GCC and other GNU tools are included in the OpenBSD tool chain. However, it is 
-quite possible to distribute a system for many applications without a tool chain, or the 
-distributor can choose to include a tool chain as an optional bundle which conforms to the 
+As an example, GCC and other GNU tools are included in the OpenBSD tool chain. However, it is
+quite possible to distribute a system for many applications without a tool chain, or the
+distributor can choose to include a tool chain as an optional bundle which conforms to the
 GPL terms.
 NetBSD*
-Much of OpenBSD is originally based on and evolved from NetBSD*, since some of the OpenBSD 
-developers were involved in the NetBSD project. The general NetBSD license terms are compatible 
-with the Berkeley license and permit such use. Material subject only to the general NetBSD license 
+Much of OpenBSD is originally based on and evolved from NetBSD*, since some of the OpenBSD
+developers were involved in the NetBSD project. The general NetBSD license terms are compatible
+with the Berkeley license and permit such use. Material subject only to the general NetBSD license
 can generally be included in OpenBSD.
-In the past, NetBSD has included material copyrighted by individuals who have imposed license 
-conditions beyond that of the general NetBSD license, but granted the NetBSD Foundation license 
-to distribute the material. Such material can not be included in OpenBSD as long as the conditions 
-imposed are at odds with the OpenBSD license terms or releases from those terms are offered on a 
+In the past, NetBSD has included material copyrighted by individuals who have imposed license
+conditions beyond that of the general NetBSD license, but granted the NetBSD Foundation license
+to distribute the material. Such material can not be included in OpenBSD as long as the conditions
+imposed are at odds with the OpenBSD license terms or releases from those terms are offered on a
 discriminatory basis.
 FreeBSD*
-Most of FreeBSD* is also based on Berkeley licensed material or includes copyright notices based 
-on the Berkeley model. Such material can be included in OpenBSD, while those parts that are subject 
-to GPL or various individual copyright terms that are at odds with the OpenBSD license can not be 
+Most of FreeBSD* is also based on Berkeley licensed material or includes copyright notices based
+on the Berkeley model. Such material can be included in OpenBSD, while those parts that are subject
+to GPL or various individual copyright terms that are at odds with the OpenBSD license can not be
 included in OpenBSD.
 Linux*
-Most of Linux* is subject to GPL style licensing terms and therefore can not be included in 
-OpenBSD. Individual components may be eligible, subject to the terms of the originator's copyright 
-notices. Note that Linux "distributions" may also be subject to additional copyright claims of the 
-distributing organization, either as a compilation or on material included that is not part of the 
+Most of Linux* is subject to GPL style licensing terms and therefore can not be included in
+OpenBSD. Individual components may be eligible, subject to the terms of the originator's copyright
+notices. Note that Linux "distributions" may also be subject to additional copyright claims of the
+distributing organization, either as a compilation or on material included that is not part of the
 Linux core.
 X*, XFree86*, X.Org*
-X*, X.Org* or XFree86* are not parts of OpenBSD, rather X.Org and parts of XFree86 3.3.6 are 
-distributed with many OpenBSD ports as a convenience to the user, subject to applicable license 
+X*, X.Org* or XFree86* are not parts of OpenBSD, rather X.Org and parts of XFree86 3.3.6 are
+distributed with many OpenBSD ports as a convenience to the user, subject to applicable license
 terms.
 Shareware, Charityware, Freeware, etc.
-Most "shareware" copyright notices impose conditions for redistribution, use or visibility that 
-are at conflict with the OpenBSD project goals. Review on a case-by-case basis is required as to 
-whether the wording of the conditions is acceptable in terms of conditions being requested vs. 
+Most "shareware" copyright notices impose conditions for redistribution, use or visibility that
+are at conflict with the OpenBSD project goals. Review on a case-by-case basis is required as to
+whether the wording of the conditions is acceptable in terms of conditions being requested vs.
 demanded and whether the spirit of the conditions is compatible with goals of the OpenBSD project.
 Public Domain
-While material that is truly entered into the "Public Domain" can be included in OpenBSD, review 
-is required on a case by case basis. Frequently the "public domain" assertion is made by someone 
+While material that is truly entered into the "Public Domain" can be included in OpenBSD, review
+is required on a case by case basis. Frequently the "public domain" assertion is made by someone
 who does not really hold all rights under Copyright law to grant that status or there are a variety
-of conditions imposed on use. For a work to be truly in the "Public Domain" all rights are abandoned 
+of conditions imposed on use. For a work to be truly in the "Public Domain" all rights are abandoned
 and the material is offered without restrictions.
 
- 
 
 
-8. Openssl 
+
+8. Openssl
 
 
 http://www.openssl.org/
@@ -637,7 +637,7 @@ http://www.openssl.org/
  * are met:
  *
  * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer. 
+ *    notice, this list of conditions and the following disclaimer.
  *
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in
@@ -692,21 +692,21 @@ http://www.openssl.org/
  * This package is an SSL implementation written
  * by Eric Young (eay@cryptsoft.com).
  * The implementation was written so as to conform with Netscapes SSL.
- * 
+ *
  * This library is free for commercial and non-commercial use as long as
  * the following conditions are aheared to.  The following conditions
  * apply to all code found in this distribution, be it the RC4, RSA,
  * lhash, DES, etc., code; not just the SSL code.  The SSL documentation
  * included with this distribution is covered by the same copyright terms
  * except that the holder is Tim Hudson (tjh@cryptsoft.com).
- * 
+ *
  * Copyright remains Eric Young's, and as such any Copyright notices in
  * the code are not to be removed.
  * If this package is used in a product, Eric Young should be given attribution
  * as the author of the parts of the library used.
  * This can be in the form of a textual message at program startup or
  * in documentation (online or textual) provided with the package.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -721,10 +721,10 @@ http://www.openssl.org/
  *     Eric Young (eay@cryptsoft.com)"
  *    The word 'cryptographic' can be left out if the rouines from the library
  *    being used are not cryptographic related :-).
- * 4. If you include any Windows specific code (or a derivative thereof) from 
+ * 4. If you include any Windows specific code (or a derivative thereof) from
  *    the apps directory (application code) you must include an acknowledgement:
  *    "This product includes software written by Tim Hudson (tjh@cryptsoft.com)"
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY ERIC YOUNG ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -736,13 +736,13 @@ http://www.openssl.org/
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- * 
+ *
  * The licence and distribution terms for any publically available version or
  * derivative of this code cannot be changed.  i.e. this code cannot simply be
  * copied and put under another distribution licence
  * [including the GNU Public Licence.]
  */
- 
+
 
 
 
@@ -751,27 +751,27 @@ http://www.openssl.org/
 Protocol Buffers - Google's data interchange format
 Copyright 2008 Google Inc.  All rights reserved.
 http://code.google.com/p/protobuf/
-Redistribution and use in source and binary forms, with or without modification, 
+Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
-1. Redistributions of source code must retain the above copyright notice, 
+1. Redistributions of source code must retain the above copyright notice,
    this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice, this 
-   list of conditions and the following disclaimer in the documentation and/or other 
+2. Redistributions in binary form must reproduce the above copyright notice, this
+   list of conditions and the following disclaimer in the documentation and/or other
    materials provided with the distribution.
-3. Neither the name of the Google Inc. nor the names of its contributors may be used 
-   to endorse or promote products derived from this software without specific prior 
+3. Neither the name of the Google Inc. nor the names of its contributors may be used
+   to endorse or promote products derived from this software without specific prior
    written permission.
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT 
-SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED 
-TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR 
-BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING 
-IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
- 
+
 
 
 
@@ -783,16 +783,16 @@ Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
- 
+
 -       Redistributions of source code must retain the above copyright notice,
 		this list of conditions and the following disclaimer.
--       Redistributions in binary form must reproduce the above copyright 
+-       Redistributions in binary form must reproduce the above copyright
 		notice, this list of conditions and the following disclaimer in the
 		documentation and/or other materials provided with the distribution.
 -       Neither the name of Intel Corporation nor the names of its contributors
 		may be used to endorse or promote products derived from this software
 		without specific prior written permission.
- 
+
 THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
 IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
@@ -800,11 +800,9 @@ EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
 BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-
-
 
 
 
@@ -817,29 +815,29 @@ http://sqlite.org/
 
 SQLite* Copyright
 
-All of the code and documentation in SQLite has been dedicated to the public 
-domain by the authors. All code authors, and representatives of the companies 
-they work for, have signed affidavits dedicating their contributions to the 
-public domain and originals of those signed affidavits are stored in a firesafe 
-at the main offices of Hwaci. Anyone is free to copy, modify, publish, use, 
-compile, sell, or distribute the original SQLite code, either in source code 
-form or as a compiled binary, for any purpose, commercial or non-commercial, 
+All of the code and documentation in SQLite has been dedicated to the public
+domain by the authors. All code authors, and representatives of the companies
+they work for, have signed affidavits dedicating their contributions to the
+public domain and originals of those signed affidavits are stored in a firesafe
+at the main offices of Hwaci. Anyone is free to copy, modify, publish, use,
+compile, sell, or distribute the original SQLite code, either in source code
+form or as a compiled binary, for any purpose, commercial or non-commercial,
 and by any means.
-The previous paragraph applies to the deliverable code and documentation in 
-SQLite - those parts of the SQLite library that you actually bundle and ship 
-with a larger application. Some scripts used as part of the build process 
-(for example the "configure" scripts generated by autoconf) might fall under 
-other open-source licenses. Nothing from these build scripts ever reaches the 
-final deliverable SQLite library, however, and so the licenses associated with 
-those scripts should not be a factor in assessing your rights to copy and use 
+The previous paragraph applies to the deliverable code and documentation in
+SQLite - those parts of the SQLite library that you actually bundle and ship
+with a larger application. Some scripts used as part of the build process
+(for example the "configure" scripts generated by autoconf) might fall under
+other open-source licenses. Nothing from these build scripts ever reaches the
+final deliverable SQLite library, however, and so the licenses associated with
+those scripts should not be a factor in assessing your rights to copy and use
 the SQLite library.
-All of the deliverable code in SQLite has been written from scratch. No code 
-has been taken from other projects or from the open internet. Every line of 
-code can be traced back to its original author, and all of those authors have 
-public domain dedications on file. So the SQLite code base is clean and is 
+All of the deliverable code in SQLite has been written from scratch. No code
+has been taken from other projects or from the open internet. Every line of
+code can be traced back to its original author, and all of those authors have
+public domain dedications on file. So the SQLite code base is clean and is
 uncontaminated with licensed code from other projects.
 
- 
+
 
 
 
@@ -854,37 +852,37 @@ Boris Fomitchev grants Licensee a non-exclusive, non-transferable,
 royalty-free license to use STLport* and its documentation without
 fee.
 
-By downloading, using, 
+By downloading, using,
 or copying STLport or any portion thereof,
-Licensee agrees to abide by the intellectual 
+Licensee agrees to abide by the intellectual
 property laws and all
 other applicable laws of the United States of America, and to all of
 
 the terms and conditions of this Agreement.
 
-Licensee shall maintain the following copyright 
+Licensee shall maintain the following copyright
 and permission notices
 on STLport sources and its documentation unchanged:
 
-Copyright 1999,2000 
+Copyright 1999,2000
 Boris Fomitchev
 
 This material is provided "as is", with absolutely no warranty
-expressed or 
+expressed or
 implied. Any use is at your own risk.
 
-Permission to use or copy this software for any purpose 
+Permission to use or copy this software for any purpose
 is hereby
 granted without fee, provided the above notices are retained on all
-copies. Permission 
+copies. Permission
 to modify the code and to distribute modified code
-is granted, provided the above notices are 
+is granted, provided the above notices are
 retained, and a notice that
 the code was modified is included with the above copyright notice.
 
 
 The Licensee may distribute binaries compiled with STLport whether
-original or modified) without 
+original or modified) without
 any royalties or restrictions.
 
 The Licensee may distribute original or modified STLport sources,
@@ -892,54 +890,54 @@ The Licensee may distribute original or modified STLport sources,
 provided that:
 
  - The conditions indicated in the above permission notice are met;
- - The 
+ - The
 following copyright notices are retained when present, and
-   conditions provided in 
+   conditions provided in
 accompanying permission notices are met :
 
 Copyright 1994 Hewlett-Packard Company
-Copyright 
+Copyright
 1996,97 Silicon Graphics Computer Systems, Inc.
-Copyright 1997 Moscow Center for SPARC 
+Copyright 1997 Moscow Center for SPARC
 Technology.
 
   Permission to use, copy, modify, distribute and sell this software
-  and its 
+  and its
 documentation for any purpose is hereby granted without fee,
-  provided that the above 
+  provided that the above
 copyright notice appear in all copies and
-  that both that copyright notice and this permission 
+  that both that copyright notice and this permission
 notice appear in
   supporting documentation. Hewlett-Packard Company makes no
-  representations 
+  representations
 about the suitability of this software for any
-  purpose. It is provided "as is" without 
+  purpose. It is provided "as is" without
 express or implied warranty.
 
-  Permission to use, copy, modify, distribute and sell this 
+  Permission to use, copy, modify, distribute and sell this
 software
   and its documentation for any purpose is hereby granted without fee,
-  provided that 
+  provided that
 the above copyright notice appear in all copies and
-  that both that copyright notice and this 
+  that both that copyright notice and this
 permission notice appear in
   supporting documentation. Silicon Graphics makes no representations
- 
+
 about the suitability of this software for any purpose. It is
-  provided "as is" without express 
+  provided "as is" without express
 or implied warranty.
 
   Permission to use, copy, modify, distribute and sell this software
-  and 
+  and
 its documentation for any purpose is hereby granted without fee,
-  provided that the above 
+  provided that the above
 copyright notice appear in all copies and
-  that both that copyright notice and this permission 
+  that both that copyright notice and this permission
 notice appear in
   supporting documentation. Moscow Center for SPARC Technology?makes
-  no 
+  no
 representations about the suitability of this software for any
-  purpose. It is provided "as is" 
+  purpose. It is provided "as is"
 without express or implied warranty.
 
 
@@ -957,17 +955,17 @@ http://www.grinninglizard.com/tinyxml2/
 
 
 The zlib/libpng License
-This software is provided 'as-is', without any express or implied warranty. 
-In no event will the authors be held liable for any damages arising from the 
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the
 use of this software.
-Permission is granted to anyone to use this software for any purpose, including 
-commercial applications, and to alter it and redistribute it freely, subject to 
+Permission is granted to anyone to use this software for any purpose, including
+commercial applications, and to alter it and redistribute it freely, subject to
 the following restrictions:
-1. The origin of this software must not be misrepresented; you must not claim 
-   that you wrote the original software. If you use this software in a product, 
-   an acknowledgment in the product documentation would be appreciated but is 
+1. The origin of this software must not be misrepresented; you must not claim
+   that you wrote the original software. If you use this software in a product,
+   an acknowledgment in the product documentation would be appreciated but is
    not required.
-2. Altered source versions must be plainly marked as such, and must not be 
+2. Altered source versions must be plainly marked as such, and must not be
    misrepresented as being the original software.
 3. This notice may not be removed or altered from any source distribution.
 

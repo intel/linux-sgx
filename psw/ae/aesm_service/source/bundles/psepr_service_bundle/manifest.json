@@ -1,7 +1,0 @@
-{
-  "bundle.symbolic_name" : "psepr_service_symbolic_name",
-  "bundle.activator" : true,
-  "bundle.name" : "PSEPR Service",
-  "bundle.description" : "This bundle provide PSEPR Service",
-  "bundle.version" : "2.0.0"
-}

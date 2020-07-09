@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -33,7 +33,7 @@
 
 set -e
 
-[[ $# -eq 1 ]] || {
+[[ $# -eq 1 ]] || [[ $# -eq 2 ]] || {
     echo "Usage : ./build-installpkg.sh sdk | psw "
     exit 1
 }
@@ -57,7 +57,14 @@ BUILD_DIR=${ROOT_DIR}/build/linux
 # Get the architecture of the build from generated binary
 get_arch()
 {
-    local a=$(readelf -h $BUILD_DIR/sgx_sign | sed -n '2p' | awk '{print $6}')
+    case "$INSTALLER_TYPE" in
+        psw)
+            local a=$(readelf -h $BUILD_DIR/aesm_service | sed -n '2p' | awk '{print $6}')
+        ;;
+        sdk)
+            local a=$(readelf -h $BUILD_DIR/sgx_sign | sed -n '2p' | awk '{print $6}')
+        ;;
+    esac
     test $a = 01 && echo 'x86' || echo 'x64'
 }
  
@@ -73,7 +80,7 @@ case "$INSTALLER_TYPE" in
     ;;
     sdk)
         source ${LINUX_INSTALLER_COMMON_SDK_DIR}/installConfig.${PACKAGE_SUFFIX}
-        ${LINUX_INSTALLER_COMMON_SDK_DIR}/createTarball.sh
+        ${LINUX_INSTALLER_COMMON_SDK_DIR}/createTarball.sh $2
         cp  ${LINUX_INSTALLER_COMMON_SDK_DIR}/output/${TARBALL_NAME} ${SCRIPT_DIR}
     ;;
 esac

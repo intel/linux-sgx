@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -39,6 +39,7 @@ CXXFLAGS += -Werror
 
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/common
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux 
+INCLUDE += -I$(SGX_HEADER_DIR)/libcxx
 
 SRC := $(wildcard *.cpp)
 OBJ := $(SRC:.cpp=.o)
@@ -51,15 +52,15 @@ CONFIG := config_linux.xml
 all: $(AENAME_OUT) 
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto -lsgx_tcxx -lsgx_tstdc
-	$(STRIP)  --strip-unneeded $(SONAME)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
+	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 $(OBJ):$(AENAME)_t.c  
 $(OBJ): %.o:%.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
+	@$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

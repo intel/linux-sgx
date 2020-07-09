@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/common/inc/sgx_attributes.h	<installdir>/include/sgx_attributes.h	0	main	STP
+<deliverydir>/psw/enclave_common/sgx_enclave_common.h	<installdir>/include/sgx_enclave_common.h	0	main	STP

@@ -12,7 +12,7 @@ target_include_directories(ipc
     ${PROJECT_SOURCE_DIR}/core/ipc
     ${PROJECT_SOURCE_DIR}/../../inc
     ${PROJECT_SOURCE_DIR}/../../inc/internal
-    ${PROJECT_SOURCE_DIR}/../../../../common/inc
+    ${SGX_HEADER_DIR}
     ${PROJECT_SOURCE_DIR}/../../../../common/inc/internal
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/common/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/inc

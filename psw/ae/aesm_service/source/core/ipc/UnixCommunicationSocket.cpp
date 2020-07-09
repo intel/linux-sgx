@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -215,7 +215,7 @@ bool UnixCommunicationSocket::init()
         memset(&serv_addr, 0, sizeof(struct sockaddr_un));
         serv_addr.sun_family = AF_UNIX;
         memset(serv_addr.sun_path, 0, sizeof(serv_addr.sun_path));
-        strncpy(serv_addr.sun_path, mSocketBase, sizeof(serv_addr.sun_path));
+        strncpy(serv_addr.sun_path, mSocketBase, sizeof(serv_addr.sun_path) - 1);
 
         if( connect(mSocket, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != 0)
         {

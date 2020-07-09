@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,7 +43,7 @@
 // attestation secure channel binding. The public EC key should be hardcoded in
 // the enclave or delivered in a trustworthy manner. The use of a spoofed public
 // EC key in the remote attestation with secure channel binding session may lead
-// to a security compromise. Every different SP the enlcave communicates to
+// to a security compromise. Every different SP the enclave communicates to
 // must have a unique SP public key. Delivery of the SP public key is
 // determined by the ISV. The TKE SIGMA protocl expects an Elliptical Curve key
 // based on NIST P-256
@@ -207,8 +207,6 @@ sgx_status_t key_derivation(const sgx_ec256_dh_shared_t* shared_key,
 // @param p_context Pointer to the location where the returned
 //                  key context is to be copied.
 //
-// @return Any error return from the create PSE session if b_pse
-//         is true.
 // @return Any error returned from the trusted key exchange API
 //         for creating a key context.
 
@@ -218,25 +216,11 @@ sgx_status_t enclave_init_ra(
 {
     // isv enclave call to trusted key exchange library.
     sgx_status_t ret;
-    if(b_pse)
-    {
-        int busy_retry_times = 2;
-        do{
-            ret = sgx_create_pse_session();
-        }while (ret == SGX_ERROR_BUSY && busy_retry_times--);
-        if (ret != SGX_SUCCESS)
-            return ret;
-    }
 #ifdef SUPPLIED_KEY_DERIVATION
     ret = sgx_ra_init_ex(&g_sp_pub_key, b_pse, key_derivation, p_context);
 #else
     ret = sgx_ra_init(&g_sp_pub_key, b_pse, p_context);
 #endif
-    if(b_pse)
-    {
-        sgx_close_pse_session();
-        return ret;
-    }
     return ret;
 }
 

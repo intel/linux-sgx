@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -50,7 +50,6 @@ public:
     bool use_se_hw() const;
     bool is_EDMM_supported(sgx_enclave_id_t enclave_id);
     bool is_driver_compatible();
-    bool is_in_kernel_driver();
     int emodpr(uint64_t addr, uint64_t size, uint64_t flag);
     int mktcs(uint64_t tcs_addr);
     int trim_range(uint64_t fromaddr, uint64_t toaddr);

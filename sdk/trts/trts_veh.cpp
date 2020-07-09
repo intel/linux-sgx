@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,6 +49,7 @@
 #include "util.h"
 #include "trts_util.h"
 #include "trts_shared_constants.h"
+#include "se_cdefs.h"
 
 
 typedef struct _handler_node_t

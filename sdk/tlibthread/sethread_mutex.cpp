@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -182,7 +182,7 @@ int sgx_thread_mutex_unlock_lazy(sgx_thread_mutex_t *mutex, sgx_thread_t *pwaite
     /* if the mutux is not locked by anyone */
     if(mutex->m_owner == SGX_THREAD_T_NULL) {
         SPIN_UNLOCK(&mutex->m_lock);
-        return EINVAL;
+        return EPERM;
     }
 
     /* if the mutex is locked by another thread */

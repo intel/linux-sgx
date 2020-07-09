@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +38,6 @@
 # define MAX_PATH FILENAME_MAX
 
 #include "sgx_urts.h"
-#include "sgx_uae_service.h"
 #include "App.h"
 #include "Enclave_u.h"
 

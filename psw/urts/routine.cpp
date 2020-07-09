@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,7 +39,7 @@
 static
 sgx_status_t _sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, const bool is_switchless)
 {
-    if ((proc != ECMD_RUN_SWITCHLESS_TWORKER) &&  (proc < 0))
+    if (proc < 0)
     {
         return SGX_ERROR_INVALID_FUNCTION;
     }

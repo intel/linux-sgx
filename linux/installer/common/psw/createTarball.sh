@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -47,7 +47,7 @@ rm -fr ${INSTALL_PATH}
 # Get the architecture of the build from generated binary
 get_arch()
 {
-    local a=$(readelf -h $BUILD_DIR/sgx_sign | sed -n '2p' | awk '{print $6}')
+    local a=$(readelf -h $BUILD_DIR/aesm_service | sed -n '2p' | awk '{print $6}')
     test $a = 01 && echo 'x86' || echo 'x64'
 }
 
@@ -66,7 +66,13 @@ python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=f
 
 # Create the tarball
 ECL_VER=$(awk '/ENCLAVE_COMMON_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+LCH_VER=$(awk '/LAUNCH_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+EPID_VER=$(awk '/EPID_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+QEX_VER=$(awk '/QUOTE_EX_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 pushd ${INSTALL_PATH} &> /dev/null
 sed -i "s/ECL_VER=.*/ECL_VER=${ECL_VER}/" Makefile
+sed -i "s/LCH_VER=.*/LCH_VER=${LCH_VER}/" Makefile
+sed -i "s/EPID_VER=.*/EPID_VER=${EPID_VER}/" Makefile
+sed -i "s/QEX_VER=.*/QEX_VER=${QEX_VER}/" Makefile
 tar -zcvf ${TARBALL_NAME} *
 popd &> /dev/null

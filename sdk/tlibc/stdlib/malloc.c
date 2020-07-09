@@ -538,7 +538,7 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define HAVE_MREMAP 0
 #define HAVE_MORECORE 1
 #define MMAP_CLEARS 0
-#define MALLOC_ALIGNMENT ((size_t)8U)
+#define MALLOC_ALIGNMENT ((size_t)16U)
 #define LACKS_TIME_H
 #define LACKS_SYS_PARAM_H
 #define LACKS_SYS_MMAN_H

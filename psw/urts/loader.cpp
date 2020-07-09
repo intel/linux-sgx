@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,6 +44,7 @@
 #include "se_detect.h"
 #include "binparser.h"
 #include "metadata.h"
+#include "edmm_utility.h"
 #include <assert.h>
 #include <vector>
 #include <tuple>
@@ -272,7 +273,7 @@ int CLoader::build_partial_page(const uint64_t rva, const uint64_t size, const v
     // Initialize the page with '0', this serves as both the padding at the start
     // of the page (if it's not aligned) as well as the fill for any unitilized
     // bytes at the end of the page, e.g. .bss data.
-    uint8_t page_data[SE_PAGE_SIZE];
+    uint8_t page_data[SE_PAGE_SIZE]  __attribute__ ((aligned(4096)));
     memset(page_data, 0, SE_PAGE_SIZE);
 
     // The amount of raw data may be less than the number of bytes on the page,
@@ -368,7 +369,7 @@ int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_en
 int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
 {
     int ret = SGX_ERROR_UNEXPECTED;
-    uint8_t added_page[SE_PAGE_SIZE];
+    uint8_t added_page[SE_PAGE_SIZE] __attribute__ ((aligned(4096)));
     sec_info_t sinfo;
     memset(added_page, 0, SE_PAGE_SIZE);
     memset(&sinfo, 0, sizeof(sinfo));
@@ -460,19 +461,6 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
     for(layout_t *layout = layout_start; layout < layout_end; layout++)
     {
         se_trace(SE_TRACE_DEBUG, "%s, step = 0x%016llX\n", __FUNCTION__, delta);
-        if (!IS_GROUP_ID(layout->entry.id)) {
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id]);
-            se_trace(SE_TRACE_DEBUG, "Page Count = %5u, ", layout->entry.page_count);
-            se_trace(SE_TRACE_DEBUG, "Attributes = 0x%02X, ", layout->entry.attributes);
-            se_trace(SE_TRACE_DEBUG, "Flags = 0x%016llX, ", layout->entry.si_flags);
-            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX + 0x%016llX\n", layout->entry.rva, delta);
-        }
-        else {
-            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id & ~(GROUP_FLAG)]);
-            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u, ", layout->group.entry_count);
-            se_trace(SE_TRACE_DEBUG, "Load Times = %u,    ", layout->group.load_times);
-            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout->group.load_step);
-        }
 
         if (!IS_GROUP_ID(layout->group.id))
         {
@@ -483,6 +471,11 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
         }
         else
         {
+            se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s, ", 0, layout->entry.id, layout_id_str[layout->entry.id & ~(GROUP_FLAG)]);
+            se_trace(SE_TRACE_DEBUG, "Entry Count = %4u, ", layout->group.entry_count);
+            se_trace(SE_TRACE_DEBUG, "Load Times = %u,    ", layout->group.load_times);
+            se_trace(SE_TRACE_DEBUG, "LStep = 0x%016llX\n", layout->group.load_step);
+
             uint64_t step = 0;
             for(uint32_t j = 0; j < layout->group.load_times; j++)
             {
@@ -580,11 +573,6 @@ int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const sec
     {
         SE_TRACE(SE_TRACE_WARNING, "init_enclave failed\n");
         goto fail;
-    }
-
-    if(get_enclave_creator()->use_se_hw() == true)
-    {
-        set_memory_protection(false);
     }
 
     return SGX_SUCCESS;
@@ -843,17 +831,16 @@ int CLoader::destroy_enclave()
     return get_enclave_creator()->destroy_enclave(ENCLAVE_ID_IOCTL, m_secs.size);
 }
 
-int CLoader::set_memory_protection(bool is_after_initialization)
+int CLoader::set_memory_protection()
 {
     int ret = 0;
     //set memory protection for segments
-    if(m_parser.set_memory_protection((uint64_t)m_start_addr, is_after_initialization) != true)
+    if(m_parser.set_memory_protection((uint64_t)m_start_addr) != true)
     {
         return SGX_ERROR_UNEXPECTED;
     }
 
-    if (is_after_initialization &&
-            (META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION) <= m_metadata->version) &&
+    if ((META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION) <= m_metadata->version) &&
             get_enclave_creator()->is_EDMM_supported(get_enclave_id()))
     {
         std::vector<std::tuple<uint64_t, uint64_t, uint32_t>> pages_to_protect;
@@ -866,6 +853,20 @@ int CLoader::set_memory_protection(bool is_after_initialization)
             if (ret != SGX_SUCCESS)
                 return SGX_ERROR_UNEXPECTED;
         }
+
+        //On EDMM supported platform, force set <ReservedMemMinSize> rsrv memory region's attribute to RW although it's was set to RWX by <ReservedMemExecutable>1</ReservedMemExecutable>
+        layout_t *layout_start = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset);
+        layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
+        for (layout_t *layout = layout_start; layout < layout_end; layout++)
+        {
+            if (layout->entry.id ==  LAYOUT_ID_RSRV_MIN && layout->entry.si_flags == SI_FLAGS_RWX && layout->entry.page_count > 0)
+            {
+                ret = get_enclave_creator()->emodpr((uint64_t)m_start_addr + layout->entry.rva, layout->entry.page_count << SE_PAGE_SHIFT, (uint64_t)(SI_FLAG_R |SI_FLAG_W ));
+                if (ret != SGX_SUCCESS)
+                    return SGX_ERROR_UNEXPECTED;
+                break;
+            }
+        }
     }
 
     //set memory protection for context
@@ -875,7 +876,7 @@ int CLoader::set_memory_protection(bool is_after_initialization)
     if (SGX_SUCCESS != ret)
     {
         return ret;
-    } 
+    }
     
     return SGX_SUCCESS;
 
@@ -888,6 +889,11 @@ int CLoader::set_context_protection(layout_t *layout_start, layout_t *layout_end
     {
         if (!IS_GROUP_ID(layout->group.id))
         {
+            if(!get_enclave_creator()->is_EDMM_supported(get_enclave_id()) && (layout->entry.id == LAYOUT_ID_RSRV_MIN ||layout->entry.id ==  LAYOUT_ID_RSRV_INIT))
+                 //Don't change the rsrv memory's attributes if platform isn't support EDMM
+                 continue;
+             //Here: URTS will change rsrv memory's attributes to RW forcely although it's signed by sign_tool as RWX (<ReservedMemExecutable>1</ReservedMemExecutable>).
+
             int prot = 0 ;
             if(layout->entry.si_flags == SI_FLAG_NONE)
             {

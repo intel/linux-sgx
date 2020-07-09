@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -35,23 +35,23 @@ set -e
 
 SCRIPT_DIR=$(dirname "$0")
 ROOT_DIR="${SCRIPT_DIR}/../../../../"
-LINUX_BUILD_DIR=$(readlink -m "${ROOT_DIR}/build/linux")
 LINUX_INSTALLER_DIR="${ROOT_DIR}/linux/installer"
 LINUX_INSTALLER_COMMON_DIR="${LINUX_INSTALLER_DIR}/common"
-LINUX_INSTALLER_COMMON_ECL_DIR="${LINUX_INSTALLER_COMMON_DIR}/libsgx-enclave-common"
+LINUX_INSTALLER_COMMON_ENCLAVE_COMMON_DIR="${LINUX_INSTALLER_COMMON_DIR}/libsgx-enclave-common"
 
-source ${LINUX_INSTALLER_COMMON_ECL_DIR}/installConfig.x64
-DEB_FOLDER=${ECL_PKG_NAME}-${ECL_VERSION}
+source ${LINUX_INSTALLER_COMMON_ENCLAVE_COMMON_DIR}/installConfig
+DEB_FOLDER=${ENCLAVE_COMMON_PACKAGE_NAME}-${ENCLAVE_COMMON_VERSION}
 
 SGX_VERSION=$(awk '/STRFILEVER/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
-DEB_BUILD_FOLDER=${ECL_PKG_NAME}-${SGX_VERSION}
+DEB_BUILD_FOLDER=${ENCLAVE_COMMON_PACKAGE_NAME}-${SGX_VERSION}
 
 main() {
     pre_build
     create_upstream_tarball
     unpack_upstream_tarball
-    generate_copyright_file
-    update_changelog_version
+    generate_install
+    generate_copyright
+    update_version
     rename_tarball
     build_deb_package
     post_build
@@ -63,15 +63,12 @@ pre_build() {
 }
 
 post_build() {
-    for FILE in $(ls ${SCRIPT_DIR}/*dbgsym*.deb 2> /dev/null); do
-        mv "${FILE}" "${FILE%.deb}".ddeb
-    done
     rm -fR ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
 }
 
 create_upstream_tarball() {
-    ${LINUX_INSTALLER_COMMON_ECL_DIR}/createTarball.sh
-    cp ${LINUX_INSTALLER_COMMON_ECL_DIR}/output/${TARBALL_NAME} ${SCRIPT_DIR}
+    ${LINUX_INSTALLER_COMMON_ENCLAVE_COMMON_DIR}/createTarball.sh
+    cp ${LINUX_INSTALLER_COMMON_ENCLAVE_COMMON_DIR}/output/${TARBALL_NAME} ${SCRIPT_DIR}
 }
 
 unpack_upstream_tarball() {
@@ -82,32 +79,45 @@ unpack_upstream_tarball() {
     popd
 }
 
-generate_copyright_file() {
+generate_install() {
+    echo "debian/tmp/${ENCLAVE_COMMON_PACKAGE_NAME}/* ." > ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}/debian/${ENCLAVE_COMMON_PACKAGE_NAME}.install
+    echo "debian/tmp/${ENCLAVE_COMMON_DEV_PACKAGE_NAME}/* ." > ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}/debian/${ENCLAVE_COMMON_DEV_PACKAGE_NAME}.install
+}
+
+generate_copyright() {
     pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
     rm -f debian/copyright
     find package/licenses/ -type f -print0 | xargs -0 -n1 cat >> debian/copyright
     popd
 }
 
-update_changelog_version() {
-    pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
+get_os_code() {
+    OS_CODE=$(lsb_release -cs 2> /dev/null)
+    if [ -z ${OS_CODE} ]; then
+        OS_CODE=$(grep "VERSION_CODENAME" /etc/os-release 2> /dev/null | cut -d= -f2)
+    fi
+    echo ${OS_CODE}
+}
 
+update_version() {
+    pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
     INS_VERSION=$(echo $(dpkg-parsechangelog |grep "Version" | cut -d: -f2))
     DEB_VERSION=$(echo $INS_VERSION | cut -d- -f2)
 
-    sed -i "s/${INS_VERSION}/${SGX_VERSION}-$(lsb_release -cs)${DEB_VERSION}/" debian/changelog
-
+    FULL_VERSION=${SGX_VERSION}-$(get_os_code)${DEB_VERSION}
+    sed -i "s/${INS_VERSION}/${FULL_VERSION}/" debian/changelog
+    sed -i "s/@dep_version@/${FULL_VERSION}/g" debian/control
     popd
 }
 
 rename_tarball() {
-    TARBALL_NAME_NEW_VERSION=$(echo ${TARBALL_NAME} | sed "s/${ECL_VERSION}/${SGX_VERSION}/")
+    TARBALL_NAME_NEW_VERSION=$(echo ${TARBALL_NAME} | sed "s/${ENCLAVE_COMMON_VERSION}/${SGX_VERSION}/")
     mv ${SCRIPT_DIR}/${TARBALL_NAME} ${SCRIPT_DIR}/${TARBALL_NAME_NEW_VERSION}
 }
 
 build_deb_package() {
     pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
-    SOURCE_DATE_EPOCH="$(date +%s)" LINUX_BUILD_DIR="${LINUX_BUILD_DIR}" dpkg-buildpackage -us -uc
+    SOURCE_DATE_EPOCH="$(date +%s)" dpkg-buildpackage -us -uc
     popd
 }
 

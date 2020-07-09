@@ -1,4 +1,4 @@
-Source: libsgx-enclave-common
+Source: libsgx-urts
 Section: libs
 Priority: optional
 Maintainer: <xiangquan.liu@intel.com>
@@ -8,5 +8,5 @@ Homepage: https://github.com/intel/linux-sgx
 
 Package: libsgx-urts
 Architecture: amd64
-Depends: libsgx-enclave-common (>= 2.5), ${shlibs:Depends}, ${misc:Depends}
-Description: SGX uRTS
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsgx-enclave-common (>= @dep_version@)
+Description: Intel(R) Software Guard Extensions uRTS

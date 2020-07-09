@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -78,12 +78,11 @@
 #define SIGNATURE_SIZE 384
 #define REL_ERROR_BIT         0x1
 #define INIT_SEC_ERROR_BIT    0x2
+#define RESIGN_BIT            0x4
 
 #define IGNORE_REL_ERROR(x)        (((x) & REL_ERROR_BIT) != 0)
 #define IGNORE_INIT_SEC_ERROR(x)   (((x) & INIT_SEC_ERROR_BIT) != 0)
-
-
-
+#define ENABLE_RESIGN(x)           (((x) & RESIGN_BIT) != 0)
 
 typedef enum _file_path_t
 {
@@ -122,13 +121,13 @@ static void close_handle(int fd)
 }
 
 
-static bool get_enclave_info(BinParser *parser, bin_fmt_t *bf, uint64_t * meta_offset, bool is_dump_mode = false)
+static bool get_enclave_info(BinParser *parser, bin_fmt_t *bf, uint64_t * meta_offset, bool is_dump_mode = false, bool resign_flag = false)
 {
     uint64_t meta_rva = parser->get_metadata_offset();
     const uint8_t *base_addr = parser->get_start_addr();
     metadata_t *metadata = GET_PTR(metadata_t, base_addr, meta_rva);
 
-    if(metadata->magic_num == METADATA_MAGIC && is_dump_mode == false)
+    if(metadata->magic_num == METADATA_MAGIC && is_dump_mode == false && resign_flag == false)
     {
         se_trace(SE_TRACE_ERROR, ENCLAVE_ALREADY_SIGNED_ERROR);
         return false;
@@ -142,7 +141,7 @@ static bool get_enclave_info(BinParser *parser, bin_fmt_t *bf, uint64_t * meta_o
 // measure_enclave():
 //    1. Get the enclave hash by loading enclave
 //    2. Get the enclave info - metadata offset and enclave file format
-static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parameter_t *parameter, uint32_t ignore_error_bits, metadata_t *metadata, uint64_t *meta_offset)
+static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parameter_t *parameter, uint32_t option_flag_bits, metadata_t *metadata, uint64_t *meta_offset)
 {
     assert(hash && dllpath && metadata && meta_offset);
     bool res = false;
@@ -175,7 +174,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
         close_handle(fh);
         return false;
     }
-    if(parser->has_init_section() && IGNORE_INIT_SEC_ERROR(ignore_error_bits) == false)
+    if(parser->has_init_section() && IGNORE_INIT_SEC_ERROR(option_flag_bits) == false)
     {
         se_trace(SE_TRACE_ERROR, INIT_SEC_ERROR);
         close_handle(fh);
@@ -191,7 +190,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     }
 
     // Collect enclave info
-    if(get_enclave_info(parser.get(), &bin_fmt, meta_offset) == false)
+    if(get_enclave_info(parser.get(), &bin_fmt, meta_offset, false, ENABLE_RESIGN(option_flag_bits)) == false)
     {
         close_handle(fh);
         return false;
@@ -205,7 +204,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     {
         no_rel = ElfHelper<32>::dump_textrels(parser.get());
     }
-    if(no_rel == false && (IGNORE_REL_ERROR(ignore_error_bits) == false))
+    if(no_rel == false && (IGNORE_REL_ERROR(option_flag_bits) == false))
     {
         close_handle(fh);
         se_trace(SE_TRACE_ERROR, TEXT_REL_ERROR);
@@ -549,7 +548,7 @@ static bool gen_enclave_signing_file(const enclave_css_t *enclave_css, const cha
     return true;
 }
 
-static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char **path, uint32_t *ignore_error_bits)
+static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char **path, uint32_t *option_flag_bits)
 {
     assert(mode!=NULL && path != NULL);
     if(argc<2)
@@ -630,38 +629,40 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         se_trace(SE_TRACE_ERROR, UNREC_CMD_ERROR, argv[1]);
         return false;
     }
-    uint32_t ie_bits = 0;
+    uint32_t pf_bits = 0;
 
-    typedef struct _ignore_error_map_t
+    // The struct used to record the options which don't need a path
+    typedef struct _para_flag_map_t
     {
         const char* para_str;
-        int error_flag_bit;
+        int flag_bit;
 
-    } ignore_error_map_t;
-    ignore_error_map_t iem[] =
+    } para_flag_map_t;
+    para_flag_map_t pfm[] =
     {
         {"-ignore-rel-error", REL_ERROR_BIT},
-        {"-ignore-init-sec-error", INIT_SEC_ERROR_BIT}
+        {"-ignore-init-sec-error", INIT_SEC_ERROR_BIT},
+        {"-resign", RESIGN_BIT}
     };
     unsigned int params_count = (unsigned)(sizeof(params_sign)/sizeof(params_sign[0]));
 
     for(unsigned int i=2; i<argc; i++)
     {
         unsigned int idx = 0;
-        for(; idx < sizeof(iem)/sizeof(iem[0]); idx++)
+        for(; idx < sizeof(pfm)/sizeof(pfm[0]); idx++)
         {
-            if(!STRCMP(argv[i], iem[idx].para_str))
+            if(!STRCMP(argv[i], pfm[idx].para_str))
             {
-                if((ie_bits & iem[idx].error_flag_bit) != 0)
+                if((pf_bits & pfm[idx].flag_bit) != 0)
                 {
                     se_trace(SE_TRACE_ERROR, REPEAT_OPTION_ERROR, argv[i]);
                     return false;
                 }
-                ie_bits |= iem[idx].error_flag_bit;
+                pf_bits |= pfm[idx].flag_bit;
                 break;
             }
         }
-        if(idx != sizeof(iem)/sizeof(iem[0]))
+        if(idx != sizeof(pfm)/sizeof(pfm[0]))
         {
             continue;
         }
@@ -708,13 +709,38 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
             return false;
         }
     }
+    if(STRCMP(mode_m[tempmode], "dump") == 0 && ENABLE_RESIGN(pf_bits))
+    {
+        // No need to set option '-resign' for dump command
+        se_trace(SE_TRACE_ERROR, GIVE_INVALID_OPTION_ERROR, "-resign", mode_m[tempmode]);
+        return false;
+    }
+    
+    for(unsigned int i = 0; i < params_count-1; i++)
+    {
+        if(params[tempmode][i].value == NULL)
+            continue;
+        for(unsigned int j=i+1; j < params_count; j++)
+        {
+            if(params[tempmode][j].value == NULL)
+                continue;
+            if(strlen(params[tempmode][i].value) == strlen(params[tempmode][j].value) &&
+                !STRNCMP(params[tempmode][i].value, params[tempmode][j].value, strlen(params[tempmode][i].value)))
+            {
+                se_trace(SE_TRACE_ERROR, DUPLICATED_FILE_NAME_ERROR, params[tempmode][i].name, params[tempmode][j].name);
+                return false;
+            }
+        }
+    }
     // Set output parameters
     for(unsigned int i = 0; i < params_count; i++)
     {
         path[i] = params[tempmode][i].value;
     }
+    
+
     *mode = tempmode;
-    *ignore_error_bits = ie_bits;
+    *option_flag_bits = pf_bits;
     return true;
 
 }
@@ -1255,9 +1281,10 @@ int main(int argc, char* argv[])
                                    {"HeapMaxSize",    0x1FFFFFFFFF,      0,              HEAP_SIZE_MAX,       0},
                                    {"HeapMinSize",    0x1FFFFFFFFF,      0,              HEAP_SIZE_MIN,       0},
                                    {"HeapInitSize",   0x1FFFFFFFFF,      0,              HEAP_SIZE_MIN,       0},
-                                   {"RsrvMaxSize",    0x1FFFFFFFFF,      0,              RSRV_SIZE_MAX,       0},
-                                   {"RsrvMinSize",    0x1FFFFFFFFF,      0,              RSRV_SIZE_MIN,       0},
-                                   {"RsrvInitSize",   0x1FFFFFFFFF,      0,              RSRV_SIZE_MIN,       0},
+                                   {"ReservedMemMaxSize",    0x1FFFFFFFFF,      0,              RSRV_SIZE_MAX,       0},
+                                   {"ReservedMemMinSize",    0x1FFFFFFFFF,      0,              RSRV_SIZE_MIN,       0},
+                                   {"ReservedMemInitSize",   0x1FFFFFFFFF,      0,              RSRV_SIZE_MIN,       0},
+                                   {"ReservedMemExecutable",   1,      0,              0,       0},
                                    {"MiscSelect",     0x00FFFFFFFF,      0,              DEFAULT_MISC_SELECT, 0},
                                    {"MiscMask",       0x00FFFFFFFF,      0,              DEFAULT_MISC_MASK,   0},
                                    {"EnableKSS",      1,                 0,              0,                   0},
@@ -1274,7 +1301,7 @@ int main(int argc, char* argv[])
     int key_type = UNIDENTIFIABLE_KEY; //indicate the type of the input key file
     size_t parameter_count = sizeof(parameter)/sizeof(parameter[0]);
     uint64_t meta_offset = 0;
-    uint32_t ignore_error_bits = 0;
+    uint32_t option_flag_bits = 0;
     RSA *rsa = NULL;
     memset(&metadata_raw, 0, sizeof(metadata_raw));
 
@@ -1287,7 +1314,7 @@ int main(int argc, char* argv[])
 #endif
 
     //Parse command line
-    if(cmdline_parse(argc, argv, &mode, path, &ignore_error_bits) == false)
+    if(cmdline_parse(argc, argv, &mode, path, &option_flag_bits) == false)
     {
         se_trace(SE_TRACE_ERROR, USAGE_STRING);
         goto clear_return;
@@ -1328,7 +1355,7 @@ int main(int argc, char* argv[])
         goto clear_return;
     }
 
-    if(measure_enclave(enclave_hash, path[OUTPUT], parameter, ignore_error_bits, metadata, &meta_offset) == false)
+    if(measure_enclave(enclave_hash, path[OUTPUT], parameter, option_flag_bits, metadata, &meta_offset) == false)
     {
         se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
         goto clear_return;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -35,22 +35,23 @@ set -e
 
 SCRIPT_DIR=$(dirname "$0")
 ROOT_DIR="${SCRIPT_DIR}/../../../../"
+LINUX_BUILD_DIR=$(readlink -m "${ROOT_DIR}/build/linux")
 LINUX_INSTALLER_DIR="${ROOT_DIR}/linux/installer"
 LINUX_INSTALLER_COMMON_DIR="${LINUX_INSTALLER_DIR}/common"
 LINUX_INSTALLER_COMMON_URTS_DIR="${LINUX_INSTALLER_COMMON_DIR}/libsgx-urts"
 
 source ${LINUX_INSTALLER_COMMON_URTS_DIR}/installConfig
-DEB_FOLDER=${URTS_PKG_NAME}-${URTS_VERSION}
+DEB_FOLDER=${URTS_PACKAGE_NAME}-${URTS_VERSION}
 
 SGX_VERSION=$(awk '/STRFILEVER/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
-DEB_BUILD_FOLDER=${URTS_PKG_NAME}-${SGX_VERSION}
+DEB_BUILD_FOLDER=${URTS_PACKAGE_NAME}-${SGX_VERSION}
 
 main() {
     pre_build
     create_upstream_tarball
     unpack_upstream_tarball
-    generate_copyright_file
-    update_changelog_version
+    generate_copyright
+    update_version
     rename_tarball
     build_deb_package
     post_build
@@ -78,21 +79,29 @@ unpack_upstream_tarball() {
     popd
 }
 
-generate_copyright_file() {
+generate_copyright() {
     pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
     rm -f debian/copyright
     find package/licenses/ -type f -print0 | xargs -0 -n1 cat >> debian/copyright
     popd
 }
 
-update_changelog_version() {
-    pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
+get_os_code() {
+    OS_CODE=$(lsb_release -cs 2> /dev/null)
+    if [ -z ${OS_CODE} ]; then
+        OS_CODE=$(grep "VERSION_CODENAME" /etc/os-release 2> /dev/null | cut -d= -f2)
+    fi
+    echo ${OS_CODE}
+}
 
+update_version() {
+    pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
     INS_VERSION=$(echo $(dpkg-parsechangelog |grep "Version" | cut -d: -f2))
     DEB_VERSION=$(echo $INS_VERSION | cut -d- -f2)
 
-    sed -i "s/${INS_VERSION}/${SGX_VERSION}-$(lsb_release -cs)${DEB_VERSION}/" debian/changelog
-
+    FULL_VERSION=${SGX_VERSION}-$(get_os_code)${DEB_VERSION}
+    sed -i "s/${INS_VERSION}/${FULL_VERSION}/" debian/changelog
+    sed -i "s/@dep_version@/${FULL_VERSION}/g" debian/control
     popd
 }
 
@@ -103,7 +112,8 @@ rename_tarball() {
 
 build_deb_package() {
     pushd ${SCRIPT_DIR}/${DEB_BUILD_FOLDER}
-    SOURCE_DATE_EPOCH="$(date +%s)" dpkg-buildpackage -b -us -uc
+    ldconfig -n ${LINUX_BUILD_DIR}
+    SOURCE_DATE_EPOCH="$(date +%s)" LINUX_BUILD_DIR="${LINUX_BUILD_DIR}" dpkg-buildpackage -us -uc
     popd
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -73,8 +73,8 @@ class CTrustThreadPool: private Uncopyable
 public:
     CTrustThreadPool(uint32_t tcs_min_pool);
     virtual ~CTrustThreadPool();
+    CTrustThread * acquire_free_thread();
     CTrustThread * acquire_thread(int ecall_cmd);
-    void release_thread(CTrustThread * const trust_thread);
     CTrustThread *add_thread(tcs_t * const tcs, CEnclave * const enclave, bool is_unallocated);
     CTrustThread *get_bound_thread(const tcs_t *tcs);
     std::vector<CTrustThread *> get_thread_list();
@@ -84,6 +84,8 @@ public:
     sgx_status_t fill_tcs_mini_pool();
     bool need_to_new_thread();
     bool is_dynamic_thread_exist();
+    int bind_pthread(const se_thread_id_t thread_id,  CTrustThread * const trust_thread);
+    void add_to_free_thread_vector(CTrustThread* it);
 protected:
     virtual int garbage_collect() = 0;
     inline int find_thread(std::vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id);
@@ -91,8 +93,7 @@ protected:
     int bind_thread(const se_thread_id_t thread_id, CTrustThread * const trust_thread);
     void unbind_thread(const se_thread_id_t thread_id);
     CTrustThread * get_bound_thread(const se_thread_id_t thread_id);
-    void add_to_free_thread_vector(CTrustThread* it);
-    
+
     std::vector<CTrustThread *>             m_free_thread_vector;
     std::vector<CTrustThread *>             m_unallocated_threads; 
     Node<se_thread_id_t, CTrustThread *>    *m_thread_list;
@@ -101,6 +102,7 @@ protected:
     Mutex                                   m_free_thread_mutex; //protect free threads.
     Cond                                    m_need_to_wait_for_new_thread_cond;
 private:
+    CTrustThread * _acquire_free_thread();
     CTrustThread * _acquire_thread();
     CTrustThread *m_utility_thread;
     uint64_t     m_tcs_min_pool;

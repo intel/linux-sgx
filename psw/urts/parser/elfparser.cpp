@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -111,28 +111,49 @@ const T* get_section_raw_data(const ElfW(Ehdr) *elf_hdr, ElfW(Addr) start_addr)
 bool validate_elf_header(const ElfW(Ehdr) *elf_hdr)
 {
     // validate magic number
-    if (memcmp(&elf_hdr->e_ident, ELFMAG, SELFMAG))
+    if (memcmp(&elf_hdr->e_ident, ELFMAG, SELFMAG)) {
+        SE_TRACE(SE_TRACE_ERROR, "Incorrect magic number\n");
         return false;
+    }
 
 #if RTS_SYSTEM_WORDSIZE == 64
-    if (ELFCLASS64 != elf_hdr->e_ident[EI_CLASS])
+    if (ELFCLASS64 != elf_hdr->e_ident[EI_CLASS]) {
+        SE_TRACE(SE_TRACE_ERROR, "Expected ELFCLASS64: 0x%x\n",
+                 elf_hdr->e_ident[EI_CLASS]);
         return false;
+    }
 #else
-    if (ELFCLASS32 != elf_hdr->e_ident[EI_CLASS])
+    if (ELFCLASS32 != elf_hdr->e_ident[EI_CLASS]) {
+        SE_TRACE(SE_TRACE_ERROR, "Expected ELFCLASS32: 0x%x\n",
+                 elf_hdr->e_ident[EI_CLASS]);
         return false;
+    }
 #endif
 
-    if (ELFDATA2LSB!= elf_hdr->e_ident[EI_DATA])
+    if (ELFDATA2LSB!= elf_hdr->e_ident[EI_DATA]) {
+        SE_TRACE(SE_TRACE_ERROR, "Expected ELFDATA2LSB: 0x%x\n",
+                 elf_hdr->e_ident[EI_DATA]);
         return false;
+    }
 
-    if (EV_CURRENT != elf_hdr->e_ident[EI_VERSION])
+    if (EV_CURRENT != elf_hdr->e_ident[EI_VERSION]) {
+        SE_TRACE(SE_TRACE_ERROR, "Expected EV_CURRENT: 0x%x\n",
+                 elf_hdr->e_ident[EI_VERSION]);
         return false;
+    }
 
-    if (ET_DYN != elf_hdr->e_type)
+    if (ET_DYN != elf_hdr->e_type) {
+        SE_TRACE(SE_TRACE_ERROR, "Expected ET_DYN: 0x%x\n",
+                 elf_hdr->e_type);
         return false;
+    }
 
-    if (sizeof(ElfW(Phdr)) != elf_hdr->e_phentsize)
+    if (sizeof(ElfW(Phdr)) != elf_hdr->e_phentsize) {
+        SE_TRACE(SE_TRACE_ERROR, "Expected phentsize == %d, got %d\n",
+                 sizeof(ElfW(Phdr)),
+                 elf_hdr->e_phentsize);
         return false;
+    }
 
     return true;
 }
@@ -206,12 +227,12 @@ bool check_symbol_table(const ElfW(Ehdr) *elf_hdr, const ElfW(Dyn) *dyn_info,
     uint32_t sym_num = (uint32_t)(sh_symtab->sh_size/sh_symtab->sh_entsize);
     const char *strtab = get_section_raw_data<char>(elf_hdr, dyn_info[DT_STRTAB].d_un.d_ptr);
 
-    // We only store "enclave_entry", "g_global_data_sim" and "g_peak_heap_used".
+    // We only store "enclave_entry", "g_global_data", "g_blobal_data_sim", "g_peak_heap_used" and "g_peak_rsrv_mem_committed".
     // To export new symbols, add them here.
     //
     // "g_global_data_sim" is needed so that we can check that whether
     // an simulated enclave is given when running an HW loader.
-    const char* str[] = { "enclave_entry", "g_global_data_sim", "g_peak_heap_used", "g_global_data" };
+    const char* str[] = { "enclave_entry", "g_global_data_sim", "g_peak_heap_used", "g_global_data", "g_peak_rsrv_mem_committed" };
 
     // The first entry is reserved, and must be all zeros
     for (uint32_t idx = 1; idx < sym_num; ++idx)
@@ -608,45 +629,60 @@ sgx_status_t ElfParser::run_parser()
     if (m_sections.size() != 0) return SGX_SUCCESS;
 
     const ElfW(Ehdr) *elf_hdr = (const ElfW(Ehdr) *)m_start_addr;
-    if (elf_hdr == NULL || m_len < sizeof(ElfW(Ehdr)))
+    if (elf_hdr == NULL || m_len < sizeof(ElfW(Ehdr))) {
+        SE_TRACE_ERROR("Header invalid size\n");
         return SGX_ERROR_INVALID_ENCLAVE;
-
+    }
     /* Check elf header*/
-    if (!validate_elf_header(elf_hdr))
+    if (!validate_elf_header(elf_hdr)) {
+        SE_TRACE_ERROR("Header invalid\n");
         return SGX_ERROR_INVALID_ENCLAVE;
-
+    }
     /* Get and check machine mode */
-    if (!get_bin_fmt(elf_hdr, m_bin_fmt))
+    if (!get_bin_fmt(elf_hdr, m_bin_fmt)) {
+        SE_TRACE_ERROR("Bin fmt incorrect\n");
         return SGX_ERROR_MODE_INCOMPATIBLE;
+    }
 
     /* Check if there is any overlap segment, and make sure the segment is 1 page aligned;
     * TLS segment must exist.
     */
-    if (!validate_segment(elf_hdr, m_len))
+    if (!validate_segment(elf_hdr, m_len)) {
+        SE_TRACE_ERROR("Segment incorrect\n");
         return SGX_ERROR_INVALID_ENCLAVE;
+    }
 
-    if (!parse_dyn(elf_hdr, &m_dyn_info[0]))
+    if (!parse_dyn(elf_hdr, &m_dyn_info[0])) {
+        SE_TRACE_ERROR("Dyn incorrect\n");
         return SGX_ERROR_INVALID_ENCLAVE;
+    }
 
     /* Check if there is any undefined symbol */
     if (!check_symbol_table(elf_hdr, m_dyn_info, m_sym_table))
     {
+        SE_TRACE_ERROR("Symbol table incorrect\n");
         return SGX_ERROR_UNDEFINED_SYMBOL;
     }
 
     /* Check if there is unexpected relocation type */
-    if (!validate_reltabs(elf_hdr, m_dyn_info))
+    if (!validate_reltabs(elf_hdr, m_dyn_info)) {
+        SE_TRACE_ERROR("Reltabs incorrect\n");
         return SGX_ERROR_INVALID_ENCLAVE;
+    }
 
     /* Check if there is .ctor section */
-    if (has_ctor_section(elf_hdr))
+    if (has_ctor_section(elf_hdr)) {
+        SE_TRACE_ERROR("ctor section incorrect\n");
         return SGX_ERROR_INVALID_ENCLAVE;
+    }
 
     /* build regular sections */
     if (build_regular_sections(m_start_addr, m_sections, m_tls_section, m_metadata_offset, m_metadata_block_size))
         return SGX_SUCCESS;
-    else
+    else {
+        SE_TRACE_ERROR("Regular sections incorrect\n");
         return SGX_ERROR_INVALID_ENCLAVE;
+    }
 }
 
 ElfParser::~ElfParser()
@@ -887,7 +923,7 @@ void ElfParser::get_executable_sections(std::vector<const char *>& xsec_names) c
     return;
 }
 
-bool ElfParser::set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization)
+bool ElfParser::set_memory_protection(uint64_t enclave_base_addr)
 {
     uint64_t len = 0;
     int ret = 0;
@@ -944,12 +980,6 @@ bool ElfParser::set_memory_protection(uint64_t enclave_base_addr, bool is_after_
             }
         }
         last_section_end = rva + len;
-    }
-    
-  
-    if(is_after_initialization == false)
-    {
-        return true;
     }
     
     const ElfW(Ehdr) *elf_hdr = (const ElfW(Ehdr) *)m_start_addr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -80,6 +80,7 @@ typedef struct _system_features
     uint8_t* sealed_key;
     uint64_t size;
     uint64_t cpu_features_ext;
+    uint32_t cpu_core_num;
 }system_features_t;
 
 // current system_feature_set only contains one element of type uint64_t, the highest
@@ -92,7 +93,6 @@ typedef struct _system_features
 #define BUILTIN_OCALL_1  -2
 #define BUILTIN_OCALL_2  -3
 #define BUILTIN_OCALL_3  -4
-#define BUILTIN_OCALL_4  -5
 
 typedef enum
 {
@@ -101,9 +101,8 @@ typedef enum
     EDMM_MODPR = BUILTIN_OCALL_3,
 }edmm_ocall_t;
 
-#define SL_WAKE_WORKERS (uint32_t)BUILTIN_OCALL_4
 
-#define is_builtin_ocall(ocall_val) (((int)ocall_val >= BUILTIN_OCALL_4) && ((int)ocall_val <= BUILTIN_OCALL_1))
+#define is_builtin_ocall(ocall_val) (((int)ocall_val >= BUILTIN_OCALL_3) && ((int)ocall_val <= BUILTIN_OCALL_1))
 
 #pragma pack(pop)
 

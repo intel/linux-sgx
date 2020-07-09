@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,11 +29,11 @@
  *
  */
 
+#include <sgx_secure_align.h>
 #include "arch.h"
 #include "pce_cert.h"
 #include "aeerror.h"
 #include "sgx_utils.h"
-#include "ipp_wrapper.h"
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -122,19 +122,22 @@ ae_error_t get_pce_priv_key(
     sgx_cmac_128bit_tag_t block;
     sgx_status_t sgx_status = SGX_SUCCESS;
     ae_error_t status = AE_SUCCESS;
-    sgx_key_128bit_t key_tmp;
+    //sgx_key_128bit_t key_tmp;
+    sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)> okey_tmp;
+    sgx_key_128bit_t* pkey_tmp = &okey_tmp.v;
+
     uint8_t hash_drg_output[HASH_DRBG_OUT_LEN];
 
     memset(&content, 0, sizeof(content));
     memset(&block, 0, sizeof(block));
-    memset(&key_tmp, 0, sizeof(key_tmp));
+    memset(pkey_tmp, 0, sizeof(*pkey_tmp));
     //1-11bytes: "PAK_KEY_DER"(ascii encoded)
     memcpy(content+1, PAK_STRING, 11);
     //14-15bytes: 0x0140 (Big Endian)
     content[14]=0x01;
     content[15]=0x40;
 
-    status = get_provision_key(&key_tmp, psvn); //Generate Provisioning Key with respect to the psvn
+    status = get_provision_key(pkey_tmp, psvn); //Generate Provisioning Key with respect to the psvn
     if(status != AE_SUCCESS){
         goto ret_point;
     }
@@ -143,7 +146,7 @@ ae_error_t get_pce_priv_key(
 
     //Block 1 = AES-CMAC(Provisioning Key, PAK string with Counter = 0x01)
     content[0] = 0x01;
-    if((sgx_status=sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(key_tmp),  
+    if((sgx_status=sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(*pkey_tmp),  
         content, sizeof(content), &block))!=SGX_SUCCESS){
             if(sgx_status == SGX_ERROR_OUT_OF_MEMORY){
                 status = AE_OUT_OF_MEMORY_ERROR;
@@ -156,7 +159,7 @@ ae_error_t get_pce_priv_key(
 
     //Block 2 = AES-CMAC(Provisioning Key, PAK string with Counter = 0x02)
     content[0] = 0x02;
-    if((sgx_status=sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(key_tmp),  
+    if((sgx_status=sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(*pkey_tmp),  
         content, sizeof(content), &block))!=SGX_SUCCESS){
             if(sgx_status == SGX_ERROR_OUT_OF_MEMORY){
                 status = AE_OUT_OF_MEMORY_ERROR;
@@ -169,7 +172,7 @@ ae_error_t get_pce_priv_key(
 
     //Block 3 = AES-CMAC(Provisioning Key, PAK string with Counter = 0x03)
     content[0] = 0x03;
-    if((sgx_status=sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(key_tmp),  
+    if((sgx_status=sgx_rijndael128_cmac_msg(reinterpret_cast<const sgx_cmac_128bit_key_t *>(*pkey_tmp),  
         content, sizeof(content), &block))!=SGX_SUCCESS){
             if(sgx_status == SGX_ERROR_OUT_OF_MEMORY){
                 status = AE_OUT_OF_MEMORY_ERROR;
@@ -197,7 +200,7 @@ ae_error_t get_pce_priv_key(
 	}
 
 ret_point:
-    (void)memset_s(&key_tmp, sizeof(key_tmp), 0, sizeof(key_tmp));
+    (void)memset_s(pkey_tmp, sizeof(*pkey_tmp), 0, sizeof(*pkey_tmp));
     (void)memset_s(&hash_drg_output, sizeof(hash_drg_output), 0, sizeof(hash_drg_output));
     (void)memset_s(&block, sizeof(block), 0, sizeof(block));
     if(status!=AE_SUCCESS){

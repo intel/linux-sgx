@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/libsgx_qe.signed.so	<installdir>/aesm/libsgx_qe.signed.so	0	main	STP
+<deliverydir>/build/linux/libsgx_pve.signed.so	<installdir>/aesm/libsgx_pve.signed.so	0	main	STP

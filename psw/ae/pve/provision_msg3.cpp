@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,7 @@
  *
  */
 
+#include <sgx_secure_align.h>
 #include <sgx_random_buffers.h>
 #include "msg3_parm.h"
 #include "se_sig_rl.h"
@@ -39,7 +40,6 @@
 #include "pve_hardcoded_tlv_data.h"
 #include "sgx_utils.h"
 #include "byte_order.h"
-#include <ipp_wrapper.h>
 #include <string.h>
 #include <stdlib.h>
 #include "pek_pub_key.h"
@@ -280,15 +280,16 @@ static pve_status_t gen_msg3_join_proof_escrow_data(const proc_prov_msg2_blob_in
 {
     pve_status_t ret = PVEC_SUCCESS;
     BitSupplier epid_prng = (BitSupplier) epid_random_func;
-    FpElemStr temp_f;
+    //FpElemStr temp_f;
     //first generate private key f randomly before sealing it by PSK
-    FpElemStr *f = &temp_f;
+    sgx::custom_alignment_aligned<FpElemStr, 32, 0, sizeof(FpElemStr)> otemp_f;
+    FpElemStr* f = &otemp_f.v;
     sgx_status_t sgx_status = SGX_SUCCESS;
     JoinRequest *join_r = &join_proof.jr;
     EpidStatus epid_ret  = kEpidNoErr;
     psvn_t psvn;
     MemberCtx* ctx = NULL;
-    memset(&temp_f, 0, sizeof(temp_f));
+    memset(f, 0, sizeof(*f));
 
     //randomly generate the private EPID key f, host to network transformation not required since server will not decode it
     ret=sgx_error_to_pve_error(sgx_gen_epid_priv_f((void*)f));
@@ -342,7 +343,7 @@ static pve_status_t gen_msg3_join_proof_escrow_data(const proc_prov_msg2_blob_in
     }
 ret_point:
     (void)memset_s(&psk, sizeof(psk), 0, sizeof(psk));//clear the key
-    (void)memset_s(&temp_f, sizeof(temp_f), 0, sizeof(temp_f));//clear temp f in stack
+    (void)memset_s(f, sizeof(*f), 0, sizeof(*f));//clear temp f in stack
     if(PVEC_SUCCESS != ret){
         (void)memset_s(&join_proof, sizeof(join_proof), 0, sizeof(join_proof));
     }
@@ -371,8 +372,12 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
     uint8_t temp_buf[JOIN_PROOF_TLV_TOTAL_SIZE];
     uint8_t *data_to_encrypt = NULL;
     uint8_t  size_to_encrypt = 0;
-    uint8_t  pwk2_tlv_buffer[PWK2_TLV_TOTAL_SIZE];
-    sgx_key_128bit_t *pwk2=reinterpret_cast<sgx_key_128bit_t *>(pwk2_tlv_buffer+PWK2_TLV_HEADER_SIZE);
+    //uint8_t  pwk2_tlv_buffer[PWK2_TLV_TOTAL_SIZE];
+    //sgx_key_128bit_t *pwk2=reinterpret_cast<sgx_key_128bit_t *>(pwk2_tlv_buffer+PWK2_TLV_HEADER_SIZE);
+    typedef uint8_t pwk2_tlv_buffer_t[PWK2_TLV_TOTAL_SIZE];
+    sgx::custom_alignment_aligned<pwk2_tlv_buffer_t, 16, PWK2_TLV_HEADER_SIZE, sizeof(sgx_key_128bit_t)> opwk2_tlv_buffer;
+    auto* ppwk2_tlv_buffer = &opwk2_tlv_buffer.v;
+    sgx_key_128bit_t *pwk2 = reinterpret_cast<sgx_key_128bit_t *>((uint8_t*) *ppwk2_tlv_buffer + PWK2_TLV_HEADER_SIZE);
     uint8_t report_data_payload[MAC_SIZE + HARD_CODED_JOIN_PROOF_WITH_ESCROW_TLV_SIZE + NONCE_2_SIZE + PEK_MOD_SIZE];
     uint8_t* pdata = &report_data_payload[0];
     sgx_report_data_t report_data = { 0 };
@@ -391,7 +396,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
     memset(temp_buf, 0 ,sizeof(temp_buf));
     memset(aad, 0, sizeof(aad));
     memset(pwk2, 0, sizeof(sgx_key_128bit_t));
-    memcpy(pwk2_tlv_buffer, PWK2_TLV_HEADER, PWK2_TLV_HEADER_SIZE);
+    memcpy(*ppwk2_tlv_buffer, PWK2_TLV_HEADER, PWK2_TLV_HEADER_SIZE);
     msg3_output->is_join_proof_generated=false;
     msg3_output->is_epid_sig_generated=false;
 
@@ -467,14 +472,14 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
         le_n[i]=pek.n[sizeof(pek.n)/sizeof(pek.n[0])-i-1];
     }
 
-    sgx_status = sgx_create_rsa_pub_key(sizeof(pek.n), sizeof(pek.e),
+    sgx_status = sgx_create_rsa_pub1_key(sizeof(pek.n), sizeof(pek.e),
         reinterpret_cast<const unsigned char *>(le_n), reinterpret_cast<const unsigned char *>(&le_e), &pub_key);
     if (SGX_SUCCESS != sgx_status) {
         ret = sgx_error_to_pve_error(sgx_status);
         goto ret_point;
     }
 
-    sgx_status = sgx_rsa_pub_encrypt_sha256(pub_key, NULL, &output_len, reinterpret_cast<const unsigned char*>(pwk2_tlv_buffer),
+    sgx_status = sgx_rsa_pub_encrypt_sha256(pub_key, NULL, &output_len, reinterpret_cast<const unsigned char*>(*ppwk2_tlv_buffer),
         PWK2_TLV_TOTAL_SIZE);
     if (SGX_SUCCESS != sgx_status) {
         ret = sgx_error_to_pve_error(sgx_status);
@@ -484,7 +489,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
         ret = PVEC_UNEXPECTED_ERROR;
         goto ret_point;
     }
-    sgx_status = sgx_rsa_pub_encrypt_sha256(pub_key, msg3_output->encrypted_pwk2, &output_len, reinterpret_cast<const unsigned char*>(pwk2_tlv_buffer),
+    sgx_status = sgx_rsa_pub_encrypt_sha256(pub_key, msg3_output->encrypted_pwk2, &output_len, reinterpret_cast<const unsigned char*>(*ppwk2_tlv_buffer),
         PWK2_TLV_TOTAL_SIZE);
     if (SGX_SUCCESS != sgx_status) {
         ret = sgx_error_to_pve_error(sgx_status);
@@ -518,7 +523,7 @@ pve_status_t gen_prov_msg3_data(const proc_prov_msg2_blob_input_t *msg2_blob_inp
 ret_point:
     (void)memset_s(aad, sizeof(aad), 0, sizeof(aad));
     (void)memset_s(temp_buf, sizeof(temp_buf), 0, sizeof(temp_buf));
-    (void)memset_s(pwk2_tlv_buffer, sizeof(pwk2_tlv_buffer),0,sizeof(pwk2_tlv_buffer));
+    (void)memset_s(*ppwk2_tlv_buffer, sizeof(*ppwk2_tlv_buffer),0,sizeof(*ppwk2_tlv_buffer));
     if(pub_key){
         sgx_free_rsa_key(pub_key, SGX_RSA_PUBLIC_KEY, sizeof(pek.n), sizeof(pek.e));
     }

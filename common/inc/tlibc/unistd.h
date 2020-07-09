@@ -40,6 +40,8 @@
 
 __BEGIN_DECLS
 
+int getpagesize(void);
+
 void * _TLIBC_CDECL_ sbrk(intptr_t);
 
 /*

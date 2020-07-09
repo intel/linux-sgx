@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -106,7 +106,7 @@ public:
     virtual sgx_status_t get_info(enclave_diff_info_t *enclave_diff_info) = 0;
 
     virtual void get_executable_sections(std::vector<const char *>& xsec_names) const = 0;
-    virtual bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization) = 0;
+    virtual bool set_memory_protection(uint64_t enclave_base_addr) = 0;
     virtual void get_pages_to_protect(uint64_t, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const = 0;
     virtual bool has_init_section() const = 0;
 };

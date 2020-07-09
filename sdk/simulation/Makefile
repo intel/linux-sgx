@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -35,11 +35,11 @@ DIRS := assembly   \
         uinst      \
         tinst      \
         driver_api \
-        tae_service_sim \
         uae_service_sim/linux \
         urtssim    \
         trtssim    \
-        SEConfigureCPUSVN/linux
+        SEConfigureCPUSVN/linux \
+		tservice_sim
 
 TARGETS := all clean
 .PHONY: $(TARGETS)

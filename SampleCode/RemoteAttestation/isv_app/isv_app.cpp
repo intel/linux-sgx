@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -53,7 +53,8 @@
 #include "sgx_urts.h"
 
 // Needed to query extended epid group id.
-#include "sgx_uae_service.h"
+#include "sgx_uae_epid.h"
+#include "sgx_uae_quote_ex.h"
 
 #include "service_provider.h"
 
@@ -221,6 +222,14 @@ int main(int argc, char* argv[])
     int i = 2; // We will do it twice, the first time is ECDSA quoting, the second one is EPID quoting
     do
     {
+        if (i == 2)
+        {
+            fprintf(OUTPUT, "\nFirst round, we will try ECDSA algorithm.\n");
+        }
+        else
+        {
+            fprintf(OUTPUT, "\nSecond round, we will try EPID algorithm.\n");
+        }
         // Preparation for remote attestation by configuring extended epid group id.
         {
             uint32_t extended_epid_group_id = 0;
@@ -272,13 +281,13 @@ int main(int argc, char* argv[])
             if(SGX_SUCCESS != ret)
             {
                 ret = -1;
-                fprintf(OUTPUT, "\nError, call sgx_select_att_key_id fail [%s].",
+                fprintf(OUTPUT, "\nInfo, call sgx_select_att_key_id fail, current platform configuration doesn't support this attestation key ID. [%s]",
                         __FUNCTION__);
                 goto CLEANUP;
             }
             fprintf(OUTPUT, "\nCall sgx_select_att_key_id success.");
         }
-        // Remote attestation will be initiated the ISV server challenges the ISV
+        // Remote attestation will be initiated if the ISV server challenges the ISV
         // app or if the ISV app detects it doesn't have the credentials
         // (shared secret) from a previous attestation required for secure
         // communication with the server.
@@ -716,8 +725,11 @@ int main(int argc, char* argv[])
 
 
         ra_free_network_response_buffer(p_msg0_resp_full);
+        p_msg0_resp_full = NULL;
         ra_free_network_response_buffer(p_msg2_full);
+        p_msg2_full = NULL;
         ra_free_network_response_buffer(p_att_result_msg_full);
+        p_att_result_msg_full = NULL;
 
         // p_msg3 is malloc'd by the untrusted KE library. App needs to free.
         SAFE_FREE(p_msg3);
@@ -729,4 +741,3 @@ int main(int argc, char* argv[])
     getchar();
     return ret;
 }
-

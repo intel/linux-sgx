@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -112,4 +112,25 @@
 .macro GET_STACK_BASE tcs
     mov      \tcs, %xax
     sub      $SE_GUARD_PAGE_SIZE, %xax
+.endm
+
+#define FLAGS_AC_BIT     0x40000   /* bit 18 */
+#define FLAGS_CLEAR_BITS FLAGS_AC_BIT
+
+.macro CLEAN_XFLAGS
+
+#if defined(LINUX64)
+    pushfq
+    notq     (%xsp)
+    orq      $FLAGS_CLEAR_BITS, (%xsp)
+    notq     (%xsp)
+    popfq
+#else
+    pushfl
+    notl     (%xsp)
+    orl      $FLAGS_CLEAR_BITS, (%xsp)
+    notl     (%xsp)
+    popfl
+#endif
+
 .endm

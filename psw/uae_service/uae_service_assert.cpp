@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,7 +37,7 @@
 */
 
 #include "aeerror.h"
-#include "sgx_uae_service.h"
+#include "sgx_quote.h"
 #include "platform_info_blob.h"
 #include "arch.h"
 

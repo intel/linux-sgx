@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -78,11 +78,6 @@ uae_oal_status_t SGXAPI oal_get_quote(
     uint32_t                timeout_usec,
     aesm_error_t            *result);
 
-uae_oal_status_t SGXAPI oal_get_ps_cap(
-    uint64_t*       p_ps_cap,
-    uint32_t        timeout_usec,
-    aesm_error_t    *result);
-
 uae_oal_status_t SGXAPI oal_report_attestation_status(
     const sgx_platform_info_t*  p_platform_info,
     int                         attestation_status,
@@ -97,35 +92,6 @@ uae_oal_status_t SGXAPI oal_check_update_status(
     uint32_t*                   status,
     uint32_t                    timeout_usec,
     aesm_error_t                *result);
-
-uae_oal_status_t oal_create_session(
-    uint32_t        *session_id,
-    uint8_t         *se_dh_msg1,
-    uint32_t        dh_msg1_size,
-    uint32_t        timeout_usec,
-    aesm_error_t    *result);
-
-uae_oal_status_t oal_exchange_report(
-    uint32_t        session_id,
-    const uint8_t   *se_dh_msg2,
-    uint32_t        dh_msg2_size,
-    uint8_t         *se_dh_msg3,
-    uint32_t        dh_msg3_size,
-    uint32_t        timeout_usec,
-    aesm_error_t    *result);
-
-uae_oal_status_t oal_close_session(
-    uint32_t        session_id,
-    uint32_t        timeout_usec,
-    aesm_error_t    *result);
-
-uae_oal_status_t oal_invoke_service(
-    const uint8_t   *pse_message_req,
-    uint32_t        pse_message_req_size,
-    uint8_t         *pse_message_resp,
-    uint32_t        pse_message_resp_size,
-    uint32_t        timeout_usec,
-    aesm_error_t    *response);
 
 uae_oal_status_t oal_get_whitelist_size(
     uint32_t* p_whitelist_size,
@@ -178,6 +144,14 @@ uae_oal_status_t oal_get_quote_ex(
                 uint32_t timeout_usec,
                 aesm_error_t *result);
 
+uae_oal_status_t oal_get_supported_att_key_id_num(
+    uint32_t *p_att_key_id_num,
+    uint32_t timeout_usec, aesm_error_t *result);
+
+uae_oal_status_t oal_get_supported_att_key_ids(
+    sgx_att_key_id_ext_t *p_att_key_id_list,
+    uint32_t att_key_id_list_size,
+    uint32_t timeout_usec, aesm_error_t *result);
 
 sgx_status_t    oal_map_status(uae_oal_status_t status);
 sgx_status_t    oal_map_result(aesm_error_t result);

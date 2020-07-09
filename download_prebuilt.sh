@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -33,12 +33,14 @@
 
 top_dir=`dirname $0`
 out_dir=$top_dir
-optlib_name=optimized_libs_2.6.tar.gz
-ae_file_name=prebuilt_ae_2.6.tar.gz
-checksum_file=SHA256SUM_prebuilt_2.6.txt
-server_url_path=https://download.01.org/intel-sgx/linux-2.6/
+optlib_name=optimized_libs_2.10.tar.gz
+ae_file_name=prebuilt_ae_2.10.tar.gz
+binutils_file_name=as.ld.objdump.gold.r2.tar.gz
+checksum_file=SHA256SUM_prebuilt_2.10.txt
+server_url_path=https://download.01.org/intel-sgx/sgx-linux/2.10/
 server_optlib_url=$server_url_path/$optlib_name
 server_ae_url=$server_url_path/$ae_file_name
+server_binutils_url=$server_url_path/$binutils_file_name
 server_checksum_url=$server_url_path/$checksum_file
 
 rm -f $out_dir/$optlib_name
@@ -52,6 +54,13 @@ rm -f $out_dir/$ae_file_name
 wget $server_ae_url -P $out_dir
 if [ $? -ne 0 ]; then
     echo "Fail to download file $server_ae_url"
+    exit -1
+fi
+
+rm -f $out_dir/$binutils_file_name
+wget $server_binutils_url -P $out_dir
+if [ $? -ne 0 ]; then
+    echo "Fail to download file $server_binutils_url"
     exit -1
 fi
 
@@ -72,8 +81,10 @@ if [ $? -ne 0 ]; then
 fi
 tar -zxf $optlib_name
 tar -zxf $ae_file_name
+tar -zxf $binutils_file_name
 rm -f $optlib_name
 rm -f $ae_file_name
 rm -f $checksum_file
+rm -f $binutils_file_name
 
 popd

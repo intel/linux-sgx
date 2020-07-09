@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +31,7 @@
 
 
 #include <assert.h>
+#include <memory>
 #include "LEClass.h"
 #include "aeerror.h"
 #include "arch.h"
@@ -48,13 +49,9 @@
 #include "launch_enclave_u.h"
 
 extern "C" sgx_status_t sgx_create_le(const char *file_name, const char *prd_css_file_name, const int debug, sgx_launch_token_t *launch_token, int *launch_token_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr, int *production_loaded);
-extern "C" bool is_in_kernel_driver();
+extern "C" bool is_launch_token_required();
 
 #endif
-
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
 
 extern AESMLogicMutex _le_mutex;
 extern std::shared_ptr<INetworkService> g_network_service;
@@ -182,7 +179,7 @@ ae_error_t CLEClass::update_white_list_by_url()
     if (last_updated_time + UPDATE_DURATION > cur_time){
         return LE_WHITE_LIST_QUERY_BUSY;
     }
-    if (is_in_kernel_driver())
+    if (!is_launch_token_required())
     {
         AESM_DBG_INFO("InKernel LE loaded");
         return AE_SUCCESS;
@@ -372,7 +369,7 @@ ae_error_t CLEClass::load_enclave()
          return AE_SUCCESS;
     }
 #ifndef REF_LE
-    if (is_in_kernel_driver())
+    if (!is_launch_token_required())
     {
         AESM_DBG_INFO("InKernel LE loaded");
         return AE_SUCCESS;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +31,7 @@
 
 syntax = "proto2";
 package aesm.message;
+option optimize_for = LITE_RUNTIME;
 
 message Request{
 
@@ -68,34 +69,6 @@ message Request{
         required    uint32 update_info_size         = 2;
         required    uint32 config                   = 3;
         optional    uint32  timeout                 = 9;
-    }
-
-    //private API
-    message CreateSessionRequest{
-        required    uint32 dh_msg1_size     = 1;
-        optional    uint32 timeout          = 9;
-    }
-
-    message InvokeServiceRequest{
-        required    bytes   pse_message     = 1;
-        required    uint32  pse_resp_size   = 2;
-        optional    uint32  timeout         = 9;
-    }
-
-    message ExchangeReportRequest{
-        required    uint32 session_id       = 1;
-        required    bytes se_dh_msg2        = 2;
-        required    uint32 se_dh_msg3_size  = 3;
-        optional    uint32 timeout          = 9;
-    }
-
-    message CloseSessionRequest{
-        required        uint32 session_id   = 1;
-        optional        uint32 timeout      = 9;
-    }
-
-    message GetPsCapRequest{
-        optional    uint32  timeout         = 9;
     }
 
     message GetWhiteListSizeRequest{
@@ -147,15 +120,17 @@ message Request{
         optional    uint32  timeout         = 9;
     }
 
+    message GetSupportedAttKeyIDNumRequest{
+        optional    uint32  timeout         = 9;
+    }
+    message GetSupportedAttKeyIDsRequest{
+        required    uint32  buf_size        = 1;
+        optional    uint32  timeout         = 9;
+    }
     optional    InitQuoteRequest initQuoteReq                 = 1;
     optional    GetQuoteRequest getQuoteReq                   = 2;
     optional    GetLaunchTokenRequest getLicTokenReq          = 3;
     optional    ReportAttestationErrorRequest   reportErrReq  = 4;
-    optional    CreateSessionRequest createSessionReq         = 5;
-    optional    InvokeServiceRequest invokeServiceReq         = 6;
-    optional    ExchangeReportRequest exchangeReportReq       = 7;
-    optional    CloseSessionRequest closeSessionReq           = 8;
-    optional    GetPsCapRequest getPsCapReq                   = 9;
     optional    GetWhiteListSizeRequest getWhiteListSizeReq   = 10;
     optional    GetWhiteListRequest getWhiteListReq           = 11;
     optional    SGXGetExtendedEpidGroupIdRequest sgxGetExtendedEpidGroupIdReq   = 12;
@@ -166,6 +141,8 @@ message Request{
     optional    GetQuoteExRequest getQuoteExReq               = 17;
     optional    CheckUpdateStatusRequest checkUpdateStatusReq = 18;
     optional    SelectAttKeyIDRequest selectAttKeyIDReq       = 19;
+    optional    GetSupportedAttKeyIDNumRequest getSupportedAttKeyIDNumReq       = 21;
+    optional    GetSupportedAttKeyIDsRequest getSupportedAttKeyIDsReq       	= 22;
 }
 
 message Response{
@@ -198,31 +175,6 @@ message Response{
         optional   uint32 status                 = 3;
     }
 
-    //private API
-    message CreateSessionResponse{
-        required    uint32 errorCode    = 1 [default = 1];
-        optional    uint32 session_id   = 2;
-        optional    bytes se_dh_msg1    = 3;
-    }
-
-    message InvokeServiceResponse{
-        required    uint32 errorCode    = 1 [default = 1];
-        optional    bytes pse_message   = 2;
-    }
-
-    message ExchangeReportResponse{
-        required    uint32 errorCode    = 1 [default = 1];
-        optional    bytes se_dh_msg3    = 2;
-    }
-
-    message CloseSessionResponse{
-        required    uint32 errorCode    = 1 [default = 1];
-    }
-
-    message GetPsCapResponse{
-        required   uint32 errorCode = 1 [default = 1];
-        optional   uint64 ps_cap = 2;
-    }
     message GetWhiteListSizeResponse{
         required   uint32 errorCode = 1 [default = 1];
         optional   uint32 white_list_size = 2;
@@ -269,15 +221,24 @@ message Response{
         optional    bytes  qe_report_info = 3;
     }
 
+    message UnsupportedRequestResponse
+    {
+        required uint32 errorCode = 1 [default = 1];
+    }
+
+    message GetSupportedAttKeyIDNumResponse{
+        required    uint32  errorCode      = 1 [default = 1];
+        optional    uint32  att_key_id_num = 2;
+    }
+	
+    message GetSupportedAttKeyIDsResponse{
+        required    uint32  errorCode      = 1 [default = 1];
+        optional    bytes   att_key_ids    = 2;
+    }
     optional    InitQuoteResponse initQuoteRes              = 1;
     optional    GetQuoteResponse getQuoteRes                = 2;
     optional    GetLaunchTokenResponse getLicTokenRes       = 3;
     optional    ReportAttestationErrorResponse reportErrRes = 4;
-    optional    CreateSessionResponse createSessionRes      = 5;
-    optional    InvokeServiceResponse invokeServiceRes      = 6;
-    optional    ExchangeReportResponse exchangeReportRes    = 7;
-    optional    CloseSessionResponse closeSessionRes        = 8;
-    optional    GetPsCapResponse getPsCapRes                = 9;
     optional    GetWhiteListSizeResponse getWhiteListSizeRes = 10;
     optional    GetWhiteListResponse getWhiteListRes        = 11;
     optional    SGXGetExtendedEpidGroupIdResponse sgxGetExtendedEpidGroupIdRes = 12;
@@ -288,4 +249,7 @@ message Response{
     optional    GetQuoteExResponse getQuoteExRes            = 17;
     optional    CheckUpdateStatusResponse checkUpdateStatusRes = 18;
     optional    SelectAttKeyIDResponse selectAttKeyIDRes    = 19;
+    optional    UnsupportedRequestResponse unsupportedRequestResponse = 20;
+    optional    GetSupportedAttKeyIDNumResponse getSupportedAttKeyIDNumRes = 21;
+    optional    GetSupportedAttKeyIDsResponse getSupportedAttKeyIDsRes = 22;
 }

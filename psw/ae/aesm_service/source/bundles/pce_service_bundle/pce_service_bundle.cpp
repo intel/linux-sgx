@@ -1,5 +1,4 @@
 #include <pce_service.h>
-#include <launch_service.h>
 
 #include <cppmicroservices/BundleActivator.h>
 #include <cppmicroservices/BundleContext.h>
@@ -7,20 +6,53 @@
 #include "cppmicroservices_util.h"
 
 #include <iostream>
-#include "PCEClass.h"
+#include "aesm_logic.h"
+#include "sgx_pce.h"
 
 using namespace cppmicroservices;
-std::shared_ptr<ILaunchService> g_launch_service;
 
 class PceServiceImp : public IPceService
 {
 private:
     bool initialized;
+    AESMLogicMutex pce_mutex;
+
+    ae_error_t pce_error_to_ae_error(sgx_pce_error_t input)
+    {
+        ae_error_t ret = AE_SUCCESS;
+        switch(input)
+        {
+        case SGX_PCE_SUCCESS:
+            ret = AE_SUCCESS;
+            break;
+        case SGX_PCE_INVALID_PARAMETER:
+            ret = AE_INVALID_PARAMETER;
+            break;
+        case SGX_PCE_INVALID_REPORT:
+            ret = PCE_INVALID_REPORT;
+            break;
+        case SGX_PCE_CRYPTO_ERROR:
+            ret = PCE_CRYPTO_ERROR;
+            break;
+        case SGX_PCE_INVALID_PRIVILEGE:
+            ret = PCE_INVALID_PRIVILEGE;
+            break;
+        case SGX_PCE_OUT_OF_EPC:
+            ret = AE_OUT_OF_MEMORY_ERROR;
+            break;
+        default:
+            ret = AE_FAILURE;
+            break;
+        }
+        return ret;
+    }
+
 public:
     PceServiceImp():initialized(false){}
 
     ae_error_t start()
     {
+        AESMLogicLock lock(pce_mutex);
         if (initialized == true)
         {
             AESM_DBG_INFO("pce bundle has been started");
@@ -28,10 +60,7 @@ public:
         }
         AESM_DBG_INFO("Starting pce bundle");
         auto context = cppmicroservices::GetBundleContext();
-        get_service_wrapper(g_launch_service, context);
 
-        if (g_launch_service)
-            g_launch_service->start();
         if (AE_SUCCESS != load_enclave())
         {
             AESM_DBG_INFO("failed to load pce");
@@ -44,24 +73,26 @@ public:
     void stop()
     {
         unload_enclave();
+        initialized = false;
         AESM_DBG_INFO("pce bundle stopped");
     }
 
     ae_error_t load_enclave()
     {
-        return CPCEClass::instance().load_enclave();
+        // pce_logic will load PCE on demond
+        return AE_SUCCESS;
     }
 
     void unload_enclave()
     {
-        CPCEClass::instance().unload_enclave();
+        sgx_set_pce_enclave_load_policy(SGX_QL_EPHEMERAL);
     }
 
     uint32_t pce_get_target(
         sgx_target_info_t *p_target,
         sgx_isv_svn_t *p_isvsvn)
     {
-        return CPCEClass::instance().pce_get_target(p_target, p_isvsvn);
+        return pce_error_to_ae_error(sgx_pce_get_target(p_target, p_isvsvn));
     }
 
     uint32_t get_pce_info(
@@ -76,10 +107,10 @@ public:
         uint16_t* p_pce_id,
         uint8_t *p_signature_scheme)
     {
-        return CPCEClass::instance().get_pce_info(p_report,
+        return pce_error_to_ae_error(sgx_get_pce_info(p_report,
                 p_pek, pek_size, crypto_suite, p_encrypted_ppid,
                 encrypted_ppid_size, p_encrypted_ppid_out_size,
-                p_pce_isvsvn, p_pce_id, p_signature_scheme);
+                p_pce_isvsvn, p_pce_id, p_signature_scheme));
     }
 
     uint32_t pce_sign_report(
@@ -90,8 +121,8 @@ public:
         uint32_t sig_size,
         uint32_t *p_sig_out_size)
     {
-        return CPCEClass::instance().pce_sign_report(p_isv_svn,
-                p_cpu_svn, p_report, p_sig, sig_size, p_sig_out_size);
+        return pce_error_to_ae_error(sgx_pce_sign_report(p_isv_svn,
+                p_cpu_svn, p_report, p_sig, sig_size, p_sig_out_size));
     }
 
 };

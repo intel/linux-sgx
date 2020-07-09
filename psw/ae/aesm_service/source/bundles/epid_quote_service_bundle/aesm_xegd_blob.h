@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,7 +40,7 @@
 #include "aeerror.h"
 #include "se_thread.h"
 #include "provision_msg.h"
-#include "internal/se_rwlock.h"
+#include "se_rwlock.h"
 #include "aesm_error.h"
 
 class XEGDBlob: public Singleton<XEGDBlob>{

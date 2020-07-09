@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +34,7 @@
 #include "sgx_key.h"
 #include "se_thread.h"
 #include "sgx_urts.h"
-#include "internal/se_stdio.h"
+#include "se_stdio.h"
 #include "oal/oal.h"
 #include "aeerror.h"
 #include <stdlib.h>

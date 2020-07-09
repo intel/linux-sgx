@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -114,14 +114,6 @@ sgx_status_t SGXLaunchToken::update_launch_token(
     bool force_update_tok)
 {
     sgx_status_t status = SGX_SUCCESS;
-
-    if (get_enclave_creator()->is_in_kernel_driver() == true)
-    {
-        memset(&m_launch, 0, sizeof(m_launch));
-        m_launch_updated = false;
-
-        return status;
-    }
 
     if (force_update_tok ||
             SE_ERROR_INVALID_LAUNCH_TOKEN == chk_launch_token(m_css, m_secs_attr, &m_launch))

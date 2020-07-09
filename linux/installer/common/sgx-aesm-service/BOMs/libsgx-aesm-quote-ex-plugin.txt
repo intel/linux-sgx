@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/bundles/libquote_ex_service_bundle.so	<installdir>/aesm/bundles/libquote_ex_service_bundle.so	0	main	STP

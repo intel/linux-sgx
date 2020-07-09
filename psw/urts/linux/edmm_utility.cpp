@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,35 +76,98 @@ static bool is_urts_support_edmm()
     return true;
 }
 
+/* get_driver_type()
+ * Parameters:
+ *      driver_type [out] - Indicate the SGX device which was opened.  Can be:
+ *            SGX_DRIVER_IN_KERNEL   (0x1) - using kernel driver
+ *            SGX_DRIVER_OUT_OF_TREE (0x2) - using out-of-tree driver
+ *            SGX_DRIVER_DCAP        (0x3) - using DCAP driver
+ * Return Value:
+ *      true - The function succeeds - driver_type is valid
+ *      false - The function fails.
+*/
+bool get_driver_type(int *driver_type)
+{
+    static int sgx_driver_type = SGX_DRIVER_UNKNOWN;
+    if(driver_type == NULL)
+    {
+        return false;
+    }
+
+    if(SGX_DRIVER_UNKNOWN != sgx_driver_type)
+    {
+        *driver_type = sgx_driver_type;
+    }
+    
+    int hdev = open("/dev/sgx/enclave", O_RDWR);    //attempt to open the in-kernel driver
+    if (-1 == hdev)
+    {
+        hdev = open("/dev/isgx", O_RDWR);    //attempt to open the out-of-tree driver
+        if (-1 == hdev)
+        {
+            hdev = open("/dev/sgx", O_RDWR);  //attempt to open the DCAP driver
+            if (-1 == hdev)
+            {
+                SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device.\n");
+                return false;
+            }
+            sgx_driver_type = SGX_DRIVER_DCAP;
+        }
+        else
+        {
+            sgx_driver_type = SGX_DRIVER_OUT_OF_TREE;
+        }
+    }
+    else
+    {
+        sgx_driver_type = SGX_DRIVER_IN_KERNEL;
+    }
+
+    close(hdev);
+    *driver_type = sgx_driver_type;
+    return true;
+
+}
+
+
 /* open_se_device()
  * Parameters:
+ *      driver_type [in] - Indicate the SGX device which was opened.  Can be:
+ *            SGX_DRIVER_IN_KERNEL   (0x1) - using kernel driver
+ *            SGX_DRIVER_OUT_OF_TREE (0x2) - using out-of-tree driver
+ *            SGX_DRIVER_DCAP        (0x3) - using DCAP driver
  *      hdevice [out] - The device handle as returned from the open_se_device API.
- *      in_kernel_driver [out] - Indicate it is in-kernel driver or not.
  * Return Value:
  *      true - The function succeeds.
  *      false - The function fails.
 */
-extern "C" bool open_se_device(int *hdevice, bool *in_kernel_driver)
+extern "C" bool open_se_device(int driver_type, int *hdevice)
 {
     if (NULL == hdevice)
         return false;
 
-    int hdev = open("/dev/isgx", O_RDWR);
-    if (-1 == hdev)
+    *hdevice = -1;
+    if (driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        hdev = open("/dev/sgx", O_RDWR);
-        if (-1 == hdev)
-        {
-            SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device.\n");
-            return false;
-        }
-
-        if (NULL != in_kernel_driver)
-            *in_kernel_driver = true;
+        *hdevice = open("/dev/sgx/enclave", O_RDWR);    //attempt to open the in-kernel driver
     }
-
-    *hdevice = hdev;
-
+    else if (driver_type == SGX_DRIVER_DCAP)
+    {
+        *hdevice = open("/dev/sgx", O_RDWR);  //attempt to open the DCAP driver
+    }
+    else if (driver_type == SGX_DRIVER_OUT_OF_TREE)
+    {
+        *hdevice = open("/dev/isgx", O_RDWR);    //attempt to open the out-of-tree driver
+    }
+    else
+    {
+        SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device. Invalid driver type.\n");
+    }
+    if (-1 == *hdevice)
+    {
+        SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device.\n");
+        return false;
+    }
     return true;
 }
 
@@ -191,8 +254,14 @@ extern "C" bool is_support_edmm()
         return false;
 
     int hdevice = -1;
-    if (false == open_se_device(&hdevice, NULL))
+    int driver_type = 0;
+    if (false == get_driver_type(&driver_type))
         return false;
+
+    if ( false == open_se_device(driver_type, &hdevice))
+    {
+        return false;
+    }
 
     if (false == is_driver_support_edmm(hdevice))
     {
@@ -207,3 +276,28 @@ extern "C" bool is_support_edmm()
 
     return true;
 }
+
+
+/* is_out_of_tree_driver()
+ * Parameters:
+ *      None.
+ * Return Value:
+ *      true - out-of-tree driver.
+ *      false - in-kernel driver or DCAP driver.
+*/
+extern "C" bool is_out_of_tree_driver()
+{
+    int driver_type = 0;
+    if (false == get_driver_type(&driver_type))
+    {
+        return false;
+    }
+
+    if(driver_type == SGX_DRIVER_OUT_OF_TREE)
+    {
+        return true;
+    }
+    
+    return false;
+}
+

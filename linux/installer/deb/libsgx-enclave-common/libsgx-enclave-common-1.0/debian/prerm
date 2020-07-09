@@ -18,10 +18,12 @@ set -e
 
 
 case "$1" in
-    remove|upgrade|deconfigure)
+    remove)
+        systemctl stop remount-dev-exec &> /dev/null || true
+        systemctl disable remount-dev-exec &> /dev/null || true
     ;;
 
-    failed-upgrade)
+    upgrade|deconfigure|failed-upgrade)
     ;;
 
     *)

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -40,7 +40,9 @@ CPPFLAGS := -isystem $(SGX_IPP_INC) \
 
 CFLAGS +=  -fPIC -Werror -fno-exceptions -I$(SGX_IPP_INC)
 
-LDFLAGS := -Bdynamic -L$(IPP_LIBS_DIR) $(LD_IPP) 
+IPPLIB_DIR = $(SGX_IPP_DIR)/lib/linux/intel64/no_mitigation
+
+LDFLAGS := -Bdynamic -L$(IPPLIB_DIR) $(LD_IPP) 
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script,sample_libcrypto.lds -Wl,--gc-sections
 
 OBJS := sample_libcrypto.o

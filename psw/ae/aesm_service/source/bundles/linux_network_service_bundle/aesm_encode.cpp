@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -40,8 +40,6 @@
 #include <openssl/buffer.h>
 #include <openssl/x509v3.h>
 #include <list>
-#include "helper.h"
-#include "Buffer.h"
 /**
 * Method converts byte containing value from 0x00-0x0F into its corresponding ASCII code, 
 * e.g. converts 0x00 to '0', 0x0A to 'A'. 
@@ -267,107 +265,5 @@ bool decode_response(const uint8_t *input_buf, uint32_t input_len, uint8_t *resp
     if(*out_len != GET_SIZE_FROM_PROVISION_RESPONSE(resp))
         return false;
     return true;
-}
-//
-// certPseSvn
-//
-// return ISVSVN of PSE stored in PSE certificate or 0, if error
-//
-// remarks
-// the ISVSVN in the cert could be old since it only updates when we execute
-// pse provisioning
-//
-uint32_t certPseSvn()
-{
-	uint32_t pseSvn = 0;
-	bool pseSvnFound = false;
-	X509* cert = NULL;
-
-	std::list<upse::Buffer> certChain;
-	X509_NAME* subj2 = NULL;
-	X509_NAME* issuer2 = NULL;
-	X509_NAME_ENTRY *entry = NULL;
-	ASN1_STRING *entryData = NULL;
-	char *str = NULL;
-
-	//
-	// load cert chain from disk
-	//
-	ae_error_t loadCertError = Helper::LoadCertificateChain(certChain);
-	//
-	// create openssl bio to temporarily hold cert data
-	//
-	BIO* certBio = BIO_new(BIO_s_mem());
-
-	if ((AE_SUCCESS == loadCertError) && (NULL != certBio)) {
-		for (std::list<upse::Buffer>::const_iterator iterator = certChain.begin(), end = certChain.end(); iterator != end; ++iterator) {
-
-			//
-			// go from binary (tempCert) to mem bio (certBio) to internal OpenSSL representation of x509 cert (cert)
-			//
-			const upse::Buffer& tempCert = *iterator;
-
-			int retVal = BIO_write(certBio, (const char*) tempCert.getData(), tempCert.getSize());
-			if (retVal <= 0) break;
-
-			cert = d2i_X509_bio(certBio, NULL);
-			if (NULL == cert) {
-				break;
-			}
-
-			//
-			// PSE ISVSVN is in parent of the leaf cert, in name
-			// we'll look for a cert with "Intel PSE" at the beginning of the subject name and
-			// "Intel PSE TCB CA" at the beginning of the issuer name and then we'll get 
-			// the ISVSVN value from (later in) the issuer name
-			//
-			subj2 = X509_get_subject_name(cert);
-			issuer2 = X509_get_issuer_name(cert);
-
-			for (int si = 0; si < X509_NAME_entry_count(subj2); si++) {
-				//
-				// boilerplate openssl stuff
-				//
-				entry = X509_NAME_get_entry(subj2, si);
-				entryData = X509_NAME_ENTRY_get_data(entry);
-				if (NULL == entryData) {
-					continue;
-				}
-				str = (char*) ASN1_STRING_data(entryData);	
-				const char* tempName = "Intel PSE";
-                if (strncmp(str, tempName, strlen(tempName))==0) {//starting with tempName
-					for (int ii = 0; ii < X509_NAME_entry_count(issuer2); ii++) {
-						entry = X509_NAME_get_entry(issuer2, ii);
-						entryData = X509_NAME_ENTRY_get_data(entry);
-						if (NULL == entryData) {
-							continue;
-						}
-						str = (char*) ASN1_STRING_data(entryData);	
-						tempName = "Intel PSE TCB CA";
-                        if (strncmp(str, tempName, strlen(tempName) )==0) {//string start with tempName
-							pseSvnFound = true;
-							//
-							// assume rest of issuer name, after "Intel PSE TCB CA" converts to PSE ISVSVN
-							pseSvn = static_cast<uint32_t>(strtol(&str[strlen(tempName)], NULL, 10));
-							break;
-						}
-					}
-					if (pseSvnFound) {
-						break;
-					}
-				}
-			}
-			if (NULL != cert) {
-				X509_free(cert);
-			}
-			if (pseSvnFound) {
-				break;
-			}
-		}
-	}
-
-	if (certBio != NULL) BIO_free(certBio);
-
-	return pseSvn;
 }
 

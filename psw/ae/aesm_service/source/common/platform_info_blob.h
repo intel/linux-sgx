@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -57,6 +57,8 @@ const uint8_t QE_EPID_GROUP_OUT_OF_DATE = 0x04;
 const uint16_t QUOTE_CPUSVN_OUT_OF_DATE = 0x0001;
 const uint16_t QUOTE_ISVSVN_QE_OUT_OF_DATE = 0x0002;
 const uint16_t QUOTE_ISVSVN_PCE_OUT_OF_DATE = 0x0004;
+/* the EPID signature of the ISV enclave QUOTE has been verified correctly but additional configuration of SGX platform may be needed.*/
+const uint16_t PLATFORM_CONFIGURATION_NEEDED= 0x0008;
 
 /* Masks for sgx_pse_evaluation_flags
    PS_SEC_PROP_DESC.PSE_ISVSVN is out of date*/

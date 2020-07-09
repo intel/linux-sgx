@@ -1,0 +1,10 @@
+prefix=/opt/intel/sgxsdk
+includedir=${prefix}/include
+libdir=${prefix}/@LIB_FOLDER_NAME@
+
+Name: libsgx_epid_sim
+Description: SGX EPID simulation library
+Version: @SGX_VERSION@
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsgx_epid_sim
+Libs.private: -lsgx_epid_sim

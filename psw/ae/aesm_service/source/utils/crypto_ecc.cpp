@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -95,7 +95,7 @@ sgx_status_t sgx_ecc256_close_context(sgx_ecc_state_handle_t ecc_handle)
 sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
                               uint32_t data_size,
                               const sgx_ec256_public_t *p_public,
-                              sgx_ec256_signature_t *p_signature,
+                              const sgx_ec256_signature_t *p_signature,
                               uint8_t *p_result,
                               sgx_ecc_state_handle_t ecc_handle)
 {

@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/common/inc/sgx_uae_quote_ex.h	<installdir>/include/sgx_uae_quote_ex.h	0	main	STP

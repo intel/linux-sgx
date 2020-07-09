@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -41,15 +41,22 @@ CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-exceptions -fno-rtti
 OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_rsa_encryption.o sgx_aes_gcm.o sgx_cmac128.o sgx_hmac.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha1.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o sgx_internal.o
 SHARED_OBJ = tcrypto_version.o sgx_common_init_ipp.o
 
-ifneq ($(USE_OPT_LIBS), 1)
-
-# Added to build with SgxSSL libraries
+ifeq ($(USE_OPT_LIBS), 0)
+# Build SGXSSL based sgx_tcrypto library
 ifeq ($(ARCH), x86_64)
 	OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/Linux/package
 else
 	$(error SGXSSL doesn't support 32bit)
 endif #($(ARCH), x86_64)
-OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/
+
+ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
+OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_load
+else ifeq ($(MITIGATION-CVE-2020-0551), CF)
+OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_cf
+else
+OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64
+endif
+
 ifdef DEBUG
 	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
 	SGXSSL_Library_Name := sgx_tsgxssld
@@ -71,7 +78,7 @@ SRCDIR := sgxssl
 LIB_NAME := libsgx_tcrypto_sgxssl.a
 
 else
-
+# Build IPP crypto based sgx_tcrypto library
 CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -Werror -fno-exceptions -fPIC
 
 OBJ += sgx_tcrypto_common.o sgx_rsa_internal.o
@@ -79,7 +86,7 @@ SRCDIR := ipp
 
 LIB_NAME := libsgx_tcrypto_ipp.a
 
-endif #!($(USE_OPT_LIBS), 1)
+endif #($(USE_OPT_LIBS), 0)
 
 C_Files := $(wildcard ipp/ipp_disp/*.c)
 C_OBJS  := $(C_Files:.c=.o)
@@ -91,7 +98,7 @@ OBJ := $(addprefix $(SRCDIR)/, $(OBJ))
 LIB_NAME := $(addprefix $(SRCDIR)/, $(LIB_NAME))
 TARGET := libsgx_tcrypto.a
 
-ifneq ($(USE_OPT_LIBS), 1)
+ifeq ($(USE_OPT_LIBS), 0)
 
 $(TARGET): PREPRARE_SGX_SSL 
 	$(MAKE) $(OBJ) 
@@ -107,11 +114,11 @@ $(TARGET): PREPRARE_SGX_SSL
 else
 
 $(TARGET): $(OBJ) $(SHARED_OBJ) $(C_OBJS)
-	@$(CP) $(IPP_LIBS_DIR)/libippcp.a $(LIB_NAME)
+	$(CP) $(IPP_LIBS_DIR)/libippcp.a $(LIB_NAME)
 	$(AR) rsD $(LIB_NAME) $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 	$(CP) $(LIB_NAME) $@
 
-endif #!($(USE_OPT_LIBS), 1)
+endif #($(USE_OPT_LIBS), 0)
 
 $(DISP_LIB_NAME): $(C_OBJS)
 	$(AR) rsD $(DISP_LIB_NAME) $(C_OBJS)

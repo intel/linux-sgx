@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -389,12 +389,7 @@ static long int get_regs(pid_t pid, void* addr, void* data)
     if(is_eresume(pid, regs))
     {
         //If it is ERESUME instruction, set the real register value
-        if(-1 == get_enclave_gregs(pid, regs, regs->REG(bx)))
-            return -1;
-        else
-        {
-            return ret;
-        }
+        get_enclave_gregs(pid, regs, regs->REG(bx));
     }
 
     return ret;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,6 +39,7 @@
 #include "se_error_internal.h"
 #include "prd_css_util.h"
 #include "se_memcpy.h"
+#include <unistd.h>
 
 #define EDMM_ENABLE_BIT 0x1ULL
 
@@ -66,6 +67,7 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
     info.size = sizeof(system_features_t);
     info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_2_2, enclave->get_enclave_version());
     info.sealed_key = enclave->get_sealed_key();
+    info.cpu_core_num = (uint32_t)sysconf(_SC_NPROCESSORS_ONLN);
     if (is_EDMM_supported(enclave_id))
             info.system_feature_set[0] |= EDMM_ENABLE_BIT;
 

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -39,16 +39,21 @@ else
     CMAKE_RESULT :=
 endif
 
+CHECK_PREBUILT :=
+ifeq ("$(wildcard data/prebuilt/libsgx_le.signed.so)", "")
+CHECK_PREBUILT := prebuilt_check_fail
+endif
+
 .PHONY: all
 ifeq ($(BUILD_REF_LE), 1)
-all: $(CMAKE_RESULT) AESM REF_LE COPY_AES CSE| $(BUILD_DIR)
+all: $(CMAKE_RESULT) AESM REF_LE COPY_AES| $(BUILD_DIR)
 else
-all: $(CMAKE_RESULT) AESM COPY_AES CSE| $(BUILD_DIR)
+all: $(CMAKE_RESULT) AESM COPY_AES| $(BUILD_DIR)
 endif #($(BUILD_REF_LE), 1)
 
-# COPY_AES: currently copy le, qe, pve, pce, pse_op, pse_pr, pse_pr_2, qe3
+# COPY_AES: currently copy le, qe, pve, pce, qe3
 .PHONY: COPY_AES
-COPY_AES: | $(BUILD_DIR)
+COPY_AES: $(CHECK_PREBUILT) | $(BUILD_DIR)
 	$(CP) data/prebuilt/* $(BUILD_DIR)
 
 .PHONY: AESM
@@ -61,18 +66,12 @@ AESM: | $(BUILD_DIR)
 REF_LE:
 	$(MAKE) -C ref_le
 
-.PHONY: CSE
-CSE: | $(BUILD_DIR)
-	$(MAKE) -C cse_provision_tool
-	@$(CP) cse_provision_tool/cse_provision_tool $|
-
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
 .PHONY: clean
 clean:
 	$(MAKE) -C aesm_service/                   clean
-	$(MAKE) -C cse_provision_tool              clean
 	$(MAKE) -C ref_le                          clean
 
 .PHONY: rebuild
@@ -89,3 +88,9 @@ cmake_check_fail:
 	@echo yum install cmake
 	@echo with root account
 	@exit 2
+
+.PHONY: prebuilt_check_fail
+prebuilt_check_fail:
+	@echo "ERROR: Please run 'download_prebuilt.sh' to download the prebuilt AEs before compiling."
+	@echo "Exiting......"
+	@exit -2

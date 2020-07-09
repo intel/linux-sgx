@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,6 +30,7 @@
  */
 
 
+#include <sgx_secure_align.h>
 #include <sgx_random_buffers.h>
 #ifndef __linux__
 #include "targetver.h"
@@ -108,14 +109,16 @@ static ae_error_t verify_blob_internal(
     ae_error_t ret = QE_UNEXPECTED_ERROR;
     sgx_status_t se_ret = SGX_SUCCESS;
     uint8_t resealed = FALSE;
-    se_secret_epid_data_sdk_t secret_epid_data;
+    //se_secret_epid_data_sdk_t secret_epid_data;
+    sgx::custom_alignment<se_secret_epid_data_sdk_t, __builtin_offsetof(se_secret_epid_data_sdk_t, epid_private_key.f), sizeof(((se_secret_epid_data_sdk_t*)0)->epid_private_key.f)> osecret_epid_data;
+    se_secret_epid_data_sdk_t* psecret_epid_data = &osecret_epid_data.v;
     se_plaintext_epid_data_sik_t plaintext_old_format;
     uint32_t plaintext_length;
     int is_old_format = 0;
-    uint32_t decryptedtext_length = sizeof(secret_epid_data);
+    uint32_t decryptedtext_length = sizeof(*psecret_epid_data);
     sgx_sealed_data_t *p_epid_blob = (sgx_sealed_data_t *)p_blob;
     uint8_t local_epid_blob[sizeof(*p_epid_blob)
-                            + sizeof(secret_epid_data)
+                            + sizeof(*psecret_epid_data)
                             + sizeof(plaintext_epid_data)]
                             = {0};
     MemberCtx *p_ctx = NULL;
@@ -139,14 +142,14 @@ static ae_error_t verify_blob_internal(
             return QE_EPIDBLOB_ERROR;
         }
 
-        memset(&secret_epid_data, 0, sizeof(secret_epid_data));
+        memset(psecret_epid_data, 0, sizeof(*psecret_epid_data));
         memset(&plaintext_epid_data, 0, sizeof(plaintext_epid_data));
         memset(&plaintext_old_format, 0, sizeof(plaintext_old_format));
 
         se_ret = sgx_unseal_data(p_epid_blob,
             (uint8_t *)&plaintext_old_format, // The unsealed plaintext can be old or new format, the buffer is defined as old format because it is bigger
             &plaintext_length,
-            (uint8_t *)&secret_epid_data,
+            (uint8_t *)psecret_epid_data,
             &decryptedtext_length);
         BREAK_IF_TRUE(SGX_SUCCESS != se_ret, ret, QE_EPIDBLOB_ERROR);
 
@@ -178,7 +181,7 @@ static ae_error_t verify_blob_internal(
             memcpy(&plaintext_epid_data.qsdk_mod, &plaintext_old_format.qsdk_mod, sizeof(plaintext_old_format.qsdk_mod));
             memcpy(&plaintext_epid_data.epid_sk, &plaintext_old_format.epid_sk, sizeof(plaintext_old_format.epid_sk));
             plaintext_epid_data.xeid = plaintext_old_format.xeid;
-            memset(&secret_epid_data.member_precomp_data, 0, sizeof(secret_epid_data.member_precomp_data));
+            memset(&psecret_epid_data->member_precomp_data, 0, sizeof(psecret_epid_data->member_precomp_data));
             is_old_format = 1;
             //PrivKey of secret_epid_data are both in offset 0 so that we need not move it
         }
@@ -205,8 +208,8 @@ static ae_error_t verify_blob_internal(
 
             epid_ret = EpidProvisionKey(p_ctx,
                 &(plaintext_epid_data.epid_group_cert),
-                (PrivKey*)&(secret_epid_data.epid_private_key),
-                is_old_format ? NULL : &secret_epid_data.member_precomp_data);
+                (PrivKey*)&(psecret_epid_data->epid_private_key),
+                is_old_format ? NULL : &psecret_epid_data->member_precomp_data);
             BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
 
             // start member
@@ -215,7 +218,7 @@ static ae_error_t verify_blob_internal(
 
             if (is_old_format)
             {
-                epid_ret = EpidMemberWritePrecomp(p_ctx, &secret_epid_data.member_precomp_data);
+                epid_ret = EpidMemberWritePrecomp(p_ctx, &psecret_epid_data->member_precomp_data);
                 BREAK_IF_TRUE(kEpidNoErr != epid_ret, ret, QE_UNEXPECTED_ERROR);
             }
         }
@@ -232,8 +235,8 @@ static ae_error_t verify_blob_internal(
         {
             se_ret = sgx_seal_data(sizeof(plaintext_epid_data),
                 (uint8_t *)&plaintext_epid_data,
-                sizeof(secret_epid_data),
-                (uint8_t *)&secret_epid_data,
+                sizeof(*psecret_epid_data),
+                (uint8_t *)psecret_epid_data,
                 SGX_TRUSTED_EPID_BLOB_SIZE_SDK,
                 (sgx_sealed_data_t *)local_epid_blob);
             BREAK_IF_TRUE(SGX_SUCCESS != se_ret, ret, QE_UNEXPECTED_ERROR);
@@ -248,8 +251,8 @@ static ae_error_t verify_blob_internal(
     while (false);
 
     // Clear the output buffer to make sure nothing leaks.
-    memset_s(&secret_epid_data, sizeof(secret_epid_data), 0,
-        sizeof(secret_epid_data));
+    memset_s(psecret_epid_data, sizeof(*psecret_epid_data), 0,
+        sizeof(*psecret_epid_data));
     if (AE_SUCCESS != ret) {
         if (p_ctx)
             epid_member_delete(&p_ctx);

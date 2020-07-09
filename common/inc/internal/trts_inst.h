@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -79,8 +79,6 @@ sgx_status_t do_add_thread(void *ms);
 int is_dynamic_thread(void *tcs);
 int is_dynamic_thread_exist(void);
 uint32_t get_dynamic_stack_max_page(void);
-void __attribute__((regparm(3),noinline,visibility("default")))
-random_stack_notify_gdb(void *addr, size_t size);
 #ifdef __cplusplus
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -72,7 +72,6 @@ public:
     virtual bool use_se_hw() const = 0;
     virtual bool is_EDMM_supported(sgx_enclave_id_t enclave_id) = 0;
     virtual bool is_driver_compatible() = 0;
-    virtual bool is_in_kernel_driver() = 0;
 
     virtual int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag) = 0;
     virtual bool get_plat_cap(sgx_misc_attribute_t *se_attr) = 0;

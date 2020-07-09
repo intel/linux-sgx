@@ -43,8 +43,9 @@ The ref-LE is part of the PSW source tree and located in the ref-le directory, i
       |- ref_wl_gen.h/cpp                - A white list generation class
    |- ref_keys [DIR]                     - Contains a set of testing keys used by default in the build process 
       |- wl_cfg.csv                      - A sample CSV file to define the white list
-      |- le_private/public_key.pem       - RSA 3072 key pair used for signing the ref-LE and white list
-      |- encalve_private/public_key.pem  - RSA 3072 key pair included in the white list and enables signing of an arbitrary enclave
+      |- le_private/public_test_key.pem       - RSA 3072 key pair used for signing the ref-LE and white list
+      |- encalve_private/public_test_key.pem  - RSA 3072 key pair included in the white list and enables signing of an arbitrary enclave
+   |- sgx_pubkey_hash_gen                - A tool to generate SHA256 value of the enclave signer public key modulus
 ~~~
 **Note**: the ref_keys directory is meant only for testing purposes and **must not** be used on a production build
 
@@ -105,3 +106,10 @@ Example:
 The ref-LE exposes two functions for the platform software:
 * ref_le_get_launch_token() - receives MR_ENCLAVE, MR_SIGNER and attributes and generates Launch Token if permitted
 * ref_le_init_white_list() - receives a white list file and stores it for future usage if verified
+### Defining a Launch Control Policy Provider
+Generate SHA256 value of the enclave signer public key modulus of ref_LE to be written to the IA32_SGXPUBKEYHASH0..3 MSRs in order from hash0 to hash3.
+~~~
+sgx_pubkey_hash_gen [PUBLIC_KEY_FILE]
+Example:
+  ./sgx_pubkey_hash_gen ref_keys/le_public_test_key.pem
+~~~

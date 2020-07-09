@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
 
 
 
-
+#include <sgx_secure_align.h>
 #include <sgx_random_buffers.h>
 #include "sgx_tseal.h"
 #include "sgx_lfence.h"
@@ -63,9 +63,12 @@ sgx_status_t sgx_seal_data_iv(const uint32_t additional_MACtext_length,
     // Parameter checking performed in sgx_seal_data
 
     // Generate the seal key
-    // The random p_key_request->key_id guarantees the generated seal key is random
-    randomly_placed_buffer<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0x200> seal_key_buffer{};
-    auto *seal_key = seal_key_buffer.randomize_object();
+    //randomly_placed_buffer<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0x200> seal_key_buffer{};
+    //auto *seal_key = seal_key_buffer.randomize_object();
+    using cseal_key200 = randomly_placed_object<sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)>, 0x200>;
+    cseal_key200 oseal_key_buf;
+    auto* oseal_key = oseal_key_buf.instantiate_object();
+    auto* seal_key = &oseal_key->v;
     err = sgx_get_key(p_key_request, seal_key);
     if (err != SGX_SUCCESS)
     {
@@ -127,7 +130,11 @@ sgx_status_t sgx_unseal_data_helper(const sgx_sealed_data_t *p_sealed_data, uint
         memset(p_additional_MACtext, 0, additional_MACtext_length);
 
     // Get the seal key
-    auto *seal_key = seal_key_buf.randomize_object();
+    //auto *seal_key = seal_key_buf.randomize_object();
+    using cseal_key200 = randomly_placed_object<sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)>, 0x200>;
+    cseal_key200 oseal_key_buf;
+    auto* oseal_key = oseal_key_buf.instantiate_object();
+    auto* seal_key = &oseal_key->v;
     err = sgx_get_key(&p_sealed_data->key_request, seal_key);
     if (err != SGX_SUCCESS)
     {

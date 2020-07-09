@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -43,22 +43,13 @@
 #include "simple_vector.h"
 #include "se_cdefs.h"
 
-static const sgx_measurement_t g_qe_mrsigner =
-{
-    {//MR_SIGNER of CSS signed QE copied from psw/ae/data/constants/linux/service_enclave_mrsigner.hh
-        0xec, 0x15, 0xb1, 0x07, 0x87, 0xd2, 0xf8, 0x46,
-        0x67, 0xce, 0xb0, 0xb5, 0x98, 0xff, 0xc4, 0x4a,
-        0x1f, 0x1c, 0xb8, 0x0f, 0x67, 0x0a, 0xae, 0x5d,
-        0xf9, 0xe8, 0xfa, 0x9f, 0x63, 0x76, 0xe1, 0xf8
-    }
-};
-
 
 // Add a version to tkey_exchange.
 SGX_ACCESS_VERSION(tkey_exchange, 1)
 
 #define ERROR_BREAK(sgx_status)  if(SGX_SUCCESS!=sgx_status){break;}
 #define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
+
 
 #pragma pack(push, 1)
 
@@ -577,11 +568,8 @@ extern "C" sgx_status_t sgx_ra_get_msg3_trusted(
             break;
         }
 
-        // Temporarily workaround, only verify report_data for EPID quote
-        // TODO : this issue needs to be addressed in future releases
         //verify qe_report->body.report_data == SHA256(NONCE || emp_quote)
-        if((0 == memcmp(&qe_report->body.mr_signer, &g_qe_mrsigner, sizeof(g_qe_mrsigner)))
-            && (0 != memcmp(&qe_report->body.report_data, &hash, sizeof(hash))))
+        if(0 != memcmp(&qe_report->body.report_data, &hash, sizeof(hash)))
         {
             se_ret = SGX_ERROR_MAC_MISMATCH;
             break;
@@ -605,6 +593,7 @@ sgx_status_t sgx_ra_init_ex(
     sgx_ra_derive_secret_keys_t derive_key_cb,
     sgx_ra_context_t *p_context)
 {
+	UNUSED(b_pse);
     int valid = 0;
     sgx_status_t ret = SGX_SUCCESS;
     sgx_ecc_state_handle_t ecc_state = NULL;
@@ -675,17 +664,6 @@ sgx_status_t sgx_ra_init_ex(
     }
     memset(new_item,0, sizeof(ra_db_item_t));
     memcpy(&new_item->sp_pubkey, p_pub_key, sizeof(new_item->sp_pubkey));
-    if(b_pse)
-    {
-        //sgx_create_pse_session() must have been called
-        ret = sgx_get_ps_sec_prop(&new_item->ps_sec_prop);
-        if (ret!=SGX_SUCCESS)
-        {
-            SAFE_FREE(new_item);
-            return ret;
-        }
-    }
-
     new_item->derive_key_cb = ENC_KDF_POINTER(derive_key_cb);
     new_item->state = ra_inited;
 

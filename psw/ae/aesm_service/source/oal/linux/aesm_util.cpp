@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
 
 #include "persistent_storage_info.h"
 #include "oal/aesm_persistent_storage.h"
-#include "internal/se_stdio.h"
+#include "se_stdio.h"
 #include "se_string.h"
 #include <sys/stat.h>
 #include <unistd.h>

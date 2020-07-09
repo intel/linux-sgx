@@ -1,3 +1,15 @@
 [submodule "external/dcap_source"]
 	path = external/dcap_source
 	url = https://github.com/intel/SGXDataCenterAttestationPrimitives.git
+[submodule "openmp"]
+	path = external/openmp/openmp_code
+	url = https://github.com/llvm-mirror/openmp.git
+	branch = svn-tags/RELEASE_801
+[submodule "dnnl"]
+	path = external/dnnl/dnnl
+	url = https://github.com/intel/mkl-dnn.git
+	branch = rls-v1.1
+[submodule "ipp-crypto"]
+	path = external/ippcp_internal/ipp-crypto
+	url = https://github.com/intel/ipp-crypto.git
+	branch = ipp-crypto_2019_update5

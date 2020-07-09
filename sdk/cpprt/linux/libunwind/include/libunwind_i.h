@@ -104,7 +104,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 # define unreachable() do { } while (1)
 #endif
 
-#ifdef DEBUG
+#if defined(DEBUG) && !HAVE_SGX
 # define UNW_DEBUG      1
 #else
 # define UNW_DEBUG      0

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,16 +76,17 @@ void get_cpu_features(uint64_t *__intel_cpu_feature_indicator)
     unsigned int cpuid7_eax, cpuid7_ebx, cpuid7_ecx, cpuid7_edx;
     unsigned int ecpuid1_eax, ecpuid1_ebx, ecpuid1_ecx, ecpuid1_edx;
     uint64_t cpu_feature_indicator = CPU_FEATURE_GENERIC_IA32;
+    bool is_intel = false;
 
     sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
-    if(cpuid0_eax == 0 ||
-            !(cpuid0_ebx == CPU_GENU_VAL &&
-              cpuid0_edx == CPU_INEI_VAL &&
-              cpuid0_ecx == CPU_NTEL_VAL))
+    if(cpuid0_eax == 0)
     {
         *__intel_cpu_feature_indicator = cpu_feature_indicator;
         return;
     }
+
+    is_intel = (cpuid0_ebx == CPU_GENU_VAL && cpuid0_edx == CPU_INEI_VAL &&
+                cpuid0_ecx == CPU_NTEL_VAL);
 
     sgx_cpuid(1, &cpuid1_eax, &cpuid1_ebx, &cpuid1_ecx, &cpuid1_edx);
     if (CPU_MODEL(cpuid1_eax) == CPU_ATOM1 ||
@@ -162,16 +163,16 @@ void get_cpu_features(uint64_t *__intel_cpu_feature_indicator)
     if (CPU_HAS_BMI(cpuid7_ebx)) {
         cpu_feature_indicator |= CPU_FEATURE_BMI;
     }
-    if (CPU_HAS_LZCNT(ecpuid1_ecx)) {
+    if (is_intel && CPU_HAS_LZCNT(ecpuid1_ecx)) {
         cpu_feature_indicator |= CPU_FEATURE_LZCNT;
     }
     if (CPU_HAS_PREFETCHW(ecpuid1_ecx)) {
         cpu_feature_indicator |= CPU_FEATURE_PREFETCHW;
     }
-    if (CPU_HAS_HLE(cpuid7_ebx)) {
+    if (is_intel && CPU_HAS_HLE(cpuid7_ebx)) {
         cpu_feature_indicator |= CPU_FEATURE_HLE;
     }
-    if (CPU_HAS_RTM(cpuid7_ebx)) {
+    if (is_intel && CPU_HAS_RTM(cpuid7_ebx)) {
         cpu_feature_indicator |= CPU_FEATURE_RTM;
     }
     if (CPU_HAS_RDSEED(cpuid7_ebx)) {

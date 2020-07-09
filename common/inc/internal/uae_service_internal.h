@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -51,21 +51,9 @@ extern "C" {
  */
 sgx_status_t SGXAPI get_launch_token(const enclave_css_t* signature, const sgx_attributes_t* attribute, sgx_launch_token_t* launch_token);
 
-/* Return SGX_SUCCESS on success */
-sgx_status_t create_session_ocall(uint32_t* sid, uint8_t* dh_msg1, uint32_t dh_msg1_size, uint32_t timeout);
-
-/* Return SGX_SUCCESS on success */
-sgx_status_t exchange_report_ocall(uint32_t sid, const uint8_t* dh_msg2, uint32_t dh_msg2_size, uint8_t* dh_msg3, uint32_t dh_msg3_size, uint32_t timeout);
-
-/* Return SGX_SUCCESS on success */
-sgx_status_t close_session_ocall(uint32_t sid, uint32_t timeout);
-
-/* Return SGX_SUCCESS on success */
-sgx_status_t invoke_service_ocall(
-    const uint8_t* pse_message_req, uint32_t pse_message_req_size,
-    uint8_t* pse_message_resp, uint32_t pse_message_resp_size,
-    uint32_t timeout
-    );
+typedef sgx_status_t (*func_get_launch_token_t)(const enclave_css_t*,
+                                                const sgx_attributes_t*,
+                                                sgx_launch_token_t*);
 
 #ifdef  __cplusplus
 }

@@ -1,0 +1,55 @@
+From 86ef3b45bfaabd38fce03ffd1dc53e8315c97f65 Mon Sep 17 00:00:00 2001
+From: Zhang Lili <lili.z.zhang@intel.com>
+Date: Tue, 3 Mar 2020 04:00:15 +0000
+Subject: [PATCH] Add mitigation support to assembly code.
+
+Signed-off-by: Zhang Lili <lili.z.zhang@intel.com>
+---
+ CMakeLists.txt                       | 2 ++
+ sources/dispatcher/gen_disp_lin64.py | 3 ++-
+ sources/ippcp/CMakeLists.txt         | 2 +-
+ 3 files changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 159a55f..75aaf53 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -51,6 +51,8 @@ set(PROJECT_VERSION, "2019.0.0")
+ set(LIB_NAME ippcp)
+ 
+ set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "" FORCE)
++set(CMAKE_ENC_ASM_FLAGS)
++set(ASMOPTS ${CMAKE_ENC_ASM_FLAGS})
+ 
+ cmake_policy(SET CMP0054 NEW)
+ 
+diff --git a/sources/dispatcher/gen_disp_lin64.py b/sources/dispatcher/gen_disp_lin64.py
+index 377bc2e..d6ae49a 100644
+--- a/sources/dispatcher/gen_disp_lin64.py
++++ b/sources/dispatcher/gen_disp_lin64.py
+@@ -114,7 +114,8 @@ if(compiler == "GNU"):
+ movq    ippcpJumpIndexForMergedLibs@GOTPCREL(%rip),%rax
+ movslq  (%rax),%rax
+ leaq    .Larraddr_{FunName}(%rip),%r11
+-jmpq    *(%r11,%rax,8)
++movq    (%r11,%rax,8),%r11
++jmpq    *%r11
+ 
+ .type {FunName}, @function
+ .size {FunName}, .-{FunName}
+diff --git a/sources/ippcp/CMakeLists.txt b/sources/ippcp/CMakeLists.txt
+index bd6d32f..2c6b2fb 100644
+--- a/sources/ippcp/CMakeLists.txt
++++ b/sources/ippcp/CMakeLists.txt
+@@ -306,7 +306,7 @@ include(${COMPILER_OPTIONS_FILE}) # uses ${CMAKE_C_FLAGS} ${LIBRARY_DEFINES} ${<
+ if(UNIX)
+   if(ARCH MATCHES "ia32")
+     if(NOT APPLE)
+-      set(ASMOPTS "--32")
++      set(ASMOPTS " ${ASMOPTS} --32")
+     elseif(NOT USEYASM)
+       set(ASMOPTS "-arch i386")
+     endif(NOT APPLE)
+-- 
+2.17.1
+

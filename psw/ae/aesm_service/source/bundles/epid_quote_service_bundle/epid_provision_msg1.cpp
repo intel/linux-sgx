@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,10 +39,7 @@
 #include "aesm_rand.h"
 #include "epid_pve_type.h"
 #include "crypto_wrapper.h"
-
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
+#include <memory>
 
 extern std::shared_ptr<IPceService> g_pce_service;
  /**
@@ -122,13 +119,13 @@ static ae_error_t aesm_rsa_oaep_encrypt(const uint8_t *src, uint32_t src_len, co
     size_t dst_len = RSA_3072_KEY_BYTES;
     // Check the encrypt output length
 
-    sgx_status_t res = sgx_rsa_pub_encrypt_sha256(const_cast<void *>(rsa), NULL, &dst_len, src, src_len);
+    sgx_status_t res = sgx_rsa_pub_encrypt_sha256(rsa, NULL, &dst_len, src, src_len);
     if(res != SGX_SUCCESS || dst_len != RSA_3072_KEY_BYTES)
     {
         return AE_FAILURE;
     }
 
-    res = sgx_rsa_pub_encrypt_sha256(const_cast<void *>(rsa), dst, &dst_len, src, src_len);
+    res = sgx_rsa_pub_encrypt_sha256(rsa, dst, &dst_len, src, src_len);
     if(res != SGX_SUCCESS)
     {
         return AE_FAILURE;

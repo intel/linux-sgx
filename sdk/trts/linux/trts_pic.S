@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -119,6 +119,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
     /* Clear unused general registers */
     xor     %xdx, %xdx
     add     %xdx, %xdx          /* OF = SF = AF = CF = 0; ZF = PF = 1 */
+    cld                         /* DF = 0 */
 #if defined(LINUX64)
     xor     %r8, %r8
     xor     %r9, %r9
@@ -149,6 +150,9 @@ DECLARE_GLOBAL_FUNC enclave_entry
     mov     %xsp, %xbp
     .cfi_def_cfa_register xbp
 
+    CLEAN_XFLAGS
+
+
     /* Save the registers */
     sub     $(6*SE_WORDSIZE), %xsp
     mov     %xax, -1*SE_WORDSIZE(%xbp)  /* xsp_u */
@@ -157,9 +161,22 @@ DECLARE_GLOBAL_FUNC enclave_entry
     mov     %xsi, -5*SE_WORDSIZE(%xbp)  /* XSI */
     mov     %xdi, -6*SE_WORDSIZE(%xbp)  /* XDI */
 
+    /* clean extended feature registers */
+    sub     $(4*SE_WORDSIZE), %xsp
+
+    lea_pic SYNTHETIC_STATE, %xdi
+#ifdef LINUX32
+    mov     %xdi, (%xsp)
+#endif
+    call    restore_xregs
+    add     $(4*SE_WORDSIZE), %xsp
+
+    /* switch to C code */
 #ifdef LINUX64
-    mov     %rdx, %rcx
-    mov     %rbx, %rdx
+    mov     -6*SE_WORDSIZE(%xbp), %xdi  /* index */
+    mov     -5*SE_WORDSIZE(%xbp), %xsi  /* ms */
+    mov     -4*SE_WORDSIZE(%xbp), %xdx  /* TCS */
+    mov     -3*SE_WORDSIZE(%xbp), %xcx  /* cssa */
 #endif
     call    enter_enclave
     mov     %xax, %xbx
@@ -200,6 +217,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
 
     /* Set status flags to pre-defined values */
     add     %xdx, %xdx          /* OF = SF = AF = CF = 0; ZF = PF = 1 */
+    cld                         /* DF = 0 */
 
     /* EEXIT */
     mov     $SE_EEXIT, %xax     /* EEXIT leaf */
@@ -389,6 +407,7 @@ DECLARE_LOCAL_FUNC do_ocall
 
     /* Set status flags to pre-defined values */
     add     %xdx, %xdx          /* OF = SF = AF = CF = 0; ZF = PF = 1 */
+    cld                         /* DF = 0 */
 
     ENCLU
 

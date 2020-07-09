@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -49,6 +49,7 @@ ROOT_DIR              := $(call my-dir)
 ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
   $(error main directory cannot contain spaces nor colons)
 endif
+
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
 LINUX_PSW_DIR         := $(ROOT_DIR)/psw
@@ -74,18 +75,17 @@ INCLUDE :=
 # this will return the path to the file that included the buildenv.mk file
 CUR_DIR := $(realpath $(call parent-dir,$(lastword $(wordlist 2,$(words $(MAKEFILE_LIST)),x $(MAKEFILE_LIST)))))
 
+CC_VERSION := $(shell $(CC) -dumpversion)
+CC_VERSION_MAJOR := $(shell echo $(CC_VERSION) | cut -f1 -d.)
+CC_VERSION_MINOR := $(shell echo $(CC_VERSION) | cut -f2 -d.)
+CC_BELOW_4_9 := $(shell [ $(CC_VERSION_MAJOR) -lt 4 -o \( $(CC_VERSION_MAJOR) -eq 4 -a $(CC_VERSION_MINOR) -le 9 \) ] && echo 1)
+CC_BELOW_5_2 := $(shell [ $(CC_VERSION_MAJOR) -lt 5 -o \( $(CC_VERSION_MAJOR) -eq 5 -a $(CC_VERSION_MINOR) -le 2 \) ] && echo 1)
+
 # turn on stack protector for SDK
-CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
 ifeq ($(CC_BELOW_4_9), 1)
     COMMON_FLAGS += -fstack-protector
 else
     COMMON_FLAGS += -fstack-protector-strong
-endif
-
-# turn on cet
-CC_GREAT_EQUAL_8 := $(shell expr "`$(CC) -dumpversion`" \>= "8")
-ifeq ($(CC_GREAT_EQUAL_8), 1)
-    COMMON_FLAGS += -fcf-protection
 endif
 
 ifdef DEBUG
@@ -172,6 +172,66 @@ CXXFLAGS += $(COMMON_FLAGS)
 # Enable the security flags
 COMMON_LDFLAGS := -Wl,-z,relro,-z,now,-z,noexecstack
 
+# mitigation options
+MITIGATION_INDIRECT ?= 0
+MITIGATION_RET ?= 0
+MITIGATION_C ?= 0
+MITIGATION_ASM ?= 0
+MITIGATION_AFTERLOAD ?= 0
+MITIGATION_LIB_PATH :=
+
+ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
+    MITIGATION_C := 1
+    MITIGATION_ASM := 1
+    MITIGATION_INDIRECT := 1
+    MITIGATION_RET := 1
+    MITIGATION_AFTERLOAD := 1
+    MITIGATION_LIB_PATH := cve_2020_0551_load
+else ifeq ($(MITIGATION-CVE-2020-0551), CF)
+    MITIGATION_C := 1
+    MITIGATION_ASM := 1
+    MITIGATION_INDIRECT := 1
+    MITIGATION_RET := 1
+    MITIGATION_AFTERLOAD := 0
+    MITIGATION_LIB_PATH := cve_2020_0551_cf
+endif
+
+ifneq ($(origin NIX_PATH), environment)
+BINUTILS_DIR = /usr/local/bin
+else
+BINUTILS_DIR = $(ROOT_DIR)/external/toolset/nix/
+endif
+
+# enable -B option for all the build
+MITIGATION_CFLAGS += -B$(BINUTILS_DIR)
+
+ifeq ($(MITIGATION_C), 1)
+ifeq ($(MITIGATION_INDIRECT), 1)
+    MITIGATION_CFLAGS += -mindirect-branch-register
+endif
+ifeq ($(MITIGATION_RET), 1)
+CC_NO_LESS_THAN_8 := $(shell expr $(CC_VERSION) \>\= "8")
+ifeq ($(CC_NO_LESS_THAN_8), 1)
+    MITIGATION_CFLAGS += -fcf-protection=none
+endif
+    MITIGATION_CFLAGS += -mfunction-return=thunk-extern
+endif
+endif
+
+ifeq ($(MITIGATION_ASM), 1)
+    MITIGATION_ASFLAGS += -fno-plt
+ifeq ($(MITIGATION_AFTERLOAD), 1)
+    MITIGATION_ASFLAGS += -Wa,-mlfence-after-load=yes -Wa,-mlfence-before-indirect-branch=memory
+else
+    MITIGATION_ASFLAGS += -Wa,-mlfence-before-indirect-branch=all
+endif
+ifeq ($(MITIGATION_RET), 1)
+    MITIGATION_ASFLAGS += -Wa,-mlfence-before-ret=shl
+endif
+endif
+
+MITIGATION_CFLAGS += $(MITIGATION_ASFLAGS)
+
 # Compiler and linker options for an Enclave
 #
 # We are using '--export-dynamic' so that `g_global_data_sim' etc.
@@ -180,30 +240,49 @@ COMMON_LDFLAGS := -Wl,-z,relro,-z,now,-z,noexecstack
 # When `pie' is enabled, the linker (both BFD and Gold) under Ubuntu 14.04
 # will hide all symbols from dynamic symbol table even if they are marked
 # as `global' in the LD version script.
-ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie
-ifeq ($(CC_GREAT_EQUAL_8), 1)
-    ENCLAVE_CFLAGS += -fcf-protection
-endif
+ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie -fno-strict-overflow -fno-delete-null-pointer-checks
 ENCLAVE_CXXFLAGS = $(ENCLAVE_CFLAGS) -nostdinc++
-ENCLAVE_LDFLAGS  = $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
+ENCLAVE_LDFLAGS  = -B$(BINUTILS_DIR) $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
                    -Wl,--defsym,__ImageBase=0
 
+ENCLAVE_CFLAGS += $(MITIGATION_CFLAGS)
+ENCLAVE_ASFLAGS = $(MITIGATION_ASFLAGS)
 
-# Choose to use the optimized libraries (IPP/String/Math) by default.
-# Users could also use the source code version (SGXSSL/String/Math) by
-# explicitly specifying 'USE_OPT_LIBS=0'
+# Two build combinations are supported to build SGX SDK:
+#   'USE_OPT_LIBS=0' --- build SDK using SGXSSL + open sourced String/Math
+#   'USE_OPT_LIBS=1' --- build SDK using optimized IPP crypto + open sourced String/Math
+#
+# By default, choose to build SDK using optimized IPP crypto and open sourced String/Math.
+# Users could build the SDK using SGXSSL + open sourced String/Math by explicitly 
+# specifying 'USE_OPT_LIBS=0'
 USE_OPT_LIBS ?= 1
 
-
-ifeq ($(ARCH), x86_64)
-IPP_SUBDIR = intel64
-else
-IPP_SUBDIR = ia32
+IPP_SUBDIR = no_mitigation
+ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
+    IPP_SUBDIR = cve_2020_0551_load
+else ifeq ($(MITIGATION-CVE-2020-0551), CF)
+    IPP_SUBDIR = cve_2020_0551_cf
 endif
+
 
 SGX_IPP_DIR     := $(ROOT_DIR)/external/ippcp_internal
 SGX_IPP_INC     := $(SGX_IPP_DIR)/inc
-IPP_LIBS_DIR    := $(SGX_IPP_DIR)/lib/linux/$(IPP_SUBDIR)
+IPP_LIBS_DIR    := $(SGX_IPP_DIR)/lib/linux/intel64/$(IPP_SUBDIR)
 LD_IPP          := -lippcp
 
+######## SGX SDK Settings ########
+SGX_SDK ?= /opt/intel/sgxsdk
+SGX_HEADER_DIR := $(SGX_SDK)/include
+
+ifeq ($(ARCH), x86)
+	SGX_COMMON_CFLAGS := -m32
+	SGX_LIB_DIR := $(SGX_SDK)/lib
+	SGX_BIN_DIR := $(SGX_SDK)/bin/x86
+else
+	SGX_COMMON_CFLAGS := -m64
+	SGX_LIB_DIR := $(SGX_SDK)/lib64/$(MITIGATION_LIB_PATH)
+	SGX_BIN_DIR := $(SGX_SDK)/bin/x64
+endif
+
+SPLIT_VERSION=$(word $2,$(subst ., ,$1))

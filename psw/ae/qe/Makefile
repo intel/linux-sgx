@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,23 +30,21 @@
 #
 
 TOP_DIR := ../../..
+MITIGATION-CVE-2020-0551=LOAD
 include ../buildenv.mk
 
 CXXFLAGS  += -Werror
-CFLAGS	+= -Werror 
-LDTFLAGS += -L$(IPP_LIBS_DIR) -lsgx_disp -lippcp -lsgx_tcxx -lsgx_tstdc
+CFLAGS	+= -Werror
 
-EPID_SDK_DIR = $(LINUX_EXTERNAL_DIR)/epid-sdk
 EXTERNAL_LIB += -L$(EPID_SDK_DIR)/epid/member -lmember \
 				-L$(EPID_SDK_DIR)/epid/common -lcommon
 
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux \
-		   -I$(SGX_IPP_INC)/                          \
-		   -I$(LINUX_EXTERNAL_DIR)/epid-sdk           \
-		   -I$(LINUX_PSW_DIR)/ae/common               \
-		   -I$(COMMON_DIR)/inc/tlibc                  \
-		   -I$(LINUX_PSW_DIR)/ae/inc/internal  \
-		   -I$(LINUX_SDK_DIR)/tlibcxx/include
+           -I$(SGX_HEADER_DIR)/libcxx                 \
+           -I$(LINUX_PSW_DIR)/ae/common	              \
+           -I$(LINUX_PSW_DIR)/ae/inc/internal         \
+           -I$(EPID_SDK_DIR) 
+
 
 SRC := $(wildcard *.cpp)
 SRC += se_sig_rl.cpp                  \
@@ -55,24 +53,28 @@ SRC += se_sig_rl.cpp                  \
 OBJ := $(SRC:.cpp=.o)
 OBJS := $(sort $(OBJ) version.o)
 
+EPID_FILTER = -Werror -nostdinc -nostdinc++
+EPID_CFLAGS = $(filter-out $(EPID_FILTER),$(ENCLAVE_CFLAGS))
+EPID_CXXFLAGS = $(filter-out $(EPID_FILTER),$(ENCLAVE_CXXFLAGS))
+
 .PHONY: all
 all: $(SONAME) 
 
 .PHONY: EPID
 EPID:
-	cd $(EPID_SDK_DIR) && ./configure prefix=/usr/local
+	cd $(EPID_SDK_DIR) && CFLAGS="$(EPID_CFLAGS)" CXXFLAGS="$(EPID_CXXFLAGS)" ./configure prefix=/usr/local
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
-	$(STRIP)  --strip-unneeded $(SONAME)
+	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 $(OBJ): $(AENAME)_t.c
 $(OBJ): %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@
 
 $(AENAME)_t.c: $(EDLFILE)
-	@$(EDGER8R) --trusted $< --search-path $(COMMON_DIR)/inc
+	@$(EDGER8R) --trusted $< --search-path $(SGX_HEADER_DIR)
 
 .PHONY: clean
 clean:

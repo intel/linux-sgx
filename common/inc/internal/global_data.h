@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,12 +47,15 @@
 #define LAYOUT_ENTRY_NUM 42
 typedef struct _global_data_t
 {
+    sys_word_t     sdk_version;
     sys_word_t     enclave_size;
     sys_word_t     heap_offset;
     sys_word_t     heap_size;
     sys_word_t     rsrv_offset;
     sys_word_t     rsrv_size;
+    sys_word_t     rsrv_executable;
     sys_word_t     thread_policy;
+    sys_word_t     tcs_max_num;
     thread_data_t  td_template;
     uint8_t        tcs_template[TCS_TEMPLATE_SIZE];
     uint32_t       layout_entry_num;

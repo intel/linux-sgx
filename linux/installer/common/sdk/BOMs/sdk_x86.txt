@@ -27,6 +27,11 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/sgx_sign	<installdir>/package/bin/x86/sgx_sign	0	main	STP
 <deliverydir>/linux/installer/common/sdk/installConfig.x86	<installdir>/scripts/installConfig	0	main	STP
 <deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_uae_service_sim.pc	<installdir>/package/pkgconfig/libsgx_uae_service_sim.pc	0	main	STP
+<deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_epid_sim.pc	<installdir>/package/pkgconfig/libsgx_epid_sim.pc	0	main	STP
+<deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_platform_sim.pc	<installdir>/package/pkgconfig/libsgx_platform_sim.pc	0	main	STP
+<deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_quote_ex_sim.pc	<installdir>/package/pkgconfig/libsgx_quote_ex_sim.pc	0	main	STP
 <deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_urts_sim.pc	<installdir>/package/pkgconfig/libsgx_urts_sim.pc	0	main	STP
 <deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_uae_service.pc	<installdir>/package/pkgconfig/libsgx_uae_service.pc	0	main	STP
+<deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_epid.pc	<installdir>/package/pkgconfig/libsgx_epid.pc	0	main	STP
+<deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_launch.pc	<installdir>/package/pkgconfig/libsgx_launch.pc	0	main	STP
 <deliverydir>/linux/installer/common/sdk/pkgconfig/x86/libsgx_urts.pc	<installdir>/package/pkgconfig/libsgx_urts.pc	0	main	STP

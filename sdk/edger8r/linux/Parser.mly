@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -516,7 +516,7 @@ smember_type: attr_block all_type {
         | _ ->
           fun is_ary ->
             if is_ary then Ast.PTPtr($2, attr)
-            else failwithf "unexpected pointer attributes for `%s'" (Ast.get_tystr $2)
+            else failwithf "'%s' specified deep copy, but it's not a pointer" (Ast.get_tystr $2)
       else
         fun is_ary ->
           if is_ary then Ast.PTPtr($2, get_ptr_attr [])

@@ -9,10 +9,11 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/Quot
 add_library(sgx_default_qcnl_wrapper SHARED ${_srcs})
 
 target_include_directories(sgx_default_qcnl_wrapper PRIVATE
-    ${PROJECT_SOURCE_DIR}/../../../../common/inc
+    ${SGX_HEADER_DIR}
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/pce_wrapper/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/common/inc
+    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal
 )
 
 set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")

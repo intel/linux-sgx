@@ -77,6 +77,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/cdefs.h>
 
 #define SNG_EXPBITS     8
 #define SNG_FRACBITS    23
@@ -143,3 +144,27 @@ struct ieee_ext {
 #define SNG_EXP_BIAS    127
 #define DBL_EXP_BIAS    1023
 #define EXT_EXP_BIAS    16383
+
+typedef int fp_except;
+#define FP_X_INV    0x01    /* invalid operation exception */
+#define FP_X_DNML   0x02    /* denormalization exception */
+#define FP_X_DZ     0x04    /* divide-by-zero exception */
+#define FP_X_OFL    0x08    /* overflow exception */
+#define FP_X_UFL    0x10    /* underflow exception */
+#define FP_X_IMP    0x20    /* imprecise (loss of precision) */
+
+typedef enum {
+    FP_RN=0,            /* round to nearest representable number */
+    FP_RM=1,            /* round toward negative infinity */
+    FP_RP=2,            /* round toward positive infinity */
+    FP_RZ=3         /* round to zero (truncate) */
+} fp_rnd;
+
+__BEGIN_DECLS
+extern fp_rnd    fpgetround(void);
+extern fp_rnd    fpsetround(fp_rnd);
+extern fp_except fpgetmask(void);
+extern fp_except fpsetmask(fp_except);
+extern fp_except fpgetsticky(void);
+extern fp_except fpsetsticky(fp_except);
+__END_DECLS

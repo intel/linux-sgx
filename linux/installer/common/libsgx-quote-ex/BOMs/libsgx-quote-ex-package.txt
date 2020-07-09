@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/linux/installer/common/libsgx-quote-ex/installConfig	<installdir>/installConfig	0	main	STP
+<deliverydir>/linux/installer/common/libsgx-quote-ex/Makefile	<installdir>/Makefile	0	main	STP

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -32,35 +32,36 @@
 
 top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
-openssl_ver_name=openssl-1.1.0j
-sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_ver_name=v2.4.1
-sgxssl_ver=2.4.1
+openssl_ver=1.1.1g
+openssl_ver_name=openssl-$openssl_ver
+sgxssl_github_archive=https://github.com/intel/intel-sgx-ssl/archive
+sgxssl_ver=2.10
+sgxssl_ver_name=v$sgx_ver
+sgxssl_file_name=lin_$sgxssl_ver\_$openssl_ver
 build_script=$top_dir/Linux/build_openssl.sh
-server_url_path=https://www.openssl.org/source/
-full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
-full_openssl_url_old=$server_url_path/old/1.1.0/$openssl_ver_name.tar.gz
+server_url_path=https://www.openssl.org/source
+full_openssl_url=$server_url_path/old/1.1.1/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=f2233e077201f61ce8a07cd7481fca4509774bc3b446b59273b5b224d8aa5a7b
-openssl_chksum=31bec6c203ce1a8e93d5994f4ed304c63ccf07676118b6634edded12ad1b3246
+sgxssl_chksum=5fb5328fdd55d643cc125dd43cbd0a1f7d74ead7948b52cf15d8533d47a0d266
+openssl_chksum=ddb04774f1e32f0c49751e21b67216ac87852ceb056b75209af2443400636d46
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
-	wget $sgxssl_github_archive/$sgxssl_ver_name.zip -P $top_dir || exit 1
-	sha256sum $top_dir/$sgxssl_ver_name.zip > check_sum_sgxssl.txt
+	wget $sgxssl_github_archive/$sgxssl_file_name.zip -P $top_dir || exit 1
+	sha256sum $top_dir/$sgxssl_file_name.zip > check_sum_sgxssl.txt
 	grep $sgxssl_chksum check_sum_sgxssl.txt
-	if [ $? -ne 0 ]; then 
-    	echo "File $top_dir/$sgxssl_ver_name.zip checksum failure"
-        rm -f $top_dir/$sgxssl_ver_name.zip
-    	exit -1
+	if [ $? -ne 0 ]; then
+	echo "File $top_dir/$sgxssl_file_name.zip checksum failure"
+        rm -f $top_dir/$sgxssl_file_name.zip
+	exit -1
 	fi
-	unzip -qq $top_dir/$sgxssl_ver_name.zip -d $top_dir || exit 1
-	mv $top_dir/intel-sgx-ssl-$sgxssl_ver/* $top_dir || exit 1
-	rm $top_dir/$sgxssl_ver_name.zip || exit 1
-	rm -rf $top_dir/intel-sgx-ssl-$sgxssl_ver || exit 1
+	unzip -qq $top_dir/$sgxssl_file_name -d $top_dir || exit 1
+	mv $top_dir/intel-sgx-ssl-$sgxssl_file_name/* $top_dir || exit 1
+	rm $top_dir/$sgxssl_file_name.zip || exit 1
+	rm -rf $top_dir/intel-sgx-ssl-$sgxssl_file_name || exit 1
 fi
 
 if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
-	wget $full_openssl_url_old -P $openssl_out_dir || wget $full_openssl_url -P $openssl_out_dir || exit 1
+	wget $server_url_path/$openssl_ver_name.tar.gz -P $openssl_out_dir || wget $full_openssl_url -P $openssl_out_dir || exit 1
 	sha256sum $openssl_out_dir/$openssl_ver_name.tar.gz > check_sum_openssl.txt
 	grep $openssl_chksum check_sum_openssl.txt
 	if [ $? -ne 0 ]; then 
@@ -71,6 +72,5 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 fi
 
 pushd $top_dir/Linux/
-make clean all LINUX_SGX_BUILD=1
-make clean all LINUX_SGX_BUILD=1 DEBUG=1
+make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
 popd

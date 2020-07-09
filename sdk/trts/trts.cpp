@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -198,7 +198,6 @@ void * sgx_ocalloc(size_t size)
 
     return reinterpret_cast<void *>(addr);
 }
-weak_alias(sgx_ocalloc, sgx_ocalloc_switchless);
 
 // sgx_ocfree()
 // Parameters:
@@ -226,7 +225,6 @@ void sgx_ocfree()
     }
     ssa_gpr->REG(sp_u) = usp;
 }
-weak_alias(sgx_ocfree, sgx_ocfree_switchless);
 
 #ifdef SE_SIM
 static sgx_spinlock_t g_seed_lock = SGX_SPINLOCK_INITIALIZER;
@@ -318,8 +316,3 @@ int check_static_stack_canary(void *tcs)
     return 0;
 }
 
-void random_stack_notify_gdb(void *addr, size_t size)
-{
-    UNUSED(addr);
-    UNUSED(size);
-}

@@ -5,4 +5,7 @@
 #export DH_VERBOSE=1
 
 %:
-	dh $@ 
+	dh $@
+
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(LINUX_BUILD_DIR) --dpkg-shlibdeps-params=--ignore-missing-info

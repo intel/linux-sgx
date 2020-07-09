@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -301,13 +301,15 @@ sgx_status_t sgx_aes_gcm128_enc_get_mac(uint8_t *mac, sgx_aes_state_handle_t aes
 //aes_gcm encryption fini function
 sgx_status_t sgx_aes_gcm_close(sgx_aes_state_handle_t aes_gcm_state)
 {
+    if (aes_gcm_state == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
+    
     int state_size = 0;
-    if (aes_gcm_state != NULL) {
-        if (ippsAES_GCMGetSize(&state_size) != ippStsNoErr) {
-            return SGX_ERROR_UNEXPECTED;
-        }
-        CLEAR_FREE_MEM(aes_gcm_state, state_size);
+    if (ippsAES_GCMGetSize(&state_size) != ippStsNoErr) {
+        free(aes_gcm_state);
+        return SGX_SUCCESS;
     }
+    CLEAR_FREE_MEM(aes_gcm_state, state_size);
     return SGX_SUCCESS;
 }
 

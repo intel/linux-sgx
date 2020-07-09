@@ -1,0 +1,2 @@
+SUBSYSTEM=="misc",KERNEL=="enclave",MODE="0666"
+SUBSYSTEM=="sgx",KERNEL=="sgx/enclave",MODE="0666"

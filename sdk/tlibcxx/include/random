@@ -1632,9 +1632,7 @@ class piecewise_linear_distribution
 } // std
 */
 
-// Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 
 #include <cstddef>
 #include <cstdint>
@@ -1646,8 +1644,10 @@ class piecewise_linear_distribution
 #include <numeric>
 #include <vector>
 #include <string>
+#if !defined(_LIBCPP_SGX_CONFIG)
 #include <istream>
 #include <ostream>
+#endif
 
 #include <__undef_min_max>
 
@@ -1815,6 +1815,7 @@ struct __lce_ta<__a, __c, __m, (unsigned short)(~0), __b>
     }
 };
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
 class _LIBCPP_TYPE_VIS_ONLY linear_congruential_engine;
 
@@ -1830,6 +1831,7 @@ template <class _CharT, class _Traits,
 basic_istream<_CharT, _Traits>&
 operator>>(basic_istream<_CharT, _Traits>& __is,
            linear_congruential_engine<_Up, _Ap, _Cp, _Np>& __x);
+#endif
 
 template <class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
 class _LIBCPP_TYPE_VIS_ONLY linear_congruential_engine
@@ -1918,6 +1920,7 @@ private:
     template<class _Sseq>
         void __seed(_Sseq& __q, integral_constant<unsigned, 2>);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits,
               class _Up, _Up _Ap, _Up _Cp, _Up _Np>
     friend
@@ -1931,6 +1934,7 @@ private:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                linear_congruential_engine<_Up, _Ap, _Cp, _Np>& __x);
+#endif
 };
 
 template <class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
@@ -1976,6 +1980,7 @@ linear_congruential_engine<_UIntType, __a, __c, __m>::__seed(_Sseq& __q,
     __x_ = __c == 0 && __s == 0 ? result_type(1) : __s;
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _UIntType, _UIntType __a, _UIntType __c, _UIntType __m>
 inline _LIBCPP_INLINE_VISIBILITY
@@ -2003,6 +2008,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.__x_ = __t;
     return __is;
 }
+#endif
 
 typedef linear_congruential_engine<uint_fast32_t, 16807, 0, 2147483647>
                                                                    minstd_rand0;
@@ -2035,6 +2041,7 @@ operator!=(const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp,
            const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
                                          _Bp, _Tp, _Cp, _Lp, _Fp>& __y);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
           _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
@@ -2052,6 +2059,7 @@ basic_istream<_CharT, _Traits>&
 operator>>(basic_istream<_CharT, _Traits>& __is,
            mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
                                    _Bp, _Tp, _Cp, _Lp, _Fp>& __x);
+#endif
 
 template <class _UIntType, size_t __w, size_t __n, size_t __m, size_t __r,
           _UIntType __a, size_t __u, _UIntType __d, size_t __s,
@@ -2152,6 +2160,7 @@ public:
                const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
                                              _Bp, _Tp, _Cp, _Lp, _Fp>& __y);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits,
               class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
               _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
@@ -2171,6 +2180,7 @@ public:
     operator>>(basic_istream<_CharT, _Traits>& __is,
                mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp, _Sp,
                                        _Bp, _Tp, _Cp, _Lp, _Fp>& __x);
+#endif
 private:
 
     template<class _Sseq>
@@ -2444,6 +2454,7 @@ operator!=(const mersenne_twister_engine<_UI, _Wp, _Np, _Mp, _Rp, _Ap, _Up, _Dp,
     return !(__x == __y);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _UI, size_t _Wp, size_t _Np, size_t _Mp, size_t _Rp,
           _UI _Ap, size_t _Up, _UI _Dp, size_t _Sp,
@@ -2487,6 +2498,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
     }
     return __is;
 }
+#endif
 
 typedef mersenne_twister_engine<uint_fast32_t, 32, 624, 397, 31,
                                 0x9908b0df, 11, 0xffffffff,
@@ -2517,6 +2529,7 @@ operator!=(
     const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x,
     const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __y);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
 basic_ostream<_CharT, _Traits>&
@@ -2528,6 +2541,7 @@ template <class _CharT, class _Traits,
 basic_istream<_CharT, _Traits>&
 operator>>(basic_istream<_CharT, _Traits>& __is,
            subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x);
+#endif
 
 template<class _UIntType, size_t __w, size_t __s, size_t __r>
 class _LIBCPP_TYPE_VIS_ONLY subtract_with_carry_engine
@@ -2603,6 +2617,7 @@ public:
         const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x,
         const subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __y);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits,
               class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
     friend
@@ -2616,6 +2631,7 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                subtract_with_carry_engine<_UI, _Wp, _Sp, _Rp>& __x);
+#endif
 
 private:
 
@@ -2767,6 +2783,7 @@ operator!=(
     return !(__x == __y);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _UI, size_t _Wp, size_t _Sp, size_t _Rp>
 basic_ostream<_CharT, _Traits>&
@@ -2806,6 +2823,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
     }
     return __is;
 }
+#endif
 
 typedef subtract_with_carry_engine<uint_fast32_t, 24, 10, 24>     ranlux24_base;
 typedef subtract_with_carry_engine<uint_fast64_t, 48,  5, 12>     ranlux48_base;
@@ -2889,6 +2907,7 @@ public:
         const discard_block_engine<_Eng, _Pp, _Rp>& __x,
         const discard_block_engine<_Eng, _Pp, _Rp>& __y);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template<class _Eng, size_t _Pp, size_t _Rp>
     friend
     bool
@@ -2909,6 +2928,7 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                discard_block_engine<_Eng, _Pp, _Rp>& __x);
+#endif
 };
 
 template<class _Engine, size_t __p, size_t __r>
@@ -2948,6 +2968,7 @@ operator!=(const discard_block_engine<_Eng, _Pp, _Rp>& __x,
     return !(__x == __y);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _Eng, size_t _Pp, size_t _Rp>
 basic_ostream<_CharT, _Traits>&
@@ -2979,6 +3000,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
     }
     return __is;
 }
+#endif
 
 typedef discard_block_engine<ranlux24_base, 223, 23> ranlux24;
 typedef discard_block_engine<ranlux48_base, 389, 11> ranlux48;
@@ -3107,6 +3129,7 @@ public:
         const independent_bits_engine<_Eng, _Wp, _UI>& __x,
         const independent_bits_engine<_Eng, _Wp, _UI>& __y);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits,
               class _Eng, size_t _Wp, class _UI>
     friend
@@ -3120,6 +3143,7 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                independent_bits_engine<_Eng, _Wp, _UI>& __x);
+#endif
 
 private:
     _LIBCPP_INLINE_VISIBILITY
@@ -3201,6 +3225,7 @@ operator!=(
     return !(__x == __y);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _Eng, size_t _Wp, class _UI>
 basic_ostream<_CharT, _Traits>&
@@ -3222,6 +3247,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.__e_ = __e;
     return __is;
 }
+#endif
 
 // shuffle_order_engine
 
@@ -3338,6 +3364,7 @@ private:
         const shuffle_order_engine<_Eng, _Kp>& __x,
         const shuffle_order_engine<_Eng, _Kp>& __y);
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits,
               class _Eng, size_t _Kp>
     friend
@@ -3351,6 +3378,7 @@ private:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                shuffle_order_engine<_Eng, _Kp>& __x);
+#endif
 
     _LIBCPP_INLINE_VISIBILITY
     void __init()
@@ -3433,6 +3461,7 @@ operator!=(
     return !(__x == __y);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits,
           class _Eng, size_t _Kp>
 basic_ostream<_CharT, _Traits>&
@@ -3472,6 +3501,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
     }
     return __is;
 }
+#endif
 
 typedef shuffle_order_engine<minstd_rand0, 256>                         knuth_b;
 
@@ -3657,6 +3687,7 @@ generate_canonical(_URNG& __g)
 
 // in <algorithm>
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _IT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -3686,6 +3717,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__a, __b));
     return __is;
 }
+#endif
 
 // uniform_real_distribution
 
@@ -3778,6 +3810,7 @@ uniform_real_distribution<_RealType>::operator()(_URNG& __g, const param_type& _
         + __p.a();
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -3808,6 +3841,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__a, __b));
     return __is;
 }
+#endif
 
 // bernoulli_distribution
 
@@ -3890,6 +3924,7 @@ bernoulli_distribution::operator()(_URNG& __g, const param_type& __p)
     return __gen(__g) < __p.p();
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os, const bernoulli_distribution& __x)
@@ -3916,6 +3951,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is, bernoulli_distribution& __x)
         __x.param(param_type(__p));
     return __is;
 }
+#endif
 
 // binomial_distribution
 
@@ -4054,6 +4090,7 @@ binomial_distribution<_IntType>::operator()(_URNG& __g, const param_type& __pr)
     }
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _IntType>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -4084,6 +4121,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__t, __p));
     return __is;
 }
+#endif
 
 // exponential_distribution
 
@@ -4172,6 +4210,7 @@ exponential_distribution<_RealType>::operator()(_URNG& __g, const param_type& __
                   / __p.lambda();
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RealType>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -4199,6 +4238,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__lambda));
     return __is;
 }
+#endif
 
 // normal_distribution
 
@@ -4282,6 +4322,7 @@ public:
                         const normal_distribution& __y)
         {return !(__x == __y);}
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits, class _RT>
     friend
     basic_ostream<_CharT, _Traits>&
@@ -4293,6 +4334,7 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                normal_distribution<_RT>& __x);
+#endif
 };
 
 template <class _RealType>
@@ -4326,6 +4368,7 @@ normal_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return _Up * __p.stddev() + __p.mean();
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -4367,6 +4410,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
     }
     return __is;
 }
+#endif
 
 // lognormal_distribution
 
@@ -4400,6 +4444,7 @@ public:
             {return !(__x == __y);}
         friend class lognormal_distribution;
 
+#if !defined(_LIBCPP_SGX_CONFIG)
         template <class _CharT, class _Traits, class _RT>
         friend
         basic_ostream<_CharT, _Traits>&
@@ -4411,6 +4456,7 @@ public:
         basic_istream<_CharT, _Traits>&
         operator>>(basic_istream<_CharT, _Traits>& __is,
                    lognormal_distribution<_RT>& __x);
+#endif
     };
 
 private:
@@ -4462,6 +4508,7 @@ public:
                         const lognormal_distribution& __y)
         {return !(__x == __y);}
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits, class _RT>
     friend
     basic_ostream<_CharT, _Traits>&
@@ -4473,8 +4520,10 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                lognormal_distribution<_RT>& __x);
+#endif
 };
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 inline _LIBCPP_INLINE_VISIBILITY
 basic_ostream<_CharT, _Traits>&
@@ -4492,6 +4541,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
 {
     return __is >> __x.__p_.__nd_;
 }
+#endif
 
 // poisson_distribution
 
@@ -4697,6 +4747,7 @@ poisson_distribution<_IntType>::operator()(_URNG& __urng, const param_type& __pr
     return __x;
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _IntType>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -4723,6 +4774,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__mean));
     return __is;
 }
+#endif
 
 // weibull_distribution
 
@@ -4808,6 +4860,7 @@ public:
         {return !(__x == __y);}
 };
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -4839,6 +4892,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__a, __b));
     return __is;
 }
+#endif
 
 template<class _RealType = double>
 class _LIBCPP_TYPE_VIS_ONLY extreme_value_distribution
@@ -4927,6 +4981,7 @@ extreme_value_distribution<_RealType>::operator()(_URNG& __g, const param_type& 
          _VSTD::log(-_VSTD::log(1-uniform_real_distribution<result_type>()(__g)));
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -4958,6 +5013,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__a, __b));
     return __is;
 }
+#endif
 
 // gamma_distribution
 
@@ -5099,6 +5155,7 @@ gamma_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __x * __p.beta();
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -5130,6 +5187,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__alpha, __beta));
     return __is;
 }
+#endif
 
 // negative_binomial_distribution
 
@@ -5235,6 +5293,7 @@ negative_binomial_distribution<_IntType>::operator()(_URNG& __urng, const param_
                                             (__k, (1-__p)/__p)(__urng))(__urng);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _IntType>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -5265,6 +5324,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__k, __p));
     return __is;
 }
+#endif
 
 // geometric_distribution
 
@@ -5341,6 +5401,7 @@ public:
         {return !(__x == __y);}
 };
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _IntType>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -5367,6 +5428,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__p));
     return __is;
 }
+#endif
 
 // chi_squared_distribution
 
@@ -5445,6 +5507,7 @@ public:
         {return !(__x == __y);}
 };
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -5473,6 +5536,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__n));
     return __is;
 }
+#endif
 
 // cauchy_distribution
 
@@ -5565,6 +5629,7 @@ cauchy_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __p.a() + __p.b() * _VSTD::tan(3.1415926535897932384626433832795 * __gen(__g));
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -5596,6 +5661,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__a, __b));
     return __is;
 }
+#endif
 
 // fisher_f_distribution
 
@@ -5687,6 +5753,7 @@ fisher_f_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __p.n() * __gdm(__g) / (__p.m() * __gdn(__g));
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -5718,6 +5785,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__m, __n));
     return __is;
 }
+#endif
 
 // student_t_distribution
 
@@ -5803,6 +5871,7 @@ student_t_distribution<_RealType>::operator()(_URNG& __g, const param_type& __p)
     return __nd_(__g) * _VSTD::sqrt(__p.n()/__gd(__g));
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -5831,6 +5900,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         __x.param(param_type(__n));
     return __is;
 }
+#endif
 
 // discrete_distribution
 
@@ -5876,6 +5946,7 @@ public:
 
         friend class discrete_distribution;
 
+#if !defined(_LIBCPP_SGX_CONFIG)
         template <class _CharT, class _Traits, class _IT>
         friend
         basic_ostream<_CharT, _Traits>&
@@ -5887,6 +5958,7 @@ public:
         basic_istream<_CharT, _Traits>&
         operator>>(basic_istream<_CharT, _Traits>& __is,
                    discrete_distribution<_IT>& __x);
+#endif
     };
 
 private:
@@ -5946,6 +6018,7 @@ public:
                         const discrete_distribution& __y)
         {return !(__x == __y);}
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits, class _IT>
     friend
     basic_ostream<_CharT, _Traits>&
@@ -5957,6 +6030,7 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                discrete_distribution<_IT>& __x);
+#endif
 };
 
 template<class _IntType>
@@ -6026,6 +6100,7 @@ discrete_distribution<_IntType>::operator()(_URNG& __g, const param_type& __p)
                                                               __p.__p_.begin());
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _IT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -6059,6 +6134,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
         swap(__x.__p_.__p_, __p);
     return __is;
 }
+#endif
 
 // piecewise_constant_distribution
 
@@ -6107,6 +6183,7 @@ public:
 
         friend class piecewise_constant_distribution;
 
+#if !defined(_LIBCPP_SGX_CONFIG)
         template <class _CharT, class _Traits, class _RT>
         friend
         basic_ostream<_CharT, _Traits>&
@@ -6118,6 +6195,7 @@ public:
         basic_istream<_CharT, _Traits>&
         operator>>(basic_istream<_CharT, _Traits>& __is,
                    piecewise_constant_distribution<_RT>& __x);
+#endif
     };
 
 private:
@@ -6187,6 +6265,7 @@ public:
                            const piecewise_constant_distribution& __y)
         {return !(__x == __y);}
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits, class _RT>
     friend
     basic_ostream<_CharT, _Traits>&
@@ -6198,6 +6277,7 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                piecewise_constant_distribution<_RT>& __x);
+#endif
 };
 
 template<class _RealType>
@@ -6327,6 +6407,7 @@ piecewise_constant_distribution<_RealType>::operator()(_URNG& __g, const param_t
     return (__u - __p.__areas_[__k]) / __p.__densities_[__k] + __p.__b_[__k];
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -6382,6 +6463,7 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
     }
     return __is;
 }
+#endif
 
 // piecewise_linear_distribution
 
@@ -6430,6 +6512,7 @@ public:
 
         friend class piecewise_linear_distribution;
 
+#if !defined(_LIBCPP_SGX_CONFIG)
         template <class _CharT, class _Traits, class _RT>
         friend
         basic_ostream<_CharT, _Traits>&
@@ -6441,6 +6524,7 @@ public:
         basic_istream<_CharT, _Traits>&
         operator>>(basic_istream<_CharT, _Traits>& __is,
                    piecewise_linear_distribution<_RT>& __x);
+#endif
     };
 
 private:
@@ -6510,6 +6594,7 @@ public:
                         const piecewise_linear_distribution& __y)
         {return !(__x == __y);}
 
+#if !defined(_LIBCPP_SGX_CONFIG)
     template <class _CharT, class _Traits, class _RT>
     friend
     basic_ostream<_CharT, _Traits>&
@@ -6521,6 +6606,7 @@ public:
     basic_istream<_CharT, _Traits>&
     operator>>(basic_istream<_CharT, _Traits>& __is,
                piecewise_linear_distribution<_RT>& __x);
+#endif
 };
 
 template<class _RealType>
@@ -6666,6 +6752,7 @@ piecewise_linear_distribution<_RealType>::operator()(_URNG& __g, const param_typ
         __deltad;
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits, class _RT>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -6721,9 +6808,8 @@ operator>>(basic_istream<_CharT, _Traits>& __is,
     }
     return __is;
 }
+#endif
 
 _LIBCPP_END_NAMESPACE_STD
-
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_RANDOM

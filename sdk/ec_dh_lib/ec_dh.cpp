@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,7 @@
  *
  */
 
+#include <sgx_secure_align.h>
 #include <limits.h>
 #include "stdlib.h"
 #include "string.h"
@@ -707,8 +708,18 @@ sgx_status_t sgx_dh_responder_proc_msg2(const sgx_dh_msg2_t* msg2,
 {
     sgx_status_t se_ret;
 
-    sgx_ec256_dh_shared_t shared_key;
-    sgx_key_128bit_t dh_smk;
+    //
+    // securely align shared key
+    //
+    //sgx_ec256_dh_shared_t shared_key;
+    sgx::custom_alignment<sgx_ec256_dh_shared_t, 0, sizeof(sgx_ec256_dh_shared_t)> oshared_key;
+    sgx_ec256_dh_shared_t& shared_key = oshared_key.v;
+    //
+    // securely align smk
+    //
+    //sgx_key_128bit_t dh_smk;
+    sgx::custom_alignment_aligned<sgx_key_128bit_t, sizeof(sgx_key_128bit_t), 0, sizeof(sgx_key_128bit_t)> odh_smk;
+    sgx_key_128bit_t& dh_smk = odh_smk.v;
 
     sgx_internal_dh_session_t* session = (sgx_internal_dh_session_t*)sgx_dh_session;
     bool is_LAv2 = false;

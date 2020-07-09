@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,6 +31,8 @@
 
 ENV := $(strip $(wildcard $(TOP_DIR)/buildenv.mk))
 
+SGX_MODE ?= HW
+
 ifeq ($(ENV),)
     $(error "Can't find $(TOP_DIR)/buildenv.mk")
 endif
@@ -47,43 +49,36 @@ CONFIG   := config.xml
 endif
 EDLFILE  := $(wildcard *.edl)
 
-LINUX_EPID := $(LINUX_EXTERNAL_DIR)/epid/lib/linux
+EPID_SDK_DIR := $(LINUX_EXTERNAL_DIR)/epid-sdk
 
-EXTERNAL_LIB_NO_CRYPTO = -lsgx_tstdc
+ifneq ($(SGX_MODE), HW)
+	URTSLIB := -lsgx_urts_sim
+	TRTSLIB := -lsgx_trts_sim
+else
+	URTSLIB := -lsgx_urts
+	TRTSLIB := -lsgx_trts
+endif
+EXTERNAL_LIB := -lsgx_tservice
 
-URTSLIB := -lsgx_urts
-TRTSLIB := -lsgx_trts
-EXTERNAL_LIB_NO_CRYPTO += -lsgx_tservice
+EXTERNAL_LIB += -lsgx_tstdc -lsgx_tcrypto -lsgx_tcxx
 
-TCRYPTO_LIBDIR := $(LINUX_SDK_DIR)/tlibcrypto
-EXTERNAL_LIB   = $(EXTERNAL_LIB_NO_CRYPTO) -L$(TCRYPTO_LIBDIR) -lsgx_tcrypto
-
-INCLUDE := -I$(LINUX_PSW_DIR)/ae/inc \
+INCLUDE := -I$(LINUX_PSW_DIR)/ae/inc                   \
+           -I$(SGX_HEADER_DIR)                         \
+           -I$(SGX_HEADER_DIR)/tlibc                   \
            -I$(COMMON_DIR)/inc                         \
-           -I$(COMMON_DIR)/inc/tlibc                   \
-           -I$(COMMON_DIR)/inc/internal                \
-           -I$(LINUX_SDK_DIR)/selib                    \
-           -I$(LINUX_SDK_DIR)/trts
+           -I$(COMMON_DIR)/inc/internal
 
-SIGNTOOL  := $(ROOT_DIR)/build/linux/sgx_sign
-SGXSIGN   := $(ROOT_DIR)/build/linux/sgx_sign
-
-KEYFILE   := $(LINUX_SDK_DIR)/sign_tool/sample_sec.pem
-EDGER8R   := $(LINUX_SDK_DIR)/edger8r/linux/_build/Edger8r.native
+SGXSIGN   := $(SGX_BIN_DIR)/sgx_sign
+EDGER8R   := $(SGX_BIN_DIR)/sgx_edger8r
 
 CXXFLAGS  += $(ENCLAVE_CXXFLAGS)
 CFLAGS    += $(ENCLAVE_CFLAGS)
 
-LDTFLAGS  = -L$(BUILD_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whole-archive \
-            -Wl,--start-group $(EXTERNAL_LIB) -Wl,--end-group                    \
-            -Wl,--version-script=$(ROOT_DIR)/build-scripts/enclave.lds $(ENCLAVE_LDFLAGS)
-
-LDTFLAGS_NO_CRYPTO = -L$(BUILD_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whole-archive \
-            -Wl,--start-group $(EXTERNAL_LIB_NO_CRYPTO) -Wl,--end-group                    \
+LDTFLAGS  = -L$(SGX_LIB_DIR) -Wl,--whole-archive $(TRTSLIB) -Wl,--no-whole-archive \
+            -Wl,--start-group $(EXTERNAL_LIB) -Wl,--end-group -Wl,--build-id       \
             -Wl,--version-script=$(ROOT_DIR)/build-scripts/enclave.lds $(ENCLAVE_LDFLAGS)
 
 LDTFLAGS += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map -Wl,--undefined=version -Wl,--gc-sections
-LDTFLAGS_NO_CRYPTO += -fuse-ld=gold -Wl,--rosegment -Wl,-Map=out.map -Wl,--undefined=version -Wl,--gc-sections
 
 DEFINES := -D__linux__
 

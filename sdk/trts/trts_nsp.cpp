@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -48,7 +48,7 @@
 #include "trts_internal.h"
 #include "internal/rts.h"
 
-static void init_stack_guard(void *tcs)
+static void __attribute__((section(".nipx"))) init_stack_guard(void *tcs)
 {
     thread_data_t *thread_data = get_thread_data();
     if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
@@ -89,7 +89,7 @@ extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
 
     if(cssa == 0)
     {
-        if((index >= 0) || (index == ECMD_INIT_SWITCHLESS) || (index == ECMD_RUN_SWITCHLESS_TWORKER))
+        if((index >= 0) || (index == ECMD_ECALL_PTHREAD))
         {
             // Initialize stack guard if necessary
             init_stack_guard(tcs);

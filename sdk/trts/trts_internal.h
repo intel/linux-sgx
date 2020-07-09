@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,25 +33,10 @@
 
 #include "util.h"
 #include "trts_shared_constants.h"
+#include "trts_internal_types.h"
 
 #define TD2TCS(td) ((const void *)(((thread_data_t*)(td))->stack_base_addr + (size_t)STATIC_STACK_SIZE + (size_t)SE_GUARD_PAGE_SIZE))
 #define TCS2CANARY(addr)    ((size_t *)((size_t)(addr)-(size_t)SE_GUARD_PAGE_SIZE-(size_t)STATIC_STACK_SIZE+sizeof(size_t)))
-
-typedef struct {
-    const void     *ecall_addr;
-    uint8_t         is_priv;
-} ecall_addr_t;
-
-typedef struct {
-    size_t          nr_ecall;
-    ecall_addr_t    ecall_table[1];
-} ecall_table_t;
-
-typedef struct {
-    size_t  nr_ocall;
-    uint8_t entry_table[1];
-} entry_table_t;
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,8 +57,7 @@ sgx_status_t trts_handle_exception(void *tcs);
 sgx_status_t do_ecall_add_thread(void *ms);
 sgx_status_t do_uninit_enclave(void *tcs);
 int check_static_stack_canary(void *tcs);
-sgx_status_t do_init_switchless(void* ms);
-sgx_status_t do_run_switchless_tworker(void* ms);
+sgx_status_t _pthread_thread_run(void* ms);
 
 #ifdef __cplusplus
 }

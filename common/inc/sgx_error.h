@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -44,6 +44,7 @@ typedef enum _status_t
     SGX_ERROR_ENCLAVE_LOST       = SGX_MK_ERROR(0x0004),      /* Enclave lost after power transition or used in child process created by linux:fork() */
     SGX_ERROR_INVALID_STATE      = SGX_MK_ERROR(0x0005),      /* SGX API is invoked in incorrect order or state */
     SGX_ERROR_FEATURE_NOT_SUPPORTED = SGX_MK_ERROR(0x0008),   /* Feature is not supported on this platform */
+    SGX_PTHREAD_EXIT                          =    SGX_MK_ERROR(0x0009),    /* Enclave is exited with pthread_exit() */
 
 
 

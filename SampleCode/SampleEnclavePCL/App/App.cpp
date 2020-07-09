@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -205,6 +205,8 @@ sgx_status_t  initialize_enclave ( const char *file_name, sgx_enclave_id_t* eid 
         read_num = fread(sealed_blob, 1, sealed_blob_size, fsealp);
         if ( read_num != sealed_blob_size )
         {
+            delete [] sealed_blob;
+            sealed_blob = NULL;
             printf ( "Warning: Failed to read sealed blob.\n" );
         }
         else
@@ -244,7 +246,7 @@ sgx_status_t  initialize_enclave ( const char *file_name, sgx_enclave_id_t* eid 
         {
             printf("ecall_generate_sealed_blob: ret = %d, gret = 0x%x\n", ret, gret);
             sgx_destroy_enclave(seal_eid);
-            delete sealed_blob;
+            delete [] sealed_blob;
             return ret;
         }
         sgx_destroy_enclave(seal_eid);
@@ -257,7 +259,7 @@ sgx_status_t  initialize_enclave ( const char *file_name, sgx_enclave_id_t* eid 
     }
     // Load the PCL protected Enclave:
     ret = sgx_create_encrypted_enclave(file_name, SGX_DEBUG_FLAG, NULL, NULL, eid, NULL, sealed_blob);
-    delete sealed_blob;
+    delete [] sealed_blob;
 #else  // SGX_USE_PCL
     ret = sgx_create_enclave(file_name, SGX_DEBUG_FLAG, NULL, NULL, eid, NULL);
 #endif // SGX_USE_PCL
@@ -287,7 +289,9 @@ int SGX_CDECL main(int argc, char *argv[])
 
 
     /* Initialize the enclave */
-    if ( initialize_enclave ( ENCLAVE_FILENAME, &global_eid ) < 0 ){
+    if ( initialize_enclave ( ENCLAVE_FILENAME, &global_eid ) != SGX_SUCCESS ){
+        printf("Enter a character before exit ...\n");
+        getchar();
         return -1; 
     }
  

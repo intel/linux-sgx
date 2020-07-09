@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -49,10 +49,14 @@ source ${SCRIPT_DIR}/installConfig
 # Fetch the gen_source script
 cp ${LINUX_INSTALLER_COMMON_DIR}/gen_source/gen_source.py ${SCRIPT_DIR}
 
-# Copy the license file
+# Copy the files according to the BOM
+python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/libsgx-urts.txt --installdir=pkgroot/libsgx-urts
+python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/libsgx-urts-package.txt --cleanup=false
 python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
 
 # Create the tarball
+URTS_VER=$(awk '/URTS_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 pushd ${INSTALL_PATH} &> /dev/null
+sed -i "s/\(URTS_VER=\).*/\1${URTS_VER}/" Makefile
 tar -zcvf ${TARBALL_NAME} *
 popd &> /dev/null

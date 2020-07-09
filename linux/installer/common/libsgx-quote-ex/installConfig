@@ -1,0 +1,8 @@
+QUOTE_EX_VERSION="1.0"
+TARBALL_NAME=libsgx-quote-ex_1.0.orig.tar.gz
+
+QUOTE_EX_PACKAGE_NAME=libsgx-quote-ex
+QUOTE_EX_DEV_PACKAGE_NAME=libsgx-quote-ex-dev
+
+LIB_DIR=lib
+INC_DIR=include

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -270,8 +270,8 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
 *           sgx_ec256_public_t *p_public_ga - Pointer to the remote public key - LITTLE ENDIAN
 *   Output: sgx_ec256_dh_shared_t *p_shared_key - Pointer to the shared DH key - LITTLE ENDIAN
 x-coordinate of (privKeyB - pubKeyA) */
-sgx_status_t sgx_ecc256_compute_shared_dhkey(sgx_ec256_private_t *p_private_b,
-                                             sgx_ec256_public_t *p_public_ga,
+sgx_status_t sgx_ecc256_compute_shared_dhkey(const sgx_ec256_private_t *p_private_b,
+                                             const sgx_ec256_public_t *p_public_ga,
                                              sgx_ec256_dh_shared_t *p_shared_key,
                                              sgx_ecc_state_handle_t ecc_handle)
 {

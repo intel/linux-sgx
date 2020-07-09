@@ -1,7 +1,8 @@
 [Unit]
 Description=Intel(R) Architectural Enclave Service Manager 
 After=syslog.target network.target auditd.service
-Wants=jhi.service
+After=remount-dev-exec.service
+Wants=remount-dev-exec.service
 
 [Service]
 User=aesmd
@@ -15,14 +16,17 @@ ExecStartPre=@aesm_folder@/linksgx.sh
 ExecStartPre=/bin/mkdir -p /var/run/aesmd/
 ExecStartPre=/bin/chown -R aesmd:aesmd /var/run/aesmd/
 ExecStartPre=/bin/chmod 0755 /var/run/aesmd/
+ExecStartPre=/bin/chown -R aesmd:aesmd /var/opt/aesmd/
+ExecStartPre=/bin/chmod 0750 /var/opt/aesmd/
 ExecStart=@aesm_folder@/aesm_service
 InaccessibleDirectories=/home
-ExecReload=/bin/kill -SIGUP $MAINPID
+ExecReload=/bin/kill -SIGHUP $MAINPID
 Restart=on-failure
 RestartSec=15s
 DevicePolicy=closed
 DeviceAllow=/dev/isgx rw
 DeviceAllow=/dev/sgx rw
-DeviceAllow=/dev/mei0 rw
+DeviceAllow=/dev/sgx/enclave rw
+DeviceAllow=/dev/sgx/provision rw
 [Install]
 WantedBy=multi-user.target

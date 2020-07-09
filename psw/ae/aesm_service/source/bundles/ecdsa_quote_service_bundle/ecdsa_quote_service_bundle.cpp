@@ -12,6 +12,7 @@
 #include "sgx_ql_core_wrapper.h"
 
 #include "cppmicroservices_util.h"
+#include "sgx_pce.h"
 
 using namespace cppmicroservices;
 std::shared_ptr<IPceService> g_pce_service;
@@ -161,20 +162,22 @@ static aesm_error_t quote3_error_to_aesm_error(quote3_error_t input)
     return ret;
 }
 
-sgx_pce_error_t sgx_set_pce_enclave_load_policy(
+/*NOTE: This function is called by sgx_ql_set_enclave_load_policy(SGX_QL_PERSISTENT)
+  below. In AESM, only valid policy is SGX_QL_PERSISTENT which is the default value.
+  So we can ignore it. */
+extern "C" __attribute__((visibility("default"))) sgx_pce_error_t sgx_set_pce_enclave_load_policy(
     sgx_ql_request_policy_t policy)
 {
-
     return SGX_PCE_SUCCESS;
 }
 
-sgx_pce_error_t sgx_pce_get_target(sgx_target_info_t *p_target,
+extern "C" __attribute__((visibility("default"))) sgx_pce_error_t sgx_pce_get_target(sgx_target_info_t *p_target,
     sgx_isv_svn_t *p_isvsvn)
 {
     return ae_error_to_pce_error(g_pce_service->pce_get_target(p_target, p_isvsvn));
 }
 
-sgx_pce_error_t sgx_get_pce_info(const sgx_report_t *p_report,
+extern "C" __attribute__((visibility("default"))) sgx_pce_error_t sgx_get_pce_info(const sgx_report_t *p_report,
     const uint8_t *p_pek,
     uint32_t pek_size,
     uint8_t crypto_suite,
@@ -191,7 +194,7 @@ sgx_pce_error_t sgx_get_pce_info(const sgx_report_t *p_report,
                 p_pce_isvsvn, p_pce_id, p_signature_scheme));
 }
 
-sgx_pce_error_t sgx_pce_sign_report(const sgx_isv_svn_t *p_isv_svn,
+extern "C" __attribute__((visibility("default"))) sgx_pce_error_t sgx_pce_sign_report(const sgx_isv_svn_t *p_isv_svn,
     const sgx_cpu_svn_t *p_cpu_svn,
     const sgx_report_t *p_report,
     uint8_t *p_sig,
@@ -201,11 +204,6 @@ sgx_pce_error_t sgx_pce_sign_report(const sgx_isv_svn_t *p_isv_svn,
     return ae_error_to_pce_error(g_pce_service->pce_sign_report(p_isv_svn,
                 p_cpu_svn, p_report, p_sig, sig_size, p_sig_out_size));
 }
-
-extern void unload_qe();
-extern quote3_error_t load_qe(sgx_enclave_id_t *p_qe_eid,
-                                  sgx_misc_attribute_t *p_qe_attributes,
-                                  sgx_launch_token_t *p_launch_token);
 
 class EcdsaQuoteServiceImp : public IQuoteProviderService
 {
@@ -217,6 +215,7 @@ public:
 
     ae_error_t start()
     {
+        AESMLogicLock lock(ecdsa_quote_mutex);
         if (initialized == true)
         {
             AESM_DBG_INFO("ecdsa bundle has been started");
@@ -245,16 +244,6 @@ public:
             return AE_FAILURE;
         }
 
-        sgx_enclave_id_t qe_eid = 0;
-        sgx_misc_attribute_t qe_attributes ={ 0 };
-        sgx_launch_token_t launch_token = { 0 };
-
-        if (SGX_QL_SUCCESS != load_qe(&qe_eid, &qe_attributes, &launch_token))
-        {
-            AESM_DBG_ERROR("Starting ecdsa bundle failed because QE3 failed to load");
-            return AE_FAILURE;
-        }
-
         initialized = true;
         AESM_DBG_INFO("ecdsa bundle started");
         return AE_SUCCESS;
@@ -262,7 +251,6 @@ public:
     void stop()
     {
         sgx_ql_set_enclave_load_policy(SGX_QL_EPHEMERAL);
-        unload_qe();
         initialized = false;
         AESM_DBG_INFO("ecdsa bundle stopped");
     }
@@ -340,13 +328,8 @@ public:
         {
             return AESM_PARAMETER_ERROR;
         }
-        // Clear return buffer, make sure spid is 0s
-        memset(att_key_id, 0, att_key_id_size);
-        sgx_att_key_id_ext_t *p_att_key_id = (sgx_att_key_id_ext_t *)att_key_id;
-        memcpy_s(&p_att_key_id->base, sizeof(p_att_key_id->base),
-            &g_default_ecdsa_p256_att_key_id, sizeof(g_default_ecdsa_p256_att_key_id));
-        p_att_key_id->base.algorithm_id = SGX_QL_ALG_ECDSA_P256;
-        p_att_key_id->base.prod_id = 1;
+        sgx_ql_get_keyid((sgx_att_key_id_ext_t *)att_key_id);
+        // sgx_ql_get_keyid should always return success
         return AESM_SUCCESS;
     }
 

@@ -1,4 +1,5 @@
 #!/usr/bin/make -f
+include ../../buildenv.mk
 
 #variables are set by configure
 prefix = @prefix@
@@ -19,7 +20,7 @@ SIZE_CFLAGS := -O2
 CC_FLAGS := $(CFLAGS) $(SIZE_CFLAGS) -Werror -Wall -Wextra -Wno-missing-braces \
 	-Wno-missing-field-initializers -Wno-unknown-pragmas -Wno-unused-function \
 	-fno-strict-aliasing -Wno-unused-but-set-variable -Wno-comment -Wformat \
-	-Wformat-security -fstack-protector -DNDEBUG -D_FORTIFY_SOURCE=2
+	-Wformat-security -fstack-protector -DNDEBUG -D_FORTIFY_SOURCE=2 $(MITIGATION_CFLAGS)
 
 #intel c compiler flags
 ICC_FLAGS := $(CFLAGS) $(SIZE_CFLAGS) -Werror -Wall -Wextra -DNDEBUG \
@@ -111,7 +112,9 @@ clean:
 	$(MAKE) -C ./epid/common/ clean
 	$(MAKE) -C ./epid/member/ clean
 	$(MAKE) -C ./epid/verifier/ clean
-	$(MAKE) -C ./ext/gtest/ clean
+ifeq ("$(shell test -f ./ext/gtest/Makefile && echo Makefile exists)", "Makefile exists")
+	$(MAKE) -C ./ext/gtest clean
+endif
 	$(MAKE) -C ./epid/common-testhelper/ clean
 	$(MAKE) -C ./ext/argtable3/ clean
 ifneq ("$(wildcard ./ext/google_benchmark)","")

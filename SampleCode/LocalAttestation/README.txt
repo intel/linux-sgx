@@ -1,40 +1,37 @@
 ---------------------------
-Purpose of LocalAttestation
----------------------------
-The project demonstrates:
-- How to establish a protected channel
-- Secret message exchange using enclave to enclave function calls
+The project aims to demo SGX local attesation flow. 
 
 ------------------------------------
-How to Build/Execute the Sample Code
+How to Build the Sample Code
 ------------------------------------
 1. Install Intel(R) Software Guard Extensions (Intel(R) SGX) SDK for Linux* OS
-2. Make sure your environment is set:
-    $ source ${sgx-sdk-install-path}/environment
-3. Build the project with the prepared Makefile:
-    a. Hardware Mode, Debug build:
-        $ make
-    b. Hardware Mode, Pre-release build:
-        $ make SGX_PRERELEASE=1 SGX_DEBUG=0
-    c. Hardware Mode, Release build:
-        $ make SGX_DEBUG=0
-    d. Simulation Mode, Debug build:
-        $ make SGX_MODE=SIM
-    e. Simulation Mode, Pre-release build:
-        $ make SGX_MODE=SIM SGX_PRERELEASE=1 SGX_DEBUG=0
-    f. Simulation Mode, Release build:
-        $ make SGX_MODE=SIM SGX_DEBUG=0
-    g. Use Local Attestation 2.0 protocol, Hardware Mode, Debug build:
+2. Build the project with the prepared Makefile:
+        a. Hardware Mode, Debug build:
+		$ make
+        b. Hardware Mode, Pre-release build:
+		$ make SGX_PRERELEASE=1 SGX_DEBUG=0
+        c. Hardware Mode, release build:
+		$ make SGX_DEBUG=0
+        d. Simulation Mode, Debug build:
+		$ make SGX_MODE=SIM
+        e. Simulation Mode, Pre-release build:
+		$ make SGX_MODE=SIM SGX_PRERELEASE=1 SGX_DEBUG=0
+        f. Simulation Mode, Release build:
+		$ make SGX_MODE=SIM SGX_DEBUG=0
+        g. Use Local Attestation 2.0 protocol, Hardware Mode, Debug build:
         $ make LAv2=1
-       Note: Local Attestaion 2.0 protocol will be used if 'LAv2' is defined.
-4. Execute the binary directly:
-    $ ./app
-5. Remember to "make clean" before switching build mode
+           Note: Local Attestaion 2.0 protocol will be used if 'LAv2' is defined.
 
--------------------------------------------------
-Launch token initialization
--------------------------------------------------
-If using libsgx-enclave-common or sgxpsw under version 2.4, an initialized variable launch_token needs to be passed as the 3rd parameter of API sgx_create_enclave. For example,
 
-sgx_launch_token_t launch_token = {0};
-sgx_create_enclave(ENCLAVE_FILENAME, SGX_DEBUG_FLAG, launch_token, NULL, &global_eid, NULL);
+When build is successful, you can find executable binaries in "bin" sub-folder.
+ 
+------------------------------------
+How to Execute the Sample Code
+------------------------------------
+1. Install SGX driver and PSW for Linux* OS
+2. If you want to try local attesation flow from two process, you can goto "bin" sub-folder
+   a. run "./appresponder".
+      It would launch a process to act as local attestation responder.
+   b. run "./appinitiator"
+      It would launch a process to act as local attestation initator.
+3. If you want to try local attesation flow from one process, you can goto "bin" sub-folder and run "./app"

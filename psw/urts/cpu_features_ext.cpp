@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -63,19 +63,20 @@ void get_cpu_features_ext(uint64_t *__intel_cpu_feature_indicator)
     bool ecpuid14_initialized = false;
     uint64_t xfeature_mask = 0;
     bool xfeature_initialized = false;
+    bool is_intel = false;
     FeatureId curr_feature;
 
-	uint64_t cpu_feature_indicator = get_bit_from_feature_id(c_feature_generic_ia32);
+    uint64_t cpu_feature_indicator = get_bit_from_feature_id(c_feature_generic_ia32);
 
-	sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
-	if (cpuid0_eax == 0 ||
-		!(cpuid0_ebx == CPU_GENU_VAL &&
-			cpuid0_edx == CPU_INEI_VAL &&
-			cpuid0_ecx == CPU_NTEL_VAL))
-	{
-		*__intel_cpu_feature_indicator = cpu_feature_indicator;
-		return;
-	}
+    sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
+    if (cpuid0_eax == 0)
+    {
+        *__intel_cpu_feature_indicator = cpu_feature_indicator;
+        return;
+    }
+
+    is_intel = (cpuid0_ebx == CPU_GENU_VAL && cpuid0_edx == CPU_INEI_VAL &&
+                cpuid0_ecx == CPU_NTEL_VAL);
 
 #define BEGIN_FEATURE(value) \
     curr_feature = c_feature_##value;
@@ -191,14 +192,18 @@ void get_cpu_features_ext(uint64_t *__intel_cpu_feature_indicator)
 
     BEGIN_FEATURE(rdrnd)     CPUID_EAX1_ECX_VALUE(1 << 30)   END_FEATURE
     BEGIN_FEATURE(bmi)       CPUID_EAX7_ECX0_EBX_VALUE((1 << 3) | (1 << 8)) END_FEATURE
-    BEGIN_FEATURE(sgx)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 2)   END_FEATURE
-    BEGIN_FEATURE(hle)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 4)   END_FEATURE
-    BEGIN_FEATURE(rtm)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 11)  END_FEATURE
+    if (is_intel) {
+        BEGIN_FEATURE(sgx)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 2)   END_FEATURE
+        BEGIN_FEATURE(hle)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 4)   END_FEATURE
+        BEGIN_FEATURE(rtm)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 11)  END_FEATURE
+    }
     BEGIN_FEATURE(adx)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 19)  END_FEATURE
     BEGIN_FEATURE(rdseed)    CPUID_EAX7_ECX0_EBX_VALUE(1 << 18)  END_FEATURE
     BEGIN_FEATURE(clwb)      CPUID_EAX7_ECX0_EBX_VALUE(1 << 24)  END_FEATURE
 
-    BEGIN_FEATURE(lzcnt)     CPUID_EAX80000001_ECX_VALUE(1 << 5) END_FEATURE
+    if (is_intel) {
+        BEGIN_FEATURE(lzcnt)     CPUID_EAX80000001_ECX_VALUE(1 << 5) END_FEATURE
+    }
     BEGIN_FEATURE(wbnoinvd)  CPUID_EAX80000008_EBX_VALUE(1 << 9) END_FEATURE
 
     BEGIN_FEATURE(gfni)      CPUID_EAX7_ECX0_ECX_VALUE(1 << 8)   END_FEATURE

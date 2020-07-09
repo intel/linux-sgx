@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -35,7 +35,7 @@
 #include "sgx_tseal.h"
 #include "aeerror.h"
 #include "se_thread.h"
-#include "internal/se_rwlock.h"
+#include "se_rwlock.h"
 #include "oal/oal.h"
 #include "se_wrapper.h"
 #include <time.h>
@@ -72,10 +72,8 @@ public:
         _is_white_list_url_valid=false;
         _is_server_url_valid=false;
     }
-    const char *get_pse_provisioning_url(const endpoint_selection_infos_t& es_info);
 public:
     static ae_error_t verify_file_by_xgid(uint32_t xgid);
-    const char* get_dal_emulator_url(){return NULL;}/*dal emulator not supported. The interface is kept to keep PSE untrusted code compilable*/
     ae_error_t get_url_info();
     const char *get_server_url(aesm_network_server_enum_type_t type);
     /*Function to get result of Endpoint Selection Protocol from Backend Server*/

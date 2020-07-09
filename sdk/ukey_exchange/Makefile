@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -36,10 +36,7 @@ CFLAGS   += -Werror
 CXXFLAGS += -Werror
 
 INCLUDE += -I$(COMMON_DIR)/inc/internal \
-           -I$(COMMON_DIR)/inc \
-           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/quote/inc/ \
-           -I$(DCAP_DIR)/QuoteGeneration/quote_wrapper/common/inc/ \
-           -I$(DCAP_DIR)/QuoteGeneration/pce_wrapper/inc/
+           -I$(COMMON_DIR)/inc 
 
 INCLUDE += -I$(SGX_IPP_INC)
 
@@ -47,7 +44,7 @@ vpath %.cpp $(COMMON_DIR)/src
 
 vpath %.c $(TOP_DIR)/common/src
 
-KE_DEFINITIONS = -DAESM_ECDSA_BUNDLE
+KE_DEFINITIONS = 
 CXXFLAGS += -fPIC -fno-exceptions -fno-rtti $(KE_DEFINITIONS) $(INCLUDE)
 CFLAGS += -fPIC $(KE_DEFINITIONS) $(INCLUDE)
 

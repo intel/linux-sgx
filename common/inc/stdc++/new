@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,15 +55,15 @@ void* SGXAPI operator new (size_t);
 void* SGXAPI operator new[] (size_t);
 
 void* SGXAPI operator new (size_t, const std::nothrow_t&);
-void* SGXAPI operator new (size_t, void*);
+inline void* SGXAPI operator new (size_t, void* __p)  {return __p;};
 void* SGXAPI operator new[] (size_t, const std::nothrow_t&);
-void* SGXAPI operator new[] (size_t, void*);
+inline void* SGXAPI operator new[] (size_t, void* __p)  {return __p;};
 
 void SGXAPI operator delete (void*);
 void SGXAPI operator delete (void*, const std::nothrow_t&);
-void SGXAPI operator delete (void*, void*);
+inline void SGXAPI operator delete (void*, void*){};
 void SGXAPI operator delete[] (void*);
 void SGXAPI operator delete[] (void*, const std::nothrow_t&);
-void SGXAPI operator delete[] (void*, void*);
+inline void SGXAPI operator delete[] (void*, void*){};
 
 #endif /* _NEW_ */

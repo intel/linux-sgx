@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,7 +38,6 @@ extern "C"{
 #endif
 
 #include <stdint.h>
-uint32_t certPseSvn();
 
 /*Function to provide an upper bound of buffer size of encoded message for an input request
  *@param req, the header for the input request such as ProvMsg1 or ProvMsg3
@@ -63,7 +62,7 @@ bool encode_request(const uint8_t *req, uint32_t req_len, uint8_t *out_buf, uint
 /*Function to decode an response message from Provisioning Server
  *@param input_buf, pointer to the encoded response message
  *@param input_len, length in bytes of the encoded response message
- *@param resp, pointer to a buffer to recieve the decoded message 
+ *@param resp, pointer to a buffer to receive the decoded message 
  *@param out_len, *out_len to pass in the buffer len and return the decoded response message
  *@return true if successful and false if there's any error. No error code provided
  */

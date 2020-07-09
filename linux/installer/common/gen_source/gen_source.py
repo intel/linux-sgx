@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -31,7 +31,7 @@
 #
 
 #  This script is used to copy file from src to dest as descript in a BOM file
-#  example: python gen_source.py --bom=PATH_TO_BOM [--cleanup=false] [--deliverydir=DIR_RELATIVE_TO_gen_source.py]
+#  example: python gen_source.py --bom=PATH_TO_BOM [--cleanup=false] [--deliverydir=DIR_RELATIVE_TO_gen_source.py] [--installdir=DIR_APPEND_BEFORE_INSTALLDIR]
 #
 
 
@@ -44,15 +44,17 @@ def parse_cmd(argc, argv):
 	global bom_file
 	global cleanup
 	global deliverydir
+	global installdir
 
 	bom_file = ""
 	cleanup = True
 	deliverydir = ""
+	installdir = ""
 
 	local_path = os.path.split(os.path.realpath(sys.argv[0]))[0]
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], "", ["bom=", "cleanup=", "deliverydir="])
+		opts, args = getopt.getopt(sys.argv[1:], "", ["bom=", "cleanup=", "deliverydir=", "installdir="])
 	except getopt.GetoptError as err:
 		print(str(err))
 		return False
@@ -72,6 +74,9 @@ def parse_cmd(argc, argv):
 
 		if option == "--deliverydir":
 			deliverydir = value
+
+		if option == "--installdir":
+			installdir = value
 
 
 	if bom_file == "":
@@ -156,7 +161,11 @@ def copy_txt_files(local_path):
 			src = src.replace("<deliverydir>/", home_path + "/")
 		else:
 			src = src.replace("<deliverydir>/", deliverydir + "/")
-		dest = dest.replace("<installdir>/", local_path + "/output/")	
+
+		if installdir == "":
+			dest = dest.replace("<installdir>/", local_path + "/output/")
+		else:
+			dest = dest.replace("<installdir>/", local_path + "/output/" + installdir + "/")
 
 		if os.path.exists(src) == True:
 			#check whether the src is a folder or file
@@ -186,7 +195,7 @@ if __name__ == "__main__":
 	ret = parse_cmd(len(sys.argv), sys.argv)
 	if ret == False:
 		print ("Usage:")
-		print ("python gen_source.py --bom=PATH_TO_BOM [--cleanup=false] [--deliverydir=DIR_RELATIVE_TO_gen_source.py]")
+		print ("python gen_source.py --bom=PATH_TO_BOM [--cleanup=false] [--deliverydir=DIR_RELATIVE_TO_gen_source.py] [--installdir=DIR_APPEND_BEFORE_INSTALLDIR]")
 		exit(1)
 
 	#script locate direction

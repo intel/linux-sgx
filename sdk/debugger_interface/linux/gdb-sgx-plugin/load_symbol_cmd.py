@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -89,7 +89,7 @@ def GetLoadSymbolCommand(EnclaveFile, Base):
             # Write the GDB 'add-symbol-file' command with all the arguments to the setup GDB command file.
             # Note: The mandatory argument for the 'add-symbol-file' command is the .text section without a
             # '-s .SectionName'.  All other sections need the '-s .SectionName'.
-            gdbcmd = "add-symbol-file '" + EnclaveFile + "' " + '%(Location)#08x' % {'Location':int(Out[99][2])} + " -readnow "
+            gdbcmd = "add-symbol-file '" + EnclaveFile + "' " + '%(Location)#08x' % {'Location':int(Out[99][2])} + " "
             for j in range(i):
                 gdbcmd += Out[j][0] + " " + Out[j][1] + " " + '%(Location)#08x' % {'Location' : int(Out[j][2])} + " " + Out[j][3]
         else:

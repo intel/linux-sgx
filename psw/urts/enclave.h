@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -42,7 +42,6 @@
 #include "file.h"
 #include "uncopyable.h"
 #include "node.h"
-#include "uswitchless.h"
 
 class CLoader;
 
@@ -71,7 +70,7 @@ public:
     const debug_enclave_info_t* get_debug_info();
     void set_dbg_flag(bool dbg_flag) { m_dbg_flag = dbg_flag; }
     bool get_dbg_flag() { return m_dbg_flag; }
-    int set_extra_debug_info(secs_t& secs, void* g_peak_heap_addr);
+    int set_extra_debug_info(secs_t& secs, CLoader &ldr);
     //rdunlock is used in signal handler
     void rdunlock() { se_rdunlock(&m_rwlock); }
     void push_ocall_frame(ocall_frame_t* frame_point, CTrustThread *trust_thread);
@@ -82,16 +81,16 @@ public:
     sgx_status_t fill_tcs_mini_pool_fn();
     uint8_t* get_sealed_key();
     void set_sealed_key(uint8_t *sealed_key);
-    sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
+    sgx_status_t init_uswitchless(const void* config);
     void destroy_uswitchless(void);
     sgx_target_info_t get_target_info();
 #ifdef SE_SIM
     void *get_global_data_sim_ptr();
 #endif 
+    CTrustThread * get_free_tcs();
 
 private:
     CTrustThread * get_tcs(int ecall_cmd);
-    void put_tcs(CTrustThread *trust_thread);
     sgx_status_t error_trts2urts(unsigned int trts_error);
 
     void set_dynamic_tcs_list_size(CLoader &ldr);
@@ -116,8 +115,8 @@ private:
     bool                    m_pthread_is_valid;
     se_handle_t             m_new_thread_event;
     uint8_t                 *m_sealed_key;
-    struct sl_uswitchless*  m_uswitchless;
-    bool                    m_us_has_started;
+    void*                   m_switchless;
+    bool                    m_first_ecall;
     sgx_target_info_t       m_target_info;
     size_t                  m_dynamic_tcs_list_size;
 #ifdef SE_SIM    
@@ -131,6 +130,7 @@ public:
     static CEnclavePool *instance();
     int add_enclave(CEnclave *enclave);
     CEnclave * get_enclave(const sgx_enclave_id_t enclave_id);
+    CEnclave * get_enclave_with_tcs(const void * const tcs);
     CEnclave * ref_enclave(const sgx_enclave_id_t enclave_id);
     void unref_enclave(CEnclave *enclave);
     CEnclave * remove_enclave(const sgx_enclave_id_t enclave_id, sgx_status_t &status);

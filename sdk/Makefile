@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -29,16 +29,13 @@
 #
 #
 
+include ../buildenv.mk
 
-ifneq ($(USE_OPT_LIBS), 0)
-include Makefile.opt_lib
-else
 include Makefile.source
-endif
 
 # SDK requires prebuilt IPP libraries.
 CHECK_OPT :=
-ifeq ("$(wildcard $(LINUX_EXTERNAL_DIR)/ippcp_internal/inc)", "")
+ifeq ("$(wildcard $(LINUX_EXTERNAL_DIR)/ippcp_internal/lib/linux/intel64)", "")
 CHECK_OPT := opt_check_failed
 endif
 
@@ -51,6 +48,10 @@ opt_check_failed:
 .PHONY: all
 all: $(CHECK_OPT)
 	$(MAKE) components
+ifneq ($(MITIGATION-CVE-2020-0551),)
+	$(RM) -r $(BUILD_DIR)$(MITIGATION-CVE-2020-0551)
+	mv $(BUILD_DIR) $(BUILD_DIR)$(MITIGATION-CVE-2020-0551)
+endif
 
 .PHONY: rebuild
 rebuild: 

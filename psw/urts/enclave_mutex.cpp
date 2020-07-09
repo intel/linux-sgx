@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -34,7 +34,7 @@
 #include "enclave.h"
 #include "se_event.h"
 
-#include "internal/se_error_internal.h"
+#include "se_error_internal.h"
 
 /* wait on untrusted event */
 extern "C" int sgx_thread_wait_untrusted_event_ocall(const void *self)

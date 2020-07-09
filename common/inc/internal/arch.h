@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -47,7 +47,11 @@
 #define STATIC_ASSERT_UNUSED_ATTRIBUTE __attribute__((unused))
 #define _ASSERT_CONCAT(a, b) a##b
 #define ASSERT_CONCAT(a, b) _ASSERT_CONCAT(a, b)
+#ifdef  __cplusplus
+#define se_static_assert(e) static_assert(e, "static assert error")
+#else
 #define se_static_assert(e) typedef char ASSERT_CONCAT(assert_line, __LINE__)[(e)?1:-1] STATIC_ASSERT_UNUSED_ATTRIBUTE
+#endif
 
 se_static_assert(sizeof(sgx_key_request_t) == 512);
 se_static_assert(sizeof(sgx_target_info_t) == 512);
@@ -170,6 +174,7 @@ typedef uint64_t si_flags_t;
 #define SI_FLAGS_R                  (SI_FLAG_R|SI_FLAG_REG)
 #define SI_FLAGS_RW                 (SI_FLAG_R|SI_FLAG_W|SI_FLAG_REG)
 #define SI_FLAGS_RX                 (SI_FLAG_R|SI_FLAG_X|SI_FLAG_REG)
+#define SI_FLAGS_RWX              (SI_FLAG_R|SI_FLAG_W|SI_FLAG_X|SI_FLAG_REG)
 #define SI_FLAGS_TCS                (SI_FLAG_TCS)
 #define SI_FLAGS_SECS               (SI_FLAG_SECS)
 #define SI_MASK_TCS                 (SI_FLAG_PT_MASK)

@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -29,39 +29,34 @@
 #
 #
 
-include scripts/installConfig
+include installConfig
 
-SOURCE_FOLDER=package
-SCRIPTS_FOLDER=scripts
+PACKAGE_ROOT_FOLDER=pkgroot
+PACKAGES=$(notdir $(wildcard $(PACKAGE_ROOT_FOLDER)/*))
 
-INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(ECL_PACKAGES_PATH)/$(ECL_PKG_NAME))
-SOURCE_INSTALL_PATH=$(INSTALL_PATH)
-SCRIPTS_INSTALL_PATH=$(INSTALL_PATH)/$(SCRIPTS_FOLDER)
-ECL_LIB_PATH=$(SOURCE_INSTALL_PATH)/$(LIB_DIR)
-USR_LIB_PATH=$(addsuffix /$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null), $(addprefix $(DESTDIR)/usr/, $(notdir $(shell gcc -print-multi-os-directory))))
+USR_LIB_PATH=/usr/$(notdir $(shell gcc -print-multi-os-directory))/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null)
+USR_INC_PATH=/usr/$(INC_DIR)
 
-UAE_VER=1.0.0
-URTS_VER=1.0.0
 ECL_VER=1.0.0
+SPLIT_VERSION=$(word $2,$(subst ., ,$1))
 
 default:
 
-install:
-	install -d $(SOURCE_INSTALL_PATH)
-	install -d $(SCRIPTS_INSTALL_PATH)
-	install -d $(USR_LIB_PATH)
-	cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
-	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
-	mv $(ECL_LIB_PATH)/libsgx_uae_service.so $(USR_LIB_PATH)
-	mv $(ECL_LIB_PATH)/libsgx_urts.so $(USR_LIB_PATH)
-	mv $(ECL_LIB_PATH)/libsgx_enclave_common.so $(USR_LIB_PATH)
-	rmdir $(ECL_LIB_PATH)
-	cd $(USR_LIB_PATH) && \
-	mv libsgx_uae_service.so libsgx_uae_service.so.$(UAE_VER) && \
-	ln -fs libsgx_uae_service.so.$(UAE_VER) libsgx_uae_service.so.$(shell echo $(UAE_VER) |awk -F. '{print $$1}') && \
-	ln -fs libsgx_uae_service.so.$(shell echo $(UAE_VER) |awk -F. '{print $$1}') libsgx_uae_service.so && \
-	mv libsgx_urts.so libsgx_urts.so.$(URTS_VER) && \
-	ln -fs libsgx_urts.so.$(URTS_VER) libsgx_urts.so.$(shell echo $(URTS_VER) |awk -F. '{print $$1}') && \
-	ln -fs libsgx_urts.so.$(shell echo $(URTS_VER) |awk -F. '{print $$1}') libsgx_urts.so && \
+install: $(PACKAGES)
+	cd $(shell readlink -m $(DESTDIR)/$(ENCLAVE_COMMON_PACKAGE_NAME)/$(USR_LIB_PATH)) && \
 	mv libsgx_enclave_common.so libsgx_enclave_common.so.$(ECL_VER) && \
-	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(shell echo $(ECL_VER) |awk -F. '{print $$1}')
+	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1)
+	cd $(shell readlink -m $(DESTDIR)/$(ENCLAVE_COMMON_DEV_PACKAGE_NAME)/$(USR_LIB_PATH)) && \
+	ln -fs libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1) libsgx_enclave_common.so
+
+$(PACKAGES):
+	install -d $(shell readlink -m $(DESTDIR)/$@)
+	$(if $(wildcard $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR)/.*), \
+		install -d $(shell readlink -m $(DESTDIR)/$@/$(USR_LIB_PATH)) && \
+		mv $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR)/*.so $(DESTDIR)/$@/$(USR_LIB_PATH) && \
+		rm -fr $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR))
+	$(if $(wildcard $(PACKAGE_ROOT_FOLDER)/$@/$(INC_DIR)/.*), \
+		install -d $(shell readlink -m $(DESTDIR)/$@/$(USR_INC_PATH)) && \
+		install -d $(shell readlink -m $(DESTDIR)/$@/$(USR_LIB_PATH)) && \
+		mv $(PACKAGE_ROOT_FOLDER)/$@/$(INC_DIR)/* $(DESTDIR)/$@/$(USR_INC_PATH))
+	cp -r $(PACKAGE_ROOT_FOLDER)/$@/* $(DESTDIR)/$@/

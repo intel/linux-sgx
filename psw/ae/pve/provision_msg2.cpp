@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,7 @@
  *
  */
 
+#include <sgx_secure_align.h>
 #include <sgx_random_buffers.h>
 #include "msg3_parm.h"
 #include "se_sig_rl.h"
@@ -129,16 +130,18 @@ static pve_status_t prepare_epid_member(const proc_prov_msg2_blob_input_t *msg2_
             return PVEC_EPID_BLOB_ERROR; //return PVEC_EPID_BLOB_ERROR to tell AESM to backup retrial of old epid blob
 
     se_plaintext_epid_data_sdk_t epid_cert;
-    se_secret_epid_data_sdk_t epid_data;
-    uint32_t epid_data_len = sizeof(epid_data);
+    //se_secret_epid_data_sdk_t epid_data;
+    sgx::custom_alignment<se_secret_epid_data_sdk_t, __builtin_offsetof(se_secret_epid_data_sdk_t, epid_private_key.f), sizeof(((se_secret_epid_data_sdk_t*)0)->epid_private_key.f)> oepid_data;
+    se_secret_epid_data_sdk_t* pepid_data = &oepid_data.v;
+    uint32_t epid_data_len = sizeof(*pepid_data);
     uint32_t epid_cert_len = sizeof(epid_cert);
     BitSupplier epid_prng = (BitSupplier)epid_random_func;
     EpidStatus epid_ret = kEpidNoErr;
     memset(&epid_cert, 0 ,sizeof(epid_cert));
-    memset(&epid_data, 0, sizeof(epid_data));    //now start unseal epid blob
+    memset(pepid_data, 0, sizeof(*pepid_data));    //now start unseal epid blob
     if((sgx_status=sgx_unseal_data(const_cast<sgx_sealed_data_t *>(old_epid_data_blob),
         reinterpret_cast<uint8_t *>(&epid_cert), &epid_cert_len,
-        reinterpret_cast<uint8_t *>(&epid_data),&epid_data_len)) != SGX_SUCCESS){
+        reinterpret_cast<uint8_t *>(pepid_data),&epid_data_len)) != SGX_SUCCESS){
             if(sgx_status == SGX_ERROR_MAC_MISMATCH){
                 ret_status = PVEC_EPID_BLOB_ERROR;//return PVEC_EPID_BLOB_ERROR to tell AESM to backup retrial of old epid blob
             }else{
@@ -167,7 +170,7 @@ static pve_status_t prepare_epid_member(const proc_prov_msg2_blob_input_t *msg2_
     //Previous gid is provided since this function assumes that Previous PSVN is provided
     //And the previous gid must be same as the gid in old epid blob cert
     if(memcmp(&epid_cert.epid_group_cert.gid, &msg2_blob_input->previous_gid, sizeof(GroupId))!=0||
-        memcmp(&epid_data.epid_private_key.gid, &msg2_blob_input->previous_gid, sizeof(GroupId))!=0){
+        memcmp(&pepid_data->epid_private_key.gid, &msg2_blob_input->previous_gid, sizeof(GroupId))!=0){
         ret_status = PVEC_EPID_BLOB_ERROR;
         goto ret_point;
     }
@@ -180,8 +183,8 @@ static pve_status_t prepare_epid_member(const proc_prov_msg2_blob_input_t *msg2_
 
     epid_ret = EpidProvisionKey(msg3_parm->epid_member, 
         &epid_cert.epid_group_cert,//group cert from old epid blob 
-        &epid_data.epid_private_key,//group private key from old epid blob 
-        &epid_data.member_precomp_data);
+        &pepid_data->epid_private_key,//group private key from old epid blob 
+        &pepid_data->member_precomp_data);
     if (kEpidNoErr != epid_ret) {
         ret_status = epid_error_to_pve_error(epid_ret);
         goto ret_point;
@@ -194,7 +197,7 @@ static pve_status_t prepare_epid_member(const proc_prov_msg2_blob_input_t *msg2_
     }
 
 ret_point:
-    (void)memset_s(&epid_data, sizeof(epid_data), 0, sizeof(epid_data));//clear secret data from stack
+    (void)memset_s(pepid_data, sizeof(*pepid_data), 0, sizeof(*pepid_data));//clear secret data from stack
     return ret_status;
 }
 

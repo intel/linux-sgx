@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -162,24 +162,18 @@ sgx_status_t sgx_hmac256_final(unsigned char *p_hash, int hash_len, sgx_hmac_sta
 * */
 sgx_status_t sgx_hmac256_close(sgx_hmac_state_handle_t hmac_handle)
 {
-	if (hmac_handle == NULL) {
-		return SGX_SUCCESS;
-	}
+    if (hmac_handle == NULL) {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
 	
-	int size = 0;
-	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-	IppStatus ipp_ret = ippStsNoErr;
-	
-	do {
-		ipp_ret = ippsHMACGetSize_rmf(&size);
-		ERROR_BREAK(ipp_ret);
-		
-		memset_s(hmac_handle, size, 0, size);
-		free(hmac_handle);
-		hmac_handle = NULL;
-		
-		ret = SGX_SUCCESS;
-	} while (0);
+    int size = 0;
+    IppStatus ipp_ret = ippsHMACGetSize_rmf(&size);
+    if (ipp_ret != ippStsNoErr)
+    {
+        free(hmac_handle);
+        return SGX_SUCCESS;
+    }
 
-	return ret;
+    CLEAR_FREE_MEM(hmac_handle, size);
+    return SGX_SUCCESS;
 }

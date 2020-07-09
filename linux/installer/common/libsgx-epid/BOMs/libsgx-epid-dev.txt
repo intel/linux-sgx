@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/common/inc/sgx_uae_epid.h	<installdir>/include/sgx_uae_epid.h	0	main	STP

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -162,6 +162,15 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
         }
         headers=tmp;
         AESM_DBG_TRACE("ocsp request");
+    }
+    else{
+        tmp = curl_slist_append(headers, "Content-Type: text/plain");
+        if(tmp == NULL){
+           AESM_DBG_ERROR("fail in add content type text/plain");
+           ae_ret = AE_FAILURE;
+           goto fini;
+        }
+        headers=tmp;
     }
     char buf[50];
     num_bytes = snprintf(buf,sizeof(buf), "Content-Length: %u", (unsigned int)msg_size);

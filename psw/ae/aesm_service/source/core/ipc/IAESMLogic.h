@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -75,25 +75,6 @@ class IAESMLogic {
                 uint32_t qe_report_info_size, uint8_t *qe_report_info,
                 uint32_t quote_size, uint8_t **quote) = 0;
 
-        virtual aesm_error_t createSession(uint32_t *session_id,
-                                           uint8_t **se_dh_msg1,
-                                           uint32_t se_dh_msg1_size) = 0;
-
-        virtual aesm_error_t closeSession(uint32_t sessionId) = 0;
-
-        virtual aesm_error_t exchangeReport(uint32_t session_id,
-                                            const uint8_t* se_dh_msg2,
-                                            uint32_t se_dh_msg2_size,
-                                            uint8_t** se_dh_msg3,
-                                            uint32_t se_dh_msg3_size) = 0;
-
-
-        virtual aesm_error_t invokeService(const uint8_t  *pse_message_req,
-                                           uint32_t pse_message_req_size,
-                                           uint8_t  **pse_message_resp,
-                                           uint32_t pse_message_resp_size) = 0;
-
-        virtual aesm_error_t getPsCap(uint64_t* ps_cap) = 0;
 
         virtual aesm_error_t reportAttestationStatus(uint8_t* platform_info, uint32_t platform_info_size,
                                            uint32_t attestation_error_code,
@@ -105,9 +86,12 @@ class IAESMLogic {
         virtual aesm_error_t getWhiteList(uint8_t** white_list, uint32_t mWhiteListSize) = 0;
         virtual aesm_error_t sgxGetExtendedEpidGroupId(uint32_t* x_group_id) = 0;
         virtual aesm_error_t sgxSwitchExtendedEpidGroup(uint32_t x_group_id) = 0;
-		virtual aesm_error_t sgxRegister(uint8_t* buf, uint32_t buf_size, uint32_t data_type) = 0;
+        virtual aesm_error_t sgxRegister(uint8_t* buf, uint32_t buf_size, uint32_t data_type) = 0;
 
-		virtual void service_stop() = 0;
+        virtual aesm_error_t get_supported_att_key_id_num(uint32_t *att_key_id_num) = 0;
+        virtual aesm_error_t get_supported_att_key_ids(uint8_t **att_key_ids, uint32_t att_key_ids_size) = 0;
+
+        virtual void service_stop() = 0;
         virtual ~IAESMLogic(){};
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,10 +39,7 @@
 #include "sgx_read_rand.h"
 #include "ssl_crypto.h"
 #include <time.h>
-
-#include "cppmicroservices/BundleContext.h"
-#include <cppmicroservices/GetBundleContext.h>
-using namespace cppmicroservices;
+#include <memory>
 
 extern std::shared_ptr<INetworkService> g_network_service;
 
@@ -375,7 +372,3 @@ const char *EndpointSelectionInfo::get_server_url(aesm_network_server_enum_type_
     }
 }
 
-const char *EndpointSelectionInfo::get_pse_provisioning_url(const endpoint_selection_infos_t& es_info)
-{
-    return es_info.provision_url;
-}
