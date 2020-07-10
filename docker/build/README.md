@@ -31,7 +31,7 @@ $ ./build_and_run_sample_docker.sh
 
 The Dockerfile specifies 3 image build targets:
 1. builder: Builds PSW and SDK bin installers from source. This requires downloading the prebuilt AEs and optimized libs from 01.org.
-2. aesm: Takes the PSW installer from builder to install and run the AESM deamon.
+2. aesm: Takes the PSW installer from builder to install and run the AESM daemon.
 3. sample: Installs the SDK installer from builder, then builds and runs the SampleEnclave app
 
 - [build_and_run_aesm_docker.sh](./build_and_run_aesm_docker.sh): Shows how to build and run the AESM image in Docker. This will start the AESM service listening to a named socket, mounted in /var/run/aesmd in the container from the host /tmp/aesmd.
