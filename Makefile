@@ -96,6 +96,10 @@ sdk_install_pkg: sdk
 	./linux/installer/bin/build-installpkg.sh sdk cve-2020-0551
 
 psw_install_pkg: psw
+ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so)", "")
+	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+	$(CP) external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so $(BUILD_DIR)
+endif
 	./linux/installer/bin/build-installpkg.sh psw
 
 .PHONY: deb_libsgx_ae_qe3
