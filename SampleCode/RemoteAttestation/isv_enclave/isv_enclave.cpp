@@ -45,7 +45,7 @@
 // EC key in the remote attestation with secure channel binding session may lead
 // to a security compromise. Every different SP the enclave communicates to
 // must have a unique SP public key. Delivery of the SP public key is
-// determined by the ISV. The TKE SIGMA protocl expects an Elliptical Curve key
+// determined by the ISV. The TKE SIGMA protocol expects an Elliptical Curve key
 // based on NIST P-256
 static const sgx_ec256_public_t g_sp_pub_key = {
     {

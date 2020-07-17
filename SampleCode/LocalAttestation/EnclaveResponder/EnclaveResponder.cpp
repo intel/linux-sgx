@@ -44,7 +44,7 @@
 
 std::map<sgx_enclave_id_t, dh_session_t>g_src_session_info_map;
 
-// this is expected initiator's MRSIGNER for demonstration purpose 
+// this is expected initiator's MRSIGNER for demonstration purpose
 sgx_measurement_t g_initiator_mrsigner = {
         {
                 0xc3, 0x04, 0x46, 0xb4, 0xbe, 0x9b, 0xaf, 0x0f, 0x69, 0x72, 0x84, 0x23, 0xea, 0x61, 0x3e, 0xf8,
@@ -63,7 +63,7 @@ extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t*
 {
     if(!peer_enclave_identity)
         return INVALID_PARAMETER_ERROR;
-   
+
     // check peer enclave's MRSIGNER
     if (memcmp((uint8_t *)&peer_enclave_identity->mr_signer, (uint8_t*)&g_initiator_mrsigner, sizeof(sgx_measurement_t)))
         return ENCLAVE_TRUST_ERROR;
@@ -76,7 +76,7 @@ extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t*
     if (peer_enclave_identity->attributes.flags & SGX_FLAGS_DEBUG)
         return ENCLAVE_TRUST_ERROR;
 #endif
-    
+
     return SUCCESS;
 }
 
@@ -92,10 +92,10 @@ uint32_t get_message_exchange_response(uint32_t inp_secret_data)
 
 }
 
-/* Function Description: Generates the response from the request message 
- * Parameter Descriptin:
+/* Function Description: Generates the response from the request message
+ * Parameter Description:
  * [input] decrtyped_data: pointer to decrypted data
- * [output] resp_buffer: pointer to response message, which is allocated in this function 
+ * [output] resp_buffer: pointer to response message, which is allocated in this function
  * [output] resp_length: this is response length */
 extern "C" uint32_t message_exchange_response_generator(char* decrypted_data,
                                               char** resp_buffer,
@@ -104,10 +104,10 @@ extern "C" uint32_t message_exchange_response_generator(char* decrypted_data,
     ms_in_msg_exchange_t *ms;
     uint32_t inp_secret_data;
     uint32_t out_secret_data;
-    
+
     if(!decrypted_data || !resp_length)
         return INVALID_PARAMETER_ERROR;
-    
+
     ms = (ms_in_msg_exchange_t *)decrypted_data;
 
     if(umarshal_message_exchange_request(&inp_secret_data,ms) != SUCCESS)

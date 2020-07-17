@@ -59,7 +59,7 @@ ae_error_t aesm_check_pek_signature(const signed_pek_t& signed_pek, const extend
     else if(result != SGX_EC_VALID)//sgx_code is SGX_SUCCESS
         return PVE_MSG_ERROR; //signature verification failed
     else
-        return AE_SUCCESS;//PEK Singatue verified successfully
+        return AE_SUCCESS;//PEK Signature verified successfully
 }
 
 ae_error_t aesm_verify_xegb(const extended_epid_group_blob_t& signed_xegb)
@@ -67,7 +67,7 @@ ae_error_t aesm_verify_xegb(const extended_epid_group_blob_t& signed_xegb)
     uint8_t result = SGX_EC_INVALID_SIGNATURE;
     sgx_status_t sgx_code = verify_xegb(signed_xegb, &result);
     if (sgx_code == SGX_ERROR_INVALID_PARAMETER)
-        return AE_INVALID_PARAMETER; 
+        return AE_INVALID_PARAMETER;
     else if(sgx_code == SGX_ERROR_OUT_OF_MEMORY)
         return AE_OUT_OF_MEMORY_ERROR;
     else if (sgx_code != SGX_SUCCESS)
@@ -77,4 +77,3 @@ ae_error_t aesm_verify_xegb(const extended_epid_group_blob_t& signed_xegb)
     else
         return AE_SUCCESS;//XEGB Signature verified successfully
 }
-

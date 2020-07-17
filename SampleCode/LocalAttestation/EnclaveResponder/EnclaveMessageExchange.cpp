@@ -112,7 +112,7 @@ extern "C" ATTESTATION_STATUS session_request(sgx_dh_msg1_t *dh_msg1,
         return status;
     }
     memcpy(&session_info.in_progress.dh_session, &sgx_dh_session, sizeof(sgx_dh_session_t));
-    //Store the session information under the correspoding source enlave id key
+    //Store the session information under the corresponding source enclave id key
     g_dest_session_info_map.insert(std::pair<uint32_t, dh_session_t>(*session_id, session_info));
 
     return status;
@@ -138,7 +138,7 @@ extern "C" ATTESTATION_STATUS exchange_report(sgx_dh_msg2_t *dh_msg2,
     memset(&dh_aek,0, sizeof(sgx_key_128bit_t));
     do
     {
-        //Retreive the session information for the corresponding source enclave id
+        //Retrieve the session information for the corresponding source enclave id
         std::map<uint32_t, dh_session_t>::iterator it = g_dest_session_info_map.find(session_id);
         if(it != g_dest_session_info_map.end())
         {

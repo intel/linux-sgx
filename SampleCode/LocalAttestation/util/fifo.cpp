@@ -53,7 +53,7 @@
  * Parameter Description:
  * [input] fiforequest: this is pointer to request message
  * [input] fiforequest_size: this is request message size
- * [output] fiforesponse: this is pointer fo response message, the buffer is allocated inside this function
+ * [output] fiforesponse: this is pointer for response message, the buffer is allocated inside this function
  * [output] fiforesponse_size: this is response message size
  * */
 int client_send_receive(FIFO_MSG *fiforequest, size_t fiforequest_size, FIFO_MSG **fiforesponse, size_t *fiforesponse_size)
@@ -62,8 +62,8 @@ int client_send_receive(FIFO_MSG *fiforequest, size_t fiforequest_size, FIFO_MSG
     long byte_num;
     char recv_msg[BUFFER_SIZE + 1] = {0};
     FIFO_MSG * response = NULL;
-  
-    struct sockaddr_un server_addr;  
+
+    struct sockaddr_un server_addr;
     int server_sock_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (server_sock_fd == -1)
     {
@@ -87,9 +87,9 @@ int client_send_receive(FIFO_MSG *fiforequest, size_t fiforequest_size, FIFO_MSG
     {
         printf("connection error, %s, line %d..\n", strerror(errno), __LINE__);
         ret = -1;
-        goto CLEAN; 
+        goto CLEAN;
     }
-    
+
     byte_num = recv(server_sock_fd, reinterpret_cast<char *>(recv_msg), BUFFER_SIZE, 0);
     if (byte_num > 0)
     {
@@ -97,7 +97,7 @@ int client_send_receive(FIFO_MSG *fiforequest, size_t fiforequest_size, FIFO_MSG
         {
             byte_num = BUFFER_SIZE;
         }
-    
+
         recv_msg[byte_num] = '\0';
 
         response = (FIFO_MSG *)malloc((size_t)byte_num);
@@ -126,11 +126,10 @@ int client_send_receive(FIFO_MSG *fiforequest, size_t fiforequest_size, FIFO_MSG
         printf("server exit!\n");
         ret = -1;
     }
-      
+
 
 CLEAN:
     close(server_sock_fd);
 
     return ret;
 }
-

@@ -319,14 +319,14 @@ int sp_ra_proc_msg1_req(const sample_ra_msg1_t *p_msg1,
     {
         // Get the sig_rl from attestation server using GID.
         // GID is Base-16 encoded of EPID GID in little-endian format.
-        // In the product, the SP and attesation server uses an established channel for
+        // In the product, the SP and attestation server uses an established channel for
         // communication.
         uint8_t* sig_rl;
         uint32_t sig_rl_size = 0;
 
         // The product interface uses a REST based message to get the SigRL.
-        //! Refer to the attesation server API for more information on how to communicate to
-        //! the real attesation server.
+        //! Refer to the attestation server API for more information on how to communicate to
+        //! the real attestation server.
         ret = g_sp_extended_epid_group_id->get_sigrl(p_msg1->gid, &sig_rl_size, &sig_rl);
         if(0 != ret)
         {
@@ -344,7 +344,7 @@ int sp_ra_proc_msg1_req(const sample_ra_msg1_t *p_msg1,
             break;
         }
 
-        // Generate the Service providers ECCDH key pair.
+        // Generate the Service providers ECDH key pair.
         sample_ret = sample_ecc256_open_context(&ecc_state);
         if(SAMPLE_SUCCESS != sample_ret)
         {
@@ -365,7 +365,7 @@ int sp_ra_proc_msg1_req(const sample_ra_msg1_t *p_msg1,
             break;
         }
 
-        // Need to save the SP ECCDH key pair to local storage.
+        // Need to save the SP ECDH key pair to local storage.
         if(memcpy_s(&g_sp_db.b, sizeof(g_sp_db.b), &priv_key,sizeof(priv_key))
            || memcpy_s(&g_sp_db.g_b, sizeof(g_sp_db.g_b),
                        &pub_key,sizeof(pub_key)))
@@ -861,7 +861,3 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
     }
     return ret;
 }
-
-
-
-
