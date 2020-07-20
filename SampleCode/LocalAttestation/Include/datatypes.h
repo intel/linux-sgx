@@ -75,8 +75,8 @@ typedef uint8_t cmac_128[MAC_SIZE];
 //Format of the AES-GCM message being exchanged between the source and the destination enclaves
 typedef struct _secure_message_t
 {
-    uint32_t session_id; //Session ID identifyting the session to which the message belongs
-    sgx_aes_gcm_data_t message_aes_gcm_data;    
+    uint32_t session_id; //Session ID identifying the session to which the message belongs
+    sgx_aes_gcm_data_t message_aes_gcm_data;
 }secure_message_t;
 
 //Format of the input function parameter structure

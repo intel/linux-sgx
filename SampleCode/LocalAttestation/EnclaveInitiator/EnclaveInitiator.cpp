@@ -51,12 +51,12 @@ dh_session_t g_session;
 // This is hardcoded responder enclave's MRSIGNER for demonstration purpose. The content aligns to responder enclave's signing key
 sgx_measurement_t g_responder_mrsigner = {
 	{
-		0x83, 0xd7, 0x19, 0xe7, 0x7d, 0xea, 0xca, 0x14, 0x70, 0xf6, 0xba, 0xf6, 0x2a, 0x4d, 0x77, 0x43, 
+		0x83, 0xd7, 0x19, 0xe7, 0x7d, 0xea, 0xca, 0x14, 0x70, 0xf6, 0xba, 0xf6, 0x2a, 0x4d, 0x77, 0x43,
 		0x03, 0xc8, 0x99, 0xdb, 0x69, 0x02, 0x0f, 0x9c, 0x70, 0xee, 0x1d, 0xfc, 0x08, 0xc7, 0xce, 0x9e
 	}
 };
 
-/* Function Description: 
+/* Function Description:
  *   This is ECALL routine to create ECDH session.
  *   When it succeeds to create ECDH session, the session context is saved in g_session.
  * */
@@ -82,7 +82,7 @@ uint32_t test_message_exchange()
 
     target_fn_id = 0;
     msg_type = MESSAGE_EXCHANGE;
-    max_out_buff_size = 50; // it's assumed the maximum payload size in response message is 50 bytes, it's for demontration purpose
+    max_out_buff_size = 50; // it's assumed the maximum payload size in response message is 50 bytes, it's for demonstration purpose
     secret_data = 0x12345678; //Secret Data here is shown only for purpose of demonstration.
 
     //Marshals the secret data into a buffer
@@ -118,7 +118,7 @@ uint32_t test_message_exchange()
 }
 
 
-/* Function Descriptin:
+/* Function Description:
  *   This is ECALL interface to close secure session*/
 uint32_t test_close_session()
 {
@@ -126,7 +126,7 @@ uint32_t test_close_session()
 
     ke_status = close_session(&g_session);
 
-    //Erase the session context 
+    //Erase the session context
     memset(&g_session, 0, sizeof(dh_session_t));
     return ke_status;
 }
@@ -134,9 +134,9 @@ uint32_t test_close_session()
 /* Function Description:
  *   This is to verify peer enclave's identity.
  * For demonstration purpose, we verify below points:
- *   1. peer enclave's MRSIGNER is as expected 
- *   2. peer enclave's PROD_ID is as expected 
- *   3. peer enclave's attribute is reasonable: it's INITIALIZED'ed enclave; in non-debug build configuraiton, the enlave isn't loaded with enclave debug mode.
+ *   1. peer enclave's MRSIGNER is as expected
+ *   2. peer enclave's PROD_ID is as expected
+ *   3. peer enclave's attribute is reasonable: it's INITIALIZED'ed enclave; in non-debug build configuration, the enclave isn't loaded with enclave debug mode.
  **/
 extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t* peer_enclave_identity)
 {
@@ -160,14 +160,14 @@ extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t*
     return SUCCESS;
 }
 
-/* Function Desciption: Operates on the input secret and generate the output secret
+/* Function Description: Operates on the input secret and generate the output secret
  * */
 uint32_t get_message_exchange_response(uint32_t inp_secret_data)
 {
     uint32_t secret_response;
 
     //User should use more complex encryption method to protect their secret, below is just a simple example
-    secret_response = inp_secret_data & 0x11111111; 
+    secret_response = inp_secret_data & 0x11111111;
 
     return secret_response;
 
@@ -176,7 +176,7 @@ uint32_t get_message_exchange_response(uint32_t inp_secret_data)
 //Generates the response from the request message
 /* Function Description:
  *   process request message and generate response
- * Parameter Descriptin:
+ * Parameter Description:
  *   [input] decrypted_data: this is pointer to decrypted message
  *   [output] resp_buffer: this is pointer to response message, the buffer is allocated inside this function
  *   [output] resp_length: this points to response length

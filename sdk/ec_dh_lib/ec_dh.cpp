@@ -496,7 +496,7 @@ static sgx_status_t dh_verify_message3(const sgx_dh_msg3_t *msg3,
 }
 
 // sgx_status_t sgx_dh_init_session()
-// @role indicates whether the caller is a Initiator (starting the session negotiation) or a Responder (responding to the intial session negotiation request).
+// @role indicates whether the caller is a Initiator (starting the session negotiation) or a Responder (responding to the initial session negotiation request).
 // @sgx_dh_session is the context of the session.
 sgx_status_t sgx_dh_init_session(sgx_dh_session_role_t role, sgx_dh_session_t* sgx_dh_session)
 {

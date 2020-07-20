@@ -79,7 +79,7 @@ public:
 
     ae_error_t load_enclave()
     {
-        // pce_logic will load PCE on demond
+        // pce_logic will load PCE on demand
         return AE_SUCCESS;
     }
 

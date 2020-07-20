@@ -77,7 +77,7 @@ void signal_handler(int sig)
     default:
         break;
     }
-		
+
     exit(1);
 }
 
@@ -93,7 +93,7 @@ int  main(int argc, char* argv[])
     if (!g_cptask || !g_cpserver)
          return -1;
 
-    // registger signal handler so to respond to user interception
+    // register signal handler so to respond to user interception
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 

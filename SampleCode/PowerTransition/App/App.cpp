@@ -65,7 +65,7 @@ void print(const char *str)
 }
 
 // load_and_initialize_enclave():
-//		To load and initialize the enclave     
+//		To load and initialize the enclave
 sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_buf_t *buf)
 {
     sgx_status_t ret = SGX_SUCCESS;
@@ -79,7 +79,7 @@ sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_bu
         {
             sgx_destroy_enclave(*eid);
         }
-	
+
         // Step 2: load the enclave
         // Debug: set the 2nd parameter to 1 which indicates the enclave are launched in debug mode
         ret = sgx_create_enclave(ENCLAVE_NAME, SGX_DEBUG_FLAG, NULL, NULL, eid, NULL);
@@ -88,8 +88,8 @@ sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_bu
 
         // Step 3: enter the enclave to initialize the enclave
         //      If power transition occurs when the process is inside the enclave, SGX_ERROR_ENCLAVE_LOST will be returned after the system resumes.
-        //      Then we can load and intialize the enclave again or just return this error code and exit to handle the power transition.
-        //      In this sample, we choose to load and intialize the enclave again.
+        //      Then we can load and initialize the enclave again or just return this error code and exit to handle the power transition.
+        //      In this sample, we choose to load and initialize the enclave again.
         ret = initialize_enclave(*eid, &retval, buf);
         if(ret == SGX_ERROR_ENCLAVE_LOST)
         {
@@ -98,7 +98,7 @@ sgx_status_t load_and_initialize_enclave(sgx_enclave_id_t *eid, struct sealed_bu
         }
         else
         {
-            // No power transilation occurs.
+            // No power transition occurs.
             // If the initialization operation returns failure, change the return value.
             if(ret == SGX_SUCCESS && retval != 0)
             {
@@ -123,8 +123,8 @@ bool increase_and_seal_data_in_enclave()
     {
         for( ; ; )
         {
-            // If power transition occurs, all the data inside the enclave will be lost when the system resumes. 
-            // Therefore, if there are some secret data which need to be backed up for recover, 
+            // If power transition occurs, all the data inside the enclave will be lost when the system resumes.
+            // Therefore, if there are some secret data which need to be backed up for recover,
             // users can choose to seal the secret data inside the enclave and back up the sealed data.
 
             // Enter the enclave to increase the secret data and back up the sealed data
@@ -157,7 +157,7 @@ bool increase_and_seal_data_in_enclave()
                 }
                 else
                 {
-                    // The enclave has been reloaded by another thread. 
+                    // The enclave has been reloaded by another thread.
                     // Update the current EID and do increase_and_seal_data() again.
                     current_eid = global_eid;
                 }
@@ -285,4 +285,3 @@ int main(int argc, char* argv[])
     getchar();
     return 0;
 }
-

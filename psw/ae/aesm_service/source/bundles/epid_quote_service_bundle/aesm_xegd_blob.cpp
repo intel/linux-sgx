@@ -103,9 +103,8 @@ ae_error_t XEGDBlob::verify(const extended_epid_group_blob_t& signed_xegb)
     ae_error_t aesm_result = aesm_verify_xegb(signed_xegb);
     if (AE_SUCCESS != aesm_result)
     {
-        AESM_DBG_ERROR("Extended EPID Group Blob Signature verifcation not passed:%d", aesm_result);
+        AESM_DBG_ERROR("Extended EPID Group Blob Signature verification not passed:%d", aesm_result);
         return aesm_result;
     }
     return aesm_result;
 }
-

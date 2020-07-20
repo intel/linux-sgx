@@ -42,7 +42,7 @@
 #include "ias_ra.h"
 
 //This whole file is used as simulation of the interfaces to be
-// delivered an attestation server. 
+// delivered an attestation server.
 
 
 #define UNUSED(expr) do { (void)(expr); } while (0)
@@ -77,7 +77,7 @@
 // key and the public key in SDK untrusted KElibrary should be a temporary key
 // pair. For production parts an attestation server will sign the platform_info_blob with the
 // production private key and the SDK untrusted KE library will have the public
-// key for verifcation.
+// key for verification.
 
 static const sample_ec256_private_t g_rk_priv_key =
 {{
@@ -187,7 +187,7 @@ int ias_verify_attestation_evidence(
 }
 
 
-// Simulates retrieving the SIGRL for upon the SP request. 
+// Simulates retrieving the SIGRL for upon the SP request.
 //
 // @param gid Group ID for the EPID key.
 // @param p_sig_rl_size Pointer to the output value of the full
@@ -250,5 +250,3 @@ int ias_enroll(
     }
     return(0);
 }
-
-

@@ -41,8 +41,8 @@
 
 #include "CPServer.h"
 
-#define BACKLOG 5     
-#define CONCURRENT_MAX 32   
+#define BACKLOG 5
+#define CONCURRENT_MAX 32
 #define SERVER_PORT 8888
 #define BUFFER_SIZE 1024
 
@@ -51,12 +51,12 @@
 /* Function Description:
  * This is server initialization routine, it creates TCP sockets and listen on a port.
  * In Linux, it would listen on domain socket named '/tmp/UNIX.domain'
- * In Windows, it would listen on port 8888, which is for demonstration purpose 
+ * In Windows, it would listen on port 8888, which is for demonstration purpose
  * */
 int CPServer::init()
 {
     struct sockaddr_un srv_addr;
-    
+
     m_server_sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (m_server_sock_fd == -1)
     {
@@ -75,7 +75,7 @@ int CPServer::init()
         close(m_server_sock_fd);
         return -1;
     }
-    
+
     if (listen(m_server_sock_fd, BACKLOG) == -1)
     {
         printf("listen error\n");
@@ -97,13 +97,13 @@ void CPServer::doWork()
     int client_fds[CONCURRENT_MAX] = {0};
     fd_set server_fd_set;
     int max_fd = -1;
-    struct timeval tv;  
+    struct timeval tv;
     char input_msg[BUFFER_SIZE];
     char recv_msg[BUFFER_SIZE];
-    
+
     while (!m_shutdown)
     {
-        // set 20s timeout for select() 
+        // set 20s timeout for select()
         tv.tv_sec = 20;
         tv.tv_usec = 0;
         FD_ZERO(&server_fd_set);
@@ -111,12 +111,12 @@ void CPServer::doWork()
         FD_SET(STDIN_FILENO, &server_fd_set);
         if (max_fd <STDIN_FILENO)
             max_fd = STDIN_FILENO;
-        
+
         // listening on server socket
         FD_SET(m_server_sock_fd, &server_fd_set);
         if (max_fd < m_server_sock_fd)
             max_fd = m_server_sock_fd;
-    
+
         // listening on all client connections
         for(int i =0; i < CONCURRENT_MAX; i++) {
             if(client_fds[i] != 0) {
@@ -125,24 +125,24 @@ void CPServer::doWork()
                     max_fd = client_fds[i];
             }
         }
-        
+
         int ret = select(max_fd + 1, &server_fd_set, NULL, NULL, &tv);
         if(ret < 0) {
             printf("Warning: server would shutdown\n");
             continue;
         } else if(ret == 0) {
-            // timeout 
+            // timeout
             continue;
-        } 
-    
+        }
+
         if(FD_ISSET(m_server_sock_fd, &server_fd_set)) {
             // if there is new connection request
             struct sockaddr_un clt_addr;
             socklen_t len = sizeof(clt_addr);
-        
+
             // accept this connection request
             int client_sock_fd = accept(m_server_sock_fd, (struct sockaddr *)&clt_addr, &len);
-                
+
             if (client_sock_fd > 0) {
                 // add new connection to connection pool if it's not full
                 int index = -1;
@@ -153,7 +153,7 @@ void CPServer::doWork()
                         break;
                     }
                 }
-                    
+
                 if(index < 0) {
                     printf("server reach maximum connection!\n");
                     bzero(input_msg, BUFFER_SIZE);
@@ -166,20 +166,20 @@ void CPServer::doWork()
                 break;
             }
         }
-            
+
         for(int i =0; i < CONCURRENT_MAX; i++) {
             if ((client_fds[i] !=0)
-               && (FD_ISSET(client_fds[i], &server_fd_set))) 
+               && (FD_ISSET(client_fds[i], &server_fd_set)))
             {
-                // there is request messages from client connectsions
-                FIFO_MSG * msg; 
+                // there is request messages from client connections
+                FIFO_MSG * msg;
 
                 bzero(recv_msg, BUFFER_SIZE);
                 long byte_num = recv(client_fds[i], recv_msg, BUFFER_SIZE, 0);
                 if (byte_num > 0) {
                     if(byte_num > BUFFER_SIZE)
-                        byte_num = BUFFER_SIZE; 
-                            
+                        byte_num = BUFFER_SIZE;
+
                     recv_msg[byte_num] = '\0';
 
                     msg = (FIFO_MSG *)malloc(byte_num);
@@ -188,11 +188,11 @@ void CPServer::doWork()
                         continue;
                     }
                     memset(msg, 0, byte_num);
-                        
+
                     memcpy(msg, recv_msg, byte_num);
 
                     msg->header.sockfd = client_fds[i];
-                    
+
                     // put request message to event queue
                     m_cptask->puttask(msg);
                 }
@@ -217,6 +217,6 @@ void CPServer::shutDown()
     printf("Server would shutdown...\n");
     m_shutdown = 1;
     m_cptask->shutdown();
-        
+
     close(m_server_sock_fd);
 }

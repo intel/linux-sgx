@@ -240,7 +240,7 @@ public:
                 return AESM_SUCCESS;
             }
         }
-        // If the "tie-breaker" is not available, return the first availabe item.
+        // If the "tie-breaker" is not available, return the first available item.
         memcpy_s(p_selected_key_id, selected_key_id_size, &matched_ids[0], sizeof(matched_ids[0]));
         return AESM_SUCCESS;
     }

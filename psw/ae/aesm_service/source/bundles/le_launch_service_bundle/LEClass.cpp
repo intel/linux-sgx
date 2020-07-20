@@ -170,7 +170,7 @@ void CLEClass::load_white_cert_list()
 #define UPDATE_DURATION (24*3600)
 ae_error_t CLEClass::update_white_list_by_url()
 {
-    // on reference LE we don't support equiring white list from URL
+    // on reference LE we don't support querying white list from URL
 #ifndef REF_LE
     static time_t last_updated_time = 0;
     int i = 0;

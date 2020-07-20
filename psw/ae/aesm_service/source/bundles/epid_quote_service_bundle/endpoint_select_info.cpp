@@ -158,7 +158,7 @@ ae_error_t aesm_check_pek_signature(const signed_pek_t& signed_pek, const extend
 sgx_status_t get_provision_server_rsa_pub_key(const signed_pek_t& pek, void **rsa_pub_key);
 //The function is to verify the PEK ECDSA Signature and RSA Signature for ES Msg2
 //   When PvE uses PEK, it will re-check the ECDSA Signature
-//The function will only be called after ES protocol is completed. But it will not be called when reading data back from persitent storage
+//The function will only be called after ES protocol is completed. But it will not be called when reading data back from persistent storage
 //@param provision_ttl: The TTL field from ES Msg2 in little endian format
 //@param rsa_signature: The RSA Signature in ES Msg2, it is RSA Signature to XID:TTL:provision_url
 //@param xid: The transaction id (XID) of the ES Protocol
@@ -371,4 +371,3 @@ const char *EndpointSelectionInfo::get_server_url(aesm_network_server_enum_type_
         return NULL;
     }
 }
-
