@@ -122,9 +122,12 @@ typedef struct _exit_info_t
 #define SE_VECTOR_BP    3
 #define SE_VECTOR_BR    5
 #define SE_VECTOR_UD    6
+#define SE_VECTOR_GP    13
+#define SE_VECTOR_PF    14
 #define SE_VECTOR_MF    16
 #define SE_VECTOR_AC    17
 #define SE_VECTOR_XM    19
+#define SE_VECTOR_CP    21
 
 typedef struct _ssa_gpr_t
 {
