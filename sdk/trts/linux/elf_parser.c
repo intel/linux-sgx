@@ -540,7 +540,7 @@ sgx_status_t change_protection(void *enclave_base)
         if (g_global_data.layout_table[i].entry.id == LAYOUT_ID_RSRV_MIN && g_global_data.layout_table[i].entry.si_flags ==  SI_FLAGS_RWX && g_global_data.layout_table[i].entry.page_count > 0)
         {
             if((status = trts_mprotect((size_t)((size_t)enclave_base + g_global_data.layout_table[i].entry.rva), 
-                                                                     g_global_data.layout_table[i].entry.page_count << SE_PAGE_SHIFT, 
+                                                                     (size_t)g_global_data.layout_table[i].entry.page_count << SE_PAGE_SHIFT, 
                                                                            SI_FLAG_R|SI_FLAG_W)) != SGX_SUCCESS)
                 return status;
             break;
