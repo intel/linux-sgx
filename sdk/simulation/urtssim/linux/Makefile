@@ -146,6 +146,9 @@ endif
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
+
+$(OBJ6): | uinst simasm driver_api
+
 $(OBJ4): %.o: %.S
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
 
