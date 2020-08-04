@@ -1,7 +1,7 @@
 # Reproducible Enclave Build
 --------------------------------
 Intel(R) SGX applications are built a trusted part and untrusted part. The SGX trusted part (Enclave) is protect by Intel® SGX technology. The signed enclave is running in the protected environment, it has the capability to access the sensitive secrets. So, user wants to confirm the enclave is built from the right source code with a clean tool chain. Sometimes, user would get a signed enclave from third party, user may want to confirm the enclave is the right one they should use. Below is a solution to help Intel(R) SGX user to achieve the goal by “reproduce the enclave build”.
-In order to reproduce the enclave build, there are three requirements:1. stable source code 2. clean and secure environment and 3. auditable build tool chain. In this solution we use two opensource products: [Docker](https://www.docker.com/) and [Nix](https://nixos.org/) to achive the goal.
+In order to reproduce the enclave build, there are three requirements:1. stable source code 2. clean and secure environment and 3. auditable build tool chain. In this solution we use two opensource products: [Docker](https://www.docker.com/) and [Nix](https://nixos.org/) to achieve the goal.
 
 
 ## Files
