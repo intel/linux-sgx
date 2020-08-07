@@ -97,7 +97,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   1)  To install the additional required tools:
       * On Ubuntu 16.04 and Ubuntu 18.04:
       ```
-        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip
       ```
       * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1 and Fedora 31:
       ```
