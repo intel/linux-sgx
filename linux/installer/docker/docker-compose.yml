@@ -39,7 +39,7 @@ services:
       - /dev/sgx/enclave
       - /dev/sgx/provision
     volumes:
-      - /tmp/aesmd:/var/run/aesmd
+      - aesmd-socket:/var/run/aesmd
     stdin_open: true
     tty: true
     environment:
@@ -53,10 +53,12 @@ services:
     devices:
       - /dev/sgx/enclave
     volumes:
-      - /tmp/aesmd:/var/run/aesmd
+      - aesmd-socket:/var/run/aesmd
     stdin_open: true
     tty: true
     environment:
       - http_proxy
       - https_proxy
 
+volumes:
+  aesmd-socket:
