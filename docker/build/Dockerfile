@@ -75,7 +75,6 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /installer
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
 RUN ./sgx_linux_x64_psw*.bin --no-start-aesm
-USER aesmd
 WORKDIR /opt/intel/sgxpsw/aesm/
 ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon
@@ -97,9 +96,6 @@ RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
 
 WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
-
-RUN adduser -q --disabled-password --gecos "" --no-create-home sgxuser
-USER sgxuser
 
 CMD ./app
 
