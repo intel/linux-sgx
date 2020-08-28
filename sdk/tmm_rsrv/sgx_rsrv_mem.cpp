@@ -81,13 +81,24 @@ static int init_rsrv_mem_vrd()
     return 0;
 }
 
+sgx_status_t sgx_get_rsrv_mem_info(void ** start_addr, size_t * max_size)
+{
+    if(start_addr == NULL && max_size == NULL)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    if(start_addr != NULL)
+    {
+        *start_addr = rsrv_mem_base;
+    }
+    if (max_size != NULL)
+    {
+        *max_size = rsrv_mem_size;
+    }
+    return SGX_SUCCESS;
+}
 
-/*
- * sgx_alloc_rsrv_mem
- * Reserves a range of EPC memory from the reserved memory area.
- * @return Pointer to the new area on success, otherwise NULL.
- */
-void * sgx_alloc_rsrv_mem(size_t length)
+void * sgx_alloc_rsrv_mem_ex(void *desired_addr, size_t length)
 {
     static volatile bool g_first_alloc = true;
     vrd_t * rsrv_vrd = NULL;
@@ -99,12 +110,22 @@ void * sgx_alloc_rsrv_mem(size_t length)
         return NULL;
     }
     // Sanity checks
-    if ((length == 0) || !IS_PAGE_ALIGNED(length) || length > rsrv_mem_size || 
-       rsrv_mem_committed > (SIZE_MAX - length))
+    if(!IS_PAGE_ALIGNED(desired_addr) || length == 0 || !IS_PAGE_ALIGNED(length) || length > rsrv_mem_size)
     {
         errno = EINVAL;
         return NULL;
     }
+    if(desired_addr != NULL)
+    {
+        size_t end = (size_t)desired_addr + length - 1;
+        if((size_t)desired_addr > end || length > end || end > (size_t)rsrv_mem_base + rsrv_mem_size - 1 ||
+           (size_t)desired_addr < (size_t)rsrv_mem_base)
+        {
+            errno = EINVAL;
+            return NULL;
+        }
+    }
+
     sgx_thread_mutex_lock(&g_vrdl_mutex);
     if(unlikely(g_first_alloc))
     {
@@ -119,7 +140,7 @@ void * sgx_alloc_rsrv_mem(size_t length)
     }
 
     // Allocate memory from reserved memory region
-    rsrv_vrd = insert_vrd((size_t)0, length,
+    rsrv_vrd = insert_vrd((size_t)desired_addr, length,
                           (!EDMM_supported && g_global_data.rsrv_executable ) ? SGX_PAGE_EXECUTE_READWRITE : SGX_PAGE_READWRITE,
                           VRD_STATE_COMMITTED,
                           VRD_PT_REG, &sgx_ret);
@@ -149,7 +170,7 @@ void * sgx_alloc_rsrv_mem(size_t length)
         size_t size = 0;
         size_t offset = (rsrv_vrd->start_addr + length) - ((size_t)rsrv_mem_base + rsrv_mem_committed);
         rsrv_mem_committed += ROUND_TO(offset, SE_PAGE_SIZE);
-        if(EDMM_supported && rsrv_mem_committed > rsrv_mem_min_size)
+        if(EDMM_supported && rsrv_vrd->start_addr + length > (size_t)rsrv_mem_base + rsrv_mem_min_size)
         {
             // Need to apply pages
             if(prev_rsrv_mem_committed > rsrv_mem_min_size)
@@ -182,6 +203,16 @@ void * sgx_alloc_rsrv_mem(size_t length)
     combine_vrds((size_t)rsrv_vrd->start_addr, (size_t)rsrv_vrd->start_addr + length - 1);
     sgx_thread_mutex_unlock(&g_vrdl_mutex);
     return (void *)start_addr;
+}
+
+/*
+ * sgx_alloc_rsrv_mem
+ * Reserves a range of EPC memory from the reserved memory area.
+ * @return Pointer to the new area on success, otherwise NULL.
+ */
+void * sgx_alloc_rsrv_mem(size_t length)
+{
+    return sgx_alloc_rsrv_mem_ex(NULL, length);
 }
 
 /*
@@ -270,10 +301,13 @@ static sgx_status_t tprotect_internal(size_t start, size_t size, si_flags_t perm
         return SGX_ERROR_UNEXPECTED;
     }
     
+    // EMODPE/EACCEPT requires OS level R permission for the page. Therefore,
+    // If target permission is NONE, we should change the OS level permission to NONE after EACCEPT
+    // If original permission is NONE, we should change the OS level permission before EMODPE
     if(pr_needed || pe_needed)
     {
-        // If either EMODPE or EMODPR is needed, mprotect() is required to be called to change permission
-        ret = change_permissions_ocall(start, size, perms);
+        // Ocall to EMODPR if target perm is not RWX and mprotect() if target perm is not NONE
+        ret = change_permissions_ocall(start, size, perms, EDMM_MODPR);
         if (ret != SGX_SUCCESS)
             abort();
     }
@@ -290,6 +324,13 @@ static sgx_status_t tprotect_internal(size_t start, size_t size, si_flags_t perm
         if(accept_modified_pages((void *)start, size / SE_PAGE_SIZE, sf))
             abort();
     }
+    if( pr_needed && perms == SI_FLAG_NONE )
+    {
+        // If the target permission is NONE, ocall to mprotect() to change the OS permission
+        ret = change_permissions_ocall(start, size, perms, EDMM_MPROTECT);
+	if (ret != SGX_SUCCESS)
+            abort();
+    } 
     return ret;
 }
 
@@ -312,19 +353,23 @@ sgx_status_t sgx_tprotect_rsrv_mem(void *addr, size_t len, int prot)
     if(!sgx_is_within_enclave(addr, len))
         return SGX_ERROR_INVALID_PARAMETER;
     
+    if(g_sdk_version < SDK_VERSION_2_3)
+    {
+        // NONE support requires uRTS changes. Therefore, if the enclave is built with update SDK and loaded with old uRTS, 
+        // we return an error code indicating that uRTS should be updated.
+        return SGX_ERROR_UPDATE_NEEDED;
+    } 
     if(0 == rsrv_mem_size || (size_t)addr < (size_t)rsrv_mem_base ||
        !IS_PAGE_ALIGNED(addr) || len < SE_PAGE_SIZE || !IS_PAGE_ALIGNED(len))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-    if(prot == SGX_PROT_NONE ||
-       (!(prot & SGX_PROT_READ) && (prot & (SGX_PROT_WRITE | SGX_PROT_EXEC))) ||
-       (prot & ~(SGX_PROT_READ | SGX_PROT_WRITE | SGX_PROT_EXEC)))
+    if(((!(prot & SGX_PROT_READ) && (prot & (SGX_PROT_WRITE | SGX_PROT_EXEC))) ||
+        (prot & ~(SGX_PROT_READ | SGX_PROT_WRITE | SGX_PROT_EXEC))))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-
-    uint64_t perms = 0;
+    uint64_t perms = SI_FLAG_NONE;
     if((prot & SGX_PROT_EXEC) == SGX_PROT_EXEC)
     {
         perms |= SI_FLAG_X;

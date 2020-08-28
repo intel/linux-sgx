@@ -56,10 +56,10 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.6 64bits
-  * Red Hat Enterprise Linux Server release 8.1 64bits
+  * Red Hat Enterprise Linux Server release 8.2 64bits
   * CentOS 8.1 64bits
   * Fedora 31 Server 64bits
-  * SUSE Linux Enterprise Server 12 64bits
+  * SUSE Linux Enterprise Server 15 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
   * On Ubuntu 16.04:
@@ -70,7 +70,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git cmake perl
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel git cmake perl
@@ -87,19 +87,19 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo yum groupinstall 'C Development Tools and Libraries'
     $ sudo yum install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget python rpm-build git cmake perl
   ```
-  * On SUSE Linux Enterprise Server 12:
+  * On SUSE Linux Enterprise Server 15:
   ```
     $ sudo zypper install --type pattern devel_basis
     $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel rpm-build git cmake perl
   ```
-   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above. For Ubuntu 16.04, Red Hat Enterprise Linux 7.6 and SUSE Linux Enterprise Server 12, you may need to update gcc and glibc version manually.
+   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above. For Ubuntu 16.04, Red Hat Enterprise Linux 7.6, you may need to update gcc and glibc version manually.
 - Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:  
   1)  To install the additional required tools:
       * On Ubuntu 16.04 and Ubuntu 18.04:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip
       ```
-      * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1 and Fedora 31:
+      * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2 and Fedora 31:
       ```
         $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
       ```
@@ -107,18 +107,19 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
       ```
         $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
       ```
-      * On SUSE Linux Enterprise Server 12:
+      * On SUSE Linux Enterprise Server 15:
       ```
         $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo
       ```
   2) To install latest Intel(R) SGX SDK Installer
   Ensure that you have downloaded latest Intel(R) SGX SDK Installer from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and followed the Installation Guide in the same page to install latest Intel(R) SGX SDK Installer.
-  
-- Use the script ``download_prebuilt.sh`` inside source code package to download prebuilt binaries to prebuilt folder  
-  You may need set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
+
+- Download the source code and prepare the submodules and prebuilt binaries:
 ```
-  $ ./download_prebuilt.sh
+   $ git clone https://github.com/intel/linux-sgx.git .
+   $ cd linux-sgx && make preparation
 ```
+  The above ``make preparation`` would trigger the script ``download_prebuilt.sh`` to download the prebuilt binaries. You may need to set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
 
 - Copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
   ```
@@ -203,7 +204,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   ```
   $ make deb_psw_pkg DEBUG=1
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31 and SUSE Linux Enterprise Server 12:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.1, Fedora 31 and SUSE Linux Enterprise Server 15:
   ```
   $ make rpm_psw_pkg
   ```
@@ -247,20 +248,20 @@ You can find the tools and libraries generated in the `build/linux` directory.
   **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. Since the local package repository is not signed with GPG, you should ignore the gpgcheck when installing the packages.
 
   - To add the local RPM package repository to the system repository configuration, you can use the following command. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.1, Fedora 31:
   ```
   $ sudo yum-config-manager --add-repo file://PATH_TO_LOCAL_REPO
   ```
-  * On SUSE Linux Enterprise Server 12, you need to replace LOCAL_REPO_ALIAS with proper alias name for the local repo:
+  * On SUSE Linux Enterprise Server 15, you need to replace LOCAL_REPO_ALIAS with proper alias name for the local repo:
   ```
   $ sudo zypper addrepo PATH_TO_LOCAL_REPO LOCAL_REPO_ALIAS
   ```
   - To ignore the gpgcheck when you install the package, enter the following command:
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.1, Fedora 31:
   ```
   $ sudo yum --nogpgcheck install <package>
   ```
-  * On SUSE Linux Enterprise Server 12:
+  * On SUSE Linux Enterprise Server 15:
   ```
   $ sudo zypper --no-gpg-checks install <package>
   ```
@@ -274,16 +275,16 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.6 64bits
-  * Red Hat Enterprise Linux Server release 8.1 64bits
+  * Red Hat Enterprise Linux Server release 8.2 64bits
   * CentOS 8.1 64bits
   * Fedora 31 Server 64bits
-  * SUSE Linux Enterprise Server 12 64bits
+  * SUSE Linux Enterprise Server 15 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 16.04 and Ubuntu 18.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1 and CentOS 8.1:
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2 and CentOS 8.1:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python2
@@ -293,7 +294,7 @@ Install the Intel(R) SGX SDK
   ```
      $ sudo yum groupinstall 'C Development Tools and Libraries'
   ```
-  * On SUSE Linux Enterprise Server 12:
+  * On SUSE Linux Enterprise Server 15:
   ```
      $ sudo zypper install --type pattern devel_basis
      $ sudo zypper install python 
@@ -344,10 +345,10 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 7.6 64bits
-  * Red Hat Enterprise Linux Server release 8.1 64bits
+  * Red Hat Enterprise Linux Server release 8.2 64bits
   * CentOS 8.1 64bits
   * Fedora 31 Server 64bits
-  * SUSE Linux Enterprise Server 12 64bits
+  * SUSE Linux Enterprise Server 15 64bits
 - Ensure that you have a system with the following required hardware:  
   * 6th Generation Intel(R) Core(TM) Processor or newer
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
@@ -357,7 +358,7 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1 and Fedora 31:  
+  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2 and Fedora 31:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -365,7 +366,7 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo dnf --enablerepo=PowerTools install libcurl-devel protobuf-devel
   ```
-  * On SUSE Linux Enterprise Server 12:  
+  * On SUSE Linux Enterprise Server 15:  
   ```
     $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
   ```
@@ -375,7 +376,7 @@ Install the Intel(R) SGX PSW
 
   #### Using the local repo(recommended)
 
-  |   |Ubuntu 16.04, Ubuntu 18.04|Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.1, CentOS 8.1, Fedora 31|SUSE Linux Enterprise Server 12|
+  |   |Ubuntu 16.04, Ubuntu 18.04|Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.1, Fedora 31|SUSE Linux Enterprise Server 15|
   | ------------ | ------------ | ------------ | ------------ |
   |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
   |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts||

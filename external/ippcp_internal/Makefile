@@ -89,12 +89,13 @@ build_ipp: $(CHECK_PATCHED)
 
 .PHONY: ipp_source
 ipp_source:
-ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
-else
+## Need to enable below code when release
+#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+#	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
+#else
 	$(RM) -rf $(IPP_SOURCE)
 	git clone -b ipp-crypto_2019_update5  https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
-endif
+#endif
 	cd $(IPP_SOURCE) && git am ../0001-Add-mitigation-support-to-assembly-code.patch
 
 .PHONY: clean

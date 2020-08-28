@@ -52,6 +52,7 @@ CPP_OBJS := $(CPP_SRCS:.cpp=.o)
 ALL_OBJS := $(CPP_OBJS) $(C_OBJS) 
 
 SL_CXXFLAGS := $(CXXFLAGS)
+SL_CXXFLAGS += -fPIC
 SL_CXXFLAGS += -I$(COMMON_DIR)/inc          \
           -I$(COMMON_DIR)/inc/internal \
           -I$(SL_DIR)/inc

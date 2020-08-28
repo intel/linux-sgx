@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Copyright (C) 2020 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -57,10 +57,12 @@ clean_repo()
         cd $sgx_repo/ && make clean
     fi
     if [ -f $binutils_repo/Makefile ]; then
-        cd $binutils_repo && make clean && rm -rf Makefile
+        cd $binutils_repo && make clean 
+        rm -f Makefile
     fi
     if [ -f $binutils_repo/gold/Makefile ]; then
-        cd $binutils_repo/gold && make clean && rm -rf Makefile
+        cd $binutils_repo/gold && make clean
+        rm -f Makefile
     fi
     # uninstall SDK installer
     if [ -x "$sdk_install_path/uninstall.sh" ]; then
@@ -75,9 +77,9 @@ build_ipp()
     local ipp_out="$build_out/ipp"
     pushd .
     cd $sgx_repo/external/ippcp_internal/
-    make clean && make
-    make clean && make MITIGATION-CVE-2020-0551=LOAD
-    make clean && make MITIGATION-CVE-2020-0551=CF
+    make clean; make
+    make clean; make MITIGATION-CVE-2020-0551=LOAD
+    make clean; make MITIGATION-CVE-2020-0551=CF
     mkdir -p "$ipp_out"
     cp -r $sgx_repo/external/ippcp_internal/lib/linux/intel64/* "$ipp_out"
     popd
@@ -87,7 +89,7 @@ build_sdk()
 {
     local sdk_out="$build_out/sdk"
     pushd .
-    cd $sgx_repo && make sdk_install_pkg
+    cd $sgx_repo; make sdk_install_pkg
     local installer=$(find $sgx_repo/linux/installer/bin -name "sgx_linux_x64_sdk*.bin")
     if [ ! -d "$sdk_out" ]; then
         mkdir -p $sdk_out
@@ -119,7 +121,8 @@ build_ae()
         exit 1
     fi
     # Install sdk installer and source environment
-    $sdk_installer --prefix=$sdk_prefix && . $sdk_install_path/environment
+    $sdk_installer --prefix=$sdk_prefix
+    source $sdk_install_path/environment
 
     # Current export MITIGATION_CFLAGS+=-B{toolset_dir}
     # We can copy binutils to sdk installation folder
@@ -128,12 +131,18 @@ build_ae()
     pushd .
     local ae_out="$build_out/ae"
     mkdir -p $ae_out
-    cd $sgx_repo/psw/ae/le && make && cp le.so $ae_out
-    cd $sgx_repo/psw/ae/pce && make && cp pce.so $ae_out
-    cd $sgx_repo/psw/ae/pve && make && cp pve.so $ae_out
-    cd $sgx_repo/psw/ae/qe && make && cp qe.so $ae_out
-    cd $sgx_repo/external/dcap_source/QuoteGeneration/quote_wrapper/quote/enclave/linux && make && cp qe3.so $ae_out
-    cd $sgx_repo/external/dcap_source/QuoteVerification/QvE && make && cp qve.so $ae_out
+    cd $sgx_repo/psw/ae/le && make
+    cp le.so $ae_out
+    cd $sgx_repo/psw/ae/pce && make
+    cp pce.so $ae_out
+    cd $sgx_repo/psw/ae/pve && make
+    cp pve.so $ae_out
+    cd $sgx_repo/psw/ae/qe && make
+    cp qe.so $ae_out
+    cd $sgx_repo/external/dcap_source/QuoteGeneration/quote_wrapper/quote/enclave/linux && make
+    cp qe3.so $ae_out
+    cd $sgx_repo/external/dcap_source/QuoteVerification/QvE && make
+    cp qve.so $ae_out
     popd
 }
 

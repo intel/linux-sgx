@@ -29,17 +29,8 @@
 #
 #
 
-DCAP_VER?= 1.7
-DCAP_DOWNLOAD_BASE ?= https://github.com/intel/SGXDataCenterAttestationPrimitives/archive
-
-CHECK_OPT :=
-ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration)", "")
-CHECK_OPT := dcap_source
-endif
-
 include buildenv.mk
-.PHONY: all dcap_source psw sdk clean rebuild sdk_install_pkg psw_install_pkg
-.NOTPARALLEL: dcap_source sdk psw
+.PHONY: all preparation psw sdk clean rebuild sdk_install_pkg psw_install_pkg
 
 all: tips
 
@@ -55,26 +46,26 @@ tips:
 	@echo "        3) enter the commmand: \"make psw\""
 	@echo "     3. If you want to build other targets, please also follow README.md in same directory"
 
-dcap_source:
-ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-	git submodule update --init --recursive
-else
-	curl --output dcap_source.tar.gz -L --tlsv1 ${DCAP_DOWNLOAD_BASE}/DCAP_${DCAP_VER}.tar.gz
-	tar xvzf dcap_source.tar.gz
-	$(RM) dcap_source.tar.gz
-	$(RM) -rf external/dcap_source
-	mv SGXDataCenterAttestationPrimitives-DCAP_${DCAP_VER} external/dcap_source
-endif
 
-psw: $(CHECK_OPT)
+preparation:
+# As SDK build needs to clone and patch openmp, we cannot support the mode that download the source from github as zip.
+# Only enable the download from git
+	git submodule update --init --recursive
+	./external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
+	cd external/openmp/openmp_code && git apply ../0001-Enable-OpenMP-in-SGX.patch >/dev/null 2>&1 ||  git apply ../0001-Enable-OpenMP-in-SGX.patch --check -R
+	@# download prebuilt binaries
+	./download_prebuilt.sh
+	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+
+psw:
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 
-sdk_no_mitigation: $(CHECK_OPT)
+sdk_no_mitigation:
 	$(MAKE) -C sdk/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl clean
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl
 
-sdk: $(CHECK_OPT)
+sdk:
 	$(MAKE) -C sdk/ clean
 	$(MAKE) -C sdk/ MODE=$(MODE) MITIGATION-CVE-2020-0551=LOAD
 	$(MAKE) -C sdk/ clean
@@ -98,8 +89,8 @@ sdk_install_pkg: sdk
 psw_install_pkg: psw
 ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so)", "")
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
-	$(CP) external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so $(BUILD_DIR)
 endif
+	$(CP) external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so $(BUILD_DIR)
 	./linux/installer/bin/build-installpkg.sh psw
 
 .PHONY: deb_libsgx_ae_qe3
@@ -165,6 +156,11 @@ deb_libsgx_dcap_ql:
 	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_dcap_ql_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-ql/libsgx-dcap-ql*deb ./linux/installer/deb/sgx-aesm-service/
 
+.PHONY: deb_sgx_dcap_quote_verify
+deb_sgx_dcap_quote_verify:
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_dcap_quote_verify_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-quote-verify/libsgx-dcap-quote-verify*deb ./linux/installer/deb/sgx-aesm-service/
+
 .PHONY: deb_libsgx_ae_qve
 deb_libsgx_ae_qve:
 ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qve.signed.so)", "")
@@ -173,8 +169,21 @@ endif
 	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_ae_qve_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-qve/libsgx-ae-qve*deb ./linux/installer/deb/sgx-aesm-service/
 
+.PHONY: deb_sgx_pck_id_retrieval_tool_pkg
+deb_sgx_pck_id_retrieval_tool_pkg:
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_pck_id_retrieval_tool_pkg
+	$(CP) external/dcap_source/tools/PCKRetrievalTool/installer/deb/sgx-pck-id-retrieval-tool/sgx-pck-id-retrieval-tool*deb ./linux/installer/deb/sgx-aesm-service/
+
+
+.PHONY: deb_sgx_ra_service_pkg
+deb_sgx_ra_service_pkg:
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_ra_service_pkg
+	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/sgx-ra-service*deb ./linux/installer/deb/sgx-aesm-service/
+	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/libsgx-ra-*deb ./linux/installer/deb/sgx-aesm-service/
+
+
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs deb_libsgx_dcap_ql deb_libsgx_ae_qve
+deb_psw_pkg: deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs deb_libsgx_dcap_ql deb_libsgx_ae_qve deb_sgx_dcap_quote_verify deb_sgx_pck_id_retrieval_tool_pkg deb_sgx_ra_service_pkg
 endif
 
 .PHONY: deb_local_repo
@@ -256,8 +265,24 @@ endif
 	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_ae_qve_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qve/libsgx-ae-qve*rpm ./linux/installer/rpm/sgx-aesm-service/
 
+.PHONY: rpm_sgx_dcap_quote_verify
+rpm_sgx_dcap_quote_verify:
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_dcap_quote_verify_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-quote-verify/libsgx-dcap-quote-verify*rpm ./linux/installer/rpm/sgx-aesm-service/
+
+.PHONY: rpm_sgx_pck_id_retrieval_tool_pkg
+rpm_sgx_pck_id_retrieval_tool_pkg:
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_pck_id_retrieval_tool_pkg
+	$(CP) external/dcap_source/tools/PCKRetrievalTool/installer/rpm/sgx-pck-id-retrieval-tool/sgx-pck-id-retrieval-tool*rpm ./linux/installer/rpm/sgx-aesm-service/
+
+.PHONY: rpm_sgx_ra_service_pkg
+rpm_sgx_ra_service_pkg:
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_ra_service_pkg
+	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/sgx-ra-service*rpm ./linux/installer/rpm/sgx-aesm-service/
+	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/libsgx-ra-*rpm ./linux/installer/rpm/sgx-aesm-service/
+
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_dcap_default_qpl rpm_libsgx_dcap_pccs rpm_libsgx_dcap_ql rpm_libsgx_ae_qve
+rpm_psw_pkg: rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_dcap_default_qpl rpm_libsgx_dcap_pccs rpm_libsgx_dcap_ql rpm_libsgx_ae_qve rpm_sgx_dcap_quote_verify rpm_sgx_pck_id_retrieval_tool_pkg rpm_sgx_ra_service_pkg
 endif
 
 .PHONY: rpm_local_repo
@@ -303,6 +328,7 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-ql/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-pce-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-qe3-logic/clean.sh
+	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-quote-verify/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/sgx-dcap-pccs/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qve/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qe3/clean.sh
@@ -310,9 +336,22 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-ql/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-pce-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-qe3-logic/clean.sh
+	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-quote-verify/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/sgx-dcap-pccs/clean.sh
 endif
 
 rebuild:
 	$(MAKE) clean
 	$(MAKE) all
+
+.PHONY: distclean
+distclean:
+	$(MAKE) clean
+	# Cleanup
+	$(RM) -r 'Intel redistributable binary.txt' Master_EULA_for_Intel_Sw_Development_Products.pdf redist.txt
+	$(RM) -rf external/ippcp_internal/inc/*.h external/ippcp_internal/lib/ external/ippcp_internal/license
+	$(RM) -rf external/toolset psw/ae/data/prebuilt/lib*.so psw/ae/data/prebuilt/README.md
+	$(RM) -rf external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/
+	$(RM) -rf external/dcap_source/QuoteGeneration/'Intel redistributable binary.txt'
+	$(RM) -rf external/dcap_source/QuoteVerification/sgxssl/
+	git submodule deinit  --all -f

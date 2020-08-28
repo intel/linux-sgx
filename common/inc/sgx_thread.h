@@ -54,6 +54,17 @@ typedef struct _sgx_thread_mutex_t
     sgx_thread_queue_t  m_queue;
 } sgx_thread_mutex_t;
 
+/* read write lock */
+typedef struct _sgx_thread_rwlock_t
+{
+    uint32_t            m_reader_count;  /*number of readers holding the lock*/
+    uint32_t            m_writers_waiting; /*number of writers waiting for the lock*/
+    volatile uint32_t   m_lock;          /* use sgx_spinlock_t */
+    sgx_thread_t        m_owner;         /* owner of the lock - must be a writer*/
+    sgx_thread_queue_t  m_reader_queue;  /* readers waiting */
+    sgx_thread_queue_t  m_writer_queue;  /* writers waiting */
+} sgx_thread_rwlock_t;
+
 #define SGX_THREAD_T_NULL   ((sgx_thread_t)(NULL))
 
 #define SGX_THREAD_MUTEX_NONRECURSIVE   0x01
@@ -65,10 +76,20 @@ typedef struct _sgx_thread_mutex_t
 #define SGX_THREAD_MUTEX_INITIALIZER \
             SGX_THREAD_NONRECURSIVE_MUTEX_INITIALIZER
 
+#define SGX_THREAD_LOCK_INITIALIZER \
+            {0, 0, 0, SGX_THREAD_T_NULL, {SGX_THREAD_T_NULL, SGX_THREAD_T_NULL}, {SGX_THREAD_T_NULL, SGX_THREAD_T_NULL}}
+
+
+
 typedef struct _sgx_thread_mutex_attr_t
 {
     unsigned char       m_dummy;  /* for C syntax check */
 } sgx_thread_mutexattr_t;
+
+typedef struct _sgx_thread_rwlock_attr_t
+{
+    unsigned char       m_dummy;  /* for C syntax check */
+} sgx_thread_rwlockattr_t;
 
 /* Condition Variable */
 typedef struct _sgx_thread_cond_t
@@ -95,6 +116,17 @@ int SGXAPI sgx_thread_mutex_destroy(sgx_thread_mutex_t *mutex);
 int SGXAPI sgx_thread_mutex_lock(sgx_thread_mutex_t *mutex);
 int SGXAPI sgx_thread_mutex_trylock(sgx_thread_mutex_t *mutex);
 int SGXAPI sgx_thread_mutex_unlock(sgx_thread_mutex_t *mutex);
+
+/* Reader/Writer Locks */
+int SGXAPI sgx_thread_rwlock_init(sgx_thread_rwlock_t *rwlock, const sgx_thread_rwlockattr_t *unused);
+int SGXAPI sgx_thread_rwlock_destroy(sgx_thread_rwlock_t *rwlock);
+int SGXAPI sgx_thread_rwlock_rdlock(sgx_thread_rwlock_t *rwlock);
+int SGXAPI sgx_thread_rwlock_wrlock(sgx_thread_rwlock_t *rwlock);
+int SGXAPI sgx_thread_rwlock_rdunlock(sgx_thread_rwlock_t *rwlock);
+int SGXAPI sgx_thread_rwlock_wrunlock(sgx_thread_rwlock_t *rwlock);
+int SGXAPI sgx_thread_rwlock_unlock(sgx_thread_rwlock_t *rwlock);
+int SGXAPI sgx_thread_rwlock_tryrdlock(sgx_thread_rwlock_t *rwlock);
+int SGXAPI sgx_thread_rwlock_trywrlock(sgx_thread_rwlock_t *rwlock);
 
 /* Condition Variable */
 int SGXAPI sgx_thread_cond_init(sgx_thread_cond_t *cond, const sgx_thread_condattr_t *unused);

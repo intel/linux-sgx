@@ -45,21 +45,38 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+   
+    /* Return the start address and/or the max size info for the reserved memory
+     *
+     * Parameters:
+     *      start_addr[out] - the start address of the reserved memory
+     *      max_size[out] - the maximum size of the reserved memory
+     * Return:  sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+     */ 
+    sgx_status_t sgx_get_rsrv_mem_info(void ** start_addr, size_t * max_size);
+
+    /* Allocate a range of EPC memory with a fixed address from the reserved memory area with RW permission
+     *
+     * Parameters:
+     *      desired_addr[in] - the desired address to allocate the reserved memory. Page aligned
+     *      length [in] - Size of region to be allocated in bytes. Page aligned
+     * Return: Starting address of the new allocated memory area on success; otherwise NULL
+     */
+    void * sgx_alloc_rsrv_mem_ex(void * desired_addr, size_t length);
 
     /* Allocate a range of EPC memory from the reserved memory area with RW permission
      *
      * Parameters:
-     * Inputs: length [in]: Size of region to be allocated in bytes. Page aligned
+     *      length [in] - Size of region to be allocated in bytes. Page aligned
      * Return: Starting address of the new allocated memory area on success; otherwise NULL
      */
     void * sgx_alloc_rsrv_mem(size_t length);
 
-
     /* Free a range of EPC memory from the reserved memory area
      *
      * Parameters:
-     * Inputs: addr[in]: Starting address of region to be freed. Page aligned.
-     *         length[in]: The length of the memory to be freed in bytes.  Page aligned
+     *      addr[in] - Starting address of region to be freed. Page aligned.
+     *      length[in] - The length of the memory to be freed in bytes.  Page aligned
      * Return: 0 on success; otherwise -1
      */
     int sgx_free_rsrv_mem(void * addr, size_t length);
@@ -68,12 +85,12 @@ extern "C" {
     /* Modify the access permissions of the pages in the reserved memory area.
      *
      * Parameters: 
-     * Inputs: addr[in]: Starting address of region which needs to change access permission. Page aligned.
-     *         length[in]: The length of the memory to be manipulated in bytes. Page aligned.
-     *         prot[in]: The target memory protection.
+     *      addr[in] - Starting address of region which needs to change access permission. Page aligned.
+     *      length[in] - The length of the memory to be manipulated in bytes. Page aligned.
+     *      prot[in] - The target memory protection.
      * Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
      */
-    sgx_status_t sgx_tprotect_rsrv_mem(void *addr, size_t len, int prot);
+    sgx_status_t sgx_tprotect_rsrv_mem(void *addr, size_t length, int prot);
 
 
 #ifdef __cplusplus

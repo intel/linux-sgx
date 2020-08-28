@@ -62,7 +62,7 @@ int client_send_receive(FIFO_MSG *fiforequest, size_t fiforequest_size, FIFO_MSG
     long byte_num;
     char recv_msg[BUFFER_SIZE + 1] = {0};
     FIFO_MSG * response = NULL;
-
+  
     struct sockaddr_un server_addr;
     int server_sock_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (server_sock_fd == -1)
@@ -133,3 +133,4 @@ CLEAN:
 
     return ret;
 }
+

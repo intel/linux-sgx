@@ -413,12 +413,14 @@ int CEnclave::ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_tabl
     if (is_builtin_ocall(proc))
     {
         se_rdunlock(&m_rwlock);
-		if ((int)proc == EDMM_TRIM)
-			error = ocall_trim_range(ms);
-		else if ((int)proc == EDMM_TRIM_COMMIT)
-			error = ocall_trim_accept(ms);
-		else if ((int)proc == EDMM_MODPR)
-			error = ocall_emodpr(ms);
+        if ((int)proc == EDMM_TRIM)
+            error = ocall_trim_range(ms);
+        else if ((int)proc == EDMM_TRIM_COMMIT)
+            error = ocall_trim_accept(ms);
+        else if ((int)proc == EDMM_MODPR)
+            error = ocall_emodpr(ms);
+        else if ((int)proc == EDMM_MPROTECT)
+            error = ocall_mprotect(ms);
     }
     else 
     {

@@ -570,7 +570,7 @@ extern "C" sgx_status_t trts_mprotect(size_t start, size_t size, uint64_t perms)
         return SGX_ERROR_INVALID_PARAMETER;
     if (g_sdk_version == SDK_VERSION_2_0)
     {
-        ret = change_permissions_ocall(start, size, perms);
+        ret = change_permissions_ocall(start, size, perms, EDMM_MODPR);
         if (ret != SGX_SUCCESS)
             return ret;
     }

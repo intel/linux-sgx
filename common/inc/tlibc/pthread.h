@@ -58,8 +58,8 @@ typedef struct	_sgx_thread_mutex_attr_t	*pthread_mutexattr_t;
 typedef struct	_sgx_thread_cond_t		*pthread_cond_t;
 typedef struct	_sgx_thread_cond_attr_t	*pthread_condattr_t;
 typedef int				pthread_key_t;
-//typedef struct	pthread_rwlock		*pthread_rwlock_t;
-//typedef struct	pthread_rwlockattr	*pthread_rwlockattr_t;
+typedef struct	_sgx_thread_rwlock_t		*pthread_rwlock_t;
+typedef struct	_sgx_thread_rwlockattr_t	*pthread_rwlockattr_t;
 //typedef struct	pthread_barrier		*pthread_barrier_t;
 //typedef struct	pthread_barrierattr	*pthread_barrierattr_t;
 //typedef struct	pthread_spinlock	*pthread_spinlock_t;
@@ -97,6 +97,15 @@ int SGXAPI pthread_cond_destroy(pthread_cond_t *);
 int SGXAPI pthread_cond_wait(pthread_cond_t *, pthread_mutex_t *);
 int SGXAPI pthread_cond_signal(pthread_cond_t *);
 int SGXAPI pthread_cond_broadcast(pthread_cond_t *);
+
+/* RW Locks */
+int SGXAPI pthread_rwlock_init(pthread_rwlock_t *, const pthread_rwlockattr_t *);
+int SGXAPI pthread_rwlock_destroy(pthread_rwlock_t *);
+int SGXAPI pthread_rwlock_rdlock(pthread_rwlock_t *);
+int SGXAPI pthread_rwlock_tryrdlock(pthread_rwlock_t *);
+int SGXAPI pthread_rwlock_wrlock(pthread_rwlock_t *);
+int SGXAPI pthread_rwlock_trywrlock(pthread_rwlock_t *);
+int SGXAPI pthread_rwlock_unlock(pthread_rwlock_t *);
 
 /* tls */
 int SGXAPI pthread_key_create(pthread_key_t *, void (*destructor)(void*));

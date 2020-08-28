@@ -59,11 +59,33 @@ sgx_status_t ocall_emodpr(void* pms)
             return (sgx_status_t)ret;
         }
     }
-
-    ret = mprotect((void*)ms->ms_addr, ms->ms_size, (int)ms->ms_epcm_perms);
-    if(ret != 0)
+    if(ms->ms_epcm_perms != SI_FLAG_NONE)
     {
-        return SGX_ERROR_UNEXPECTED;
+        ret = mprotect((void*)ms->ms_addr, ms->ms_size, (int)ms->ms_epcm_perms);
+        if(ret != 0)
+        {
+            return SGX_ERROR_UNEXPECTED;
+        }
+    }
+
+   return SGX_SUCCESS;
+}
+
+sgx_status_t ocall_mprotect(void *pms)
+{
+    int ret = 0;
+    ms_trim_emodpr_ocall_t* ms = SGX_CAST(ms_trim_emodpr_ocall_t*, pms);
+    if(ms->ms_epcm_perms & ~(SI_FLAG_R|SI_FLAG_W|SI_FLAG_X))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    else
+    {
+        ret = mprotect((void*)ms->ms_addr, ms->ms_size, (int)ms->ms_epcm_perms);
+        if(ret != 0)
+        {
+            return SGX_ERROR_UNEXPECTED;
+        }
     }
 
     return SGX_SUCCESS;

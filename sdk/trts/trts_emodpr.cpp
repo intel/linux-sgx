@@ -53,12 +53,13 @@ typedef struct ms_change_permissions_ocall_t {
     uint64_t ms_epcm_perms;
 } ms_change_permissions_ocall_t;
 
-sgx_status_t SGXAPI change_permissions_ocall(size_t addr, size_t size, uint64_t epcm_perms)
+sgx_status_t SGXAPI change_permissions_ocall(size_t addr, size_t size, uint64_t epcm_perms, const int proc)
 {
 #ifdef SE_SIM
     (void)addr;
     (void)size;
     (void)epcm_perms;
+    (void)proc;
     return SGX_SUCCESS;
 #else
     sgx_status_t status = SGX_SUCCESS;
@@ -69,7 +70,7 @@ sgx_status_t SGXAPI change_permissions_ocall(size_t addr, size_t size, uint64_t 
     ms->ms_addr = addr;
     ms->ms_size = size;
     ms->ms_epcm_perms = epcm_perms;
-    status = sgx_ocall(EDMM_MODPR, ms);
+    status = sgx_ocall(proc, ms);
 
 
     sgx_ocfree();

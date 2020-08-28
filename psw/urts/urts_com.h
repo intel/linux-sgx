@@ -273,7 +273,7 @@ static int __create_enclave(BinParser &parser,
     if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
         MINOR_VERSION_OF_METADATA(metadata->version) >= MINOR_VERSION_OF_METADATA(urts_version))
     {
-        enclave_version = SDK_VERSION_2_2;
+        enclave_version = SDK_VERSION_2_3;
     }
     else if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
              MINOR_VERSION_OF_METADATA(metadata->version) < MINOR_VERSION_OF_METADATA(urts_version))

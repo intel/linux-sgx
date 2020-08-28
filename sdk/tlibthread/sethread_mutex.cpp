@@ -225,3 +225,4 @@ int sgx_thread_mutex_unlock(sgx_thread_mutex_t *mutex)
 
     return 0;
 }
+

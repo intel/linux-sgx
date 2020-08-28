@@ -7,7 +7,7 @@
 	branch = svn-tags/RELEASE_801
 [submodule "dnnl"]
 	path = external/dnnl/dnnl
-	url = https://github.com/intel/mkl-dnn.git
+	url = https://github.com/oneapi-src/oneDNN.git
 	branch = rls-v1.1
 [submodule "ipp-crypto"]
 	path = external/ippcp_internal/ipp-crypto

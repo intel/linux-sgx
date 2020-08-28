@@ -47,7 +47,7 @@ extern "C" {
 
 
 sgx_status_t SGX_CDECL ocall_emodpr(void* pms);
-
+sgx_status_t SGX_CDECL ocall_mprotect(void *pms);
 
 
 #ifdef __cplusplus
