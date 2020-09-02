@@ -1905,7 +1905,7 @@ bool HeapLeakChecker::IsActive() {
 
 vector<HeapCleaner::void_function>* HeapCleaner::heap_cleanups_ = NULL;
 
-// When a HeapCleaner object is intialized, add its function to the static list
+// When a HeapCleaner object is initialized, add its function to the static list
 // of cleaners to be run before leaks checking.
 HeapCleaner::HeapCleaner(void_function f) {
   if (heap_cleanups_ == NULL)

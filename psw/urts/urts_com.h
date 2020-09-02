@@ -409,7 +409,7 @@ static int __create_enclave(BinParser &parser,
         }
     }
 
-    //call trts to do some intialization
+    //call trts to do some initialization
     if(SGX_SUCCESS != (ret = get_enclave_creator()->initialize(loader.get_enclave_id())))
     {
         sgx_status_t status = SGX_SUCCESS;

@@ -184,7 +184,7 @@ ae_error_t EndpointSelectionInfo::verify_signature(const endpoint_selection_info
 
     ae_err = aesm_check_pek_signature(es_info.pek, xegb);
     if(AE_SUCCESS != ae_err){
-        AESM_DBG_ERROR("PEK Signature verifcation not passed:%d",ae_err);
+        AESM_DBG_ERROR("PEK Signature verification not passed:%d",ae_err);
         goto ret_point;
     }
     AESM_DBG_INFO("PEK signature verified successfully");

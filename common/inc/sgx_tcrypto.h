@@ -455,7 +455,7 @@ extern "C" {
     * dataset or data stream the incremented counter block should be used on successive
     * calls of the encryption/decryption process for that given stream.  However for
     * new or different datasets/streams, the same counter should not be reused, instead
-    * intialize the counter for the new data set.
+    * initialize the counter for the new data set.
     * Note: SGXSSL based version doesn't support user given ctr_inc_bits. It use OpenSSL's implementation
     * which divide the counter block into two parts ([IV][counter])
     *

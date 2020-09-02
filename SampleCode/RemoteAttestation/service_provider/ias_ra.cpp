@@ -147,7 +147,7 @@ int ias_verify_attestation_evidence(
            0, GID_SIZE);
 
     // @TODO: Product signing algorithm still TBD.  May be RSA2048 signing.
-    // Generate the Service providers ECCDH key pair.
+    // Generate the Service providers ECDH key pair.
     do {
         ret = sample_ecc256_open_context(&ecc_state);
         if (SAMPLE_SUCCESS != ret) {
