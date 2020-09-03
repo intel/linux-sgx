@@ -33,6 +33,6 @@ set -e
 docker build --target sample --build-arg https_proxy=$https_proxy \
              --build-arg http_proxy=$http_proxy -t sgx_sample -f ./Dockerfile ../../
 
-# Another container should expose AESM and its socket
+# Another container should expose AESM and its socket in aesmd-socket volume.
 # Replace /dev/sgx/enclave with /dev/isgx if you use the Legacy Launch Control driver
-docker run --env http_proxy --env https_proxy --device=/dev/sgx/enclave -v /tmp/aesmd:/var/run/aesmd -it sgx_sample
+docker run --env http_proxy --env https_proxy --device=/dev/sgx/enclave -v aesmd-socket:/var/run/aesmd -it sgx_sample

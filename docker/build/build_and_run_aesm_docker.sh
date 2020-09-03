@@ -33,15 +33,9 @@ set -e
 docker build --target aesm --build-arg https_proxy=$https_proxy \
              --build-arg http_proxy=$http_proxy -t sgx_aesm -f ./Dockerfile ../../
 
-# Create a temporary directory on the host that is mounted
-# into both the AESM and sample containers at /var/run/aesmd
-# so that the AESM socket is visible to the sample container
-# in the expected location. It is critical that /tmp/aesmd is
-# world writable as the UIDs may shift in the container.
-mkdir -p -m 777 /tmp/aesmd
-chmod -R -f 777 /tmp/aesmd || sudo chmod -R -f 777 /tmp/aesmd || true
+docker volume create --driver local --opt type=tmpfs --opt device=tmpfs --opt o=rw aesmd-socket
 
 # If you use the Legacy Launch Control driver, replace /dev/sgx/enclave with /dev/isgx, and remove
 # --device=/dev/sgx/provision
 
-docker run --env http_proxy --env https_proxy --device=/dev/sgx/enclave --device=/dev/sgx/provision -v /dev/log:/dev/log -v /tmp/aesmd:/var/run/aesmd -it sgx_aesm
+docker run --env http_proxy --env https_proxy --device=/dev/sgx/enclave --device=/dev/sgx/provision -v /dev/log:/dev/log -v aesmd-socket:/var/run/aesmd -it sgx_aesm

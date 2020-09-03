@@ -36,12 +36,6 @@ docker build  --target aesm --build-arg https_proxy=$https_proxy \
 docker build --target sample --build-arg https_proxy=$https_proxy \
              --build-arg http_proxy=$http_proxy -t sgx_sample -f ./Dockerfile ./
 
-# Create a temporary directory on the host that is mounted
-# into both the AESM and sample containers at /var/run/aesmd
-# so that the AESM socket is visible to the sample container
-# in the expected location. It is critical that /tmp/aesmd is
-# world writable as the UIDs may shift in the container.
+docker volume create --driver local --opt type=tmpfs --opt device=tmpfs --opt o=rw aesmd-socket
 
-mkdir -p -m 777 /tmp/aesmd
-chmod -R -f 777 /tmp/aesmd || sudo chmod -R -f 777 /tmp/aesmd || true
 docker-compose --verbose up
