@@ -90,7 +90,7 @@ sgx_status_t sgx_get_key(const sgx_key_request_t *key_request, sgx_key_128bit_t 
         goto CLEANUP;
     }
     // check key_request->key_policy reserved bits
-    if(key_request->key_policy & ~(SGX_KEYPOLICY_MRENCLAVE | SGX_KEYPOLICY_MRSIGNER | (KEY_POLICY_KSS)))
+    if(key_request->key_policy & ~(SGX_KEYPOLICY_MRENCLAVE | SGX_KEYPOLICY_MRSIGNER | (KEY_POLICY_KSS) | SGX_KEYPOLICY_NOISVPRODID))
     {
         err = SGX_ERROR_INVALID_PARAMETER;
         goto CLEANUP;
@@ -99,7 +99,7 @@ sgx_status_t sgx_get_key(const sgx_key_request_t *key_request, sgx_key_128bit_t 
     // check if KSS flag is disabled but KSS related policy or config_svn is set
     report = sgx_self_report();
     if (!(report->body.attributes.flags & SGX_FLAGS_KSS) &&
-        ((key_request->key_policy & KEY_POLICY_KSS) || key_request->config_svn > 0))
+        ((key_request->key_policy & (KEY_POLICY_KSS | SGX_KEYPOLICY_NOISVPRODID)) || key_request->config_svn > 0))
     {
         err = SGX_ERROR_INVALID_PARAMETER;
         goto CLEANUP;
