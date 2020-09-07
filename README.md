@@ -116,7 +116,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 
 - Download the source code and prepare the submodules and prebuilt binaries:
 ```
-   $ git clone https://github.com/intel/linux-sgx.git .
+   $ git clone https://github.com/intel/linux-sgx.git 
    $ cd linux-sgx && make preparation
 ```
   The above ``make preparation`` would trigger the script ``download_prebuilt.sh`` to download the prebuilt binaries. You may need to set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
