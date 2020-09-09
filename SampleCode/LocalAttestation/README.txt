@@ -1,5 +1,5 @@
 ---------------------------
-The project aims to demo SGX local attesation flow. 
+The project aims to demo SGX local attestation flow. 
 
 ------------------------------------
 How to Build the Sample Code
@@ -29,9 +29,9 @@ When build is successful, you can find executable binaries in "bin" sub-folder.
 How to Execute the Sample Code
 ------------------------------------
 1. Install SGX driver and PSW for Linux* OS
-2. If you want to try local attesation flow from two process, you can goto "bin" sub-folder
+2. If you want to try local attestation flow from two process, you can goto "bin" sub-folder
    a. run "./appresponder".
       It would launch a process to act as local attestation responder.
    b. run "./appinitiator"
       It would launch a process to act as local attestation initator.
-3. If you want to try local attesation flow from one process, you can goto "bin" sub-folder and run "./app"
+3. If you want to try local attestation flow from one process, you can goto "bin" sub-folder and run "./app"

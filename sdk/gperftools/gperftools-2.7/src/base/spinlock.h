@@ -53,7 +53,7 @@ class LOCKABLE SpinLock {
   //
   //    static SpinLock lock(base::LINKER_INITIALIZED);
   //
-  // When intialized using this constructor, we depend on the fact
+  // When initialized using this constructor, we depend on the fact
   // that the linker has already initialized the memory appropriately.
   // A SpinLock constructed like this can be freely used from global
   // initializers without worrying about the order in which global

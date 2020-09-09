@@ -418,7 +418,7 @@ ATTESTATION_STATUS generate_session_id(uint32_t *session_id)
     {
         return INVALID_PARAMETER_ERROR;
     }
-    //if the session structure is untintialized, set that as the next session ID
+    //if the session structure is uninitialized, set that as the next session ID
     for (int i = 0; i < MAX_SESSION_COUNT; i++)
     {
         if (g_session_id_tracker[i] == NULL)
