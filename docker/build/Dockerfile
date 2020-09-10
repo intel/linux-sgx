@@ -53,8 +53,6 @@ RUN apt-get update && apt-get install  -y \
 WORKDIR /linux-sgx
 COPY . .
 
-RUN ./download_prebuilt.sh
-
 RUN make sdk_install_pkg_no_mitigation
 
 WORKDIR /opt/intel

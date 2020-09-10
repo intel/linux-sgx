@@ -7,6 +7,10 @@ Files in this directory demonstrate how to build and install the SGX SDK and PSW
 ###  Prerequisites
 1. Install [Docker and Compose](https://docs.docker.com/) and configure them properly following their respective installation guide.
 2. Install [SGX Flexible Launch Control driver](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/driver/linux). **Note**: See below to run with the Legacy Launch Control driver.
+3. In the root directory of this repo, prepare source code and download prebuilt binaries:
+```
+$ make preparation
+```
 
 ### Run with Docker Compose
 This will start AESM and an SGX sample on one terminal using docker-compose.
