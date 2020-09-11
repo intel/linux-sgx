@@ -59,7 +59,7 @@ SL_CXXFLAGS += -I$(COMMON_DIR)/inc          \
 
 
 SL_CFLAGS := $(CFLAGS)
-SL_CFLAGS += -Werror -D_GNU_SOURCE -fPIC -g
+SL_CFLAGS += -Werror -D_GNU_SOURCE -fPIC
 SL_CFLAGS += $(ADDED_INC)
 SL_CFLAGS += -I$(COMMON_DIR)/inc          \
           -I$(COMMON_DIR)/inc/internal \
