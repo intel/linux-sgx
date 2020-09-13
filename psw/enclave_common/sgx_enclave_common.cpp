@@ -543,6 +543,58 @@ extern "C" void* COMM_API enclave_create(
     return enclave_base;
 }
 
+static int do_eadd_in_kernel(int hfile, __u64 src, __u64 offset, __u64 length, __u64 secinfo, __u64 flags)
+{
+	static unsigned long eadd_ioc = SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL;
+	struct sgx_enclave_add_pages_v36 addp;
+	memset(&addp, 0, sizeof(sgx_enclave_add_pages_v36));
+	addp.src = src;
+	addp.offset = offset;
+	addp.length = length;
+	addp.secinfo = secinfo;
+	addp.flags = flags;
+	addp.count = 0;
+	int ret = ioctl(hfile, eadd_ioc, &addp);
+	if (ret <0 && errno == ENOTTY){
+		if (eadd_ioc == SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL){
+			eadd_ioc = SGX_IOC_ENCLAVE_ADD_PAGES_V36;
+		} else {
+			eadd_ioc = SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL;
+		}
+		ret = ioctl(hfile, eadd_ioc, &addp);
+	}
+	static const int MAX_EADD_RETRY = 5;
+	//handle partially completed EADD operations:
+	//TODO test this
+	if (eadd_ioc == SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL)
+	{
+		int retry = 0;
+		while(ret > 0 && (__u64)ret < addp.length && retry < MAX_EADD_RETRY)
+		{
+			addp.length -= ret;
+			addp.offset += ret;
+			addp.src += ret;
+			ret = ioctl(hfile, eadd_ioc, &addp);
+			retry++;
+		}
+		if (ret >= 0 && (__u64)ret == addp.length)
+			ret = 0;
+		else if (ret == 0) // ensure it is translated to ENCLAVE_UNKOWN
+			ret = EFAULT;
+	}else if (eadd_ioc == SGX_IOC_ENCLAVE_ADD_PAGES_V36)
+	{
+		while ( ret < 0 && errno == EINTR && addp.count < addp.length)
+		{
+			addp.length -= addp.count;
+			addp.offset += addp.count;
+			addp.src += addp.count;
+			addp.count = 0;
+			ret = ioctl(hfile, eadd_ioc, &addp);
+		}
+	}
+	return ret;
+}
+
 /* enclave_load_data()
  * Parameters:
  *      target_address [in] - The address in the enclave where you want to load the data.
@@ -617,26 +669,12 @@ extern "C" size_t COMM_API enclave_load_data(
                 return 0;
             }
             memset(source, 0 , target_size);
-        } 
- 
-        struct sgx_enclave_add_pages_in_kernel addp;
-        memset(&addp, 0, sizeof(sgx_enclave_add_pages_in_kernel));
-        if(source_buffer != NULL)
-        {
-            addp.src = POINTER_TO_U64(source_buffer);
-        }
-        else
-        {
-            addp.src = POINTER_TO_U64(source);
-        }
-            
-        addp.offset = POINTER_TO_U64((uint64_t)target_address - (uint64_t)enclave_base_addr);
-        addp.length = target_size;
-        addp.secinfo = POINTER_TO_U64(&sec_info);
-        if (!(data_properties & ENCLAVE_PAGE_UNVALIDATED))
-            addp.flags = SGX_PAGE_MEASURE;
-        addp.count = 0;
-        int ret = ioctl(hfile, SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL, &addp);
+	}
+
+        __u64 src = source_buffer != NULL? POINTER_TO_U64(source_buffer) : POINTER_TO_U64(source);
+        __u64 offset = POINTER_TO_U64((uint64_t)target_address - (uint64_t)enclave_base_addr);
+        __u64 flags = !(data_properties & ENCLAVE_PAGE_UNVALIDATED)?SGX_PAGE_MEASURE : 0;
+        int ret = do_eadd_in_kernel(hfile, src, offset, target_size, POINTER_TO_U64(&sec_info), flags);
         if (ret) {
             SE_TRACE(SE_TRACE_WARNING, "\nAdd Page - %p to %p... FAIL\n", source, target_address);
             if (enclave_error != NULL)

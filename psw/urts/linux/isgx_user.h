@@ -120,6 +120,8 @@ enum sgx_page_flags {
 	_IOW(SGX_MAGIC, 0x0d, unsigned long)
 
 //Note: SGX_IOC_ENCLAVE_CREATE is the same for in-kernel except that it returns a file handle for in-kernel
+#define SGX_IOC_ENCLAVE_ADD_PAGES_V36 \
+	_IOWR(SGX_MAGIC, 0x01, struct sgx_enclave_add_pages_v36)
 #define SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL \
 	_IOWR(SGX_MAGIC, 0x01, struct sgx_enclave_add_pages_in_kernel)
 #define SGX_IOC_ENCLAVE_INIT_IN_KERNEL \
@@ -190,6 +192,28 @@ struct sgx_enclave_add_page {
 } __attribute__((packed));
 
 /**
+ * Kernel patch v36 or earlier, and DCAP driver 1.36 or earlier
+ * struct sgx_enclave_add_pages_v36 - parameter structure for the
+ *                                %SGX_IOC_ENCLAVE_ADD_PAGE ioctl
+ * @src:        start address for the page data
+ * @offset:     starting page offset
+ * @length:     length of the data (multiple of the page size)
+ * @secinfo:address for the SECINFO data
+ * @flags:      page control flags
+ * @count:      number of bytes added (multiple of the page size)
+ */
+
+struct sgx_enclave_add_pages_v36 {
+        __u64   src;
+        __u64   offset;
+        __u64   length;
+        __u64   secinfo;
+        __u64   flags;
+        __u64   count;
+} __attribute__((packed));
+
+
+/**
  * struct sgx_enclave_add_pages_in_kernel - parameter structure for the
  *                                %SGX_IOC_ENCLAVE_ADD_PAGE ioctl
  * @src:	start address for the page data
@@ -197,7 +221,6 @@ struct sgx_enclave_add_page {
  * @length:	length of the data (multiple of the page size)
  * @secinfo:address for the SECINFO data
  * @flags:	page control flags
- * @count:	number of bytes added (multiple of the page size)
  */
 struct sgx_enclave_add_pages_in_kernel {
 	__u64	src;
@@ -205,7 +228,6 @@ struct sgx_enclave_add_pages_in_kernel {
 	__u64	length;
 	__u64	secinfo;
 	__u64	flags;
-	__u64	count;
 } __attribute__((packed));
 
 /**
