@@ -32,7 +32,7 @@
 usage()
 {
 	echo -e "Usage:
-    ./reproducibility_verifier.sh [intel_signed_ae] [user_build_unsiged_ae] [user_private_key] [intel_ae_config_xml]
+    ./reproducibility_verifier.sh [intel_signed_ae] [user_build_unsigned_ae] [user_private_key] [intel_ae_config_xml]
 
 The script is to verify Intel(R) prebuilt AEs are:
     * Built using same code and toolsets that being opensourced
