@@ -197,9 +197,9 @@ else ifeq ($(MITIGATION-CVE-2020-0551), CF)
 endif
 
 ifneq ($(origin NIX_PATH), environment)
-BINUTILS_DIR = /usr/local/bin
+BINUTILS_DIR ?= /usr/local/bin
 else
-BINUTILS_DIR = $(ROOT_DIR)/external/toolset/nix/
+BINUTILS_DIR ?= $(ROOT_DIR)/external/toolset/nix/
 endif
 
 # enable -B option for all the build
