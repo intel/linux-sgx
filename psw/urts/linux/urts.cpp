@@ -231,8 +231,7 @@ static bool get_metadata_internal(BinParser *parser, metadata_t **metadata)
         return false;
     }
     //check metadata version
-    if(MAJOR_VERSION_OF_METADATA(urts_version) >=
-       MAJOR_VERSION_OF_METADATA((*metadata)->version))
+    if(check_metadata_version(urts_version, (*metadata)->version) == true)
     {
         if(target_metadata == NULL ||
            target_metadata->version < (*metadata)->version)

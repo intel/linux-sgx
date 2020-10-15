@@ -76,6 +76,8 @@ typedef enum _para_type_t
     ISVFAMILYID_L,
     ISVEXTPRODID_H,
     ISVEXTPRODID_L,
+    ENCLAVESTARTADDRESS,
+    ELRANGESIZE
 } para_type_t;
 
 typedef struct _xml_parameter_t

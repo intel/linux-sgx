@@ -63,7 +63,7 @@ int create_enclave(secs_t           *secs,
 
     memset(&sinfo, 0, sizeof(sinfo));
     sinfo.flags = SI_FLAGS_SECS;
-
+    secs->base = *start_addr;
     memset(&pinfo, 0, sizeof(pinfo));
     pinfo.src_page = secs;
     pinfo.sec_info = &sinfo;

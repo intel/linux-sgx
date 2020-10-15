@@ -89,7 +89,13 @@ typedef enum {
 
 typedef enum {
     ENCLAVE_LAUNCH_TOKEN = 0x1,
+    ENCLAVE_ELRANGE
 } enclave_info_type_t;
+
+typedef struct enclave_elrange{
+    uint64_t enclave_start_address;
+    uint64_t elrange_size;
+}enclave_elrange_t;
 
 #define SECS_SIZE 4096
 #define SIGSTRUCT_SIZE 1808

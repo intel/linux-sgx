@@ -55,6 +55,7 @@ public:
     int trim_range(uint64_t fromaddr, uint64_t toaddr);
     int trim_accept(uint64_t addr);
     int remove_range(uint64_t fromaddr, uint64_t numpages);
+    int set_enclave_info(void* base_address, uint32_t info_type, void* input_info, size_t input_info_size);
 };
 
 #endif

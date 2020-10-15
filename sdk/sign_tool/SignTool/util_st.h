@@ -145,6 +145,16 @@
 #define SET_TCS_MIN_POOL_ERROR              "Minimum number of TCS Pool is not correct.\n"
 #define SET_ENABLE_KSS_ERROR                "KSS must be enabled if ISVEXTPRODID or ISVFAMILYID is set.\n"
 
+#define SET_ELRANGE_ERROR                   "EnclaveStartAddress must be set when ELRangeSize is set.\n"
+#define SET_ENCLAVESTARTADDRESS_ALIGN_ERROR         "EnclaveStartAddress setting is not correct: ImageOffset should be enclave size aligned.\n"
+#define SET_ENCLAVESTARTADDRESS_RANGE_ERROR         "EnclaveStartAddress and ELRangeSize setting are not correct: ELRangeSize should large enough to fit the enclave image loaded at EnclaveStartAddress.\n"
+#define SET_ELRANGE_ALIGN_ERROR             "ELRangeSize setting is not correct: ELRangeSize should be power of 2.\n"
+#define SET_ELRANGE_PAGE_ALIGN_ERROR        "ELRangeSize setting is not correct: ELRangeSize is not page aligned.\n"
+
+
+
+
+
 #define SDK_VERSION_ERROR                   "SDK version is not correct. The same SDK should be used for enclave building and signing.\n"\
                                             "The SDK version for building enclave could be obtained by below command:\n\n"\
                                             "           $ strings {Enclave.so} | grep SGX_TSTDC_VERSION \n\n"

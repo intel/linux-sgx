@@ -143,6 +143,8 @@ namespace {
             entry_cnt++;
         }
 
+        global_data->enclave_start_address = metadata->enclave_start_address;
+        global_data->elrange_size = metadata->elrange_size;
         return true;
     }
 }

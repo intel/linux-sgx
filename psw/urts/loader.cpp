@@ -52,6 +52,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <sys/mman.h>
+#include "sgx_enclave_common.h"
 
 const char * layout_id_str[] = {
     "Undefined",
@@ -510,13 +511,42 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
     EnclaveCreator *enclave_creator = get_enclave_creator();
     if(NULL == enclave_creator)
         return SGX_ERROR_UNEXPECTED;
+        
+    if(MAJOR_VERSION_OF_METADATA(m_metadata->version) >= SGX_METADATA_UPDATED_VERSION)
+    {
+        metadata_t * medata = NULL;
+        if(enclave_creator->use_se_hw() == true || m_parser.get_symbol_rva("g_global_data_sim"))
+        {
+            uint64_t meta_rva = m_parser.get_metadata_offset();
+            const uint8_t *base_addr = m_parser.get_start_addr();
+            medata = GET_PTR(metadata_t, base_addr, meta_rva);
+        }
+        else
+        {
+            medata = const_cast<metadata_t*>(m_metadata);
+        }
+        if(medata->elrange_size)
+        {
+            enclave_elrange_t elrange;
+            memset(&elrange, 0 , sizeof(enclave_elrange_t));
+            elrange.enclave_start_address = medata->enclave_start_address;
+            elrange.elrange_size = medata->elrange_size;
+            int ret = enclave_creator->set_enclave_info(reinterpret_cast<void*>(medata->enclave_start_address), ENCLAVE_ELRANGE, &elrange, sizeof(enclave_elrange_t));
+            if(SGX_SUCCESS != ret)
+            {
+                return ret;
+            }  
+        }
+        m_start_addr = reinterpret_cast<void*>(medata->enclave_start_address);
+    }
+    
     int ret = enclave_creator->create_enclave(&m_secs, &m_enclave_id, &m_start_addr, is_ae(&m_metadata->enclave_css));
     if(SGX_SUCCESS == ret)
     {
         SE_TRACE(SE_TRACE_NOTICE, "Enclave start addr. = %p, Size = 0x%llx, %llu KB\n", 
                  m_start_addr, m_metadata->enclave_size, m_metadata->enclave_size/1024);
     }
-	// m_secs.mr_enclave value is not set previously
+    // m_secs.mr_enclave value is not set previously
     if(memcpy_s(&m_secs.mr_enclave, sizeof(sgx_measurement_t), &m_metadata->enclave_css.body.enclave_hash, sizeof(sgx_measurement_t)))
         return SGX_ERROR_UNEXPECTED;
 

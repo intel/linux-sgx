@@ -45,6 +45,7 @@ CFLAGS   += -fPIC -DSE_SIM -Werror -g
 CPPFLAGS += $(ADDED_INC) #for ubuntu 11 and later version
 CPPFLAGS += -I$(COMMON_DIR)/inc                \
             -I$(COMMON_DIR)/inc/internal/linux \
+            -I$(LINUX_PSW_DIR)/enclave_common  \
             -I$(LINUX_PSW_DIR)/urts            \
             -I$(LINUX_PSW_DIR)/urts/parser     \
             -I$(VTUNE_DIR)/include \
@@ -145,7 +146,6 @@ endif
 
 $(BUILD_DIR):
 	@$(MKDIR) $@
-
 
 $(OBJ6): | uinst simasm driver_api
 

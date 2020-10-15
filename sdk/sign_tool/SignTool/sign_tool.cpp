@@ -1126,12 +1126,12 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
             min_rsrv_entry = l;
             continue;
         }
-	else if (l->entry.id == LAYOUT_ID_RSRV_INIT)
+        else if (l->entry.id == LAYOUT_ID_RSRV_INIT)
         {
             init_rsrv_entry = l;
             continue;
         }
-	else if (l->entry.id == LAYOUT_ID_RSRV_MAX)
+        else if (l->entry.id == LAYOUT_ID_RSRV_MAX)
         {
             max_rsrv_entry = l;
             continue;
@@ -1291,7 +1291,9 @@ int main(int argc, char* argv[])
                                    {"ISVFAMILYID_H",  ISVFAMILYID_MAX,   0,              0,                   0},
                                    {"ISVFAMILYID_L",  ISVFAMILYID_MAX ,  0,              0,                   0},
                                    {"ISVEXTPRODID_H", ISVEXTPRODID_MAX,  0,              0,                   0},
-                                   {"ISVEXTPRODID_L", ISVEXTPRODID_MAX,  0,              0,                   0}};
+                                   {"ISVEXTPRODID_L", ISVEXTPRODID_MAX,  0,              0,                   0},
+                                   {"EnclaveStartAddress",    0xFFFFFFFFFFFFFFFF,  0x1000,       0,                   0},
+                                   {"ELRangeSize",    0xFFFFFFFFFFFFFFFF,  0x1000,       0,                   0}};
 
     const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};

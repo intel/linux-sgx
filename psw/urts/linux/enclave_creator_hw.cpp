@@ -194,7 +194,7 @@ int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
         return SGX_ERROR_UNEXPECTED;
 
     uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
-    void* enclave_base = enclave_create(NULL, (size_t)secs->size, 0, ENCLAVE_TYPE_SGX2, &enclave_create_sgx, sizeof(enclave_create_sgx_t), &enclave_error);
+    void* enclave_base = enclave_create(*start_addr, (size_t)secs->size, 0, ENCLAVE_TYPE_SGX2, &enclave_create_sgx, sizeof(enclave_create_sgx_t), &enclave_error);
 
     if (enclave_error)
         return error_api2urts(enclave_error);
@@ -418,4 +418,33 @@ bool EnclaveCreatorHW::is_driver_compatible()
     return is_driver_support_edmm(m_hdevice);
 }
 
+
+
+int EnclaveCreatorHW::set_enclave_info(void* base_address, uint32_t info_type, 
+    void* input_info, size_t input_info_size)
+{
+    uint32_t enclave_error = 0;
+    if (base_address == NULL || input_info == NULL)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    if (info_type != ENCLAVE_ELRANGE)
+    {
+        return SGX_ERROR_FEATURE_NOT_SUPPORTED;
+    }
+    else
+    {
+        if (input_info_size != sizeof(enclave_elrange_t))
+        {
+            return SGX_ERROR_INVALID_PARAMETER;
+        }
+        if(enclave_set_information(base_address, info_type, input_info, input_info_size, &enclave_error) != true)
+        {
+            return error_api2urts(enclave_error);
+        }
+    }
+    
+    return SGX_SUCCESS;
+}
 

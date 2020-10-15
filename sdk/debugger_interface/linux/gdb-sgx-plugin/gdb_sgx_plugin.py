@@ -241,6 +241,8 @@ class enclave_info(object):
                 return -1
             tcs_tuple = struct.unpack_from(TCS_INFO_FMT, tcs_str)
             offset = tcs_tuple[7]
+            if offset > self.start_addr:
+                offset = offset - self.start_addr
             if SIZE == 4:
                 td_fmt = '20I'
             elif SIZE == 8:
@@ -401,13 +403,18 @@ def retrieve_enclave_info(info_addr = 0):
             return None
         tcs_t_tuple = struct.unpack_from(TCS_INFO_FMT, tcs_t_str)
 
+        offset = tcs_t_tuple[7]
+
+        if offset > info_tuple[1]:
+            offset = offset - info_tuple[1]   
+
         if SIZE == 4:
             td_fmt = '4I'
         elif SIZE == 8:
             td_fmt = '4Q'
 
         #get thread_data_t address
-        td_addr = tcs_t_tuple[7] + info_tuple[1]     #thread_data_t = tcs.of_base + debug_enclave_info.start_addr
+        td_addr = offset + info_tuple[1]     #thread_data_t = tcs.of_base + debug_enclave_info.start_addr
         td_str = read_from_memory(td_addr, (4*SIZE))
         if td_str == None:
             return None
@@ -578,6 +585,9 @@ class UpdateOcallFrame(gdb.Breakpoint):
                 return False
             tcs_tuple = struct.unpack_from(TCS_INFO_FMT, tcs_str)
             offset = tcs_tuple[7]
+
+            if offset > base_addr:
+                offset = offset - base_addr
 
             if SIZE == 4:
                 td_fmt = '4I'

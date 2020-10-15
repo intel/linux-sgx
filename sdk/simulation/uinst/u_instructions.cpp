@@ -151,10 +151,14 @@ uintptr_t _ECREATE(page_info_t* pi)
 
     CEnclaveSim* ce = new CEnclaveSim(secs);
     void*   addr;
+    if(secs->base != NULL)
+    {
+        ce->set_image_offset((uint64_t)secs->base);
+    }
 
     // `ce' is not checked against NULL, since it is not
     // allocated with new(std::no_throw).
-    addr = se_virtual_alloc(NULL, (size_t)secs->size, MEM_COMMIT);
+    addr = se_virtual_alloc(secs->base, (size_t)secs->size, MEM_COMMIT);
     if (addr == NULL) {
         delete ce;
         return 0;
@@ -228,9 +232,11 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         secs_t*       secs;
         CEnclaveMngr* mngr;
         CEnclaveSim*    ce;
+        uint64_t      image_offset;
 
         // xbx contains the address of a TCS
         tcs = reinterpret_cast<tcs_t*>(xbx);
+        
 
         // Is TCS pointer page-aligned?
         GP_ON_EENTER(!IS_PAGE_ALIGNED(tcs));
@@ -247,6 +253,15 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);
         GP_ON_EENTER(tcs_sim->tcs_state != TCS_STATE_INACTIVE);
         GP_ON_EENTER(tcs->cssa >= tcs->nssa);
+
+        image_offset = ce->get_image_offset();
+        if(image_offset!=0 && tcs->oentry > image_offset)
+        {
+            tcs->oentry -= image_offset;
+            tcs->ossa -= image_offset;
+            tcs->ofs_base -= image_offset;
+            tcs->ogs_base -= image_offset;
+        }
 
         secs = ce->get_secs();
         enclave_base_addr = secs->base;

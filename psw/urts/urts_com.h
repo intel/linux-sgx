@@ -147,6 +147,26 @@ static int validate_platform()
 }
 #endif
 
+static bool check_metadata_version(uint64_t urts_version, uint64_t metadata_version)
+{
+    //for metadata change, we have updated the metadata major version
+    //sgx1's version has been updated from 1 to 3
+    //sgx2's version has been updated from 2 to 4
+    //so for old enclave compatibility, we should do this check
+    if(MAJOR_VERSION_OF_METADATA(urts_version)%2 != MAJOR_VERSION_OF_METADATA(metadata_version)%2)
+    {
+        return false;
+    }
+
+    if(MAJOR_VERSION_OF_METADATA(urts_version) < MAJOR_VERSION_OF_METADATA(metadata_version))
+    {
+        return false;
+    }
+    
+    return true;
+}
+
+
 static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t **metadata, sgx_misc_attribute_t *sgx_misc_attr)
 {
     assert(parser != NULL && metadata != NULL && sgx_misc_attr != NULL);
@@ -185,8 +205,7 @@ static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t 
             return SGX_ERROR_INVALID_METADATA;
         }
         //check metadata version
-        if(MAJOR_VERSION_OF_METADATA(urts_version) >=
-           MAJOR_VERSION_OF_METADATA((*metadata)->version))
+        if(check_metadata_version(urts_version, (*metadata)->version) == true)
         {
             if(target_metadata == NULL ||
                target_metadata->version < (*metadata)->version)
@@ -270,12 +289,12 @@ static int __create_enclave(BinParser &parser,
     uint32_t enclave_version = SDK_VERSION_1_5;
     uint64_t urts_version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION);
     // metadata->version has already been validated during load_encalve_ex()
-    if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
+    if (MAJOR_VERSION_OF_METADATA(metadata->version) % 2 == 0 &&
         MINOR_VERSION_OF_METADATA(metadata->version) >= MINOR_VERSION_OF_METADATA(urts_version))
     {
         enclave_version = SDK_VERSION_2_3;
     }
-    else if (MAJOR_VERSION_OF_METADATA(metadata->version) == MAJOR_VERSION_OF_METADATA(urts_version) &&
+    else if (MAJOR_VERSION_OF_METADATA(metadata->version) % 2 == 0 &&
              MINOR_VERSION_OF_METADATA(metadata->version) < MINOR_VERSION_OF_METADATA(urts_version))
     {
         enclave_version = SDK_VERSION_2_0;

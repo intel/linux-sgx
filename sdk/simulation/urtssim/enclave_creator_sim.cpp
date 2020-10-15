@@ -305,3 +305,14 @@ int EnclaveCreatorSim::remove_range(uint64_t fromaddr, uint64_t numpages)
 
     return SGX_SUCCESS;
 }
+
+int EnclaveCreatorSim::set_enclave_info(void* base_address, uint32_t info_type, void* input_info, size_t input_info_size)
+{
+    UNUSED(base_address); 
+    UNUSED(info_type); 
+    UNUSED(input_info); 
+    UNUSED(input_info_size); 
+
+    return SGX_SUCCESS;
+}
+

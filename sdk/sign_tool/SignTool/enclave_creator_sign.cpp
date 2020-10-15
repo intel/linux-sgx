@@ -45,6 +45,7 @@
 #include "util_st.h"
 #include "util.h"
 #include "se_page_attr.h"
+#include "sgx_enclave_common.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,9 @@
 
 #define DATA_BLOCK_SIZE 64
 #define EID             0x44444444
+uint64_t enclave_start_address = 0;
+uint64_t elrange_size = 0;
+
 
 EnclaveCreatorST::EnclaveCreatorST()
 {
@@ -92,7 +96,11 @@ int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     }
 
     uint8_t ecreat_val[SIZE_NAMED_VALUE] = "ECREATE";
-
+    uint64_t size= secs->size;
+    if(elrange_size != 0)
+    {
+        size = elrange_size;
+    }
     uint8_t data_block[DATA_BLOCK_SIZE];
     size_t offset = 0;
     memset(data_block, 0, DATA_BLOCK_SIZE);
@@ -100,7 +108,7 @@ int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     offset += SIZE_NAMED_VALUE;
     memcpy_s(&data_block[offset], sizeof(data_block)-offset, &secs->ssa_frame_size, sizeof(secs->ssa_frame_size));
     offset += sizeof(secs->ssa_frame_size);
-    memcpy_s(&data_block[offset], sizeof(data_block)-offset, &secs->size, sizeof(secs->size));
+    memcpy_s(&data_block[offset], sizeof(data_block)-offset, &size, sizeof(uint64_t));
 
     if(EVP_DigestUpdate(m_ctx, &data_block, DATA_BLOCK_SIZE) != 1)
     {
@@ -143,6 +151,11 @@ int EnclaveCreatorST::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
     }
 
     uint64_t page_offset = (uint64_t)offset;
+    if(elrange_size != 0)
+    {
+        page_offset += enclave_start_address;
+    }
+    
     uint8_t eadd_val[SIZE_NAMED_VALUE] = "EADD\0\0\0";
 
     uint8_t data_block[DATA_BLOCK_SIZE];
@@ -322,6 +335,32 @@ int EnclaveCreatorST::remove_range(uint64_t fromaddr, uint64_t numpages)
 
     return SGX_SUCCESS;
 }
+
+int EnclaveCreatorST::set_enclave_info(void* base_address, uint32_t info_type, void* input_info, size_t input_info_size)
+{
+    if (base_address == NULL || input_info == NULL)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    if (info_type != ENCLAVE_ELRANGE)
+    {
+        return SGX_ERROR_FEATURE_NOT_SUPPORTED;
+    }
+    else
+    {
+        if (input_info_size != sizeof(enclave_elrange_t))
+        {
+            return SGX_ERROR_INVALID_PARAMETER;
+        }
+        enclave_elrange_t *enclave_range = (enclave_elrange_t*) input_info;
+        enclave_start_address = enclave_range->enclave_start_address;
+        elrange_size = enclave_range->elrange_size;
+    }
+        
+    return SGX_SUCCESS;
+}
+
 
 static EnclaveCreatorST g_enclave_creator_st;
 EnclaveCreator* g_enclave_creator = &g_enclave_creator_st;

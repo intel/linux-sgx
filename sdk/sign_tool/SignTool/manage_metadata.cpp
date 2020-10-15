@@ -343,6 +343,8 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     m_metadata->magic_num = METADATA_MAGIC;
     m_metadata->desired_misc_select = 0;
     m_metadata->tcs_min_pool = (uint32_t)parameter[TCSMINPOOL].value;
+    m_metadata->enclave_start_address = parameter[ENCLAVESTARTADDRESS].value;
+    m_metadata->elrange_size = parameter[ELRANGESIZE].value;
     m_metadata->enclave_css.body.misc_select = (uint32_t)parameter[MISCSELECT].value;
     m_metadata->enclave_css.body.misc_mask =  (uint32_t)parameter[MISCMASK].value;
 
@@ -483,6 +485,13 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
         return false;
     }
 
+    if(parameter[ENCLAVESTARTADDRESS].flag == 0 && parameter[ELRANGESIZE].flag !=0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGE_ERROR);
+        return false;
+    }
+
+
     m_create_param.heap_init_size = parameter[HEAPINITSIZE].flag ? parameter[HEAPINITSIZE].value : parameter[HEAPMAXSIZE].value;
     m_create_param.heap_min_size = parameter[HEAPMINSIZE].value;
     m_create_param.heap_max_size = parameter[HEAPMAXSIZE].value;
@@ -564,6 +573,11 @@ bool CMetadata::update_layout_entries()
     return true;
 }
 
+static inline bool is_power_of_two(size_t n)
+{
+    return (n != 0) && (!(n & (n - 1)));
+}
+
 bool CMetadata::build_layout_entries()
 {
     SE_TRACE_DEBUG("\n");
@@ -574,6 +588,34 @@ bool CMetadata::build_layout_entries()
     {
         se_trace(SE_TRACE_ERROR, OUT_OF_EPC_ERROR);
         return false;
+    }
+    
+    if(m_metadata->enclave_start_address)
+    {
+        if(m_metadata->enclave_start_address%m_metadata->enclave_size != 0)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ENCLAVESTARTADDRESS_ALIGN_ERROR);
+            return false;
+        }
+    }
+    
+    if(m_metadata->elrange_size)
+    {
+        if(m_metadata->elrange_size%SE_PAGE_SIZE != 0)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ELRANGE_PAGE_ALIGN_ERROR);
+            return false;
+        }
+        if(m_metadata->enclave_start_address+m_metadata->enclave_size > m_metadata->elrange_size)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ENCLAVESTARTADDRESS_RANGE_ERROR);
+            return false;
+        }
+        if(!is_power_of_two(m_metadata->elrange_size))
+        {
+            se_trace(SE_TRACE_ERROR, SET_ELRANGE_ALIGN_ERROR);
+            return false;
+        }  
     }
 
     // Add extra EPC pages to round the enclave size to power of 2
@@ -899,7 +941,7 @@ bool CMetadata::build_patch_table()
     if (gdata -> sdk_version != VERSION_UINT)
     {
         se_trace(SE_TRACE_ERROR, SDK_VERSION_ERROR);
-	return false;
+        return false;
     }
 
     patch.dst = (uint64_t)PTR_DIFF(gdata, base_addr);
@@ -1078,16 +1120,23 @@ bool CMetadata::build_gd_template(uint8_t *data, uint32_t *data_size)
 
 bool CMetadata::build_tcs_template(tcs_t *tcs)
 {
+    uint64_t offset = 0;
+    if(m_metadata->elrange_size != 0)
+    {
+        offset = m_metadata->enclave_start_address;
+    }
     tcs->oentry = m_parser->get_symbol_rva("enclave_entry");
     if(tcs->oentry == 0)
     {
         return false;
     }
+    tcs->oentry += offset;
     tcs->nssa = SSA_NUM;
     tcs->cssa = 0;
-    tcs->ossa = get_entry_by_id(LAYOUT_ID_SSA)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva;
+    tcs->ossa = get_entry_by_id(LAYOUT_ID_SSA)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva + offset;
     //fs/gs pointer at TLS/TD
-    tcs->ofs_base = tcs->ogs_base = get_entry_by_id(LAYOUT_ID_TD)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva + (((uint64_t)get_entry_by_id(LAYOUT_ID_TD)->page_count - 1) << SE_PAGE_SHIFT);
+    tcs->ofs_base = tcs->ogs_base = get_entry_by_id(LAYOUT_ID_TD)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva + 
+        (((uint64_t)get_entry_by_id(LAYOUT_ID_TD)->page_count - 1) << SE_PAGE_SHIFT) + offset;
     tcs->ofs_limit = tcs->ogs_limit = (uint32_t)-1;
     return true;
 }

@@ -37,21 +37,22 @@
 #pragma pack(1)
 
  /* version of metadata */
-#define MAJOR_VERSION 2                 //MAJOR_VERSION should not larger than 0ffffffff
+#define MAJOR_VERSION 4                 //MAJOR_VERSION should not larger than 0ffffffff
 #define MINOR_VERSION 4                 //MINOR_VERSION should not larger than 0ffffffff
 
-#define SGX_2_1_MAJOR_VERSION 2         //MAJOR_VERSION should not larger than 0ffffffff
+#define SGX_2_1_MAJOR_VERSION 4         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_2_1_MINOR_VERSION 2         //MINOR_VERSION should not larger than 0ffffffff
 
-#define SGX_2_0_MAJOR_VERSION 2         //MAJOR_VERSION should not larger than 0ffffffff
+#define SGX_2_0_MAJOR_VERSION 4         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_2_0_MINOR_VERSION 1         //MINOR_VERSION should not larger than 0ffffffff
 
-#define SGX_1_9_MAJOR_VERSION 1         //MAJOR_VERSION should not larger than 0ffffffff
+#define SGX_1_9_MAJOR_VERSION 3         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_1_9_MINOR_VERSION 4         //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_1_5_MAJOR_VERSION 1         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_1_5_MINOR_VERSION 3         //MINOR_VERSION should not larger than 0ffffffff
 
+#define SGX_METADATA_UPDATED_VERSION 3
 
 #define META_DATA_MAKE_VERSION(major, minor) (((uint64_t)major)<<32 | minor)
 #define MAJOR_VERSION_OF_METADATA(version) (((uint64_t)version) >> 32)
@@ -182,7 +183,9 @@ typedef struct _metadata_t
     sgx_attributes_t    attributes;            /* XFeatureMask to be set in SECS. */
     enclave_css_t       enclave_css;           /* The enclave signature */
     data_directory_t    dirs[DIR_NUM];
-    uint8_t             data[18592];
+    uint8_t             data[18576];
+    uint64_t            enclave_start_address;
+    uint64_t            elrange_size;
 }metadata_t;
 
 se_static_assert(sizeof(metadata_t) == METADATA_SIZE);
