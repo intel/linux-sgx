@@ -2,7 +2,6 @@
 with pkgs;
 
 stdenvNoCC.mkDerivation {
-  inherit ipp_crypto asldobjdump;
   name = "sgx-build-nix";
   buildInputs = [
     autoconf

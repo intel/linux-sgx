@@ -20,6 +20,7 @@ RUN touch .bash_profile \
 && . /home/user/.nix-profile/etc/profile.d/nix.sh \
 && nix-env -i /nix/store/681354n3k44r8z90m35hm8945vsp95h1-glibc-2.27
 
+COPY shell.nix /home/user/
 #config nix-shell
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \
 && nix-shell
