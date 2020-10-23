@@ -224,7 +224,8 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
         continue_execution(info);
     }
 
-    if ((nhead = (uintptr_t *)malloc(size)) == NULL)
+    // The customer handler may never return, use alloca instead of malloc 
+    if ((nhead = (uintptr_t *)alloca(size)) == NULL)
     {
         sgx_spin_unlock(&g_handler_lock);
         goto failed_end;
@@ -241,6 +242,10 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
     // read unlock
     sgx_spin_unlock(&g_handler_lock);
 
+    // decrease the nested exception count before the customer
+    // handler execution, becasue the handler may never return
+    thread_data->exception_flag--;
+
     // call exception handler until EXCEPTION_CONTINUE_EXECUTION is returned
     ntmp = nhead;
     while(size > 0)
@@ -254,7 +259,6 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
         ntmp++;
         size -= sizeof(sgx_exception_handler_t);
     }
-    free(nhead);
 
     // call default handler
     // ignore invalid return value, treat to EXCEPTION_CONTINUE_SEARCH
@@ -265,12 +269,7 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
         goto failed_end;
     }
 
-    if(EXCEPTION_CONTINUE_EXECUTION == status)
-    {
-        //exception is handled, decrease the nested exception count
-        thread_data->exception_flag--;
-    }
-    else
+    if(EXCEPTION_CONTINUE_EXECUTION != status)
     {
         //exception cannot be handled
         thread_data->exception_flag = -1;
