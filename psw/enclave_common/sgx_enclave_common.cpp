@@ -399,6 +399,11 @@ extern "C" void* COMM_API enclave_create(
         //The in-kernel driver does not do the base and size alignment. This is up to user mode to do it. 
         //Therefore enclave_size will be virtual_size*2. The unused region will be released by calling munmap later.
         enclave_size = virtual_size*2;
+        //for this suitation, we don't need to make the base and size alignement
+        if(s_enclave_elrange_map.count(base_address) != 0 && s_enclave_elrange_map[base_address]->elrange_size!= 0)
+        {
+            enclave_size = virtual_size;
+        }
     }
     else
     {
@@ -430,7 +435,7 @@ extern "C" void* COMM_API enclave_create(
         return NULL;
     }
     
-    if(s_driver_type == SGX_DRIVER_IN_KERNEL)
+    if(s_driver_type == SGX_DRIVER_IN_KERNEL && s_enclave_elrange_map.count(base_address) == 0)
     {
         uint64_t aligned_addr = ((uint64_t)enclave_base + virtual_size - 1) & ~(virtual_size - 1);
         if(aligned_addr != (uint64_t)enclave_base)
@@ -464,6 +469,7 @@ extern "C" void* COMM_API enclave_create(
             }
         }
         enclave_base = (void*)aligned_addr;
+
     }
     if(s_enclave_elrange_map.count(base_address) != 0 && s_enclave_elrange_map[base_address]->elrange_size!= 0)
     {

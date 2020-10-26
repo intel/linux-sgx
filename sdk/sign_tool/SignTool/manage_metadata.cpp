@@ -592,7 +592,7 @@ bool CMetadata::build_layout_entries()
     
     if(m_metadata->enclave_start_address)
     {
-        if(m_metadata->enclave_start_address%m_metadata->enclave_size != 0)
+        if(m_metadata->enclave_start_address%SE_PAGE_SIZE != 0)
         {
             se_trace(SE_TRACE_ERROR, SET_ENCLAVESTARTADDRESS_ALIGN_ERROR);
             return false;
@@ -606,7 +606,7 @@ bool CMetadata::build_layout_entries()
             se_trace(SE_TRACE_ERROR, SET_ELRANGE_PAGE_ALIGN_ERROR);
             return false;
         }
-        if(m_metadata->enclave_start_address+m_metadata->enclave_size > m_metadata->elrange_size)
+        if(m_metadata->enclave_start_address + m_rva > m_metadata->elrange_size)
         {
             se_trace(SE_TRACE_ERROR, SET_ENCLAVESTARTADDRESS_RANGE_ERROR);
             return false;
