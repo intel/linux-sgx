@@ -15,5 +15,5 @@ Description: Intel(R) Software Guard Extensions Enclave Common Loader
 Package: libsgx-enclave-common-dev
 Section: devel
 Architecture: amd64
-Depends: libsgx-enclave-common (= @dep_version@)
+Depends: libsgx-enclave-common (= @dep_version@), libsgx-headers (>= @dep_version@)
 Description: Intel(R) Software Guard Extensions Enclave Common Loader for Developers

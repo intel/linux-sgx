@@ -36,7 +36,7 @@
 #include <openssl/err.h>
 #include "sgx_tcrypto.h"
 #include "ssl_wrapper.h"
-#define POINT_NOT_ON_CURVE 0x1007c06b
+#define POINT_NOT_ON_CURVE 0x1012606b
 
 /*
 * Elliptic Curve Cryptography - Based on GF(p), 256 bit
@@ -143,7 +143,7 @@ sgx_status_t sgx_ecc256_create_key_pair(sgx_ec256_private_t *p_private,
 
 		// extract two BNs representing the public key
 		//
-		if (!EC_POINT_get_affine_coordinates_GFp(ec_group, public_k, pub_k_x, pub_k_y, NULL)) {
+		if (!EC_POINT_get_affine_coordinates(ec_group, public_k, pub_k_x, pub_k_y, NULL)) {
 			break;
 		}
 
@@ -230,7 +230,7 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
 
 		// sets point based on x,y coordinates
 		//
-		if (1 != EC_POINT_set_affine_coordinates_GFp((const EC_GROUP*)ecc_handle, ec_point, b_x, b_y, NULL)) {
+		if (1 != EC_POINT_set_affine_coordinates((const EC_GROUP*)ecc_handle, ec_point, b_x, b_y, NULL)) {
 			internal_openssl_error = ERR_get_error();
 			if (internal_openssl_error == POINT_NOT_ON_CURVE) {
 				/* fails if point not on curve */
@@ -316,7 +316,7 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(const sgx_ec256_private_t *p_privat
 
 		// create point (public key) based on public key's x,y coordinates
 		//
-		if (EC_POINT_set_affine_coordinates_GFp(ec_group, point_pubA, pubA_gx, pubA_gy, NULL) != 1) {
+		if (EC_POINT_set_affine_coordinates(ec_group, point_pubA, pubA_gx, pubA_gy, NULL) != 1) {
 			break;
 		}
 
@@ -450,7 +450,7 @@ sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att
 
         //retrieve x and y coordinates into BNs
         //
-        if (!EC_POINT_get_affine_coordinates_GFp(ec_group, pub_ec_point, bn_x, bn_y, tmp)) {
+        if (!EC_POINT_get_affine_coordinates(ec_group, pub_ec_point, bn_x, bn_y, tmp)) {
             break;
         }
 

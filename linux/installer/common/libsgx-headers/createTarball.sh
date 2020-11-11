@@ -1,5 +1,6 @@
+#!/usr/bin/env bash
 #
-# Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,45 +31,30 @@
 #
 
 
-%define _install_path @install_path@
-%define _license_file COPYING
+set -e
 
-Name:           libsgx-aesm-ecdsa-plugin
-Version:        @version@
-Release:        1%{?dist}
-Summary:        ECDSA Quote Plugin for Intel(R) Software Guard Extensions AESM Service
-Group:          Development/System
-Requires:       sgx-aesm-service >= %{version}-%{release} libsgx-qe3-logic >= 1.9 libsgx-aesm-pce-plugin >= %{version}-%{release}
+SCRIPT_DIR=$(dirname "$0")
+ROOT_DIR="${SCRIPT_DIR}/../../../../"
+LINUX_INSTALLER_DIR="${ROOT_DIR}/linux/installer"
+LINUX_INSTALLER_COMMON_DIR="${LINUX_INSTALLER_DIR}/common"
 
-License:        BSD License
-URL:            https://github.com/intel/linux-sgx
-Source0:        %{name}-%{version}.tar.gz
+INSTALL_PATH=${SCRIPT_DIR}/output
 
-%description
-ECDSA Quote Plugin for Intel(R) Software Guard Extensions AESM Service
+# Cleanup
+rm -fr ${INSTALL_PATH}
 
-%prep
-%setup -qc
+# Get the configuration for this package
+source ${SCRIPT_DIR}/installConfig
 
-%install
-make DESTDIR=%{?buildroot} install
-pushd %{?buildroot}
-rm -fr $(ls | grep -xv "%{name}")
-install -d %{name}%{_docdir}/%{name}
-find %{?_sourcedir}/package/licenses/ -type f -print0 | xargs -0 -n1 cat >> %{name}%{_docdir}/%{name}/%{_license_file}
-popd
-echo "%{_install_path}" > %{_specdir}/list-%{name}
-find %{?buildroot}/%{name} | sort | \
-awk '$0 !~ last "/" {print last} {last=$0} END {print last}' | \
-sed -e "s#^%{?buildroot}/%{name}##" | \
-grep -v "^%{_install_path}" >> %{_specdir}/list-%{name} || :
-cp -r %{?buildroot}/%{name}/* %{?buildroot}/
-rm -fr %{?buildroot}/%{name}
+# Fetch the gen_source script
+cp ${LINUX_INSTALLER_COMMON_DIR}/gen_source/gen_source.py ${SCRIPT_DIR}
 
-%files -f %{_specdir}/list-%{name}
+# Copy the files according to the BOM
+python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/libsgx-headers.txt --installdir=pkgroot/libsgx-headers
+python ${SCRIPT_DIR}/gen_source.py --bom=BOMs/libsgx-headers-package.txt --cleanup=false
+python ${SCRIPT_DIR}/gen_source.py --bom=../licenses/BOM_license.txt --cleanup=false
 
-%debug_package
-
-%changelog
-* Mon Jul 29 2019 SGX Team
-- Initial Release
+# Create the tarball
+pushd ${INSTALL_PATH} &> /dev/null
+tar -zcvf ${TARBALL_NAME} *
+popd &> /dev/null

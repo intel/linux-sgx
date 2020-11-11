@@ -204,6 +204,9 @@ extern "C" __attribute__((visibility("default"))) sgx_pce_error_t sgx_pce_sign_r
     return ae_error_to_pce_error(g_pce_service->pce_sign_report(p_isv_svn,
                 p_cpu_svn, p_report, p_sig, sig_size, p_sig_out_size));
 }
+extern "C" quote3_error_t load_qe(sgx_enclave_id_t *p_qe_eid,
+                                  sgx_misc_attribute_t *p_qe_attributes,
+                                  sgx_launch_token_t *p_launch_token);
 
 class EcdsaQuoteServiceImp : public IQuoteProviderService
 {
@@ -241,6 +244,19 @@ public:
         if (SGX_QL_SUCCESS != sgx_ql_set_enclave_load_policy(SGX_QL_PERSISTENT))
         {
             AESM_DBG_ERROR("Starting ecdsa bundle failed because pce service failed to start");
+            return AE_FAILURE;
+        }
+
+        quote3_error_t ret = SGX_QL_SUCCESS;
+        sgx_enclave_id_t qe_eid = 0;
+        sgx_misc_attribute_t qe_attributes ={ 0 };
+        sgx_launch_token_t launch_token = { 0 };
+
+        ret = load_qe(&qe_eid, &qe_attributes, &launch_token);
+        if (SGX_QL_SUCCESS != ret)
+        {
+            AESM_LOG_ERROR("Failed to load QE3: 0x%x", ret);
+            AESM_DBG_ERROR("Starting ecdsa bundle failed because QE3 failed to load");
             return AE_FAILURE;
         }
 

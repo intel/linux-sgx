@@ -15,5 +15,5 @@ Description: Intel(R) Software Guard Extensions Launch Service
 Package: libsgx-launch-dev
 Section: devel
 Architecture: amd64
-Depends: libsgx-launch (= @dep_version@)
+Depends: libsgx-launch (= @dep_version@), libsgx-headers (>= @dep_version@)
 Description: Intel(R) Software Guard Extensions Launch Service for Developers

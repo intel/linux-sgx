@@ -1,0 +1,12 @@
+Source: libsgx-headers
+Section: devel
+Priority: optional
+Maintainer: <xiangquan.liu@intel.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+Homepage: https://github.com/intel/linux-sgx
+
+Package: libsgx-headers
+Section: devel
+Architecture: amd64
+Description: Intel(R) Software Guard Extensions Basic Headers for Developers

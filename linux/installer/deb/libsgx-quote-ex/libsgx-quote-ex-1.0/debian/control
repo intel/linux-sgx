@@ -15,5 +15,5 @@ Description: Intel(R) Software Guard Extensions Unified Quote Service
 Package: libsgx-quote-ex-dev
 Section: devel
 Architecture: amd64
-Depends: libsgx-quote-ex (= @dep_version@)
+Depends: libsgx-quote-ex (= @dep_version@), libsgx-headers (>= @dep_version@)
 Description: Intel(R) Software Guard Extensions Unified Quote Service for Developers

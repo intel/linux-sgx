@@ -1,0 +1,6 @@
+SGX_HEADERS_VERSION="1.0"
+TARBALL_NAME=libsgx-headers_1.0.orig.tar.gz
+
+SGX_HEADERS_PACKAGE_NAME=libsgx-headers
+
+INC_DIR=include

@@ -15,5 +15,5 @@ Description: Intel(R) Software Guard Extensions EPID Quote Service
 Package: libsgx-epid-dev
 Section: devel
 Architecture: amd64
-Depends: libsgx-epid (= @dep_version@)
+Depends: libsgx-epid (= @dep_version@), libsgx-headers (>= @dep_version@)
 Description: Intel(R) Software Guard Extensions EPID Quote Service for Developers

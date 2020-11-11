@@ -223,8 +223,7 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
         //instruction triggering the exception will be executed again.
         continue_execution(info);
     }
-
-    // The customer handler may never return, use alloca instead of malloc 
+    // The customer handler may never return, use alloca instead of malloc
     if ((nhead = (uintptr_t *)alloca(size)) == NULL)
     {
         sgx_spin_unlock(&g_handler_lock);

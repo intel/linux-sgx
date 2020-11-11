@@ -48,7 +48,7 @@ Intel(R) Software Guard Extensions Enclave Common Loader
 %package devel
 Summary:        Intel(R) Software Guard Extensions Enclave Common Loader for Developers
 Group:          Development/Libraries
-Requires:       %{name} = %{version}-%{release}
+Requires:       %{name} = %{version}-%{release} libsgx-headers >= %{version}-%{release}
 
 %description devel
 Intel(R) Software Guard Extensions Enclave Common Loader for Developers

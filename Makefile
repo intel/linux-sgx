@@ -137,9 +137,13 @@ deb_libsgx_enclave_common: psw
 deb_libsgx_urts: psw
 	./linux/installer/deb/libsgx-urts/build.sh
 
+.PHONY: deb_libsgx_headers_pkg
+deb_libsgx_headers_pkg: 
+	./linux/installer/deb/libsgx-headers/build.sh
+
 ifeq ($(CC_BELOW_5_2), 1)
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3
+deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3
 else
 .PHONY: deb_libsgx_dcap_default_qpl
 deb_libsgx_dcap_default_qpl:
@@ -183,7 +187,7 @@ deb_sgx_ra_service_pkg:
 
 
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs deb_libsgx_dcap_ql deb_libsgx_ae_qve deb_sgx_dcap_quote_verify deb_sgx_pck_id_retrieval_tool_pkg deb_sgx_ra_service_pkg
+deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs deb_libsgx_dcap_ql deb_libsgx_ae_qve deb_sgx_dcap_quote_verify deb_sgx_pck_id_retrieval_tool_pkg deb_sgx_ra_service_pkg
 endif
 
 .PHONY: deb_local_repo
@@ -238,9 +242,13 @@ rpm_libsgx_urts: psw
 rpm_sdk_pkg: sdk
 	./linux/installer/rpm/sdk/build.sh
 
+.PHONY: rpm_libsgx_headers_pkg
+rpm_libsgx_headers_pkg: 
+	./linux/installer/rpm/libsgx-headers/build.sh
+
 ifeq ($(CC_BELOW_5_2), 1)
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3
+rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3
 else
 .PHONY: rpm_libsgx_dcap_default_qpl
 rpm_libsgx_dcap_default_qpl:
@@ -282,7 +290,7 @@ rpm_sgx_ra_service_pkg:
 	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/libsgx-ra-*rpm ./linux/installer/rpm/sgx-aesm-service/
 
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_dcap_default_qpl rpm_libsgx_dcap_pccs rpm_libsgx_dcap_ql rpm_libsgx_ae_qve rpm_sgx_dcap_quote_verify rpm_sgx_pck_id_retrieval_tool_pkg rpm_sgx_ra_service_pkg
+rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_dcap_default_qpl rpm_libsgx_dcap_pccs rpm_libsgx_dcap_ql rpm_libsgx_ae_qve rpm_sgx_dcap_quote_verify rpm_sgx_pck_id_retrieval_tool_pkg rpm_sgx_ra_service_pkg
 endif
 
 .PHONY: rpm_local_repo
@@ -304,6 +312,7 @@ clean:
 	./linux/installer/deb/libsgx-uae-service/clean.sh
 	./linux/installer/deb/libsgx-enclave-common/clean.sh
 	./linux/installer/deb/libsgx-urts/clean.sh
+	./linux/installer/deb/libsgx-headers/clean.sh
 	./linux/installer/common/local_repo_builder/local_repo_builder.sh debian clean
 	./linux/installer/rpm/sgx-aesm-service/clean.sh
 	./linux/installer/rpm/libsgx-epid/clean.sh
@@ -312,6 +321,7 @@ clean:
 	./linux/installer/rpm/libsgx-uae-service/clean.sh
 	./linux/installer/rpm/libsgx-enclave-common/clean.sh
 	./linux/installer/rpm/libsgx-urts/clean.sh
+	./linux/installer/rpm/libsgx-headers/clean.sh
 	./linux/installer/rpm/sdk/clean.sh
 	./linux/installer/common/local_repo_builder/local_repo_builder.sh rpm clean
 ifeq ("$(shell test -f external/dcap_source/QuoteVerification/dcap_tvl/Makefile && echo TVL Makefile exists)", "TVL Makefile exists")

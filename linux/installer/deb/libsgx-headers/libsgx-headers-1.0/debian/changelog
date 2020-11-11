@@ -1,0 +1,5 @@
+libsgx-headers (1.0-1) unstable; urgency=low
+
+  * Initial Release
+
+ -- Xiangquan Liu <xiangquan.liu@intel.com>  Sun, 23 Aug 2020 15:23:51 +0800

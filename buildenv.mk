@@ -273,7 +273,7 @@ LD_IPP          := -lippcp
 
 ######## SGX SDK Settings ########
 SGX_SDK ?= /opt/intel/sgxsdk
-SGX_HEADER_DIR := $(SGX_SDK)/include
+SGX_HEADER_DIR ?= $(SGX_SDK)/include
 
 ifeq ($(ARCH), x86)
 	SGX_COMMON_CFLAGS := -m32

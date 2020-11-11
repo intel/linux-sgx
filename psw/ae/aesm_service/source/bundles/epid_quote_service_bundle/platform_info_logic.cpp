@@ -152,7 +152,7 @@ aesm_error_t PlatformInfoLogic::check_update_status(
     // presence of platform info is conditional, on whether we're up to date
     // if we're up to date, no platform info and no need for update info
     //
-    if (((NULL != platform_info) && (sizeof(pibw.platform_info_blob) > platform_info_size)) || ((NULL != update_info) && (sizeof(sgx_update_info_bit_t) > update_info_size)))
+    if (((NULL != platform_info) && (sizeof(pibw.platform_info_blob) != platform_info_size)) || ((NULL != update_info) && (sizeof(sgx_update_info_bit_t) != update_info_size)))
     {
         return AESM_PARAMETER_ERROR;
     }
@@ -166,7 +166,9 @@ aesm_error_t PlatformInfoLogic::check_update_status(
 
     if (NULL != platform_info) {
         pibw.valid_info_blob = false;
-        memcpy_s(&pibw.platform_info_blob, sizeof(pibw.platform_info_blob), platform_info, platform_info_size);
+        if (0 != memcpy_s(&pibw.platform_info_blob, sizeof(pibw.platform_info_blob), platform_info, sizeof(pibw.platform_info_blob))) {
+	    return AESM_UNEXPECTED_ERROR;
+	}
 	    
 	    //
 	    // contents of input platform info can get stale, but not by virtue of anything we do
@@ -327,12 +329,14 @@ aesm_error_t PlatformInfoLogic::report_attestation_status(
     // presence of platform info is conditional, on whether we're up to date
     // if we're up to date, no platform info and no need for update info
     //
-    if (((sizeof(pibw.platform_info_blob) > platform_info_size)) || ((NULL != update_info) && (sizeof(sgx_update_info_bit_t) > update_info_size))) {
+    if (((sizeof(pibw.platform_info_blob) != platform_info_size)) || ((NULL != update_info) && (sizeof(sgx_update_info_bit_t) != update_info_size))) {
         return AESM_PARAMETER_ERROR;
     }
 
     pibw.valid_info_blob = false;
-    memcpy_s(&pibw.platform_info_blob, sizeof(pibw.platform_info_blob), platform_info, platform_info_size);
+    if (0 != memcpy_s(&pibw.platform_info_blob, sizeof(pibw.platform_info_blob), platform_info, sizeof(pibw.platform_info_blob))) {
+	return AESM_UNEXPECTED_ERROR;
+    }
 
     aesm_error_t status = AESM_SUCCESS;       // status only tells app to look at updateInfo
 

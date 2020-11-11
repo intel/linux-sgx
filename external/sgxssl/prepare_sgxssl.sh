@@ -35,14 +35,14 @@ openssl_out_dir=$top_dir/openssl_source
 openssl_ver=1.1.1g
 openssl_ver_name=openssl-$openssl_ver
 sgxssl_github_archive=https://github.com/intel/intel-sgx-ssl/archive
-sgxssl_ver=2.10
+sgxssl_ver=2.11
 sgxssl_ver_name=v$sgx_ver
 sgxssl_file_name=lin_$sgxssl_ver\_$openssl_ver
 build_script=$top_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
 full_openssl_url=$server_url_path/old/1.1.1/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=5fb5328fdd55d643cc125dd43cbd0a1f7d74ead7948b52cf15d8533d47a0d266
+sgxssl_chksum=12828839c4555e0f5e88e86db090c995053d98d99091862c498fc55f379183fc
 openssl_chksum=ddb04774f1e32f0c49751e21b67216ac87852ceb056b75209af2443400636d46
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
@@ -72,5 +72,9 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 fi
 
 pushd $top_dir/Linux/
-make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+if [ "$MITIGATION" != "" ]; then
+        make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+else
+        make clean sgxssl_no_mitigation LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+fi
 popd

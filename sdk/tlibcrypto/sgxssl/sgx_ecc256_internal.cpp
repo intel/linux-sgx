@@ -93,7 +93,7 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
 
 		//create point (public key) based on public key's x,y coordinates
 		//
-		if (EC_POINT_set_affine_coordinates_GFp(ec_group, point_pubA, pubA_gx, pubA_gy, NULL) != 1) {
+		if (EC_POINT_set_affine_coordinates(ec_group, point_pubA, pubA_gx, pubA_gy, NULL) != 1) {
 			break;
 		}
 
@@ -135,7 +135,7 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
 			break;
 		}
 
-		if (EC_POINT_get_affine_coordinates_GFp(ec_group, point_R, BN_dh_shared_x, BN_dh_shared_y, NULL) != 1) {
+		if (EC_POINT_get_affine_coordinates(ec_group, point_R, BN_dh_shared_x, BN_dh_shared_y, NULL) != 1) {
 			break;
 		}
 	

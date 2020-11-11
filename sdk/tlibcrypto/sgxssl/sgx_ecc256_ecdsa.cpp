@@ -240,7 +240,7 @@ sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *p_data,
 
 		// sets point based on public key's x,y coordinates
 		//
-		if (1 != EC_POINT_set_affine_coordinates_GFp((EC_GROUP*)ecc_handle, public_point, bn_pub_x, bn_pub_y, NULL)) {
+		if (1 != EC_POINT_set_affine_coordinates((EC_GROUP*)ecc_handle, public_point, bn_pub_x, bn_pub_y, NULL)) {
 			break;
 		}
 

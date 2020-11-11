@@ -1,19 +1,19 @@
-From ebb889669626966aa2b5a3775d76d6cff16f7059 Mon Sep 17 00:00:00 2001
+From 0ce73c45cfd4850de6c28f05d836b2fd1ed4eee0 Mon Sep 17 00:00:00 2001
 From: Zhang Lili Z <lili.z.zhang@intel.com>
-Date: Wed, 11 Dec 2019 23:28:56 +0800
-Subject: [PATCH] Enable OpenMP in SGX.
+Date: Tue, 18 Aug 2020 18:58:53 +0800
+Subject: [PATCH] Enable OpenMP in SGX
 
 Signed-off-by: Zhang Lili Z <lili.z.zhang@intel.com>
 ---
  final/CMakeLists.txt                        |  2 +-
- final/runtime/CMakeLists.txt                | 10 ++-
+ final/runtime/CMakeLists.txt                | 12 +++-
  final/runtime/cmake/LibompDefinitions.cmake |  1 +
  final/runtime/cmake/LibompHandleFlags.cmake |  7 ++
  final/runtime/cmake/config-ix.cmake         |  2 +-
  final/runtime/src/CMakeLists.txt            |  5 ++
  final/runtime/src/kmp.h                     | 42 ++++++++++-
  final/runtime/src/kmp_affinity.h            |  4 ++
- final/runtime/src/kmp_config.h.cmake        | 10 +++
+ final/runtime/src/kmp_config.h.cmake        | 12 ++++
  final/runtime/src/kmp_csupport.cpp          | 12 ++++
  final/runtime/src/kmp_environment.cpp       | 11 ++-
  final/runtime/src/kmp_ftn_entry.h           | 10 +++
@@ -30,7 +30,7 @@ Signed-off-by: Zhang Lili Z <lili.z.zhang@intel.com>
  final/runtime/src/sgx_stub.cpp              | 63 ++++++++++++++++
  final/runtime/src/sgx_stub.h                | 51 +++++++++++++
  final/runtime/src/z_Linux_util.cpp          | 79 +++++++++++++++++++--
- 25 files changed, 394 insertions(+), 20 deletions(-)
+ 25 files changed, 397 insertions(+), 21 deletions(-)
  create mode 100644 final/runtime/src/sgx_stub.cpp
  create mode 100644 final/runtime/src/sgx_stub.h
 
@@ -48,7 +48,7 @@ index 597eedc..bfeda38 100644
  # Since the device plugins are only supported on Linux anyway,
  # there is no point in trying to compile libomptarget on other OSes.
 diff --git a/final/runtime/CMakeLists.txt b/final/runtime/CMakeLists.txt
-index 447b3cd..c146e18 100644
+index 447b3cd..3d3018c 100644
 --- a/final/runtime/CMakeLists.txt
 +++ b/final/runtime/CMakeLists.txt
 @@ -20,6 +20,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
@@ -60,6 +60,15 @@ index 447b3cd..c146e18 100644
  # These include files are in the cmake/ subdirectory
  include(LibompUtils)
  include(LibompGetArchitecture)
+@@ -33,7 +35,7 @@ if(${OPENMP_STANDALONE_BUILD})
+   set(LIBOMP_ARCH ${LIBOMP_DETECTED_ARCH} CACHE STRING
+     "The architecture to build for (x86_64/i386/arm/ppc64/ppc64le/aarch64/mic/mips/mips64).")
+   # Should assertions be enabled?  They are on by default.
+-  set(LIBOMP_ENABLE_ASSERTIONS TRUE CACHE BOOL
++  set(LIBOMP_ENABLE_ASSERTIONS FALSE CACHE BOOL
+     "enable assertions?")
+ else() # Part of LLVM build
+   # Determine the native architecture from LLVM.
 @@ -282,7 +284,7 @@ if(LIBOMP_STATS)
  endif()
  
@@ -330,10 +339,20 @@ index 34147fd..1cc2dd4 100644
    bool operator==(const AddrUnsPair &b) const {
      if (first != b.first)
 diff --git a/final/runtime/src/kmp_config.h.cmake b/final/runtime/src/kmp_config.h.cmake
-index c9ebbc0..1f2c2c1 100644
+index c9ebbc0..17c1f66 100644
 --- a/final/runtime/src/kmp_config.h.cmake
 +++ b/final/runtime/src/kmp_config.h.cmake
-@@ -95,11 +95,16 @@
+@@ -53,7 +53,9 @@
+ #cmakedefine01 LIBOMP_USE_INTERNODE_ALIGNMENT
+ #define KMP_USE_INTERNODE_ALIGNMENT LIBOMP_USE_INTERNODE_ALIGNMENT
+ #cmakedefine01 LIBOMP_ENABLE_ASSERTIONS
++#if LIBOMP_ENABLE_ASSERTIONS
+ #define KMP_USE_ASSERT LIBOMP_ENABLE_ASSERTIONS
++#endif
+ #cmakedefine01 LIBOMP_USE_HIER_SCHED
+ #define KMP_USE_HIER_SCHED LIBOMP_USE_HIER_SCHED
+ #cmakedefine01 STUBS_LIBRARY
+@@ -95,11 +97,16 @@
  #define USE_ITT_BUILD LIBOMP_USE_ITT_NOTIFY
  #define INTEL_ITTNOTIFY_PREFIX __kmp_itt_
  #if ! KMP_MIC
@@ -350,7 +369,7 @@ index c9ebbc0..1f2c2c1 100644
  #if STUBS_LIBRARY
  # define KMP_STUB 1
  #endif
-@@ -107,6 +112,11 @@
+@@ -107,6 +114,11 @@
  # define KMP_DEBUG 1
  #endif
  
