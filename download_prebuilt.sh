@@ -33,7 +33,7 @@
 
 top_dir=`dirname $0`
 out_dir=$top_dir
-optlib_name=optimized_libs_2.12.tar.gz
+optlib_name=optimized_libs_update_2.12.tar.gz
 ae_file_name=prebuilt_ae_2.12.tar.gz
 binutils_file_name=as.ld.objdump.gold.r3.tar.gz
 checksum_file=SHA256SUM_prebuilt_2.12.cfg
