@@ -40,7 +40,7 @@ To do verification, please follow below usage.
 
 ##### Usage:
 ```
-$ ./reproducibility_verifier.sh intel_signed_ae user_build_unsiged_ae user_private_key intel_ae_config_xml
+$ ./reproducibility_verifier.sh intel_signed_ae user_build_unsigned_ae user_private_key intel_ae_config_xml
 ```
 ##### Parameters:
 The script MUST take four parameters in above order. For the parameters, please see the description [Prequisites: Prepare below 4 materials](#materials)
@@ -49,7 +49,7 @@ The script MUST take four parameters in above order. For the parameters, please 
 If the verification succeeds, you will see below info in command line window:
 
 ```
-$ ./reproducibility_verifier.sh intel_signed_ae user_build_unsiged_ae user_private_key intel_ae_config_xml
+$ ./reproducibility_verifier.sh intel_signed_ae user_build_unsigned_ae user_private_key intel_ae_config_xml
 ...
 Reproducibility Verification PASSED!
 
@@ -57,7 +57,7 @@ Reproducibility Verification PASSED!
 If the verification fails, you will see below info in command line window:
 
 ```
-$ ./reproducibility_verifier.sh intel_signed_ae user_build_unsiged_ae user_private_key intel_ae_config_xml
+$ ./reproducibility_verifier.sh intel_signed_ae user_build_unsigned_ae user_private_key intel_ae_config_xml
 ...
 Reproducibility Verification FAILED!
 Please find the diff contents in output/metadata_diff.txt
@@ -76,7 +76,7 @@ Meanwhile, you can find the extracted intel & user metadata to be compared in  *
     # extract metadata
     $ sed -n '/metadata->magic_num/,/metadata->enclave_css.header.module_vendor/p;/metadata->enclave_css.header.header2/,/metadata->enclave_css.header.hw_version/p;/metadata->enclave_css.body.misc_select/,/metadata->enclave_css.body.isv_svn/p;' intel_metadata_orig.txt > intel_metadata.txt
   ```
-2) Sign user_build_unsiged_ae with user_private_key and intel_ae_config_xml, and generate user_signed_ae.
+2) Sign user_build_unsigned_ae with user_private_key and intel_ae_config_xml, and generate user_signed_ae.
   ```
     $ {SGX_SDK}/bin/x64/sgx_sign sign -enclave user_build_unsigned_ae -key user_private_key -config intel_ae_config_xml -out user_signed_ae
   ```
