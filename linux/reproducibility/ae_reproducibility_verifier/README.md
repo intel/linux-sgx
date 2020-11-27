@@ -17,7 +17,9 @@ So this doc will give an approach using your local AE builds to verify Intel(R) 
 * <a id="materials">Prepare below 4 materials</a>
 
  1. intel_signed_ae:  
- It is the Intel(R) prebuilt AE to be verified, and can be downloaded from (https://download.01.org/intel-sgx/latest/intel-latest/)
+ It is the Intel(R) prebuilt AE to be verified, and can be downloaded from
+ https://download.01.org/intel-sgx/latest/dcap-latest/linux/ (for ECDSA-based
+ attestation) or https://download.01.org/intel-sgx/latest/linux-latest/.
  2. user_build_unsigned_ae:   
  The unsigned AE is built by yourself in an SGX docker container. You can follow the [reproducibility README.md](../README.md) to build all AEs in a container.
  3. user_private_key:  
