@@ -36,6 +36,18 @@
 
     .text
 
+DECLARE_LOCAL_FUNC switch_stack
+    xchg %rcx, %rsp    # naked_arg3
+    mov  (%rcx), %rcx  # return addr
+    push %rcx
+    push %rbp
+    mov  %rsp, %rbp
+    sub  $(4*SE_WORDSIZE), %rsp
+    call call_old_handler
+    mov  %rbp, %rsp
+    pop  %rbp
+    ret
+
 /* DoECREATE_SW, DoEADD_SW, DoEINIT_SW, DoEREMOVE, ... */
 DoSW ECREATE
 DoSW EADD

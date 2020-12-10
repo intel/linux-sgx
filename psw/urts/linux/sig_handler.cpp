@@ -106,7 +106,9 @@ void sig_handler(int signum, siginfo_t* siginfo, void *priv)
     if(xip == get_aep()
             && SE_ERESUME == xax)
     {
+#ifndef SE_SIM
         assert(ENCLU == (*xip & 0xffffff));
+#endif
         //suppose the exception is within enclave.
         SE_TRACE(SE_TRACE_NOTICE, "exception on ERESUME\n");
         //The ecall looks recursively, but it will not cause infinite call.

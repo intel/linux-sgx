@@ -49,7 +49,8 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/         \
 CXXFLAGS += -Werror -fPIC
 
 OBJ1 := linux/set_tls.o \
-        linux/restore_tls.o
+        linux/restore_tls.o \
+        linux/get_tcs.o
 
 LIBSESIMU_U := libsesimu_u.a
 

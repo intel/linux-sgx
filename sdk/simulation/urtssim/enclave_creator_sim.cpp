@@ -90,12 +90,15 @@ int EnclaveCreatorSim::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, 
     }
     return ::add_enclave_page(enclave_id, source, (size_t)offset, sinfo, attr);
 }
+
+void reg_sig_handler();
 int EnclaveCreatorSim::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file)
 {
     UNUSED(prd_css_file);
     sgx_launch_token_t token;
     memset(token, 0, sizeof(sgx_launch_token_t));
 
+    reg_sig_handler();
     int ret = lc->update_launch_token(false);
     if(ret != SGX_SUCCESS)
         return ret;
