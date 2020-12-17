@@ -514,7 +514,6 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         assert(mngr != NULL);
 
         ce = mngr->get_enclave(tcs);
-        ce = mngr->get_enclave(tcs);
         GP_ON_EENTER(ce == NULL);
         GP_ON_EENTER(!ce->is_tcs_page(tcs));
 
