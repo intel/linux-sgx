@@ -44,6 +44,8 @@
 #include "rts_sim.h"
 #include <assert.h>
 #include <time.h>
+#include "sgx_enclave_common.h"
+#include <map>
 
 #include <openssl/evp.h>
 #include <openssl/err.h>
@@ -70,6 +72,34 @@ static void cleanup_openssl(void)
     ERR_free_strings();
 #endif
 }
+
+
+static Mutex s_enclave_info_mutex;
+static std::map<void *, enclave_elrange_t*>s_enclave_elrange_map;
+
+__attribute__((destructor)) 
+static void enclave_elrange_cleanup(void)
+{
+    for (auto &res:s_enclave_elrange_map)
+    {
+        auto elrange = res.second;
+        delete elrange;
+        elrange = NULL;
+    }
+}
+
+extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_start_address)
+{
+    LockGuard lock(&s_enclave_info_mutex);
+    bool ret = false;
+    if(s_enclave_elrange_map.count(base_address) != 0)
+    {
+        elrange_start_address = s_enclave_elrange_map[base_address]->elrange_start_address;
+        ret = true;
+    }
+    return ret;  
+}
+
 
 
 EnclaveCreator* g_enclave_creator = new EnclaveCreatorSim();
@@ -180,7 +210,6 @@ int EnclaveCreatorSim::destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enc
 
     if(enclave == NULL)
         return SGX_ERROR_INVALID_ENCLAVE_ID;
-
     return ::destroy_enclave(enclave_id);
 }
 
@@ -306,12 +335,86 @@ int EnclaveCreatorSim::remove_range(uint64_t fromaddr, uint64_t numpages)
     return SGX_SUCCESS;
 }
 
+
+
 int EnclaveCreatorSim::set_enclave_info(void* base_address, uint32_t info_type, void* input_info, size_t input_info_size)
 {
-    UNUSED(base_address); 
-    UNUSED(info_type); 
-    UNUSED(input_info); 
-    UNUSED(input_info_size); 
+    UNUSED(base_address);
+    if (input_info == NULL)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    if (info_type != ENCLAVE_ELRANGE)
+    {
+        return SGX_ERROR_FEATURE_NOT_SUPPORTED;
+    }
+    else
+    {
+        if (input_info_size != sizeof(enclave_elrange_t))
+        {
+            return SGX_ERROR_INVALID_PARAMETER;
+        }
+        //check the input parameters 
+        enclave_elrange_t* input_data = reinterpret_cast<enclave_elrange_t*>(input_info);
+        if(input_data->elrange_size == 0)
+        {
+            return ENCLAVE_INVALID_PARAMETER;
+        }
+
+        if(input_data->elrange_start_address > input_data->enclave_image_address)
+        {
+            return ENCLAVE_INVALID_PARAMETER;
+        }
+
+        if((input_data->elrange_size % SE_PAGE_SIZE != 0) ||
+            (input_data->elrange_start_address% SE_PAGE_SIZE != 0) ||
+            (input_data->enclave_image_address% SE_PAGE_SIZE != 0))
+        {
+            return ENCLAVE_INVALID_PARAMETER;
+        }
+
+        if((input_data->elrange_start_address & (input_data->elrange_size -1 )) !=0)
+        {
+            return ENCLAVE_INVALID_PARAMETER;
+        }
+
+        uint64_t elrange_end = input_data->elrange_start_address + input_data->elrange_size;
+        if(elrange_end < input_data->elrange_start_address || elrange_end < input_data->elrange_size)
+        {
+            return ENCLAVE_INVALID_PARAMETER;
+        }
+        
+        LockGuard lock(&s_enclave_info_mutex);
+        if (s_enclave_elrange_map.count(base_address) != 0)
+        {
+            enclave_elrange_t *enclave_elrange = s_enclave_elrange_map[base_address];
+            if (enclave_elrange == NULL)
+            {
+                return SGX_ERROR_UNEXPECTED;
+            }
+
+            if (memcpy_s(enclave_elrange, sizeof(enclave_elrange_t), input_info, input_info_size))
+            {
+                return SGX_ERROR_UNEXPECTED;
+            }
+        }
+        else
+        {
+            enclave_elrange_t *enclave_elrange = new(std::nothrow) enclave_elrange_t;
+            if (enclave_elrange == NULL)
+            {
+                return SGX_ERROR_OUT_OF_MEMORY;
+            }
+            memset(enclave_elrange, 0, sizeof(enclave_elrange_t));
+            if (memcpy_s(enclave_elrange, sizeof(enclave_elrange_t), input_info, input_info_size))
+            {
+                return SGX_ERROR_UNEXPECTED;
+            }
+            s_enclave_elrange_map[base_address] = enclave_elrange;  
+        }
+    }
+        
 
     return SGX_SUCCESS;
 }

@@ -92,6 +92,8 @@ CLoader::CLoader(uint8_t *mapped_file_base, BinParser &parser)
     : m_mapped_file_base(mapped_file_base)
     , m_enclave_id(0)
     , m_start_addr(NULL)
+    , m_elrange_start_address(0)
+    , m_elrange_size(0)
     , m_metadata(NULL)
     , m_parser(parser)
 {
@@ -111,6 +113,16 @@ sgx_enclave_id_t CLoader::get_enclave_id() const
 const void* CLoader::get_start_addr() const
 {
     return m_start_addr;
+}
+
+uint64_t CLoader::get_elrange_start_addr() const
+{
+    return m_elrange_start_address;
+}
+
+uint64_t CLoader::get_elrange_size() const
+{
+    return m_elrange_size;
 }
 
 const std::vector<std::pair<tcs_t *, bool>>& CLoader::get_tcs_list() const
@@ -494,7 +506,7 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
 {
     memset(&m_secs, 0, sizeof(secs_t)); //should set resvered field of secs as 0.
     //create secs structure.
-    m_secs.base = 0;    //base is allocated by driver. set it as 0
+    m_secs.base = 0;
     m_secs.size = m_metadata->enclave_size;
     m_secs.misc_select = misc_attr->misc_select;
 
@@ -529,15 +541,19 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
         {
             enclave_elrange_t elrange;
             memset(&elrange, 0 , sizeof(enclave_elrange_t));
-            elrange.enclave_start_address = medata->enclave_start_address;
+            elrange.enclave_image_address = medata->enclave_image_address;
+            elrange.elrange_start_address = medata->elrange_start_address;
             elrange.elrange_size = medata->elrange_size;
-            int ret = enclave_creator->set_enclave_info(reinterpret_cast<void*>(medata->enclave_start_address), ENCLAVE_ELRANGE, &elrange, sizeof(enclave_elrange_t));
+            int ret = enclave_creator->set_enclave_info(reinterpret_cast<void*>(medata->enclave_image_address), ENCLAVE_ELRANGE, 
+                                                        reinterpret_cast<void*>(&elrange), sizeof(enclave_elrange_t));
             if(SGX_SUCCESS != ret)
             {
                 return ret;
-            }  
+            }
+            m_elrange_start_address = medata->elrange_start_address;
+            m_elrange_size = medata->elrange_size;
         }
-        m_start_addr = reinterpret_cast<void*>(medata->enclave_start_address);
+        m_start_addr = reinterpret_cast<void*>(medata->enclave_image_address);
     }
     
     int ret = enclave_creator->create_enclave(&m_secs, &m_enclave_id, &m_start_addr, is_ae(&m_metadata->enclave_css));

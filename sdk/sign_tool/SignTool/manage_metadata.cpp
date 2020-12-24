@@ -343,7 +343,8 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     m_metadata->magic_num = METADATA_MAGIC;
     m_metadata->desired_misc_select = 0;
     m_metadata->tcs_min_pool = (uint32_t)parameter[TCSMINPOOL].value;
-    m_metadata->enclave_start_address = parameter[ENCLAVESTARTADDRESS].value;
+    m_metadata->enclave_image_address = parameter[ENCLAVEIMAGEADDRESS].value;
+    m_metadata->elrange_start_address = parameter[ELRANGESTARTADDRESS].value;
     m_metadata->elrange_size = parameter[ELRANGESIZE].value;
     m_metadata->enclave_css.body.misc_select = (uint32_t)parameter[MISCSELECT].value;
     m_metadata->enclave_css.body.misc_mask =  (uint32_t)parameter[MISCMASK].value;
@@ -485,12 +486,17 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
         return false;
     }
 
-    if(parameter[ENCLAVESTARTADDRESS].flag == 0 && parameter[ELRANGESIZE].flag !=0)
+    if(parameter[ENCLAVEIMAGEADDRESS].flag != 0 && parameter[ELRANGESIZE].flag ==0)
     {
-        se_trace(SE_TRACE_ERROR, SET_ELRANGE_ERROR);
+        se_trace(SE_TRACE_ERROR, SET_ENCLAVEIMAGEADDRESS_SET_ERROR);
         return false;
     }
 
+    if(parameter[ELRANGESTARTADDRESS].flag != 0 && parameter[ELRANGESIZE].flag ==0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_SET_ERROR);
+        return false;
+    }
 
     m_create_param.heap_init_size = parameter[HEAPINITSIZE].flag ? parameter[HEAPINITSIZE].value : parameter[HEAPMAXSIZE].value;
     m_create_param.heap_min_size = parameter[HEAPMINSIZE].value;
@@ -590,27 +596,58 @@ bool CMetadata::build_layout_entries()
         return false;
     }
     
-    if(m_metadata->enclave_start_address)
-    {
-        if(m_metadata->enclave_start_address%SE_PAGE_SIZE != 0)
-        {
-            se_trace(SE_TRACE_ERROR, SET_ENCLAVESTARTADDRESS_ALIGN_ERROR);
-            return false;
-        }
-    }
-    
     if(m_metadata->elrange_size)
     {
+        if(m_metadata->enclave_image_address % SE_PAGE_SIZE != 0)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ENCLAVEIMAGEADDRESS_ALIGN_ERROR);
+            return false;
+        }
+        
+        if(m_metadata->elrange_start_address % SE_PAGE_SIZE != 0)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_PAGE_ALIGN_ERROR);
+            return false;
+        }
+
         if(m_metadata->elrange_size%SE_PAGE_SIZE != 0)
         {
             se_trace(SE_TRACE_ERROR, SET_ELRANGE_PAGE_ALIGN_ERROR);
             return false;
         }
-        if(m_metadata->enclave_start_address + m_rva > m_metadata->elrange_size)
+        
+        if((m_metadata->elrange_start_address & (m_metadata->elrange_size -1)) != 0)
         {
-            se_trace(SE_TRACE_ERROR, SET_ENCLAVESTARTADDRESS_RANGE_ERROR);
+            se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_ALIGN_ERROR);
             return false;
         }
+        
+        if(m_metadata->elrange_start_address > m_metadata->enclave_image_address)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_RANGE_ERROR);
+            return false;
+        }
+
+        uint64_t enclave_end = m_metadata->enclave_image_address + m_rva;
+        if(enclave_end < m_metadata->enclave_image_address || enclave_end < m_rva)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ENCLAVEIMAGEADDRESS_ERROR);
+            return false;
+        }
+
+        uint64_t elrange_end = m_metadata->elrange_start_address+ m_metadata->elrange_size;
+        if(elrange_end < m_metadata->elrange_start_address || elrange_end < m_metadata->elrange_size)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ELRANGE_ERROR);
+            return false;
+        }
+        
+        if(enclave_end > elrange_end)
+        {
+            se_trace(SE_TRACE_ERROR, SET_ELRANGE_RANGE_ERROR);
+            return false;
+        }
+        
         if(!is_power_of_two(m_metadata->elrange_size))
         {
             se_trace(SE_TRACE_ERROR, SET_ELRANGE_ALIGN_ERROR);
@@ -1123,7 +1160,7 @@ bool CMetadata::build_tcs_template(tcs_t *tcs)
     uint64_t offset = 0;
     if(m_metadata->elrange_size != 0)
     {
-        offset = m_metadata->enclave_start_address;
+        offset = m_metadata->enclave_image_address - m_metadata->elrange_start_address;
     }
     tcs->oentry = m_parser->get_symbol_rva("enclave_entry");
     if(tcs->oentry == 0)

@@ -183,8 +183,9 @@ typedef struct _metadata_t
     sgx_attributes_t    attributes;            /* XFeatureMask to be set in SECS. */
     enclave_css_t       enclave_css;           /* The enclave signature */
     data_directory_t    dirs[DIR_NUM];
-    uint8_t             data[18576];
-    uint64_t            enclave_start_address;
+    uint8_t             data[18568];
+    uint64_t            enclave_image_address;
+    uint64_t            elrange_start_address;
     uint64_t            elrange_size;
 }metadata_t;
 

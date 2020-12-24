@@ -54,7 +54,9 @@
 
 #define DATA_BLOCK_SIZE 64
 #define EID             0x44444444
-uint64_t enclave_start_address = 0;
+
+uint64_t enclave_image_address = 0;
+uint64_t elrange_start_address = 0;
 uint64_t elrange_size = 0;
 
 
@@ -153,7 +155,7 @@ int EnclaveCreatorST::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
     uint64_t page_offset = (uint64_t)offset;
     if(elrange_size != 0)
     {
-        page_offset += enclave_start_address;
+        page_offset += enclave_image_address - elrange_start_address;
     }
     
     uint8_t eadd_val[SIZE_NAMED_VALUE] = "EADD\0\0\0";
@@ -338,7 +340,8 @@ int EnclaveCreatorST::remove_range(uint64_t fromaddr, uint64_t numpages)
 
 int EnclaveCreatorST::set_enclave_info(void* base_address, uint32_t info_type, void* input_info, size_t input_info_size)
 {
-    if (base_address == NULL || input_info == NULL)
+    UNUSED(base_address);
+    if (input_info == NULL)
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
@@ -354,7 +357,8 @@ int EnclaveCreatorST::set_enclave_info(void* base_address, uint32_t info_type, v
             return SGX_ERROR_INVALID_PARAMETER;
         }
         enclave_elrange_t *enclave_range = (enclave_elrange_t*) input_info;
-        enclave_start_address = enclave_range->enclave_start_address;
+        enclave_image_address = enclave_range->enclave_image_address;
+        elrange_start_address = enclave_range->elrange_start_address;
         elrange_size = enclave_range->elrange_size;
     }
         

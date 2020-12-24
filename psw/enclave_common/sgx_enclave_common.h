@@ -93,7 +93,8 @@ typedef enum {
 } enclave_info_type_t;
 
 typedef struct enclave_elrange{
-    uint64_t enclave_start_address;
+    uint64_t enclave_image_address;
+    uint64_t elrange_start_address;
     uint64_t elrange_size;
 }enclave_elrange_t;
 

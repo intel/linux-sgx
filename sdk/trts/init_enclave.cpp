@@ -61,7 +61,7 @@ uint64_t g_enclave_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 
 const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0};
+   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0};
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 uint32_t g_cpu_core_num __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
@@ -119,18 +119,15 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     g_enclave_base = (uint64_t)&__ImageBase;
     g_enclave_size = g_global_data.enclave_size;
     
-    if(g_global_data.enclave_start_address != 0)
+    if(g_global_data.elrange_size != 0)
     {
-        //__ImageBase should the same as enclave_start_address
-        if(g_global_data.enclave_start_address != g_enclave_base)
+        //__ImageBase should be the same as enclave_start_address
+        if(g_global_data.enclave_image_address != g_enclave_base)
         {
             abort();
         }
-    }
-    if(g_global_data.elrange_size != 0)
-    {
         //if elrange_size is set, we should set enclave_base and enclave_size to correct value
-        g_enclave_base = 0;
+        g_enclave_base = g_global_data.elrange_start_address;
         g_enclave_size = g_global_data.elrange_size;
     }
 
@@ -183,7 +180,10 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
 
 #ifdef SE_SIM
     memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
-    memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
+    if(g_global_data.rsrv_size != 0)
+    {
+        memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
+    }
 #endif
     // xsave
     uint64_t xfrm = get_xfeature_state();

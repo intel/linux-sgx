@@ -75,6 +75,7 @@ CEnclaveSim::CEnclaveSim(const secs_t* secs)
     memcpy_s(&m_secs, sizeof(m_secs), secs, sizeof(*secs));
 
     m_enclave_id = gen_enclave_id();
+    m_image_offset = 0;
 }
 
 CEnclaveSim::~CEnclaveSim()

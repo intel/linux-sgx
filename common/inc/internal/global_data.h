@@ -61,7 +61,8 @@ typedef struct _global_data_t
     uint32_t       layout_entry_num;
     uint32_t       reserved;
     layout_t       layout_table[LAYOUT_ENTRY_NUM];
-    uint64_t       enclave_start_address;
+    uint64_t       enclave_image_address;
+    uint64_t       elrange_start_address;
     uint64_t       elrange_size;
 } global_data_t;
 

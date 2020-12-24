@@ -1292,8 +1292,9 @@ int main(int argc, char* argv[])
                                    {"ISVFAMILYID_L",  ISVFAMILYID_MAX ,  0,              0,                   0},
                                    {"ISVEXTPRODID_H", ISVEXTPRODID_MAX,  0,              0,                   0},
                                    {"ISVEXTPRODID_L", ISVEXTPRODID_MAX,  0,              0,                   0},
-                                   {"EnclaveStartAddress",    0xFFFFFFFFFFFFFFFF,  0x1000,       0,                   0},
-                                   {"ELRangeSize",    0xFFFFFFFFFFFFFFFF,  0x1000,       0,                   0}};
+                                   {"EnclaveImageAddress",    0xFFFFFFFFFFFFFFFF,  0,       0,                0},
+                                   {"ELRangeStartAddress",    0xFFFFFFFFFFFFFFFF,  0,       0,                0},
+                                   {"ELRangeSize",    0xFFFFFFFFFFFFFFFF,  0x2000,       0,                   0}};
 
     const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};

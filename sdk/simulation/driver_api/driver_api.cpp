@@ -73,7 +73,7 @@ int create_enclave(secs_t           *secs,
         SE_TRACE(SE_TRACE_DEBUG, "out of memory.\n");
         return SGX_ERROR_OUT_OF_MEMORY;
     }
-
+    
     *start_addr = ce->get_secs()->base;
     *enclave_id = ce->get_enclave_id();
     secs->base = *start_addr;
