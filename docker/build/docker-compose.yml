@@ -62,3 +62,4 @@ services:
 
 volumes:
   aesmd-socket:
+    external: true
