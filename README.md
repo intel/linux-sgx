@@ -35,10 +35,13 @@ Intel(R) Software Guard Extensions (Intel(R) SGX) is an Intel technology for app
 
 The Linux\* Intel(R) SGX software stack is comprised of the Intel(R) SGX driver, the Intel(R) SGX SDK, and the Intel(R) SGX Platform Software (PSW). The Intel(R) SGX SDK and Intel(R) SGX PSW are hosted in the [linux-sgx](https://github.com/01org/linux-sgx) project.
 
-The [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project maintains an out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used on the platforms with *Flexible Launch Control* and *Intel(R) AES New Instructions* support and could support both Elliptic Curve Digital Signature algorithm (ECDSA) based attestation and Enhanced Privacy Identification (EPID) based attestation.      
+The [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project maintains an out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used on the platforms with *Flexible Launch Control* and *Intel(R) AES New Instructions* support and could support both Elliptic Curve Digital Signature algorithm (ECDSA) based attestation and Enhanced Privacy Identification (EPID) based attestation.
+
 The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the other out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used to support Enhanced Privacy Identification (EPID) based attestation on the platforms without *Flexible Launch Control*. 
 
-The repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
+The [intel-device-plugins-for-kubernetes](https://github.com/intel/intel-device-plugins-for-kubernetes) project enables users to run container applications running Intel(R) SGX enclaves in Kubernetes clusters. It also gives instructions how to set up ECDSA based attestation in a cluster.
+
+This repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
 
 License
 -------
