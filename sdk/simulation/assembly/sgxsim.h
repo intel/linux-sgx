@@ -53,9 +53,6 @@ uintptr_t DoEINIT_SW(secs_t* secs, enclave_css_t *css,
 
 uintptr_t DoEREMOVE_SW(uintptr_t unused_xbx, void* epc_lin_addr);
 
-void switch_stack(int signum, void* siginfo, void *priv, uintptr_t rsp);
-void call_old_handler(int signum, void* siginfo, void *priv);
-
 #ifdef __cplusplus
 }
 #endif

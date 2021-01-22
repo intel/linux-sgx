@@ -43,6 +43,8 @@ typedef struct _tcs_sim_t
     size_t    tcs_state;
     uintptr_t saved_dtv;
     uintptr_t saved_fs_gs_0;
+    uintptr_t saved_fs_base;
+    uintptr_t saved_gs_base;
 } tcs_sim_t;
 
 #define TCS_STATE_INACTIVE   0  //The TCS is available for a normal EENTER
@@ -61,10 +63,10 @@ extern "C" {
 #endif
 
 //Add the implementation to get the _tls_array pointer in GNU here.
-#include "gnu_tls.h"
+//#include "gnu_tls.h"
 extern uint8_t __ImageBase;
-int td_mngr_set_td(void *enclave_base, tcs_t *tcs);
-int td_mngr_restore_td(tcs_t *tcs)  __attribute__((section (".nipx")));
+//int td_mngr_set_td(void *enclave_base, tcs_t *tcs);
+//int td_mngr_restore_td(tcs_t *tcs)  __attribute__((section (".nipx")));
 
 #ifdef __cplusplus
 }

@@ -37,6 +37,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <asm/prctl.h>
+#include <sys/prctl.h>
+#include <errno.h>
 
 #include "arch.h"
 #include "util.h"
@@ -58,7 +61,7 @@ static uintptr_t _EINIT(secs_t* secs, enclave_css_t* css, token_t* launch);
 static uintptr_t _ECREATE (page_info_t* pi);
 static uintptr_t _EADD (page_info_t* pi, void* epc_lin_addr);
 static uintptr_t _EREMOVE(const void* epc_lin_addr);
-extern "C" void* get_td_addr(void);
+extern "C" int arch_prctl(int code, unsigned long addr);
 
 ////////////////////////////////////////////////////////////////////////
 #define __GP__() exit(EXIT_FAILURE)
@@ -135,13 +138,13 @@ void call_old_handler(int signum, void* siginfo, void *priv)
             g_old_sigact[signum].sa_handler = SIG_DFL;
     }
 }
-void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)  __attribute__((optimize(0)));
+void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)  __attribute__((optimize(0))) __attribute__((optimize("no-stack-protector")));
 void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
 {
-    SE_TRACE(SE_TRACE_DEBUG, "SIM signal handler is triggered\n");
     GP_ON(signum != SIGFPE && signum != SIGSEGV);
     
-    thread_data_t *thread_data = (thread_data_t*)get_td_addr();
+    thread_data_t *thread_data = 0;
+    asm volatile("mov %%gs:0, %0":"=r"(thread_data));
     if (thread_data != NULL) 
     {
         // first SSA can be used to get tcs, even cssa > 0.
@@ -150,6 +153,19 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
         tcs_t *tcs = GET_TCS_PTR(xbp);
         if(tcs != NULL)
         {
+            tcs_sim_t *tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);
+            GP_ON(tcs_sim->tcs_state != TCS_STATE_ACTIVE);
+            tcs_sim->tcs_state = TCS_STATE_INACTIVE;
+
+            // save FS, GS base address
+            uint64_t tmp_fs_base=0, tmp_gs_base=0;
+            arch_prctl(ARCH_GET_FS, (unsigned long)&tmp_fs_base);
+            arch_prctl(ARCH_GET_GS, (unsigned long)&tmp_gs_base);
+
+            // restore FS, GS base address
+            arch_prctl(ARCH_SET_FS, tcs_sim->saved_fs_base);
+            arch_prctl(ARCH_SET_GS, tcs_sim->saved_gs_base);
+
             CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
             assert(mngr != NULL);
 
@@ -161,9 +177,6 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
                 secs_t *secs = ce->get_secs();
                 if (secs && (xip >= (size_t)secs->base) && (xip < (size_t)secs->base + secs->size))
 	        {
-                    tcs_sim_t *tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);
-                    GP_ON(tcs_sim->tcs_state != TCS_STATE_ACTIVE);
-                    tcs_sim->tcs_state = TCS_STATE_INACTIVE;
                     GP_ON(tcs->cssa >= tcs->nssa);
                     p_ssa_gpr = (ssa_gpr_t*)((size_t)p_ssa_gpr + tcs->cssa * secs->ssa_frame_size * SE_PAGE_SIZE);
                     p_ssa_gpr->REG(ax) = context->uc_mcontext.gregs[REG_RAX];
@@ -184,10 +197,10 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
                     p_ssa_gpr->r14 = context->uc_mcontext.gregs[REG_R14];
                     p_ssa_gpr->r15 = context->uc_mcontext.gregs[REG_R15];
                     p_ssa_gpr->rflags = context->uc_flags;
+                    p_ssa_gpr->fs = tmp_fs_base;
+                    p_ssa_gpr->gs = tmp_gs_base;
 
 	            xsave_regs((char*)((size_t)p_ssa_gpr + sizeof(ssa_gpr_t) - secs->ssa_frame_size * SE_PAGE_SIZE), secs->attributes.xfrm);
-		    // not sure if they are the same, copy context->__fpregs_mem to SSA again
-		    memcpy((uint8_t*)((size_t)p_ssa_gpr + sizeof(ssa_gpr_t) - secs->ssa_frame_size * SE_PAGE_SIZE), &context->__fpregs_mem, sizeof(context->__fpregs_mem));
                     context->uc_mcontext.gregs[REG_RAX] = SE_ERESUME;
                     context->uc_mcontext.gregs[REG_RBX] = (size_t)tcs;
                     context->uc_mcontext.gregs[REG_RIP] = tcs_sim->saved_aep;
@@ -218,35 +231,6 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
                         p_ssa_gpr->exit_info.valid = 0;
 		    }
                     tcs->cssa +=1;
-		    // copy stack to untrusted stack
-		    uintptr_t rsp_t = 0;
-		    uintptr_t rbp_t = 0;
-		    asm volatile("mov %%rsp, %0":"=m"(rsp_t));
-		    size_t stack_size = p_ssa_gpr->REG(sp) - rsp_t;
-		    uintptr_t rsp_u = ((p_ssa_gpr->REG(sp_u) - stack_size) >> 4) << 4;
-		    memcpy((void*)rsp_u, (void*)rsp_t, stack_size);
-		    uintptr_t *p_t = (uintptr_t *)rsp_t;
-		    uintptr_t *p_u = (uintptr_t *)rsp_u;
-		    for (size_t i = 0; i < stack_size / sizeof(uintptr_t); i++ )
-		    {
-                        if(*p_t - rsp_t <= stack_size)
-			{
-				*p_u = *p_t - rsp_t + rsp_u;
-			}
-			p_t++;
-			p_u++;
-		    }
-		    asm volatile("mov %%rbp, %0":"=m"(rbp_t));
-		    if (rbp_t -rsp_t <= stack_size)
-                    {
-                        uintptr_t rbp_u = rbp_t - rsp_t + rsp_u;
-		        asm volatile("mov %0, %%rbp"::"r"(rbp_u));
-		    }
-
-                    ucontext_t *context_u = (ucontext_t *)((uintptr_t)priv - rsp_t + rsp_u);
-		    siginfo_t *siginfo_u = (siginfo_t *)((uintptr_t)siginfo - rsp_t + rsp_u);
-                    switch_stack(signum, (void*)siginfo_u, (void*)context_u, rsp_u);
-		    return;
 	        }
 	    }
         }
@@ -258,10 +242,14 @@ void reg_sig_handler_sim()
 {
     int ret = 0;
     struct sigaction sig_act;
-
+    stack_t ss;
+    ss.ss_flags = 0;
+    ss.ss_size = SIGSTKSZ;
+    ss.ss_sp = malloc(ss.ss_size);
+    sigaltstack(&ss, NULL);
     memset(&sig_act, 0, sizeof(sig_act));
     sig_act.sa_sigaction = sig_handler_sim;
-    sig_act.sa_flags = SA_SIGINFO | SA_NODEFER | SA_RESTART;
+    sig_act.sa_flags = SA_SIGINFO | SA_NODEFER | SA_RESTART | SA_ONSTACK;
     sigemptyset(&sig_act.sa_mask);
     if(sigprocmask(SIG_SETMASK, NULL, &sig_act.sa_mask))
     {
@@ -477,8 +465,12 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         GP_ON_EENTER(xip == 0);
 
         //set the _tls_array to point to the self_addr of TLS section inside the enclave
-        GP_ON_EENTER(td_mngr_set_td(enclave_base_addr, tcs) == false);
+        //GP_ON_EENTER(td_mngr_set_td(enclave_base_addr, tcs) == false);
  
+        // save FS, GS base address
+        arch_prctl(ARCH_GET_FS, (unsigned long)&tcs_sim->saved_fs_base);
+        arch_prctl(ARCH_GET_GS, (unsigned long)&tcs_sim->saved_gs_base);
+
         // Destination depends on STATE
         xip += (uintptr_t)tcs->oentry;
         tcs_sim->tcs_state = TCS_STATE_ACTIVE;
@@ -498,6 +490,10 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         regs.xbp = p_ssa_gpr->REG(bp_u);
         regs.xsp = p_ssa_gpr->REG(sp_u);
         regs.xip = xip;
+
+        // adjust the FS, GS base address
+        arch_prctl(ARCH_SET_FS, (unsigned long)enclave_base_addr + tcs->ofs_base);
+        arch_prctl(ARCH_SET_GS, (unsigned long)enclave_base_addr + tcs->ogs_base);
 
         load_regs(&regs);
 
@@ -540,6 +536,10 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         regs.xsp = p_ssa_gpr->REG(sp);
         regs.xbp = p_ssa_gpr->REG(bp);
         regs.xip = p_ssa_gpr->REG(ip);
+
+	// adjust the FS, GS base address
+        arch_prctl(ARCH_SET_FS, p_ssa_gpr->fs);
+        arch_prctl(ARCH_SET_GS, p_ssa_gpr->gs);
 
         load_regs(&regs);
         return;
