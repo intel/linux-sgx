@@ -77,31 +77,13 @@ extern "C" int arch_prctl(int code, unsigned long addr);
 
 #define mcp_same_size(dst_ptr, src_ptr, size) memcpy_s(dst_ptr, size, src_ptr, size)
 
-static void xsave_regs(char *addr, uint64_t bits)
+static void fxsave_regs(char *addr)
 {
-    if(bits == 3)
-    {
-        asm volatile("fxsave %0" : : "m" (*addr));
-    }
-    else
-    {
-        uint32_t high = (uint32_t)(bits >> 32);
-        uint32_t low = (uint32_t)(bits & 0xFFFFFFFF);
-        asm volatile("xsave %0" : : "m" (*addr), "a" (low), "d" (high));
-    }
+    asm volatile("fxsave %0" : : "m" (*addr));
 }
-static void xrstor_regs(char *addr, uint64_t bits)
+static void fxrstor_regs(char *addr)
 {
-    if(bits == 3)
-    {
-        asm volatile("fxrstor %0" : : "m" (*addr));
-    }
-    else
-    {
-        uint32_t high = (uint32_t)(bits >> 32);
-        uint32_t low = (uint32_t)(bits & 0xFFFFFFFF);
-        asm volatile("xrstor %0" : : "m" (*addr), "a" (low), "d" (high));
-    }
+    asm volatile("fxrstor %0" : : "m" (*addr));
 }
 
 static struct sigaction g_old_sigact[_NSIG];
@@ -200,7 +182,6 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
                     p_ssa_gpr->fs = tmp_fs_base;
                     p_ssa_gpr->gs = tmp_gs_base;
 
-	            xsave_regs((char*)((size_t)p_ssa_gpr + sizeof(ssa_gpr_t) - secs->ssa_frame_size * SE_PAGE_SIZE), secs->attributes.xfrm);
                     context->uc_mcontext.gregs[REG_RAX] = SE_ERESUME;
                     context->uc_mcontext.gregs[REG_RBX] = (size_t)tcs;
                     context->uc_mcontext.gregs[REG_RIP] = tcs_sim->saved_aep;
@@ -209,7 +190,7 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
                     if(signum == SIGSEGV)
 		    {
                         p_ssa_gpr->exit_info.valid = 1;
-                        p_ssa_gpr->exit_info.exit_type = 6; //SW
+                        p_ssa_gpr->exit_info.exit_type = 3; // BP 6(SW), others 3(HW)
                         p_ssa_gpr->exit_info.vector = 14;   //#PF
 			struct misc_t {
                             void *   maddr;
@@ -223,7 +204,7 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
 		    else if(signum == SIGFPE)
 		    {
                         p_ssa_gpr->exit_info.valid = 1;
-                        p_ssa_gpr->exit_info.exit_type = 6; //SW
+                        p_ssa_gpr->exit_info.exit_type = 3; // BP 6(SW), others 3(HW)
                         p_ssa_gpr->exit_info.vector = 0;   //#DE
 		    }
 		    else
@@ -500,6 +481,8 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         // Returning from this function enters the enclave
         return;
     case SE_ERESUME:
+        char buf[512];
+        fxsave_regs(buf);
         SE_TRACE(SE_TRACE_DEBUG, "ERESUME instruction\n");
         // xbx contains the address of a TCS
         tcs = reinterpret_cast<tcs_t*>(xbx);
@@ -526,7 +509,8 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
                 + (tcs->cssa+1) * secs->ssa_frame_size * SE_PAGE_SIZE
                 - sizeof(ssa_gpr_t));
 
-        xrstor_regs((char*)((size_t)p_ssa_gpr + sizeof(ssa_gpr_t) - secs->ssa_frame_size * SE_PAGE_SIZE), secs->attributes.xfrm);
+        memcpy((char*)((size_t)p_ssa_gpr + sizeof(ssa_gpr_t) - secs->ssa_frame_size * SE_PAGE_SIZE), buf, sizeof(buf));
+        fxrstor_regs((char*)((size_t)p_ssa_gpr + sizeof(ssa_gpr_t) - secs->ssa_frame_size * SE_PAGE_SIZE));
         regs.xax = p_ssa_gpr->REG(ax);
         regs.xbx = p_ssa_gpr->REG(bx);
         regs.xdx = p_ssa_gpr->REG(dx);
