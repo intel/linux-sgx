@@ -431,7 +431,7 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         enclave_base_addr = secs->base;
 
         p_ssa_gpr = reinterpret_cast<ssa_gpr_t*>(reinterpret_cast<uintptr_t>(enclave_base_addr) + static_cast<size_t>(tcs->ossa)
-                + secs->ssa_frame_size * SE_PAGE_SIZE
+                + secs->ssa_frame_size * SE_PAGE_SIZE * (tcs->cssa + 1)
                 - sizeof(ssa_gpr_t));
 
         tcs_sim->saved_aep = xcx;
@@ -481,7 +481,7 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         // Returning from this function enters the enclave
         return;
     case SE_ERESUME:
-        char buf[512];
+        char buf[512]  __attribute((aligned (16)));
         fxsave_regs(buf);
         SE_TRACE(SE_TRACE_DEBUG, "ERESUME instruction\n");
         // xbx contains the address of a TCS
