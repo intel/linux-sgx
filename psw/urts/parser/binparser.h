@@ -42,8 +42,8 @@
 #include <vector>
 #include <string>
 
-#define ENCLAVE_MAX_SIZE_32 0xffffffff
-#define ENCLAVE_MAX_SIZE_64 0x1fffffffff
+#define ENCLAVE_MAX_SIZE_32 UINT32_MAX
+#define ENCLAVE_MAX_SIZE_64 UINT64_MAX
 
 typedef enum _bin_fmt_t
 {

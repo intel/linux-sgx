@@ -30,17 +30,11 @@
  */
 
 
-#include "td_mngr.h"
+#include <math.h>
 
-/*
- * Get the TD address  - this function needs to be called
- * when the DTV value has not been restored yet.
- */
-void* get_td_addr(void)
+double
+pow10(double x)
 {
-    dtv_t* dtv = GET_DTV();
-    return read_dtv_val(dtv);
+    return pow(10, x);
 }
-
-/* vim: set ts=4 sw=4 cin et: */
 

@@ -36,6 +36,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <asm/prctl.h>
+#include <sys/prctl.h>
+#include <errno.h>
 
 #include "arch.h"
 #include "util.h"
@@ -206,6 +209,7 @@ uintptr_t _EREMOVE(const void *epc_lin_addr)
 
 ////////////////////////////////////////////////////////////////////////
 
+extern "C" int arch_prctl(int code, unsigned long addr);
 // Master entry functions
 
 // The call to load_regs assumes the existence of a frame pointer.
@@ -265,10 +269,11 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
 
         xip = reinterpret_cast<uintptr_t>(enclave_base_addr);
         GP_ON_EENTER(xip == 0);
-
-        //set the _tls_array to point to the self_addr of TLS section inside the enclave
-        GP_ON_EENTER(td_mngr_set_td(enclave_base_addr, tcs) == false);
  
+        // save FS, GS base address
+        arch_prctl(ARCH_GET_FS, (unsigned long)&tcs_sim->saved_fs_base);
+        arch_prctl(ARCH_GET_GS, (unsigned long)&tcs_sim->saved_gs_base);
+
         // Destination depends on STATE
         xip += (uintptr_t)tcs->oentry;
         tcs_sim->tcs_state = TCS_STATE_ACTIVE;
@@ -288,6 +293,10 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         regs.xbp = p_ssa_gpr->REG(bp_u);
         regs.xsp = p_ssa_gpr->REG(sp_u);
         regs.xip = xip;
+
+        // adjust the FS, GS base address
+        arch_prctl(ARCH_SET_FS, (unsigned long)enclave_base_addr + tcs->ofs_base);
+        arch_prctl(ARCH_SET_GS, (unsigned long)enclave_base_addr + tcs->ogs_base);
 
         load_regs(&regs);
 

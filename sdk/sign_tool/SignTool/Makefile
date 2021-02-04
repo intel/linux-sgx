@@ -99,4 +99,4 @@ clean:
 
 .PHONY: enclaveparser
 enclaveparser:
-	$(MAKE) -C $(LINUX_PSW_DIR)/urts/parser/
+	$(MAKE) -C $(LINUX_PSW_DIR)/urts/parser/ SIGN_TOOL=1

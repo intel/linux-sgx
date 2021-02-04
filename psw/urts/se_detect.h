@@ -51,6 +51,8 @@
 // EAX[1] enums support for compaction extensions to XSAVE
 #define XSAVEC_SHIFT 1
 
+bool is_se_supported();
+
 bool try_read_xcr0(uint64_t *value);
 //bool is_se_debug_supported();
 bool get_plat_cap_by_cpuid(sgx_misc_attribute_t *se_misc_attr);

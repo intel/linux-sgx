@@ -41,7 +41,7 @@ CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-exceptions -fno-rtti
 OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_rsa_encryption.o sgx_aes_gcm.o sgx_cmac128.o sgx_hmac.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha1.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o sgx_internal.o
 SHARED_OBJ = tcrypto_version.o sgx_common_init_ipp.o
 
-ifeq ($(USE_OPT_LIBS), 0)
+ifeq ($(USE_CRYPTO_LIB), 0)
 # Build SGXSSL based sgx_tcrypto library
 ifeq ($(ARCH), x86_64)
 	OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/Linux/package
@@ -86,7 +86,7 @@ SRCDIR := ipp
 
 LIB_NAME := libsgx_tcrypto_ipp.a
 
-endif #($(USE_OPT_LIBS), 0)
+endif #($(USE_CRYPTO_LIB), 0)
 
 C_Files := $(wildcard ipp/ipp_disp/*.c)
 C_OBJS  := $(C_Files:.c=.o)
@@ -98,7 +98,7 @@ OBJ := $(addprefix $(SRCDIR)/, $(OBJ))
 LIB_NAME := $(addprefix $(SRCDIR)/, $(LIB_NAME))
 TARGET := libsgx_tcrypto.a
 
-ifeq ($(USE_OPT_LIBS), 0)
+ifeq ($(USE_CRYPTO_LIB), 0)
 
 $(TARGET): PREPRARE_SGX_SSL 
 	$(MAKE) $(OBJ) 
@@ -118,7 +118,7 @@ $(TARGET): $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 	$(AR) rsD $(LIB_NAME) $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 	$(CP) $(LIB_NAME) $@
 
-endif #($(USE_OPT_LIBS), 0)
+endif #($(USE_CRYPTO_LIB), 0)
 
 $(DISP_LIB_NAME): $(C_OBJS)
 	$(AR) rsD $(DISP_LIB_NAME) $(C_OBJS)

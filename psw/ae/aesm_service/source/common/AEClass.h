@@ -113,7 +113,7 @@ ae_error_t SingletonEnclave<T>::load_enclave()
     if((ae_err = aesm_get_pathname(FT_ENCLAVE_NAME, aesm_enclave_id, enclave_path,
         MAX_PATH))
         !=AE_SUCCESS){
-        AESM_DBG_ERROR("fail to get enclave pathname");
+        AESM_LOG_ERROR("fail to get enclave pathname");
         return ae_err;
     }
     int launch_token_update;
@@ -121,7 +121,7 @@ ae_error_t SingletonEnclave<T>::load_enclave()
         &launch_token_update, &m_enclave_id,
         &m_attributes);
     if (ret == SGX_ERROR_NO_DEVICE){
-        AESM_DBG_ERROR("AE SERVER NOT AVAILABLE in load enclave: %s",enclave_path);
+        AESM_LOG_ERROR("AE SERVER NOT AVAILABLE in load enclave: %s",enclave_path);
         return AE_SERVER_NOT_AVAILABLE;
     }
     if(ret == SGX_ERROR_OUT_OF_EPC){
@@ -130,7 +130,7 @@ ae_error_t SingletonEnclave<T>::load_enclave()
         return AESM_AE_OUT_OF_EPC;
     }
     if (ret != SGX_SUCCESS){
-        AESM_DBG_ERROR("Create Enclave failed:%d",ret);
+        AESM_LOG_ERROR("Create Enclave failed:%d",ret);
         return AE_SERVER_NOT_AVAILABLE;
     }
     AESM_DBG_INFO("enclave %d loaded with id 0X%llX",aesm_enclave_id,m_enclave_id);

@@ -36,24 +36,57 @@
 #define AESM_LOG_REPORT_WARNING 2
 #define AESM_LOG_REPORT_INFO    3
 #include "event_strings.h"
+#include "internal_log.h"
 #ifdef __cplusplus
 extern "C" {
 #endif/*__cplusplus*/
-    void aesm_log_report(int level, const char *format, ...);
+    void sgx_proc_log_report(int level, const char *format, ...);
     void aesm_log_init(void);
     void aesm_log_fini(void);
 #ifdef __cplusplus
 };
 #endif/*__cplusplus*/
 
-#define AESM_LOG_FATAL(format, args...) aesm_log_report(AESM_LOG_REPORT_FATAL, format, ## args)
-#define AESM_LOG_ERROR(format, args...) aesm_log_report(AESM_LOG_REPORT_ERROR, format, ## args)
-#define AESM_LOG_WARN(format, args...)  aesm_log_report(AESM_LOG_REPORT_WARNING, format, ## args)
-#define AESM_LOG_INFO(format, args...)  aesm_log_report(AESM_LOG_REPORT_INFO, format, ## args)
-#define AESM_LOG_FATAL_ADMIN(format, args...) aesm_log_report(AESM_LOG_REPORT_FATAL, "[ADMIN]" format, ## args)
-#define AESM_LOG_ERROR_ADMIN(format, args...) aesm_log_report(AESM_LOG_REPORT_ERROR, "[ADMIN]" format, ## args)
-#define AESM_LOG_WARN_ADMIN(format, args...) aesm_log_report(AESM_LOG_REPORT_WARNING, "[ADMIN]" format, ## args)
-#define AESM_LOG_INFO_ADMIN(format, args...) aesm_log_report(AESM_LOG_REPORT_INFO, "[ADMIN]" format, ## args)
+#define AESM_LOG_FATAL(format, args...) \
+    do {\
+        sgx_proc_log_report(AESM_LOG_REPORT_FATAL, format, ## args); \
+        AESM_DBG_FATAL(format, ## args); \
+    }while(0)
+#define AESM_LOG_ERROR(format, args...) \
+    do { \
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, format, ## args); \
+        AESM_DBG_ERROR(format, ## args); \
+    }while(0);
+#define AESM_LOG_WARN(format, args...)  \
+    do { \
+        sgx_proc_log_report(AESM_LOG_REPORT_WARNING, format, ## args); \
+        AESM_DBG_WARN(format, ## args); \
+    }while(0)
+#define AESM_LOG_INFO(format, args...)  \
+    do { \
+        sgx_proc_log_report(AESM_LOG_REPORT_INFO, format, ## args); \
+        AESM_DBG_INFO(format, ## args); \
+    }while(0)
+#define AESM_LOG_FATAL_ADMIN(format, args...) \
+    do { \
+        sgx_proc_log_report(AESM_LOG_REPORT_FATAL, "[ADMIN]" format, ## args); \
+        AESM_DBG_FATAL("[ADMIN]" format, ## args); \
+    }while(0)
+#define AESM_LOG_ERROR_ADMIN(format, args...) \
+    do { \
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "[ADMIN]" format, ## args); \
+        AESM_DBG_ERROR("[ADMIN]" format, ## args); \
+    }while(0)
+#define AESM_LOG_WARN_ADMIN(format, args...) \
+    do { \
+        sgx_proc_log_report(AESM_LOG_REPORT_WARNING, "[ADMIN]" format, ## args); \
+        AESM_DBG_WARN("[ADMIN]" format, ## args); \
+    }while(0)
+#define AESM_LOG_INFO_ADMIN(format, args...) \
+    do { \
+        sgx_proc_log_report(AESM_LOG_REPORT_INFO, "[ADMIN]" format, ## args); \
+        AESM_DBG_INFO("[ADMIN]" format, ## args); \
+    }while(0)
 #define AESM_LOG_INIT() aesm_log_init()
 #define AESM_LOG_FINI() aesm_log_fini()
 #define AESM_LOG_ERROR_UNICODE AESM_LOG_ERROR

@@ -34,6 +34,8 @@ __weak_alias(index, strchr);
 
 #ifdef _TLIBC_USE_INTEL_FAST_STRING_
 extern char *_intel_fast_strchr(const char *, int);
+#else
+extern char *_strchr(const char *p, int ch);
 #endif
 
 
@@ -43,13 +45,7 @@ strchr(const char *p, int ch)
 #ifdef _TLIBC_USE_INTEL_FAST_STRING_
 	return _intel_fast_strchr(p, ch);
 #else
-	char c = ch;
-	for (;; ++p) {
-		if (*p == c)
-			return((char *)p);
-		if (!*p)
-			return ((char *)NULL);
-	}
+	return _strchr(p, ch);	
 	/* NOTREACHED */
 #endif	
 }

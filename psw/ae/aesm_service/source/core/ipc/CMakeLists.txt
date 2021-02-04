@@ -9,6 +9,7 @@ target_include_directories(ipc
     PUBLIC
     ${PROTOBUF_INCLUDE_DIRS}
     ${CMAKE_CURRENT_BINARY_DIR}
+    ${PROJECT_SOURCE_DIR}/common
     ${PROJECT_SOURCE_DIR}/core/ipc
     ${PROJECT_SOURCE_DIR}/../../inc
     ${PROJECT_SOURCE_DIR}/../../inc/internal
