@@ -76,7 +76,7 @@ mount_dir="/linux-sgx"
 sdk_installer=""
 sgx_src=""
 
-default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.13.100.1.bin
+default_sdk_installer=sgx_linux_x64_sdk_Reproducible_2.13.100.1.bin
 default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.13/distro/nix_reproducibility/$default_sdk_installer
 
 

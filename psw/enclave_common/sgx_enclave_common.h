@@ -64,7 +64,7 @@ typedef enum {
     ENCLAVE_INVALID_SIGNATURE = ENCLAVE_MK_ERROR(0x0003),   /* SGX – invalid Signature or SIGSTRUCT. */
     ENCLAVE_INVALID_ATTRIBUTE = ENCLAVE_MK_ERROR(0x0004),   /* SGX – invalid SECS Attribute. */
     ENCLAVE_INVALID_MEASUREMENT = ENCLAVE_MK_ERROR(0x0005), /* SGX – invalid measurement. */
-    ENCLAVE_NOT_AUTHORIZED = ENCLAVE_MK_ERROR(0x0006),      /* Enclave not authorized to run,  .e.g. provisioning enclave hosted in an app without access rights to /dev/sgx_provision */
+    ENCLAVE_NOT_AUTHORIZED = ENCLAVE_MK_ERROR(0x0006),      /* Enclave not authorized to run. */
     ENCLAVE_INVALID_ENCLAVE = ENCLAVE_MK_ERROR(0x0007),     /* Address is not a Valid Enclave. */
     ENCLAVE_LOST = ENCLAVE_MK_ERROR(0x0008),                /* SGX – enclave is lost (likely due to a power event). */
     ENCLAVE_INVALID_PARAMETER = ENCLAVE_MK_ERROR(0x0009),   /* Invalid Parameter (unspecified) – may be due to type length/format. */
