@@ -696,12 +696,41 @@ bin_fmt_t ElfParser::get_bin_format() const
     return m_bin_fmt;
 }
 
+#include "cpuid.h"
+#include "se_detect.h"
+
 uint64_t ElfParser::get_enclave_max_size() const
 {
+#if !defined(SIGN) && !defined(SE_SIM)
+    int cpu_info[4] = {0, 0, 0, 0};
+    if(is_se_supported())
+    {
+        __cpuidex(cpu_info, SE_LEAF, 0);
+
+    	if(m_bin_fmt == BF_ELF64)
+        {
+            uint8_t exp = (uint8_t)((cpu_info[3] >> 8) & 0xFF);
+            if(exp < 64)
+                return (1ULL << exp);
+            else
+                return ENCLAVE_MAX_SIZE_64;
+        }
+        else
+        {
+          uint8_t exp = (uint8_t)(cpu_info[3] & 0xFF);
+          if(exp < 32)
+            return (1ULL << exp);
+          else
+            return ENCLAVE_MAX_SIZE_32;
+        }
+    }
+    return 0;
+#else
     if(m_bin_fmt == BF_ELF64)
         return ENCLAVE_MAX_SIZE_64;
     else
         return ENCLAVE_MAX_SIZE_32;
+#endif
 }
 
 uint64_t ElfParser::get_metadata_offset() const

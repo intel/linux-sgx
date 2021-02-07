@@ -34,7 +34,7 @@
 # in the docker container.
 #
 # Usage:
-#     ./build_and_launch_docker.sh [ [ -d | --code-dir dir ] [ -t | --reproduce-type type ] | [ -h | --help ] ]
+#     ./build_and_launch_docker.sh [ [ -d | --code-dir dir ] [ -t | --reproduce-type type ] | [ -i | --sdk-installer installer ] | [ -s | --sgx-src-dir src_dir ] [ -h | --help ] ]
 #
 # Options:
 #     -d, --code-dir:
@@ -48,8 +48,19 @@
 #         If no type is provided, all the code will be prepared. And the build steps will
 #         be triggered in the container. Then you can choose to build what you want in the container.
 #
+#    -i, --sdk-installer:
+#         Specify the SDK installer used for AE reproducibility. If this option is not specified,
+#         script will download the default SDK installer.
+#
+#    -s, --sgx-src-dir:
+#         Specify the local sgx source path if you have pulled the sgx source code via `$git clone`
+#         or by other ways.
+#         If this option is specified, script will not clone sgx source but start the build based on
+#         the code base specified by this option.
+#
 #     -h, --help:
-#         Show this usage message.#
+#         Show this usage message.
+#
 #
 
 set -e
@@ -62,23 +73,41 @@ type="all"
 type_flag=0
 mount_dir="/linux-sgx"
 
+sdk_installer=""
+sgx_src=""
+
+default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.13.100.1.bin
+default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.13/distro/nix_reproducibility/$default_sdk_installer
+
+
 usage()
 {
     echo "
     The script is to automatically prepare the reproducible code, build docker image and launch the build
     in the docker container.
+
     Usage:
-        $0 [ [ -d | --code-dir dir ] [ -t | --reproduce-type type ] | [ -h | --help ] ]
+        $0 [ [ -d | --code-dir dir ] [ -t | --reproduce-type type ] | [ -i | --sdk-installer installer ] | [ -s | --sgx-src-dir src_dir ] [ -h | --help ] ]
+
     Options:
         -d, --code-dir:
-            Specify the directory you want to download the repo. If this option is
-            not specified, will use the same directory as the script location.
+            Specify the directory you want to prepare the code and share to the reproducible container.
+            If this option is not specified, will use the same directory as the script location.
         -t, --reproduce-type:
             Specify the reproducibility type. Provided options: all|sdk|ae|ipp|binutils.
             If one type is provided, the corresponding code will be prepared. And the correponding
             build steps will also be executed in the container automatically.
             If no type is provided, all the code will be prepared. And the build steps will not
             be triggered in the container. Then you can choose to build what you want in the container.
+        -i, --sdk-installer:
+            Specify the SDK installer used for AE reproducibility.
+            If this option is not provided, script will choose the default SDK installer to build AEs.
+            Only valid when the reproduce type is 'ae'.
+        -s, --sgx-src-dir:
+            Specify the local sgx source path if you have pulled the sgx source code via \`\$git clone\`
+            or by other ways.
+            If this option is specified, script will not clone sgx source but start the build based on
+            the code base specified by this option.
         -h, --help:
             Show this usage message."
 }
@@ -102,12 +131,35 @@ parse_cmd()
                 usage
                 exit
                 ;;
+             -i | --sdk-installer ) shift
+                sdk_installer="$1"
+                if [ ! -f "$sdk_installer" ]; then
+                    echo "The $sdk_installer doesn't exist."
+                    usage
+                    exit 1
+                fi
+                sdk_installer="$(realpath $sdk_installer)"
+                ;;
+            -s | --sgx-src-dir) shift
+                sgx_src="$1"
+                if [ ! -d "$sgx_src" ]; then
+                    echo "The $sgx_src doesn't exist."
+                    usage
+                    exit 1
+                fi
+                sgx_src="$(realpath $sgx_src)"
+                ;;
             * )
                 usage
                 exit 1
         esac
         shift
     done
+    if [ "$type" != "ae" ] && [ $type_flag == 1 ] && [ "$sdk_installer" != "" ]; then
+        echo -e "\n   ERROR: Option '--sdk-installer' is valid only if '--reproduce-type' is 'ae'."
+        usage
+        exit 1
+    fi
     mkdir -p "$code_dir" | exit
     code_dir="$(realpath $code_dir)"
     sgx_repo="$code_dir/sgx"
@@ -116,43 +168,29 @@ parse_cmd()
 
 prepare_sgx_src()
 {
+    pushd .
     if [ -d $sgx_repo ]; then
         echo "Removing existing SGX code repo in $sgx_repo"
         rm -rf $sgx_repo
     fi
 
-    git clone -b sgx_2.10_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
-    cd $sgx_repo && ./download_prebuilt.sh && cd -
-}
+    # If user prepares the sgx code repo in the host machine, copy the code to $sgx_repo
+    # Otherwise, pull the sgx source code.
+    if [ "$sgx_src" != "" ]; then
+        mkdir -p "$sgx_repo" && cp -a "$sgx_src/." "$sgx_repo"
+    else
+        git clone -b sgx_2.13_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
+    fi
 
-prepare_dcap_src()
-{
-    if [ ! -f $sgx_repo/Makefile ]; then
-        echo "Please download the source repo firstly."
-        exit -1
-    fi
-    cd ${sgx_repo} && make dcap_source && cd -
-    $sgx_repo/external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
-}
+    cd "$sgx_repo" && make preparation
+    popd
 
-prepare_openmp_src()
-{
-    openmp_dir="$sgx_repo/external/openmp/"
-    if [ ! -d $openmp_dir/openmp_code/final ]; then
-        cd $openmp_dir && git submodule update -f --init --recursive -- openmp_code && cd -
-    fi
-    if [ ! -f $openmp_dir/openmp_code/final/runtime/src/sgx_stub.h ]; then
-        cd $openmp_dir/openmp_code && git apply ../0001-Enable-OpenMP-in-SGX.patch && cd -
-    fi
 }
 
 prepare_ipp_src()
 {
     pushd .
     ipp_dir="$sgx_repo/external/ippcp_internal"
-    if [ -z "$(ls -A $ipp_dir/ipp-crypto)" ]; then
-        cd $ipp_dir && git submodule update -f --init --recursive -- ipp-crypto
-    fi
 
     patch_log="$( cd $ipp_dir/ipp-crypto && git log --oneline --grep='Add mitigation support to assembly code' | cut -d' ' -f 3)"
 
@@ -169,28 +207,33 @@ prepare_binutils_src()
         rm -rf $binutils_repo
     fi
 
-    git clone https://github.com/bminor/binutils-gdb.git $binutils_repo
-    #git clone https://sourceware.org/git/binutils-gdb.git $binutils_repo
-    cd $binutils_repo && git checkout a09f656b267b9a684f038fba7cadfe98e2f18892 && cd -
+    git clone https://github.com/bminor/binutils-gdb.git --branch binutils-2_35 --depth 1 $binutils_repo
+    #git clone https://sourceware.org/git/binutils-gdb.git --branch binutils-2_35 --depth 1 $binutils_repo
 }
 
 
 prepare_sdk_installer()
 {
     # Used for 'ae' type repreducibility.
-    sdk_installer=sgx_linux_x64_sdk_reproducible_2.10.100.1.bin
-    sdk_url=https://download.01.org/intel-sgx/sgx-linux/2.10/distro/nix_reproducibility/$sdk_installer
-    cd $code_dir && wget $sdk_url && chmod +x $sdk_installer && cd -
+    # If user prepares the sdk installer, we copy it to the right place
+    # Otherwise, we download one from 01.org
+    if [ "$sdk_installer" != "" ]; then
+        chmod +x "$sdk_installer" && cp "$sdk_installer" "$code_dir"
+    else
+        cd $code_dir && wget $default_sdk_installer_url && chmod +x $default_sdk_installer && cd -
+    fi
 }
 
 generate_cmd_script()
 {
-    rm -rf $code_dir/cmd.sh
+    rm -f $code_dir/cmd.sh
 
     cat > $code_dir/cmd.sh << EOF
 #!/usr/bin/env bash
+
 . ~/.bash_profile
 nix-shell ~/shell.nix --run "$mount_dir/start_build.sh $type"
+
 EOF
 
     chmod +x $code_dir/cmd.sh
@@ -208,18 +251,13 @@ case $type in
     "all")
         prepare_binutils_src
         prepare_sgx_src
-        prepare_dcap_src
-        prepare_openmp_src
         prepare_ipp_src
         ;;
     "sdk")
         prepare_sgx_src
-        prepare_dcap_src
-        prepare_openmp_src
         ;;
     "ae")
         prepare_sgx_src
-        prepare_dcap_src
         prepare_sdk_installer
         ;;
     "ipp")
@@ -250,4 +288,6 @@ if [ $type_flag = 0 ]; then
 else
     docker run -v $code_dir:$mount_dir -it --network none --rm sgx.build.env /bin/bash -c $mount_dir/cmd.sh
 fi
+
+
 

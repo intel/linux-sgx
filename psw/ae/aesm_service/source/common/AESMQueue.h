@@ -69,14 +69,14 @@ AESMQueue<T>::AESMQueue() :
     rc = pthread_mutex_init(&m_queueMutex, NULL);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to initialize mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to initialize mutex");
         exit(-1);
     }
 
     rc = pthread_cond_init(&m_queueCond, NULL);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to initialize a condition variable");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to initialize a condition variable");
         exit(-1);
     }
  
@@ -90,11 +90,11 @@ AESMQueue<T>::~AESMQueue()
 
     rc = pthread_mutex_destroy(&m_queueMutex);
     if (rc != 0)
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to destroy mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to destroy mutex");
 
     rc = pthread_cond_destroy(&m_queueCond);
     if (rc != 0)
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to destory a condition variable");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to destory a condition variable");
 
 }
 
@@ -106,7 +106,7 @@ void AESMQueue<T>::push(T* value)
     rc = pthread_mutex_lock(&m_queueMutex);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to acquire mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to acquire mutex");
         exit(-1);
     }
 
@@ -116,14 +116,14 @@ void AESMQueue<T>::push(T* value)
     rc = pthread_cond_signal(&m_queueCond);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to signal condition");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to signal condition");
         exit(-1);
     }
 
     rc = pthread_mutex_unlock(&m_queueMutex);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to unlock mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to unlock mutex");
         exit(-1);
     }
 }
@@ -137,7 +137,7 @@ T* AESMQueue<T>::blockingPop()
     rc = pthread_mutex_lock(&m_queueMutex);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to acquire mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to acquire mutex");
         exit(-1);
     }
 
@@ -165,7 +165,7 @@ T* AESMQueue<T>::blockingPop()
 
             if (rc != 0)
             {
-                aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed wait on a condition");
+                sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed wait on a condition");
                 exit(-1);
             }
         }
@@ -174,7 +174,7 @@ T* AESMQueue<T>::blockingPop()
     rc = pthread_mutex_unlock(&m_queueMutex);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to unlock mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to unlock mutex");
         exit(-1);
     }
 
@@ -189,7 +189,7 @@ void AESMQueue<T>::close()
     rc = pthread_mutex_lock(&m_queueMutex);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to acquire mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to acquire mutex");
         exit(-1);
     }
 
@@ -197,14 +197,14 @@ void AESMQueue<T>::close()
     rc = pthread_cond_signal(&m_queueCond);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to signal a condition");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to signal a condition");
         exit(-1);
     }
 
     rc = pthread_mutex_unlock(&m_queueMutex);
     if (rc != 0)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Failed to unlock mutex");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Failed to unlock mutex");
         exit(-1);
     }
 }

@@ -1,8 +1,11 @@
-/*	$OpenBSD: strlen.c,v 1.9 2015/08/31 02:53:57 guenther Exp $	*/
+/*	$OpenBSD: DEFS.h,v 1.2 2017/11/29 05:13:57 guenther Exp $	*/
 
 /*-
- * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,23 +30,36 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	from: @(#)SYS.h	5.5 (Berkeley) 5/7/91
+ *	$NetBSD: SYS.h,v 1.5 2002/06/03 18:30:32 fvdl Exp $
  */
 
-#include <string.h>
+#include <asm.h>
 
-#ifdef _TLIBC_USE_INTEL_FAST_STRING_
-extern size_t _intel_fast_strlen(const char *);
-#else
-extern size_t _strlen(const char *);
-#endif
+/*
+ * We define a hidden alias with the prefix "_libc_" for each global symbol
+ * that may be used internally.  By referencing _libc_x instead of x, other
+ * parts of libc prevent overriding by the application and avoid unnecessary
+ * relocations.
+ */
+#define _HIDDEN(x)		_libc_##x
+#define _HIDDEN_ALIAS(x,y)			\
+	STRONG_ALIAS(_HIDDEN(x),y);		\
+	.hidden _HIDDEN(x)
+#define _HIDDEN_FALIAS(x,y)			\
+	_HIDDEN_ALIAS(x,y);			\
+	.type _HIDDEN(x),@function
 
-size_t
-strlen(const char *str)
-{
-#ifdef _TLIBC_USE_INTEL_FAST_STRING_
-	return _intel_fast_strlen(str);
-#else
-	return _strlen(str);
-#endif
-}
+/*
+ * For functions implemented in ASM that aren't syscalls.
+ *   END_STRONG(x)	Like DEF_STRONG() in C; for standard/reserved C names
+ *   END_WEAK(x)	Like DEF_WEAK() in C; for non-ISO C names
+ *   END_BUILTIN(x)	If compiling with clang, then just END() and
+ *			mark it .protected, else be like END_STRONG();
+ *			for clang builtins like memcpy
+ */
+#define	END_STRONG(x)	END(x); _HIDDEN_FALIAS(x,x); END(_HIDDEN(x))
+#define	END_WEAK(x)	END_STRONG(x); .weak x
 
+#define	END_BUILTIN(x)	END_STRONG(x)

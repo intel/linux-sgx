@@ -35,22 +35,9 @@
 
 #ifdef _TLIBC_USE_INTEL_FAST_STRING_
 extern void *_intel_fast_memset(void *, void *, size_t);
+#else
+extern void *__memset(void *dst, int c, size_t n);
 #endif
-
-void * __attribute__((optimize("O0")))
-__memset(void *dst, int c, size_t n)
-{
-	if (n != 0) {
-                unsigned char *d = dst;
-
-                do
-                        *d++ = (unsigned char)c;
-                while (--n != 0);
-        }
-        return (dst);
-
-
-}
 
 void *
 memset(void *dst, int c, size_t n)
@@ -61,3 +48,4 @@ memset(void *dst, int c, size_t n)
 	return __memset(dst, c, n);
 #endif /* !_TLIBC_USE_INTEL_FAST_STRING_ */	
 }
+

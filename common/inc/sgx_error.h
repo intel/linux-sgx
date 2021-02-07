@@ -72,7 +72,7 @@ typedef enum _status_t
     SGX_ERROR_INVALID_LAUNCH_TOKEN = SGX_MK_ERROR(0x2011),    /* The launch token is not correct.*/
 
     SGX_ERROR_MAC_MISMATCH       = SGX_MK_ERROR(0x3001),      /* Indicates verification error for reports, sealed datas, etc */
-    SGX_ERROR_INVALID_ATTRIBUTE  = SGX_MK_ERROR(0x3002),      /* The enclave is not authorized */
+    SGX_ERROR_INVALID_ATTRIBUTE  = SGX_MK_ERROR(0x3002),      /* The enclave is not authorized, e.g., requesting invalid attribute or launch key access on legacy SGX platform without FLC  */
     SGX_ERROR_INVALID_CPUSVN     = SGX_MK_ERROR(0x3003),      /* The cpu svn is beyond platform's cpu svn value */
     SGX_ERROR_INVALID_ISVSVN     = SGX_MK_ERROR(0x3004),      /* The isv svn is greater than the enclave's isv svn */
     SGX_ERROR_INVALID_KEYNAME    = SGX_MK_ERROR(0x3005),      /* The key name is an unsupported value */
@@ -80,7 +80,7 @@ typedef enum _status_t
     SGX_ERROR_SERVICE_UNAVAILABLE       = SGX_MK_ERROR(0x4001),   /* Indicates aesm didn't respond or the requested service is not supported */
     SGX_ERROR_SERVICE_TIMEOUT           = SGX_MK_ERROR(0x4002),   /* The request to aesm timed out */
     SGX_ERROR_AE_INVALID_EPIDBLOB       = SGX_MK_ERROR(0x4003),   /* Indicates epid blob verification error */
-    SGX_ERROR_SERVICE_INVALID_PRIVILEGE = SGX_MK_ERROR(0x4004),   /* Enclave has no privilege to get launch token */
+    SGX_ERROR_SERVICE_INVALID_PRIVILEGE = SGX_MK_ERROR(0x4004),   /*  Enclave not authorized to run, .e.g. provisioning enclave hosted in an app without access rights to /dev/sgx_provision */
     SGX_ERROR_EPID_MEMBER_REVOKED       = SGX_MK_ERROR(0x4005),   /* The EPID group membership is revoked. */
     SGX_ERROR_UPDATE_NEEDED             = SGX_MK_ERROR(0x4006),   /* SGX needs to be updated */
     SGX_ERROR_NETWORK_FAILURE           = SGX_MK_ERROR(0x4007),   /* Network connecting or proxy setting issue is encountered */

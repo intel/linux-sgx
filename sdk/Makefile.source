@@ -73,19 +73,19 @@ tstdc: $(LIBTLIBC)
 
 $(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp tmm_rsrv
 	$(MAKE) -C tlibc/ -j4 2> /dev/null
-	@$(MKDIR) $(BUILD_DIR)/.tlibc   $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
-	@$(RM) -f $(BUILD_DIR)/.tlibc/*         && cd $(BUILD_DIR)/.tlibc      && $(AR) x $(LINUX_SDK_DIR)/tlibc/libtlibc.a
+	@$(MKDIR) $(BUILD_DIR)/.compiler-rt $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
+	@$(RM) -f $(BUILD_DIR)/.compiler-rt/*   && cd $(BUILD_DIR)/.compiler-rt && $(AR) x $(LINUX_SDK_DIR)/compiler-rt/libcompiler-rt.a
 	@$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
 	@$(RM) -f $(BUILD_DIR)/.tsafecrt/*      && cd $(BUILD_DIR)/.tsafecrt   && $(AR) x $(LINUX_SDK_DIR)/tsafecrt/libsgx_tsafecrt.a
 	@$(RM) -f $(BUILD_DIR)/.tsetjmp/*.o     && cd $(BUILD_DIR)/.tsetjmp    && $(AR) x $(LINUX_SDK_DIR)/tsetjmp/libsgx_tsetjmp.a
 	@$(RM) -f $(BUILD_DIR)/.tmm_rsrv/*.o    && cd $(BUILD_DIR)/.tmm_rsrv   && $(AR) x $(LINUX_SDK_DIR)/tmm_rsrv/libsgx_tmm_rsrv.a
-	$(CP) compiler-rt/libcompiler-rt.a $@
-	$(AR) qD $@ $(BUILD_DIR)/.tlibc/*.o
+	$(CP) $(LINUX_SDK_DIR)/tlibc/libtlibc.a $@
+	$(AR) qD $@ $(BUILD_DIR)/.compiler-rt/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tlibthread/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tsafecrt/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tsetjmp/*.o
 	$(AR) qD $@ $(BUILD_DIR)/.tmm_rsrv/*.o
-	@$(RM) -rf $(BUILD_DIR)/.tlibc
+	@$(RM) -rf $(BUILD_DIR)/.compiler-rt
 	@$(RM) -rf $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt 
 	@$(RM) -rf $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 

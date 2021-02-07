@@ -281,9 +281,12 @@ static void _EREPORT(const sgx_target_info_t* ti, const sgx_report_data_t* rd, s
 }
 
 ////////////////////////////////////////////////////////////////////////
+
 #define ARCH_SET_GS 0x1001
 #define ARCH_SET_FS 0x1002
 
+
+static void arch_prctl(int code, unsigned long addr) __attribute__((section(".nipx")));
 static void arch_prctl(int code, unsigned long addr)
 {
     int ret;
@@ -301,6 +304,7 @@ static void arch_prctl(int code, unsigned long addr)
         abort();
     }
 }
+
 static void
 _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xdi) __attribute__((section(".nipx")));
 
@@ -319,9 +323,6 @@ _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xd
 
     tcs_t *tcs = GET_TCS_PTR(xdx);
     GP_ON(tcs == NULL);
-
-    // restore the used _tls_array
-    // GP_ON(td_mngr_restore_td(tcs) == false);
 
     // check thread is in use or not
     tcs_sim_t *tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);

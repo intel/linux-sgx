@@ -28,63 +28,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "Thread.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#include <new>
-#include <sched.h>
-#include <sys/sysinfo.h>
-/*--------------------------------------------------------------------------------------------------*/
 
-Thread::Thread()
-        : m_shutDown(false), m_thread(0) 
+#include <math.h>
+#include <float.h>
+
+#ifdef _TLIBC_GNU_
+
+#if (LDBL_MANT_DIG > DBL_MANT_DIG)
+
+long double dreml(long double x, long double y)
 {
+	return remainderl(x, y);
 }
 
-Thread::~Thread()
-{
-}
-
-void Thread::start()
-{
-    int rc = pthread_create(&m_thread, NULL, Thread::doWork, (void*)this);
-    assert(rc == 0);
-    (void)rc;
-}
-
-void Thread::stop()
-{
-    m_shutDown = true;
-}
-
-bool Thread::isStopped()
-{
-    return m_shutDown;
-}
-
-void* Thread::doWork(void* param)
-{
-    try
-    {
-        Thread* thread = static_cast<Thread*>(param);
-        thread->run();
-    }
-    catch(std::bad_alloc& allocationException)
-    {
-        printf("Unable to allocate memory\n");
-		(void)allocationException;
-        throw;
-    }
-
-    return NULL;
-};
-
-
-void Thread::join()
-{
-    void* res;
-    pthread_join(m_thread, &res);
-}
-
-/*--------------------------------------------------------------------------------------------------*/
+#endif
+#endif

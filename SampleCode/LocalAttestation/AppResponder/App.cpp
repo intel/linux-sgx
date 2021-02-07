@@ -60,8 +60,8 @@
 #define scanf_s scanf
 #define _tmain  main
 
-CPTask * g_cptask;
-CPServer * g_cpserver;
+CPTask * g_cptask = NULL;
+CPServer * g_cpserver = NULL;
 
 void signal_handler(int sig)
 {
@@ -81,6 +81,14 @@ void signal_handler(int sig)
     exit(1);
 }
 
+void cleanup()
+{
+    if(g_cptask != NULL)
+        delete g_cptask;
+    if(g_cpserver != NULL)
+        delete g_cpserver;
+}
+
 int  main(int argc, char* argv[])
 {
     (void)argc;
@@ -92,6 +100,8 @@ int  main(int argc, char* argv[])
 
     if (!g_cptask || !g_cpserver)
          return -1;
+
+    atexit(cleanup);
 
     // register signal handler so to respond to user interception
     signal(SIGINT, signal_handler);
@@ -108,6 +118,6 @@ int  main(int argc, char* argv[])
          printf("Press Ctrl+C to exit...\n");
          g_cpserver->doWork();
     }
-
+    
     return 0;
 }

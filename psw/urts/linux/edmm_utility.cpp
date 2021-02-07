@@ -57,7 +57,7 @@ static bool is_urts_support_edmm()
     FILE* pipe = popen(SGX_URTS_CMD, "r");
     if (NULL == pipe)
     {
-        SE_TRACE(SE_TRACE_WARNING, "Failed to open pipe.\n");
+        SE_PROD_LOG("Failed to open pipe.\n");
         return false;
     }
 
@@ -70,7 +70,7 @@ static bool is_urts_support_edmm()
 
     if (-1 == pclose(pipe))
     {
-        SE_TRACE(SE_TRACE_WARNING, "Failed to close pipe.\n");
+        SE_PROD_LOG("Failed to close pipe.\n");
     }
 
     return true;
@@ -108,7 +108,7 @@ bool get_driver_type(int *driver_type)
             hdev = open("/dev/sgx", O_RDWR);  //attempt to open the DCAP driver
             if (-1 == hdev)
             {
-                SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device.\n");
+                SE_PROD_LOG("Failed to open Intel SGX device.\n");
                 return false;
             }
             sgx_driver_type = SGX_DRIVER_DCAP;
@@ -161,11 +161,11 @@ extern "C" bool open_se_device(int driver_type, int *hdevice)
     }
     else
     {
-        SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device. Invalid driver type.\n");
+        SE_PROD_LOG("Failed to open Intel SGX device. Invalid driver type.\n");
     }
     if (-1 == *hdevice)
     {
-        SE_TRACE(SE_TRACE_WARNING, "Failed to open Intel SGX device.\n");
+        SE_PROD_LOG("Failed to open Intel SGX device.\n");
         return false;
     }
     return true;
@@ -185,7 +185,7 @@ extern "C" bool close_se_device(int *hdevice)
 
     if (-1 != *hdevice && 0 != close(*hdevice))
     {
-        SE_TRACE(SE_TRACE_WARNING, "Failed to close Intel SGX device.\n");
+        SE_PROD_LOG("Failed to close Intel SGX device.\n");
         return false;
     }
 

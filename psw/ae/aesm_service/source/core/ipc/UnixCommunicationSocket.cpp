@@ -37,8 +37,8 @@
 #include <errno.h>
 #include <IAERequest.h>
 #include <IAEResponse.h>
-#include <se_trace.h>
 #include <UnixCommunicationSocket.h>
+#include "se_trace.h"
 
 
 UnixCommunicationSocket::UnixCommunicationSocket(const char* socketbase)
@@ -148,11 +148,12 @@ ssize_t UnixCommunicationSocket::writeRaw(const char* data, ssize_t length)
         ssize_t step = write(mSocket, data+written, length-written);
 
         if(step == -1 && errno == EINTR && CheckForTimeout() == false){
-            SE_TRACE_WARNING("write was interrupted by signal\n");
+            SE_PROD_LOG("write was interrupted by signal\n");
             continue;
         }
         if (step < 0 || CheckForTimeout())
         {
+            SE_PROD_LOG("Socket write timeout\n");
             //this connection is probably closed
             disconnect();
             break;
@@ -179,12 +180,13 @@ char* UnixCommunicationSocket::readRaw(ssize_t length)
     do {
         ssize_t step = read(mSocket, recBuf + total_read, length - total_read);
         if(step == -1 && errno == EINTR && CheckForTimeout() == false){
-            SE_TRACE_WARNING("read was interrupted by signal\n");
+            SE_PROD_LOG("read was interrupted by signal\n");
             continue;
         }
         //check connection closed by peer
         if (step <= 0 || CheckForTimeout())
         {
+            SE_PROD_LOG("Socket read timeout\n");
             //this connection is probably closed
             disconnect();
             delete[] recBuf;
@@ -209,6 +211,7 @@ bool UnixCommunicationSocket::init()
         mSocket = socket(AF_UNIX, SOCK_STREAM, 0);
         if(mSocket < 0)
         {
+            SE_PROD_LOG("Failed to create socket fd.\n");
             return false;
         }
 
@@ -219,10 +222,14 @@ bool UnixCommunicationSocket::init()
 
         if( connect(mSocket, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) != 0)
         {
+            SE_PROD_LOG("Failed to connect to socket %s\n", serv_addr.sun_path);
             return false;
         }
         if (mSocket < 0)
+        {
+            SE_PROD_LOG("Invalid socket fd\n");
             return false;
+        }
     }
     return true;
 }

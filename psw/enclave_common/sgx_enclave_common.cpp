@@ -244,6 +244,9 @@ static uint32_t error_driver2api(int driver_error, int err_no)
             break;
         case (int)EACCES:
             ret = ENCLAVE_NOT_AUTHORIZED;
+            SE_PROD_LOG("Enclave not authorized to run, .e.g. provisioning enclave hosted in app " 
+                    "without access rights to /dev/sgx_provision. You need add the user id to group "
+                    "sgx_prv or run the app as root.\n");
             break;
         default:
             SE_TRACE(SE_TRACE_WARNING, "unexpected errno %#x from driver, might be a driver bug\n", err_no);
@@ -273,6 +276,9 @@ static uint32_t error_driver2api(int driver_error, int err_no)
             break;
         case SGX_INVALID_PRIVILEGE:
             ret = ENCLAVE_NOT_AUTHORIZED;
+            SE_PROD_LOG("Enclave not authorized to run, .e.g. provisioning enclave hosted in app " 
+                    "without access rights to /dev/sgx_provision. You need add the user id to group "
+                    "sgx_prv or run the app as root.\n");
             break;
         default:
             SE_TRACE(SE_TRACE_WARNING, "unexpected return value %#x from driver, might be a driver bug\n", driver_error);
@@ -293,6 +299,8 @@ static uint32_t error_aesm2api(int aesm_error)
         ret = ENCLAVE_INVALID_PARAMETER;
         break;
     case SGX_ERROR_SERVICE_UNAVAILABLE:
+        ret = ENCLAVE_SERVICE_NOT_AVAILABLE;
+        break;
     case SGX_ERROR_NO_DEVICE:
         ret = ENCLAVE_NOT_SUPPORTED;
         break;

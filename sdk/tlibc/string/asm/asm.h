@@ -1,8 +1,12 @@
-/*	$OpenBSD: strlen.c,v 1.9 2015/08/31 02:53:57 guenther Exp $	*/
+/*	$OpenBSD: asm.h,v 1.18 2019/04/02 03:35:08 mortimer Exp $	*/
+/*	$NetBSD: asm.h,v 1.2 2003/05/02 18:05:47 yamt Exp $	*/
 
 /*-
- * Copyright (c) 1990, 1993
- *	The Regents of the University of California.  All rights reserved.
+ * Copyright (c) 1990 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * This code is derived from software contributed to Berkeley by
+ * William Jolitz.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -27,23 +31,42 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
+ *
+ *	@(#)asm.h	5.5 (Berkeley) 5/7/91
  */
 
-#include <string.h>
+#ifndef _MACHINE_ASM_H_
+#define _MACHINE_ASM_H_
 
-#ifdef _TLIBC_USE_INTEL_FAST_STRING_
-extern size_t _intel_fast_strlen(const char *);
-#else
-extern size_t _strlen(const char *);
-#endif
+# define _C_LABEL(x)	x
+#define	_ASM_LABEL(x)	x
 
-size_t
-strlen(const char *str)
-{
-#ifdef _TLIBC_USE_INTEL_FAST_STRING_
-	return _intel_fast_strlen(str);
-#else
-	return _strlen(str);
-#endif
-}
+#define _ALIGN_TEXT	.align	16, 0x90
+#define _ALIGN_TRAPS	.align	16, 0xcc
 
+#define	_GENTRY(x)	.globl x; .type x,@function; x:
+#define _ENTRY(x) \
+	.text; _ALIGN_TRAPS; _GENTRY(x)
+#define _NENTRY(x) \
+	.text; _ALIGN_TEXT; _GENTRY(x)
+
+# define RETGUARD_SETUP_OFF(x, reg, off)
+# define RETGUARD_SETUP(x, reg)
+# define RETGUARD_CHECK(x, reg)
+# define RETGUARD_PUSH(reg)
+# define RETGUARD_POP(reg)
+# define RETGUARD_SYMBOL(x)
+
+#define	ENTRY(y)	_ENTRY(_C_LABEL(y));
+#define	NENTRY(y)	_NENTRY(_C_LABEL(y))
+#define	ASENTRY(y)	_NENTRY(_ASM_LABEL(y));
+#define	END(y)		.size y, . - y
+
+#define	STRONG_ALIAS(alias,sym)						\
+	.global alias;							\
+	alias = sym
+#define	WEAK_ALIAS(alias,sym)						\
+	.weak alias;							\
+	alias = sym
+
+#endif /* !_MACHINE_ASM_H_ */

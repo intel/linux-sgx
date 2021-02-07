@@ -70,15 +70,14 @@ void signal_handler(int sig)
 int main(int argc, char *argv[]) {
     // The only command line option that is supported is --no-daemon.
     bool noDaemon = argc == 2 && (strcmp(argv[1], "--no-daemon") == 0);
+    AESM_LOG_INIT();
     if ((argc > 2) || (argc == 2 && !noDaemon)) {
-        AESM_LOG_INIT();
         AESM_LOG_FATAL("Invalid command line.");
         AESM_LOG_FINI();
         exit(1);
     }
     if(!noDaemon && daemon(0, 0) < 0)
     {
-        AESM_LOG_INIT();
         AESM_LOG_FATAL("Fail to set daemon.");
         AESM_LOG_FINI();
         exit(1);
@@ -95,6 +94,7 @@ int main(int argc, char *argv[]) {
             if(aesmLogic->service_start()!=AE_SUCCESS){
                 AESM_LOG_ERROR("Fail to start service.");
                 delete aesmLogic;
+                AESM_LOG_FINI();
                 exit(1);
             }
             UnixServerSocket* serverSock = new UnixServerSocket(CONFIG_SOCKET_PATH);
@@ -116,6 +116,6 @@ int main(int argc, char *argv[]) {
         AESM_LOG_FATAL("%s", error_msg);
     }
 
-
+    AESM_LOG_FINI();
     return 0;
 }

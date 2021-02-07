@@ -145,7 +145,7 @@ T* Queue<T>::blockingPop()
             {
                 value = m_queue.front();
                 m_queue.pop();
-                delete value;
+                free(value);
             }
             value = NULL;			
             break;

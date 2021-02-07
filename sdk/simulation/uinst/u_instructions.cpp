@@ -126,8 +126,8 @@ void sig_handler_sim(int signum, siginfo_t* siginfo, void *priv)
     GP_ON(signum != SIGFPE && signum != SIGSEGV);
     
     thread_data_t *thread_data = 0;
-    asm volatile("mov %%gs:0, %0":"=r"(thread_data));
-    if (thread_data != NULL) 
+    arch_prctl(ARCH_GET_GS, (unsigned long)&thread_data);
+    if (thread_data != NULL && (uintptr_t)thread_data == (uintptr_t)thread_data->self_addr)
     {
         // first SSA can be used to get tcs, even cssa > 0.
         ssa_gpr_t *p_ssa_gpr = (ssa_gpr_t*)thread_data->first_ssa_gpr;
@@ -444,9 +444,6 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
 
         xip = reinterpret_cast<uintptr_t>(enclave_base_addr);
         GP_ON_EENTER(xip == 0);
-
-        //set the _tls_array to point to the self_addr of TLS section inside the enclave
-        //GP_ON_EENTER(td_mngr_set_td(enclave_base_addr, tcs) == false);
  
         // save FS, GS base address
         arch_prctl(ARCH_GET_FS, (unsigned long)&tcs_sim->saved_fs_base);

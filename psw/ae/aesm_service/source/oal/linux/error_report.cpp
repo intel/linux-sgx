@@ -43,7 +43,7 @@ void aesm_log_fini(void)
     closelog();
 }
 
-void aesm_log_report(int level, const char *format, ...)
+void sgx_proc_log_report(int level, const char *format, ...)
 {
     int priority = 0;
     va_list ap;
