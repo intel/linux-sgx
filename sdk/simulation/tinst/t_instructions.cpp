@@ -282,6 +282,28 @@ static void _EREPORT(const sgx_target_info_t* ti, const sgx_report_data_t* rd, s
 
 ////////////////////////////////////////////////////////////////////////
 
+#define ARCH_SET_GS 0x1001
+#define ARCH_SET_FS 0x1002
+
+
+static void arch_prctl(int code, unsigned long addr) __attribute__((section(".nipx")));
+static void arch_prctl(int code, unsigned long addr)
+{
+    int ret;
+
+    __asm__("mov %1, %%edi\n\t"
+            "movq %2, %%rsi\n\t"
+            "mov $0x9e,%%eax\n\t"
+            "syscall\n\t"
+            "mov %%eax, %0\n\t"
+            :"=a"(ret)
+            :"r"(code), "r"(addr)
+            :"r11", "rcx");
+    if(ret != 0) {
+        // This should never happen.
+        abort();
+    }
+}
 
 static void
 _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xdi) __attribute__((section(".nipx")));
@@ -302,9 +324,6 @@ _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xd
     tcs_t *tcs = GET_TCS_PTR(xdx);
     GP_ON(tcs == NULL);
 
-    // restore the used _tls_array
-    GP_ON(td_mngr_restore_td(tcs) == false);
-
     // check thread is in use or not
     tcs_sim_t *tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);
     GP_ON(tcs_sim->tcs_state != TCS_STATE_ACTIVE);
@@ -315,6 +334,10 @@ _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xd
     regs.xcx = tcs_sim->saved_aep;
     regs.xsi = xsi;
     regs.xdi = xdi;
+
+    //restore the FS, GS base address
+    arch_prctl(ARCH_SET_FS, tcs_sim->saved_fs_base);
+    arch_prctl(ARCH_SET_GS, tcs_sim->saved_gs_base);
 
     load_regs(&regs);
 

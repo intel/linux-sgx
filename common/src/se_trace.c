@@ -29,20 +29,34 @@
  *
  */
 
-
 #include "se_trace.h"
 #include <stdarg.h>
-int se_trace_internal(int debug_level, const char *fmt, ...)
+
+void sgx_proc_log_report_default(int channel, int debug_level, const char *fmt, ...)
 {
+    (void)channel;
     va_list args;
-    int ret = 0;
 
     va_start(args, fmt);
-    if(SE_TRACE_NOTICE == debug_level)
-        ret = vfprintf(stdout, fmt, args);
+    if (SE_TRACE_NOTICE == debug_level)
+        vfprintf(stdout, fmt, args);
     else
-        ret = vfprintf(stderr, fmt, args);
+        vfprintf(stderr, fmt, args);
     va_end(args);
 
-    return ret;
+    return;
+}
+
+void se_trace_internal(int debug_level, const char *fmt, ...)
+{
+    va_list args;
+
+    va_start(args, fmt);
+    if (SE_TRACE_NOTICE == debug_level)
+        vfprintf(stdout, fmt, args);
+    else
+        vfprintf(stderr, fmt, args);
+    va_end(args);
+
+    return;
 }

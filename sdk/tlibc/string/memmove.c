@@ -42,71 +42,23 @@ typedef	long word;		/* "word" used for optimal copy speed */
 #define	wsize	sizeof(word)
 #define	wmask	(wsize - 1)
 
+
+#ifdef _TLIBC_USE_INTEL_FAST_STRING_
+extern void *_intel_fast_memmove(void *, void *, size_t);
+#else
+extern void *__memmove(void *, void *, size_t);
+#endif
+
 /*
  * Copy a block of memory, handling overlap.
  */
 void *
 memmove(void *dst0, const void *src0, size_t length)
 {
-	char *dst = dst0;
-	const char *src = src0;
-	size_t t;
-
-	if (length == 0 || dst == src)		/* nothing to do */
-		goto done;
-
-	/*
-	 * Macros: loop-t-times; and loop-t-times, t>0
-	 */
-#define	TLOOP(s) if (t) TLOOP1(s)
-#define	TLOOP1(s) do { s; } while (--t)
-
-	if ((unsigned long)dst < (unsigned long)src) {
-		/*
-		 * Copy forward.
-		 */
-		t = (long)src;	/* only need low bits */
-		if ((t | (long)dst) & wmask) {
-			/*
-			 * Try to align operands.  This cannot be done
-			 * unless the low bits match.
-			 */
-			if ((t ^ (long)dst) & wmask || length < wsize)
-				t = length;
-			else
-				t = wsize - (t & wmask);
-			length -= t;
-			TLOOP1(*dst++ = *src++);
-		}
-		/*
-		 * Copy whole words, then mop up any trailing bytes.
-		 */
-		t = length / wsize;
-		TLOOP(*(word *)dst = *(word *)src; src += wsize; dst += wsize);
-		t = length & wmask;
-		TLOOP(*dst++ = *src++);
-	} else {
-		/*
-		 * Copy backwards.  Otherwise essentially the same.
-		 * Alignment works as before, except that it takes
-		 * (t&wmask) bytes to align, not wsize-(t&wmask).
-		 */
-		src += length;
-		dst += length;
-		t = (long)src;
-		if ((t | (long)dst) & wmask) {
-			if ((t ^ (long)dst) & wmask || length <= wsize)
-				t = length;
-			else
-				t &= wmask;
-			length -= t;
-			TLOOP1(*--dst = *--src);
-		}
-		t = length / wsize;
-		TLOOP(src -= wsize; dst -= wsize; *(word *)dst = *(word *)src);
-		t = length & wmask;
-		TLOOP(*--dst = *--src);
-	}
-done:
-	return (dst0);
+#ifdef _TLIBC_USE_INTEL_FAST_STRING_
+ 	return _intel_fast_memmove(dst0, (void*)src0, length);
+#else
+	return __memmove(dst0, src0, length);
+#endif
 }
+

@@ -30,29 +30,14 @@
  */
 
 
-/**
- * restore_tls.c
- *   Implemente the TLS support in simulation mode
- */
+#include <math.h>
+#include <float.h>
 
-#include "td_mngr.h"
+#if (LDBL_MANT_DIG > DBL_MANT_DIG)
 
-/*
- * Restore the old DTV value.
- */
-int td_mngr_restore_td(tcs_t *tcs)
+long double pow10l(long double x)
 {
-    dtv_t* dtv __attribute__((unused));
-    tcs_sim_t *tcs_sim;
-
-    if (!tcs)
-        return 0;
-
-    dtv = GET_DTV();
-    tcs_sim = (tcs_sim_t *)tcs->reserved;
-    set_dtv_val(dtv, tcs_sim->saved_dtv);
-    SET_FS_GS_0(tcs_sim->saved_fs_gs_0);
-    return 1;
+    return powl(10, x);
 }
 
-/* vim: set ts=4 sw=4 cin et: */
+#endif

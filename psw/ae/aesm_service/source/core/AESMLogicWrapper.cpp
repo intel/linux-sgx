@@ -702,8 +702,6 @@ ae_error_t AESMLogicWrapper::service_start()
 
     crypto_initialize();
 
-    AESM_LOG_INIT(); 
-
     AESM_DBG_INFO("aesm service is starting");
 
     {
@@ -751,7 +749,6 @@ void AESMLogicWrapper::service_stop()
     g_fw.WaitForStop(std::chrono::seconds(5));
     crypto_cleanup();
     AESM_DBG_INFO("aesm service down");
-    AESM_LOG_FINI();
 }
 
 #if !defined(US_BUILD_SHARED_LIBS)

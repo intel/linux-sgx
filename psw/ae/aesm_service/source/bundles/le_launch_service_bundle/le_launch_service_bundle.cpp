@@ -168,7 +168,7 @@ private:
         if(AE_SUCCESS != ae_ret)
         {
             AESM_DBG_INFO("fail to load LE: %d", ae_ret);
-            //AESM_LOG_FATAL("%s", g_event_string_table[SGX_EVENT_SERVICE_UNAVAILABLE]);
+            AESM_LOG_FATAL("%s", g_event_string_table[SGX_EVENT_SERVICE_UNAVAILABLE]);
             return ae_ret;
         }
         auto context = cppmicroservices::GetBundleContext();
@@ -282,21 +282,20 @@ private:
         {
             if(ret_le == AESM_AE_NO_DEVICE)
             {
-                AESM_DBG_FATAL("LE not loaded due to no SGX device available, possible SGX Env Not Ready");
+                AESM_LOG_FATAL("LE not loaded due to no SGX device available, possible SGX Env Not Ready");
                 return SGX_ERROR_NO_DEVICE;
             }
             else if(ret_le == AESM_AE_OUT_OF_EPC)
             {
-                AESM_DBG_FATAL("LE not loaded due to out of EPC");
+                AESM_LOG_FATAL("LE not loaded due to out of EPC");
                 return SGX_ERROR_OUT_OF_EPC;
             }
             else
             {
-                AESM_DBG_FATAL("fail to load LE:%d",ret_le);
+                AESM_LOG_FATAL("fail to load LE:%d",ret_le);
                 return SGX_ERROR_SERVICE_UNAVAILABLE;
             }
-        }
-
+        } 
         ret_le = static_cast<ae_error_t>(CLEClass::instance().get_launch_token_internal(
             const_cast<uint8_t*>(reinterpret_cast<const uint8_t *>(&signature->body.enclave_hash)),
             sizeof(sgx_measurement_t),

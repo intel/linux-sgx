@@ -37,6 +37,10 @@ else
 CXXFLAGS += -USE_DEBUG_LEVEL -DSE_DEBUG_LEVEL=SE_TRACE_NOTICE
 endif
 
+ifdef SIGN_TOOL
+CXXFLAGS += -DSIGN
+endif
+
 SRCS := $(wildcard *.cpp)
 SRCS := $(filter-out elfparser.cpp, $(SRCS))
 OBJS := $(sort $(SRCS:.cpp=.o))

@@ -86,7 +86,7 @@ void* Thread::doWork(void* param)
     }
     catch(std::bad_alloc& allocationException)
     {
-        aesm_log_report(AESM_LOG_REPORT_ERROR, "Unable to allocate memory");
+        sgx_proc_log_report(AESM_LOG_REPORT_ERROR, "Unable to allocate memory");
         throw;
     }
 

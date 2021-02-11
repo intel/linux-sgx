@@ -30,37 +30,11 @@
  */
 
 
-/**
- * set_tls.c
- *   Implemente the TLS support in simulation mode
- */
+#include <math.h>
 
-#include "td_mngr.h"
-#include "util.h"
-
-int td_mngr_set_td(void *enclave_base, tcs_t *tcs)
+float
+pow10f(float x)
 {
-    dtv_t* dtv;
-    tcs_sim_t *tcs_sim;
-
-    if (!tcs)
-        return 0;
-
-    /* save the old DTV[0].pointer->val */
-    dtv = GET_DTV();
-    tcs_sim = (tcs_sim_t *)tcs->reserved;
-    tcs_sim->saved_dtv = (uintptr_t)read_dtv_val(dtv);
-
-    /* save the old fs:0x0 or gs:0x0 value */
-    tcs_sim->saved_fs_gs_0 = GET_FS_GS_0();
-
-    /* set the DTV[0].pointer->val to TLS address */
-    uintptr_t *tib = GET_PTR(uintptr_t, enclave_base, tcs->ofs_base);
-    set_dtv_val(dtv, tib);
-
-    /* set the fs:0x0 or gs:0x0 to TLS address */
-    SET_FS_GS_0(tib);
-    return 1;
+    return powf(10, x);
 }
 
-/* vim: set ts=4 sw=4 cin et: */

@@ -701,7 +701,7 @@ int CLoader::validate_metadata()
     //if the version of metadata does NOT match the version of metadata in urts, we should NOT launch enclave.
     if(MAJOR_VERSION_OF_METADATA(urts_version) < MAJOR_VERSION_OF_METADATA(m_metadata->version))
     {
-        SE_TRACE(SE_TRACE_WARNING, "Mismatch between the metadata urts required and the metadata in use.\n");
+        SE_TRACE(SE_TRACE_ERROR, "Mismatch between the metadata urts required and the metadata in use.\n");
         return SGX_ERROR_INVALID_VERSION;
     }
 
@@ -712,6 +712,7 @@ int CLoader::validate_metadata()
     uint64_t size = m_metadata->enclave_size;
     if(size > m_parser.get_enclave_max_size())
     {
+        SE_TRACE(SE_TRACE_ERROR, "The enclave size setting in metadata is too large.\n");
         return SGX_ERROR_INVALID_METADATA;
     }
     while ((size != 0) && ((size & 1) != 1))
