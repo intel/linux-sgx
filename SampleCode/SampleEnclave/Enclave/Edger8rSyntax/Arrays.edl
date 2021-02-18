@@ -43,7 +43,7 @@ enclave {
         /*
          * []:  can be used to declare an array.
          * [user_check]:
-         *      pointer of the array won't be valified, and the buffer pointed by 'arr' 
+         *      pointer of the array won't be verified, and the buffer pointed by 'arr' 
          *      is not copied into the enclave either. But enclave can modify the memory outside.
          */
         
