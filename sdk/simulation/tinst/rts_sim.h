@@ -67,6 +67,8 @@ typedef struct _global_data_sim_t
     uint64_t seed;      /* to initialize the PRNG */
 } global_data_sim_t;
 
+extern global_data_sim_t g_global_data_sim;
+
 #ifdef __cplusplus
 }
 #endif

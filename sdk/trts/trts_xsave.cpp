@@ -58,6 +58,7 @@ int g_xsave_enabled __attribute__((section(".nipd"))) = 0;         // flag to in
 #ifdef SE_SIM
 uint32_t g_xsave_mask_high __attribute__((section(".nipd"))) = 0xFFFFFFFF;
 uint32_t g_xsave_mask_low __attribute__((section(".nipd"))) = 0xFFFFFFFF;
+#include "rts_sim.h"
 #endif
 
 // EENTER will set xcr0 with secs.attr.xfrm, 
@@ -71,10 +72,13 @@ uint32_t g_xsave_mask_low __attribute__((section(".nipd"))) = 0xFFFFFFFF;
 SE_OPTIMIZE_OFF
 uint64_t get_xfeature_state()
 {
+#ifndef SE_SIM
     auto *report = sgx_self_report();
     g_xsave_enabled = (report->body.attributes.xfrm == SGX_XFRM_LEGACY) ? 0 : 1;
     uint64_t xfrm = report->body.attributes.xfrm;
-#ifdef SE_SIM
+#else
+    uint64_t xfrm = g_global_data_sim.secs_ptr->attributes.xfrm;
+    g_xsave_enabled = (xfrm == SGX_XFRM_LEGACY) ? 0 : 1;
     g_xsave_mask_high = (uint32_t)(xfrm >> 32);
     g_xsave_mask_low = (uint32_t)(xfrm & 0xFFFFFFFF);
 #endif
