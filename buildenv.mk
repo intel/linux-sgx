@@ -268,7 +268,7 @@ USE_MATH_LIB ?= 1
 
 ifeq ($(USE_OPT_LIBS), 0)
 # SGXSSL + open sourced string + open sourced math
-    USE_CRYPTO_LIB := 0 
+    USE_CRYPTO_LIB := 0
     USE_MATH_LIB := 1
     USE_STRING_LIB := 1
 else ifeq ($(USE_OPT_LIBS), 2)
