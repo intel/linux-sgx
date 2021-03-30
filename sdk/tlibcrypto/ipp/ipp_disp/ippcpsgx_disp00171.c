@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
-IPPAPI(IppStatus, l9_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
-IPPAPI(IppStatus, k0_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
+IPPAPI(IppStatus, y8_ippsHashUpdate,(const Ipp8u* pSrc, int len, IppsHashState* pState))
+IPPAPI(IppStatus, l9_ippsHashUpdate,(const Ipp8u* pSrc, int len, IppsHashState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsHashUpdate,(const Ipp8u* pSrc, int len, IppsHashState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsHashGetTag( pTag, tagLen, pState );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsHashGetTag( pTag, tagLen, pState );
+        return l9_ippsHashUpdate( pSrc, len, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsHashGetTag( pTag, tagLen, pState );
+        return y8_ippsHashUpdate( pSrc, len, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
-IPPAPI(IppStatus, h9_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
+IPPAPI(IppStatus, p8_ippsHashUpdate,(const Ipp8u* pSrc, int len, IppsHashState* pState))
+IPPAPI(IppStatus, h9_ippsHashUpdate,(const Ipp8u* pSrc, int len, IppsHashState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsHashGetTag,(Ipp8u* pTag, int tagLen, const IppsHashState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsHashUpdate,(const Ipp8u* pSrc, int len, IppsHashState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsHashGetTag( pTag, tagLen, pState );
+        return h9_ippsHashUpdate( pSrc, len, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsHashGetTag( pTag, tagLen, pState );
+        return p8_ippsHashUpdate( pSrc, len, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

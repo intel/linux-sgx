@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPInitStd128r2,(IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPInitStd128r2,(IppsECCPState* pEC))
-IPPAPI(IppStatus, k0_ippsECCPInitStd128r2,(IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPGetSizeStd128r2,(int* pSize))
+IPPAPI(IppStatus, l9_ippsECCPGetSizeStd128r2,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPInitStd128r2,(IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd128r2,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsECCPInitStd128r2( pEC );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPInitStd128r2( pEC );
+        return l9_ippsECCPGetSizeStd128r2( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPInitStd128r2( pEC );
+        return y8_ippsECCPGetSizeStd128r2( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPInitStd128r2,(IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPInitStd128r2,(IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPGetSizeStd128r2,(int* pSize))
+IPPAPI(IppStatus, h9_ippsECCPGetSizeStd128r2,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPInitStd128r2,(IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd128r2,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPInitStd128r2( pEC );
+        return h9_ippsECCPGetSizeStd128r2( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPInitStd128r2( pEC );
+        return p8_ippsECCPGetSizeStd128r2( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

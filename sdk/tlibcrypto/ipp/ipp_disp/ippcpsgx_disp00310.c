@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
-IPPAPI(IppStatus, l9_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
-IPPAPI(IppStatus, k0_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPAPI(IppStatus, y8_ippsRSA_MB_Verify_PKCS1v15_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSignts[8], int pIsValid[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsRSA_MB_Verify_PKCS1v15_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSignts[8], int pIsValid[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_Verify_PKCS1v15_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSignts[8], int pIsValid[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsDLPGetDP( pDP, tag, pCtx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsDLPGetDP( pDP, tag, pCtx );
+        return l9_ippsRSA_MB_Verify_PKCS1v15_rmf( pMsgs, msgLens, pSignts, pIsValid, pPubKeys, pMethod, statuses, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsDLPGetDP( pDP, tag, pCtx );
+        return y8_ippsRSA_MB_Verify_PKCS1v15_rmf( pMsgs, msgLens, pSignts, pIsValid, pPubKeys, pMethod, statuses, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
-IPPAPI(IppStatus, h9_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPAPI(IppStatus, p8_ippsRSA_MB_Verify_PKCS1v15_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSignts[8], int pIsValid[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
+IPPAPI(IppStatus, h9_ippsRSA_MB_Verify_PKCS1v15_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSignts[8], int pIsValid[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPGetDP,(IppsBigNumState* pDP, IppDLPKeyTag tag, const IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_Verify_PKCS1v15_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSignts[8], int pIsValid[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsDLPGetDP( pDP, tag, pCtx );
+        return h9_ippsRSA_MB_Verify_PKCS1v15_rmf( pMsgs, msgLens, pSignts, pIsValid, pPubKeys, pMethod, statuses, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsDLPGetDP( pDP, tag, pCtx );
+        return p8_ippsRSA_MB_Verify_PKCS1v15_rmf( pMsgs, msgLens, pSignts, pIsValid, pPubKeys, pMethod, statuses, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

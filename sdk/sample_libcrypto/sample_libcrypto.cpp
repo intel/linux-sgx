@@ -743,7 +743,7 @@ sample_status_t sample_ecdsa_sign(const uint8_t *p_data,
         ERROR_BREAK(ipp_ret);
 
         // Prepare the message used to sign.
-        ipp_ret = ippsHashMessage(p_data, data_size, (Ipp8u*)hash, IPP_ALG_HASH_SHA256);
+        ipp_ret = ippsHashMessage_rmf(p_data, data_size, (Ipp8u*)hash, ippsHashMethod_SHA256_TT());
         ERROR_BREAK(ipp_ret);
         /* Byte swap in creation of Big Number from SHA256 hash output */
         ipp_ret = sgx_ipp_newBN(NULL, sizeof(hash), &p_hash_bn);
@@ -843,19 +843,19 @@ sample_status_t sample_ecdsa_sign(const uint8_t *p_data,
 sample_status_t sample_sha256_init(sample_sha_state_handle_t* p_sha_handle)
 {
     IppStatus ipp_ret = ippStsNoErr;
-    IppsHashState* p_temp_state = NULL;
+    IppsHashState_rmf* p_temp_state = NULL;
 
     if (p_sha_handle == NULL)
         return SAMPLE_ERROR_INVALID_PARAMETER;
 
     int ctx_size = 0;
-    ipp_ret = ippsHashGetSize(&ctx_size);
+    ipp_ret = ippsHashGetSize_rmf(&ctx_size);
     if (ipp_ret != ippStsNoErr)
         return SAMPLE_ERROR_UNEXPECTED;
-    p_temp_state = (IppsHashState*)(malloc(ctx_size));
+    p_temp_state = (IppsHashState_rmf*)(malloc(ctx_size));
     if (p_temp_state == NULL)
         return SAMPLE_ERROR_OUT_OF_MEMORY;
-    ipp_ret = ippsHashInit(p_temp_state, IPP_ALG_HASH_SHA256);
+    ipp_ret = ippsHashInit_rmf(p_temp_state, ippsHashMethod_SHA256_TT());
     if (ipp_ret != ippStsNoErr)
     {
         SAFE_FREE(p_temp_state);
@@ -885,7 +885,7 @@ sample_status_t sample_sha256_update(const uint8_t *p_src, uint32_t src_len, sam
         return SAMPLE_ERROR_INVALID_PARAMETER;
     }
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashUpdate(p_src, src_len, (IppsHashState*)sha_handle);
+    ipp_ret = ippsHashUpdate_rmf(p_src, src_len, (IppsHashState_rmf*)sha_handle);
     switch (ipp_ret) 
     {
     case ippStsNoErr: return SAMPLE_SUCCESS;
@@ -907,7 +907,7 @@ sample_status_t sample_sha256_get_hash(sample_sha_state_handle_t sha_handle, sam
         return SAMPLE_ERROR_INVALID_PARAMETER;
     }
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashGetTag((Ipp8u*)p_hash, SAMPLE_SHA256_HASH_SIZE, (IppsHashState*)sha_handle);
+    ipp_ret = ippsHashGetTag_rmf((Ipp8u*)p_hash, SAMPLE_SHA256_HASH_SIZE, (IppsHashState_rmf*)sha_handle);
     switch (ipp_ret) 
     {
     case ippStsNoErr: return SAMPLE_SUCCESS;

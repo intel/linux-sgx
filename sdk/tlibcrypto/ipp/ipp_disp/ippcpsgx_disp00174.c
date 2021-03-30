@@ -47,43 +47,39 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsHashMethod*, y8_ippsHashMethod_MD5, (void) )
-IPPAPI( const IppsHashMethod*, l9_ippsHashMethod_MD5, (void) )
-IPPAPI( const IppsHashMethod*, k0_ippsHashMethod_MD5, (void) )
+IPPAPI(IppStatus, y8_ippsHashMessage,(const Ipp8u* pMsg, int len, Ipp8u* pMD, IppHashAlgId hashAlg))
+IPPAPI(IppStatus, l9_ippsHashMessage,(const Ipp8u* pMsg, int len, Ipp8u* pMD, IppHashAlgId hashAlg))
 
-IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_MD5, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsHashMessage,(const Ipp8u* pMsg, int len, Ipp8u* pMD, IppHashAlgId hashAlg))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsHashMethod_MD5(  );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsHashMethod_MD5(  );
+        return l9_ippsHashMessage( pMsg, len, pMD, hashAlg );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsHashMethod_MD5(  );
+        return y8_ippsHashMessage( pMsg, len, pMD, hashAlg );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI( const IppsHashMethod*, p8_ippsHashMethod_MD5, (void) )
-IPPAPI( const IppsHashMethod*, h9_ippsHashMethod_MD5, (void) )
+IPPAPI(IppStatus, p8_ippsHashMessage,(const Ipp8u* pMsg, int len, Ipp8u* pMD, IppHashAlgId hashAlg))
+IPPAPI(IppStatus, h9_ippsHashMessage,(const Ipp8u* pMsg, int len, Ipp8u* pMD, IppHashAlgId hashAlg))
 
-IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_MD5, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsHashMessage,(const Ipp8u* pMsg, int len, Ipp8u* pMD, IppHashAlgId hashAlg))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsHashMethod_MD5(  );
+        return h9_ippsHashMessage( pMsg, len, pMD, hashAlg );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsHashMethod_MD5(  );
+        return p8_ippsHashMessage( pMsg, len, pMD, hashAlg );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #endif

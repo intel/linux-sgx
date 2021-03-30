@@ -39,6 +39,7 @@ stdenvNoCC.mkDerivation { \n\
 \t\t/nix/store/dmxxhhl5yr92pbl17q1szvx34jcbzsy8-texinfo-6.5 \n\
 \t\t/nix/store/g6c80c9s2hmrk7jmkp9przi83jpcs8c6-bison-3.5.4 \n\
 \t\t/nix/store/qh2ppjlz4yq65cl0vs0m2h57x2cjlwm4-flex-2.6.4 \n\
+\t\t/nix/store/j6098x206440z8sbyqlibn95q6yhwdq7-nasm-2.15.05 \n\
 \t]; \n\
 \n\
 \tshellHook = '' \n\
@@ -69,7 +70,8 @@ RUN touch .bash_profile \
 && nix-env -i /nix/store/lvwq3g3093injr86lm0kp0f61k5cbpay-gcc-wrapper-8.3.0 \
 && nix-env -i /nix/store/dmxxhhl5yr92pbl17q1szvx34jcbzsy8-texinfo-6.5 \
 && nix-env -i /nix/store/g6c80c9s2hmrk7jmkp9przi83jpcs8c6-bison-3.5.4 \
-&& nix-env -i /nix/store/qh2ppjlz4yq65cl0vs0m2h57x2cjlwm4-flex-2.6.4 
+&& nix-env -i /nix/store/qh2ppjlz4yq65cl0vs0m2h57x2cjlwm4-flex-2.6.4  \
+&& nix-env -i /nix/store/j6098x206440z8sbyqlibn95q6yhwdq7-nasm-2.15.05
 
 
 #config nix-shell

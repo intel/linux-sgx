@@ -47,43 +47,39 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpxInit, (const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* const ppGroundElm[], int nElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
-IPPAPI(IppStatus, l9_ippsGFpxInit, (const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* const ppGroundElm[], int nElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
-IPPAPI(IppStatus, k0_ippsGFpxInit, (const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* const ppGroundElm[], int nElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPAPI( const IppsGFpMethod*, y8_ippsGFpMethod_p224r1, (void) )
+IPPAPI( const IppsGFpMethod*, l9_ippsGFpMethod_p224r1, (void) )
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxInit, (const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* const ppGroundElm[], int nElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p224r1, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpxInit( pGroundGF, extDeg, ppGroundElm, nElm, pGFpMethod, pGFpx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpxInit( pGroundGF, extDeg, ppGroundElm, nElm, pGFpMethod, pGFpx );
+        return l9_ippsGFpMethod_p224r1(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpxInit( pGroundGF, extDeg, ppGroundElm, nElm, pGFpMethod, pGFpx );
+        return y8_ippsGFpMethod_p224r1(  );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpxInit, (const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* const ppGroundElm[], int nElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
-IPPAPI(IppStatus, h9_ippsGFpxInit, (const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* const ppGroundElm[], int nElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPAPI( const IppsGFpMethod*, p8_ippsGFpMethod_p224r1, (void) )
+IPPAPI( const IppsGFpMethod*, h9_ippsGFpMethod_p224r1, (void) )
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxInit, (const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* const ppGroundElm[], int nElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p224r1, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpxInit( pGroundGF, extDeg, ppGroundElm, nElm, pGFpMethod, pGFpx );
+        return h9_ippsGFpMethod_p224r1(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpxInit( pGroundGF, extDeg, ppGroundElm, nElm, pGFpMethod, pGFpx );
+        return p8_ippsGFpMethod_p224r1(  );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #endif

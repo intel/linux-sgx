@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsARCFourCheckKey, (const Ipp8u *pKey, int keyLen, IppBool* pIsWeak))
-IPPAPI(IppStatus, l9_ippsARCFourCheckKey, (const Ipp8u *pKey, int keyLen, IppBool* pIsWeak))
-IPPAPI(IppStatus, k0_ippsARCFourCheckKey, (const Ipp8u *pKey, int keyLen, IppBool* pIsWeak))
+IPPAPI(IppStatus, y8_ippsAES_CMACGetTag,(Ipp8u* pMD, int mdLen, const IppsAES_CMACState* pState))
+IPPAPI(IppStatus, l9_ippsAES_CMACGetTag,(Ipp8u* pMD, int mdLen, const IppsAES_CMACState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourCheckKey, (const Ipp8u *pKey, int keyLen, IppBool* pIsWeak))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CMACGetTag,(Ipp8u* pMD, int mdLen, const IppsAES_CMACState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsARCFourCheckKey( pKey, keyLen, pIsWeak );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsARCFourCheckKey( pKey, keyLen, pIsWeak );
+        return l9_ippsAES_CMACGetTag( pMD, mdLen, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsARCFourCheckKey( pKey, keyLen, pIsWeak );
+        return y8_ippsAES_CMACGetTag( pMD, mdLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsARCFourCheckKey, (const Ipp8u *pKey, int keyLen, IppBool* pIsWeak))
-IPPAPI(IppStatus, h9_ippsARCFourCheckKey, (const Ipp8u *pKey, int keyLen, IppBool* pIsWeak))
+IPPAPI(IppStatus, p8_ippsAES_CMACGetTag,(Ipp8u* pMD, int mdLen, const IppsAES_CMACState* pState))
+IPPAPI(IppStatus, h9_ippsAES_CMACGetTag,(Ipp8u* pMD, int mdLen, const IppsAES_CMACState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourCheckKey, (const Ipp8u *pKey, int keyLen, IppBool* pIsWeak))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CMACGetTag,(Ipp8u* pMD, int mdLen, const IppsAES_CMACState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsARCFourCheckKey( pKey, keyLen, pIsWeak );
+        return h9_ippsAES_CMACGetTag( pMD, mdLen, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsARCFourCheckKey( pKey, keyLen, pIsWeak );
+        return p8_ippsAES_CMACGetTag( pMD, mdLen, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

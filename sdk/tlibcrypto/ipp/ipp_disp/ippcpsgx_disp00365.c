@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPCheckPoint,(const IppsECCPPointState* pP, IppECResult* pResult, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPCheckPoint,(const IppsECCPPointState* pP, IppECResult* pResult, IppsECCPState* pEC))
-IPPAPI(IppStatus, k0_ippsECCPCheckPoint,(const IppsECCPPointState* pP, IppECResult* pResult, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPBindGxyTblStdSM2, (IppsECCPState* pEC))
+IPPAPI(IppStatus, l9_ippsECCPBindGxyTblStdSM2, (IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPCheckPoint,(const IppsECCPPointState* pP, IppECResult* pResult, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPBindGxyTblStdSM2, (IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsECCPCheckPoint( pP, pResult, pEC );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPCheckPoint( pP, pResult, pEC );
+        return l9_ippsECCPBindGxyTblStdSM2( pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPCheckPoint( pP, pResult, pEC );
+        return y8_ippsECCPBindGxyTblStdSM2( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPCheckPoint,(const IppsECCPPointState* pP, IppECResult* pResult, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPCheckPoint,(const IppsECCPPointState* pP, IppECResult* pResult, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPBindGxyTblStdSM2, (IppsECCPState* pEC))
+IPPAPI(IppStatus, h9_ippsECCPBindGxyTblStdSM2, (IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPCheckPoint,(const IppsECCPPointState* pP, IppECResult* pResult, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPBindGxyTblStdSM2, (IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPCheckPoint( pP, pResult, pEC );
+        return h9_ippsECCPBindGxyTblStdSM2( pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPCheckPoint( pP, pResult, pEC );
+        return p8_ippsECCPBindGxyTblStdSM2( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

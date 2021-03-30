@@ -76,8 +76,8 @@ mount_dir="/linux-sgx"
 sdk_installer=""
 sgx_src=""
 
-default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.13.100.1.bin
-default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.13/distro/nix_reproducibility/$default_sdk_installer
+default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.13.101.1.bin
+default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.13.1/distro/nix_reproducibility/$default_sdk_installer
 
 
 usage()
@@ -179,7 +179,7 @@ prepare_sgx_src()
     if [ "$sgx_src" != "" ]; then
         mkdir -p "$sgx_repo" && cp -a "$sgx_src/." "$sgx_repo"
     else
-        git clone -b sgx_2.13_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
+        git clone -b sgx_2.13.1_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
     fi
 
     cd "$sgx_repo" && make preparation
@@ -189,15 +189,6 @@ prepare_sgx_src()
 
 prepare_ipp_src()
 {
-    pushd .
-    ipp_dir="$sgx_repo/external/ippcp_internal"
-
-    patch_log="$( cd $ipp_dir/ipp-crypto && git log --oneline --grep='Add mitigation support to assembly code' | cut -d' ' -f 3)"
-
-    if [  "$patch_log" != "mitigation" ]; then
-        cd $ipp_dir/ipp-crypto && git am ../0001-Add-mitigation-support-to-assembly-code.patch
-    fi
-    popd
 }
 
 prepare_binutils_src()

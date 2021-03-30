@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsDLPGetSize,(int bitSizeP, int bitSizeR, int* pSize))
-IPPAPI(IppStatus, l9_ippsDLPGetSize,(int bitSizeP, int bitSizeR, int* pSize))
-IPPAPI(IppStatus, k0_ippsDLPGetSize,(int bitSizeP, int bitSizeR, int* pSize))
+IPPAPI(IppStatus, y8_ippsRSA_MB_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* const pKeys[8]))
+IPPAPI(IppStatus, l9_ippsRSA_MB_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* const pKeys[8]))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPGetSize,(int bitSizeP, int bitSizeR, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* const pKeys[8]))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsDLPGetSize( bitSizeP, bitSizeR, pSize );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsDLPGetSize( bitSizeP, bitSizeR, pSize );
+        return l9_ippsRSA_MB_GetBufferSizePublicKey( pBufferSize, pKeys );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsDLPGetSize( bitSizeP, bitSizeR, pSize );
+        return y8_ippsRSA_MB_GetBufferSizePublicKey( pBufferSize, pKeys );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsDLPGetSize,(int bitSizeP, int bitSizeR, int* pSize))
-IPPAPI(IppStatus, h9_ippsDLPGetSize,(int bitSizeP, int bitSizeR, int* pSize))
+IPPAPI(IppStatus, p8_ippsRSA_MB_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* const pKeys[8]))
+IPPAPI(IppStatus, h9_ippsRSA_MB_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* const pKeys[8]))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPGetSize,(int bitSizeP, int bitSizeR, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* const pKeys[8]))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsDLPGetSize( bitSizeP, bitSizeR, pSize );
+        return h9_ippsRSA_MB_GetBufferSizePublicKey( pBufferSize, pKeys );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsDLPGetSize( bitSizeP, bitSizeR, pSize );
+        return p8_ippsRSA_MB_GetBufferSizePublicKey( pBufferSize, pKeys );
       } else 
         return ippStsCpuNotSupportedErr;
 }

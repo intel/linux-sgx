@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
-IPPAPI(IppStatus, l9_ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
-IPPAPI(IppStatus, k0_ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, y8_ippsMGF1_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, l9_ippsMGF1_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
 
-IPPFUN(IppStatus,sgx_disp_ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
+IPPFUN(IppStatus,sgx_disp_ippsMGF1_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsMGF2_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsMGF2_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
+        return l9_ippsMGF1_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsMGF2_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
+        return y8_ippsMGF1_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
-IPPAPI(IppStatus, h9_ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, p8_ippsMGF1_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, h9_ippsMGF1_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
 
-IPPFUN(IppStatus,sgx_disp_ippsMGF2_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
+IPPFUN(IppStatus,sgx_disp_ippsMGF1_rmf,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, const IppsHashMethod* pMethod))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsMGF2_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
+        return h9_ippsMGF1_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsMGF2_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
+        return p8_ippsMGF1_rmf( pSeed, seedLen, pMask, maskLen, pMethod );
       } else 
         return ippStsCpuNotSupportedErr;
 }

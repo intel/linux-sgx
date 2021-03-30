@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsAES_XTSEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int bitSizeLen, const IppsAES_XTSSpec* pCtx, const Ipp8u* pTweak, int startCipherBlkNo))
-IPPAPI(IppStatus, l9_ippsAES_XTSEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int bitSizeLen, const IppsAES_XTSSpec* pCtx, const Ipp8u* pTweak, int startCipherBlkNo))
-IPPAPI(IppStatus, k0_ippsAES_XTSEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int bitSizeLen, const IppsAES_XTSSpec* pCtx, const Ipp8u* pTweak, int startCipherBlkNo))
+IPPAPI(IppStatus, y8_ippsAES_XTSInit,(const Ipp8u* pKey, int keyLen, int duBitsize, IppsAES_XTSSpec* pCtx,int ctxSize))
+IPPAPI(IppStatus, l9_ippsAES_XTSInit,(const Ipp8u* pKey, int keyLen, int duBitsize, IppsAES_XTSSpec* pCtx,int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_XTSEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int bitSizeLen, const IppsAES_XTSSpec* pCtx, const Ipp8u* pTweak, int startCipherBlkNo))
+IPPFUN(IppStatus,sgx_disp_ippsAES_XTSInit,(const Ipp8u* pKey, int keyLen, int duBitsize, IppsAES_XTSSpec* pCtx,int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsAES_XTSEncrypt( pSrc, pDst, bitSizeLen, pCtx, pTweak, startCipherBlkNo );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsAES_XTSEncrypt( pSrc, pDst, bitSizeLen, pCtx, pTweak, startCipherBlkNo );
+        return l9_ippsAES_XTSInit( pKey, keyLen, duBitsize, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsAES_XTSEncrypt( pSrc, pDst, bitSizeLen, pCtx, pTweak, startCipherBlkNo );
+        return y8_ippsAES_XTSInit( pKey, keyLen, duBitsize, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsAES_XTSEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int bitSizeLen, const IppsAES_XTSSpec* pCtx, const Ipp8u* pTweak, int startCipherBlkNo))
-IPPAPI(IppStatus, h9_ippsAES_XTSEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int bitSizeLen, const IppsAES_XTSSpec* pCtx, const Ipp8u* pTweak, int startCipherBlkNo))
+IPPAPI(IppStatus, p8_ippsAES_XTSInit,(const Ipp8u* pKey, int keyLen, int duBitsize, IppsAES_XTSSpec* pCtx,int ctxSize))
+IPPAPI(IppStatus, h9_ippsAES_XTSInit,(const Ipp8u* pKey, int keyLen, int duBitsize, IppsAES_XTSSpec* pCtx,int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_XTSEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int bitSizeLen, const IppsAES_XTSSpec* pCtx, const Ipp8u* pTweak, int startCipherBlkNo))
+IPPFUN(IppStatus,sgx_disp_ippsAES_XTSInit,(const Ipp8u* pKey, int keyLen, int duBitsize, IppsAES_XTSSpec* pCtx,int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsAES_XTSEncrypt( pSrc, pDst, bitSizeLen, pCtx, pTweak, startCipherBlkNo );
+        return h9_ippsAES_XTSInit( pKey, keyLen, duBitsize, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsAES_XTSEncrypt( pSrc, pDst, bitSizeLen, pCtx, pTweak, startCipherBlkNo );
+        return p8_ippsAES_XTSInit( pKey, keyLen, duBitsize, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

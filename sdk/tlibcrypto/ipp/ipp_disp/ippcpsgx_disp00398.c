@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpxMethod_binom2_epid2,(void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpxMethod_binom2_epid2,(void) )
-IPPAPI( const IppsGFpMethod*, k0_ippsGFpxMethod_binom2_epid2,(void) )
+IPPAPI( const IppsGFpMethod*, y8_ippsGFpMethod_p384r1, (void) )
+IPPAPI( const IppsGFpMethod*, l9_ippsGFpMethod_p384r1, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom2_epid2,(void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p384r1, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpxMethod_binom2_epid2(  );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpxMethod_binom2_epid2(  );
+        return l9_ippsGFpMethod_p384r1(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpxMethod_binom2_epid2(  );
+        return y8_ippsGFpMethod_p384r1(  );
       } else 
         return NULL;
 }
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpxMethod_binom2_epid2,(void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpxMethod_binom2_epid2,(void) )
+IPPAPI( const IppsGFpMethod*, p8_ippsGFpMethod_p384r1, (void) )
+IPPAPI( const IppsGFpMethod*, h9_ippsGFpMethod_p384r1, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom2_epid2,(void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p384r1, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpxMethod_binom2_epid2(  );
+        return h9_ippsGFpMethod_p384r1(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpxMethod_binom2_epid2(  );
+        return p8_ippsGFpMethod_p384r1(  );
       } else 
         return NULL;
 }

@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsMontInit,(IppsExpMethod method, int length, IppsMontState* pCtx))
-IPPAPI(IppStatus, l9_ippsMontInit,(IppsExpMethod method, int length, IppsMontState* pCtx))
-IPPAPI(IppStatus, k0_ippsMontInit,(IppsExpMethod method, int length, IppsMontState* pCtx))
+IPPAPI(IppStatus, y8_ippsMontGetSize,(IppsExpMethod method, int length, int* pSize))
+IPPAPI(IppStatus, l9_ippsMontGetSize,(IppsExpMethod method, int length, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsMontInit,(IppsExpMethod method, int length, IppsMontState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsMontGetSize,(IppsExpMethod method, int length, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsMontInit( method, length, pCtx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsMontInit( method, length, pCtx );
+        return l9_ippsMontGetSize( method, length, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsMontInit( method, length, pCtx );
+        return y8_ippsMontGetSize( method, length, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsMontInit,(IppsExpMethod method, int length, IppsMontState* pCtx))
-IPPAPI(IppStatus, h9_ippsMontInit,(IppsExpMethod method, int length, IppsMontState* pCtx))
+IPPAPI(IppStatus, p8_ippsMontGetSize,(IppsExpMethod method, int length, int* pSize))
+IPPAPI(IppStatus, h9_ippsMontGetSize,(IppsExpMethod method, int length, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsMontInit,(IppsExpMethod method, int length, IppsMontState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsMontGetSize,(IppsExpMethod method, int length, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsMontInit( method, length, pCtx );
+        return h9_ippsMontGetSize( method, length, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsMontInit( method, length, pCtx );
+        return p8_ippsMontGetSize( method, length, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

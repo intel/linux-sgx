@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECPrivateKey,(IppsBigNumState* pPrivate, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, l9_ippsGFpECPrivateKey,(IppsBigNumState* pPrivate, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, k0_ippsGFpECPrivateKey,(IppsBigNumState* pPrivate, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, y8_ippsGFpECGetPoint,(const IppsGFpECPoint* pPoint, IppsGFpElement* pX, IppsGFpElement* pY, IppsGFpECState* pEC))
+IPPAPI(IppStatus, l9_ippsGFpECGetPoint,(const IppsGFpECPoint* pPoint, IppsGFpElement* pX, IppsGFpElement* pY, IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECPrivateKey,(IppsBigNumState* pPrivate, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECGetPoint,(const IppsGFpECPoint* pPoint, IppsGFpElement* pX, IppsGFpElement* pY, IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpECPrivateKey( pPrivate, pEC, rndFunc, pRndParam );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECPrivateKey( pPrivate, pEC, rndFunc, pRndParam );
+        return l9_ippsGFpECGetPoint( pPoint, pX, pY, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpECPrivateKey( pPrivate, pEC, rndFunc, pRndParam );
+        return y8_ippsGFpECGetPoint( pPoint, pX, pY, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECPrivateKey,(IppsBigNumState* pPrivate, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, h9_ippsGFpECPrivateKey,(IppsBigNumState* pPrivate, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, p8_ippsGFpECGetPoint,(const IppsGFpECPoint* pPoint, IppsGFpElement* pX, IppsGFpElement* pY, IppsGFpECState* pEC))
+IPPAPI(IppStatus, h9_ippsGFpECGetPoint,(const IppsGFpECPoint* pPoint, IppsGFpElement* pX, IppsGFpElement* pY, IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECPrivateKey,(IppsBigNumState* pPrivate, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECGetPoint,(const IppsGFpECPoint* pPoint, IppsGFpElement* pX, IppsGFpElement* pY, IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpECPrivateKey( pPrivate, pEC, rndFunc, pRndParam );
+        return h9_ippsGFpECGetPoint( pPoint, pX, pY, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpECPrivateKey( pPrivate, pEC, rndFunc, pRndParam );
+        return p8_ippsGFpECGetPoint( pPoint, pX, pY, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

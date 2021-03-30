@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsBigNumInit,(int length, IppsBigNumState* pBN))
-IPPAPI(IppStatus, l9_ippsBigNumInit,(int length, IppsBigNumState* pBN))
-IPPAPI(IppStatus, k0_ippsBigNumInit,(int length, IppsBigNumState* pBN))
+IPPAPI(IppStatus, y8_ippsBigNumGetSize,(int length, int* pSize))
+IPPAPI(IppStatus, l9_ippsBigNumGetSize,(int length, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsBigNumInit,(int length, IppsBigNumState* pBN))
+IPPFUN(IppStatus,sgx_disp_ippsBigNumGetSize,(int length, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsBigNumInit( length, pBN );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsBigNumInit( length, pBN );
+        return l9_ippsBigNumGetSize( length, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsBigNumInit( length, pBN );
+        return y8_ippsBigNumGetSize( length, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsBigNumInit,(int length, IppsBigNumState* pBN))
-IPPAPI(IppStatus, h9_ippsBigNumInit,(int length, IppsBigNumState* pBN))
+IPPAPI(IppStatus, p8_ippsBigNumGetSize,(int length, int* pSize))
+IPPAPI(IppStatus, h9_ippsBigNumGetSize,(int length, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsBigNumInit,(int length, IppsBigNumState* pBN))
+IPPFUN(IppStatus,sgx_disp_ippsBigNumGetSize,(int length, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsBigNumInit( length, pBN );
+        return h9_ippsBigNumGetSize( length, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsBigNumInit( length, pBN );
+        return p8_ippsBigNumGetSize( length, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

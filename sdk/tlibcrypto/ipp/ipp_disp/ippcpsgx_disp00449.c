@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECBindGxyTblStd384r1,(IppsGFpECState* pEC))
-IPPAPI(IppStatus, l9_ippsGFpECBindGxyTblStd384r1,(IppsGFpECState* pEC))
-IPPAPI(IppStatus, k0_ippsGFpECBindGxyTblStd384r1,(IppsGFpECState* pEC))
+IPPAPI(IppStatus, y8_ippsGFpECInitStd224r1,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
+IPPAPI(IppStatus, l9_ippsGFpECInitStd224r1,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECBindGxyTblStd384r1,(IppsGFpECState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECInitStd224r1,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpECBindGxyTblStd384r1( pEC );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECBindGxyTblStd384r1( pEC );
+        return l9_ippsGFpECInitStd224r1( pGFp, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpECBindGxyTblStd384r1( pEC );
+        return y8_ippsGFpECInitStd224r1( pGFp, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECBindGxyTblStd384r1,(IppsGFpECState* pEC))
-IPPAPI(IppStatus, h9_ippsGFpECBindGxyTblStd384r1,(IppsGFpECState* pEC))
+IPPAPI(IppStatus, p8_ippsGFpECInitStd224r1,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
+IPPAPI(IppStatus, h9_ippsGFpECInitStd224r1,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECBindGxyTblStd384r1,(IppsGFpECState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECInitStd224r1,(const IppsGFpState* pGFp, IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpECBindGxyTblStd384r1( pEC );
+        return h9_ippsGFpECInitStd224r1( pGFp, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpECBindGxyTblStd384r1( pEC );
+        return p8_ippsGFpECInitStd224r1( pGFp, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

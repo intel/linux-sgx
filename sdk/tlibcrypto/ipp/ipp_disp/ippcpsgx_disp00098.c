@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsARCFourPack,(const IppsARCFourState* pCtx, Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsARCFourPack,(const IppsARCFourState* pCtx, Ipp8u* pBuffer))
-IPPAPI(IppStatus, k0_ippsARCFourPack,(const IppsARCFourState* pCtx, Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsARCFourReset, (IppsARCFourState* pCtx))
+IPPAPI(IppStatus, l9_ippsARCFourReset, (IppsARCFourState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourPack,(const IppsARCFourState* pCtx, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourReset, (IppsARCFourState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsARCFourPack( pCtx, pBuffer );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsARCFourPack( pCtx, pBuffer );
+        return l9_ippsARCFourReset( pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsARCFourPack( pCtx, pBuffer );
+        return y8_ippsARCFourReset( pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsARCFourPack,(const IppsARCFourState* pCtx, Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsARCFourPack,(const IppsARCFourState* pCtx, Ipp8u* pBuffer))
+IPPAPI(IppStatus, p8_ippsARCFourReset, (IppsARCFourState* pCtx))
+IPPAPI(IppStatus, h9_ippsARCFourReset, (IppsARCFourState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourPack,(const IppsARCFourState* pCtx, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourReset, (IppsARCFourState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsARCFourPack( pCtx, pBuffer );
+        return h9_ippsARCFourReset( pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsARCFourPack( pCtx, pBuffer );
+        return p8_ippsARCFourReset( pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

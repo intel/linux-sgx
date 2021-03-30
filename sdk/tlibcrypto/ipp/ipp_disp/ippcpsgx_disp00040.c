@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSMS4SetKey,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx))
-IPPAPI(IppStatus, l9_ippsSMS4SetKey,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx))
-IPPAPI(IppStatus, k0_ippsSMS4SetKey,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx))
+IPPAPI(IppStatus, y8_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
+IPPAPI(IppStatus, l9_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4SetKey,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsSMS4SetKey( pKey, keyLen, pCtx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSMS4SetKey( pKey, keyLen, pCtx );
+        return l9_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSMS4SetKey( pKey, keyLen, pCtx );
+        return y8_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSMS4SetKey,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx))
-IPPAPI(IppStatus, h9_ippsSMS4SetKey,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx))
+IPPAPI(IppStatus, p8_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
+IPPAPI(IppStatus, h9_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4SetKey,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSMS4SetKey( pKey, keyLen, pCtx );
+        return h9_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSMS4SetKey( pKey, keyLen, pCtx );
+        return p8_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

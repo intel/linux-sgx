@@ -47,43 +47,39 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpMethod_pArb, (void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpMethod_pArb, (void) )
-IPPAPI( const IppsGFpMethod*, k0_ippsGFpMethod_pArb, (void) )
+IPPAPI(IppStatus, y8_ippsGFpInit, (const IppsBigNumState* pPrime, int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPAPI(IppStatus, l9_ippsGFpInit, (const IppsBigNumState* pPrime, int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_pArb, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpInit, (const IppsBigNumState* pPrime, int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpMethod_pArb(  );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpMethod_pArb(  );
+        return l9_ippsGFpInit( pPrime, primeBitSize, pGFpMethod, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpMethod_pArb(  );
+        return y8_ippsGFpInit( pPrime, primeBitSize, pGFpMethod, pGFp );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpMethod_pArb, (void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpMethod_pArb, (void) )
+IPPAPI(IppStatus, p8_ippsGFpInit, (const IppsBigNumState* pPrime, int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPAPI(IppStatus, h9_ippsGFpInit, (const IppsBigNumState* pPrime, int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_pArb, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpInit, (const IppsBigNumState* pPrime, int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpMethod_pArb(  );
+        return h9_ippsGFpInit( pPrime, primeBitSize, pGFpMethod, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpMethod_pArb(  );
+        return p8_ippsGFpInit( pPrime, primeBitSize, pGFpMethod, pGFp );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #endif

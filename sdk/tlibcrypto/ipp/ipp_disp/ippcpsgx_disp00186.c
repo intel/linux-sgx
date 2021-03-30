@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsHashMethod*, y8_ippsHashMethod_SHA384, (void) )
-IPPAPI( const IppsHashMethod*, l9_ippsHashMethod_SHA384, (void) )
-IPPAPI( const IppsHashMethod*, k0_ippsHashMethod_SHA384, (void) )
+IPPAPI( const IppsHashMethod*, y8_ippsHashMethod_SHA512, (void) )
+IPPAPI( const IppsHashMethod*, l9_ippsHashMethod_SHA512, (void) )
 
-IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_SHA384, (void) )
+IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_SHA512, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsHashMethod_SHA384(  );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsHashMethod_SHA384(  );
+        return l9_ippsHashMethod_SHA512(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsHashMethod_SHA384(  );
+        return y8_ippsHashMethod_SHA512(  );
       } else 
         return NULL;
 }
 #else
 
 
-IPPAPI( const IppsHashMethod*, p8_ippsHashMethod_SHA384, (void) )
-IPPAPI( const IppsHashMethod*, h9_ippsHashMethod_SHA384, (void) )
+IPPAPI( const IppsHashMethod*, p8_ippsHashMethod_SHA512, (void) )
+IPPAPI( const IppsHashMethod*, h9_ippsHashMethod_SHA512, (void) )
 
-IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_SHA384, (void) )
+IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_SHA512, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsHashMethod_SHA384(  );
+        return h9_ippsHashMethod_SHA512(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsHashMethod_SHA384(  );
+        return p8_ippsHashMethod_SHA512(  );
       } else 
         return NULL;
 }

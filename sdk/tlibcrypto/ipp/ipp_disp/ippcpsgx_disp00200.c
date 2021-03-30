@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
-IPPAPI(IppStatus, l9_ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
-IPPAPI(IppStatus, k0_ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
+IPPAPI(IppStatus, y8_ippsHashGetInfo_rmf,(IppsHashInfo* pInfo, const IppsHashState_rmf* pState))
+IPPAPI(IppStatus, l9_ippsHashGetInfo_rmf,(IppsHashInfo* pInfo, const IppsHashState_rmf* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
+IPPFUN(IppStatus,sgx_disp_ippsHashGetInfo_rmf,(IppsHashInfo* pInfo, const IppsHashState_rmf* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsMGF( pSeed, seedLen, pMask, maskLen, hashAlg );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsMGF( pSeed, seedLen, pMask, maskLen, hashAlg );
+        return l9_ippsHashGetInfo_rmf( pInfo, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsMGF( pSeed, seedLen, pMask, maskLen, hashAlg );
+        return y8_ippsHashGetInfo_rmf( pInfo, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
-IPPAPI(IppStatus, h9_ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
+IPPAPI(IppStatus, p8_ippsHashGetInfo_rmf,(IppsHashInfo* pInfo, const IppsHashState_rmf* pState))
+IPPAPI(IppStatus, h9_ippsHashGetInfo_rmf,(IppsHashInfo* pInfo, const IppsHashState_rmf* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsMGF,(const Ipp8u* pSeed, int seedLen, Ipp8u* pMask, int maskLen, IppHashAlgId hashAlg))
+IPPFUN(IppStatus,sgx_disp_ippsHashGetInfo_rmf,(IppsHashInfo* pInfo, const IppsHashState_rmf* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsMGF( pSeed, seedLen, pMask, maskLen, hashAlg );
+        return h9_ippsHashGetInfo_rmf( pInfo, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsMGF( pSeed, seedLen, pMask, maskLen, hashAlg );
+        return p8_ippsHashGetInfo_rmf( pInfo, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

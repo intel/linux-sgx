@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsHashGetSize,(int* pSize))
-IPPAPI(IppStatus, l9_ippsHashGetSize,(int* pSize))
-IPPAPI(IppStatus, k0_ippsHashGetSize,(int* pSize))
+IPPAPI(IppStatus, y8_ippsSM3MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
+IPPAPI(IppStatus, l9_ippsSM3MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
 
-IPPFUN(IppStatus,sgx_disp_ippsHashGetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsSM3MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsHashGetSize( pSize );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsHashGetSize( pSize );
+        return l9_ippsSM3MessageDigest( pMsg, len, pMD );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsHashGetSize( pSize );
+        return y8_ippsSM3MessageDigest( pMsg, len, pMD );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsHashGetSize,(int* pSize))
-IPPAPI(IppStatus, h9_ippsHashGetSize,(int* pSize))
+IPPAPI(IppStatus, p8_ippsSM3MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
+IPPAPI(IppStatus, h9_ippsSM3MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
 
-IPPFUN(IppStatus,sgx_disp_ippsHashGetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsSM3MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsHashGetSize( pSize );
+        return h9_ippsSM3MessageDigest( pMsg, len, pMD );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsHashGetSize( pSize );
+        return p8_ippsSM3MessageDigest( pMsg, len, pMD );
       } else 
         return ippStsCpuNotSupportedErr;
 }

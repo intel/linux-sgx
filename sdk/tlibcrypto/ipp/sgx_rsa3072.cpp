@@ -44,7 +44,6 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
         return SGX_ERROR_INVALID_PARAMETER;
     }
     IppStatus ipp_ret = ippStsNoErr;
-    IppHashAlgId hash_alg = ippHashAlg_SHA256;
 
     IppsRSAPrivateKeyState* p_rsa_privatekey_ctx = NULL;
     int private_key_ctx_size = 0;
@@ -93,7 +92,7 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
         }
 
         // sign the data buffer
-        ipp_ret = ippsRSASign_PKCS1v15(p_data, data_size, *p_signature, p_rsa_privatekey_ctx, NULL, hash_alg, temp_buff);
+        ipp_ret = ippsRSASign_PKCS1v15_rmf(p_data, data_size, *p_signature, p_rsa_privatekey_ctx, NULL, ippsHashMethod_SHA256_TT(), temp_buff);
 
     } while (0);
 
@@ -130,7 +129,6 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
     *p_result = SGX_RSA_INVALID_SIGNATURE;
 
     IppStatus ipp_ret = ippStsNoErr;
-    IppHashAlgId hash_alg = ippHashAlg_SHA256;
 
     IppsRSAPublicKeyState* p_rsa_publickey_ctx = NULL;
     Ipp8u *temp_buff = NULL;
@@ -183,7 +181,7 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
         }
 
         // verify the signature
-        ipp_ret = ippsRSAVerify_PKCS1v15(p_data, data_size, *p_signature, &result, p_rsa_publickey_ctx, hash_alg, temp_buff);
+        ipp_ret = ippsRSAVerify_PKCS1v15_rmf(p_data, data_size, *p_signature, &result, p_rsa_publickey_ctx, ippsHashMethod_SHA256_TT(), temp_buff);
     } while (0);
 
     if ((result != 0) && (ipp_ret == ippStsNoErr))

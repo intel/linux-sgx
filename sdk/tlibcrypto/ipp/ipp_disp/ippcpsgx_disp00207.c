@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsHMAC_Duplicate,(const IppsHMACState* pSrcCtx, IppsHMACState* pDstCtx))
-IPPAPI(IppStatus, l9_ippsHMAC_Duplicate,(const IppsHMACState* pSrcCtx, IppsHMACState* pDstCtx))
-IPPAPI(IppStatus, k0_ippsHMAC_Duplicate,(const IppsHMACState* pSrcCtx, IppsHMACState* pDstCtx))
+IPPAPI(IppStatus, y8_ippsHMAC_Unpack,(const Ipp8u* pBuffer, IppsHMACState* pCtx))
+IPPAPI(IppStatus, l9_ippsHMAC_Unpack,(const Ipp8u* pBuffer, IppsHMACState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsHMAC_Duplicate,(const IppsHMACState* pSrcCtx, IppsHMACState* pDstCtx))
+IPPFUN(IppStatus,sgx_disp_ippsHMAC_Unpack,(const Ipp8u* pBuffer, IppsHMACState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsHMAC_Duplicate( pSrcCtx, pDstCtx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsHMAC_Duplicate( pSrcCtx, pDstCtx );
+        return l9_ippsHMAC_Unpack( pBuffer, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsHMAC_Duplicate( pSrcCtx, pDstCtx );
+        return y8_ippsHMAC_Unpack( pBuffer, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsHMAC_Duplicate,(const IppsHMACState* pSrcCtx, IppsHMACState* pDstCtx))
-IPPAPI(IppStatus, h9_ippsHMAC_Duplicate,(const IppsHMACState* pSrcCtx, IppsHMACState* pDstCtx))
+IPPAPI(IppStatus, p8_ippsHMAC_Unpack,(const Ipp8u* pBuffer, IppsHMACState* pCtx))
+IPPAPI(IppStatus, h9_ippsHMAC_Unpack,(const Ipp8u* pBuffer, IppsHMACState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsHMAC_Duplicate,(const IppsHMACState* pSrcCtx, IppsHMACState* pDstCtx))
+IPPFUN(IppStatus,sgx_disp_ippsHMAC_Unpack,(const Ipp8u* pBuffer, IppsHMACState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsHMAC_Duplicate( pSrcCtx, pDstCtx );
+        return h9_ippsHMAC_Unpack( pBuffer, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsHMAC_Duplicate( pSrcCtx, pDstCtx );
+        return p8_ippsHMAC_Unpack( pBuffer, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

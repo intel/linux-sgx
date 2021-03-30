@@ -47,43 +47,39 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
-IPPAPI(IppStatus, l9_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
-IPPAPI(IppStatus, k0_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPAPI( const IppsGFpMethod*, y8_ippsGFpMethod_p192r1, (void) )
+IPPAPI( const IppsGFpMethod*, l9_ippsGFpMethod_p192r1, (void) )
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p192r1, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpxGetSize( pGroundGF, degree, pSize );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return l9_ippsGFpMethod_p192r1(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return y8_ippsGFpMethod_p192r1(  );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
-IPPAPI(IppStatus, h9_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPAPI( const IppsGFpMethod*, p8_ippsGFpMethod_p192r1, (void) )
+IPPAPI( const IppsGFpMethod*, h9_ippsGFpMethod_p192r1, (void) )
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p192r1, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return h9_ippsGFpMethod_p192r1(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return p8_ippsGFpMethod_p192r1(  );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #endif

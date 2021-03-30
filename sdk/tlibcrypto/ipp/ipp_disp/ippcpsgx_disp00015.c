@@ -49,16 +49,12 @@
 
 IPPAPI(IppStatus, y8_ippsAESGetSize,(int *pSize))
 IPPAPI(IppStatus, l9_ippsAESGetSize,(int *pSize))
-IPPAPI(IppStatus, k0_ippsAESGetSize,(int *pSize))
 
 IPPFUN(IppStatus,sgx_disp_ippsAESGetSize,(int *pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsAESGetSize( pSize );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsAESGetSize( pSize );
       } else 
