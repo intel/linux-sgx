@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSA_GetPrivateKeyType1,(IppsBigNumState* pModulus, IppsBigNumState* pPrivateExp, const IppsRSAPrivateKeyState* pKey))
-IPPAPI(IppStatus, l9_ippsRSA_GetPrivateKeyType1,(IppsBigNumState* pModulus, IppsBigNumState* pPrivateExp, const IppsRSAPrivateKeyState* pKey))
+IPPAPI(IppStatus, y8_ippsRSA_GetSizePrivateKeyType2,(int factorPbitSize, int factorQbitSize, int* pKeySize))
+IPPAPI(IppStatus, l9_ippsRSA_GetSizePrivateKeyType2,(int factorPbitSize, int factorQbitSize, int* pKeySize))
+IPPAPI(IppStatus, k0_ippsRSA_GetSizePrivateKeyType2,(int factorPbitSize, int factorQbitSize, int* pKeySize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GetPrivateKeyType1,(IppsBigNumState* pModulus, IppsBigNumState* pPrivateExp, const IppsRSAPrivateKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_GetSizePrivateKeyType2,(int factorPbitSize, int factorQbitSize, int* pKeySize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsRSA_GetSizePrivateKeyType2( factorPbitSize, factorQbitSize, pKeySize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSA_GetPrivateKeyType1( pModulus, pPrivateExp, pKey );
+        return l9_ippsRSA_GetSizePrivateKeyType2( factorPbitSize, factorQbitSize, pKeySize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSA_GetPrivateKeyType1( pModulus, pPrivateExp, pKey );
+        return y8_ippsRSA_GetSizePrivateKeyType2( factorPbitSize, factorQbitSize, pKeySize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSA_GetPrivateKeyType1,(IppsBigNumState* pModulus, IppsBigNumState* pPrivateExp, const IppsRSAPrivateKeyState* pKey))
-IPPAPI(IppStatus, h9_ippsRSA_GetPrivateKeyType1,(IppsBigNumState* pModulus, IppsBigNumState* pPrivateExp, const IppsRSAPrivateKeyState* pKey))
+IPPAPI(IppStatus, p8_ippsRSA_GetSizePrivateKeyType2,(int factorPbitSize, int factorQbitSize, int* pKeySize))
+IPPAPI(IppStatus, h9_ippsRSA_GetSizePrivateKeyType2,(int factorPbitSize, int factorQbitSize, int* pKeySize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GetPrivateKeyType1,(IppsBigNumState* pModulus, IppsBigNumState* pPrivateExp, const IppsRSAPrivateKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_GetSizePrivateKeyType2,(int factorPbitSize, int factorQbitSize, int* pKeySize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSA_GetPrivateKeyType1( pModulus, pPrivateExp, pKey );
+        return h9_ippsRSA_GetSizePrivateKeyType2( factorPbitSize, factorQbitSize, pKeySize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSA_GetPrivateKeyType1( pModulus, pPrivateExp, pKey );
+        return p8_ippsRSA_GetSizePrivateKeyType2( factorPbitSize, factorQbitSize, pKeySize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

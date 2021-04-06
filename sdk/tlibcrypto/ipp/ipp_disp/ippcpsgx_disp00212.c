@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsHMAC_Message,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pKey, int keyLen, Ipp8u* pMD, int mdLen, IppHashAlgId hashAlg))
-IPPAPI(IppStatus, l9_ippsHMAC_Message,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pKey, int keyLen, Ipp8u* pMD, int mdLen, IppHashAlgId hashAlg))
+IPPAPI(IppStatus, y8_ippsHMACGetSize_rmf,(int* pSize))
+IPPAPI(IppStatus, l9_ippsHMACGetSize_rmf,(int* pSize))
+IPPAPI(IppStatus, k0_ippsHMACGetSize_rmf,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsHMAC_Message,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pKey, int keyLen, Ipp8u* pMD, int mdLen, IppHashAlgId hashAlg))
+IPPFUN(IppStatus,sgx_disp_ippsHMACGetSize_rmf,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsHMACGetSize_rmf( pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsHMAC_Message( pMsg, msgLen, pKey, keyLen, pMD, mdLen, hashAlg );
+        return l9_ippsHMACGetSize_rmf( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsHMAC_Message( pMsg, msgLen, pKey, keyLen, pMD, mdLen, hashAlg );
+        return y8_ippsHMACGetSize_rmf( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsHMAC_Message,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pKey, int keyLen, Ipp8u* pMD, int mdLen, IppHashAlgId hashAlg))
-IPPAPI(IppStatus, h9_ippsHMAC_Message,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pKey, int keyLen, Ipp8u* pMD, int mdLen, IppHashAlgId hashAlg))
+IPPAPI(IppStatus, p8_ippsHMACGetSize_rmf,(int* pSize))
+IPPAPI(IppStatus, h9_ippsHMACGetSize_rmf,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsHMAC_Message,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pKey, int keyLen, Ipp8u* pMD, int mdLen, IppHashAlgId hashAlg))
+IPPFUN(IppStatus,sgx_disp_ippsHMACGetSize_rmf,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsHMAC_Message( pMsg, msgLen, pKey, keyLen, pMD, mdLen, hashAlg );
+        return h9_ippsHMACGetSize_rmf( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsHMAC_Message( pMsg, msgLen, pKey, keyLen, pMD, mdLen, hashAlg );
+        return p8_ippsHMACGetSize_rmf( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECTstKeyPair,(const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, l9_ippsGFpECTstKeyPair,(const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, y8_ippsGFpECESInit_SM2, (IppsGFpECState* pEC, IppsECESState_SM2* pState, int avaliableCtxSize))
+IPPAPI(IppStatus, l9_ippsGFpECESInit_SM2, (IppsGFpECState* pEC, IppsECESState_SM2* pState, int avaliableCtxSize))
+IPPAPI(IppStatus, k0_ippsGFpECESInit_SM2, (IppsGFpECState* pEC, IppsECESState_SM2* pState, int avaliableCtxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECTstKeyPair,(const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECESInit_SM2, (IppsGFpECState* pEC, IppsECESState_SM2* pState, int avaliableCtxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpECESInit_SM2( pEC, pState, avaliableCtxSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECTstKeyPair( pPrivate, pPublic, pResult, pEC, pScratchBuffer );
+        return l9_ippsGFpECESInit_SM2( pEC, pState, avaliableCtxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpECTstKeyPair( pPrivate, pPublic, pResult, pEC, pScratchBuffer );
+        return y8_ippsGFpECESInit_SM2( pEC, pState, avaliableCtxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECTstKeyPair,(const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, h9_ippsGFpECTstKeyPair,(const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, p8_ippsGFpECESInit_SM2, (IppsGFpECState* pEC, IppsECESState_SM2* pState, int avaliableCtxSize))
+IPPAPI(IppStatus, h9_ippsGFpECESInit_SM2, (IppsGFpECState* pEC, IppsECESState_SM2* pState, int avaliableCtxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECTstKeyPair,(const IppsBigNumState* pPrivate, const IppsGFpECPoint* pPublic, IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECESInit_SM2, (IppsGFpECState* pEC, IppsECESState_SM2* pState, int avaliableCtxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpECTstKeyPair( pPrivate, pPublic, pResult, pEC, pScratchBuffer );
+        return h9_ippsGFpECESInit_SM2( pEC, pState, avaliableCtxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpECTstKeyPair( pPrivate, pPublic, pResult, pEC, pScratchBuffer );
+        return p8_ippsGFpECESInit_SM2( pEC, pState, avaliableCtxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

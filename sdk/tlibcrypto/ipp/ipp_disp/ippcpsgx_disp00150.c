@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
-IPPAPI(IppStatus, l9_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
+IPPAPI(IppStatus, y8_ippsMD5Pack,(const IppsMD5State* pState, Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsMD5Pack,(const IppsMD5State* pState, Ipp8u* pBuffer))
+IPPAPI(IppStatus, k0_ippsMD5Pack,(const IppsMD5State* pState, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
+IPPFUN(IppStatus,sgx_disp_ippsMD5Pack,(const IppsMD5State* pState, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsMD5Pack( pState, pBuffer );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsMD5Duplicate( pSrcState, pDstState );
+        return l9_ippsMD5Pack( pState, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsMD5Duplicate( pSrcState, pDstState );
+        return y8_ippsMD5Pack( pState, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
-IPPAPI(IppStatus, h9_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
+IPPAPI(IppStatus, p8_ippsMD5Pack,(const IppsMD5State* pState, Ipp8u* pBuffer))
+IPPAPI(IppStatus, h9_ippsMD5Pack,(const IppsMD5State* pState, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
+IPPFUN(IppStatus,sgx_disp_ippsMD5Pack,(const IppsMD5State* pState, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsMD5Duplicate( pSrcState, pDstState );
+        return h9_ippsMD5Pack( pState, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsMD5Duplicate( pSrcState, pDstState );
+        return p8_ippsMD5Pack( pState, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

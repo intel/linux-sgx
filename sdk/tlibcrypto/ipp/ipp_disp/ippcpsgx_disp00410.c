@@ -47,39 +47,43 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpxMethod_binom3, (void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpxMethod_binom3, (void) )
+IPPAPI(IppStatus, y8_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, l9_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, k0_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpxMethod_binom3(  );
+        return l9_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpxMethod_binom3(  );
+        return y8_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpxMethod_binom3, (void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpxMethod_binom3, (void) )
+IPPAPI(IppStatus, p8_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, h9_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementRandom,(IppsGFpElement* pR, IppsGFpState* pGFp, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpxMethod_binom3(  );
+        return h9_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpxMethod_binom3(  );
+        return p8_ippsGFpSetElementRandom( pR, pGFp, rndFunc, pRndParam );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #endif

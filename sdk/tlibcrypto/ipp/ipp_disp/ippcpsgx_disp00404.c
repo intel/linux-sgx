@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
-IPPAPI(IppStatus, l9_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPAPI(IppStatus, y8_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
+IPPAPI(IppStatus, l9_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
+IPPAPI(IppStatus, k0_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return l9_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return y8_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
-IPPAPI(IppStatus, h9_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPAPI(IppStatus, p8_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
+IPPAPI(IppStatus, h9_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxGetSize,(const IppsGFpState* pGroundGF, int degree, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsGFpScratchBufferSize,(int nExponents, int ExpBitSize, const IppsGFpState* pGFp, int* pBufferSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return h9_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpxGetSize( pGroundGF, degree, pSize );
+        return p8_ippsGFpScratchBufferSize( nExponents, ExpBitSize, pGFp, pBufferSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

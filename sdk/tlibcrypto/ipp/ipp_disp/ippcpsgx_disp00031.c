@@ -49,12 +49,16 @@
 
 IPPAPI(IppStatus, y8_ippsAESDecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsAESSpec* pCtx, const Ipp8u* pIV))
 IPPAPI(IppStatus, l9_ippsAESDecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsAESSpec* pCtx, const Ipp8u* pIV))
+IPPAPI(IppStatus, k0_ippsAESDecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsAESSpec* pCtx, const Ipp8u* pIV))
 
 IPPFUN(IppStatus,sgx_disp_ippsAESDecryptCFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int cfbBlkSize, const IppsAESSpec* pCtx, const Ipp8u* pIV))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAESDecryptCFB( pSrc, pDst, len, cfbBlkSize, pCtx, pIV );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsAESDecryptCFB( pSrc, pDst, len, cfbBlkSize, pCtx, pIV );
       } else 

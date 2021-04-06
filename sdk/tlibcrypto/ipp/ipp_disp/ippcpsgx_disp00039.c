@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSMS4GetSize,(int *pSize))
-IPPAPI(IppStatus, l9_ippsSMS4GetSize,(int *pSize))
+IPPAPI(IppStatus, y8_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
+IPPAPI(IppStatus, l9_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
+IPPAPI(IppStatus, k0_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4GetSize,(int *pSize))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSMS4GetSize( pSize );
+        return l9_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSMS4GetSize( pSize );
+        return y8_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSMS4GetSize,(int *pSize))
-IPPAPI(IppStatus, h9_ippsSMS4GetSize,(int *pSize))
+IPPAPI(IppStatus, p8_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
+IPPAPI(IppStatus, h9_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4GetSize,(int *pSize))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4Init,(const Ipp8u* pKey, int keyLen, IppsSMS4Spec* pCtx, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSMS4GetSize( pSize );
+        return h9_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSMS4GetSize( pSize );
+        return p8_ippsSMS4Init( pKey, keyLen, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

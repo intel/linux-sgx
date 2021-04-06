@@ -36,7 +36,7 @@ CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
             -I$(COMMON_DIR)/inc/tlibc    \
 	    -I$(SGX_IPP_INC)
 
-CXXFLAGS += $(ENCLAVE_CXXFLAGS) -fno-exceptions -fno-rtti #-Werror
+CXXFLAGS += $(ENCLAVE_CXXFLAGS) -Werror -fno-exceptions -fno-rtti
 
 OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_rsa_encryption.o sgx_aes_gcm.o sgx_cmac128.o sgx_hmac.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha256.o sgx_sha1.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o sgx_internal.o
 SHARED_OBJ = tcrypto_version.o sgx_common_init_ipp.o
@@ -67,7 +67,7 @@ else
 endif
 
 PREPARE_SGXSSL := $(LINUX_EXTERNAL_DIR)/sgxssl/prepare_sgxssl.sh
-PREPARE_SGX_SSL:
+PREPRARE_SGX_SSL:
 	chmod 755 $(PREPARE_SGXSSL)
 	test -f $(OPENSSL_LIBRARY_PATH)/lib$(SGXSSL_Library_Name).a || MITIGATION=$(MITIGATION-CVE-2020-0551) $(PREPARE_SGXSSL)
 
@@ -79,7 +79,7 @@ LIB_NAME := libsgx_tcrypto_sgxssl.a
 
 else
 # Build IPP crypto based sgx_tcrypto library
-CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -fno-exceptions -fPIC #-Werror
+CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -Werror -fno-exceptions -fPIC
 
 OBJ += sgx_tcrypto_common.o sgx_rsa_internal.o
 SRCDIR := ipp
@@ -100,7 +100,7 @@ TARGET := libsgx_tcrypto.a
 
 ifeq ($(USE_CRYPTO_LIB), 0)
 
-$(TARGET): PREPARE_SGX_SSL
+$(TARGET): PREPRARE_SGX_SSL 
 	$(MAKE) $(OBJ) 
 	$(MAKE) $(SHARED_OBJ)
 	$(MKDIR) $(BUILD_DIR)/.libs

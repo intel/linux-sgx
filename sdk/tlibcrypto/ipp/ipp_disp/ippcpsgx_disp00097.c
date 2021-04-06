@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsARCFourInit, (const Ipp8u *pKey, int keyLen, IppsARCFourState *pCtx))
-IPPAPI(IppStatus, l9_ippsARCFourInit, (const Ipp8u *pKey, int keyLen, IppsARCFourState *pCtx))
+IPPAPI(IppStatus, y8_ippsARCFourReset, (IppsARCFourState* pCtx))
+IPPAPI(IppStatus, l9_ippsARCFourReset, (IppsARCFourState* pCtx))
+IPPAPI(IppStatus, k0_ippsARCFourReset, (IppsARCFourState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourInit, (const Ipp8u *pKey, int keyLen, IppsARCFourState *pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourReset, (IppsARCFourState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsARCFourReset( pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsARCFourInit( pKey, keyLen, pCtx );
+        return l9_ippsARCFourReset( pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsARCFourInit( pKey, keyLen, pCtx );
+        return y8_ippsARCFourReset( pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsARCFourInit, (const Ipp8u *pKey, int keyLen, IppsARCFourState *pCtx))
-IPPAPI(IppStatus, h9_ippsARCFourInit, (const Ipp8u *pKey, int keyLen, IppsARCFourState *pCtx))
+IPPAPI(IppStatus, p8_ippsARCFourReset, (IppsARCFourState* pCtx))
+IPPAPI(IppStatus, h9_ippsARCFourReset, (IppsARCFourState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourInit, (const Ipp8u *pKey, int keyLen, IppsARCFourState *pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourReset, (IppsARCFourState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsARCFourInit( pKey, keyLen, pCtx );
+        return h9_ippsARCFourReset( pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsARCFourInit( pKey, keyLen, pCtx );
+        return p8_ippsARCFourReset( pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

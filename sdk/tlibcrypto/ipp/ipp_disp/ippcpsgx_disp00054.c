@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSMS4EncryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
-IPPAPI(IppStatus, l9_ippsSMS4EncryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
+IPPAPI(IppStatus, y8_ippsSMS4DecryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
+IPPAPI(IppStatus, l9_ippsSMS4DecryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
+IPPAPI(IppStatus, k0_ippsSMS4DecryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4EncryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4DecryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsSMS4DecryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSMS4EncryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
+        return l9_ippsSMS4DecryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSMS4EncryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
+        return y8_ippsSMS4DecryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSMS4EncryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
-IPPAPI(IppStatus, h9_ippsSMS4EncryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
+IPPAPI(IppStatus, p8_ippsSMS4DecryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
+IPPAPI(IppStatus, h9_ippsSMS4DecryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4EncryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4DecryptOFB,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int ofbBlkSize, const IppsSMS4Spec* pCtx, Ipp8u* pIV))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSMS4EncryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
+        return h9_ippsSMS4DecryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSMS4EncryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
+        return p8_ippsSMS4DecryptOFB( pSrc, pDst, len, ofbBlkSize, pCtx, pIV );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsAES_GCMProcessIV,(const Ipp8u* pIV, int ivLen, IppsAES_GCMState* pState))
-IPPAPI(IppStatus, l9_ippsAES_GCMProcessIV,(const Ipp8u* pIV, int ivLen, IppsAES_GCMState* pState))
+IPPAPI(IppStatus, y8_ippsAES_GCMProcessAAD,(const Ipp8u* pAAD, int ivAAD, IppsAES_GCMState* pState))
+IPPAPI(IppStatus, l9_ippsAES_GCMProcessAAD,(const Ipp8u* pAAD, int ivAAD, IppsAES_GCMState* pState))
+IPPAPI(IppStatus, k0_ippsAES_GCMProcessAAD,(const Ipp8u* pAAD, int ivAAD, IppsAES_GCMState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_GCMProcessIV,(const Ipp8u* pIV, int ivLen, IppsAES_GCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_GCMProcessAAD,(const Ipp8u* pAAD, int ivAAD, IppsAES_GCMState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAES_GCMProcessAAD( pAAD, ivAAD, pState );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsAES_GCMProcessIV( pIV, ivLen, pState );
+        return l9_ippsAES_GCMProcessAAD( pAAD, ivAAD, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsAES_GCMProcessIV( pIV, ivLen, pState );
+        return y8_ippsAES_GCMProcessAAD( pAAD, ivAAD, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsAES_GCMProcessIV,(const Ipp8u* pIV, int ivLen, IppsAES_GCMState* pState))
-IPPAPI(IppStatus, h9_ippsAES_GCMProcessIV,(const Ipp8u* pIV, int ivLen, IppsAES_GCMState* pState))
+IPPAPI(IppStatus, p8_ippsAES_GCMProcessAAD,(const Ipp8u* pAAD, int ivAAD, IppsAES_GCMState* pState))
+IPPAPI(IppStatus, h9_ippsAES_GCMProcessAAD,(const Ipp8u* pAAD, int ivAAD, IppsAES_GCMState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_GCMProcessIV,(const Ipp8u* pIV, int ivLen, IppsAES_GCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_GCMProcessAAD,(const Ipp8u* pAAD, int ivAAD, IppsAES_GCMState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsAES_GCMProcessIV( pIV, ivLen, pState );
+        return h9_ippsAES_GCMProcessAAD( pAAD, ivAAD, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsAES_GCMProcessIV( pIV, ivLen, pState );
+        return p8_ippsAES_GCMProcessAAD( pAAD, ivAAD, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

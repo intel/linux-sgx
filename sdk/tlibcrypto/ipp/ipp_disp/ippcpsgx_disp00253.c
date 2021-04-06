@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPRNGSetSeed, (const IppsBigNumState* pSeed,IppsPRNGState* pCtx))
-IPPAPI(IppStatus, l9_ippsPRNGSetSeed, (const IppsBigNumState* pSeed,IppsPRNGState* pCtx))
+IPPAPI(IppStatus, y8_ippsPRNGGetSeed, (const IppsPRNGState* pCtx,IppsBigNumState* pSeed))
+IPPAPI(IppStatus, l9_ippsPRNGGetSeed, (const IppsPRNGState* pCtx,IppsBigNumState* pSeed))
+IPPAPI(IppStatus, k0_ippsPRNGGetSeed, (const IppsPRNGState* pCtx,IppsBigNumState* pSeed))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGSetSeed, (const IppsBigNumState* pSeed,IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGGetSeed, (const IppsPRNGState* pCtx,IppsBigNumState* pSeed))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsPRNGGetSeed( pCtx, pSeed );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsPRNGSetSeed( pSeed, pCtx );
+        return l9_ippsPRNGGetSeed( pCtx, pSeed );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsPRNGSetSeed( pSeed, pCtx );
+        return y8_ippsPRNGGetSeed( pCtx, pSeed );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPRNGSetSeed, (const IppsBigNumState* pSeed,IppsPRNGState* pCtx))
-IPPAPI(IppStatus, h9_ippsPRNGSetSeed, (const IppsBigNumState* pSeed,IppsPRNGState* pCtx))
+IPPAPI(IppStatus, p8_ippsPRNGGetSeed, (const IppsPRNGState* pCtx,IppsBigNumState* pSeed))
+IPPAPI(IppStatus, h9_ippsPRNGGetSeed, (const IppsPRNGState* pCtx,IppsBigNumState* pSeed))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGSetSeed, (const IppsBigNumState* pSeed,IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGGetSeed, (const IppsPRNGState* pCtx,IppsBigNumState* pSeed))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsPRNGSetSeed( pSeed, pCtx );
+        return h9_ippsPRNGGetSeed( pCtx, pSeed );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsPRNGSetSeed( pSeed, pCtx );
+        return p8_ippsPRNGGetSeed( pCtx, pSeed );
       } else 
         return ippStsCpuNotSupportedErr;
 }

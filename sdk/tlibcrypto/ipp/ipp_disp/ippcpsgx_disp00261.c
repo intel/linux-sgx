@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPrimeGetSize,(int nMaxBits, int* pSize))
-IPPAPI(IppStatus, l9_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPAPI(IppStatus, y8_ippsPrimeInit, (int nMaxBits, IppsPrimeState* pCtx))
+IPPAPI(IppStatus, l9_ippsPrimeInit, (int nMaxBits, IppsPrimeState* pCtx))
+IPPAPI(IppStatus, k0_ippsPrimeInit, (int nMaxBits, IppsPrimeState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeInit, (int nMaxBits, IppsPrimeState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsPrimeInit( nMaxBits, pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsPrimeGetSize( nMaxBits, pSize );
+        return l9_ippsPrimeInit( nMaxBits, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsPrimeGetSize( nMaxBits, pSize );
+        return y8_ippsPrimeInit( nMaxBits, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPrimeGetSize,(int nMaxBits, int* pSize))
-IPPAPI(IppStatus, h9_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPAPI(IppStatus, p8_ippsPrimeInit, (int nMaxBits, IppsPrimeState* pCtx))
+IPPAPI(IppStatus, h9_ippsPrimeInit, (int nMaxBits, IppsPrimeState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeInit, (int nMaxBits, IppsPrimeState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsPrimeGetSize( nMaxBits, pSize );
+        return h9_ippsPrimeInit( nMaxBits, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsPrimeGetSize( nMaxBits, pSize );
+        return p8_ippsPrimeInit( nMaxBits, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

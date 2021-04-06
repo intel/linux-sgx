@@ -49,12 +49,16 @@
 
 IPPAPI(IppStatus, y8_ippsAESUnpack,(const Ipp8u* pBuffer, IppsAESSpec* pCtx, int ctxSize))
 IPPAPI(IppStatus, l9_ippsAESUnpack,(const Ipp8u* pBuffer, IppsAESSpec* pCtx, int ctxSize))
+IPPAPI(IppStatus, k0_ippsAESUnpack,(const Ipp8u* pBuffer, IppsAESSpec* pCtx, int ctxSize))
 
 IPPFUN(IppStatus,sgx_disp_ippsAESUnpack,(const Ipp8u* pBuffer, IppsAESSpec* pCtx, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAESUnpack( pBuffer, pCtx, ctxSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsAESUnpack( pBuffer, pCtx, ctxSize );
       } else 

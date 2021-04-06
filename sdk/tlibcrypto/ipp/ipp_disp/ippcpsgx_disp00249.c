@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
-IPPAPI(IppStatus, l9_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, y8_ippsPRNGSetModulus,(const IppsBigNumState* pMod, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, l9_ippsPRNGSetModulus,(const IppsBigNumState* pMod, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, k0_ippsPRNGSetModulus,(const IppsBigNumState* pMod, IppsPRNGState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGSetModulus,(const IppsBigNumState* pMod, IppsPRNGState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsPRNGSetModulus( pMod, pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsPRNGInit( seedBits, pCtx );
+        return l9_ippsPRNGSetModulus( pMod, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsPRNGInit( seedBits, pCtx );
+        return y8_ippsPRNGSetModulus( pMod, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
-IPPAPI(IppStatus, h9_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, p8_ippsPRNGSetModulus,(const IppsBigNumState* pMod, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, h9_ippsPRNGSetModulus,(const IppsBigNumState* pMod, IppsPRNGState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGInit, (int seedBits, IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGSetModulus,(const IppsBigNumState* pMod, IppsPRNGState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsPRNGInit( seedBits, pCtx );
+        return h9_ippsPRNGSetModulus( pMod, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsPRNGInit( seedBits, pCtx );
+        return p8_ippsPRNGSetModulus( pMod, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

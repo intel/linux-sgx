@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -83,7 +83,6 @@ extern "C" {
   #define ippsAESDecryptCTR sgx_disp_ippsAESDecryptCTR
   #define ippsAESEncryptXTS_Direct sgx_disp_ippsAESEncryptXTS_Direct
   #define ippsAESDecryptXTS_Direct sgx_disp_ippsAESDecryptXTS_Direct
-  #define ippsAES_EncryptCFB16_MB sgx_disp_ippsAES_EncryptCFB16_MB
   #define ippsSMS4GetSize sgx_disp_ippsSMS4GetSize
   #define ippsSMS4Init sgx_disp_ippsSMS4Init
   #define ippsSMS4SetKey sgx_disp_ippsSMS4SetKey
@@ -348,14 +347,6 @@ extern "C" {
   #define ippsRSAVerify_PKCS1v15 sgx_disp_ippsRSAVerify_PKCS1v15
   #define ippsRSASign_PKCS1v15_rmf sgx_disp_ippsRSASign_PKCS1v15_rmf
   #define ippsRSAVerify_PKCS1v15_rmf sgx_disp_ippsRSAVerify_PKCS1v15_rmf
-  #define ippsRSA_MB_GetBufferSizePublicKey sgx_disp_ippsRSA_MB_GetBufferSizePublicKey
-  #define ippsRSA_MB_GetBufferSizePrivateKey sgx_disp_ippsRSA_MB_GetBufferSizePrivateKey
-  #define ippsRSA_MB_Encrypt sgx_disp_ippsRSA_MB_Encrypt
-  #define ippsRSA_MB_Decrypt sgx_disp_ippsRSA_MB_Decrypt
-  #define ippsRSA_MB_Sign_PSS_rmf sgx_disp_ippsRSA_MB_Sign_PSS_rmf
-  #define ippsRSA_MB_Verify_PSS_rmf sgx_disp_ippsRSA_MB_Verify_PSS_rmf
-  #define ippsRSA_MB_Sign_PKCS1v15_rmf sgx_disp_ippsRSA_MB_Sign_PKCS1v15_rmf
-  #define ippsRSA_MB_Verify_PKCS1v15_rmf sgx_disp_ippsRSA_MB_Verify_PKCS1v15_rmf
   #define ippsDLGetResultString sgx_disp_ippsDLGetResultString
   #define ippsDLPGetSize sgx_disp_ippsDLPGetSize
   #define ippsDLPInit sgx_disp_ippsDLPInit
@@ -518,9 +509,7 @@ extern "C" {
   #define ippsGFpECSetPointRandom sgx_disp_ippsGFpECSetPointRandom
   #define ippsGFpECMakePoint sgx_disp_ippsGFpECMakePoint
   #define ippsGFpECSetPointHash sgx_disp_ippsGFpECSetPointHash
-  #define ippsGFpECSetPointHashBackCompatible sgx_disp_ippsGFpECSetPointHashBackCompatible
   #define ippsGFpECSetPointHash_rmf sgx_disp_ippsGFpECSetPointHash_rmf
-  #define ippsGFpECSetPointHashBackCompatible_rmf sgx_disp_ippsGFpECSetPointHashBackCompatible_rmf
   #define ippsGFpECGetPoint sgx_disp_ippsGFpECGetPoint
   #define ippsGFpECGetPointRegular sgx_disp_ippsGFpECGetPointRegular
   #define ippsGFpECSetPointOctString sgx_disp_ippsGFpECSetPointOctString

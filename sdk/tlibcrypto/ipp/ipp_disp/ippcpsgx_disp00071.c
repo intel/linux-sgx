@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsAES_CCMEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
-IPPAPI(IppStatus, l9_ippsAES_CCMEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, y8_ippsAES_CCMDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, l9_ippsAES_CCMDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, k0_ippsAES_CCMDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_CCMEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAES_CCMDecrypt( pSrc, pDst, len, pState );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsAES_CCMEncrypt( pSrc, pDst, len, pState );
+        return l9_ippsAES_CCMDecrypt( pSrc, pDst, len, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsAES_CCMEncrypt( pSrc, pDst, len, pState );
+        return y8_ippsAES_CCMDecrypt( pSrc, pDst, len, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsAES_CCMEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
-IPPAPI(IppStatus, h9_ippsAES_CCMEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, p8_ippsAES_CCMDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, h9_ippsAES_CCMDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_CCMEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, IppsAES_CCMState* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsAES_CCMEncrypt( pSrc, pDst, len, pState );
+        return h9_ippsAES_CCMDecrypt( pSrc, pDst, len, pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsAES_CCMEncrypt( pSrc, pDst, len, pState );
+        return p8_ippsAES_CCMDecrypt( pSrc, pDst, len, pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

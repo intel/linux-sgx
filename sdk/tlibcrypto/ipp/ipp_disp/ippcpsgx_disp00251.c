@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
-IPPAPI(IppStatus, l9_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, y8_ippsPRNGSetAugment,(const IppsBigNumState* pAug, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, l9_ippsPRNGSetAugment,(const IppsBigNumState* pAug, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, k0_ippsPRNGSetAugment,(const IppsBigNumState* pAug, IppsPRNGState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGSetAugment,(const IppsBigNumState* pAug, IppsPRNGState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsPRNGSetAugment( pAug, pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsPRNGSetH0( pH0, pCtx );
+        return l9_ippsPRNGSetAugment( pAug, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsPRNGSetH0( pH0, pCtx );
+        return y8_ippsPRNGSetAugment( pAug, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
-IPPAPI(IppStatus, h9_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, p8_ippsPRNGSetAugment,(const IppsBigNumState* pAug, IppsPRNGState* pCtx))
+IPPAPI(IppStatus, h9_ippsPRNGSetAugment,(const IppsBigNumState* pAug, IppsPRNGState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGSetH0, (const IppsBigNumState* pH0, IppsPRNGState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsPRNGSetAugment,(const IppsBigNumState* pAug, IppsPRNGState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsPRNGSetH0( pH0, pCtx );
+        return h9_ippsPRNGSetAugment( pAug, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsPRNGSetH0( pH0, pCtx );
+        return p8_ippsPRNGSetAugment( pAug, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

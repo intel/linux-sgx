@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSHA384GetSize,(int* pSize))
-IPPAPI(IppStatus, l9_ippsSHA384GetSize,(int* pSize))
+IPPAPI(IppStatus, y8_ippsSHA384Init,(IppsSHA384State* pState))
+IPPAPI(IppStatus, l9_ippsSHA384Init,(IppsSHA384State* pState))
+IPPAPI(IppStatus, k0_ippsSHA384Init,(IppsSHA384State* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA384GetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsSHA384Init,(IppsSHA384State* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsSHA384Init( pState );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSHA384GetSize( pSize );
+        return l9_ippsSHA384Init( pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSHA384GetSize( pSize );
+        return y8_ippsSHA384Init( pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSHA384GetSize,(int* pSize))
-IPPAPI(IppStatus, h9_ippsSHA384GetSize,(int* pSize))
+IPPAPI(IppStatus, p8_ippsSHA384Init,(IppsSHA384State* pState))
+IPPAPI(IppStatus, h9_ippsSHA384Init,(IppsSHA384State* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA384GetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsSHA384Init,(IppsSHA384State* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSHA384GetSize( pSize );
+        return h9_ippsSHA384Init( pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSHA384GetSize( pSize );
+        return p8_ippsSHA384Init( pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

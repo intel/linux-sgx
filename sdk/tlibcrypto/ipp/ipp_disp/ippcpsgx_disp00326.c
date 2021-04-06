@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
-IPPAPI(IppStatus, l9_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPAPI(IppStatus, y8_ippsECCPGetSizeStd192r1,(int* pSize))
+IPPAPI(IppStatus, l9_ippsECCPGetSizeStd192r1,(int* pSize))
+IPPAPI(IppStatus, k0_ippsECCPGetSizeStd192r1,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd192r1,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsECCPGetSizeStd192r1( pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+        return l9_ippsECCPGetSizeStd192r1( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+        return y8_ippsECCPGetSizeStd192r1( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
-IPPAPI(IppStatus, h9_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPAPI(IppStatus, p8_ippsECCPGetSizeStd192r1,(int* pSize))
+IPPAPI(IppStatus, h9_ippsECCPGetSizeStd192r1,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSharedSecretDH,(const IppsBigNumState* pPrvKeyA, const IppsBigNumState* pPubKeyB, IppsBigNumState* pShare, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd192r1,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+        return h9_ippsECCPGetSizeStd192r1( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsDLPSharedSecretDH( pPrvKeyA, pPubKeyB, pShare, pCtx );
+        return p8_ippsECCPGetSizeStd192r1( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

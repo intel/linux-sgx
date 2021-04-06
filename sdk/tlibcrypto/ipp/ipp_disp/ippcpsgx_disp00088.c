@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsAES_SIVEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, Ipp8u* pSIV, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD))
-IPPAPI(IppStatus, l9_ippsAES_SIVEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, Ipp8u* pSIV, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD))
+IPPAPI(IppStatus, y8_ippsAES_SIVDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int* pAuthPassed, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD, const Ipp8u* pSIV))
+IPPAPI(IppStatus, l9_ippsAES_SIVDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int* pAuthPassed, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD, const Ipp8u* pSIV))
+IPPAPI(IppStatus, k0_ippsAES_SIVDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int* pAuthPassed, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD, const Ipp8u* pSIV))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_SIVEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, Ipp8u* pSIV, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD))
+IPPFUN(IppStatus,sgx_disp_ippsAES_SIVDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int* pAuthPassed, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD, const Ipp8u* pSIV))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAES_SIVDecrypt( pSrc, pDst, len, pAuthPassed, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD, pSIV );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsAES_SIVEncrypt( pSrc, pDst, len, pSIV, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD );
+        return l9_ippsAES_SIVDecrypt( pSrc, pDst, len, pAuthPassed, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD, pSIV );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsAES_SIVEncrypt( pSrc, pDst, len, pSIV, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD );
+        return y8_ippsAES_SIVDecrypt( pSrc, pDst, len, pAuthPassed, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD, pSIV );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsAES_SIVEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, Ipp8u* pSIV, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD))
-IPPAPI(IppStatus, h9_ippsAES_SIVEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, Ipp8u* pSIV, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD))
+IPPAPI(IppStatus, p8_ippsAES_SIVDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int* pAuthPassed, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD, const Ipp8u* pSIV))
+IPPAPI(IppStatus, h9_ippsAES_SIVDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int* pAuthPassed, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD, const Ipp8u* pSIV))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_SIVEncrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, Ipp8u* pSIV, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD))
+IPPFUN(IppStatus,sgx_disp_ippsAES_SIVDecrypt,(const Ipp8u* pSrc, Ipp8u* pDst, int len, int* pAuthPassed, const Ipp8u* pAuthKey, const Ipp8u* pConfKey, int keyLen, const Ipp8u* pAD[], const int pADlen[], int numAD, const Ipp8u* pSIV))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsAES_SIVEncrypt( pSrc, pDst, len, pSIV, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD );
+        return h9_ippsAES_SIVDecrypt( pSrc, pDst, len, pAuthPassed, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD, pSIV );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsAES_SIVEncrypt( pSrc, pDst, len, pSIV, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD );
+        return p8_ippsAES_SIVDecrypt( pSrc, pDst, len, pAuthPassed, pAuthKey, pConfKey, keyLen, pAD, pADlen, numAD, pSIV );
       } else 
         return ippStsCpuNotSupportedErr;
 }

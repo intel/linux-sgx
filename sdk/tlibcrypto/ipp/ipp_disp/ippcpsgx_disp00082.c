@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsAES_GCMGetTag,(Ipp8u* pDstTag, int tagLen, const IppsAES_GCMState* pState))
-IPPAPI(IppStatus, l9_ippsAES_GCMGetTag,(Ipp8u* pDstTag, int tagLen, const IppsAES_GCMState* pState))
+IPPAPI(IppStatus, y8_ippsAES_XTSGetSize,(int * pSize))
+IPPAPI(IppStatus, l9_ippsAES_XTSGetSize,(int * pSize))
+IPPAPI(IppStatus, k0_ippsAES_XTSGetSize,(int * pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_GCMGetTag,(Ipp8u* pDstTag, int tagLen, const IppsAES_GCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_XTSGetSize,(int * pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAES_XTSGetSize( pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsAES_GCMGetTag( pDstTag, tagLen, pState );
+        return l9_ippsAES_XTSGetSize( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsAES_GCMGetTag( pDstTag, tagLen, pState );
+        return y8_ippsAES_XTSGetSize( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsAES_GCMGetTag,(Ipp8u* pDstTag, int tagLen, const IppsAES_GCMState* pState))
-IPPAPI(IppStatus, h9_ippsAES_GCMGetTag,(Ipp8u* pDstTag, int tagLen, const IppsAES_GCMState* pState))
+IPPAPI(IppStatus, p8_ippsAES_XTSGetSize,(int * pSize))
+IPPAPI(IppStatus, h9_ippsAES_XTSGetSize,(int * pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_GCMGetTag,(Ipp8u* pDstTag, int tagLen, const IppsAES_GCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_XTSGetSize,(int * pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsAES_GCMGetTag( pDstTag, tagLen, pState );
+        return h9_ippsAES_XTSGetSize( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsAES_GCMGetTag( pDstTag, tagLen, pState );
+        return p8_ippsAES_XTSGetSize( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

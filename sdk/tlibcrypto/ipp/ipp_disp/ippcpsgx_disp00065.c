@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSMS4_CCMGetTag,(Ipp8u* pTag, int tagLen, const IppsSMS4_CCMState* pCtx))
-IPPAPI(IppStatus, l9_ippsSMS4_CCMGetTag,(Ipp8u* pTag, int tagLen, const IppsSMS4_CCMState* pCtx))
+IPPAPI(IppStatus, y8_ippsAES_CCMGetSize,(int* pSize))
+IPPAPI(IppStatus, l9_ippsAES_CCMGetSize,(int* pSize))
+IPPAPI(IppStatus, k0_ippsAES_CCMGetSize,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4_CCMGetTag,(Ipp8u* pTag, int tagLen, const IppsSMS4_CCMState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMGetSize,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsAES_CCMGetSize( pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSMS4_CCMGetTag( pTag, tagLen, pCtx );
+        return l9_ippsAES_CCMGetSize( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSMS4_CCMGetTag( pTag, tagLen, pCtx );
+        return y8_ippsAES_CCMGetSize( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSMS4_CCMGetTag,(Ipp8u* pTag, int tagLen, const IppsSMS4_CCMState* pCtx))
-IPPAPI(IppStatus, h9_ippsSMS4_CCMGetTag,(Ipp8u* pTag, int tagLen, const IppsSMS4_CCMState* pCtx))
+IPPAPI(IppStatus, p8_ippsAES_CCMGetSize,(int* pSize))
+IPPAPI(IppStatus, h9_ippsAES_CCMGetSize,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4_CCMGetTag,(Ipp8u* pTag, int tagLen, const IppsSMS4_CCMState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMGetSize,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSMS4_CCMGetTag( pTag, tagLen, pCtx );
+        return h9_ippsAES_CCMGetSize( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSMS4_CCMGetTag( pTag, tagLen, pCtx );
+        return p8_ippsAES_CCMGetSize( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

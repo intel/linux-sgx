@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPrimeTest_BN,(const IppsBigNumState* pPrime, int nTrials, Ipp32u* pResult, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, l9_ippsPrimeTest_BN,(const IppsBigNumState* pPrime, int nTrials, Ipp32u* pResult, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, y8_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
+IPPAPI(IppStatus, l9_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
+IPPAPI(IppStatus, k0_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeTest_BN,(const IppsBigNumState* pPrime, int nTrials, Ipp32u* pResult, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsPrimeGet( pPrime, pLen, pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsPrimeTest_BN( pPrime, nTrials, pResult, pCtx, rndFunc, pRndParam );
+        return l9_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsPrimeTest_BN( pPrime, nTrials, pResult, pCtx, rndFunc, pRndParam );
+        return y8_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPrimeTest_BN,(const IppsBigNumState* pPrime, int nTrials, Ipp32u* pResult, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, h9_ippsPrimeTest_BN,(const IppsBigNumState* pPrime, int nTrials, Ipp32u* pResult, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, p8_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
+IPPAPI(IppStatus, h9_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeTest_BN,(const IppsBigNumState* pPrime, int nTrials, Ipp32u* pResult, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsPrimeTest_BN( pPrime, nTrials, pResult, pCtx, rndFunc, pRndParam );
+        return h9_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsPrimeTest_BN( pPrime, nTrials, pResult, pCtx, rndFunc, pRndParam );
+        return p8_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

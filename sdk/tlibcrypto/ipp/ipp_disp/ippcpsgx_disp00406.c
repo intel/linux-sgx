@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
-IPPAPI(IppStatus, l9_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPAPI(IppStatus, y8_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, l9_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, k0_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPFUN(IppStatus,sgx_disp_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsGFpElementInit( pA, lenA, pR, pGFp );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+        return l9_ippsGFpElementInit( pA, lenA, pR, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+        return y8_ippsGFpElementInit( pA, lenA, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
-IPPAPI(IppStatus, h9_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPAPI(IppStatus, p8_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, h9_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpxInitBinomial,(const IppsGFpState* pGroundGF, int extDeg, const IppsGFpElement* pGroundElm, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFpx))
+IPPFUN(IppStatus,sgx_disp_ippsGFpElementInit, (const Ipp32u* pA, int lenA, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+        return h9_ippsGFpElementInit( pA, lenA, pR, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpxInitBinomial( pGroundGF, extDeg, pGroundElm, pGFpMethod, pGFpx );
+        return p8_ippsGFpElementInit( pA, lenA, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }

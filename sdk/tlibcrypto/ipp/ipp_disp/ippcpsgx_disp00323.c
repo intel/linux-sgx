@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsDLPSetKeyPair,(const IppsBigNumState* pPrvKey, const IppsBigNumState* pPubKey, IppsDLPState* pCtx))
-IPPAPI(IppStatus, l9_ippsDLPSetKeyPair,(const IppsBigNumState* pPrvKey, const IppsBigNumState* pPubKey, IppsDLPState* pCtx))
+IPPAPI(IppStatus, y8_ippsECCPGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, l9_ippsECCPGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, k0_ippsECCPGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSetKeyPair,(const IppsBigNumState* pPrvKey, const IppsBigNumState* pPubKey, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsECCPGetSize( feBitSize, pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsDLPSetKeyPair( pPrvKey, pPubKey, pCtx );
+        return l9_ippsECCPGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsDLPSetKeyPair( pPrvKey, pPubKey, pCtx );
+        return y8_ippsECCPGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsDLPSetKeyPair,(const IppsBigNumState* pPrvKey, const IppsBigNumState* pPubKey, IppsDLPState* pCtx))
-IPPAPI(IppStatus, h9_ippsDLPSetKeyPair,(const IppsBigNumState* pPrvKey, const IppsBigNumState* pPubKey, IppsDLPState* pCtx))
+IPPAPI(IppStatus, p8_ippsECCPGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, h9_ippsECCPGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSetKeyPair,(const IppsBigNumState* pPrvKey, const IppsBigNumState* pPubKey, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsDLPSetKeyPair( pPrvKey, pPubKey, pCtx );
+        return h9_ippsECCPGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsDLPSetKeyPair( pPrvKey, pPubKey, pCtx );
+        return p8_ippsECCPGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

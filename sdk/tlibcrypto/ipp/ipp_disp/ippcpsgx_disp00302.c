@@ -47,39 +47,43 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSAVerify_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSign, int* pIsValid, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsRSAVerify_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSign, int* pIsValid, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI( const char*, y8_ippsDLGetResultString, (IppDLResult code))
+IPPAPI( const char*, l9_ippsDLGetResultString, (IppDLResult code))
+IPPAPI( const char*, k0_ippsDLGetResultString, (IppDLResult code))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSAVerify_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSign, int* pIsValid, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN( const char*,sgx_disp_ippsDLGetResultString, (IppDLResult code))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsDLGetResultString( code );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSAVerify_PKCS1v15_rmf( pMsg, msgLen, pSign, pIsValid, pKey, pMethod, pBuffer );
+        return l9_ippsDLGetResultString( code );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSAVerify_PKCS1v15_rmf( pMsg, msgLen, pSign, pIsValid, pKey, pMethod, pBuffer );
+        return y8_ippsDLGetResultString( code );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSAVerify_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSign, int* pIsValid, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsRSAVerify_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSign, int* pIsValid, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI( const char*, p8_ippsDLGetResultString, (IppDLResult code))
+IPPAPI( const char*, h9_ippsDLGetResultString, (IppDLResult code))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSAVerify_PKCS1v15_rmf,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSign, int* pIsValid, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN( const char*,sgx_disp_ippsDLGetResultString, (IppDLResult code))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSAVerify_PKCS1v15_rmf( pMsg, msgLen, pSign, pIsValid, pKey, pMethod, pBuffer );
+        return h9_ippsDLGetResultString( code );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSAVerify_PKCS1v15_rmf( pMsg, msgLen, pSign, pIsValid, pKey, pMethod, pBuffer );
+        return p8_ippsDLGetResultString( code );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #endif

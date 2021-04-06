@@ -34,7 +34,8 @@ include ../../buildenv.mk
 DIR = $(CURDIR)
 
 IPP_CONFIG = -Bbuild -DCMAKE_VERBOSE_MAKEFILE=on
-
+# Set the mitigation version assembler for IPP assembly code build
+IPP_CONFIG += -DCMAKE_ASM-ATT_COMPILER="$(BINUTILS_DIR)/as"
 # Ignore the CMAKE C/C++ compiler check to avoid conflicts with mitigation options
 IPP_CONFIG += -DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE 
 IPP_SOURCE = ipp-crypto
@@ -48,23 +49,29 @@ ENC_CXXFLAGS = $(ENC_CFLAGS)
 
 IPP_CONFIG += -DCMAKE_C_FLAGS="$(ENC_CFLAGS)"
 IPP_CONFIG += -DCMAKE_CXX_FLAGS="$(ENC_CXXFLAGS)"
+comma:= ,
+ASM_FLAGS = $(subst -Wa$(comma),,$(MITIGATION_ASFLAGS))
+ENC_ASM_FLAGS = $(patsubst -fno-plt, , $(ASM_FLAGS))
+
+IPP_CONFIG += -DCMAKE_ENC_ASM_FLAGS="$(ENC_ASM_FLAGS)"
 
 SUB_DIR = no_mitigation
 ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
 	SUB_DIR = cve_2020_0551_load
-	PRE_CONFIG= ASM_NASM="python $(DIR)/../../build-scripts/sgx-asm-pp.py --assembler=nasm --MITIGATION-CVE-2020-0551=LOAD"
 else ifeq ($(MITIGATION-CVE-2020-0551), CF)
 	SUB_DIR = cve_2020_0551_cf
-	PRE_CONFIG= ASM_NASM="python $(DIR)/../../build-scripts/sgx-asm-pp.py --assembler=nasm --MITIGATION-CVE-2020-0551=CF"
 endif
 OUT_DIR = lib/linux/$(ARCH)/$(SUB_DIR)/
 
-CHECK_SOURCE :=
+PATCH_LOG = $(shell cd ./$(IPP_SOURCE) && git log --oneline --grep='Add mitigation support to assembly code' | cut -d' ' -f 3)
+CHECK_PATCHED :=
 # For reproducibility build in docker, the code should be 
 # prepared before build. So skip the code check to avoid
 # triggering network request 
 ifneq ($(origin NIX_PATH), environment)
-CHECK_SOURCE:= ipp_source
+ifneq ($(PATCH_LOG), mitigation)
+CHECK_PATCHED:= ipp_source
+endif
 endif
 
 .PHONY: all build_ipp
@@ -73,21 +80,23 @@ all: build_ipp
 	$(MKDIR) $(OUT_DIR)
 	$(CP) ipp-crypto/build/.build/RELEASE/lib/libippcp.a $(OUT_DIR)
 	$(CP) ipp-crypto/include/* ./inc/
-	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp20u3.patch -o ./inc/ippcp.h
+	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp19u5.patch -o ./inc/ippcp.h
 	$(MKDIR) license
 	$(CP) ipp-crypto/LICENSE ./license/
 
-build_ipp: $(CHECK_SOURCE)
-	cd $(IPP_SOURCE) && $(PRE_CONFIG) cmake CMakeLists.txt $(IPP_CONFIG) && cd build && make ippcp_s
+build_ipp: $(CHECK_PATCHED)
+	cd $(IPP_SOURCE) && cmake CMakeLists.txt $(IPP_CONFIG) && cd build && make ippcp_s
 
 .PHONY: ipp_source
 ipp_source:
-ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
-else
+## Need to enable below code when release
+#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+#	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
+#else
 	$(RM) -rf $(IPP_SOURCE)
-	git clone -b ipp-crypto_2020_update3 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
-endif
+	git clone -b ipp-crypto_2019_update5  https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
+#endif
+	cd $(IPP_SOURCE) && git am ../0001-Add-mitigation-support-to-assembly-code.patch
 
 .PHONY: clean
 clean:

@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSHA384MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
-IPPAPI(IppStatus, l9_ippsSHA384MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
+IPPAPI(IppStatus, y8_ippsSHA512GetSize,(int* pSize))
+IPPAPI(IppStatus, l9_ippsSHA512GetSize,(int* pSize))
+IPPAPI(IppStatus, k0_ippsSHA512GetSize,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA384MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
+IPPFUN(IppStatus,sgx_disp_ippsSHA512GetSize,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsSHA512GetSize( pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSHA384MessageDigest( pMsg, len, pMD );
+        return l9_ippsSHA512GetSize( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSHA384MessageDigest( pMsg, len, pMD );
+        return y8_ippsSHA512GetSize( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSHA384MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
-IPPAPI(IppStatus, h9_ippsSHA384MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
+IPPAPI(IppStatus, p8_ippsSHA512GetSize,(int* pSize))
+IPPAPI(IppStatus, h9_ippsSHA512GetSize,(int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA384MessageDigest,(const Ipp8u* pMsg, int len, Ipp8u* pMD))
+IPPFUN(IppStatus,sgx_disp_ippsSHA512GetSize,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSHA384MessageDigest( pMsg, len, pMD );
+        return h9_ippsSHA512GetSize( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSHA384MessageDigest( pMsg, len, pMD );
+        return p8_ippsSHA512GetSize( pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

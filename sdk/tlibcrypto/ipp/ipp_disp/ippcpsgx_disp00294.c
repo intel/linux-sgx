@@ -47,38 +47,42 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSADecrypt_PKCSv15,(const Ipp8u* pSrc, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsRSADecrypt_PKCSv15,(const Ipp8u* pSrc, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsRSASign_PSS,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSalt, int saltLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsRSASign_PSS,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSalt, int saltLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, k0_ippsRSASign_PSS,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSalt, int saltLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_PKCSv15,(const Ipp8u* pSrc, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSASign_PSS,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSalt, int saltLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsRSASign_PSS( pMsg, msgLen, pSalt, saltLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSADecrypt_PKCSv15( pSrc, pDst, pDstLen, pKey, pBuffer );
+        return l9_ippsRSASign_PSS( pMsg, msgLen, pSalt, saltLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSADecrypt_PKCSv15( pSrc, pDst, pDstLen, pKey, pBuffer );
+        return y8_ippsRSASign_PSS( pMsg, msgLen, pSalt, saltLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSADecrypt_PKCSv15,(const Ipp8u* pSrc, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsRSADecrypt_PKCSv15,(const Ipp8u* pSrc, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, Ipp8u* pBuffer))
+IPPAPI(IppStatus, p8_ippsRSASign_PSS,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSalt, int saltLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, h9_ippsRSASign_PSS,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSalt, int saltLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_PKCSv15,(const Ipp8u* pSrc, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSASign_PSS,(const Ipp8u* pMsg, int msgLen, const Ipp8u* pSalt, int saltLen, Ipp8u* pSign, const IppsRSAPrivateKeyState* pPrvKey, const IppsRSAPublicKeyState* pPubKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSADecrypt_PKCSv15( pSrc, pDst, pDstLen, pKey, pBuffer );
+        return h9_ippsRSASign_PSS( pMsg, msgLen, pSalt, saltLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSADecrypt_PKCSv15( pSrc, pDst, pDstLen, pKey, pBuffer );
+        return p8_ippsRSASign_PSS( pMsg, msgLen, pSalt, saltLen, pSign, pPrvKey, pPubKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

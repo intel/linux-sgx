@@ -49,12 +49,16 @@
 
 IPPAPI( const IppLibraryVersion*, y8_ippcpGetLibVersion, (void) )
 IPPAPI( const IppLibraryVersion*, l9_ippcpGetLibVersion, (void) )
+IPPAPI( const IppLibraryVersion*, k0_ippcpGetLibVersion, (void) )
 
 IPPFUN( const IppLibraryVersion*,sgx_disp_ippcpGetLibVersion, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippcpGetLibVersion(  );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippcpGetLibVersion(  );
       } else 

@@ -47,39 +47,43 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsHashMethod*, y8_ippsHashMethod_SHA512_224, (void) )
-IPPAPI( const IppsHashMethod*, l9_ippsHashMethod_SHA512_224, (void) )
+IPPAPI(IppStatus, y8_ippsHashGetSize_rmf,(int* pSize))
+IPPAPI(IppStatus, l9_ippsHashGetSize_rmf,(int* pSize))
+IPPAPI(IppStatus, k0_ippsHashGetSize_rmf,(int* pSize))
 
-IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_SHA512_224, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsHashGetSize_rmf,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsHashGetSize_rmf( pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsHashMethod_SHA512_224(  );
+        return l9_ippsHashGetSize_rmf( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsHashMethod_SHA512_224(  );
+        return y8_ippsHashGetSize_rmf( pSize );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI( const IppsHashMethod*, p8_ippsHashMethod_SHA512_224, (void) )
-IPPAPI( const IppsHashMethod*, h9_ippsHashMethod_SHA512_224, (void) )
+IPPAPI(IppStatus, p8_ippsHashGetSize_rmf,(int* pSize))
+IPPAPI(IppStatus, h9_ippsHashGetSize_rmf,(int* pSize))
 
-IPPFUN( const IppsHashMethod*,sgx_disp_ippsHashMethod_SHA512_224, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsHashGetSize_rmf,(int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsHashMethod_SHA512_224(  );
+        return h9_ippsHashGetSize_rmf( pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsHashMethod_SHA512_224(  );
+        return p8_ippsHashGetSize_rmf( pSize );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #endif

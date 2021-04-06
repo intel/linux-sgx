@@ -49,12 +49,16 @@
 
 IPPAPI(IppStatus, y8_ippsDESInit,(const Ipp8u* pKey, IppsDESSpec* pCtx))
 IPPAPI(IppStatus, l9_ippsDESInit,(const Ipp8u* pKey, IppsDESSpec* pCtx))
+IPPAPI(IppStatus, k0_ippsDESInit,(const Ipp8u* pKey, IppsDESSpec* pCtx))
 
 IPPFUN(IppStatus,sgx_disp_ippsDESInit,(const Ipp8u* pKey, IppsDESSpec* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
+        return k0_ippsDESInit( pKey, pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsDESInit( pKey, pCtx );
       } else 
