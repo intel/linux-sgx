@@ -141,7 +141,7 @@ enclave {
     
         /*
          * [user_check]:
-         *      the pointer won't be valified, and the buffer pointed by 'val' is not 
+         *      the pointer won't be verified, and the buffer pointed by 'val' is not 
          *      copied to outside buffer either. Besides 'App' cannot modify the memory 
          *      pointer by 'val'.
          */
