@@ -80,14 +80,14 @@ $(APPNAME): $(CPPMICROSERVICES) source/build/CMakeCache.txt urts RDRAND
 	$(CP) $(CPPMICROSERVICES) source/build/bin/
 
 CMAKE_VERSION_MAJOR=$(shell cmake --version | head -n  1 | cut -d \  -f 3 | cut -d . -f 1)
-CMAKE_VERSION_MINOR=$(shell cmake --version | head -n  1 | cut -d \  -f 3 | cut -d . -f 2)
+CMAKE_VERSION_MINOR=$(shell cmake --version | head -n  1 | cut -d \  -f 3 | cut -d . -f 2 | xargs printf '%02d')
 CMAKE_VERSION=$(CMAKE_VERSION_MAJOR)$(CMAKE_VERSION_MINOR)
 CMAKE := $(HOME)/cache/bin/cmake
 
 .PHONY: CPPMICROSERVICES
 $(CPPMICROSERVICES):
 	mkdir -p $(CPPMICROSERVICES_DIR)/build
-ifeq ($(shell test $(CMAKE_VERSION) -lt 32 && echo 1), 1)
+ifeq ($(shell test $(CMAKE_VERSION) -lt 302 && echo 1), 1)
 	$(CPPMICROSERVICES_DIR)/install_cmake.sh
 	cd $(CPPMICROSERVICES_DIR)/build && $(CMAKE) -DCMAKE_COMMAND=$(CMAKE) $(CPPMICROSERVICES_CONFIG) ../ && $(MAKE) && $(MAKE) install
 else
@@ -95,7 +95,7 @@ else
 endif
 
 source/build/CMakeCache.txt: $(CPPMICROSERVICES)
-ifeq ($(shell test $(CMAKE_VERSION) -lt 30 && echo 1), 1)
+ifeq ($(shell test $(CMAKE_VERSION) -lt 300 && echo 1), 1)
 	mkdir -p source/build && cd source/build && $(CMAKE) -DCMAKE_COMMAND=$(CMAKE) $(AESM_CONFIG) ../
 else
 	mkdir -p source/build && cd source/build && cmake $(AESM_CONFIG) ../
