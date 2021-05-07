@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPRNGGetSize,(int* pSize))
-IPPAPI(IppStatus, l9_ippsPRNGGetSize,(int* pSize))
-IPPAPI(IppStatus, k0_ippsPRNGGetSize,(int* pSize))
+IPPAPI(IppStatus, y8_ippsMontExp, (const IppsBigNumState* pA, const IppsBigNumState* pE, IppsMontState* m, IppsBigNumState* pR))
+IPPAPI(IppStatus, l9_ippsMontExp, (const IppsBigNumState* pA, const IppsBigNumState* pE, IppsMontState* m, IppsBigNumState* pR))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGGetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsMontExp, (const IppsBigNumState* pA, const IppsBigNumState* pE, IppsMontState* m, IppsBigNumState* pR))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsPRNGGetSize( pSize );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsPRNGGetSize( pSize );
+        return l9_ippsMontExp( pA, pE, m, pR );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsPRNGGetSize( pSize );
+        return y8_ippsMontExp( pA, pE, m, pR );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPRNGGetSize,(int* pSize))
-IPPAPI(IppStatus, h9_ippsPRNGGetSize,(int* pSize))
+IPPAPI(IppStatus, p8_ippsMontExp, (const IppsBigNumState* pA, const IppsBigNumState* pE, IppsMontState* m, IppsBigNumState* pR))
+IPPAPI(IppStatus, h9_ippsMontExp, (const IppsBigNumState* pA, const IppsBigNumState* pE, IppsMontState* m, IppsBigNumState* pR))
 
-IPPFUN(IppStatus,sgx_disp_ippsPRNGGetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsMontExp, (const IppsBigNumState* pA, const IppsBigNumState* pE, IppsMontState* m, IppsBigNumState* pR))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsPRNGGetSize( pSize );
+        return h9_ippsMontExp( pA, pE, m, pR );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsPRNGGetSize( pSize );
+        return p8_ippsMontExp( pA, pE, m, pR );
       } else 
         return ippStsCpuNotSupportedErr;
 }

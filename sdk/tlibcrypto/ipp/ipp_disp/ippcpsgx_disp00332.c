@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPInit,(int feBitSize, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPInit,(int feBitSize, IppsECCPState* pEC))
-IPPAPI(IppStatus, k0_ippsECCPInit,(int feBitSize, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, l9_ippsECCPGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPInit,(int feBitSize, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsECCPInit( feBitSize, pEC );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPInit( feBitSize, pEC );
+        return l9_ippsECCPGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPInit( feBitSize, pEC );
+        return y8_ippsECCPGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPInit,(int feBitSize, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPInit,(int feBitSize, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, h9_ippsECCPGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPInit,(int feBitSize, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPInit( feBitSize, pEC );
+        return h9_ippsECCPGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPInit( feBitSize, pEC );
+        return p8_ippsECCPGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

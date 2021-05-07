@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsARCFourEncrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
-IPPAPI(IppStatus, l9_ippsARCFourEncrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
-IPPAPI(IppStatus, k0_ippsARCFourEncrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
+IPPAPI(IppStatus, y8_ippsARCFourUnpack,(const Ipp8u* pBuffer, IppsARCFourState* pCtx))
+IPPAPI(IppStatus, l9_ippsARCFourUnpack,(const Ipp8u* pBuffer, IppsARCFourState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourEncrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourUnpack,(const Ipp8u* pBuffer, IppsARCFourState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsARCFourEncrypt( pSrc, pDst, length, pCtx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsARCFourEncrypt( pSrc, pDst, length, pCtx );
+        return l9_ippsARCFourUnpack( pBuffer, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsARCFourEncrypt( pSrc, pDst, length, pCtx );
+        return y8_ippsARCFourUnpack( pBuffer, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsARCFourEncrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
-IPPAPI(IppStatus, h9_ippsARCFourEncrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
+IPPAPI(IppStatus, p8_ippsARCFourUnpack,(const Ipp8u* pBuffer, IppsARCFourState* pCtx))
+IPPAPI(IppStatus, h9_ippsARCFourUnpack,(const Ipp8u* pBuffer, IppsARCFourState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsARCFourEncrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourUnpack,(const Ipp8u* pBuffer, IppsARCFourState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsARCFourEncrypt( pSrc, pDst, length, pCtx );
+        return h9_ippsARCFourUnpack( pBuffer, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsARCFourEncrypt( pSrc, pDst, length, pCtx );
+        return p8_ippsARCFourUnpack( pBuffer, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

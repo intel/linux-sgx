@@ -33,12 +33,12 @@
 include ../../buildenv.mk
 
 
-CXXFLAGS += -Werror -fno-rtti -fno-exceptions -fPIC
+CXXFLAGS += -fno-rtti -fno-exceptions -fPIC #-Werror
 
 CPPFLAGS := -isystem $(SGX_IPP_INC) \
             -I$(COMMON_DIR)/inc/internal/           
 
-CFLAGS +=  -fPIC -Werror -fno-exceptions -I$(SGX_IPP_INC)
+CFLAGS +=  -fPIC -fno-exceptions -I$(SGX_IPP_INC) #-Werror
 
 IPPLIB_DIR = $(SGX_IPP_DIR)/lib/linux/intel64/no_mitigation
 

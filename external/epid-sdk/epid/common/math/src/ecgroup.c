@@ -1104,7 +1104,7 @@ EpidStatus EcHash(EcGroup* g, ConstOctStr msg, size_t msg_len, HashAlg hash_alg,
   }
 
   do {
-    sts = ippsGFpECSetPointHash(ipp_i, msg, ipp_msg_len, r->ipp_ec_pt,
+    sts = ippsGFpECSetPointHashBackCompatible(ipp_i, msg, ipp_msg_len, r->ipp_ec_pt,
                                 g->ipp_ec, hash_id, g->scratch_buffer);
   } while (ippStsQuadraticNonResidueErr == sts &&
            ipp_i++ < EPID_ECHASH_WATCHDOG);

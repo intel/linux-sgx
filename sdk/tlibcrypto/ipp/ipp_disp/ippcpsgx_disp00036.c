@@ -49,16 +49,12 @@
 
 IPPAPI(IppStatus, y8_ippsAESEncryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
 IPPAPI(IppStatus, l9_ippsAESEncryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
-IPPAPI(IppStatus, k0_ippsAESEncryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
 
 IPPFUN(IppStatus,sgx_disp_ippsAESEncryptXTS_Direct,(const Ipp8u* pSrc, Ipp8u* pDst, int encBitsize, int aesBlkNo, const Ipp8u* pTweakPT, const Ipp8u* pKey, int keyBitsize, int dataUnitBitsize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsAESEncryptXTS_Direct( pSrc, pDst, encBitsize, aesBlkNo, pTweakPT, pKey, keyBitsize, dataUnitBitsize );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsAESEncryptXTS_Direct( pSrc, pDst, encBitsize, aesBlkNo, pTweakPT, pKey, keyBitsize, dataUnitBitsize );
       } else 

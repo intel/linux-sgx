@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
-IPPAPI(IppStatus, l9_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
-IPPAPI(IppStatus, k0_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, y8_ippsAES_CCMInit,(const Ipp8u* pKey, int keyLen, IppsAES_CCMState* pState, int ctxSize))
+IPPAPI(IppStatus, l9_ippsAES_CCMInit,(const Ipp8u* pKey, int keyLen, IppsAES_CCMState* pState, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMInit,(const Ipp8u* pKey, int keyLen, IppsAES_CCMState* pState, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsAES_CCMMessageLen( msgLen, pState );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsAES_CCMMessageLen( msgLen, pState );
+        return l9_ippsAES_CCMInit( pKey, keyLen, pState, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsAES_CCMMessageLen( msgLen, pState );
+        return y8_ippsAES_CCMInit( pKey, keyLen, pState, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
-IPPAPI(IppStatus, h9_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
+IPPAPI(IppStatus, p8_ippsAES_CCMInit,(const Ipp8u* pKey, int keyLen, IppsAES_CCMState* pState, int ctxSize))
+IPPAPI(IppStatus, h9_ippsAES_CCMInit,(const Ipp8u* pKey, int keyLen, IppsAES_CCMState* pState, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsAES_CCMMessageLen,(Ipp64u msgLen, IppsAES_CCMState* pState))
+IPPFUN(IppStatus,sgx_disp_ippsAES_CCMInit,(const Ipp8u* pKey, int keyLen, IppsAES_CCMState* pState, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsAES_CCMMessageLen( msgLen, pState );
+        return h9_ippsAES_CCMInit( pKey, keyLen, pState, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsAES_CCMMessageLen( msgLen, pState );
+        return p8_ippsAES_CCMInit( pKey, keyLen, pState, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

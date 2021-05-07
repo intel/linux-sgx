@@ -49,16 +49,12 @@
 
 IPPAPI(IppStatus, y8_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
 IPPAPI(IppStatus, l9_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
-IPPAPI(IppStatus, k0_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
 
 IPPFUN(IppStatus,sgx_disp_ippsTDESDecryptCBC,(const Ipp8u* pSrc, Ipp8u* pDst, int len, const IppsDESSpec* pCtx1, const IppsDESSpec* pCtx2, const IppsDESSpec* pCtx3, const Ipp8u* pIV, IppsCPPadding padding))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsTDESDecryptCBC( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pIV, padding );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsTDESDecryptCBC( pSrc, pDst, len, pCtx1, pCtx2, pCtx3, pIV, padding );
       } else 

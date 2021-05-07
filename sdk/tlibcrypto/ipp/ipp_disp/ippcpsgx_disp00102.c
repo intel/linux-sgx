@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSHA1GetSize,(int* pSize))
-IPPAPI(IppStatus, l9_ippsSHA1GetSize,(int* pSize))
-IPPAPI(IppStatus, k0_ippsSHA1GetSize,(int* pSize))
+IPPAPI(IppStatus, y8_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
+IPPAPI(IppStatus, l9_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA1GetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsSHA1GetSize( pSize );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSHA1GetSize( pSize );
+        return l9_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSHA1GetSize( pSize );
+        return y8_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSHA1GetSize,(int* pSize))
-IPPAPI(IppStatus, h9_ippsSHA1GetSize,(int* pSize))
+IPPAPI(IppStatus, p8_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
+IPPAPI(IppStatus, h9_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA1GetSize,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsARCFourDecrypt, (const Ipp8u *pSrc, Ipp8u *pDst, int length, IppsARCFourState *pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSHA1GetSize( pSize );
+        return h9_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSHA1GetSize( pSize );
+        return p8_ippsARCFourDecrypt( pSrc, pDst, length, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

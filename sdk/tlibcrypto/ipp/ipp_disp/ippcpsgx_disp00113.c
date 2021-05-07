@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSHA224Duplicate,(const IppsSHA224State* pSrcState, IppsSHA224State* pDstState))
-IPPAPI(IppStatus, l9_ippsSHA224Duplicate,(const IppsSHA224State* pSrcState, IppsSHA224State* pDstState))
-IPPAPI(IppStatus, k0_ippsSHA224Duplicate,(const IppsSHA224State* pSrcState, IppsSHA224State* pDstState))
+IPPAPI(IppStatus, y8_ippsSHA224Init,(IppsSHA224State* pState))
+IPPAPI(IppStatus, l9_ippsSHA224Init,(IppsSHA224State* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA224Duplicate,(const IppsSHA224State* pSrcState, IppsSHA224State* pDstState))
+IPPFUN(IppStatus,sgx_disp_ippsSHA224Init,(IppsSHA224State* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsSHA224Duplicate( pSrcState, pDstState );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSHA224Duplicate( pSrcState, pDstState );
+        return l9_ippsSHA224Init( pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSHA224Duplicate( pSrcState, pDstState );
+        return y8_ippsSHA224Init( pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSHA224Duplicate,(const IppsSHA224State* pSrcState, IppsSHA224State* pDstState))
-IPPAPI(IppStatus, h9_ippsSHA224Duplicate,(const IppsSHA224State* pSrcState, IppsSHA224State* pDstState))
+IPPAPI(IppStatus, p8_ippsSHA224Init,(IppsSHA224State* pState))
+IPPAPI(IppStatus, h9_ippsSHA224Init,(IppsSHA224State* pState))
 
-IPPFUN(IppStatus,sgx_disp_ippsSHA224Duplicate,(const IppsSHA224State* pSrcState, IppsSHA224State* pDstState))
+IPPFUN(IppStatus,sgx_disp_ippsSHA224Init,(IppsSHA224State* pState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSHA224Duplicate( pSrcState, pDstState );
+        return h9_ippsSHA224Init( pState );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSHA224Duplicate( pSrcState, pDstState );
+        return p8_ippsSHA224Init( pState );
       } else 
         return ippStsCpuNotSupportedErr;
 }

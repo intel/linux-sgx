@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpGetInfo, (IppsGFpInfo* pInfo, const IppsGFpState* pGFp))
-IPPAPI(IppStatus, l9_ippsGFpGetInfo, (IppsGFpInfo* pInfo, const IppsGFpState* pGFp))
-IPPAPI(IppStatus, k0_ippsGFpGetInfo, (IppsGFpInfo* pInfo, const IppsGFpState* pGFp))
+IPPAPI(IppStatus, y8_ippsGFpSqr, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, l9_ippsGFpSqr, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpGetInfo, (IppsGFpInfo* pInfo, const IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSqr, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpGetInfo( pInfo, pGFp );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpGetInfo( pInfo, pGFp );
+        return l9_ippsGFpSqr( pA, pR, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpGetInfo( pInfo, pGFp );
+        return y8_ippsGFpSqr( pA, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpGetInfo, (IppsGFpInfo* pInfo, const IppsGFpState* pGFp))
-IPPAPI(IppStatus, h9_ippsGFpGetInfo, (IppsGFpInfo* pInfo, const IppsGFpState* pGFp))
+IPPAPI(IppStatus, p8_ippsGFpSqr, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, h9_ippsGFpSqr, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpGetInfo, (IppsGFpInfo* pInfo, const IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSqr, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpGetInfo( pInfo, pGFp );
+        return h9_ippsGFpSqr( pA, pR, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpGetInfo( pInfo, pGFp );
+        return p8_ippsGFpSqr( pA, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }

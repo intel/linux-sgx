@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPValidate,(int nTrials, IppECResult* pResult, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, l9_ippsECCPValidate,(int nTrials, IppECResult* pResult, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, k0_ippsECCPValidate,(int nTrials, IppECResult* pResult, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, y8_ippsECCPSetStdSM2, (IppsECCPState* pEC))
+IPPAPI(IppStatus, l9_ippsECCPSetStdSM2, (IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPValidate,(int nTrials, IppECResult* pResult, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsECCPSetStdSM2, (IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsECCPValidate( nTrials, pResult, pEC, rndFunc, pRndParam );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPValidate( nTrials, pResult, pEC, rndFunc, pRndParam );
+        return l9_ippsECCPSetStdSM2( pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPValidate( nTrials, pResult, pEC, rndFunc, pRndParam );
+        return y8_ippsECCPSetStdSM2( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPValidate,(int nTrials, IppECResult* pResult, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, h9_ippsECCPValidate,(int nTrials, IppECResult* pResult, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, p8_ippsECCPSetStdSM2, (IppsECCPState* pEC))
+IPPAPI(IppStatus, h9_ippsECCPSetStdSM2, (IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPValidate,(int nTrials, IppECResult* pResult, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsECCPSetStdSM2, (IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPValidate( nTrials, pResult, pEC, rndFunc, pRndParam );
+        return h9_ippsECCPSetStdSM2( pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPValidate( nTrials, pResult, pEC, rndFunc, pRndParam );
+        return p8_ippsECCPSetStdSM2( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPMulPointScalar,(const IppsECCPPointState* pP, const IppsBigNumState* pK, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPMulPointScalar,(const IppsECCPPointState* pP, const IppsBigNumState* pK, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, k0_ippsECCPMulPointScalar,(const IppsECCPPointState* pP, const IppsBigNumState* pK, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPPointGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, l9_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPMulPointScalar,(const IppsECCPPointState* pP, const IppsBigNumState* pK, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsECCPMulPointScalar( pP, pK, pR, pEC );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPMulPointScalar( pP, pK, pR, pEC );
+        return l9_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPMulPointScalar( pP, pK, pR, pEC );
+        return y8_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPMulPointScalar,(const IppsECCPPointState* pP, const IppsBigNumState* pK, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPMulPointScalar,(const IppsECCPPointState* pP, const IppsBigNumState* pK, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPPointGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, h9_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPMulPointScalar,(const IppsECCPPointState* pP, const IppsBigNumState* pK, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPMulPointScalar( pP, pK, pR, pEC );
+        return h9_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPMulPointScalar( pP, pK, pR, pEC );
+        return p8_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

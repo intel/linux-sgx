@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSAEncrypt_OAEP,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsRSAEncrypt_OAEP,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
-IPPAPI(IppStatus, k0_ippsRSAEncrypt_OAEP,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsRSA_ValidateKeys,(int* pResult, const IppsRSAPublicKeyState* pPublicKey, const IppsRSAPrivateKeyState* pPrivateKeyType2, const IppsRSAPrivateKeyState* pPrivateKeyType1, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, l9_ippsRSA_ValidateKeys,(int* pResult, const IppsRSAPublicKeyState* pPublicKey, const IppsRSAPrivateKeyState* pPrivateKeyType2, const IppsRSAPrivateKeyState* pPrivateKeyType1, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSAEncrypt_OAEP,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_ValidateKeys,(int* pResult, const IppsRSAPublicKeyState* pPublicKey, const IppsRSAPrivateKeyState* pPrivateKeyType2, const IppsRSAPrivateKeyState* pPrivateKeyType1, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsRSAEncrypt_OAEP( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, hashAlg, pBuffer );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSAEncrypt_OAEP( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, hashAlg, pBuffer );
+        return l9_ippsRSA_ValidateKeys( pResult, pPublicKey, pPrivateKeyType2, pPrivateKeyType1, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSAEncrypt_OAEP( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, hashAlg, pBuffer );
+        return y8_ippsRSA_ValidateKeys( pResult, pPublicKey, pPrivateKeyType2, pPrivateKeyType1, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSAEncrypt_OAEP,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsRSAEncrypt_OAEP,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, p8_ippsRSA_ValidateKeys,(int* pResult, const IppsRSAPublicKeyState* pPublicKey, const IppsRSAPrivateKeyState* pPrivateKeyType2, const IppsRSAPrivateKeyState* pPrivateKeyType1, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, h9_ippsRSA_ValidateKeys,(int* pResult, const IppsRSAPublicKeyState* pPublicKey, const IppsRSAPrivateKeyState* pPrivateKeyType2, const IppsRSAPrivateKeyState* pPrivateKeyType1, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSAEncrypt_OAEP,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_ValidateKeys,(int* pResult, const IppsRSAPublicKeyState* pPublicKey, const IppsRSAPrivateKeyState* pPrivateKeyType2, const IppsRSAPrivateKeyState* pPrivateKeyType1, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSAEncrypt_OAEP( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, hashAlg, pBuffer );
+        return h9_ippsRSA_ValidateKeys( pResult, pPublicKey, pPrivateKeyType2, pPrivateKeyType1, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSAEncrypt_OAEP( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, hashAlg, pBuffer );
+        return p8_ippsRSA_ValidateKeys( pResult, pPublicKey, pPrivateKeyType2, pPrivateKeyType1, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }

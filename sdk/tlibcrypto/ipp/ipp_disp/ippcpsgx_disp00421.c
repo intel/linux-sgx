@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpInv, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
-IPPAPI(IppStatus, l9_ippsGFpInv, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
-IPPAPI(IppStatus, k0_ippsGFpInv, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, y8_ippsGFpSetElementHash_rmf,(const Ipp8u* pMsg, int msgLen, IppsGFpElement* pElm, IppsGFpState* pGFp, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, l9_ippsGFpSetElementHash_rmf,(const Ipp8u* pMsg, int msgLen, IppsGFpElement* pElm, IppsGFpState* pGFp, const IppsHashMethod* pMethod))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpInv, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementHash_rmf,(const Ipp8u* pMsg, int msgLen, IppsGFpElement* pElm, IppsGFpState* pGFp, const IppsHashMethod* pMethod))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpInv( pA, pR, pGFp );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpInv( pA, pR, pGFp );
+        return l9_ippsGFpSetElementHash_rmf( pMsg, msgLen, pElm, pGFp, pMethod );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpInv( pA, pR, pGFp );
+        return y8_ippsGFpSetElementHash_rmf( pMsg, msgLen, pElm, pGFp, pMethod );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpInv, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
-IPPAPI(IppStatus, h9_ippsGFpInv, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, p8_ippsGFpSetElementHash_rmf,(const Ipp8u* pMsg, int msgLen, IppsGFpElement* pElm, IppsGFpState* pGFp, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, h9_ippsGFpSetElementHash_rmf,(const Ipp8u* pMsg, int msgLen, IppsGFpElement* pElm, IppsGFpState* pGFp, const IppsHashMethod* pMethod))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpInv, (const IppsGFpElement* pA, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSetElementHash_rmf,(const Ipp8u* pMsg, int msgLen, IppsGFpElement* pElm, IppsGFpState* pGFp, const IppsHashMethod* pMethod))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpInv( pA, pR, pGFp );
+        return h9_ippsGFpSetElementHash_rmf( pMsg, msgLen, pElm, pGFp, pMethod );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpInv( pA, pR, pGFp );
+        return p8_ippsGFpSetElementHash_rmf( pMsg, msgLen, pElm, pGFp, pMethod );
       } else 
         return ippStsCpuNotSupportedErr;
 }

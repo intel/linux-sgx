@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsSMS4_CCMMessageLen,(Ipp64u msgLen, IppsSMS4_CCMState* pCtx))
-IPPAPI(IppStatus, l9_ippsSMS4_CCMMessageLen,(Ipp64u msgLen, IppsSMS4_CCMState* pCtx))
-IPPAPI(IppStatus, k0_ippsSMS4_CCMMessageLen,(Ipp64u msgLen, IppsSMS4_CCMState* pCtx))
+IPPAPI(IppStatus, y8_ippsSMS4_CCMInit,(const Ipp8u* pKey, int keyLen, IppsSMS4_CCMState* pCtx, int ctxSize))
+IPPAPI(IppStatus, l9_ippsSMS4_CCMInit,(const Ipp8u* pKey, int keyLen, IppsSMS4_CCMState* pCtx, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4_CCMMessageLen,(Ipp64u msgLen, IppsSMS4_CCMState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4_CCMInit,(const Ipp8u* pKey, int keyLen, IppsSMS4_CCMState* pCtx, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsSMS4_CCMMessageLen( msgLen, pCtx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsSMS4_CCMMessageLen( msgLen, pCtx );
+        return l9_ippsSMS4_CCMInit( pKey, keyLen, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsSMS4_CCMMessageLen( msgLen, pCtx );
+        return y8_ippsSMS4_CCMInit( pKey, keyLen, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsSMS4_CCMMessageLen,(Ipp64u msgLen, IppsSMS4_CCMState* pCtx))
-IPPAPI(IppStatus, h9_ippsSMS4_CCMMessageLen,(Ipp64u msgLen, IppsSMS4_CCMState* pCtx))
+IPPAPI(IppStatus, p8_ippsSMS4_CCMInit,(const Ipp8u* pKey, int keyLen, IppsSMS4_CCMState* pCtx, int ctxSize))
+IPPAPI(IppStatus, h9_ippsSMS4_CCMInit,(const Ipp8u* pKey, int keyLen, IppsSMS4_CCMState* pCtx, int ctxSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsSMS4_CCMMessageLen,(Ipp64u msgLen, IppsSMS4_CCMState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsSMS4_CCMInit,(const Ipp8u* pKey, int keyLen, IppsSMS4_CCMState* pCtx, int ctxSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsSMS4_CCMMessageLen( msgLen, pCtx );
+        return h9_ippsSMS4_CCMInit( pKey, keyLen, pCtx, ctxSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsSMS4_CCMMessageLen( msgLen, pCtx );
+        return p8_ippsSMS4_CCMInit( pKey, keyLen, pCtx, ctxSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

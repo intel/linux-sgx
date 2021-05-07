@@ -388,8 +388,8 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(const void* rsa_key, unsigned char* pout
 
         //encrypt input data with public rsa_key and SHA256 padding
         //
-        if (ippsRSAEncrypt_OAEP(pin_data, (int)pin_len, NULL, 0, seeds,
-            pout_data, (IppsRSAPublicKeyState*)rsa_key, IPP_ALG_HASH_SHA256, p_scratch_buffer) != ippStsNoErr) {
+        if (ippsRSAEncrypt_OAEP_rmf(pin_data, (int)pin_len, NULL, 0, seeds,
+            pout_data, (IppsRSAPublicKeyState*)rsa_key, ippsHashMethod_SHA256_TT(), p_scratch_buffer) != ippStsNoErr) {
             break;
         }
 	*pout_len = mod_len / 8;
@@ -474,8 +474,8 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(const void* rsa_key, unsigned char* pou
         }
 
         //decrypt input ciphertext using private key rsa_key
-        if (ippsRSADecrypt_OAEP(pin_data, NULL, 0, pout_data, (int*)pout_len, (IppsRSAPrivateKeyState*)rsa_key,
-            IPP_ALG_HASH_SHA256, p_scratch_buffer) != ippStsNoErr) {
+        if (ippsRSADecrypt_OAEP_rmf(pin_data, NULL, 0, pout_data, (int*)pout_len, (IppsRSAPrivateKeyState*)rsa_key,
+            ippsHashMethod_SHA256_TT(), p_scratch_buffer) != ippStsNoErr) {
             break;
         }
         ret_code = SGX_SUCCESS;

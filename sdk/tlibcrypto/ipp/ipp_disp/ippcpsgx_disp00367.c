@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, k0_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPGetOrderBitSize,(int* pBitSize, IppsECCPState* pEC))
+IPPAPI(IppStatus, l9_ippsECCPGetOrderBitSize,(int* pBitSize, IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetOrderBitSize,(int* pBitSize, IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsECCPNegativePoint( pP, pR, pEC );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPNegativePoint( pP, pR, pEC );
+        return l9_ippsECCPGetOrderBitSize( pBitSize, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPNegativePoint( pP, pR, pEC );
+        return y8_ippsECCPGetOrderBitSize( pBitSize, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPGetOrderBitSize,(int* pBitSize, IppsECCPState* pEC))
+IPPAPI(IppStatus, h9_ippsECCPGetOrderBitSize,(int* pBitSize, IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGetOrderBitSize,(int* pBitSize, IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPNegativePoint( pP, pR, pEC );
+        return h9_ippsECCPGetOrderBitSize( pBitSize, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPNegativePoint( pP, pR, pEC );
+        return p8_ippsECCPGetOrderBitSize( pBitSize, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

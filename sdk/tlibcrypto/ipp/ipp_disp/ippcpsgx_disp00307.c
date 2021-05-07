@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsDLPSet,(const IppsBigNumState* pP, const IppsBigNumState* pR, const IppsBigNumState* pG, IppsDLPState* pCtx))
-IPPAPI(IppStatus, l9_ippsDLPSet,(const IppsBigNumState* pP, const IppsBigNumState* pR, const IppsBigNumState* pG, IppsDLPState* pCtx))
-IPPAPI(IppStatus, k0_ippsDLPSet,(const IppsBigNumState* pP, const IppsBigNumState* pR, const IppsBigNumState* pG, IppsDLPState* pCtx))
+IPPAPI(IppStatus, y8_ippsRSA_MB_Sign_PSS_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSalts[8], const int saltLens[8], Ipp8u* const pSignts[8], const IppsRSAPrivateKeyState* const pPrvKeys[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsRSA_MB_Sign_PSS_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSalts[8], const int saltLens[8], Ipp8u* const pSignts[8], const IppsRSAPrivateKeyState* const pPrvKeys[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSet,(const IppsBigNumState* pP, const IppsBigNumState* pR, const IppsBigNumState* pG, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_Sign_PSS_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSalts[8], const int saltLens[8], Ipp8u* const pSignts[8], const IppsRSAPrivateKeyState* const pPrvKeys[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsDLPSet( pP, pR, pG, pCtx );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsDLPSet( pP, pR, pG, pCtx );
+        return l9_ippsRSA_MB_Sign_PSS_rmf( pMsgs, msgLens, pSalts, saltLens, pSignts, pPrvKeys, pPubKeys, pMethod, statuses, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsDLPSet( pP, pR, pG, pCtx );
+        return y8_ippsRSA_MB_Sign_PSS_rmf( pMsgs, msgLens, pSalts, saltLens, pSignts, pPrvKeys, pPubKeys, pMethod, statuses, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsDLPSet,(const IppsBigNumState* pP, const IppsBigNumState* pR, const IppsBigNumState* pG, IppsDLPState* pCtx))
-IPPAPI(IppStatus, h9_ippsDLPSet,(const IppsBigNumState* pP, const IppsBigNumState* pR, const IppsBigNumState* pG, IppsDLPState* pCtx))
+IPPAPI(IppStatus, p8_ippsRSA_MB_Sign_PSS_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSalts[8], const int saltLens[8], Ipp8u* const pSignts[8], const IppsRSAPrivateKeyState* const pPrvKeys[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
+IPPAPI(IppStatus, h9_ippsRSA_MB_Sign_PSS_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSalts[8], const int saltLens[8], Ipp8u* const pSignts[8], const IppsRSAPrivateKeyState* const pPrvKeys[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsDLPSet,(const IppsBigNumState* pP, const IppsBigNumState* pR, const IppsBigNumState* pG, IppsDLPState* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_Sign_PSS_rmf, (const Ipp8u* const pMsgs[8], const int msgLens[8], const Ipp8u* const pSalts[8], const int saltLens[8], Ipp8u* const pSignts[8], const IppsRSAPrivateKeyState* const pPrvKeys[8], const IppsRSAPublicKeyState* const pPubKeys[8], const IppsHashMethod* pMethod, IppStatus statuses[8], Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsDLPSet( pP, pR, pG, pCtx );
+        return h9_ippsRSA_MB_Sign_PSS_rmf( pMsgs, msgLens, pSalts, saltLens, pSignts, pPrvKeys, pPubKeys, pMethod, statuses, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsDLPSet( pP, pR, pG, pCtx );
+        return p8_ippsRSA_MB_Sign_PSS_rmf( pMsgs, msgLens, pSalts, saltLens, pSignts, pPrvKeys, pPubKeys, pMethod, statuses, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -47,42 +47,38 @@
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, l9_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, k0_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, y8_ippsGFpECGet,(IppsGFpState** const ppGFp, IppsGFpElement* pA, IppsGFpElement* pB, const IppsGFpECState* pEC))
+IPPAPI(IppStatus, l9_ippsGFpECGet,(IppsGFpState** const ppGFp, IppsGFpElement* pA, IppsGFpElement* pB, const IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECGet,(IppsGFpState** const ppGFp, IppsGFpElement* pA, IppsGFpElement* pB, const IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
-      if( AVX3X_FEATURES  == ( features & AVX3X_FEATURES  )) {
-        return k0_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
-      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return l9_ippsGFpECGet( ppGFp, pA, pB, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return y8_ippsGFpECGet( ppGFp, pA, pB, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, h9_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, p8_ippsGFpECGet,(IppsGFpState** const ppGFp, IppsGFpElement* pA, IppsGFpElement* pB, const IppsGFpECState* pEC))
+IPPAPI(IppStatus, h9_ippsGFpECGet,(IppsGFpState** const ppGFp, IppsGFpElement* pA, IppsGFpElement* pB, const IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECGet,(IppsGFpState** const ppGFp, IppsGFpElement* pA, IppsGFpElement* pB, const IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return h9_ippsGFpECGet( ppGFp, pA, pB, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return p8_ippsGFpECGet( ppGFp, pA, pB, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
