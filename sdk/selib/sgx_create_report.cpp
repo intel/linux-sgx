@@ -44,6 +44,7 @@
 #include "sgx_trts.h"
 #include "trts_inst.h"
 #include "se_cdefs.h"
+#include "sgx_spinlock.h"
 
 // add a version to tservice.
 SGX_ACCESS_VERSION(tservice, 1)
@@ -131,11 +132,18 @@ const sgx_report_t *sgx_self_report(void)
         .key_id = {0},
         .mac = {0}
     };
+    static sgx_spinlock_t report_lock = SGX_SPINLOCK_INITIALIZER;
 
-    // Below sgx_create_report() will be called only once during the enclave initialization,
-    // so there is no potential race conditional.
     if (0 == _report.body.attributes.flags)
-        sgx_create_report(nullptr, nullptr, &_report);
+    {
+        // sgx_create_report() only needs to be called once to get self report.
+        sgx_spin_lock(&report_lock);
+        if (0 == _report.body.attributes.flags)
+        {
+            sgx_create_report(nullptr, nullptr, &_report);
+        }
+        sgx_spin_unlock(&report_lock);
+    }
 
     return &_report;
 }
