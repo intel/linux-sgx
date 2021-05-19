@@ -25,6 +25,7 @@
 
 #include "cppmicroservices/FrameworkExport.h"
 
+#include <exception>
 #include <string>
 
 namespace cppmicroservices {
