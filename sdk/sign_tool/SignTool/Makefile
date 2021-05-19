@@ -42,6 +42,7 @@ INC += $(ADDED_INC)
 INC +=  -I$(COMMON_DIR)/inc                         \
         -I$(COMMON_DIR)/inc/internal                \
         -I$(COMMON_DIR)/inc/internal/linux/         \
+        -I$(LINUX_PSW_DIR)/enclave_common           \
         -I$(LINUX_PSW_DIR)/urts                     \
         -I$(LINUX_PSW_DIR)/urts/linux               \
         -I$(LINUX_EXTERNAL_DIR)/tinyxml2            \

@@ -62,6 +62,8 @@ public:
     int destroy_enclave();
     sgx_enclave_id_t get_enclave_id() const;
     const void* get_start_addr() const;
+    uint64_t get_elrange_start_addr() const;
+    uint64_t get_elrange_size() const;
     const secs_t& get_secs() const;
     const std::vector<std::pair<tcs_t *, bool>>& get_tcs_list() const;
     void* get_symbol_address(const char* const sym);
@@ -88,10 +90,13 @@ private:
     int get_debug_flag(const token_t * const launch);
     virtual int build_sections(std::vector<uint8_t> *bitmap);
     int set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
+    int set_elrange_config();
 
     uint8_t             *m_mapped_file_base;
     sgx_enclave_id_t    m_enclave_id;
     void                *m_start_addr;
+    uint64_t            m_elrange_start_address;
+    uint64_t            m_elrange_size;
 
     // the TCS list
     std::vector<std::pair<tcs_t *, bool>> m_tcs_list;

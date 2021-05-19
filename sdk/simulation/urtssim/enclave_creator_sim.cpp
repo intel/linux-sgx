@@ -44,6 +44,8 @@
 #include "rts_sim.h"
 #include <assert.h>
 #include <time.h>
+#include "sgx_enclave_common.h"
+#include <map>
 
 #include <openssl/evp.h>
 #include <openssl/err.h>
@@ -72,11 +74,71 @@ static void cleanup_openssl(void)
 }
 
 
+static Mutex s_enclave_info_mutex;
+static std::map<void *, enclave_elrange_t*>s_enclave_elrange_map;
+
+__attribute__((destructor)) 
+static void enclave_elrange_cleanup(void)
+{
+    for (auto &res:s_enclave_elrange_map)
+    {
+        auto elrange = res.second;
+        delete elrange;
+        elrange = NULL;
+    }
+}
+
+extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_start_address)
+{
+    LockGuard lock(&s_enclave_info_mutex);
+    bool ret = false;
+    if(s_enclave_elrange_map.count(base_address) != 0)
+    {
+        elrange_start_address = s_enclave_elrange_map[base_address]->elrange_start_address;
+        ret = true;
+    }
+    return ret;  
+}
+
+
+
 EnclaveCreator* g_enclave_creator = new EnclaveCreatorSim();
 
-int EnclaveCreatorSim::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
+int EnclaveCreatorSim::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, const uint32_t ex_features, const void* ex_features_p[32])
 {
-    UNUSED(ae);
+    if(ex_features == ENCLAVE_CREATE_EX_EL_RANGE && ex_features_p[ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX] != NULL)
+    {
+        enclave_elrange_t *tmp_enclave_elrange =  reinterpret_cast<enclave_elrange_t *>(const_cast<void *>(ex_features_p[ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX]));
+        void *base_address = reinterpret_cast<void*>(tmp_enclave_elrange->enclave_image_address);
+        LockGuard lock(&s_enclave_info_mutex);
+        if (s_enclave_elrange_map.count(base_address) != 0)
+        {
+            enclave_elrange_t *enclave_elrange = s_enclave_elrange_map[base_address];
+            if (enclave_elrange == NULL)
+            {
+                return SGX_ERROR_UNEXPECTED;
+            }
+
+            if (memcpy_s(enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
+            {
+                return SGX_ERROR_UNEXPECTED;
+            }
+        }
+        else
+        {
+            enclave_elrange_t *enclave_elrange = new(std::nothrow) enclave_elrange_t;
+            if (enclave_elrange == NULL)
+            {
+                return SGX_ERROR_OUT_OF_MEMORY;
+            }
+            memset(enclave_elrange, 0, sizeof(enclave_elrange_t));
+            if (memcpy_s(enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
+            {
+                return SGX_ERROR_UNEXPECTED;
+            }
+            s_enclave_elrange_map[base_address] = enclave_elrange;  
+        }
+    }
     return ::create_enclave(secs, enclave_id, start_addr);
 }
 int EnclaveCreatorSim::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, uint64_t offset, const sec_info_t &sinfo, uint32_t attr)
@@ -180,7 +242,6 @@ int EnclaveCreatorSim::destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enc
 
     if(enclave == NULL)
         return SGX_ERROR_INVALID_ENCLAVE_ID;
-
     return ::destroy_enclave(enclave_id);
 }
 
@@ -305,3 +366,5 @@ int EnclaveCreatorSim::remove_range(uint64_t fromaddr, uint64_t numpages)
 
     return SGX_SUCCESS;
 }
+
+

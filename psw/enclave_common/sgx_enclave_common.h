@@ -89,8 +89,26 @@ typedef enum {
 } enclave_page_properties_t;
 
 typedef enum {
-    ENCLAVE_LAUNCH_TOKEN = 0x1,
+    ENCLAVE_LAUNCH_TOKEN = 0x1
 } enclave_info_type_t;
+
+
+#define ENCLAVE_CREATE_MAX_EX_FEATURES_COUNT    32
+
+#define ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX      0
+#define ENCLAVE_CREATE_EX_EL_RANGE              (1 << ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX) // Reserve Bit 0 for the el_range config
+
+//update the following when adding new extended feature
+#define _ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_  ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX 
+
+#define _ENCLAVE_CREATE_EX_FEATURES_MASK_ (((uint32_t)-1) >> (ENCLAVE_CREATE_MAX_EX_FEATURES_COUNT - 1  - _ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_))
+
+
+typedef struct enclave_elrange{
+    uint64_t enclave_image_address;
+    uint64_t elrange_start_address;
+    uint64_t elrange_size;
+}enclave_elrange_t;
 
 #define SECS_SIZE 4096
 #define SIGSTRUCT_SIZE 1808
@@ -102,6 +120,34 @@ typedef struct enclave_create_sgx_t {
 typedef struct enclave_init_sgx_t {
     uint8_t sigstruct[SIGSTRUCT_SIZE];
 } enclave_init_sgx_t;
+
+
+/* enclave_create_ex()
+ * Parameters:
+ *      base_address [in, optional] - An optional preferred base address for the enclave.
+ *      virtual_size [in] - The virtual address range of the enclave in bytes.
+ *      initial_commit[in] - The amount of physical memory to reserve for the initial load of the enclave in bytes.
+ *      type [in] - The architecture type of the enclave that you want to create.
+ *      info [in] - A pointer to the architecture-specific information to use to create the enclave.
+ *      info_size [in] - The length of the structure that the info parameter points to, in bytes.
+ *      ex_features [in] - Bitmask defining the extended features to activate on the enclave creation.
+ *      ex_features_p [in] - Array of pointers to extended feature control structures.
+ *      enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
+ * Return Value:
+ *      If the function succeeds, the return value is the base address of the created enclave.
+ *      If the function fails, the return value is NULL. The extended error information will be in the enclave_error parameter if used.
+*/
+void* COMM_API enclave_create_ex(
+    COMM_IN_OPT void* base_address,
+    COMM_IN size_t virtual_size,
+    COMM_IN size_t initial_commit,
+    COMM_IN uint32_t type,
+    COMM_IN const void* info,
+    COMM_IN size_t info_size,
+    COMM_IN const uint32_t ex_features,
+    COMM_IN const void* ex_features_p[32],
+    COMM_OUT_OPT uint32_t* enclave_error);
+    
 
 /* enclave_create()
  * Parameters:

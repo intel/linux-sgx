@@ -60,6 +60,9 @@ static uintptr_t _ECREATE (page_info_t* pi);
 static uintptr_t _EADD (page_info_t* pi, void* epc_lin_addr);
 static uintptr_t _EREMOVE(const void* epc_lin_addr);
 
+extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_start_address);
+
+
 ////////////////////////////////////////////////////////////////////////
 #define __GP__() exit(EXIT_FAILURE)
 
@@ -154,17 +157,34 @@ uintptr_t _ECREATE(page_info_t* pi)
 
     CEnclaveSim* ce = new CEnclaveSim(secs);
     void*   addr;
-
+    uint64_t elrange_start_address = 0;
+    uint64_t image_offset = 0;
+    bool ret = get_elrange_start_address(secs->base, elrange_start_address);
+    int mmap_flag = MAP_PRIVATE |  MAP_ANONYMOUS;
+    if(ret == true)
+    {
+        image_offset = reinterpret_cast<uint64_t>(secs->base) - elrange_start_address;
+        mmap_flag |= MAP_FIXED;
+    }
+    
     // `ce' is not checked against NULL, since it is not
     // allocated with new(std::no_throw).
-    addr = se_virtual_alloc(NULL, (size_t)secs->size, MEM_COMMIT);
-    if (addr == NULL) {
+    addr = mmap(secs->base, (size_t)secs->size, PROT_READ | PROT_WRITE, mmap_flag, -1, 0);
+    if(MAP_FAILED == addr)
+    {
         delete ce;
         return 0;
     }
 
     // Mark all the memory inaccessible.
     se_virtual_protect(addr, (size_t)secs->size, SGX_PROT_NONE);
+
+    //set image_offset
+    if(image_offset != 0)
+    {
+        ce->set_image_offset(image_offset);
+    }
+    
     ce->get_secs()->base = addr;
 
     CEnclaveMngr::get_instance()->add(ce);
@@ -232,9 +252,11 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         secs_t*       secs;
         CEnclaveMngr* mngr;
         CEnclaveSim*    ce;
+        uint64_t      image_offset;
 
         // xbx contains the address of a TCS
         tcs = reinterpret_cast<tcs_t*>(xbx);
+        
 
         // Is TCS pointer page-aligned?
         GP_ON_EENTER(!IS_PAGE_ALIGNED(tcs));
@@ -251,6 +273,16 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);
         GP_ON_EENTER(tcs_sim->tcs_state != TCS_STATE_INACTIVE);
         GP_ON_EENTER(tcs->cssa >= tcs->nssa);
+
+        image_offset = ce->get_image_offset();
+        if(image_offset!=0 && tcs_sim->tcs_offset_update_flag == false)
+        {
+            tcs->oentry -= image_offset;
+            tcs->ossa -= image_offset;
+            tcs->ofs_base -= image_offset;
+            tcs->ogs_base -= image_offset;
+            tcs_sim->tcs_offset_update_flag = true;
+        }
 
         secs = ce->get_secs();
         enclave_base_addr = secs->base;

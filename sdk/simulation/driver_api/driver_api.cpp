@@ -63,7 +63,7 @@ int create_enclave(secs_t           *secs,
 
     memset(&sinfo, 0, sizeof(sinfo));
     sinfo.flags = SI_FLAGS_SECS;
-
+    secs->base = *start_addr;
     memset(&pinfo, 0, sizeof(pinfo));
     pinfo.src_page = secs;
     pinfo.sec_info = &sinfo;
@@ -73,7 +73,7 @@ int create_enclave(secs_t           *secs,
         SE_TRACE(SE_TRACE_DEBUG, "out of memory.\n");
         return SGX_ERROR_OUT_OF_MEMORY;
     }
-
+    
     *start_addr = ce->get_secs()->base;
     *enclave_id = ce->get_enclave_id();
     secs->base = *start_addr;

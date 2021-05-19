@@ -43,6 +43,23 @@ namespace {
             assert(false);
         return NULL;
     }
+
+    elrange_config_entry_t *get_elrange_config_entry(const metadata_t *const metadata)
+    {   
+        if(MAJOR_VERSION_OF_METADATA(metadata->version) <= SGX_MAJOR_VERSION_GAP)
+        {
+            return NULL;
+        }
+        //elrange config entry is placed at the beginning of data
+        data_directory_t* dir = GET_PTR(data_directory_t, metadata, offsetof(metadata_t, data));
+        if(dir == NULL)
+        {
+            return NULL;
+        }
+        elrange_config_entry_t* elrange_config_entry = GET_PTR(elrange_config_entry_t, metadata, dir->offset);
+        return elrange_config_entry;
+    }
+    
     bool do_update_global_data(const metadata_t *const metadata,
                                 const create_param_t* const create_param,
                                global_data_t* global_data)
@@ -142,7 +159,13 @@ namespace {
             global_data->layout_entry_num++;
             entry_cnt++;
         }
-
+        elrange_config_entry_t* elrange_config_entry = get_elrange_config_entry(metadata);
+        if(elrange_config_entry != NULL)
+        {
+            global_data->enclave_image_address = elrange_config_entry->enclave_image_address;
+            global_data->elrange_start_address= elrange_config_entry->elrange_start_address;
+            global_data->elrange_size = elrange_config_entry->elrange_size;
+        }
         return true;
     }
 }

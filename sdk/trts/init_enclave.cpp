@@ -56,9 +56,12 @@
 uint64_t g_cpu_feature_indicator __attribute__((section(RELRO_SECTION_NAME))) = 0;
 int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
 sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
+uint64_t g_enclave_base __attribute__((section(RELRO_SECTION_NAME))) = 0;
+uint64_t g_enclave_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
+
 
 const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
+   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0};
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 uint32_t g_cpu_core_num __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
@@ -113,6 +116,21 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
         return -1;
     }
 
+    g_enclave_base = (uint64_t)&__ImageBase;
+    g_enclave_size = g_global_data.enclave_size;
+    
+    if(g_global_data.elrange_size != 0)
+    {
+        //__ImageBase should be the same as enclave_start_address
+        if(g_global_data.enclave_image_address != g_enclave_base)
+        {
+            abort();
+        }
+        //if elrange_size is set, we should set enclave_base and enclave_size to correct value
+        g_enclave_base = g_global_data.elrange_start_address;
+        g_enclave_size = g_global_data.elrange_size;
+    }
+
     // Check if the ms is outside the enclave.
     // sgx_is_outside_enclave() should be placed after relocate_enclave()
     system_features_t *info = (system_features_t *)ms;
@@ -156,13 +174,16 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         return -1;
     }
-
+    
     if (heap_init(get_heap_base(), get_heap_size(), get_heap_min_size(), EDMM_supported) != SGX_SUCCESS)
         return -1;
 
 #ifdef SE_SIM
     memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
-    memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
+    if(g_global_data.rsrv_size != 0)
+    {
+        memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
+    }
 #endif
     // xsave
     uint64_t xfrm = get_xfeature_state();

@@ -45,6 +45,18 @@ static uint32_t atomic_inc32(uint32_t volatile *val)
 
 uint32_t CEnclaveSim::m_counter = 1;
 
+void CEnclaveSim::set_image_offset(uint64_t image_offset)
+{
+    m_image_offset = image_offset;
+}
+
+uint64_t CEnclaveSim::get_image_offset()
+{
+    return m_image_offset;
+}
+
+
+
 sgx_enclave_id_t CEnclaveSim::gen_enclave_id(void)
 {
     //getpid() is to simulate fork() scenario, refer to do_ecall in sig_handler.cpp
@@ -63,6 +75,7 @@ CEnclaveSim::CEnclaveSim(const secs_t* secs)
     memcpy_s(&m_secs, sizeof(m_secs), secs, sizeof(*secs));
 
     m_enclave_id = gen_enclave_id();
+    m_image_offset = 0;
 }
 
 CEnclaveSim::~CEnclaveSim()

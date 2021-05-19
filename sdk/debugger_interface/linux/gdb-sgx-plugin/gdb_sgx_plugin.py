@@ -52,8 +52,9 @@ KB_SIZE = 1024
 # pointer: next_enclave_info, start_addr, tcs_list, lpFileName,
 #          g_peak_heap_used_addr, g_peak_rsrv_mem_committed_addr
 # int32_t: enclave_type, file_name_size
-ENCLAVE_INFO_SIZE = 6 * 8 + 2 * 4
-INFO_FMT = 'QQQIIQQQ'
+# uint64_t: elrange_start_address, elrange_size
+ENCLAVE_INFO_SIZE = 8 * 8 + 2 * 4
+INFO_FMT = 'QQQIIQQQQQ'
 ENCLAVES_ADDR = {}
 
 # The following definitions should strictly align with the struct of
@@ -122,7 +123,8 @@ class enclave_info(object):
     such as start address, stack addresses, stack size, etc.
     The enclave information is for one enclave."""
     def __init__(self, _next_ei, _start_addr, _enclave_type, _stack_addr_list, \
-            _stack_size, _enclave_path, _heap_addr, _tcs_addr_list, _rsrv_mem_addr):
+            _stack_size, _enclave_path, _heap_addr, _tcs_addr_list, _rsrv_mem_addr, \
+            _elrange_start_address, _elrange_size):
         self.next_ei         =   _next_ei
         self.start_addr      =   _start_addr
         self.enclave_type    =   _enclave_type
@@ -132,6 +134,8 @@ class enclave_info(object):
         self.heap_addr       =   _heap_addr
         self.tcs_addr_list   =   _tcs_addr_list
         self.rsrv_mem_addr   =   _rsrv_mem_addr
+        self.elrange_start_address = _elrange_start_address
+        self.elrange_size    =   _elrange_size
     def __str__(self):
         print ("stack address list = {0:s}".format(self.stack_addr_list))
         return "start_addr = %#x, enclave_path = \"%s\", stack_size = %d" \
@@ -245,7 +249,13 @@ class enclave_info(object):
                 td_fmt = '20I'
             elif SIZE == 8:
                 td_fmt = '20Q'
-            td_str = read_from_memory(self.start_addr+offset, (20*SIZE))
+
+            if (self.elrange_size == 0) or ((self.enclave_type & ET_SIM) == ET_SIM):
+                td_addr = self.start_addr + offset
+            else:
+                td_addr = self.elrange_start_address + offset
+
+            td_str = read_from_memory(td_addr, (20*SIZE))
             if td_str == None:
                 return -1
             td_tuple = struct.unpack_from(td_fmt, td_str)
@@ -407,7 +417,11 @@ def retrieve_enclave_info(info_addr = 0):
             td_fmt = '4Q'
 
         #get thread_data_t address
-        td_addr = tcs_t_tuple[7] + info_tuple[1]     #thread_data_t = tcs.of_base + debug_enclave_info.start_addr
+        if (info_tuple[9] == 0) or ((info_tuple[3] & ET_SIM) == ET_SIM):
+            td_addr = tcs_t_tuple[7] + info_tuple[1]     #thread_data_t = tcs.of_base + debug_enclave_info.start_addr
+        else:
+            td_addr = tcs_t_tuple[7] + info_tuple[8]     #thread_data_t = tcs.of_base + debug_enclave_info.elrange_start_address
+       
         td_str = read_from_memory(td_addr, (4*SIZE))
         if td_str == None:
             return None
@@ -486,7 +500,7 @@ def retrieve_enclave_info(info_addr = 0):
             last_ocall_frame = last_frame
 
     node = enclave_info(info_tuple[0], info_tuple[1], info_tuple[3], stack_addr_list, \
-        stacksize, enclave_path, info_tuple[6], tcs_addr_list, info_tuple[7])
+        stacksize, enclave_path, info_tuple[6], tcs_addr_list, info_tuple[7], info_tuple[8], info_tuple[9])
     return node
 
 def handle_load_event():
@@ -583,7 +597,7 @@ class UpdateOcallFrame(gdb.Breakpoint):
                 td_fmt = '4I'
             elif SIZE == 8:
                 td_fmt = '4Q'
-
+            
             td_str = read_from_memory(base_addr+offset, (4*SIZE))
             if td_str == None:
                 return False

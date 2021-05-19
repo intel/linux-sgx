@@ -76,6 +76,9 @@ typedef enum _para_type_t
     ISVFAMILYID_L,
     ISVEXTPRODID_H,
     ISVEXTPRODID_L,
+    ENCLAVEIMAGEADDRESS,
+    ELRANGESTARTADDRESS,
+    ELRANGESIZE
 } para_type_t;
 
 typedef struct _xml_parameter_t
@@ -118,10 +121,13 @@ private:
     uint64_t calculate_sections_size();
     uint64_t calculate_enclave_size(uint64_t size);
     void* get_rawdata_by_rva(uint64_t rva);
+    bool vaildate_elrange_config();
+    bool build_elrange_config_entry();
 
     metadata_t *m_metadata;
     BinParser *m_parser;
     create_param_t m_create_param;
+    elrange_config_entry_t m_elrange_config_entry;
     std::vector <layout_t> m_layouts;
     uint64_t m_rva;
     uint32_t m_gd_size;

@@ -189,6 +189,7 @@ CMetadata::CMetadata(metadata_t *metadata, BinParser *parser)
 {
     memset(m_metadata, 0, sizeof(metadata_t));
     memset(&m_create_param, 0, sizeof(m_create_param));
+    memset(&m_elrange_config_entry, 0, sizeof(m_elrange_config_entry));
 }
 CMetadata::~CMetadata()
 {
@@ -196,6 +197,11 @@ CMetadata::~CMetadata()
 bool CMetadata::build_metadata(const xml_parameter_t *parameter)
 {
     if(!modify_metadata(parameter))
+    {
+        return false;
+    }
+    //elrange config entry
+    if(!build_elrange_config_entry())
     {
         return false;
     }
@@ -210,6 +216,12 @@ bool CMetadata::build_metadata(const xml_parameter_t *parameter)
         return false;
     }
     if(!build_layout_entries())
+    {
+        return false;
+    }
+    //vaildate the elrange config here
+    //at this time, enclave size should be calculated out
+    if(vaildate_elrange_config() == false)
     {
         return false;
     }
@@ -335,7 +347,17 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     if(!fill_enclave_css(parameter))
         return false;
 
-    m_metadata->version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION );
+    //if elrange is set, will update the major version to SGX_2_ELRANGE_MAJOR_VERSION
+    if(parameter[ELRANGESIZE].value == 0)
+    {
+        m_metadata->version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION );
+    }
+    else
+    {
+        m_metadata->version = META_DATA_MAKE_VERSION(SGX_2_ELRANGE_MAJOR_VERSION,MINOR_VERSION );
+    }
+
+    
     m_metadata->size = offsetof(metadata_t, data);
     m_metadata->tcs_policy = (uint32_t)parameter[TCSPOLICY].value;
     m_metadata->ssa_frame_size = SSA_FRAME_SIZE;
@@ -346,6 +368,11 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     m_metadata->enclave_css.body.misc_select = (uint32_t)parameter[MISCSELECT].value;
     m_metadata->enclave_css.body.misc_mask =  (uint32_t)parameter[MISCMASK].value;
 
+    //store the elrange config for further check
+    m_elrange_config_entry.enclave_image_address = parameter[ENCLAVEIMAGEADDRESS].value;
+    m_elrange_config_entry.elrange_start_address = parameter[ELRANGESTARTADDRESS].value;
+    m_elrange_config_entry.elrange_size = parameter[ELRANGESIZE].value;
+    
     //set metadata.attributes
     //low 64 bit: it's the same as enclave_css
     memset(&m_metadata->attributes, 0, sizeof(sgx_attributes_t));
@@ -483,6 +510,18 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
         return false;
     }
 
+    if(parameter[ENCLAVEIMAGEADDRESS].flag != 0 && parameter[ELRANGESIZE].flag ==0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ENCLAVEIMAGEADDRESS_SET_ERROR);
+        return false;
+    }
+
+    if(parameter[ELRANGESTARTADDRESS].flag != 0 && parameter[ELRANGESIZE].flag ==0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_SET_ERROR);
+        return false;
+    }
+
     m_create_param.heap_init_size = parameter[HEAPINITSIZE].flag ? parameter[HEAPINITSIZE].value : parameter[HEAPMAXSIZE].value;
     m_create_param.heap_min_size = parameter[HEAPMINSIZE].value;
     m_create_param.heap_max_size = parameter[HEAPMAXSIZE].value;
@@ -561,6 +600,112 @@ bool CMetadata::update_layout_entries()
            se_trace(SE_TRACE_DEBUG, "RVA = 0x%016llX --- 0x%016llX\n", temp_rva, m_rva-1);
         }
     }
+    return true;
+}
+
+static inline bool is_power_of_two(size_t n)
+{
+    return (n != 0) && (!(n & (n - 1)));
+}
+
+bool CMetadata::vaildate_elrange_config()
+{
+    if(m_elrange_config_entry.elrange_size == 0)
+    {
+        return true;
+    }
+
+    if(m_elrange_config_entry.enclave_image_address % SE_PAGE_SIZE != 0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ENCLAVEIMAGEADDRESS_ALIGN_ERROR);
+        return false;
+    }
+    
+    if(m_elrange_config_entry.elrange_start_address % SE_PAGE_SIZE != 0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_PAGE_ALIGN_ERROR);
+        return false;
+    }
+
+    if(m_elrange_config_entry.elrange_size%SE_PAGE_SIZE != 0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGE_PAGE_ALIGN_ERROR);
+        return false;
+    }
+    
+    if((m_elrange_config_entry.elrange_start_address & (m_elrange_config_entry.elrange_size -1)) != 0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_ALIGN_ERROR);
+        return false;
+    }
+    
+    if(m_elrange_config_entry.elrange_start_address > m_elrange_config_entry.enclave_image_address)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGESTARTADDRESS_RANGE_ERROR);
+        return false;
+    }
+
+    uint64_t enclave_end = m_elrange_config_entry.enclave_image_address + m_rva;
+    if(enclave_end < m_elrange_config_entry.enclave_image_address || enclave_end < m_rva)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ENCLAVEIMAGEADDRESS_ERROR);
+        return false;
+    }
+
+    uint64_t elrange_end = m_elrange_config_entry.elrange_start_address+ m_elrange_config_entry.elrange_size;
+    if(elrange_end < m_elrange_config_entry.elrange_start_address || elrange_end < m_elrange_config_entry.elrange_size)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGE_ERROR);
+        return false;
+    }
+    
+    if(enclave_end > elrange_end)
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGE_RANGE_ERROR);
+        return false;
+    }
+    
+    if(!is_power_of_two(m_elrange_config_entry.elrange_size))
+    {
+        se_trace(SE_TRACE_ERROR, SET_ELRANGE_ALIGN_ERROR);
+        return false;
+    }
+    return true;
+
+}
+
+bool CMetadata::build_elrange_config_entry()
+{
+    if(m_elrange_config_entry.elrange_size == 0)
+    {
+        return true;
+    }
+    //place the elrange config entry at the beginning of data
+    uint32_t size = (uint32_t)(sizeof(data_directory_t));
+    data_directory_t* dir = (data_directory_t*)alloc_buffer_from_metadata(size);
+    if(dir == NULL)
+    {
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Elrange config table could not be allocated\n");
+        return false;
+    }
+
+    size = (uint32_t)(sizeof(elrange_config_entry_t));
+    elrange_config_entry_t *config_table = (elrange_config_entry_t *) alloc_buffer_from_metadata(size);
+    if(config_table == NULL)
+    {
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "Elrange config table could not be allocated\n");
+        return false;
+    }
+    
+    config_table->elrange_size = m_elrange_config_entry.elrange_size;
+    config_table->elrange_start_address = m_elrange_config_entry.elrange_start_address;
+    config_table->enclave_image_address = m_elrange_config_entry.enclave_image_address;
+    
+    dir->offset = (uint32_t)PTR_DIFF(config_table, m_metadata);
+    dir->size = size;
+    
     return true;
 }
 
@@ -899,7 +1044,7 @@ bool CMetadata::build_patch_table()
     if (gdata -> sdk_version != VERSION_UINT)
     {
         se_trace(SE_TRACE_ERROR, SDK_VERSION_ERROR);
-	return false;
+        return false;
     }
 
     patch.dst = (uint64_t)PTR_DIFF(gdata, base_addr);
@@ -1078,16 +1223,23 @@ bool CMetadata::build_gd_template(uint8_t *data, uint32_t *data_size)
 
 bool CMetadata::build_tcs_template(tcs_t *tcs)
 {
+    uint64_t offset = 0;
+    if(m_elrange_config_entry.elrange_size != 0)
+    {
+        offset = m_elrange_config_entry.enclave_image_address - m_elrange_config_entry.elrange_start_address;
+    }
     tcs->oentry = m_parser->get_symbol_rva("enclave_entry");
     if(tcs->oentry == 0)
     {
         return false;
     }
+    tcs->oentry += offset;
     tcs->nssa = SSA_NUM;
     tcs->cssa = 0;
-    tcs->ossa = get_entry_by_id(LAYOUT_ID_SSA)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva;
+    tcs->ossa = get_entry_by_id(LAYOUT_ID_SSA)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva + offset;
     //fs/gs pointer at TLS/TD
-    tcs->ofs_base = tcs->ogs_base = get_entry_by_id(LAYOUT_ID_TD)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva + (((uint64_t)get_entry_by_id(LAYOUT_ID_TD)->page_count - 1) << SE_PAGE_SHIFT);
+    tcs->ofs_base = tcs->ogs_base = get_entry_by_id(LAYOUT_ID_TD)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva + 
+        (((uint64_t)get_entry_by_id(LAYOUT_ID_TD)->page_count - 1) << SE_PAGE_SHIFT) + offset;
     tcs->ofs_limit = tcs->ogs_limit = (uint32_t)-1;
     return true;
 }
