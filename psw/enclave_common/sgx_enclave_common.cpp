@@ -47,6 +47,11 @@
 #include <dlfcn.h>
 #include "se_memcpy.h"
 #include "se_lock.hpp"
+//ubuntu 18.04 use glibc 2.27, doesn't support MAP_FIXED_NOREPLACE
+#ifndef MAP_FIXED_NOREPLACE
+#define MAP_FIXED_NOREPLACE 0x100000
+#endif
+
 
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
 
@@ -80,7 +85,7 @@ typedef struct _mem_region_t {
 
 static std::map<void*, mem_region_t> s_enclave_mem_region;
 
-extern "C" bool open_file(int *hFile)
+static bool open_file(int *hFile)
 {
     if (hFile == NULL)
         return false;
@@ -97,13 +102,13 @@ extern "C" bool open_file(int *hFile)
     return false;
 }
 
-extern "C" void close_file(int *hFile)
+static void close_file(int *hFile)
 {
     LockGuard lock(&s_device_mutex);
     close_se_device(hFile);
 }
 
-extern "C" bool open_device(void)
+static bool open_device(void)
 {
     LockGuard lock(&s_device_mutex);
     if (s_hdevice != -1) {
@@ -119,7 +124,7 @@ extern "C" bool open_device(void)
     return false;
 }
 
-extern "C" void close_device(void)
+static void close_device(void)
 {
     LockGuard lock(&s_device_mutex);
 
@@ -127,7 +132,7 @@ extern "C" void close_device(void)
     s_driver_type = SGX_DRIVER_UNKNOWN;  //this may not be needed - can it change on the platform?
 }
 
-extern "C" int get_file_handle_from_address(void* target_address)
+static int get_file_handle_from_address(void* target_address)
 {
     int hfile = -1;
     
@@ -147,7 +152,7 @@ extern "C" int get_file_handle_from_address(void* target_address)
    return hfile;
 }
 
-extern "C" void* get_enclave_base_address_from_address(void* target_address)
+static void* get_enclave_base_address_from_address(void* target_address)
 {
     void* base_addr = NULL;
         
@@ -165,7 +170,7 @@ extern "C" void* get_enclave_base_address_from_address(void* target_address)
 
 }
 
-extern "C" bool get_elrange_from_base_address(void* base_address, enclave_elrange_t* enclave_elrange)
+static bool get_elrange_from_base_address(void* base_address, enclave_elrange_t* enclave_elrange)
 {
     LockGuard lock(&s_enclave_mutex);
     if(s_enclave_elrange_map.count(base_address) != 0)
@@ -182,7 +187,7 @@ extern "C" bool get_elrange_from_base_address(void* base_address, enclave_elrang
     return false;
 }
 
-extern "C" bool get_secs_attr_from_base_address(void* base_address, sgx_attributes_t* secs_attr)
+static bool get_secs_attr_from_base_address(void* base_address, sgx_attributes_t* secs_attr)
 {
     LockGuard lock(&s_enclave_mutex);
     std::map<void*, sgx_attributes_t>::iterator it = s_secs_attr.find(base_address);
@@ -348,44 +353,41 @@ static inline bool is_power_of_two(size_t n)
 //validate the el_range params
 static bool check_elrange_params(enclave_elrange_t* input_data)
 {
-    if(input_data == NULL)
-    {
-        return true;
-    }
-    
+    //An enclave must have a SECS.SIZE greater than zero
     if(input_data->elrange_size == 0)
     {
         return false;
     }
-
-    if(input_data->elrange_start_address > input_data->enclave_image_address)
-    {
-        return false;
-    }
-
+    //An enclave SECS.BASEADDR and SECS.SIZE must be aligned on a page size.  
+    //In addition, the enclave image address must also start on a page size
     if((input_data->elrange_size % SE_PAGE_SIZE != 0) ||
         (input_data->elrange_start_address% SE_PAGE_SIZE != 0) ||
         (input_data->enclave_image_address% SE_PAGE_SIZE != 0))
     {
         return false;
     }
-
+    //The enclave image address must be within ELRANGE
+    if(input_data->elrange_start_address > input_data->enclave_image_address)
+    {
+        return false;
+    }
+    //SECS.SIZE must be a power of two
     if(!is_power_of_two(input_data->elrange_size))
     {
         return false;
     }
-
+    //SECS.BASEADDR must be naturally aligned on SECS.SIZE
     if((input_data->elrange_start_address & (input_data->elrange_size -1 )) !=0)
     {
         return false;
     }
-
+    //SECS.BASEADDR + SECS.SIZE must not exceed UINT64
     uint64_t elrange_end = input_data->elrange_start_address + input_data->elrange_size;
     if(elrange_end < input_data->elrange_start_address || elrange_end < input_data->elrange_size)
     {
         return false;
     }
-
+    //The enclave image address must be within ELRANGE
     if(input_data->enclave_image_address >= elrange_end)
     {
         return false;
@@ -579,7 +581,7 @@ extern "C" void* COMM_API enclave_create_ex(
         return NULL;
     }
 
-    if(check_elrange_params(enclave_elrange) == false)
+    if(enclave_elrange != NULL && check_elrange_params(enclave_elrange) == false)
     {
         if (enclave_error != NULL)
         {
@@ -643,11 +645,11 @@ extern "C" void* COMM_API enclave_create_ex(
     if(s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
         mmap_flag |= MAP_PRIVATE | MAP_ANONYMOUS;
-        enclave_base = mmap(base_address, enclave_size, PROT_NONE, mmap_flag, -1, 0);
         if(enclave_elrange != NULL)
         {
-            mmap_flag |= MAP_FIXED;
+            mmap_flag |= MAP_FIXED_NOREPLACE;
         }
+        enclave_base = mmap(base_address, enclave_size, PROT_NONE, mmap_flag, -1, 0);
     }
     else 
     {
@@ -664,6 +666,30 @@ extern "C" void* COMM_API enclave_create_ex(
             close_file(&hdevice_temp);
         }
         return NULL;
+    }
+    
+    if(enclave_elrange != NULL)
+    {
+        /* Note that older kernels which do not recognize the
+         * MAP_FIXED_NOREPLACE flag will typically (upon detecting a
+         * collision with a preexisting mapping) fall back to a "non-
+         * MAP_FIXED" type of behavior: they will return an address
+         * that is different from the requested address.  Therefore,
+         * backward-compatible software should check the returned
+         * address against the requested address.
+        */
+        if(enclave_base != base_address)
+        {
+            SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, the return address is different from the requested addess\n");
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_UNEXPECTED;
+            if(s_driver_type == SGX_DRIVER_IN_KERNEL)
+            {
+                close_file(&hdevice_temp);
+            }
+            munmap(enclave_base, enclave_size);
+            return NULL;
+        }
     }
     
     if(s_driver_type == SGX_DRIVER_IN_KERNEL && enclave_elrange == NULL)
@@ -1255,13 +1281,7 @@ extern "C" bool COMM_API enclave_delete(
         if(s_enclave_elrange_map.count(base_address) != 0)
         {
             enclave_elrange_t *enclave_elrange = s_enclave_elrange_map[base_address];
-            if (enclave_elrange == NULL)
-            {
-                if (enclave_error)
-                *enclave_error = ENCLAVE_UNEXPECTED;
-                return false;
-            }
-            else
+            if (enclave_elrange != NULL)
             {
                 s_enclave_elrange_map.erase(base_address);
                 delete enclave_elrange;
@@ -1294,7 +1314,7 @@ extern "C" bool COMM_API enclave_delete(
  * output_info_size[in, out] - Size of the output_info buffer, in bytes.  If the API succeeds, then this will return the number of bytes returned in output_info.  If the API fails with, ENCLAVE_INVALID_SIZE, then this will return the required size
  * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  */
-bool COMM_API enclave_get_information(
+extern "C" bool COMM_API enclave_get_information(
     COMM_IN void* base_address,
     COMM_IN uint32_t info_type,
     COMM_OUT void* output_info,
@@ -1320,7 +1340,7 @@ bool COMM_API enclave_get_information(
  * input_info_size[in] - Size of the information, in bytes, provided in input_info from the API.
  * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  */
-bool COMM_API enclave_set_information(
+extern "C" bool COMM_API enclave_set_information(
     COMM_IN void* base_address,
     COMM_IN uint32_t info_type,
     COMM_IN void* input_info,

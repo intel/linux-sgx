@@ -88,7 +88,6 @@ typedef struct _debug_enclave_info_t
     PADDED_POINTER(void, g_peak_heap_used_addr);
     PADDED_POINTER(void, g_peak_rsrv_mem_committed_addr);
     uint64_t elrange_start_address;
-    uint64_t elrange_size;
     PADDED_POINTER(void, dyn_sec);
     sgx_misc_select_t  misc_select;
     /* The following members are optional or unused */

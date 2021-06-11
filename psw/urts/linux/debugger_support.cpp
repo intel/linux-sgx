@@ -122,7 +122,8 @@ extern "C" void push_ocall_frame(uintptr_t frame_point, tcs_t* tcs, CTrustThread
     assert(enclave != NULL);
     enclave->push_ocall_frame(container_of(frame_point, ocall_frame_t, xbp), trust_thread);
     
-    if(enclave->get_debug_info()->elrange_size == 0 || ((enclave->get_debug_info()->enclave_type & ET_SIM) ==ET_SIM))
+    if((enclave->get_debug_info()->elrange_start_address == reinterpret_cast<uint64_t>(enclave->get_start_address())) || 
+        ((enclave->get_debug_info()->enclave_type & ET_SIM) ==ET_SIM))
     {
         notify_gdb_to_update(enclave->get_start_address(), tcs, (uintptr_t)container_of(frame_point, ocall_frame_t, xbp));
     }

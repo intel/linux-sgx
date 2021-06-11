@@ -48,7 +48,7 @@
 typedef struct _global_data_t
 {
     sys_word_t     sdk_version;
-    sys_word_t     enclave_size;
+    sys_word_t     enclave_size;            /* the size of the virtual address range that the enclave will use*/
     sys_word_t     heap_offset;
     sys_word_t     heap_size;
     sys_word_t     rsrv_offset;
@@ -61,9 +61,9 @@ typedef struct _global_data_t
     uint32_t       layout_entry_num;
     uint32_t       reserved;
     layout_t       layout_table[LAYOUT_ENTRY_NUM];
-    uint64_t       enclave_image_address;
-    uint64_t       elrange_start_address;
-    uint64_t       elrange_size;
+    uint64_t       enclave_image_address;   /* the base address of the enclave image */
+    uint64_t       elrange_start_address;   /* the base address provided in the enclave's SECS (SECS.BASEADDR) */
+    uint64_t       elrange_size;            /* the size of the enclave address range provided in the enclave's SECS (SECS.SIZE) */
 } global_data_t;
 
 #define ENCLAVE_INIT_NOT_STARTED  0

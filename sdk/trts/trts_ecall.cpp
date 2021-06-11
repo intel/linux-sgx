@@ -60,6 +60,10 @@ __attribute__((weak)) void _pthread_tls_store_context(void* context) {UNUSED(con
 __attribute__((weak)) void _pthread_wakeup_join(void* ms) {UNUSED(ms);}
 __attribute__((weak)) void _pthread_tls_destructors(void) {}
 
+extern "C"
+__attribute__((weak)) void tc_set_idle() {}
+
+
 // is_ecall_allowed()
 // check the index in the dynamic entry table
 static sgx_status_t is_ecall_allowed(uint32_t ordinal)
@@ -438,6 +442,16 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
     {
         status = trts_ecall(index, ms);
     }
+
+    // TCS unbind mode and root ECALL:
+    // 1. If tcmalloc is used, release the cached free memory back to its central list.
+    // 2. If tcmalloc is not used, it's a no-op.
+    if ((0 != g_global_data.thread_policy) &&
+            (thread_data->stack_base_addr == thread_data->last_sp))
+    {
+        tc_set_idle();
+    }
+
     return status;
 }
 

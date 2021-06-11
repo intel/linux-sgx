@@ -104,6 +104,11 @@ extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_
 
 EnclaveCreator* g_enclave_creator = new EnclaveCreatorSim();
 
+EnclaveCreatorSim::EnclaveCreatorSim():
+    m_sig_registered(false)
+{
+}
+
 int EnclaveCreatorSim::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, const uint32_t ex_features, const void* ex_features_p[32])
 {
     if(ex_features == ENCLAVE_CREATE_EX_EL_RANGE && ex_features_p[ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX] != NULL)
@@ -152,11 +157,21 @@ int EnclaveCreatorSim::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, 
     }
     return ::add_enclave_page(enclave_id, source, (size_t)offset, sinfo, attr);
 }
+
+void reg_sig_handler();
+void reg_sig_handler_sim();
 int EnclaveCreatorSim::init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file)
 {
     UNUSED(prd_css_file);
     sgx_launch_token_t token;
     memset(token, 0, sizeof(sgx_launch_token_t));
+
+    if(false == m_sig_registered)
+    {
+        reg_sig_handler();
+        reg_sig_handler_sim();
+        m_sig_registered = true;
+    }
 
     int ret = lc->update_launch_token(false);
     if(ret != SGX_SUCCESS)

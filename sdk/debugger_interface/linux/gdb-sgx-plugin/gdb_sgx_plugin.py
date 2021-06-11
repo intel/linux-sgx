@@ -48,13 +48,13 @@ PAGE_SIZE = 0x1000
 KB_SIZE = 1024
 # The following definitions should strictly align with the structure of
 # debug_enclave_info_t in uRTS.
-# Here we only care about the first 7 items in the structure.
+# Here we only care about the first 9 items in the structure.
 # pointer: next_enclave_info, start_addr, tcs_list, lpFileName,
 #          g_peak_heap_used_addr, g_peak_rsrv_mem_committed_addr
 # int32_t: enclave_type, file_name_size
-# uint64_t: elrange_start_address, elrange_size
-ENCLAVE_INFO_SIZE = 8 * 8 + 2 * 4
-INFO_FMT = 'QQQIIQQQQQ'
+# uint64_t: elrange_start_address
+ENCLAVE_INFO_SIZE = 8 * 7 + 2 * 4
+INFO_FMT = 'QQQIIQQQQ'
 ENCLAVES_ADDR = {}
 
 # The following definitions should strictly align with the struct of
@@ -124,7 +124,7 @@ class enclave_info(object):
     The enclave information is for one enclave."""
     def __init__(self, _next_ei, _start_addr, _enclave_type, _stack_addr_list, \
             _stack_size, _enclave_path, _heap_addr, _tcs_addr_list, _rsrv_mem_addr, \
-            _elrange_start_address, _elrange_size):
+            _elrange_start_address):
         self.next_ei         =   _next_ei
         self.start_addr      =   _start_addr
         self.enclave_type    =   _enclave_type
@@ -135,7 +135,6 @@ class enclave_info(object):
         self.tcs_addr_list   =   _tcs_addr_list
         self.rsrv_mem_addr   =   _rsrv_mem_addr
         self.elrange_start_address = _elrange_start_address
-        self.elrange_size    =   _elrange_size
     def __str__(self):
         print ("stack address list = {0:s}".format(self.stack_addr_list))
         return "start_addr = %#x, enclave_path = \"%s\", stack_size = %d" \
@@ -250,7 +249,7 @@ class enclave_info(object):
             elif SIZE == 8:
                 td_fmt = '20Q'
 
-            if (self.elrange_size == 0) or ((self.enclave_type & ET_SIM) == ET_SIM):
+            if (self.elrange_start_address == self.start_addr) or ((self.enclave_type & ET_SIM) == ET_SIM):
                 td_addr = self.start_addr + offset
             else:
                 td_addr = self.elrange_start_address + offset
@@ -417,7 +416,7 @@ def retrieve_enclave_info(info_addr = 0):
             td_fmt = '4Q'
 
         #get thread_data_t address
-        if (info_tuple[9] == 0) or ((info_tuple[3] & ET_SIM) == ET_SIM):
+        if (info_tuple[8] == info_tuple[1]) or ((info_tuple[3] & ET_SIM) == ET_SIM):
             td_addr = tcs_t_tuple[7] + info_tuple[1]     #thread_data_t = tcs.of_base + debug_enclave_info.start_addr
         else:
             td_addr = tcs_t_tuple[7] + info_tuple[8]     #thread_data_t = tcs.of_base + debug_enclave_info.elrange_start_address
@@ -500,7 +499,7 @@ def retrieve_enclave_info(info_addr = 0):
             last_ocall_frame = last_frame
 
     node = enclave_info(info_tuple[0], info_tuple[1], info_tuple[3], stack_addr_list, \
-        stacksize, enclave_path, info_tuple[6], tcs_addr_list, info_tuple[7], info_tuple[8], info_tuple[9])
+        stacksize, enclave_path, info_tuple[6], tcs_addr_list, info_tuple[7], info_tuple[8])
     return node
 
 def handle_load_event():

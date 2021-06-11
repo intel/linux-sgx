@@ -117,18 +117,18 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     }
 
     g_enclave_base = (uint64_t)&__ImageBase;
-    g_enclave_size = g_global_data.enclave_size;
-    
-    if(g_global_data.elrange_size != 0)
+    g_enclave_size = g_global_data.elrange_size;
+    //we are not allowed to set enclave_image_address to 0 if elrange is set
+    //so if enclave_image_address is 0, it means elrange is not set
+    if(g_global_data.enclave_image_address != 0)
     {
         //__ImageBase should be the same as enclave_start_address
         if(g_global_data.enclave_image_address != g_enclave_base)
         {
             abort();
         }
-        //if elrange_size is set, we should set enclave_base and enclave_size to correct value
+        //if elrange is set, we should set enclave_base to correct value
         g_enclave_base = g_global_data.elrange_start_address;
-        g_enclave_size = g_global_data.elrange_size;
     }
 
     // Check if the ms is outside the enclave.

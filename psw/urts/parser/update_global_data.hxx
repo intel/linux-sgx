@@ -166,6 +166,12 @@ namespace {
             global_data->elrange_start_address= elrange_config_entry->elrange_start_address;
             global_data->elrange_size = elrange_config_entry->elrange_size;
         }
+        else
+        {
+            global_data->enclave_image_address = 0;
+            global_data->elrange_start_address= 0;
+            global_data->elrange_size = global_data->enclave_size;
+        }
         return true;
     }
 }

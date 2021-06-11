@@ -525,47 +525,47 @@ int CLoader::set_elrange_config()
     elrange_config_entry_t* elrange_config_entry = GET_PTR(elrange_config_entry_t, m_metadata, dir->offset);
     if(elrange_config_entry == NULL)
     {
-        return SGX_ERROR_UNEXPECTED;
+        return SGX_ERROR_INVALID_METADATA;
     }
     
     if(elrange_config_entry->elrange_size ==0)
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        return SGX_ERROR_INVALID_METADATA;
     }
     
     //validate the el_range params
     if(elrange_config_entry->elrange_start_address > elrange_config_entry->enclave_image_address)
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        return SGX_ERROR_INVALID_METADATA;
     }
 
     if((elrange_config_entry->elrange_size % SE_PAGE_SIZE != 0) ||
         (elrange_config_entry->elrange_start_address% SE_PAGE_SIZE != 0) ||
         (elrange_config_entry->enclave_image_address% SE_PAGE_SIZE != 0))
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        return SGX_ERROR_INVALID_METADATA;
     }
 
     if(!is_power_of_two(elrange_config_entry->elrange_size))
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        return SGX_ERROR_INVALID_METADATA;
     }  
 
     if((elrange_config_entry->elrange_start_address & (elrange_config_entry->elrange_size -1 )) !=0)
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        return SGX_ERROR_INVALID_METADATA;
     }
 
     uint64_t elrange_end = elrange_config_entry->elrange_start_address + elrange_config_entry->elrange_size;
     if(elrange_end < elrange_config_entry->elrange_start_address || elrange_end < elrange_config_entry->elrange_size)
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        return SGX_ERROR_INVALID_METADATA;
     }
     
     if(elrange_config_entry->enclave_image_address >= elrange_end ||
        (elrange_config_entry->enclave_image_address + m_metadata->enclave_size) > elrange_end)
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        return SGX_ERROR_INVALID_METADATA;
     }
     
     m_elrange_start_address = elrange_config_entry->elrange_start_address;
