@@ -36,7 +36,7 @@ DIR = $(CURDIR)
 IPP_CONFIG = -Bbuild -DCMAKE_VERBOSE_MAKEFILE=on
 
 # Ignore the CMAKE C/C++ compiler check to avoid conflicts with mitigation options
-IPP_CONFIG += -DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE 
+IPP_CONFIG += -DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE
 IPP_SOURCE = ipp-crypto
 ARCH = intel64
 IPP_CONFIG += -DARCH=$(ARCH)
@@ -59,13 +59,21 @@ else ifeq ($(MITIGATION-CVE-2020-0551), CF)
 endif
 OUT_DIR = lib/linux/$(ARCH)/$(SUB_DIR)/
 
+#CHECK_SOURCE :=
+## For reproducibility build in docker, the code should be
+## prepared before build. So skip the code check to avoid
+## triggering network request
+#ifneq ($(origin NIX_PATH), environment)
+#CHECK_SOURCE:= ipp_source
+#endif
+# FIXME temporary workaround for nix derivation
+# Why can't IPP simply be a dependency like any other dependency?
+# IPP library is a git submodule which must be init
 CHECK_SOURCE :=
-# For reproducibility build in docker, the code should be 
-# prepared before build. So skip the code check to avoid
-# triggering network request 
-ifneq ($(origin NIX_PATH), environment)
-CHECK_SOURCE:= ipp_source
-endif
+#ifeq ("$(wildcard $(LINUX_EXTERNAL_DIR)/ippcp_internal/ipp_crypto)", "")
+#CHECK_SOURCE := ipp_source
+#endif
+
 
 .PHONY: all build_ipp
 all: build_ipp
