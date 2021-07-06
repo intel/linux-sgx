@@ -36,7 +36,7 @@ SGX_TRUSTED_LIBRARY_PATH ?= $(SGX_SDK)/lib64
 CC ?= gcc
 CC_VERSION := $(shell $(CC) -dumpversion)
 CC_NO_LESS_THAN_8 := $(shell expr $(CC_VERSION) \>\= "8")
-BINUTILS_DIR := /usr/local/bin
+BINUTILS_DIR ?= /usr/local/bin
 
 MITIGATION_CFLAGS += -B$(BINUTILS_DIR)
 MITIGATION_LDFLAGS += -B$(BINUTILS_DIR)
