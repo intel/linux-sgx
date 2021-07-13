@@ -119,7 +119,7 @@ def target_path_to_host_path(target_path):
     return host_path
 
 class enclave_info(object):
-    """Class to contain the enclave information,
+    """Class to contain the enclave inforation,
     such as start address, stack addresses, stack size, etc.
     The enclave information is for one enclave."""
     def __init__(self, _next_ei, _start_addr, _enclave_type, _stack_addr_list, \

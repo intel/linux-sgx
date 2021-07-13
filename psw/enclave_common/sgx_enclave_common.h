@@ -77,7 +77,6 @@ typedef enum {
     ENCLAVE_NOT_INITIALIZED = ENCLAVE_MK_ERROR(0x0010),     /* The enclave is not initialized – the operation requires that the enclave be initialized. */
     ENCLAVE_SERVICE_TIMEOUT = ENCLAVE_MK_ERROR(0x0011),     /* The launch service timed out when attempting to obtain a launch token.  Check to ensure that the AESM service is running and accessible. */
     ENCLAVE_SERVICE_NOT_AVAILABLE = ENCLAVE_MK_ERROR(0x0012), /* The launch service is not available when attempting to obtain a launch token.  Check to ensure that the AESM service is running. */
-    ENCLAVE_MEMORY_MAP_FAILURE = ENCLAVE_MK_ERROR(0x0013),  /* Failed to reserve memory for the enclave. */
     ENCLAVE_UNEXPECTED = ENCLAVE_MK_ERROR(0x1001),          /* Unexpected error. */
 } enclave_error_t;
 

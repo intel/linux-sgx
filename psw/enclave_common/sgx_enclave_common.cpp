@@ -47,11 +47,6 @@
 #include <dlfcn.h>
 #include "se_memcpy.h"
 #include "se_lock.hpp"
-//ubuntu 18.04 use glibc 2.27, doesn't support MAP_FIXED_NOREPLACE
-#ifndef MAP_FIXED_NOREPLACE
-#define MAP_FIXED_NOREPLACE 0x100000
-#endif
-
 
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
 
@@ -647,7 +642,7 @@ extern "C" void* COMM_API enclave_create_ex(
         mmap_flag |= MAP_PRIVATE | MAP_ANONYMOUS;
         if(enclave_elrange != NULL)
         {
-            mmap_flag |= MAP_FIXED_NOREPLACE;
+            mmap_flag |= MAP_FIXED;
         }
         enclave_base = mmap(base_address, enclave_size, PROT_NONE, mmap_flag, -1, 0);
     }
@@ -660,36 +655,12 @@ extern "C" void* COMM_API enclave_create_ex(
     if (enclave_base == MAP_FAILED) {
         SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
         if (enclave_error != NULL)
-            *enclave_error = ENCLAVE_MEMORY_MAP_FAILURE;
+            *enclave_error = error_driver2api(-1, errno);
         if(s_driver_type == SGX_DRIVER_IN_KERNEL)
         {
             close_file(&hdevice_temp);
         }
         return NULL;
-    }
-    
-    if(enclave_elrange != NULL)
-    {
-        /* Note that older kernels which do not recognize the
-         * MAP_FIXED_NOREPLACE flag will typically (upon detecting a
-         * collision with a preexisting mapping) fall back to a "non-
-         * MAP_FIXED" type of behavior: they will return an address
-         * that is different from the requested address.  Therefore,
-         * backward-compatible software should check the returned
-         * address against the requested address.
-        */
-        if(enclave_base != base_address)
-        {
-            SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, the return address is different from the requested addess\n");
-            if (enclave_error != NULL)
-                *enclave_error = ENCLAVE_MEMORY_MAP_FAILURE;
-            if(s_driver_type == SGX_DRIVER_IN_KERNEL)
-            {
-                close_file(&hdevice_temp);
-            }
-            munmap(enclave_base, enclave_size);
-            return NULL;
-        }
     }
     
     if(s_driver_type == SGX_DRIVER_IN_KERNEL && enclave_elrange == NULL)
