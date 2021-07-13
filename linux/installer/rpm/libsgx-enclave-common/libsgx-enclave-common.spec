@@ -78,7 +78,15 @@ rm -fr %{?buildroot}/%{name}-dev
 %files devel -f %{_specdir}/list-%{name}-devel
 
 %post
-udevadm trigger &>/dev/null || true
+trigger_udev() {
+    if ! which udevadm &> /dev/null; then
+        return 0
+    fi
+    udevadm control --reload || :
+    udevadm trigger || :
+}
+
+trigger_udev
 
 %debug_package
 

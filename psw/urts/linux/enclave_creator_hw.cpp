@@ -63,6 +63,7 @@ EnclaveCreatorHW::EnclaveCreatorHW():
     m_sig_registered(false)
 {
     se_mutex_init(&m_sig_mutex);
+    memset(&m_enclave_elrange, 0, sizeof(m_enclave_elrange));
 }
 
 EnclaveCreatorHW::~EnclaveCreatorHW()
@@ -177,7 +178,10 @@ int EnclaveCreatorHW::error_api2urts(uint32_t api_error)
          break;
      case ENCLAVE_SERVICE_NOT_AVAILABLE:
          ret = SGX_ERROR_SERVICE_UNAVAILABLE;
-         break;    
+         break; 
+     case ENCLAVE_MEMORY_MAP_FAILURE:
+         ret = SGX_ERROR_MEMORY_MAP_FAILURE;
+         break;
      default:
          SE_TRACE(SE_TRACE_WARNING, "unexpected error %#x from enclave common api, should be uRTS/driver bug\n", api_error);
          ret = SGX_ERROR_UNEXPECTED;
@@ -187,17 +191,16 @@ int EnclaveCreatorHW::error_api2urts(uint32_t api_error)
      return ret;
 }
  
-int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
+int EnclaveCreatorHW::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, const uint32_t ex_features, const void* ex_features_p[32])
 {
     assert(secs != NULL && enclave_id != NULL && start_addr != NULL);
-    UNUSED(ae);
 
     enclave_create_sgx_t enclave_create_sgx = {0};
     if (0 != memcpy_s(enclave_create_sgx.secs, SECS_SIZE, secs, SECS_SIZE))
         return SGX_ERROR_UNEXPECTED;
 
     uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
-    void* enclave_base = enclave_create(NULL, (size_t)secs->size, 0, ENCLAVE_TYPE_SGX2, &enclave_create_sgx, sizeof(enclave_create_sgx_t), &enclave_error);
+    void* enclave_base = enclave_create_ex(*start_addr, (size_t)secs->size, 0, ENCLAVE_TYPE_SGX2, &enclave_create_sgx, sizeof(enclave_create_sgx_t), ex_features, ex_features_p, &enclave_error);
 
     if (enclave_error)
         return error_api2urts(enclave_error);
@@ -420,5 +423,6 @@ bool EnclaveCreatorHW::is_driver_compatible()
     open_device();
     return is_driver_support_edmm(m_hdevice);
 }
+
 
 

@@ -55,6 +55,8 @@
 SGX_ACCESS_VERSION(trts, 1);
 
 #endif
+extern uint64_t g_enclave_base;
+extern uint64_t g_enclave_size;
 
 // sgx_is_within_enclave()
 // Parameters:
@@ -69,8 +71,8 @@ int sgx_is_within_enclave(const void *addr, size_t size)
 {
     size_t start = reinterpret_cast<size_t>(addr);
     size_t end = 0;
-    size_t enclave_start = (size_t)&__ImageBase;
-    size_t enclave_end = enclave_start + g_global_data.enclave_size - 1;
+    size_t enclave_start = (size_t)g_enclave_base;
+    size_t enclave_end = enclave_start + (size_t)g_enclave_size - 1;
     // g_global_data.enclave_end = enclave_base + enclave_size - 1;
     // so the enclave range is [enclave_start, enclave_end] inclusively
 
@@ -102,8 +104,8 @@ int sgx_is_outside_enclave(const void *addr, size_t size)
 {
     size_t start = reinterpret_cast<size_t>(addr);
     size_t end = 0;
-    size_t enclave_start = (size_t)&__ImageBase;
-    size_t enclave_end = enclave_start + g_global_data.enclave_size - 1;
+    size_t enclave_start = (size_t)g_enclave_base;
+    size_t enclave_end = enclave_start + (size_t)g_enclave_size - 1;
     // g_global_data.enclave_end = enclave_base + enclave_size - 1;
     // so the enclave range is [enclave_start, enclave_end] inclusively
 

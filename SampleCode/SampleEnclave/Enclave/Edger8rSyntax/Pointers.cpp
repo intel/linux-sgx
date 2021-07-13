@@ -98,6 +98,7 @@ void ecall_pointer_in(int* val)
 {
     if (sgx_is_within_enclave(val, sizeof(int)) != 1)
         abort();
+    assert(*val == 1);
     *val = 1234;
 }
 
@@ -119,6 +120,7 @@ void ecall_pointer_in_out(int* val)
 {
     if (sgx_is_within_enclave(val, sizeof(int)) != 1)
         abort();
+    assert(*val == 1);
     *val = 1234;
 }
 

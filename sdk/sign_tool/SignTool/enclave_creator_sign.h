@@ -45,7 +45,7 @@ class EnclaveCreatorST : public EnclaveCreator
 public:
     EnclaveCreatorST();
     virtual ~EnclaveCreatorST();
-    int create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae);
+    int create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, const uint32_t ex_features, const void* ex_features_p[32]);
     int add_enclave_page(sgx_enclave_id_t enclave_id, void *source, uint64_t offset, const sec_info_t &sinfo, uint32_t attr);
     int init_enclave(sgx_enclave_id_t enclave_id, enclave_css_t *enclave_css, SGXLaunchToken *lc, le_prd_css_file_t *prd_css_file);
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
@@ -61,6 +61,7 @@ public:
     int trim_range(uint64_t fromaddr, uint64_t toaddr);
     int trim_accept(uint64_t addr);
     int remove_range(uint64_t fromaddr, uint64_t numpages);
+
 private:
     uint8_t m_enclave_hash[SGX_HASH_SIZE];
     EVP_MD_CTX  *m_ctx;

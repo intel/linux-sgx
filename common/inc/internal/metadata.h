@@ -40,6 +40,12 @@
 #define MAJOR_VERSION 2                 //MAJOR_VERSION should not larger than 0ffffffff
 #define MINOR_VERSION 4                 //MINOR_VERSION should not larger than 0ffffffff
 
+#define SGX_2_ELRANGE_MAJOR_VERSION 12
+#define SGX_1_ELRANGE_MAJOR_VERSION 11
+
+#define SGX_MAJOR_VERSION_GAP 10
+
+
 #define SGX_2_1_MAJOR_VERSION 2         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_2_1_MINOR_VERSION 2         //MINOR_VERSION should not larger than 0ffffffff
 
@@ -167,6 +173,13 @@ typedef struct _patch_entry_t
     uint32_t size;              /* patched size */
     uint32_t reserved[4];
 } patch_entry_t;
+
+typedef struct _elrange_config_entry_t
+{
+    uint64_t enclave_image_address;
+    uint64_t elrange_start_address;
+    uint64_t elrange_size;
+}elrange_config_entry_t;
 
 typedef struct _metadata_t 
 {

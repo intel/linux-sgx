@@ -145,6 +145,22 @@
 #define SET_TCS_MIN_POOL_ERROR              "Minimum number of TCS Pool is not correct.\n"
 #define SET_ENABLE_KSS_ERROR                "KSS must be enabled if ISVEXTPRODID or ISVFAMILYID is set.\n"
 
+#define SET_ENCLAVEIMAGEADDRESS_SET_ERROR           "ELRangeSize must be set when EnclaveImageAddress is set.\n"
+#define SET_ENCLAVEIMAGEADDRESS_ERROR               "EnclaveImageAddress setting is not correct. EnclaveImageAddress plus EnclaveSize should not overflow.\n"
+#define SET_ENCLAVEIMAGEADDRESS_ALIGN_ERROR         "EnclaveImageAddress setting is not correct: EnclaveImageAddress is not page aligned.\n"
+#define SET_ELRANGESTARTADDRESS_SET_ERROR           "ELRangeSize must be set when ELRangeStartAddress is set.\n\n"
+#define SET_ELRANGESTARTADDRESS_PAGE_ALIGN_ERROR    "ELRangeStartAddress setting is not correct: ELRangeStartAddress is not page aligned.\n"
+#define SET_ELRANGESTARTADDRESS_ALIGN_ERROR         "ELRangeStartAddress and ELRangeSize setting are not correct: ELRangeStartAddress should be aligned on an ELRangeSize boundary.\n"
+#define SET_ELRANGESTARTADDRESS_RANGE_ERROR         "ELRangeStartAddress setting is not correct: ELRangeStartAddress should not bigger than EnclaveImageAddress.\n"
+#define SET_ELRANGE_ERROR                           "ELRange setting is not correct. ELRangeStartAddress plus ELRangeSize should not overflow.\n"
+#define SET_ELRANGE_RANGE_ERROR                     "ELRange setting is not correct: ELRange should be large enough to fit the enclave image loaded at EnclaveImageAddress.\n"
+#define SET_ELRANGE_ALIGN_ERROR                     "ELRangeSize setting is not correct: ELRangeSize should be power of 2.\n"
+#define SET_ELRANGE_PAGE_ALIGN_ERROR                "ELRangeSize setting is not correct: ELRangeSize is not page aligned.\n"
+
+
+
+
+
 #define SDK_VERSION_ERROR                   "SDK version is not correct. The same SDK should be used for enclave building and signing.\n"\
                                             "The SDK version for building enclave could be obtained by below command:\n\n"\
                                             "           $ strings {Enclave.so} | grep SGX_TSTDC_VERSION \n\n"

@@ -84,6 +84,9 @@ $(PACKAGES):
 		install $(PACKAGE_ROOT_FOLDER)/$@/$(LIB_DIR)/* $(DESTDIR)/$@/$(USR_LIB_PATH), \
 		install -d $(shell readlink -m $(DESTDIR)/$@/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)) && \
 		cp -r $(PACKAGE_ROOT_FOLDER)/$@/* $(DESTDIR)/$@/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)) 
+	$(if $(wildcard $(PACKAGE_ROOT_FOLDER)/$@/$(ETC_DIR)/.*), \
+		install -d $(shell readlink -m $(DESTDIR)/$@/$(ETC_DIR)) && \
+		cp -fr $(PACKAGE_ROOT_FOLDER)/$@/$(ETC_DIR)/* $(DESTDIR)/$@/$(ETC_DIR))
 	$(if $(wildcard $(PACKAGE_ROOT_FOLDER)/$@/aesm/data/.*), \
 		install -d $(shell readlink -m $(DESTDIR)/$@/$(VAR_OPT_PATH)) && \
 		cp -fr $(DESTDIR)/$@/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm/data \

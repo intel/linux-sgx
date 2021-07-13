@@ -36,12 +36,8 @@ if test $(id -u) -ne 0; then
 fi
 
 /usr/bin/getent group sgx_prv &> /dev/null
-if [ $? != "0" -a -c /dev/sgx/provision ]; then
-    # Add sgx_prv for in-kernel driver.
-    /usr/sbin/groupadd sgx_prv
-    udevadm trigger
+if [ $? == "0" ]; then
+    /usr/sbin/usermod -aG sgx_prv aesmd &> /dev/null
 fi
-
-/usr/sbin/usermod -aG sgx_prv aesmd &> /dev/null
 
 echo

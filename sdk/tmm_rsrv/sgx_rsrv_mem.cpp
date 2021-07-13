@@ -328,7 +328,7 @@ static sgx_status_t tprotect_internal(size_t start, size_t size, si_flags_t perm
     {
         // If the target permission is NONE, ocall to mprotect() to change the OS permission
         ret = change_permissions_ocall(start, size, perms, EDMM_MPROTECT);
-	if (ret != SGX_SUCCESS)
+        if (ret != SGX_SUCCESS)
             abort();
     } 
     return ret;

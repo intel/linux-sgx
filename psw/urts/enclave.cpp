@@ -147,8 +147,7 @@ sgx_status_t CEnclave::initialize(const se_file_t& file,  CLoader &ldr, const ui
     }
 
     m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
-
-
+    
     m_enclave_id = ldr.get_enclave_id();
     m_start_addr = (void*)ldr.get_start_addr();
     m_size = enclave_size;
@@ -576,9 +575,19 @@ int CEnclave::set_extra_debug_info(secs_t& secs, CLoader &ldr)
     void *g_peak_rsrv_mem_committed_addr = ldr.get_symbol_address("g_peak_rsrv_mem_committed");
     m_enclave_info.g_peak_heap_used_addr = g_peak_heap_used_addr;
     m_enclave_info.g_peak_rsrv_mem_committed_addr = g_peak_rsrv_mem_committed_addr;
-
+    
     m_enclave_info.start_addr = secs.base;
     m_enclave_info.misc_select = secs.misc_select;
+
+    //if elrange is not set, elrange_start_address should equal to start_addr
+    if(ldr.get_elrange_size() != 0)
+    {
+        m_enclave_info.elrange_start_address = ldr.get_elrange_start_addr();
+    }
+    else
+    {
+        m_enclave_info.elrange_start_address = reinterpret_cast<uint64_t>(m_enclave_info.start_addr);
+    }
 
     if(g_peak_heap_used_addr == NULL)
     {

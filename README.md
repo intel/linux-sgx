@@ -40,6 +40,8 @@ The Linux\* Intel(R) SGX software stack is comprised of the Intel(R) SGX driver,
 
 The [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project maintains an out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used on the platforms with *Flexible Launch Control* and *Intel(R) AES New Instructions* support and could support both Elliptic Curve Digital Signature algorithm (ECDSA) based attestation and Enhanced Privacy Identification (EPID) based attestation.
 
+**Note**: Ice Lake Xeon-SP (and the future Xeon-SP platforms) doesn't support EPID attestation.
+
 The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the other out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used to support Enhanced Privacy Identification (EPID) based attestation on the platforms without *Flexible Launch Control*. 
 
 The [intel-device-plugins-for-kubernetes](https://github.com/intel/intel-device-plugins-for-kubernetes) project enables users to run container applications running Intel(R) SGX enclaves in Kubernetes clusters. It also gives instructions how to set up ECDSA based attestation in a cluster.

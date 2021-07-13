@@ -52,6 +52,7 @@
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <sys/mman.h>
+#include "sgx_enclave_common.h"
 
 const char * layout_id_str[] = {
     "Undefined",
@@ -91,6 +92,8 @@ CLoader::CLoader(uint8_t *mapped_file_base, BinParser &parser)
     : m_mapped_file_base(mapped_file_base)
     , m_enclave_id(0)
     , m_start_addr(NULL)
+    , m_elrange_start_address(0)
+    , m_elrange_size(0)
     , m_metadata(NULL)
     , m_parser(parser)
 {
@@ -110,6 +113,16 @@ sgx_enclave_id_t CLoader::get_enclave_id() const
 const void* CLoader::get_start_addr() const
 {
     return m_start_addr;
+}
+
+uint64_t CLoader::get_elrange_start_addr() const
+{
+    return m_elrange_start_address;
+}
+
+uint64_t CLoader::get_elrange_size() const
+{
+    return m_elrange_size;
 }
 
 const std::vector<std::pair<tcs_t *, bool>>& CLoader::get_tcs_list() const
@@ -489,11 +502,89 @@ int CLoader::build_contexts(layout_t *layout_start, layout_t *layout_end, uint64
     }
     return SGX_SUCCESS;
 }
+
+static inline bool is_power_of_two(size_t n)
+{
+    return (n != 0) && (!(n & (n - 1)));
+}
+
+
+int CLoader::set_elrange_config()
+{   
+    if(MAJOR_VERSION_OF_METADATA(m_metadata->version) <= SGX_MAJOR_VERSION_GAP)
+    {
+        return SGX_SUCCESS;
+    }
+    //elrange is placed at the beginning of data
+    data_directory_t* dir = GET_PTR(data_directory_t, m_metadata, offsetof(metadata_t, data));
+    if(dir == NULL)
+    {
+        return SGX_ERROR_UNEXPECTED;
+    }
+    
+    elrange_config_entry_t* elrange_config_entry = GET_PTR(elrange_config_entry_t, m_metadata, dir->offset);
+    if(elrange_config_entry == NULL)
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+    
+    if(elrange_config_entry->elrange_size ==0)
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+    
+    //validate the el_range params
+    if(elrange_config_entry->elrange_start_address > elrange_config_entry->enclave_image_address)
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+
+    if((elrange_config_entry->elrange_size % SE_PAGE_SIZE != 0) ||
+        (elrange_config_entry->elrange_start_address% SE_PAGE_SIZE != 0) ||
+        (elrange_config_entry->enclave_image_address% SE_PAGE_SIZE != 0))
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+
+    if(!is_power_of_two(elrange_config_entry->elrange_size))
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }  
+
+    if((elrange_config_entry->elrange_start_address & (elrange_config_entry->elrange_size -1 )) !=0)
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+
+    uint64_t elrange_end = elrange_config_entry->elrange_start_address + elrange_config_entry->elrange_size;
+    if(elrange_end < elrange_config_entry->elrange_start_address || elrange_end < elrange_config_entry->elrange_size)
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+    
+    if(elrange_config_entry->enclave_image_address >= elrange_end ||
+       (elrange_config_entry->enclave_image_address + m_metadata->enclave_size) > elrange_end)
+    {
+        return SGX_ERROR_INVALID_METADATA;
+    }
+    
+    m_elrange_start_address = elrange_config_entry->elrange_start_address;
+    m_elrange_size = elrange_config_entry->elrange_size;
+    m_start_addr = reinterpret_cast<void*>(elrange_config_entry->enclave_image_address); 
+    
+    return SGX_SUCCESS;
+}
+
+
+
 int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr)
 {
+    uint32_t ex_features = 0;
+    const void* ex_features_p[32] = { 0 };
+    
     memset(&m_secs, 0, sizeof(secs_t)); //should set resvered field of secs as 0.
     //create secs structure.
-    m_secs.base = 0;    //base is allocated by driver. set it as 0
+    m_secs.base = 0;
     m_secs.size = m_metadata->enclave_size;
     m_secs.misc_select = misc_attr->misc_select;
 
@@ -506,17 +597,36 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
             return SGX_ERROR_UNEXPECTED;
     }
     m_secs.config_svn = config_svn;
-
+    
+    int ret = set_elrange_config();
+    if(ret != SGX_SUCCESS)
+    {
+        return ret;
+    }
+    
     EnclaveCreator *enclave_creator = get_enclave_creator();
     if(NULL == enclave_creator)
         return SGX_ERROR_UNEXPECTED;
-    int ret = enclave_creator->create_enclave(&m_secs, &m_enclave_id, &m_start_addr, is_ae(&m_metadata->enclave_css));
+
+    enclave_elrange_t enclave_elrange;
+    memset(&enclave_elrange, 0, sizeof(enclave_elrange));
+    if(m_elrange_size != 0)
+    {
+        enclave_elrange.elrange_size = m_elrange_size;
+        enclave_elrange.enclave_image_address = reinterpret_cast<uint64_t>(m_start_addr);
+        enclave_elrange.elrange_start_address = m_elrange_start_address;
+        
+        ex_features = ENCLAVE_CREATE_EX_EL_RANGE;
+        ex_features_p[ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX] = &enclave_elrange; 
+    }
+    
+    ret = enclave_creator->create_enclave(&m_secs, &m_enclave_id, &m_start_addr, ex_features, ex_features_p);
     if(SGX_SUCCESS == ret)
     {
         SE_TRACE(SE_TRACE_NOTICE, "Enclave start addr. = %p, Size = 0x%llx, %llu KB\n", 
                  m_start_addr, m_metadata->enclave_size, m_metadata->enclave_size/1024);
     }
-	// m_secs.mr_enclave value is not set previously
+    // m_secs.mr_enclave value is not set previously
     if(memcpy_s(&m_secs.mr_enclave, sizeof(sgx_measurement_t), &m_metadata->enclave_css.body.enclave_hash, sizeof(sgx_measurement_t)))
         return SGX_ERROR_UNEXPECTED;
 
@@ -699,7 +809,7 @@ int CLoader::validate_metadata()
     uint64_t urts_version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION);
 
     //if the version of metadata does NOT match the version of metadata in urts, we should NOT launch enclave.
-    if(MAJOR_VERSION_OF_METADATA(urts_version) < MAJOR_VERSION_OF_METADATA(m_metadata->version))
+    if(MAJOR_VERSION_OF_METADATA(urts_version)%SGX_MAJOR_VERSION_GAP < MAJOR_VERSION_OF_METADATA(m_metadata->version)%SGX_MAJOR_VERSION_GAP)
     {
         SE_TRACE(SE_TRACE_ERROR, "Mismatch between the metadata urts required and the metadata in use.\n");
         return SGX_ERROR_INVALID_VERSION;

@@ -45,6 +45,7 @@ typedef struct _tcs_sim_t
     uintptr_t saved_fs_gs_0;
     uintptr_t saved_fs_base;
     uintptr_t saved_gs_base;
+    uint64_t  tcs_offset_update_flag;
 } tcs_sim_t;
 
 #define TCS_STATE_INACTIVE   0  //The TCS is available for a normal EENTER

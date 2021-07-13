@@ -45,6 +45,7 @@
 #include "util_st.h"
 #include "util.h"
 #include "se_page_attr.h"
+#include "sgx_enclave_common.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,11 @@
 
 #define DATA_BLOCK_SIZE 64
 #define EID             0x44444444
+
+uint64_t enclave_image_address = 0;
+uint64_t elrange_start_address = 0;
+uint64_t elrange_size = 0;
+
 
 EnclaveCreatorST::EnclaveCreatorST()
 {
@@ -69,7 +75,7 @@ EnclaveCreatorST::~EnclaveCreatorST()
         EVP_MD_CTX_destroy(m_ctx);
 }
 
-int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, bool ae)
+int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id, void **start_addr, const uint32_t ex_features, const void* ex_features_p[32])
 {
     if(!secs || !enclave_id || !start_addr)
     {
@@ -77,7 +83,13 @@ int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
         return SGX_ERROR_UNEXPECTED;
     }
 
-    UNUSED(ae);
+    if(ex_features == ENCLAVE_CREATE_EX_EL_RANGE && ex_features_p[ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX] != NULL)
+    {
+        enclave_elrange_t *enclave_elrange =  reinterpret_cast<enclave_elrange_t *>(const_cast<void *>(ex_features_p[ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX]));
+        elrange_size = enclave_elrange->elrange_size;
+        elrange_start_address = enclave_elrange->elrange_start_address;
+        enclave_image_address = enclave_elrange->enclave_image_address;
+    }
     
     memset(m_enclave_hash, 0, SGX_HASH_SIZE);
     if((m_ctx = EVP_MD_CTX_create()) == NULL)
@@ -92,7 +104,12 @@ int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     }
 
     uint8_t ecreat_val[SIZE_NAMED_VALUE] = "ECREATE";
-
+    
+    uint64_t size= secs->size;
+    if(elrange_size != 0)
+    {
+        size = elrange_size;
+    }
     uint8_t data_block[DATA_BLOCK_SIZE];
     size_t offset = 0;
     memset(data_block, 0, DATA_BLOCK_SIZE);
@@ -100,7 +117,7 @@ int EnclaveCreatorST::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id,
     offset += SIZE_NAMED_VALUE;
     memcpy_s(&data_block[offset], sizeof(data_block)-offset, &secs->ssa_frame_size, sizeof(secs->ssa_frame_size));
     offset += sizeof(secs->ssa_frame_size);
-    memcpy_s(&data_block[offset], sizeof(data_block)-offset, &secs->size, sizeof(secs->size));
+    memcpy_s(&data_block[offset], sizeof(data_block)-offset, &size, sizeof(uint64_t));
 
     if(EVP_DigestUpdate(m_ctx, &data_block, DATA_BLOCK_SIZE) != 1)
     {
@@ -143,6 +160,11 @@ int EnclaveCreatorST::add_enclave_page(sgx_enclave_id_t enclave_id, void *src, u
     }
 
     uint64_t page_offset = (uint64_t)offset;
+    if(elrange_size != 0)
+    {
+        page_offset += enclave_image_address - elrange_start_address;
+    }
+    
     uint8_t eadd_val[SIZE_NAMED_VALUE] = "EADD\0\0\0";
 
     uint8_t data_block[DATA_BLOCK_SIZE];
@@ -322,6 +344,7 @@ int EnclaveCreatorST::remove_range(uint64_t fromaddr, uint64_t numpages)
 
     return SGX_SUCCESS;
 }
+
 
 static EnclaveCreatorST g_enclave_creator_st;
 EnclaveCreator* g_enclave_creator = &g_enclave_creator_st;

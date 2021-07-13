@@ -2195,4 +2195,8 @@ extern "C" PERFTOOLS_DLL_DECL void* tc_malloc_skip_new_handler(size_t size)  PER
   return result;
 }
 
+extern "C" void tc_set_idle(){
+    MallocExtension::instance()->MarkThreadIdle();
+}
+
 #endif  // TCMALLOC_USING_DEBUGALLOCATION

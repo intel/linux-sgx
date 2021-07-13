@@ -46,6 +46,13 @@
 #include <sys/types.h>
 #include <dlfcn.h>
 #include "se_memcpy.h"
+#include "se_lock.hpp"
+//ubuntu 18.04 use glibc 2.27, doesn't support MAP_FIXED_NOREPLACE
+#ifndef MAP_FIXED_NOREPLACE
+#define MAP_FIXED_NOREPLACE 0x100000
+#endif
+
+
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
 
 #define SGX_LAUNCH_SO "libsgx_launch.so.1"
@@ -54,10 +61,11 @@
 func_get_launch_token_t get_launch_token_func = NULL;
 
 static void* s_hdlopen = NULL;
-static se_mutex_t s_dlopen_mutex;
+static Mutex s_dlopen_mutex;
 
-static se_mutex_t s_device_mutex;
-static se_mutex_t s_enclave_mutex;
+static Mutex s_device_mutex;
+static Mutex s_enclave_mutex;
+
 
 static int s_driver_type = SGX_DRIVER_UNKNOWN;  //driver which is opened
 
@@ -67,7 +75,7 @@ static std::map<void*, int> s_hfile;            //enclave file handles for drive
 static std::map<void*, size_t> s_enclave_size;
 static std::map<void*, bool> s_enclave_init;
 static std::map<void*, sgx_attributes_t> s_secs_attr;
-
+static std::map<void *, enclave_elrange_t*>s_enclave_elrange_map;
 
 typedef struct _mem_region_t {
     void* addr;
@@ -77,71 +85,59 @@ typedef struct _mem_region_t {
 
 static std::map<void*, mem_region_t> s_enclave_mem_region;
 
-extern "C" bool open_file(int *hFile)
+static bool open_file(int *hFile)
 {
     if (hFile == NULL)
         return false;
 
-    se_mutex_lock(&s_device_mutex);
+    LockGuard lock(&s_device_mutex);
     if (s_driver_type != SGX_DRIVER_IN_KERNEL) {
-        se_mutex_unlock(&s_device_mutex);
         return false;
     }
 
     if (true == open_se_device(SGX_DRIVER_IN_KERNEL, hFile)) {
-        se_mutex_unlock(&s_device_mutex);
         return true;
     }
-
-    se_mutex_unlock(&s_device_mutex);
 
     return false;
 }
 
-extern "C" void close_file(int *hFile)
+static void close_file(int *hFile)
 {
-    se_mutex_lock(&s_device_mutex);
-
+    LockGuard lock(&s_device_mutex);
     close_se_device(hFile);
-
-    se_mutex_unlock(&s_device_mutex);
 }
 
-extern "C" bool open_device(void)
+static bool open_device(void)
 {
-    se_mutex_lock(&s_device_mutex);
+    LockGuard lock(&s_device_mutex);
     if (s_hdevice != -1) {
-        se_mutex_unlock(&s_device_mutex);
         return true;
     }
 
     if (true == open_se_device(s_driver_type, &s_hdevice)) {
-        se_mutex_unlock(&s_device_mutex);
         return true;
     }
 
     s_hdevice = -1;
-    se_mutex_unlock(&s_device_mutex);
 
     return false;
 }
 
-extern "C" void close_device(void)
+static void close_device(void)
 {
-    se_mutex_lock(&s_device_mutex);
+    LockGuard lock(&s_device_mutex);
 
     close_se_device(&s_hdevice);
     s_driver_type = SGX_DRIVER_UNKNOWN;  //this may not be needed - can it change on the platform?
-
-    se_mutex_unlock(&s_device_mutex);
 }
 
-extern "C" int get_file_handle_from_address(void* target_address)
+static int get_file_handle_from_address(void* target_address)
 {
     int hfile = -1;
     
     //find the enclave file handle from the target address
-    se_mutex_lock(&s_enclave_mutex);
+    LockGuard lock(&s_enclave_mutex);
     for (auto rec : s_enclave_size) {
         if ((uint64_t)target_address >= (uint64_t)rec.first && (uint64_t)target_address < (uint64_t)rec.first + (uint64_t)rec.second) 
         {
@@ -152,17 +148,16 @@ extern "C" int get_file_handle_from_address(void* target_address)
             break;
         }
     }
-    se_mutex_unlock(&s_enclave_mutex);
     
    return hfile;
 }
 
-extern "C" void* get_enclave_base_address_from_address(void* target_address)
+static void* get_enclave_base_address_from_address(void* target_address)
 {
     void* base_addr = NULL;
         
     //find the enclave file handle from the target address
-    se_mutex_lock(&s_enclave_mutex);
+    LockGuard lock(&s_enclave_mutex);
     for (auto rec : s_enclave_size) {
         if ((uint64_t)target_address >= (uint64_t)rec.first && (uint64_t)target_address < (uint64_t)rec.first + (uint64_t)rec.second) 
         {
@@ -170,32 +165,61 @@ extern "C" void* get_enclave_base_address_from_address(void* target_address)
             break;
         }
     }
-    se_mutex_unlock(&s_enclave_mutex);
     
    return base_addr;
 
 }
 
+static bool get_elrange_from_base_address(void* base_address, enclave_elrange_t* enclave_elrange)
+{
+    LockGuard lock(&s_enclave_mutex);
+    if(s_enclave_elrange_map.count(base_address) != 0)
+    {
+        if(enclave_elrange != NULL)
+        {
+            enclave_elrange->elrange_size = s_enclave_elrange_map[base_address]->elrange_size;
+            enclave_elrange->elrange_start_address = s_enclave_elrange_map[base_address]->elrange_start_address;
+            enclave_elrange->enclave_image_address = s_enclave_elrange_map[base_address]->enclave_image_address;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+static bool get_secs_attr_from_base_address(void* base_address, sgx_attributes_t* secs_attr)
+{
+    LockGuard lock(&s_enclave_mutex);
+    std::map<void*, sgx_attributes_t>::iterator it = s_secs_attr.find(base_address);
+    if (it == s_secs_attr.end())
+    {
+        return false;
+    }
+    if(secs_attr != NULL)
+    {
+        secs_attr->flags = it->second.flags;
+        secs_attr->xfrm = it->second.xfrm;
+    }
+    return true;
+}
+
 static func_get_launch_token_t get_launch_token_function(void)
 {
     if (get_launch_token_func == NULL) {
-        se_mutex_lock(&s_dlopen_mutex);
+        LockGuard lock(&s_dlopen_mutex);
         if (get_launch_token_func != NULL)
         {
-            se_mutex_unlock(&s_dlopen_mutex);
             return get_launch_token_func;
         }
 
         if (s_hdlopen == NULL) {
             s_hdlopen = dlopen(SGX_LAUNCH_SO, RTLD_LAZY);
             if (s_hdlopen == NULL) {
-                se_mutex_unlock(&s_dlopen_mutex);
                 return NULL;
             }
         }
 
         get_launch_token_func = (func_get_launch_token_t)dlsym(s_hdlopen, SGX_GET_LAUNCH_TOKEN);
-        se_mutex_unlock(&s_dlopen_mutex);
     }
 
     return get_launch_token_func;
@@ -203,28 +227,28 @@ static func_get_launch_token_t get_launch_token_function(void)
 
 static void close_sofile(void)
 {
-    se_mutex_lock(&s_dlopen_mutex);
+    LockGuard lock(&s_dlopen_mutex);
     if (s_hdlopen != NULL) {
         dlclose(s_hdlopen);
         s_hdlopen = NULL;
     }
-    se_mutex_unlock(&s_dlopen_mutex);
 }
 
-static void __attribute__((constructor)) enclave_init(void)
+
+static void release_enclave_elrange_map()
 {
-    se_mutex_init(&s_device_mutex);
-    se_mutex_init(&s_dlopen_mutex);
-    se_mutex_init(&s_enclave_mutex);
+    for (auto &res:s_enclave_elrange_map)
+    {
+        auto elrange = res.second;
+        delete elrange;
+        elrange = NULL;
+    }
 }
-
 static void __attribute__((destructor)) enclave_fini(void)
 {
     close_device();
     close_sofile();
-    se_mutex_destroy(&s_device_mutex);
-    se_mutex_destroy(&s_dlopen_mutex);
-    se_mutex_destroy(&s_enclave_mutex);
+    release_enclave_elrange_map();
 }
 
 static uint32_t error_driver2api(int driver_error, int err_no)
@@ -321,7 +345,179 @@ static uint32_t error_aesm2api(int aesm_error)
     return ret;
 }
 
-/* enclave_create()
+static inline bool is_power_of_two(size_t n)
+{
+    return (n != 0) && (!(n & (n - 1)));
+}
+
+//validate the el_range params
+static bool check_elrange_params(enclave_elrange_t* input_data)
+{
+    //An enclave must have a SECS.SIZE greater than zero
+    if(input_data->elrange_size == 0)
+    {
+        return false;
+    }
+    //An enclave SECS.BASEADDR and SECS.SIZE must be aligned on a page size.  
+    //In addition, the enclave image address must also start on a page size
+    if((input_data->elrange_size % SE_PAGE_SIZE != 0) ||
+        (input_data->elrange_start_address% SE_PAGE_SIZE != 0) ||
+        (input_data->enclave_image_address% SE_PAGE_SIZE != 0))
+    {
+        return false;
+    }
+    //The enclave image address must be within ELRANGE
+    if(input_data->elrange_start_address > input_data->enclave_image_address)
+    {
+        return false;
+    }
+    //SECS.SIZE must be a power of two
+    if(!is_power_of_two(input_data->elrange_size))
+    {
+        return false;
+    }
+    //SECS.BASEADDR must be naturally aligned on SECS.SIZE
+    if((input_data->elrange_start_address & (input_data->elrange_size -1 )) !=0)
+    {
+        return false;
+    }
+    //SECS.BASEADDR + SECS.SIZE must not exceed UINT64
+    uint64_t elrange_end = input_data->elrange_start_address + input_data->elrange_size;
+    if(elrange_end < input_data->elrange_start_address || elrange_end < input_data->elrange_size)
+    {
+        return false;
+    }
+    //The enclave image address must be within ELRANGE
+    if(input_data->enclave_image_address >= elrange_end)
+    {
+        return false;
+    }
+
+    //if enclave_image_address is within some other enclaves
+    //we will rejcet the setting and return failure
+    if(get_enclave_base_address_from_address((void*)input_data->enclave_image_address) != NULL)
+    {
+        return false;
+    }
+    return true;
+}
+
+//validate the extend feature params
+static bool check_ex_params(const uint32_t ex_features, const void* ex_features_p[32])
+{
+    //update last feature index if it fails here
+    se_static_assert(_ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_ == ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX);
+    
+    uint32_t i;
+
+    if (ex_features_p != NULL)
+    {
+        for (i = 0; i <= _ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_; i++)
+        {
+            if (((ex_features & (1<<i)) == 0) && (ex_features_p[i] != NULL))
+                return false;
+        }
+
+        for (i = _ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_ + 1; i < ENCLAVE_CREATE_MAX_EX_FEATURES_COUNT; i++)
+        {
+            if (ex_features_p[i] != NULL)
+                return false;
+        }
+    }
+    
+    return ((ex_features | _ENCLAVE_CREATE_EX_FEATURES_MASK_) == _ENCLAVE_CREATE_EX_FEATURES_MASK_);
+}
+
+
+#define GET_FEATURE_POINTER(feature_name, ex_features_p)    ex_features_p[feature_name##_BIT_IDX]
+// Get the corresponding feature pointer for the input feature name
+// This function should only be called for the features which have the corresponding feature structs
+// Return value: 
+//    -1 - invalid input
+//    0  - no such feature request
+//    1  - has such feature request
+static int get_ex_feature_pointer(uint32_t feature_name, const uint32_t ex_features, const void *ex_features_p[ENCLAVE_CREATE_MAX_EX_FEATURES_COUNT], void **op)
+{
+    bool fbit_set = (feature_name & ex_features) ? true : false;
+    void *pointer = NULL;
+    int ret = -1;
+    switch(feature_name)
+    {
+    case ENCLAVE_CREATE_EX_EL_RANGE:
+        if (ex_features_p != NULL)
+            pointer = const_cast<void *>(GET_FEATURE_POINTER(ENCLAVE_CREATE_EX_EL_RANGE, ex_features_p));
+        if (fbit_set && pointer)
+            ret = 1;
+        else if (!fbit_set && !pointer)
+            ret = 0;
+        break;
+    default:
+        break;
+    }
+    if (ret == 1)
+        *op = pointer;
+    return ret;
+}
+
+
+static void enclave_set_provision_access(int hdevice, void* enclave_base)
+{
+    if(hdevice == -1 || enclave_base == NULL)
+    {
+        return;
+    }
+    
+    int hdev_prov = -1;
+    
+    if (s_driver_type == SGX_DRIVER_IN_KERNEL)
+    {
+        hdev_prov = open("/dev/sgx/provision", O_RDWR);
+        if (-1 == hdev_prov)
+        {
+            //in-kernel driver can still succeed if the MRSIGNER is whitelisted for provision key
+            SE_TRACE(SE_TRACE_WARNING, "\nOpen in-kernel driver node, failed: errno = %d\n", errno);
+        }
+        else
+        {
+            struct sgx_enclave_set_attribute_in_kernel attrp = { 0 };
+            attrp.attribute_fd = hdev_prov;
+            int ret2 = ioctl(hdevice, SGX_IOC_ENCLAVE_SET_ATTRIBUTE_IN_KERNEL, &attrp);
+            if ( ret2 )
+            {
+                SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_SET_ATTRIBUTE, failed: errno = %d\n", errno);
+            }
+        }
+        close(hdev_prov);
+    }
+    else
+    {
+        hdev_prov = open("/dev/sgx_prv", O_RDWR);
+        if (-1 == hdev_prov)
+        {
+            //DCAP driver can still succeed if the MRSIGNER is whitelisted for provision key
+            SE_TRACE(SE_TRACE_WARNING, "\nOpen DCAP driver node, failed: errno = %d\n", errno);
+        }
+        else
+        {
+            struct sgx_enclave_set_attribute attrp = { 0, 0 };
+            attrp.addr = POINTER_TO_U64(enclave_base);
+            attrp.attribute_fd = hdev_prov;
+            int ret2 = ioctl(hdevice, SGX_IOC_ENCLAVE_SET_ATTRIBUTE, &attrp);
+            if ( ret2 )
+            {
+                SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_SET_ATTRIBUTE, failed: errno = %d\n", errno);
+                //It may fail here if DCAP driver doesn't support this ioctl
+                //Therefore we will continue here instead of returning error code
+                //The initialization could fail if the driver requires the provision file access
+            }
+            close(hdev_prov);
+        }
+    }
+    return;
+}
+
+
+/* enclave_create_ex()
  * Parameters:
  *      base_address [in, optional] - An optional preferred base address for the enclave.
  *      virtual_size [in] - The virtual address range of the enclave in bytes.
@@ -329,24 +525,30 @@ static uint32_t error_aesm2api(int aesm_error)
  *      type [in] - The architecture type of the enclave that you want to create.
  *      info [in] - A pointer to the architecture-specific information to use to create the enclave.
  *      info_size [in] - The length of the structure that the info parameter points to, in bytes.
+ *      ex_features [in] - Bitmask defining the extended features to activate on the enclave creation.
+ *      ex_features_p [in] - Array of pointers to extended feature control structures.
  *      enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  * Return Value:
  *      If the function succeeds, the return value is the base address of the created enclave.
  *      If the function fails, the return value is NULL. The extended error information will be in the enclave_error parameter if used.
 */
-extern "C" void* COMM_API enclave_create(
+extern "C" void* COMM_API enclave_create_ex(
     COMM_IN_OPT void* base_address,
     COMM_IN size_t virtual_size,
     COMM_IN size_t initial_commit,
     COMM_IN uint32_t type,
     COMM_IN const void* info,
     COMM_IN size_t info_size,
+    COMM_IN const uint32_t ex_features,
+    COMM_IN const void* ex_features_p[32],
     COMM_OUT_OPT uint32_t* enclave_error)
 {
     UNUSED(initial_commit);
     int hdevice_temp = -1;
     size_t enclave_size = virtual_size;
     void* enclave_base = NULL;
+    enclave_elrange_t* enclave_elrange = NULL;
+    int mmap_flag = 0;
 
     if ((type != ENCLAVE_TYPE_SGX1 && type != ENCLAVE_TYPE_SGX2) || info == NULL) {
         if (enclave_error != NULL)
@@ -358,6 +560,33 @@ extern "C" void* COMM_API enclave_create(
     if (info_size == 0 || sizeof(*enclave_create_sgx) != info_size) {
         if (enclave_error != NULL)
             *enclave_error = ENCLAVE_INVALID_PARAMETER;
+        return NULL;
+    }
+    
+    if(check_ex_params(ex_features, ex_features_p) == false)
+    {
+        if (enclave_error != NULL)
+        {
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
+        }
+        return NULL;
+    }
+
+    if(get_ex_feature_pointer(ENCLAVE_CREATE_EX_EL_RANGE, ex_features, ex_features_p, (void**)&enclave_elrange) == -1)
+    {
+        if (enclave_error != NULL)
+        {
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
+        }
+        return NULL;
+    }
+
+    if(enclave_elrange != NULL && check_elrange_params(enclave_elrange) == false)
+    {
+        if (enclave_error != NULL)
+        {
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
+        }
         return NULL;
     }
 
@@ -379,8 +608,17 @@ extern "C" void* COMM_API enclave_create(
         if (( s_driver_type == SGX_DRIVER_OUT_OF_TREE) || (s_driver_type == SGX_DRIVER_DCAP))
         {
             open_device();
-        } 
+            if(enclave_elrange != NULL)
+            {
+                SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: don't support to set EL_RANGE\n");
+                if (enclave_error != NULL)
+                    *enclave_error = ENCLAVE_NOT_SUPPORTED;
+                return NULL;
+            }
+            
+        }
     }
+    
     //if in-kernel driver then open the file for each enclave load
     if (s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
@@ -392,25 +630,37 @@ extern "C" void* COMM_API enclave_create(
         //The in-kernel driver does not do the base and size alignment. This is up to user mode to do it. 
         //Therefore enclave_size will be virtual_size*2. The unused region will be released by calling munmap later.
         enclave_size = virtual_size*2;
+        //check if elrange is set
+        if(enclave_elrange != NULL)
+        {
+            //for this situation, we don't need to make the base and size alignement
+            enclave_size = virtual_size;
+        }
     }
     else
     {
         hdevice_temp = s_hdevice;
     }
-    
+
     if(s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        mmap_flag |= MAP_PRIVATE | MAP_ANONYMOUS;
+        if(enclave_elrange != NULL)
+        {
+            mmap_flag |= MAP_FIXED_NOREPLACE;
+        }
+        enclave_base = mmap(base_address, enclave_size, PROT_NONE, mmap_flag, -1, 0);
     }
     else 
     {
-        enclave_base = mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED, hdevice_temp, 0);
+        mmap_flag |= MAP_SHARED;
+        enclave_base = mmap(base_address, enclave_size, PROT_NONE, mmap_flag, hdevice_temp, 0);
     }
     
     if (enclave_base == MAP_FAILED) {
         SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
         if (enclave_error != NULL)
-            *enclave_error = error_driver2api(-1, errno);
+            *enclave_error = ENCLAVE_MEMORY_MAP_FAILURE;
         if(s_driver_type == SGX_DRIVER_IN_KERNEL)
         {
             close_file(&hdevice_temp);
@@ -418,7 +668,31 @@ extern "C" void* COMM_API enclave_create(
         return NULL;
     }
     
-    if(s_driver_type == SGX_DRIVER_IN_KERNEL)
+    if(enclave_elrange != NULL)
+    {
+        /* Note that older kernels which do not recognize the
+         * MAP_FIXED_NOREPLACE flag will typically (upon detecting a
+         * collision with a preexisting mapping) fall back to a "non-
+         * MAP_FIXED" type of behavior: they will return an address
+         * that is different from the requested address.  Therefore,
+         * backward-compatible software should check the returned
+         * address against the requested address.
+        */
+        if(enclave_base != base_address)
+        {
+            SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, the return address is different from the requested addess\n");
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_MEMORY_MAP_FAILURE;
+            if(s_driver_type == SGX_DRIVER_IN_KERNEL)
+            {
+                close_file(&hdevice_temp);
+            }
+            munmap(enclave_base, enclave_size);
+            return NULL;
+        }
+    }
+    
+    if(s_driver_type == SGX_DRIVER_IN_KERNEL && enclave_elrange == NULL)
     {
         uint64_t aligned_addr = ((uint64_t)enclave_base + virtual_size - 1) & ~(virtual_size - 1);
         if(aligned_addr != (uint64_t)enclave_base)
@@ -454,8 +728,16 @@ extern "C" void* COMM_API enclave_create(
         enclave_base = (void*)aligned_addr;
     }
     
-    secs->base = enclave_base;
-
+    if(enclave_elrange != NULL)
+    {
+        secs->base = reinterpret_cast<void*>(enclave_elrange->elrange_start_address);
+        secs->size = enclave_elrange->elrange_size;
+    }
+    else
+    {
+        secs->base = enclave_base;
+    }
+    
     struct sgx_enclave_create param = { 0 };
     param.src = POINTER_TO_U64(secs);
 
@@ -474,82 +756,172 @@ extern "C" void* COMM_API enclave_create(
 
         return NULL;
     }
-
+    
     //in-kernel and DCAP drivers support special provision key access mode (DCAP also supports whitelisting for provision key access)
     if (((s_driver_type == SGX_DRIVER_IN_KERNEL) || (s_driver_type == SGX_DRIVER_DCAP)) && (secs->attributes.flags & SGX_FLAGS_PROVISION_KEY))
     {
-        int hdev_prov = -1;
+        enclave_set_provision_access(hdevice_temp, enclave_base);
+    }
+
+    {
+        LockGuard lock(&s_enclave_mutex);
+
+        //if in-kernel driver then save the file handle
         if (s_driver_type == SGX_DRIVER_IN_KERNEL)
         {
-            hdev_prov = open("/dev/sgx/provision", O_RDWR);
-            if (-1 == hdev_prov)
-            {
-                //in-kernel driver can still succeed if the MRSIGNER is whitelisted for provision key
-                SE_TRACE(SE_TRACE_WARNING, "\nOpen in-kernel driver node, failed: errno = %d\n", errno);
-            }
-            else
-            {
-                struct sgx_enclave_set_attribute_in_kernel attrp = { 0 };
-                attrp.attribute_fd = hdev_prov;
-                int ret2 = ioctl(hdevice_temp, SGX_IOC_ENCLAVE_SET_ATTRIBUTE_IN_KERNEL, &attrp);
-                if ( ret2 )
-                {
-                    SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_SET_ATTRIBUTE, failed: errno = %d\n", errno);
-                }
-            }
-            close(hdev_prov);
+            s_hfile[enclave_base] = hdevice_temp;
         }
-        else
+        s_enclave_size[enclave_base] = virtual_size;
+
+        sgx_attributes_t secs_attr;
+        memset(&secs_attr, 0, sizeof(sgx_attributes_t));
+        memcpy_s(&secs_attr, sizeof(sgx_attributes_t), &secs->attributes, sizeof(sgx_attributes_t));
+        s_secs_attr[enclave_base] = secs_attr;
+
+        s_enclave_mem_region[enclave_base].addr = 0;
+        s_enclave_mem_region[enclave_base].len = 0;
+        s_enclave_mem_region[enclave_base].prot = 0;
+        if(enclave_elrange != NULL)
         {
-            hdev_prov = open("/dev/sgx_prv", O_RDWR);
-            if (-1 == hdev_prov)
+            enclave_elrange_t *tmp_enclave_elrange = new(std::nothrow) enclave_elrange_t;
+            if (tmp_enclave_elrange == NULL)
             {
-                //DCAP driver can still succeed if the MRSIGNER is whitelisted for provision key
-                SE_TRACE(SE_TRACE_WARNING, "\nOpen DCAP driver node, failed: errno = %d\n", errno);
-            }
-            else
-            {
-                struct sgx_enclave_set_attribute attrp = { 0, 0 };
-                attrp.addr = POINTER_TO_U64(enclave_base);
-                attrp.attribute_fd = hdev_prov;
-                int ret2 = ioctl(hdevice_temp, SGX_IOC_ENCLAVE_SET_ATTRIBUTE, &attrp);
-                if ( ret2 )
+                if (enclave_error)
                 {
-                    SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_SET_ATTRIBUTE, failed: errno = %d\n", errno);
-                    //It may fail here if DCAP driver doesn't support this ioctl
-                    //Therefore we will continue here instead of returning error code
-                    //The initialization could fail if the driver requires the provision file access
+                    *enclave_error = ENCLAVE_OUT_OF_MEMORY;
                 }
-                close(hdev_prov);
+
+                //if in-kernel driver then close the file handle
+                if (s_driver_type == SGX_DRIVER_IN_KERNEL)
+                {
+                    close_file(&hdevice_temp);
+                }
+                munmap(enclave_base, virtual_size);
+                return NULL;
             }
-        }        
-       
+            memset(tmp_enclave_elrange, 0, sizeof(enclave_elrange_t));
+            if (memcpy_s(tmp_enclave_elrange, sizeof(enclave_elrange_t), enclave_elrange, sizeof(enclave_elrange_t)))
+            {
+                if (enclave_error)
+                {
+                    *enclave_error = ENCLAVE_UNEXPECTED;
+                }
+                //if in-kernel driver then close the file handle
+                if (s_driver_type == SGX_DRIVER_IN_KERNEL)
+                {
+                    close_file(&hdevice_temp);
+                }
+                munmap(enclave_base, virtual_size);
+                return NULL;
+            }
+            s_enclave_elrange_map[enclave_base] = tmp_enclave_elrange;
+        }
     }
-
-    se_mutex_lock(&s_enclave_mutex);
-
-    //if in-kernel driver then save the file handle
-    if (s_driver_type == SGX_DRIVER_IN_KERNEL)
-    {
-        s_hfile[enclave_base] = hdevice_temp;
-    }
-    s_enclave_size[enclave_base] = virtual_size;
-
-    sgx_attributes_t secs_attr;
-    memset(&secs_attr, 0, sizeof(sgx_attributes_t));
-    memcpy_s(&secs_attr, sizeof(sgx_attributes_t), &secs->attributes, sizeof(sgx_attributes_t));
-    s_secs_attr[enclave_base] = secs_attr;
-
-    s_enclave_mem_region[enclave_base].addr = 0;
-    s_enclave_mem_region[enclave_base].len = 0;
-    s_enclave_mem_region[enclave_base].prot = 0;
-
-    se_mutex_unlock(&s_enclave_mutex);
-
+    
     if (enclave_error != NULL)
         *enclave_error = ENCLAVE_ERROR_SUCCESS;
     return enclave_base;
 }
+
+/* enclave_create()
+ * Parameters:
+ *      base_address [in, optional] - An optional preferred base address for the enclave.
+ *      virtual_size [in] - The virtual address range of the enclave in bytes.
+ *      initial_commit[in] - The amount of physical memory to reserve for the initial load of the enclave in bytes.
+ *      type [in] - The architecture type of the enclave that you want to create.
+ *      info [in] - A pointer to the architecture-specific information to use to create the enclave.
+ *      info_size [in] - The length of the structure that the info parameter points to, in bytes.
+ *      enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
+ * Return Value:
+ *      If the function succeeds, the return value is the base address of the created enclave.
+ *      If the function fails, the return value is NULL. The extended error information will be in the enclave_error parameter if used.
+*/
+extern "C" void* COMM_API enclave_create(
+    COMM_IN_OPT void* base_address,
+    COMM_IN size_t virtual_size,
+    COMM_IN size_t initial_commit,
+    COMM_IN uint32_t type,
+    COMM_IN const void* info,
+    COMM_IN size_t info_size,
+    COMM_OUT_OPT uint32_t* enclave_error)
+{
+    return enclave_create_ex(base_address, virtual_size, initial_commit, type, info, info_size, 0 , NULL, enclave_error);
+}
+
+static bool enclave_do_mprotect_region(void* target_address, size_t target_size, int prot, uint32_t* enclave_error)
+{
+    int hfile = -1;
+    // find the enclave base
+    void* enclave_base = get_enclave_base_address_from_address(target_address);
+    if (enclave_base == NULL) {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_ENCLAVE;
+        return false;
+    }
+    
+    if (s_driver_type == SGX_DRIVER_IN_KERNEL)
+    {
+        hfile = get_file_handle_from_address(target_address);
+    }
+
+    auto enclave_mem_region = &s_enclave_mem_region[enclave_base];
+    //if target_size =0, means mprotect the last region
+    if(target_size != 0)
+    {
+        void* next_page = (void*)((uint64_t)enclave_mem_region->addr + (uint64_t)enclave_mem_region->len);
+        if ((enclave_mem_region->prot != prot) || (target_address != next_page)) {
+            if (enclave_mem_region->len != 0) {
+                //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
+                int ret = 0;
+                if (hfile != -1) {
+                    if (MAP_FAILED == mmap(enclave_mem_region->addr, enclave_mem_region->len,
+                        enclave_mem_region->prot, MAP_SHARED | MAP_FIXED, hfile, 0))
+                        ret=-1;
+                }
+                else
+                {
+                    ret = mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
+                }
+                if (0 != ret) {
+                    if (enclave_error != NULL)
+                        *enclave_error = error_driver2api(-1, errno);
+                    return false;
+                }
+            }
+            //record the current load of enclave data in the memory region structure
+            enclave_mem_region->addr = target_address;
+            enclave_mem_region->len = target_size;
+            enclave_mem_region->prot = prot;
+        } 
+        else {
+            //this load of enclave data is extending the memory region
+            enclave_mem_region->len += target_size;
+        }
+    }
+    else
+    {
+        if (enclave_mem_region->addr != 0) {
+            //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
+           int ret = 0;
+           if (hfile != -1) {
+               if (MAP_FAILED == mmap(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot, MAP_SHARED | MAP_FIXED, hfile, 0))
+                   ret=-1;
+           }
+           else
+               ret= mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
+           if (0 != ret) {
+                if (enclave_error != NULL)
+                    *enclave_error = error_driver2api(-1, errno);
+                return false;
+            }
+            //record the current load of enclave data in the memory region structure
+            enclave_mem_region->addr = 0; //just in case we need to call enclave_initialize twice
+        }
+    }
+
+    return true;
+}
+
 
 /* enclave_load_data()
  * Parameters:
@@ -577,6 +949,10 @@ extern "C" size_t COMM_API enclave_load_data(
     
     sec_info_t sec_info;
     memset(&sec_info, 0, sizeof(sec_info_t));
+    uint64_t elrange_start_address = 0;
+    enclave_elrange_t enclave_elrange;
+
+    memset(&enclave_elrange, 0, sizeof(enclave_elrange));
 
     sec_info.flags = data_properties;
     if (!(sec_info.flags & ENCLAVE_PAGE_THREAD_CONTROL))
@@ -612,6 +988,15 @@ extern "C" size_t COMM_API enclave_load_data(
                 *enclave_error = ENCLAVE_INVALID_ADDRESS;
             return 0;
         }
+        
+        if(get_elrange_from_base_address(enclave_base_addr, &enclave_elrange) == true)
+        {
+            elrange_start_address = enclave_elrange.elrange_start_address;
+        }
+        else
+        {
+            elrange_start_address = reinterpret_cast<uint64_t>(enclave_base_addr);
+        }
 
         uint8_t* source = (uint8_t*)source_buffer;
         if (source == NULL) {
@@ -637,8 +1022,8 @@ extern "C" size_t COMM_API enclave_load_data(
         {
             addp.src = POINTER_TO_U64(source);
         }
-            
-        addp.offset = POINTER_TO_U64((uint64_t)target_address - (uint64_t)enclave_base_addr);
+           
+        addp.offset = POINTER_TO_U64((uint64_t)target_address - elrange_start_address);
         addp.length = target_size;
         addp.secinfo = POINTER_TO_U64(&sec_info);
         if (!(data_properties & ENCLAVE_PAGE_UNVALIDATED))
@@ -706,49 +1091,17 @@ extern "C" size_t COMM_API enclave_load_data(
         prot = (int)(SI_FLAGS_RW & SI_MASK_MEM_ATTRIBUTE);
     }
 
-    // find the enclave base
-    void* enclave_base = get_enclave_base_address_from_address(target_address);
-    if (enclave_base == NULL) {
-        if (enclave_error != NULL)
-            *enclave_error = ENCLAVE_INVALID_ENCLAVE;
+    if(enclave_do_mprotect_region(target_address, target_size, prot, enclave_error) == false)
+    {
         return 0;
-    }
-
-    se_mutex_lock(&s_enclave_mutex);
-    auto enclave_mem_region = &s_enclave_mem_region[enclave_base];
-    se_mutex_unlock(&s_enclave_mutex);
-
-    void* next_page = (void*)((uint64_t)enclave_mem_region->addr + (uint64_t)enclave_mem_region->len);
-    if ((enclave_mem_region->prot != prot) || (target_address != next_page)) {
-        if (enclave_mem_region->addr != 0) {
-            //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
-            int ret = 0;
-            if (hfile != -1) {
-                if (MAP_FAILED == mmap(enclave_mem_region->addr, enclave_mem_region->len,
-                    enclave_mem_region->prot, MAP_SHARED | MAP_FIXED, hfile, 0))
-                    ret=-1;
-            }
-            else
-                ret = mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
-            if (0 != ret) {
-                if (enclave_error != NULL)
-                    *enclave_error = error_driver2api(-1, errno);
-                return 0;
-            }
-        }
-        //record the current load of enclave data in the memory region structure
-        enclave_mem_region->addr = target_address;
-        enclave_mem_region->len = target_size;
-        enclave_mem_region->prot = prot;
-    } else {
-        //this load of enclave data is extending the memory region
-        enclave_mem_region->len += target_size;
     }
 
     if (enclave_error != NULL)
         *enclave_error = ENCLAVE_ERROR_SUCCESS;
     return target_size;
 }
+
+
 
 /* enclave_initialize()
  * Parameters:
@@ -793,41 +1146,27 @@ extern "C" bool COMM_API enclave_initialize(
     }
 
     //mprotect the last region
-    se_mutex_lock(&s_enclave_mutex);
-    auto enclave_mem_region = &s_enclave_mem_region[base_address];
-    se_mutex_unlock(&s_enclave_mutex);
-    if (enclave_mem_region->addr != 0) {
-        //the new load of enclave data either has a different protection or is not contiguous with the last one, mprotect/mmap the range stored in memory region structure
-       int ret = 0;
-       if (hfile != -1) {
-           if (MAP_FAILED == mmap(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot, MAP_SHARED | MAP_FIXED, hfile, 0))
-               ret=-1;
-       }
-       else
-           ret= mprotect(enclave_mem_region->addr, enclave_mem_region->len, enclave_mem_region->prot);
-       if (0 != ret) {
-            if (enclave_error != NULL)
-                *enclave_error = error_driver2api(-1, errno);
-            return 0;
-        }
-        //record the current load of enclave data in the memory region structure
-        enclave_mem_region->addr = 0; //just in case we need to call enclave_initialize twice
+    if(enclave_do_mprotect_region(base_address, 0, 0, enclave_error) == false)
+    {
+        return false;
     }
 
     int ret = 0;
     if ( s_driver_type == SGX_DRIVER_OUT_OF_TREE )
     {
         //out-of-tree driver requires a launch token to be provided
-        se_mutex_lock(&s_enclave_mutex);
-        std::map<void*, sgx_attributes_t>::iterator it = s_secs_attr.find(base_address);
-        if (it == s_secs_attr.end()) {
-            se_mutex_unlock(&s_enclave_mutex);
+        sgx_attributes_t secs_attr;
+        memset(&secs_attr, 0, sizeof(sgx_attributes_t));
+        
+        if(get_secs_attr_from_base_address(base_address, &secs_attr)== false)
+        {
             if (enclave_error != NULL)
+            {
                 *enclave_error = ENCLAVE_INVALID_PARAMETER;
+            }
             return false;
         }
-        se_mutex_unlock(&s_enclave_mutex);
-
+        
         sgx_launch_token_t launch_token;
         memset(launch_token, 0, sizeof(sgx_launch_token_t));
 
@@ -841,7 +1180,7 @@ extern "C" bool COMM_API enclave_initialize(
                 return false;
             }
 
-            sgx_status_t status = func(enclave_css, &it->second, &launch_token);
+            sgx_status_t status = func(enclave_css, &secs_attr, &launch_token);
             if (status != SGX_SUCCESS) {
                 if (enclave_error != NULL)
                     *enclave_error = error_aesm2api(status);
@@ -875,23 +1214,24 @@ extern "C" bool COMM_API enclave_initialize(
     }
 
     if (ret) {
-        SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_INIT failed error = %d\n", ret);
+        SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_INIT failed error = %d, errno = %d\n", ret, errno);
         if (enclave_error != NULL)
             *enclave_error = error_driver2api(ret, errno);
         return false;
     }
 
-    se_mutex_lock(&s_enclave_mutex);
-    std::map<void*, bool>::iterator it = s_enclave_init.find(base_address);
-    if (it != s_enclave_init.end() && it->second) {
-        se_mutex_unlock(&s_enclave_mutex);
-        if (enclave_error != NULL)
-            *enclave_error = ENCLAVE_ALREADY_INITIALIZED;
-        return false;
+    {
+        LockGuard lock(&s_enclave_mutex);
+        std::map<void*, bool>::iterator it = s_enclave_init.find(base_address);
+        if (it != s_enclave_init.end() && it->second) {
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_ALREADY_INITIALIZED;
+            return false;
+        }
+
+        s_enclave_init[base_address] = true;
     }
 
-    s_enclave_init[base_address] = true;
-    se_mutex_unlock(&s_enclave_mutex);
 
     if (enclave_error != NULL)
         *enclave_error = ENCLAVE_ERROR_SUCCESS;
@@ -916,27 +1256,41 @@ extern "C" bool COMM_API enclave_delete(
         return false;
     }
 
-    se_mutex_lock(&s_enclave_mutex);
-    std::map<void*, size_t>::iterator it = s_enclave_size.find(base_address);
-    if (it == s_enclave_size.end()) {
-        se_mutex_unlock(&s_enclave_mutex);
-        if (enclave_error != NULL)
-            *enclave_error = ENCLAVE_INVALID_PARAMETER;
-        return false;
-    }
+    size_t enclave_size = 0;
 
-    s_enclave_size.erase(base_address);
-    s_enclave_init.erase(base_address);
-    s_enclave_mem_region.erase(base_address);
-    if (s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        int hfile_temp = s_hfile[base_address];
-        close_file(&hfile_temp);
-        s_hfile.erase(base_address);
-    }
-    se_mutex_unlock(&s_enclave_mutex);
+        LockGuard lock(&s_enclave_mutex);
+        std::map<void*, size_t>::iterator it = s_enclave_size.find(base_address);
+        if (it == s_enclave_size.end()) {
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_INVALID_PARAMETER;
+            return false;
+        }
+        enclave_size = it->second;
 
-    if (0 != munmap(base_address, it->second)) {
+        s_enclave_size.erase(base_address);
+        s_enclave_init.erase(base_address);
+        s_enclave_mem_region.erase(base_address);
+        if (s_driver_type == SGX_DRIVER_IN_KERNEL)
+        {
+            int hfile_temp = s_hfile[base_address];
+            close_file(&hfile_temp);
+            s_hfile.erase(base_address);
+        }
+
+        if(s_enclave_elrange_map.count(base_address) != 0)
+        {
+            enclave_elrange_t *enclave_elrange = s_enclave_elrange_map[base_address];
+            if (enclave_elrange != NULL)
+            {
+                s_enclave_elrange_map.erase(base_address);
+                delete enclave_elrange;
+                enclave_elrange = NULL;
+            } 
+        }
+    }
+
+    if (0 != munmap(base_address, enclave_size)) {
         SE_TRACE(SE_TRACE_WARNING, "delete SGX enclave failed, error = %d\n", errno);
         if (enclave_error != NULL) {
             if (errno == EINVAL)
@@ -960,7 +1314,7 @@ extern "C" bool COMM_API enclave_delete(
  * output_info_size[in, out] - Size of the output_info buffer, in bytes.  If the API succeeds, then this will return the number of bytes returned in output_info.  If the API fails with, ENCLAVE_INVALID_SIZE, then this will return the required size
  * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  */
-bool COMM_API enclave_get_information(
+extern "C" bool COMM_API enclave_get_information(
     COMM_IN void* base_address,
     COMM_IN uint32_t info_type,
     COMM_OUT void* output_info,
@@ -986,7 +1340,7 @@ bool COMM_API enclave_get_information(
  * input_info_size[in] - Size of the information, in bytes, provided in input_info from the API.
  * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  */
-bool COMM_API enclave_set_information(
+extern "C" bool COMM_API enclave_set_information(
     COMM_IN void* base_address,
     COMM_IN uint32_t info_type,
     COMM_IN void* input_info,
@@ -1003,3 +1357,4 @@ bool COMM_API enclave_set_information(
 
     return false;
 }
+

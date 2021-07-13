@@ -307,7 +307,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     thread_data_t *thread_data = get_thread_data();
     ssa_gpr_t *ssa_gpr = NULL;
     sgx_exception_info_t *info = NULL;
-    uintptr_t sp, *new_sp = NULL;
+    uintptr_t sp_u, sp, *new_sp = NULL;
     size_t size = 0;
 
     if ((thread_data == NULL) || (tcs == NULL)) goto default_handler;
@@ -331,8 +331,24 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
 
     // no need to check the result of ssa_gpr because thread_data is always trusted
     ssa_gpr = reinterpret_cast<ssa_gpr_t *>(thread_data->first_ssa_gpr);
-    
+
+    // The unstrusted RSP should never point inside the enclave
+    sp_u = ssa_gpr->REG(sp_u);
+    if (!sgx_is_outside_enclave((void *)sp_u, sizeof(sp_u)))
+    {
+        g_enclave_state = ENCLAVE_CRASHED;
+        return SGX_ERROR_STACK_OVERRUN;
+    }
+
+    // The untrusted and trusted RSPs cannot be the same, unless
+    // an exception happened before the enclave setup the trusted stack
     sp = ssa_gpr->REG(sp);
+    if (sp_u == sp)
+    {
+        g_enclave_state = ENCLAVE_CRASHED;
+        return SGX_ERROR_STACK_OVERRUN;
+    }
+
     if(!is_stack_addr((void*)sp, 0))  // check stack overrun only, alignment will be checked after exception handled
     {
         g_enclave_state = ENCLAVE_CRASHED;

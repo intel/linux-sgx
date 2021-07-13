@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# postinst script for libsgx-enclave-common
+# postinst script for sgx-aesm-service
 #
 # see: dh_installdeb(1)
 
@@ -27,9 +27,11 @@ trigger_udev() {
 
 case "$1" in
     configure)
-        trigger_udev
-        systemctl enable remount-dev-exec &> /dev/null || true
-        systemctl start remount-dev-exec &> /dev/null || true
+        # Add sgx_prv for in-kernel driver.
+        if [ -c /dev/sgx_provision -o -c /dev/sgx/provision ]; then
+            /usr/bin/getent group sgx_prv &> /dev/null || /usr/sbin/groupadd sgx_prv
+            trigger_udev
+        fi
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)

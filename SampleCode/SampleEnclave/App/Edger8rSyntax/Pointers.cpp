@@ -50,19 +50,19 @@ void edger8r_pointer_attributes(void)
     assert(strcmp(c, "SGX_SUCCESS") == 0);
 
 
-    val = 0;
+    val = 1;
     ret = ecall_pointer_in(global_eid, &val);
     if (ret != SGX_SUCCESS)
         abort();
-    assert(val == 0);
+    assert(val == 1);
     
-    val = 0;
+    val = 1;
     ret = ecall_pointer_out(global_eid, &val);
     if (ret != SGX_SUCCESS)
         abort();
     assert(val == 1234);
     
-    val = 0;
+    val = 1;
     ret = ecall_pointer_in_out(global_eid, &val);
     if (ret != SGX_SUCCESS)
         abort();

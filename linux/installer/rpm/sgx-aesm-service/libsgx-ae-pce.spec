@@ -67,6 +67,21 @@ rm -fr %{?buildroot}/%{name}
 
 %debug_package
 
+%post
+trigger_udev() {
+    if ! which udevadm &> /dev/null; then
+        return 0
+    fi
+    udevadm control --reload || :
+    udevadm trigger || :
+}
+
+# Add sgx_prv for in-kernel driver.
+if [ -c /dev/sgx_provision -o -c /dev/sgx/provision ]; then
+    /usr/bin/getent group sgx_prv &> /dev/null || /usr/sbin/groupadd sgx_prv
+    trigger_udev
+fi
+
 %changelog
 * Mon Jul 29 2019 SGX Team
 - Initial Release

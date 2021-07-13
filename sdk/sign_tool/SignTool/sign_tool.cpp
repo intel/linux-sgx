@@ -1076,18 +1076,29 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     }
 
     SE_TRACE_DEBUG("\n");
-
+    
     // append 2_0 metadata
     memcpy_s(metadata2, metadata->size, metadata, metadata->size);
-    metadata2->version = META_DATA_MAKE_VERSION(SGX_2_0_MAJOR_VERSION,SGX_2_0_MINOR_VERSION);
-    if (!append_compatible_metadata(metadata2, metadata))
+    //if elrange is set, we can remove this metadata 
+    if(parameter[ELRANGESIZE].value == 0)
     {
-        free(metadata2);
-        return false;
+        metadata2->version = META_DATA_MAKE_VERSION(SGX_2_0_MAJOR_VERSION,SGX_2_0_MINOR_VERSION);
+        if (!append_compatible_metadata(metadata2, metadata))
+        {
+            free(metadata2);
+            return false;
+        }
     }
 
     // append 1_9 metadata
-    metadata2->version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
+    if(parameter[ELRANGESIZE].value != 0)
+    {
+        metadata2->version = META_DATA_MAKE_VERSION(SGX_1_ELRANGE_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
+    }
+    else
+    {
+        metadata2->version = META_DATA_MAKE_VERSION(SGX_1_9_MAJOR_VERSION,SGX_1_9_MINOR_VERSION);
+    }
     layout_t *start = GET_PTR(layout_t, metadata2, metadata2->dirs[DIR_LAYOUT].offset);
     layout_t *end = GET_PTR(layout_t, start, metadata2->dirs[DIR_LAYOUT].size);
     layout_t tmp_layout;
@@ -1126,12 +1137,12 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
             min_rsrv_entry = l;
             continue;
         }
-	else if (l->entry.id == LAYOUT_ID_RSRV_INIT)
+        else if (l->entry.id == LAYOUT_ID_RSRV_INIT)
         {
             init_rsrv_entry = l;
             continue;
         }
-	else if (l->entry.id == LAYOUT_ID_RSRV_MAX)
+        else if (l->entry.id == LAYOUT_ID_RSRV_MAX)
         {
             max_rsrv_entry = l;
             continue;
@@ -1291,8 +1302,10 @@ int main(int argc, char* argv[])
                                    {"ISVFAMILYID_H",        ISVFAMILYID_MAX,       0,              0,                   0},
                                    {"ISVFAMILYID_L",        ISVFAMILYID_MAX ,      0,              0,                   0},
                                    {"ISVEXTPRODID_H",       ISVEXTPRODID_MAX,      0,              0,                   0},
-                                   {"ISVEXTPRODID_L",       ISVEXTPRODID_MAX,      0,              0,                   0}};
-
+                                   {"ISVEXTPRODID_L",       ISVEXTPRODID_MAX,      0,              0,                   0},
+                                   {"EnclaveImageAddress",  0xFFFFFFFFFFFFFFFF,    0x1000,         0,                   0},
+                                   {"ELRangeStartAddress",  0xFFFFFFFFFFFFFFFF,    0,              0,                   0},
+                                   {"ELRangeSize",          0xFFFFFFFFFFFFFFFF,    0x1000,         0,                   0}};
     const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
     uint8_t metadata_raw[METADATA_SIZE];
