@@ -83,8 +83,6 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
 - Ensure that you have one of the following required operating systems:  
-  * Ubuntu\* 16.04 LTS Desktop 64bits
-  * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
@@ -95,10 +93,6 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Fedora 31 Server 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
-  * On Ubuntu 16.04:
-  ```
-    $ sudo apt-get install build-essential ocaml automake autoconf libtool wget python libssl-dev git cmake perl
-  ```
   * On Ubuntu 18.04:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git cmake perl
@@ -124,10 +118,10 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo yum groupinstall 'C Development Tools and Libraries'
     $ sudo yum install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget python rpm-build git cmake perl
   ```
-   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above. For Ubuntu 16.04, Red Hat Enterprise Linux 7.6, you may need to update gcc and glibc version manually.
+   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above. For Red Hat Enterprise Linux 7.6, you may need to update gcc and glibc version manually.
 - Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:  
   1)  To install the additional required tools:
-      * On Ubuntu 16.04, Ubuntu 18.04 and Ubuntu 20.04:
+      * On Ubuntu 18.04 and Ubuntu 20.04:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip
       ```
@@ -227,17 +221,14 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make
 ``` 
 - To build the Intel(R) SGX PSW installer, enter the following command:
-  * On Ubuntu 16.04, Ubuntu 18.04 and Ubuntu 20.04:
+  * On Ubuntu 18.04 and Ubuntu 20.04:
    ```
   $ make deb_psw_pkg
   ```
   You can find the generated Intel(R) SGX PSW installers located under `linux/installer/deb/libsgx-urts`, `linux/installer/deb/libsgx-enclave-common`, `linux/installer/deb/libsgx-uae-service`, `linux/installer/deb/libsgx-epid`, `linux/installer/deb/libsgx-launch`, `linux/installer/deb/libsgx-quote-ex` and `linux/installer/deb/sgx-aesm-service` respectively.
 
-  **Note**: On Ubuntu 18.04 and Ubuntu 20.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``package-name-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose. On Ubuntu 16.04, if you want to keep debug symbols in the Intel(R) SGX PSW installer, before building the Intel(R) SGX PSW, you need to export an environment variable to ensure the debug symbols not stripped:
-   ```
-   $ export DEB_BUILD_OPTIONS="nostrip"
-   ```
-  **Note**: Starting with the 2.10 release, besides the Intel(R) SGX PSW installer, the above command generates [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) installers on OS newer than Ubuntu 16.04. Ubuntu 16.04 is not included because of GCC version.
+  **Note**: On Ubuntu 18.04 and Ubuntu 20.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``package-name-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose. 
+  **Note**: Starting with the 2.10 release, besides the Intel(R) SGX PSW installer, the above command generates [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) installers as well.
 
   **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer without optimization and with full debug information kept in the tools and libraries, enter the following command:
   ```
@@ -264,10 +255,6 @@ You can find the tools and libraries generated in the `build/linux` directory.
 
   - To add the local Debian package repository to the system repository configuration, append the following line to /etc/apt/sources.list. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
   
-  * On Ubuntu 16.04:
-  ```
-  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO xenial main
-  ```
   * On Ubuntu 18.04:
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO bionic main
@@ -277,7 +264,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO focal main
   ```
   After that, you need to update the apt:
-  * On Ubuntu 16.04, Ubuntu 18.04 and Ubuntu 20.04:
+  * On Ubuntu 18.04 and Ubuntu 20.04:
   ```
   $ sudo apt update
   ```
@@ -305,8 +292,6 @@ Install the Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
-  * Ubuntu\* 16.04 LTS Desktop 64bits
-  * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
@@ -316,7 +301,7 @@ Install the Intel(R) SGX SDK
   * CentOS 8.2 64bits
   * Fedora 31 Server 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
-  * On Ubuntu 16.04, Ubuntu 18.04 and Ubuntu 20.04:
+  * On Ubuntu 18.04 and Ubuntu 20.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
@@ -371,8 +356,6 @@ Install the Intel(R) SGX PSW
 ----------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:  
-  * Ubuntu\* 16.04 LTS Desktop 64bits
-  * Ubuntu\* 16.04 LTS Server 64bits
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
@@ -386,7 +369,7 @@ Install the Intel(R) SGX PSW
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:  
-  * On Ubuntu 16.04, Ubuntu 18.04 and Ubuntu 20.04:
+  * On Ubuntu 18.04 and Ubuntu 20.04:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
@@ -404,16 +387,14 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 16.04, Ubuntu 18.04 and Ubuntu 20.04|Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.2, Fedora 31|
+|   |Ubuntu 18.04 and Ubuntu 20.04|Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.2, Fedora 31|
 | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|
 |algorithm agnostic attestation service|apt-get install libsgx-quote-ex libsgx-urts|yum install libsgx-quote-ex libsgx-urts|
-|DCAP ECDSA-based service(Ubuntu16.04 not included)|apt-get install libsgx-dcap-ql|yum install libsgx-dcap-ql|
+|DCAP ECDSA-based service |apt-get install libsgx-dcap-ql|yum install libsgx-dcap-ql|
 
 Optionally, you can install *-dbgsym or *-debuginfo packages to get the debug symbols, and install *-dev or *-devel packages to get the header files for development.
-
-**NOTE**: To debug with sgx-gdb on Ubuntu 16.04, you need to ensure the Intel(R) SGX PSW is built under the condition that the environment variable ``DEB_BUILD_OPTIONS="nostrip"`` is set. 
 
 #### Using the individual packages
 Please refer [Intel_SGX_Installation_Guide_Linux](https://download.01.org/intel-sgx/latest/linux-latest/docs/) for detail.
@@ -427,7 +408,7 @@ apt-get dist-upgrade -o Dpkg::Options::="--force-overwrite"
 ```
 #### Configure the installation
 Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-* On Ubuntu 16.04, Ubuntu 18.04 and Ubuntu 20.04:
+* On Ubuntu 18.04 and Ubuntu 20.04:
 ```
   --no-install-recommends
 ```
