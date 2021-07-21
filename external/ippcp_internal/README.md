@@ -7,13 +7,19 @@ In order to build your own IPP crypto, please follow below steps:
 2. Read the ipp-crypto README to prepare your build environment.
 3. Make sure ipp-crypto source code are prepared.
 4. Build the target ippcp library with the prepared Makefile:
-   a. Build the target ippcp library with All-Loads-Mitigation:
+   1. Build the target ippcp library with All-Loads-Mitigation:
+      ```shell
       $ make MITIGATION-CVE-2020-0551=LOAD
-   b. Build the target ippcp library with Branch-Mitigation:
+      ```
+   2. Build the target ippcp library with Branch-Mitigation:
+      ```shell
       $ make MITIGATION-CVE-2020-0551=CF
-   c. Build the target ippcp library with No-Mitigation:
+      ```
+   3. Build the target ippcp library with No-Mitigation:
+      ```shell
       $ make
+      ```
 The built-out static library `libippcp.a` and header files will be copied into the right place.
-Remember to "make clean" before switching the build.
+Remember to `make clean` before switching the build.
 
 For IPP crypto reproducible build, please follow the instructions in [reproducibility README.md](../../linux/reproducibility/README.md) to reproduce the prebuilt IPP crypto.
