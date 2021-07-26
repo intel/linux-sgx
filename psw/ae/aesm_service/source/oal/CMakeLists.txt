@@ -25,5 +25,7 @@ target_compile_definitions(oal PRIVATE
 	$<$<CONFIG:Debug>:DBG_LOG>
 )
 
+set_source_files_properties(linux/aesm_util.cpp PROPERTIES COMPILE_FLAGS "-fno-optimize-sibling-calls")
+
 target_link_libraries(oal Threads::Threads ${CMAKE_DL_LIBS})
 set_property(TARGET oal APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")
