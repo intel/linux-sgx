@@ -25,6 +25,7 @@
 #define _PTHREAD_H_
 
 #include <sgx_defs.h>
+#include <sgx_thread.h>
 
 /*
  * Flags for once initialization.
@@ -40,9 +41,9 @@
 /*
  * Static initialization values. 
  */
-#define PTHREAD_MUTEX_INITIALIZER	NULL
-#define PTHREAD_COND_INITIALIZER	NULL
-#define PTHREAD_RWLOCK_INITIALIZER	NULL
+#define PTHREAD_MUTEX_INITIALIZER   SGX_THREAD_MUTEX_INITIALIZER
+#define PTHREAD_COND_INITIALIZER    SGX_THREAD_COND_INITIALIZER
+#define PTHREAD_RWLOCK_INITIALIZER  SGX_THREAD_LOCK_INITIALIZER
 
 /*
  * Primitive system data type definitions required by P1003.1c.
@@ -51,18 +52,15 @@
  * or assignment operators for the types pthread_attr_t, pthread_cond_t,
  * pthread_condattr_t, pthread_mutex_t, pthread_mutexattr_t.
  */
-typedef struct	_pthread			*pthread_t;
-typedef struct	_pthread_attr		*pthread_attr_t;
-typedef struct _sgx_thread_mutex_t	*pthread_mutex_t;
-typedef struct	_sgx_thread_mutex_attr_t	*pthread_mutexattr_t;
-typedef struct	_sgx_thread_cond_t		*pthread_cond_t;
-typedef struct	_sgx_thread_cond_attr_t	*pthread_condattr_t;
-typedef int				pthread_key_t;
-typedef struct	_sgx_thread_rwlock_t		*pthread_rwlock_t;
-typedef struct	_sgx_thread_rwlockattr_t	*pthread_rwlockattr_t;
-//typedef struct	pthread_barrier		*pthread_barrier_t;
-//typedef struct	pthread_barrierattr	*pthread_barrierattr_t;
-//typedef struct	pthread_spinlock	*pthread_spinlock_t;
+typedef struct  _pthread                    *pthread_t;
+typedef struct  _pthread_attr               *pthread_attr_t;
+typedef struct  _sgx_thread_mutex_t         pthread_mutex_t;
+typedef struct  _sgx_thread_mutex_attr_t    pthread_mutexattr_t;
+typedef struct  _sgx_thread_cond_t          pthread_cond_t;
+typedef struct  _sgx_thread_cond_attr_t     pthread_condattr_t;
+typedef         int                         pthread_key_t;
+typedef struct  _sgx_thread_rwlock_t        pthread_rwlock_t;
+typedef struct  _sgx_thread_rwlockattr_t    pthread_rwlockattr_t;
 
 /*
  * Once definitions.

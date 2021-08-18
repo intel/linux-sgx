@@ -28,131 +28,39 @@ static volatile uint32_t static_init_lock = SGX_SPINLOCK_INITIALIZER;
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlockp, const pthread_rwlockattr_t *attr)
 {
-    pthread_rwlock_t rwlock;
     UNUSED(attr);
-    rwlock = (pthread_rwlock_t)calloc(1, sizeof(*rwlock));
-    if (rwlock == NULL)
-        return (ENOMEM);
-    sgx_thread_rwlock_init(rwlock, NULL);
-    *rwlockp = rwlock;
-    return 0;
+    return sgx_thread_rwlock_init(rwlockp, NULL);
 }
 
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlockp)
 {
-    if (rwlockp == NULL)
-        return (EINVAL);
-
-    sgx_thread_rwlock_t *rwlock = *rwlockp;
-    if(rwlock) {
-        int ret = sgx_thread_rwlock_destroy(rwlock);
-        if(ret != 0)
-            return ret;
-
-        free((void *)(rwlock));
-        *rwlockp = NULL;
-    }
-    return 0;
+    return sgx_thread_rwlock_destroy(rwlockp);
 }
 
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlockp)
 {
-    if (rwlockp == NULL)
-        return (EINVAL);
-    int error = 0;
-
-    /*
-      * If the rwlock is statically initialized, perform the dynamic
-      * initialization.
-    */
-    if (*rwlockp == NULL) {
-        sgx_spin_lock(&static_init_lock);
-        if (*rwlockp == NULL)
-            error = pthread_rwlock_init(rwlockp, NULL);
-        sgx_spin_unlock(&static_init_lock);
-        if (error != 0)
-            return (EINVAL);
-    }
-
-    return sgx_thread_rwlock_rdlock(*rwlockp);
+    return sgx_thread_rwlock_rdlock(rwlockp);
 }
 
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlockp)
 {
-    if (rwlockp == NULL)
-        return (EINVAL);
-    int error=0;
-
-    /*
-      * If the rwlock is statically initialized, perform the dynamic
-      * initialization. 
-    */
-    if (*rwlockp == NULL) {
-        sgx_spin_lock(&static_init_lock);
-        if (*rwlockp == NULL)
-            error = pthread_rwlock_init(rwlockp, NULL);
-        sgx_spin_unlock(&static_init_lock);
-        if (error != 0)
-            return (EINVAL);
-    }
-
-    return sgx_thread_rwlock_tryrdlock(*rwlockp);
+    return sgx_thread_rwlock_tryrdlock(rwlockp);
 }
 
 
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlockp)
 {
-    if (rwlockp == NULL)
-        return (EINVAL);
-    int error = 0;
-
-    /*
-      * If the rwlock is statically initialized, perform the dynamic
-      * initialization.
-    */
-    if (*rwlockp == NULL) {
-        sgx_spin_lock(&static_init_lock);
-        if (*rwlockp == NULL)
-            error = pthread_rwlock_init(rwlockp, NULL);
-        sgx_spin_unlock(&static_init_lock);
-        if (error != 0)
-            return (EINVAL);
-    }
-
-    return sgx_thread_rwlock_wrlock(*rwlockp);
+    return sgx_thread_rwlock_wrlock(rwlockp);
 }
 
 
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlockp)
 {
-    if (rwlockp == NULL)
-        return (EINVAL);
-    int error = 0;
-
-    /*
-      * If the rwlock is statically initialized, perform the dynamic
-      * initialization.
-    */
-    if (*rwlockp == NULL) {
-        sgx_spin_lock(&static_init_lock);
-        if (*rwlockp == NULL)
-            error = pthread_rwlock_init(rwlockp, NULL);
-        sgx_spin_unlock(&static_init_lock);
-        if (error != 0)
-            return (EINVAL);
-    }
-
-    return sgx_thread_rwlock_trywrlock(*rwlockp);
+    return sgx_thread_rwlock_trywrlock(rwlockp);
 }
 
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlockp)
 {
-    if (rwlockp == NULL)
-        return (EINVAL);
-
-    if (*rwlockp == NULL)
-        abort();
-
-    return sgx_thread_rwlock_unlock(*rwlockp);
+    return sgx_thread_rwlock_unlock(rwlockp);
 }
 
