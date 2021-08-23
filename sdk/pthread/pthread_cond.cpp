@@ -29,56 +29,26 @@
 int pthread_cond_init(pthread_cond_t *condp, const pthread_condattr_t *attr)
 {
     UNUSED(attr);
-    pthread_cond_t cond;
-    cond = (pthread_cond_t)calloc(1, sizeof(*cond));
-    if (cond == NULL)
-        return (ENOMEM);
-    *condp = cond;
-    return sgx_thread_cond_init(cond, NULL);
+    return sgx_thread_cond_init(condp, NULL);
 }
 
 int pthread_cond_destroy(pthread_cond_t *condp)
 {
-    int error;
-    pthread_cond_t cond;
-    cond = *condp;
-    if (cond != NULL) {
-        error = sgx_thread_cond_destroy(cond);
-        if(0 != error)
-            return error;
-        free(cond);
-    }
-    *condp = NULL;
-    return 0;
+    return sgx_thread_cond_destroy(condp);
 }
 
 int pthread_cond_wait(pthread_cond_t *condp, pthread_mutex_t *mutexp)
 {
-    pthread_cond_t cond;
-    int error;
-    if (*condp == NULL) {
-        if ((error = pthread_cond_init(condp, NULL)))
-            return (error);
-    }
-    cond = *condp;
-    return sgx_thread_cond_wait(cond, *mutexp);
+    return sgx_thread_cond_wait(condp, mutexp);
 }
 
 int pthread_cond_signal(pthread_cond_t *condp)
 {
-    pthread_cond_t cond;
-    if (*condp == NULL)
-        return (0);
-    cond = *condp;
-    return sgx_thread_cond_signal(cond);
+    return sgx_thread_cond_signal(condp);
 }
 
 int pthread_cond_broadcast(pthread_cond_t *condp)
 {
-    pthread_cond_t cond;
-    if (*condp == NULL)
-        return (0);
-    cond = *condp;
-    return sgx_thread_cond_broadcast(cond);
+    return sgx_thread_cond_broadcast(condp);
 }
 
