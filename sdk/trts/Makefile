@@ -48,18 +48,19 @@ OBJS1 := init_enclave.o  \
         trts.o           \
         trts_ecall.o     \
         trts_ocall.o     \
+        ema_init.o     \
         trts_util.o      \
         trts_veh.o       \
         trts_xsave.o     \
         init_optimized_lib.o \
         trts_version.o \
-        trts_trim.o \
-        trts_emodpr.o  \
         trts_add_trim.o
 
 OBJS2 := trts_nsp.o
 
-OBJS := $(OBJS1) $(OBJS2)
+OBJS3 := ema_rt.o
+
+OBJS := $(OBJS1) $(OBJS2) $(OBJ3)
 
 all: $(OBJS) elf_parser
 
@@ -69,6 +70,11 @@ $(OBJS1): %.o: %.cpp
 
 $(OBJS2): %.o: %.cpp
 	$(CXX) -c $(TCXXFLAGS) $(CPPFLAGS) -fPIC $< -o $@
+
+$(OBJS3): %.o: %.c
+	$(CC) -c $(TCFLAGS) $(CFLAGS) -fPIC $< -o $@
+
+.PHONY: elf_parser
 
 .PHONY: elf_parser
 elf_parser: $(OBJS)

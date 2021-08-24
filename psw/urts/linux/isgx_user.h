@@ -108,16 +108,25 @@ enum sgx_page_flags {
 	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init)
 #define SGX_IOC_ENCLAVE_SET_ATTRIBUTE \
 	_IOW(SGX_MAGIC, 0x03, struct sgx_enclave_set_attribute)
+#define SGX_IOC_PAGE_MODP \
+	_IOWR(SGX_MAGIC, 0x04, struct sgx_page_modp)
+#define SGX_IOC_PAGE_MODT \
+	_IOWR(SGX_MAGIC, 0x05, struct sgx_page_modt)
+#define SGX_IOC_PAGE_REMOVE \
+    _IOWR(SGX_MAGIC, 0x06, struct sgx_page_remove)
+
+/* Legacy OOT driver support for EDMM */
 #define SGX_IOC_ENCLAVE_EMODPR \
 	_IOW(SGX_MAGIC, 0x09, struct sgx_modification_param)
 #define SGX_IOC_ENCLAVE_MKTCS \
 	_IOW(SGX_MAGIC, 0x0a, struct sgx_range)
 #define SGX_IOC_ENCLAVE_TRIM \
 	_IOW(SGX_MAGIC, 0x0b, struct sgx_range)
+
+//Legacy implementation to ensure EPC pages removed no later by this ioctl
+
 #define SGX_IOC_ENCLAVE_NOTIFY_ACCEPT \
 	_IOW(SGX_MAGIC, 0x0c, struct sgx_range)
-#define SGX_IOC_ENCLAVE_PAGE_REMOVE \
-	_IOW(SGX_MAGIC, 0x0d, unsigned long)
 
 //Note: SGX_IOC_ENCLAVE_CREATE is the same for in-kernel except that it returns a file handle for in-kernel
 #define SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL \
@@ -267,7 +276,7 @@ struct sgx_enclave_destroy {
 
 
 /*
- *     SGX2.0 definitions
+ *     SGX2.0 definitions for Legacy OOT driver
  */
 
 #define SGX_GROW_UP_FLAG	1
@@ -283,6 +292,57 @@ struct sgx_modification_param {
 	unsigned long flags;
 };
 
+/**
+ * struct sgx_page_modp - parameter structure for the %SGX_IOC_PAGE_MODP ioctl
+ * @offset:	starting page offset
+ * @length:	length of memory (multiple of the page size)
+ * @prot:	new protection bits of pages in range described by @offset
+ *		and @length.
+ * @result:	SGX result code
+ * @count:	bytes successfully changed (multiple of page size)
+ */
+struct sgx_page_modp {
+	__u64 offset;
+	__u64 length;
+	__u64 prot;
+	__u64 result;
+	__u64 count;
+};
+
+/**
+ * struct sgx_page_modt - parameter structure for the %SGX_IOC_PAGE_MODT ioctl
+ * @offset:	starting page offset
+ * @length:	length of memory (multiple of the page size)
+ * @prot:	new type of pages in range described by @offset and @length.
+ * @result:	SGX result code
+ * @count:	bytes successfully changed (multiple of page size)
+ */
+struct sgx_page_modt {
+	__u64 offset;
+	__u64 length;
+	__u64 type;
+	__u64 result;
+	__u64 count;
+};
+
+/**
+ * struct sgx_page_remove - parameters for the %SGX_IOC_PAGE_REMOVE ioctl
+ * @offset: starting page offset (page aligned relative to enclave base
+ *      address defined in SECS)
+ * @length: length of memory (multiple of the page size)
+ * @count:  bytes successfully changed (multiple of page size)
+ *
+ * Regular (PT_REG) or TCS (PT_TCS) can be removed from an initialized
+ * enclave if the system supports SGX2. First, the %SGX_IOC_PAGE_MODT ioctl
+ * should be used to change the page type to PT_TRIM. After that succeeds
+ * ENCLU[EACCEPT] should be run from within the enclave and then can this
+ * ioctl be used to complete the page removal.
+ */
+struct sgx_page_remove {
+    __u64 offset;
+    __u64 length;
+    __u64 count;
+};
 
 
 struct sgx_enclave_run;
@@ -363,7 +423,7 @@ struct sgx_enclave_run {
  * Most exceptions reported on ENCLU, including those that occur within the
  * enclave, are fixed up and reported synchronously instead of being delivered
  * via a standard signal. Debug Exceptions (#DB) and Breakpoints (#BP) are
- * never fixed up and are always delivered via standard signals. On synchrously
+ * never fixed up and are always delivered via standard signals. On synchronously
  * reported exceptions, -EFAULT is returned and details about the exception are
  * recorded in @run.exception, the optional sgx_enclave_exception struct.
  *

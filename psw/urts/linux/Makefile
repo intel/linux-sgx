@@ -51,6 +51,7 @@ INC += -I$(SGX_HEADER_DIR)                \
        -I$(LINUX_PSW_DIR)/urts/           \
        -I$(LINUX_PSW_DIR)/urts/linux      \
        -I$(LINUX_PSW_DIR)/urts/parser     \
+       -I$(LINUX_SDK_DIR)/emm/include     \
        -I$(VTUNE_DIR)/include \
        -I$(VTUNE_DIR)/sdk/src/ittnotify 
 
@@ -96,6 +97,7 @@ OBJ2 := urts.o               \
         get_thread_id.o      \
         prd_css_util.o       \
         urts_emodpr.o        \
+        urts_emm.o        \
         urts_trim.o          \
         edmm_utility.o
 

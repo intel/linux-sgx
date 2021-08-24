@@ -81,10 +81,10 @@ public:
     virtual uint32_t handle_page_fault(uint64_t pf_address) { UNUSED(pf_address); return (uint32_t)SGX_ERROR_UNEXPECTED; }
 #endif
     virtual int emodpr(uint64_t addr, uint64_t size, uint64_t flag) = 0;
+    virtual int alloc(uint64_t addr, uint64_t size, int flag) = 0;
     virtual int mktcs(uint64_t tcs_addr) = 0;
     virtual int trim_range(uint64_t fromaddr, uint64_t toaddr) = 0;
     virtual int trim_accept(uint64_t addr) = 0;
-    virtual int remove_range(uint64_t fromaddr, uint64_t numpages) = 0;
     
     // destructor
     virtual ~EnclaveCreator() {};

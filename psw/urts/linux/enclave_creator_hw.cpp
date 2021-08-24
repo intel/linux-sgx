@@ -49,7 +49,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <stdlib.h>
-
+#include "sgx_mm.h"
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
   
 static EnclaveCreatorHW g_enclave_creator_hw;
@@ -306,19 +306,27 @@ void EnclaveCreatorHW::close_device()
     m_hdevice = -1;
 }
 
-int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
+int EnclaveCreatorHW::alloc(uint64_t addr, uint64_t size, int flag)
 {
-    sgx_modification_param params;
-    memset(&params, 0 ,sizeof(sgx_modification_param));
-    params.range.start_addr = (unsigned long)addr;
-    params.range.nr_pages = (unsigned int)(size/SE_PAGE_SIZE);
-    params.flags = (unsigned long)flag;
-
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_EMODPR, &params);
+	int ret = enclave_alloc(addr, size, flag);
     if (ret)
     {
-        SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_EMODPR failed %d\n", errno);
-        return error_driver2urts(ret, errno);
+        SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_alloc failed %d\n", ret);
+        return error_api2urts(ret);
+    }
+
+    return SGX_SUCCESS;
+}
+
+int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
+{
+
+    int ret = enclave_modify(addr, size, PROT_READ|PROT_WRITE|PROT_EXEC|SGX_EMA_PAGE_TYPE_REG,
+			(int) (flag|SGX_EMA_PAGE_TYPE_REG));
+    if (ret)
+    {
+        SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_EMODPR failed %d\n", ret);
+        return error_api2urts(ret);
     }
 
     return SGX_SUCCESS;
@@ -326,16 +334,11 @@ int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
  
 int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
 {
-    sgx_range params;
-    memset(&params, 0 ,sizeof(sgx_range));
-    params.start_addr = (unsigned long)tcs_addr;
-    params.nr_pages = 1;
-
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_MKTCS, &params);
+    int ret = enclave_modify(tcs_addr, SE_PAGE_SIZE, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_REG, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_TCS);
     if (ret)
     {
-        SE_TRACE(SE_TRACE_ERROR, "MODIFY_TYPE failed %d\n", errno);
-        return error_driver2urts(ret, errno);
+        SE_TRACE(SE_TRACE_ERROR, "MODIFY_TYPE failed %d\n", ret);
+        return error_api2urts(ret);
     }
 
     return SGX_SUCCESS;
@@ -343,16 +346,12 @@ int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
  
 int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
 {
-    sgx_range params;
-    memset(&params, 0 ,sizeof(sgx_range));
-    params.start_addr = (unsigned long)fromaddr;
-    params.nr_pages = (unsigned int)((toaddr - fromaddr)/SE_PAGE_SIZE);
 
-    int ret= ioctl(m_hdevice, SGX_IOC_ENCLAVE_TRIM, &params);
+    int ret= enclave_modify( fromaddr, toaddr - fromaddr, PROT_READ|PROT_WRITE, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_TRIM);
     if (ret)
     {
-        SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_TRIM failed %d\n", errno);
-        return error_driver2urts(ret, errno);
+        SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_TRIM failed %d\n", ret);
+        return error_api2urts(ret);
     }
 
     return SGX_SUCCESS;
@@ -361,38 +360,13 @@ int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
  
 int EnclaveCreatorHW::trim_accept(uint64_t addr)
 {
-    sgx_range params;
-    memset(&params, 0 ,sizeof(sgx_range));
-    params.start_addr = (unsigned long)addr;
-    params.nr_pages = 1;
-
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_NOTIFY_ACCEPT, &params);
-
+    int ret = enclave_modify(addr, SE_PAGE_SIZE, SGX_EMA_PAGE_TYPE_TRIM|PROT_READ|PROT_WRITE
+	                     , SGX_EMA_PAGE_TYPE_TRIM|PROT_READ|PROT_WRITE); 
 
     if (ret)
     {
-        SE_TRACE(SE_TRACE_ERROR, "TRIM_RANGE_COMMIT failed %d\n", errno);
-        return error_driver2urts(ret, errno);
-    }
-
-    return SGX_SUCCESS;
-}
- 
-int EnclaveCreatorHW::remove_range(uint64_t fromaddr, uint64_t numpages)
-{
-    int ret = -1;
-    uint64_t i;
-    unsigned long start;
-
-    for (i = 0; i < numpages; i++)
-    {
-        start = (unsigned long)fromaddr + (unsigned long)(i << SE_PAGE_SHIFT);
-        ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_PAGE_REMOVE, &start);
-        if (ret)
-        {
-            SE_TRACE(SE_TRACE_ERROR, "PAGE_REMOVE failed %d\n", errno);
-            return error_driver2urts(ret, errno);
-        }
+        SE_TRACE(SE_TRACE_ERROR, "TRIM_RANGE_COMMIT failed %d\n", ret);
+        return error_api2urts(ret);
     }
 
     return SGX_SUCCESS;

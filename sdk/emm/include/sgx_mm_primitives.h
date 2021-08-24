@@ -29,30 +29,34 @@
  *
  */
 
-
-#ifndef MPROTECT_T_H__
-#define MPROTECT_T_H__
+#ifndef SGX_MM_PRIMITIVES_H_
+#define SGX_MM_PRIMITIVES_H_
 
 #include <stdint.h>
-#include <wchar.h>
 #include <stddef.h>
-#include "sgx_trts.h"
-
-
-#include <stdlib.h> // for size_t
-
-#define SGX_CAST(type, item) ((type)(item))
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-sgx_status_t SGXAPI change_permissions_ocall(size_t addr, size_t size, uint64_t epcm_perms, const int proc);
+//SGX primitives
+typedef struct _sec_info_t
+{
+    uint64_t         flags;
+    uint64_t         reserved[7];
+} sec_info_t;
 
-sgx_status_t change_protection(void *enclave_base);
+// EACCEPT
+int do_eaccept(const sec_info_t* si, size_t addr);
+
+// EMODPE
+int do_emodpe(const sec_info_t* si, size_t addr);
+
+// EACCEPTCOPY
+int do_eacceptcopy(const sec_info_t* si, size_t dest, size_t src);
 
 #ifdef __cplusplus
 }
-#endif /* __cplusplus */
+#endif
+
 
 #endif

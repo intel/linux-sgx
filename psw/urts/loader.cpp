@@ -989,7 +989,6 @@ int CLoader::set_memory_protection()
     {
         return ret;
     }
-    
     return SGX_SUCCESS;
 
 }
@@ -1028,13 +1027,25 @@ int CLoader::set_context_protection(layout_t *layout_start, layout_t *layout_end
                 }
 #endif                          
             }
-
-            ret = mprotect(GET_PTR(void, m_start_addr, layout->entry.rva + delta), 
+#ifdef SE_SIM
+			ret = mprotect(GET_PTR(void, m_start_addr, layout->entry.rva + delta), 
                                (size_t)layout->entry.page_count << SE_PAGE_SHIFT,
                                prot); 
-            if(ret != 0)
+#else
+            if((layout->entry.attributes&PAGE_ATTR_EADD))
+				ret = mprotect(GET_PTR(void, m_start_addr, layout->entry.rva + delta), 
+                               (size_t)layout->entry.page_count << SE_PAGE_SHIFT,
+                               prot); 
+			else//dynamic allocated regions
+                if(prot!=PROT_NONE)
+			    ret = get_enclave_creator()->alloc((uint64_t) GET_PTR(void, m_start_addr, layout->entry.rva + delta),
+                               (size_t)layout->entry.page_count << SE_PAGE_SHIFT,
+                               prot);
+                else ret = 0;
+#endif
+			if(ret != 0)
             {
-                SE_TRACE(SE_TRACE_WARNING, "mprotect(rva=%" PRIu64 ", len=%" PRIu64 ", flags=%d) failed\n",
+                SE_TRACE(SE_TRACE_WARNING, "mprotect/alloc(rva=%" PRIu64 ", len=%" PRIu64 ", flags=%d) failed\n",
                          (uint64_t)m_start_addr + layout->entry.rva + delta, 
                          (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT, 
                           prot);

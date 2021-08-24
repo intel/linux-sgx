@@ -46,10 +46,11 @@ CXXFLAGS += -Werror $(ENCLAVE_CXXFLAGS)      \
 TCFLAGS   += -nostdinc \
              -I$(COMMON_DIR)/inc/tlibc/
 
+
 LDCFLAGS  := -shared -nostdlib -nodefaultlibs -nostartfiles
 
 CPP_SRCS  := $(wildcard ../*.cpp)
-C_SRCS    := $(wildcard *.c)
+C_SRCS    := $(wildcard *.c) $(wildcard ../*.c)
 ASM_SRCS  := $(wildcard *.S) \
              $(COMMON_DIR)/src/linux/xsave_gnu.S
 OBJS      := $(CPP_SRCS:.cpp=.o)
@@ -58,13 +59,22 @@ OBJS      += $(ASM_SRCS:.S=.o)
 OBJS      := $(sort $(OBJS))
 
 LIBTRTS = libsgx_trts.a
+LIBSGX_MM_PATH = $(LINUX_SDK_DIR)/emm
+LIBSGX_MM = libsgx_mm.a
 
 .PHONY: all
 all: $(LIBTRTS) | $(BUILD_DIR)
 	$(CP) $(LIBTRTS) $|
 
-$(LIBTRTS): $(OBJS) 
+$(LIBSGX_MM):
+	$(MAKE) -C $(LIBSGX_MM_PATH)
+
+$(LIBTRTS): $(OBJS) $(LIBSGX_MM)
 	$(AR) rsD $@ $(OBJS) 
+	$(MKDIR) $(BUILD_DIR)/.libsgx_mm
+	$(RM) $(BUILD_DIR)/.libsgx_mm/* && cd $(BUILD_DIR)/.libsgx_mm && $(AR) x $(LIBSGX_MM_PATH)/libsgx_mm.a
+	$(AR) rsD $@ $(BUILD_DIR)/.libsgx_mm/*.o
+	@$(RM) -rf $(BUILD_DIR)/.libsgx_mm
 
 %.o: %.S
 	echo $(ASM_SRCS)
@@ -82,7 +92,7 @@ $(BUILD_DIR):
 .PHONY: clean
 clean:
 	@$(RM) $(OBJS) $(LIBTRTS) $(BUILD_DIR)/$(LIBTRTS) 
-
+	@$(MAKE) -C $(LIBSGX_MM_PATH) clean
 .PHONY: rebuild
 rebuild:
 	$(MAKE) clean

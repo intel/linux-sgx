@@ -1,0 +1,1 @@
+../../sdk/emm/include/sgx_mm.h

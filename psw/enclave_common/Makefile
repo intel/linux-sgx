@@ -47,6 +47,7 @@ CFLAGS += $(ADDED_INC)
 INC += -I$(SGX_HEADER_DIR)                \
        -I$(COMMON_DIR)/inc/internal       \
        -I$(COMMON_DIR)/inc/internal/linux \
+       -I$(LINUX_SDK_DIR)/emm/include     \
        -I$(LINUX_PSW_DIR)/urts/           \
        -I$(LINUX_PSW_DIR)/urts/linux      \
        -I$(LINUX_PSW_DIR)/enclave_common
@@ -92,7 +93,7 @@ ifndef DEBUG
 	$(OBJCOPY) --add-gnu-debuglink=$(LIBSGX_ENCLAVE_COMMON_DEBUG) $(LIBSGX_ENCLAVE_COMMON)
 endif
 
-$(OBJ): %.o: %.cpp
+$(OBJ): %.o: %.cpp sgx_mm_ocalls.cpp
 	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
 
 $(LIBWRAPPER):

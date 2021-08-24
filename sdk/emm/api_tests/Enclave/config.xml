@@ -1,0 +1,23 @@
+<EnclaveConfiguration>
+  <ProdID>0</ProdID>
+  <ISVSVN>0</ISVSVN>
+  <TCSNum>8</TCSNum>
+  <TCSMinPool>3</TCSMinPool>
+  <TCSPolicy>1</TCSPolicy>
+  <TCSMaxNum>18</TCSMaxNum>
+
+  <StackMaxSize>0x10000</StackMaxSize>
+  <StackMinSize>0x2000</StackMinSize>
+  <HeapMaxSize>0x900000</HeapMaxSize>
+  <HeapInitSize>0x90000</HeapInitSize>
+  <HeapMinSize>0x080000</HeapMinSize>
+  <ReservedMemMinSize>  0x00001000</ReservedMemMinSize>
+  <ReservedMemInitSize> 0x00100000</ReservedMemInitSize>
+  <ReservedMemMaxSize>  0x90000000</ReservedMemMaxSize>
+  <!--  Intel SDK reserved memory is specified here to
+	  only force sign_tool to alloc more EPC
+  -->
+  <DisableDebug>0</DisableDebug>
+  <MiscSelect>1</MiscSelect>
+  <MiscMask>0xFFFFFFFF</MiscMask>
+</EnclaveConfiguration>

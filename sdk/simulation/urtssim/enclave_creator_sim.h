@@ -56,6 +56,7 @@ public:
     int trim_range(uint64_t fromaddr, uint64_t toaddr);
     int trim_accept(uint64_t addr);
     int remove_range(uint64_t fromaddr, uint64_t numpages);
+    int alloc(uint64_t addr, uint64_t size, int flag);
 private:
     bool m_sig_registered;
 };

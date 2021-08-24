@@ -26,32 +26,61 @@
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
  */
 
 
-#ifndef TRIM_RANGE_T_H__
-#define TRIM_RANGE_T_H__
+#define SE_EACCEPT    5
+#define SE_EMODPE     6
+#define SE_EACCEPTCOPY   7
 
-#include <stdint.h>
-#include <wchar.h>
-#include <stddef.h>
-#include "sgx_edger8r.h" // for sgx_ocall etc.
+.macro ENCLU
+.byte 0x0f, 0x01, 0xd7
+.endm
+
+.macro SE_PROLOG
+    .cfi_startproc
+
+    push    %rbx
+    push    %rcx
+    push    %rdx
+    movq    %rdi, %rbx
+    movq    %rsi, %rcx
+
+.endm
 
 
-#include <stdlib.h> // for size_t
+.macro SE_EPILOG
+    pop     %rdx
+    pop     %rcx
+    pop     %rbx
 
-#define SGX_CAST(type, item) ((type)(item))
+    ret
+    .cfi_endproc
+.endm
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-sgx_status_t SGXAPI trim_range_ocall(size_t fromaddr, size_t toaddr);
-sgx_status_t SGXAPI trim_range_commit_ocall(size_t addr);
+.macro DECLARE_GLOBAL_FUNC name
+    .globl \name
+    .type \name, @function
+\name:
+.endm
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
-#endif
+DECLARE_GLOBAL_FUNC do_eaccept
+    SE_PROLOG
+    mov     $SE_EACCEPT, %eax
+    ENCLU
+    SE_EPILOG
+
+DECLARE_GLOBAL_FUNC do_eacceptcopy
+    SE_PROLOG
+    mov     $SE_EACCEPTCOPY, %eax
+    ENCLU
+    SE_EPILOG
+
+DECLARE_GLOBAL_FUNC do_emodpe
+    SE_PROLOG
+    mov     $SE_EMODPE, %eax
+    ENCLU
+    SE_EPILOG
+
