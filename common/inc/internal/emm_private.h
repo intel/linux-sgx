@@ -1,0 +1,1 @@
+../../../sdk/emm/include/emm_private.h

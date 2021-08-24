@@ -29,51 +29,80 @@
  *
  */
 
+#include "../sgx_mm_primitives.h"
+#include "../sgx_mm_rt_abstraction.h"
 
-#include "trts_emodpr.h"
+struct _sgx_mm_mutex {
+    void *impl;
+} g_mm_lock;
 
-#include "sgx_trts.h" // for sgx_ocalloc, sgx_is_outside_enclave
-#include "arch.h"
-#include "sgx_edger8r.h" // for sgx_ocall etc.
-#include "internal/rts.h"
-
-/* sgx_ocfree() just restores the original outside stack pointer. */
-#define OCALLOC(val, type, len) do {    \
-    void* __tmp = sgx_ocalloc(len); \
-    if (__tmp == NULL) {    \
-        sgx_ocfree();   \
-        return SGX_ERROR_UNEXPECTED;\
-    }           \
-    (val) = (type)__tmp;    \
-} while (0)
-
-typedef struct ms_change_permissions_ocall_t {
-    size_t ms_addr;
-    size_t ms_size;
-    uint64_t ms_epcm_perms;
-} ms_change_permissions_ocall_t;
-
-sgx_status_t SGXAPI change_permissions_ocall(size_t addr, size_t size, uint64_t epcm_perms, const int proc)
+int do_eaccept(const sec_info_t* si, size_t addr)
 {
-#ifdef SE_SIM
-    (void)addr;
-    (void)size;
-    (void)epcm_perms;
-    (void)proc;
-    return SGX_SUCCESS;
-#else
-    sgx_status_t status = SGX_SUCCESS;
+    return 0;
+}
 
-    ms_change_permissions_ocall_t* ms;
-    OCALLOC(ms, ms_change_permissions_ocall_t*, sizeof(*ms));
+int do_eacceptcopy(const sec_info_t* si, size_t addr, size_t src)
+{
+    return 0;
+}
 
-    ms->ms_addr = addr;
-    ms->ms_size = size;
-    ms->ms_epcm_perms = epcm_perms;
-    status = sgx_ocall(proc, ms);
+int do_emodpe(const sec_info_t* si, size_t addr)
+{
+    return 0;
+}
+
+int sgx_mm_alloc_ocall(size_t addr, size_t length, int flags)
+{
+    return 0;
+}
+
+int sgx_mm_modify_ocall(size_t addr, size_t length, int flags_from, int flags_to)
+{
+    return 0;
+}
+
+size_t get_rts_base()
+{
+    return 0;
+}
+
+size_t get_rts_end()
+{
+    return 0x7FFFFF000000;
+}
+
+size_t get_user_base()
+{
+    return 0x7FFFFF000000;
+}
+
+size_t get_user_end()
+{
+    return 0x7FFFFFFFFFFF;
+}
+bool sgx_mm_is_within_enclave(const void *ptr, size_t size){
+    return true;
+}
 
 
-    sgx_ocfree();
-    return status;
-#endif
+sgx_mm_mutex* sgx_mm_mutex_create(void)
+{
+    return &g_mm_lock;
+}
+int sgx_mm_mutex_lock(sgx_mm_mutex *mutex)
+{
+    return 0;
+}
+int sgx_mm_mutex_unlock(sgx_mm_mutex *mutex)
+{
+    return 0;
+}
+
+int sgx_mm_mutex_destroy(sgx_mm_mutex *mutex)
+{
+    return 0;
+}
+bool sgx_mm_register_pfhandler(sgx_mm_pfhandler_t pfhandler)
+{
+    return true;
 }

@@ -247,6 +247,64 @@ bool COMM_API enclave_set_information(
     COMM_IN void* input_info,
     COMM_IN size_t input_info_size,
     COMM_OUT_OPT uint32_t* enclave_error);
+
+/*
+ * Call OS to reserve region for EAUG, immediately or on-demand.
+ *
+ * @param[in] addr Desired page aligned start address, NULL if no desired address.
+ * @param[in] length Size of the region in bytes of multiples of page size.
+ * @param[in] flags A bitwise OR of flags describing committing mode, committing
+ *                     order, address preference, page type. The untrusted side.
+ *    implementation should always invoke mmap syscall with MAP_SHARED|MAP_FIXED_NOREPLACE, and
+ *    translate following additional bits to proper parameters invoking mmap or other SGX specific
+ *    syscall(s) provided by the kernel.
+ *        The flags param of this interface should include exactly one of following for committing mode:
+ *            - SGX_EMA_RESERVE: kernel map an address range with PROT_NONE, no EPC EAUGed.
+ *            - SGX_EMA_COMMIT_NOW: reserves memory range with SGX_EMA_PROT_READ|SGX_EMA_PROT_WRITE, if supported,
+ *                   kernel is given a hint to EAUG EPC pages for the area as soon as possible.
+ *            - SGX_EMA_COMMIT_ON_DEMAND: reserves memory range, EPC pages can be EAUGed upon #PF.
+ *        ORed with zero or one of the committing order flags:
+ *            - SGX_EMA_GROWSDOWN: if supported, a hint given for the kernel to EAUG pages from higher
+ *                              to lower addresses, no gaps in addresses above the last committed.
+ *            - SGX_EMA_GROWSUP: if supported, a hint given for the kernel to EAUG pages from lower
+ *                              to higher addresses, no gaps in addresses below the last committed.
+ *        Optionally ORed with one of following page types:
+ *             - SGX_EMA_PAGE_TYPE_REG: regular page type. This is the default if not specified.
+ *             - SGX_EMA_PAGE_TYPE_SS_FIRST: the first page in shadow stack.
+ *             - SGX_EMA_PAGE_TYPE_SS_REST: the rest page in shadow stack.
+ * @retval 0 The operation was successful.
+ * @retval EINVAL Any parameter passed in is not valid.
+ * @retval errno Error as reported by dependent syscalls, e.g., mmap().
+ */
+int COMM_API enclave_alloc(uint64_t addr, size_t length, int flags);
+
+/*
+ * Call OS to change permissions, type, or notify EACCEPT done after TRIM.
+ *
+ * @param[in] addr Start address of the memory to change protections.
+ * @param[in] length Length of the area.  This must be a multiple of the page size.
+ * @param[in] flags_from The original EPCM flags of the EPC pages to be modified. 
+ *            Must be bitwise OR of following:
+ *            SGX_EMA_PROT_READ
+ *            SGX_EMA_PROT_WRITE
+ *            SGX_EMA_PROT_EXEC
+ *            SGX_EMA_PAGE_TYPE_REG: regular page, changeable to TRIM or TCS
+ *            SGX_EMA_PAGE_TYPE_TRIM: signal to the kernel EACCEPT is done for TRIM pages.
+ * @param[in] flags_to The target EPCM flags. This must be bitwise OR of following:
+ *            SGX_EMA_PROT_READ
+ *            SGX_EMA_PROT_WRITE
+ *            SGX_EMA_PROT_EXEC
+ *            SGX_EMA_PAGE_TYPE_TRIM: change the page type to PT_TRIM. Note the address
+ *                      range for trimmed pages may still be reserved by enclave with
+ *                      proper permissions.
+ *            SGX_EMA_PAGE_TYPE_TCS: change the page type to PT_TCS
+ * @retval 0 The operation was successful.
+ * @retval EINVAL A parameter passed in is not valid.
+ * @retval errno Error as reported by dependent syscalls, e.g., mprotect().
+ */
+
+int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_from, int flags_to);
+
 #ifdef __cplusplus
 }
 #endif

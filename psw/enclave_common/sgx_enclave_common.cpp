@@ -47,11 +47,11 @@
 #include <dlfcn.h>
 #include "se_memcpy.h"
 #include "se_lock.hpp"
+#include "sgx_mm.h"
 //ubuntu 18.04 use glibc 2.27, doesn't support MAP_FIXED_NOREPLACE
 #ifndef MAP_FIXED_NOREPLACE
 #define MAP_FIXED_NOREPLACE 0x100000
 #endif
-
 
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
 
@@ -1102,7 +1102,6 @@ extern "C" size_t COMM_API enclave_load_data(
 }
 
 
-
 /* enclave_initialize()
  * Parameters:
  *      base_address [in] - The enclave base address as returned from the enclave_create API.
@@ -1357,4 +1356,4 @@ extern "C" bool COMM_API enclave_set_information(
 
     return false;
 }
-
+#include "sgx_mm_ocalls.cpp"

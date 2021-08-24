@@ -1,12 +1,24 @@
 <EnclaveConfiguration>
   <ProdID>0</ProdID>
   <ISVSVN>0</ISVSVN>
-  <StackMaxSize>0x40000</StackMaxSize>
-  <HeapMaxSize>0x100000</HeapMaxSize>
-  <TCSNum>10</TCSNum>
+  <TCSNum>1</TCSNum>
+  <TCSMinPool>5</TCSMinPool>
   <TCSPolicy>1</TCSPolicy>
+  <TCSMaxNum>13</TCSMaxNum>
+
+  <!-- For a static thread, total available stack is 0x40000 -->
+  <!-- For a dynamic thread, once it is creted, available stack is
+       0x2000, the gap, that is 0x40000 - 0x2000, can be dynamically
+       expanded as necessary.
+  -->
+  <StackMaxSize>0x4000</StackMaxSize>
+  <StackMinSize>0x2000</StackMinSize>
+  <HeapMaxSize>0x900000</HeapMaxSize>
+  <HeapInitSize>0x90000</HeapInitSize>
+  <HeapMinSize>0x0022000</HeapMinSize>
+
   <!-- Recommend changing 'DisableDebug' to 1 to make the enclave undebuggable for enclave release -->
   <DisableDebug>0</DisableDebug>
-  <MiscSelect>0</MiscSelect>
+  <MiscSelect>1</MiscSelect>
   <MiscMask>0xFFFFFFFF</MiscMask>
 </EnclaveConfiguration>

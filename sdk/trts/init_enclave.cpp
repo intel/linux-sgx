@@ -33,7 +33,7 @@
 /**
  * File: init_enclave.cpp
  * Description:
- *     Initialize enclave by rebasing the image to the enclave base 
+ *     Initialize enclave by rebasing the image to the enclave base
  */
 
 #include <string.h>
@@ -51,7 +51,7 @@
 #include "se_memcpy.h"
 #include "se_cpu_feature.h"
 #include "se_version.h"
-
+#include "sgx_mm_rt_abstraction.h"
 // The global cpu feature bits from uRTS
 uint64_t g_cpu_feature_indicator __attribute__((section(RELRO_SECTION_NAME))) = 0;
 int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
@@ -77,7 +77,9 @@ extern sgx_status_t pcl_entry(void* enclave_base,void* ms) __attribute__((weak))
 extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section(".nipx")));
 
 extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
-
+extern "C" int init_segment_emas(void* enclave_base);
+extern "C" int init_rts_contexts_emas(layout_t *start, layout_t *end, uint64_t delta);
+extern "C" void sgx_mm_init();
 // init_enclave()
 //      Initialize enclave.
 // Parameters:
@@ -174,7 +176,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         return -1;
     }
-    
+
     if (heap_init(get_heap_base(), get_heap_size(), get_heap_min_size(), EDMM_supported) != SGX_SUCCESS)
         return -1;
 
@@ -205,7 +207,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
             return -1;
         }
     }
-    else 
+    else
     {
         if (0 != init_optimized_libs(cpu_features, NULL, xfrm))
         {
@@ -219,19 +221,17 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
             return -1;
     }
 
-    
+
     if(SGX_SUCCESS != sgx_read_rand((unsigned char*)&__stack_chk_guard,
                                      sizeof(__stack_chk_guard)))
     {
         return -1;
     }
 
+
+
     return 0;
 }
-
-#ifndef SE_SIM
-int accept_post_remove(const volatile layout_t *layout_start, const volatile layout_t *layout_end, size_t offset);
-#endif
 
 extern size_t rsrv_mem_min_size;
 
@@ -259,9 +259,6 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
     /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
     if (EDMM_supported)
     {
-        if (0 != accept_post_remove(&g_global_data.layout_table[0], &g_global_data.layout_table[0] + g_global_data.layout_entry_num, 0))
-            return SGX_ERROR_UNEXPECTED;
-
         size_t heap_min_size = get_heap_min_size();
         memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), heap_min_size, 0, heap_min_size);
 
@@ -275,6 +272,18 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
 #endif
 
     g_enclave_state = ENCLAVE_INIT_DONE;
+    if (EDMM_supported)
+    {
+        sgx_mm_init();
+        void* enclave_start = (void*)&__ImageBase;
+        if (init_segment_emas(enclave_start))
+            return SGX_ERROR_UNEXPECTED;
+        int ret = init_rts_contexts_emas((layout_t*)g_global_data.layout_table,
+            (layout_t*)(g_global_data.layout_table + g_global_data.layout_entry_num), 0);
+        if (ret != SGX_SUCCESS) {
+            return SGX_ERROR_UNEXPECTED;
+        }
+    }
     return SGX_SUCCESS;
 }
 

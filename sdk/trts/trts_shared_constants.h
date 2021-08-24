@@ -47,7 +47,7 @@
 #endif
 
 
-#define STATIC_STACK_SIZE   688
+#define STATIC_STACK_SIZE   1024
 
 
 #endif

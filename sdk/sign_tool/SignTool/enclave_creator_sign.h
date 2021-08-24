@@ -56,12 +56,11 @@ public:
     bool is_EDMM_supported(sgx_enclave_id_t enclave_id);
     bool is_driver_compatible();
     int get_enclave_info(uint8_t *hash, int size, uint64_t *quota);
+    int alloc(uint64_t addr, uint64_t size, int flag);
     int emodpr(uint64_t addr, uint64_t size, uint64_t flag);
     int mktcs(uint64_t tcs_addr);
     int trim_range(uint64_t fromaddr, uint64_t toaddr);
     int trim_accept(uint64_t addr);
-    int remove_range(uint64_t fromaddr, uint64_t numpages);
-
 private:
     uint8_t m_enclave_hash[SGX_HASH_SIZE];
     EVP_MD_CTX  *m_ctx;

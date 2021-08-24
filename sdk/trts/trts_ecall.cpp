@@ -42,7 +42,8 @@
 #include "global_init.h"
 #include "trts_internal.h"
 #include "trts_inst.h"
-#include "trts_emodpr.h"
+#include "trts_emm.h"
+#include "sgx_mm.h"
 #include "trts_util.h"
 #include "metadata.h"
 #  include "linux/elf_parser.h"
@@ -51,6 +52,9 @@
 #include "pthread_imp.h"
 #include "sgx_random_buffers.h"
 #include "se_page_attr.h"
+#include "emm_private.h"
+
+extern "C" sgx_status_t change_protection(void *enclave_base);
 
 __attribute__((weak)) sgx_status_t _pthread_thread_run(void* ms) {UNUSED(ms); return SGX_SUCCESS;}
 __attribute__((weak)) bool _pthread_enabled() {return false;}
@@ -544,7 +548,7 @@ sgx_status_t do_uninit_enclave(void *tcs)
 
         size_t start = (size_t)DEC_TCS_POINTER(tcs_node->tcs);
         size_t end = start + (1 << SE_PAGE_SHIFT);
-        int rc = sgx_accept_forward(SI_FLAG_TRIM | SI_FLAG_MODIFIED, start, end);
+        int rc = mm_dealloc((void*)start, end);
         if(rc != 0)
         {
             set_enclave_state(ENCLAVE_CRASHED);
@@ -570,39 +574,3 @@ sgx_status_t do_uninit_enclave(void *tcs)
     return SGX_SUCCESS;
 }
 
-extern sdk_version_t g_sdk_version;
-
-extern "C" sgx_status_t trts_mprotect(size_t start, size_t size, uint64_t perms)
-{
-    int rc = -1;
-    size_t page;
-    sgx_status_t ret = SGX_SUCCESS;
-    SE_DECLSPEC_ALIGN(sizeof(sec_info_t)) sec_info_t si;
-
-    //Error return if start or size is not page-aligned or size is zero.
-    if (!IS_PAGE_ALIGNED(start) || (size == 0) || !IS_PAGE_ALIGNED(size))
-        return SGX_ERROR_INVALID_PARAMETER;
-    if (g_sdk_version == SDK_VERSION_2_0)
-    {
-        ret = change_permissions_ocall(start, size, perms, EDMM_MODPR);
-        if (ret != SGX_SUCCESS)
-            return ret;
-    }
-
-    si.flags = perms|SI_FLAG_REG|SI_FLAG_PR;
-    memset(&si.reserved, 0, sizeof(si.reserved));
-
-    for(page = start; page < start + size; page += SE_PAGE_SIZE)
-    {
-        do_emodpe(&si, page);
-        // If the target permission to set is RWX, no EMODPR, hence no EACCEPT.
-        if ((perms & (SI_FLAG_W|SI_FLAG_X)) != (SI_FLAG_W|SI_FLAG_X))
-        {
-            rc = do_eaccept(&si, page);
-            if(rc != 0)
-                return (sgx_status_t)rc;
-        }
-    }
-
-    return SGX_SUCCESS;
-}

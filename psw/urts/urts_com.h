@@ -408,7 +408,8 @@ static int __create_enclave(BinParser &parser,
 
     if (get_enclave_creator()->is_EDMM_supported(loader.get_enclave_id()))
     {
-        layout_t *layout_start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
+        //!FIXME use version of enclave to determine action here
+        /*layout_t *layout_start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
         layout_t *layout_end = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
         if (SGX_SUCCESS != (ret = loader.post_init_action(layout_start, layout_end, 0)))
         {
@@ -417,7 +418,7 @@ static int __create_enclave(BinParser &parser,
             generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
             CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
             goto fail;
-        }
+        }*/
     }
 
     //call trts to do some initialization
@@ -431,7 +432,8 @@ static int __create_enclave(BinParser &parser,
 
     if (get_enclave_creator()->is_EDMM_supported(loader.get_enclave_id()))
     {
-        
+        //!FIXME use version of enclave to determine action here
+        /* 
         layout_t *layout_start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
         layout_t *layout_end = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
         if (SGX_SUCCESS != (ret = loader.post_init_action_commit(layout_start, layout_end, 0)))
@@ -441,7 +443,7 @@ static int __create_enclave(BinParser &parser,
             generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
             CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
             goto fail;
-        }
+        }*/
     }
 
     if(SGX_SUCCESS != (ret = loader.set_memory_protection()))

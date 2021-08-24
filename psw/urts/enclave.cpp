@@ -40,6 +40,7 @@
 #include "se_memory.h"
 #include "urts_trim.h"
 #include "urts_emodpr.h"
+#include "urts_emm.h"
 #include "rts_cmd.h"
 #include <assert.h>
 #include "rts.h"
@@ -352,7 +353,7 @@ sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, 
                     se_event_wake(m_new_thread_event);
                     pthread_join(m_pthread_tid, NULL);
                 }
-                ocall_table = m_ocall_table;
+                /*ocall_table = m_ocall_table;
 
                 std::vector<CTrustThread *> threads = m_thread_pool->get_thread_list();
                 for (unsigned idx = 0; idx < threads.size(); ++idx)
@@ -370,6 +371,7 @@ sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, 
                         // Change TCS permission to Read only to let driver not handle the 
                         // #PF caused by TCS trim. It gives urts a chance to catch the exception
                         // and exit the ecall with an error code.
+                        //!TODO do we really need this?
                         if(0 != mprotect((void *)start, TCS_SIZE, SI_FLAG_R))
                         {
                             se_rdunlock(&m_rwlock);
@@ -381,7 +383,7 @@ sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, 
                             return (sgx_status_t)ret;
                         }
                     }
-                }
+                }*/
             }
 
             ret = do_ecall(proc, m_ocall_table, ms, trust_thread);
@@ -420,6 +422,10 @@ int CEnclave::ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_tabl
             error = ocall_emodpr(ms);
         else if ((int)proc == EDMM_MPROTECT)
             error = ocall_mprotect(ms);
+		else if ((int)proc == EDMM_ALLOC)
+			error = ocall_emm_alloc(ms);
+		else if ((int)proc == EDMM_MODIFY)
+            error = ocall_emm_modify(ms);
     }
     else 
     {

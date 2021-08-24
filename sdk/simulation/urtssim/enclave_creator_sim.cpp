@@ -46,7 +46,7 @@
 #include <time.h>
 #include "sgx_enclave_common.h"
 #include <map>
-
+#include <sys/mman.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/crypto.h>
@@ -340,6 +340,13 @@ bool EnclaveCreatorSim::get_plat_cap(sgx_misc_attribute_t *se_attr)
 {
     UNUSED(se_attr);
     return false;
+}
+
+int EnclaveCreatorSim::alloc(uint64_t addr, uint64_t size, int flag)
+{
+    int ret = mprotect((void*)addr, size, flag);
+	if (ret) return errno;
+	return ret;
 }
 
 int EnclaveCreatorSim::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
