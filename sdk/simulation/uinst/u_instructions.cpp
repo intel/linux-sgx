@@ -237,8 +237,9 @@ void reg_sig_handler_sim()
     struct sigaction sig_act;
     stack_t ss;
     ss.ss_flags = 0;
+    static char stack[SIG_STACK_SIZE];
     ss.ss_size = SIG_STACK_SIZE;
-    ss.ss_sp = malloc(ss.ss_size);
+    ss.ss_sp = stack;
     sigaltstack(&ss, NULL);
     memset(&sig_act, 0, sizeof(sig_act));
     sig_act.sa_sigaction = sig_handler_sim;
