@@ -240,7 +240,8 @@ void reg_sig_handler_sim()
     ss.ss_size = SIG_STACK_SIZE;
     ss.ss_sp = malloc(ss.ss_size);
     sigaltstack(&ss, NULL);
-    memset(&sig_act, 0, sizeof(sig_act));
+    static char stack[SIG_STACK_SIZE];
+    ss.ss_sp = stack;
     sig_act.sa_sigaction = sig_handler_sim;
     // nested signals are not supported
     sig_act.sa_flags = SA_SIGINFO | SA_ONSTACK;
