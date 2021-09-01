@@ -67,7 +67,7 @@ static ae_error_t get_isv_svn(sgx_isv_svn_t* isv_svn)
     return AE_SUCCESS;
 }
 
-//always assume the format of public_key is module n of RSA public key followed by 4 bytes e and both n and e are in Big Endian
+//always assume the format of public_key is modulo n of RSA public key followed by 4 bytes e and both n and e are in Big Endian
 uint32_t get_pc_info(const sgx_report_t* report,
                      const uint8_t* public_key, uint32_t key_size,
                      uint8_t crypto_suite,
@@ -84,7 +84,7 @@ uint32_t get_pc_info(const sgx_report_t* report,
         signature_scheme == NULL) {
         return AE_INVALID_PARAMETER;
     }
-    if (ALG_RSA_OAEP_3072 != crypto_suite) { //The only crypto suite supported in RSA 3072 where 384 bytes module n is used
+    if (ALG_RSA_OAEP_3072 != crypto_suite) { //The only crypto suite supported in RSA 3072 where 384 bytes modulo n is used
         return AE_INVALID_PARAMETER;
     }
 
