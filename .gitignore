@@ -29,3 +29,9 @@ redist.txt
 # directory created when running reproducibility scripts
 linux/reproducibility/code_dir/
 
+# files generated when building sample code
+SampleCode/*/.config_*
+SampleCode/*/app
+SampleCode/LocalAttestation/bin/*
+SampleCode/RemoteAttestation/sample_libcrypto
+SampleCode/SampleCommonLoader/sample
