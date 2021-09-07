@@ -53,6 +53,32 @@ DECLARE_GLOBAL_FUNC set_xsave_info
     movl    %edx, (%xax)
     ret
 
+DECLARE_GLOBAL_FUNC vdso_sgx_enter_enclave_wrapper
+EENTER_PROLOG
+    movl    frame_arg0, %edi
+#if defined(__x86_64__)
+    /* we defined fn as int, so we do sign extend.*/
+    movslq  %edi,   %rdi
+#endif
+    mov frame_arg1, %xsi
+    mov frame_arg2, %xdx
+    # clean the upper bits of YMM registers
+    lea_symbol  g_clean_ymm, %xbx
+    movl (%xbx), %ecx
+    cmpl $0, %ecx
+    je   1f
+    vzeroupper
+ 1:
+    sub $(1*SE_WORDSIZE), %xsp
+    mov 2*SE_WORDSIZE(%xbp), %xcx
+    push %xcx
+    mov frame_arg3, %xcx
+    lea_pic vdso_sgx_enter_enclave, %r10
+    call *(%r10)
+    mov %xax, %xsi
+EENTER_EPILOG
+
+
 DECLARE_GLOBAL_FUNC __morestack
 
 //__morestack:
