@@ -40,7 +40,15 @@
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
+#include "isgx_user.h"
+#include <sys/auxv.h>
+#include <elf.h>
+#include "se_error_internal.h"
 
+
+#ifdef ANDROID
+#include <ucontext.h>
+#endif
 
 typedef struct _ecall_param_t
 {
@@ -85,6 +93,13 @@ extern "C" void *get_aep();
 extern "C" void *get_eenterp();
 extern "C" void *get_eretp();
 static struct sigaction g_old_sigact[_NSIG];
+vdso_sgx_enter_enclave_t vdso_sgx_enter_enclave = NULL;
+extern "C" int vdso_sgx_enter_enclave_wrapper(unsigned long rdi, unsigned long rsi,
+                    unsigned long rdx, unsigned int function,
+                    unsigned long r8,  unsigned long r9,
+                    struct sgx_enclave_run *run);
+
+
 
 void reg_sig_handler();
 
@@ -131,7 +146,8 @@ void sig_handler(int signum, siginfo_t* siginfo, void *priv)
         }
         //If we can't fix the exception within enclave, then give the handle to other signal hanlder.
         //Call the previous signal handler. The default signal handler should terminate the application.
-        
+        //! FIXME: Before propagate the signal, we release the resource that allocated during the ecall,
+        //! in case app can longjmp to where ecall begins and return error code.
         enclave->rdunlock();
         CEnclavePool::instance()->unref_enclave(enclave);
     }
@@ -186,6 +202,11 @@ void sig_handler(int signum, siginfo_t* siginfo, void *priv)
 
 void reg_sig_handler()
 {
+    if(vdso_sgx_enter_enclave != NULL)
+    {
+        SE_TRACE(SE_TRACE_DEBUG, "vdso_sgx_enter_enclave exists, we won't use signal handler here\n");
+        return;
+    }
     int ret = 0;
     struct sigaction sig_act;
     SE_TRACE(SE_TRACE_DEBUG, "signal handler is registered\n");
@@ -224,10 +245,125 @@ void reg_sig_handler()
 
 extern "C" int enter_enclave(const tcs_t *tcs, const long fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
 
+extern "C" int stack_sticker(unsigned int proc, sgx_ocall_table_t *ocall_table, void *ms, CTrustThread *trust_thread, tcs_t *tcs);
+
+void* get_vdso_sym(const char* vdso_func_name) 
+{
+    char* dynstr = 0;
+    void *ret = NULL;
+
+    uint8_t* vdso_addr = (uint8_t*)getauxval(AT_SYSINFO_EHDR);  
+    Elf64_Ehdr* elf_header = (Elf64_Ehdr*)vdso_addr;
+    Elf64_Shdr* section_header = (Elf64_Shdr*)(vdso_addr + elf_header->e_shoff);
+
+    for (int i = 0; i < elf_header->e_shnum; i++) {
+        auto& s = section_header[i];
+        auto& ss_ = section_header[elf_header->e_shstrndx];
+        auto name = (char*)(vdso_addr + ss_.sh_offset + s.sh_name);
+        if (strcmp(name, ".dynstr") == 0) {
+            dynstr = (char*)(vdso_addr + s.sh_offset);
+            break;
+        }
+    }
+
+    for (int i = 0; i < elf_header->e_shnum; i++) {
+        auto& s = section_header[i];
+        auto& ss_ = section_header[elf_header->e_shstrndx];
+        auto name = (char*)(vdso_addr + ss_.sh_offset + s.sh_name);
+        if (strcmp(name, ".dynsym") == 0) {
+            for (unsigned int si = 0; si < (s.sh_size/s.sh_entsize); si++) {
+                auto &sym = ((Elf64_Sym*)(vdso_addr + s.sh_offset))[si];
+                auto vdname = dynstr + sym.st_name;
+                if (strcmp(vdname, vdso_func_name) == 0) {
+                    ret = (vdso_addr + sym.st_value);
+                    break;
+                }
+            }
+            if (ret) break;
+        }
+    }
+    return ret;
+}
+
+
+static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r8, long r9,
+            struct sgx_enclave_run *run)
+{   
+    UNUSED(rdx);
+    UNUSED(ursp);
+    UNUSED(r8);
+    UNUSED(r9);
+    if(run->function == SE_ERESUME)
+    {
+        //need to handle exception here
+        __u64 *user_data = (__u64*)run->user_data;
+        void *ocall_table = reinterpret_cast<void *>(user_data[0]);
+        CTrustThread* trust_thread = reinterpret_cast<CTrustThread *>(user_data[1]);
+        CEnclave *enclave = trust_thread->get_enclave();
+        unsigned int ret = enclave->ecall(ECMD_EXCEPT, ocall_table, NULL);
+
+        if(SGX_SUCCESS == ret)
+        {
+            return SE_ERESUME;
+        }
+        else
+        {
+            run->user_data = (__u64)ret;
+            return 0;
+        }
+    }
+    else if(run->function == SE_EEXIT)
+    {
+        //return 0 for normal enclave ecall return
+        //return EENTER after invoking proper ocall with runtime specific convention
+        if(rdi == OCMD_ERET)
+        {
+            run->user_data = (__u64)rsi;
+            return 0;
+        }
+        else
+        {
+            __u64 *user_data = (__u64*)run->user_data;
+            auto status = stack_sticker((unsigned int )rdi, reinterpret_cast<sgx_ocall_table_t *>(user_data[0]), (void *)rsi,
+                reinterpret_cast<CTrustThread *>(user_data[1]), (reinterpret_cast<CTrustThread *>(user_data[1]))->get_tcs());
+            
+            if(status == (int)SE_ERROR_READ_LOCK_FAIL)
+            {
+                run->user_data = SE_ERROR_READ_LOCK_FAIL;
+                return 0;
+            }
+            //move the ocall return result to rsi and set rdi to ECMD_ORET for ocall return to trts
+            __asm__("mov %rax, %rsi\n"
+                    "mov $-2, %rdi");
+            return SE_EENTER;
+        }
+    }
+    else if(run->function == SE_EENTER)
+    {
+        //enclave may lose EPC context due to power events
+        run->user_data = SGX_ERROR_ENCLAVE_LOST;
+        return 0;
+    }
+    
+    return 0;
+}
+
+static void __attribute__((constructor)) vdso_detector(void)
+{
+#ifdef SE_SIM
+    vdso_sgx_enter_enclave = NULL;
+#else  
+    if(vdso_sgx_enter_enclave == NULL)
+    {
+        vdso_sgx_enter_enclave = (vdso_sgx_enter_enclave_t)get_vdso_sym("__vdso_sgx_enter_enclave");
+    }
+#endif
+}
+
 
 int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread)
 {
-    int status = SGX_ERROR_UNEXPECTED;
+    int status = SGX_ERROR_UNEXPECTED; 
 
 #ifdef SE_SIM
     CEnclave* enclave = trust_thread->get_enclave();
@@ -236,11 +372,35 @@ int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread
     if((pid_t)(eid >> 32) != getpid())
         return SGX_ERROR_ENCLAVE_LOST;
 #endif
-
+    
     tcs_t *tcs = trust_thread->get_tcs();
-
-    status = enter_enclave(tcs, fn, ocall_table, ms, trust_thread);
-
+    
+    if(vdso_sgx_enter_enclave == NULL)
+    {
+        status = enter_enclave(tcs, fn, ocall_table, ms, trust_thread);
+    }
+    else
+    {
+        struct sgx_enclave_run run;
+        memset(&run, 0, sizeof(run));
+        __u64 user_data[2] = {0};
+        user_data[0] = (__u64)ocall_table;
+        user_data[1] = (__u64)trust_thread;
+        run.tcs = (__u64)tcs;
+        run.user_handler = (__u64)sgx_urts_vdso_handler;
+        run.user_data = (__u64) user_data;
+        int ret = vdso_sgx_enter_enclave_wrapper((unsigned long)fn, (unsigned long)ms, (unsigned long)ocall_table, SE_EENTER,
+            0, 0, &run);
+        if(ret == 0)
+        {
+            status = (int)run.user_data;
+        }
+        else
+        {
+            status = SGX_ERROR_UNEXPECTED;
+        }
+    }
+    
     return status;
 }
 
