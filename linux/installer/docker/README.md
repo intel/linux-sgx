@@ -6,7 +6,7 @@ Files in this directory demonstrate how to build and deploy SGX enclave applicat
 
 ###  Prerequisites
 1. Install [Docker and Compose](https://docs.docker.com/) and configure them properly following respective their installation guide.
-2. Install [SGX Flexible Launch Control driver](https://github.com/intel/SGXDataCenterAttestationPrimitives/driver/linux). **Note**: See below to run with the Legacy Launch Control driver.
+2. Install [SGX Flexible Launch Control driver](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/driver/linux). **Note**: See below to run with the Legacy Launch Control driver.
 
 ### Run with Docker Compose
 This will start AESM and an SGX sample on one terminal using docker-compose.
