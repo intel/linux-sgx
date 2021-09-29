@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
-IPPAPI(IppStatus, l9_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
+IPPAPI(IppStatus, y8_ippsMontSet,(const Ipp32u* pModulo, int size, IppsMontState* pCtx))
+IPPAPI(IppStatus, l9_ippsMontSet,(const Ipp32u* pModulo, int size, IppsMontState* pCtx))
+IPPAPI(IppStatus, k1_ippsMontSet,(const Ipp32u* pModulo, int size, IppsMontState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsMontSet,(const Ipp32u* pModulo, int size, IppsMontState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsMontSet( pModulo, size, pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsTRNGenRDSEED( pRand, nBits, pCtx );
+        return l9_ippsMontSet( pModulo, size, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsTRNGenRDSEED( pRand, nBits, pCtx );
+        return y8_ippsMontSet( pModulo, size, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
-IPPAPI(IppStatus, h9_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
+IPPAPI(IppStatus, p8_ippsMontSet,(const Ipp32u* pModulo, int size, IppsMontState* pCtx))
+IPPAPI(IppStatus, h9_ippsMontSet,(const Ipp32u* pModulo, int size, IppsMontState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsTRNGenRDSEED, (Ipp32u* pRand, int nBits, void* pCtx))
+IPPFUN(IppStatus,sgx_disp_ippsMontSet,(const Ipp32u* pModulo, int size, IppsMontState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsTRNGenRDSEED( pRand, nBits, pCtx );
+        return h9_ippsMontSet( pModulo, size, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsTRNGenRDSEED( pRand, nBits, pCtx );
+        return p8_ippsMontSet( pModulo, size, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

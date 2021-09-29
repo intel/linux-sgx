@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSA_MB_Decrypt,(const IppsBigNumState* const pPtxts[8], IppsBigNumState* const pCtxts[8], const IppsRSAPrivateKeyState* const pKeys[8], IppStatus statuses[8], Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsRSA_MB_Decrypt,(const IppsBigNumState* const pPtxts[8], IppsBigNumState* const pCtxts[8], const IppsRSAPrivateKeyState* const pKeys[8], IppStatus statuses[8], Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, k1_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_Decrypt,(const IppsBigNumState* const pPtxts[8], IppsBigNumState* const pCtxts[8], const IppsRSAPrivateKeyState* const pKeys[8], IppStatus statuses[8], Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSA_MB_Decrypt( pPtxts, pCtxts, pKeys, statuses, pBuffer );
+        return l9_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSA_MB_Decrypt( pPtxts, pCtxts, pKeys, statuses, pBuffer );
+        return y8_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSA_MB_Decrypt,(const IppsBigNumState* const pPtxts[8], IppsBigNumState* const pCtxts[8], const IppsRSAPrivateKeyState* const pKeys[8], IppStatus statuses[8], Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsRSA_MB_Decrypt,(const IppsBigNumState* const pPtxts[8], IppsBigNumState* const pCtxts[8], const IppsRSAPrivateKeyState* const pKeys[8], IppStatus statuses[8], Ipp8u* pBuffer))
+IPPAPI(IppStatus, p8_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
+IPPAPI(IppStatus, h9_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_MB_Decrypt,(const IppsBigNumState* const pPtxts[8], IppsBigNumState* const pCtxts[8], const IppsRSAPrivateKeyState* const pKeys[8], IppStatus statuses[8], Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSADecrypt_OAEP,(const Ipp8u* pSrc, const Ipp8u* pLab, int labLen, Ipp8u* pDst, int* pDstLen, const IppsRSAPrivateKeyState* pKey, IppHashAlgId hashAlg, Ipp8u* pBuffer))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSA_MB_Decrypt( pPtxts, pCtxts, pKeys, statuses, pBuffer );
+        return h9_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSA_MB_Decrypt( pPtxts, pCtxts, pKeys, statuses, pBuffer );
+        return p8_ippsRSADecrypt_OAEP( pSrc, pLab, labLen, pDst, pDstLen, pKey, hashAlg, pBuffer );
       } else 
         return ippStsCpuNotSupportedErr;
 }

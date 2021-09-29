@@ -1,0 +1,63 @@
+/*
+ * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in
+ *     the documentation and/or other materials provided with the
+ *     distribution.
+ *   * Neither the name of Intel Corporation nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/* Libcxx.edl - EDL sample for trusted C++ library. */
+
+enclave {
+    
+    /* 
+     * A subset of the C++14 standard is supported.
+     */
+
+    trusted {
+        public void ecall_cxx14_standard_user_defined_literals(void);
+        public void ecall_cxx14_tuple_via_type(void);
+        public void ecall_cxx14_make_unique(void);
+        public void ecall_cxx14_integral_constant(void);
+        public void ecall_cxx14_integer_sequence(void);
+        public void ecall_cxx14_constant_begin_end(void);
+        public void ecall_cxx14_exchage(void);
+        public void ecall_cxx14_is_final(void);
+        public void ecall_cxx14_equal_mismatch_permutation_new_overloads(void);
+        public void ecall_cxx14_heterogeneous_lookup(void);
+        public void ecall_cxx14_function_return_type_deduction(void);
+        public void ecall_cxx14_variable_template(void);
+        public void ecall_cxx14_binary_literals(void);
+        public void ecall_cxx14_digit_separators(void);
+        public void ecall_cxx14_generic_lambdas(void);
+        public void ecall_cxx14_lambda_capture_expression(void);
+        public void ecall_cxx14_attribute_deprecated(void);
+        public void ecall_cxx14_aggregate_member_init(void);
+        public void ecall_cxx14_relaxed_constexpr(void);
+        public void ecall_cxx14_alternate_type_deduction(void);
+        public void ecall_cxx14_quoted(void);
+    };
+};

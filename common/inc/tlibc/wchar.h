@@ -131,6 +131,10 @@ wchar_t *   _TLIBC_CDECL_ wmemset(wchar_t *, wchar_t, size_t);
 int         _TLIBC_CDECL_ swprintf(wchar_t *, size_t, const wchar_t *, ...);
 int         _TLIBC_CDECL_ vswprintf(wchar_t *, size_t, const wchar_t *, __va_list);
 
+long double         _TLIBC_CDECL_ wcstold (const wchar_t *, wchar_t **);
+long long           _TLIBC_CDECL_ wcstoll (const wchar_t *, wchar_t **, int);
+unsigned long long  _TLIBC_CDECL_ wcstoull (const wchar_t *, wchar_t **, int);
+
 /* leagcy version of wcsstr */
 wchar_t *   _TLIBC_CDECL_ wcswcs(const wchar_t *, const wchar_t *);
 

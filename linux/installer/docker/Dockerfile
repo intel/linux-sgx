@@ -77,7 +77,7 @@ RUN apt-get install -y \
 # More aesm plugins, e.g libsgx-aesm-quote-ex-plugin, are needed if application requires attestation. See installation guide.
 RUN apt-get install -y libsgx-aesm-launch-plugin
 
-# Run the aesm service as root to ensure its access to /dev/sgx/provision
+USER aesmd
 WORKDIR /opt/intel/sgx-aesm-service/aesm
 ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon

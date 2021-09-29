@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPAddPoint,(const IppsECCPPointState* pP, const IppsECCPPointState* pQ, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPAddPoint,(const IppsECCPPointState* pP, const IppsECCPPointState* pQ, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPPointGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, l9_ippsECCPPointGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, k1_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPAddPoint,(const IppsECCPPointState* pP, const IppsECCPPointState* pQ, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsECCPPointGetSize( feBitSize, pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPAddPoint( pP, pQ, pR, pEC );
+        return l9_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPAddPoint( pP, pQ, pR, pEC );
+        return y8_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPAddPoint,(const IppsECCPPointState* pP, const IppsECCPPointState* pQ, IppsECCPPointState* pR, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPAddPoint,(const IppsECCPPointState* pP, const IppsECCPPointState* pQ, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPPointGetSize,(int feBitSize, int* pSize))
+IPPAPI(IppStatus, h9_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPAddPoint,(const IppsECCPPointState* pP, const IppsECCPPointState* pQ, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPPointGetSize,(int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPAddPoint( pP, pQ, pR, pEC );
+        return h9_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPAddPoint( pP, pQ, pR, pEC );
+        return p8_ippsECCPPointGetSize( feBitSize, pSize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

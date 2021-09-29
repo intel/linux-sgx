@@ -172,7 +172,6 @@ typedef basic_stringstream<wchar_t> wstringstream;
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <ostream>
 #include <istream>
 #include <string>
@@ -976,6 +975,5 @@ basic_stringstream<_CharT, _Traits, _Allocator>::str(const string_type& __s)
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_SSTREAM

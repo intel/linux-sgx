@@ -58,6 +58,7 @@ int _TLIBC_CDECL_ isxdigit(int);
 int _TLIBC_CDECL_ tolower(int);
 int _TLIBC_CDECL_ toupper(int);
 int _TLIBC_CDECL_ isblank(int);
+int _TLIBC_CDECL_ isascii(int);
 
 __END_DECLS
 

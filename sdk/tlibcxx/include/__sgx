@@ -53,7 +53,7 @@
 // this to conform to C++11 not C++14 or later.
 // More specific we should not compile code under __cplusplus > 201103L.
 // Code under __cplusplus >= 201103L is fine.
-#define sgx__cplusplus 201103L
+#define sgx__cplusplus 201402L
 // We need to make sure that where __cplusplus is used in defines it always goes to path for 
 // #define __cplusplus 201103L because it might be defined to something higher.
 
@@ -107,10 +107,6 @@
 //#undef _LIBCPP_DEBUG // TBD. Debug without I/O?
 #undef _LIBCPP_HAS_QUICK_EXIT
 #undef _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS // Not used
-
-// Current goal is to support C++11 so define the version accordingly.
-// Libc++ also supports 14 and beyond. 
-#define _LIBCPP_STD_VER 11
 
 /////////////
 // SECTION 3: DEFINE VARIOUS LIBC++ DEFINES TO CUSTOMIZE USAGE FOR SGX

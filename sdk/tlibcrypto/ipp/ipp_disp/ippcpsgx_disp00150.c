@@ -43,18 +43,24 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
 IPPAPI(IppStatus, y8_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
 IPPAPI(IppStatus, l9_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
+IPPAPI(IppStatus, k1_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
 
 IPPFUN(IppStatus,sgx_disp_ippsMD5Duplicate,(const IppsMD5State* pSrcState, IppsMD5State* pDstState))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsMD5Duplicate( pSrcState, pDstState );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
         return l9_ippsMD5Duplicate( pSrcState, pDstState );
       } else 

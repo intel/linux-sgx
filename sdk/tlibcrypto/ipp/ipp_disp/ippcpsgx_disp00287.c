@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSA_GenerateKeys,(const IppsBigNumState* pSrcPublicExp, IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, IppsBigNumState* pPrivateExp, IppsRSAPrivateKeyState* pPrivateKeyType2, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, l9_ippsRSA_GenerateKeys,(const IppsBigNumState* pSrcPublicExp, IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, IppsBigNumState* pPrivateExp, IppsRSAPrivateKeyState* pPrivateKeyType2, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, y8_ippsRSA_GetSizePublicKey,(int rsaModulusBitSize, int pubicExpBitSize, int* pKeySize))
+IPPAPI(IppStatus, l9_ippsRSA_GetSizePublicKey,(int rsaModulusBitSize, int pubicExpBitSize, int* pKeySize))
+IPPAPI(IppStatus, k1_ippsRSA_GetSizePublicKey,(int rsaModulusBitSize, int pubicExpBitSize, int* pKeySize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GenerateKeys,(const IppsBigNumState* pSrcPublicExp, IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, IppsBigNumState* pPrivateExp, IppsRSAPrivateKeyState* pPrivateKeyType2, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_GetSizePublicKey,(int rsaModulusBitSize, int pubicExpBitSize, int* pKeySize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsRSA_GetSizePublicKey( rsaModulusBitSize, pubicExpBitSize, pKeySize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSA_GenerateKeys( pSrcPublicExp, pModulus, pPublicExp, pPrivateExp, pPrivateKeyType2, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
+        return l9_ippsRSA_GetSizePublicKey( rsaModulusBitSize, pubicExpBitSize, pKeySize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSA_GenerateKeys( pSrcPublicExp, pModulus, pPublicExp, pPrivateExp, pPrivateKeyType2, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
+        return y8_ippsRSA_GetSizePublicKey( rsaModulusBitSize, pubicExpBitSize, pKeySize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSA_GenerateKeys,(const IppsBigNumState* pSrcPublicExp, IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, IppsBigNumState* pPrivateExp, IppsRSAPrivateKeyState* pPrivateKeyType2, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
-IPPAPI(IppStatus, h9_ippsRSA_GenerateKeys,(const IppsBigNumState* pSrcPublicExp, IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, IppsBigNumState* pPrivateExp, IppsRSAPrivateKeyState* pPrivateKeyType2, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, p8_ippsRSA_GetSizePublicKey,(int rsaModulusBitSize, int pubicExpBitSize, int* pKeySize))
+IPPAPI(IppStatus, h9_ippsRSA_GetSizePublicKey,(int rsaModulusBitSize, int pubicExpBitSize, int* pKeySize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GenerateKeys,(const IppsBigNumState* pSrcPublicExp, IppsBigNumState* pModulus, IppsBigNumState* pPublicExp, IppsBigNumState* pPrivateExp, IppsRSAPrivateKeyState* pPrivateKeyType2, Ipp8u* pScratchBuffer, int nTrials, IppsPrimeState* pPrimeGen, IppBitSupplier rndFunc, void* pRndParam))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_GetSizePublicKey,(int rsaModulusBitSize, int pubicExpBitSize, int* pKeySize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSA_GenerateKeys( pSrcPublicExp, pModulus, pPublicExp, pPrivateExp, pPrivateKeyType2, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
+        return h9_ippsRSA_GetSizePublicKey( rsaModulusBitSize, pubicExpBitSize, pKeySize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSA_GenerateKeys( pSrcPublicExp, pModulus, pPublicExp, pPrivateExp, pPrivateKeyType2, pScratchBuffer, nTrials, pPrimeGen, rndFunc, pRndParam );
+        return p8_ippsRSA_GetSizePublicKey( rsaModulusBitSize, pubicExpBitSize, pKeySize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

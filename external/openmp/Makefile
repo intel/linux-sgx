@@ -40,6 +40,7 @@ ifdef DEBUG
 endif
 ENC_CXXFLAGS = $(patsubst -fpie, -fpic, $(ENCLAVE_CXXFLAGS))
 OMP_CONFIG += -DCMAKE_CXX_FLAGS="$(ENC_CXXFLAGS)"
+OMP_CONFIG += -DSGX_PROGRAM_SEARCH_PATH="$(EXT_BINUTILS_DIR)"
 
 CHECK_SOURCE :=
 ifeq ("$(wildcard $(OMP_DIR)/final)", "")

@@ -847,7 +847,6 @@ inserter(_Container& __x, typename _Container::iterator __i)
     return insert_iterator<_Container>(__x, __i);
 }
 
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
 template <class _Tp, class _CharT = char,
           class _Traits = char_traits<_CharT>, class _Distance = ptrdiff_t>
 class _LIBCPP_TYPE_VIS_ONLY istream_iterator
@@ -1028,7 +1027,6 @@ public:
                      ios_base& __iob, _Ch __fl);
 #endif
 };
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
 
 template <class _Iter>
 class _LIBCPP_TYPE_VIS_ONLY move_iterator

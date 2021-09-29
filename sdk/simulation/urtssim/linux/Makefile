@@ -104,7 +104,11 @@ OBJ6 := $(SIM_DIR)/driver_api/driver_api.o \
         $(SIM_DIR)/assembly/linux/lowlib.o \
         $(SIM_DIR)/assembly/linux/sgxsim.o \
         $(SIM_DIR)/uinst/u_instructions.o  \
-        $(SIM_DIR)/uinst/enclave_mngr.o
+        $(SIM_DIR)/uinst/enclave_mngr.o    \
+        $(SIM_DIR)/uinst/linux/get_tcs.o   \
+        $(SIM_DIR)/uinst/linux/set_tls.o   \
+        $(SIM_DIR)/uinst/linux/restore_tls.o
+
 		
 CPP_OBJ := $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ5)
 OBJ     := $(CPP_OBJ) $(C_OBJ) $(OBJ4)

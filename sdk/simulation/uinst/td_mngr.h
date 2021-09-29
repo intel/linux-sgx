@@ -43,8 +43,6 @@ typedef struct _tcs_sim_t
     size_t    tcs_state;
     uintptr_t saved_dtv;
     uintptr_t saved_fs_gs_0;
-    uintptr_t saved_fs_base;
-    uintptr_t saved_gs_base;
     uint64_t  tcs_offset_update_flag;
 } tcs_sim_t;
 
@@ -57,6 +55,20 @@ typedef struct _tcs_sim_t
 #define GET_TCS_PTR(xbp) (tcs_t *)(*(uintptr_t *)((size_t)(xbp) - 10 * sizeof(uintptr_t)))
 #else
 #define GET_TCS_PTR(xbp) (tcs_t *)(*(uintptr_t *)((size_t)(xbp) + 2 * sizeof(uintptr_t)))
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//Add the implementation to get the _tls_array pointer in GNU here.
+#include "gnu_tls.h"
+extern uint8_t __ImageBase;
+int td_mngr_set_td(void *enclave_base, tcs_t *tcs);
+int td_mngr_restore_td(tcs_t *tcs)  __attribute__((section (".nipx")));
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif

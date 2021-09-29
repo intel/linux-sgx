@@ -161,7 +161,6 @@ template <class charT, class traits, class T>
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <ostream>
 
 #include <__undef_min_max>
@@ -349,6 +348,7 @@ basic_istream<_CharT, _Traits>::swap(basic_istream& __rhs)
     basic_ios<char_type, traits_type>::swap(__rhs);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits>
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::operator>>(unsigned short& __n)
@@ -725,6 +725,7 @@ basic_istream<_CharT, _Traits>::operator>>(int& __n)
 #endif  // _LIBCPP_NO_EXCEPTIONS
     return *this;
 }
+#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 template <class _CharT, class _Traits>
 inline _LIBCPP_INLINE_VISIBILITY
@@ -1749,6 +1750,5 @@ _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS basic_iostream<char>)
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_ISTREAM

@@ -50,6 +50,18 @@ ifneq ($(words $(subst :, ,$(ROOT_DIR))), 1)
   $(error main directory cannot contain spaces nor colons)
 endif
 
+
+#--------------------------------------------------------------------------------------
+# Function: get_distr_info
+# Arguments: 1: the grep keyword to be searched from /etc/os-release
+# Returns: Return the value for the Linux distribution info corresponding to the keyword
+#---------------------------------------------------------------------------------------
+get_distr_info = $(patsubst "%",%,$(shell grep $(1) /etc/os-release 2> /dev/null | awk -F'=' '{print $$2}'))
+
+DISTR_ID := $(call get_distr_info, '^ID=')
+DISTR_VER := $(call get_distr_info, '^VERSION_ID=')
+
+
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
 LINUX_PSW_DIR         := $(ROOT_DIR)/psw
@@ -121,7 +133,7 @@ CFLAGS += -Wjump-misses-init -Wstrict-prototypes -Wunsuffixed-float-constants
 # additional warnings flags for C++
 CXXFLAGS += -Wnon-virtual-dtor
 
-CXXFLAGS += -std=c++11
+CXXFLAGS += -std=c++14
 
 .DEFAULT_GOAL := all
 # this turns off the RCS / SCCS implicit rules of GNU Make
@@ -198,8 +210,10 @@ endif
 
 ifneq ($(origin NIX_PATH), environment)
 BINUTILS_DIR ?= /usr/local/bin
+EXT_BINUTILS_DIR = $(ROOT_DIR)/external/toolset/$(DISTR_ID)$(DISTR_VER)
 else
 BINUTILS_DIR ?= $(ROOT_DIR)/external/toolset/nix/
+EXT_BINUTILS_DIR = $(ROOT_DIR)/external/toolset/nix/
 endif
 
 # enable -B option for all the build

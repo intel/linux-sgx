@@ -73,7 +73,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /installer
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
 RUN ./sgx_linux_x64_psw*.bin --no-start-aesm
-# Run the aesm service as root to ensure its access to /dev/sgx/provision
+USER aesmd
 WORKDIR /opt/intel/sgxpsw/aesm/
 ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon

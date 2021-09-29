@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSAEncrypt_OAEP_rmf,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, l9_ippsRSAEncrypt_OAEP_rmf,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsRSA_GetSizePrivateKeyType1,(int rsaModulusBitSize, int privateExpBitSize, int* pKeySize))
+IPPAPI(IppStatus, l9_ippsRSA_GetSizePrivateKeyType1,(int rsaModulusBitSize, int privateExpBitSize, int* pKeySize))
+IPPAPI(IppStatus, k1_ippsRSA_GetSizePrivateKeyType1,(int rsaModulusBitSize, int privateExpBitSize, int* pKeySize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSAEncrypt_OAEP_rmf,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_GetSizePrivateKeyType1,(int rsaModulusBitSize, int privateExpBitSize, int* pKeySize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsRSA_GetSizePrivateKeyType1( rsaModulusBitSize, privateExpBitSize, pKeySize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSAEncrypt_OAEP_rmf( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, pMethod, pBuffer );
+        return l9_ippsRSA_GetSizePrivateKeyType1( rsaModulusBitSize, privateExpBitSize, pKeySize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSAEncrypt_OAEP_rmf( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, pMethod, pBuffer );
+        return y8_ippsRSA_GetSizePrivateKeyType1( rsaModulusBitSize, privateExpBitSize, pKeySize );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSAEncrypt_OAEP_rmf,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
-IPPAPI(IppStatus, h9_ippsRSAEncrypt_OAEP_rmf,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPAPI(IppStatus, p8_ippsRSA_GetSizePrivateKeyType1,(int rsaModulusBitSize, int privateExpBitSize, int* pKeySize))
+IPPAPI(IppStatus, h9_ippsRSA_GetSizePrivateKeyType1,(int rsaModulusBitSize, int privateExpBitSize, int* pKeySize))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSAEncrypt_OAEP_rmf,(const Ipp8u* pSrc, int srcLen, const Ipp8u* pLabel, int labLen, const Ipp8u* pSeed, Ipp8u* pDst, const IppsRSAPublicKeyState* pKey, const IppsHashMethod* pMethod, Ipp8u* pBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsRSA_GetSizePrivateKeyType1,(int rsaModulusBitSize, int privateExpBitSize, int* pKeySize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSAEncrypt_OAEP_rmf( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, pMethod, pBuffer );
+        return h9_ippsRSA_GetSizePrivateKeyType1( rsaModulusBitSize, privateExpBitSize, pKeySize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSAEncrypt_OAEP_rmf( pSrc, srcLen, pLabel, labLen, pSeed, pDst, pKey, pMethod, pBuffer );
+        return p8_ippsRSA_GetSizePrivateKeyType1( rsaModulusBitSize, privateExpBitSize, pKeySize );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -31,16 +31,32 @@
 
 #include <syslog.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 #include "oal/error_report.h"
+
+static bool _nosyslog = false;
 
 void aesm_log_init(void)
 {
-    openlog("aesm_service", LOG_CONS|LOG_PID, LOG_USER);
+    if (!_nosyslog) {
+        openlog("aesm_service", LOG_CONS|LOG_PID, LOG_USER);
+    }
+}
+
+void aesm_log_init_ex(bool nosyslog)
+{
+    // If nosyslog is true, we will output logs to stdout instead of syslog
+    _nosyslog = nosyslog;
+
+    aesm_log_init();
 }
 
 void aesm_log_fini(void)
 {
-    closelog();
+    if (!_nosyslog) {
+        closelog();
+    }
 }
 
 void sgx_proc_log_report(int level, const char *format, ...)
@@ -64,7 +80,23 @@ void sgx_proc_log_report(int level, const char *format, ...)
    default:
       return;//ignore
     }
-    vsyslog(priority, format, ap);
+    if (!_nosyslog) {
+        vsyslog(priority, format, ap);
+    }
+    else {
+        FILE* stream = nullptr;
+        if (level <= AESM_LOG_REPORT_ERROR) {
+            stream = stderr;
+        }
+        else {
+            stream = stdout;
+        }
+        // Automatically add newline
+        vfprintf(stream, format, ap);
+        if (format[strlen(format)-1] != '\n') 
+            fprintf(stream, "\n");
+        fflush(stream);
+    }
     va_end(ap);
 }
 

@@ -30,11 +30,13 @@
  */
 
 #include "sgx_tcrypto.h"
+#include <string.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include "se_tcrypto_common.h"
+#include "sgx_read_rand.h"
 
 sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
 	uint32_t data_size,
@@ -307,5 +309,30 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
 	if (e)
 		BN_clear_free(e);
 
+	return retval;
+}
+
+sgx_status_t sgx_rsa3072_sign_ex(const uint8_t * p_data,
+	uint32_t data_size,
+	const sgx_rsa3072_key_t * p_key,
+	const sgx_rsa3072_public_key_t *p_public,
+	sgx_rsa3072_signature_t * p_signature)
+{
+	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
+	sgx_rsa_result_t result = SGX_RSA_INVALID_SIGNATURE;
+
+
+	if (p_public == NULL)
+		return sgx_rsa3072_sign(p_data, data_size, p_key, p_signature);
+
+	retval = sgx_rsa3072_sign(p_data, data_size, p_key, p_signature);
+	if (retval != SGX_SUCCESS)
+		return retval;
+	retval = sgx_rsa3072_verify(p_data, data_size, p_public, p_signature, &result);
+	if (retval != SGX_SUCCESS || result != SGX_RSA_VALID) {
+		if(SGX_SUCCESS != sgx_read_rand((unsigned char*)p_signature, sizeof(sgx_rsa3072_signature_t)))
+			(void)memset_s(p_signature, sizeof(sgx_rsa3072_signature_t), 0, sizeof(sgx_rsa3072_signature_t));
+		return retval == SGX_ERROR_OUT_OF_MEMORY ? SGX_ERROR_OUT_OF_MEMORY : SGX_ERROR_INVALID_PARAMETER;
+	}
 	return retval;
 }

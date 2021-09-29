@@ -761,6 +761,29 @@ extern "C" {
         const sgx_rsa3072_key_t *p_key,
         sgx_rsa3072_signature_t *p_signature);
 
+    /** Computes signature for a given data based on RSA 3072 private key and optional
+    * corresponding public key.
+    *
+    * A digital signature over a message consists of a 3072 bit number.
+    *
+    * Return: If private key, signature or data pointer is NULL,
+    *                    SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If the signing process fails then SGX_ERROR_UNEXPECTED is returned.
+    * Parameters:
+    *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: uint8_t *p_data - Pointer to the data to be signed
+    *           uint32_t data_size - Size of the data to be signed
+    *           sgx_rsa3072_key_t *p_key - Pointer to the RSA key. 
+    *				Note: In IPP based version p_key->e is unused, hence it can be NULL.
+    *           sgx_rsa3072_public_key_t *p_public - Pointer to the public key(optional).
+    *   Output: sgx_rsa3072_signature_t *p_signature - Pointer to the signature output
+    */
+    sgx_status_t sgx_rsa3072_sign_ex(const uint8_t * p_data,
+    uint32_t data_size,
+    const sgx_rsa3072_key_t * p_key,
+    const sgx_rsa3072_public_key_t *p_public,
+    sgx_rsa3072_signature_t * p_signature);
+
     /** Verifies the signature for the given data based on the RSA 3072 public key.
     *
     * A digital signature over a message consists of a 3072 bit number.

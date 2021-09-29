@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpxMethod_binom3, (void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpxMethod_binom3, (void) )
+IPPAPI( const IppsGFpMethod*, y8_ippsGFpMethod_p256, (void) )
+IPPAPI( const IppsGFpMethod*, l9_ippsGFpMethod_p256, (void) )
+IPPAPI( const IppsGFpMethod*, k1_ippsGFpMethod_p256, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p256, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsGFpMethod_p256(  );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpxMethod_binom3(  );
+        return l9_ippsGFpMethod_p256(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpxMethod_binom3(  );
+        return y8_ippsGFpMethod_p256(  );
       } else 
         return NULL;
 }
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpxMethod_binom3, (void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpxMethod_binom3, (void) )
+IPPAPI( const IppsGFpMethod*, p8_ippsGFpMethod_p256, (void) )
+IPPAPI( const IppsGFpMethod*, h9_ippsGFpMethod_p256, (void) )
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpxMethod_binom3, (void) )
+IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p256, (void) )
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpxMethod_binom3(  );
+        return h9_ippsGFpMethod_p256(  );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpxMethod_binom3(  );
+        return p8_ippsGFpMethod_p256(  );
       } else 
         return NULL;
 }

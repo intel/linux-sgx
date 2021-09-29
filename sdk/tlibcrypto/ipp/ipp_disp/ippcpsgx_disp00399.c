@@ -43,43 +43,49 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI( const IppsGFpMethod*, y8_ippsGFpMethod_p521r1, (void) )
-IPPAPI( const IppsGFpMethod*, l9_ippsGFpMethod_p521r1, (void) )
+IPPAPI(IppStatus, y8_ippsGFpGetSize, (int feBitSize, int* pSize))
+IPPAPI(IppStatus, l9_ippsGFpGetSize, (int feBitSize, int* pSize))
+IPPAPI(IppStatus, k1_ippsGFpGetSize, (int feBitSize, int* pSize))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p521r1, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpGetSize, (int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsGFpGetSize( feBitSize, pSize );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpMethod_p521r1(  );
+        return l9_ippsGFpGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpMethod_p521r1(  );
+        return y8_ippsGFpGetSize( feBitSize, pSize );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI( const IppsGFpMethod*, p8_ippsGFpMethod_p521r1, (void) )
-IPPAPI( const IppsGFpMethod*, h9_ippsGFpMethod_p521r1, (void) )
+IPPAPI(IppStatus, p8_ippsGFpGetSize, (int feBitSize, int* pSize))
+IPPAPI(IppStatus, h9_ippsGFpGetSize, (int feBitSize, int* pSize))
 
-IPPFUN( const IppsGFpMethod*,sgx_disp_ippsGFpMethod_p521r1, (void) )
+IPPFUN(IppStatus,sgx_disp_ippsGFpGetSize, (int feBitSize, int* pSize))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpMethod_p521r1(  );
+        return h9_ippsGFpGetSize( feBitSize, pSize );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpMethod_p521r1(  );
+        return p8_ippsGFpGetSize( feBitSize, pSize );
       } else 
-        return NULL;
+        return ippStsCpuNotSupportedErr;
 }
 #endif

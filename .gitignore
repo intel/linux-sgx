@@ -21,7 +21,11 @@
 # files downloaded in preparation phase
 Intel redistributable binary.txt
 Master_EULA_for_Intel_Sw_Development_Products.pdf
-external/ippcp_internal/
+external/ippcp_internal/inc/ippcp.h
+external/ippcp_internal/inc/ippcpdefs.h
+external/ippcp_internal/inc/ippversion.h
+external/ippcp_internal/inc/sgx_ippcp.h
+external/ippcp_internal/license/
 external/toolset/
 psw/ae/data/prebuilt/README.md
 redist.txt

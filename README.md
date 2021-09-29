@@ -46,6 +46,10 @@ The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts 
 
 The [intel-device-plugins-for-kubernetes](https://github.com/intel/intel-device-plugins-for-kubernetes) project enables users to run container applications running Intel(R) SGX enclaves in Kubernetes clusters. It also gives instructions how to set up ECDSA based attestation in a cluster.
 
+
+The [intel-sgx-ssl](https://github.com/intel/intel-sgx-ssl) project provides a full-strength general purpose cryptography library for Intel(R) SGX enclave applications. It is based on the underlying OpenSSL* Open Source project. Intel(R) SGX provides a build combination to build out a SGXSSL based SDK as [below](#build-the-intelr-sgx-sdk-and-intelr-sgx-sdk-installer). Users could also utilize this cryptography library in SGX enclave applications seperately.
+
+
 This repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
 
 License
@@ -87,10 +91,8 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 7.6 64bits
   * Red Hat Enterprise Linux Server release 8.2 64bits
   * CentOS 8.2 64bits
-  * Fedora 31 Server 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
   * On Ubuntu 18.04:
@@ -101,7 +103,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python-is-python3 libssl-dev git cmake perl
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2:
+  * On Red Hat Enterprise Linux 8.2:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel git cmake perl
@@ -113,19 +115,14 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo dnf --enablerepo=PowerTools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python2
     $ sudo alternatives --set python /usr/bin/python2
   ```
-  * On Fedora 31:
-  ```
-    $ sudo yum groupinstall 'C Development Tools and Libraries'
-    $ sudo yum install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget python rpm-build git cmake perl
-  ```
-   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above. For Red Hat Enterprise Linux 7.6, you may need to update gcc and glibc version manually.
+   **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above.
 - Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:  
   1)  To install the additional required tools:
       * On Ubuntu 18.04 and Ubuntu 20.04:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip
       ```
-      * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2 and Fedora 31:
+      * On Red Hat Enterprise Linux 8.2:
       ```
         $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
       ```
@@ -234,7 +231,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   ```
   $ make deb_psw_pkg DEBUG=1
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.2 and Fedora 31:
+  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
   ```
   $ make rpm_psw_pkg
   ```
@@ -278,12 +275,12 @@ You can find the tools and libraries generated in the `build/linux` directory.
   **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. Since the local package repository is not signed with GPG, you should ignore the gpgcheck when installing the packages.
 
   - To add the local RPM package repository to the system repository configuration, you can use the following command. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.2, Fedora 31:
+  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
   ```
   $ sudo yum-config-manager --add-repo file://PATH_TO_LOCAL_REPO
   ```
   - To ignore the gpgcheck when you install the package, enter the following command:
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.2, Fedora 31:
+  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
   ```
   $ sudo yum --nogpgcheck install <package>
   ```
@@ -296,24 +293,18 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 7.6 64bits
   * Red Hat Enterprise Linux Server release 8.2 64bits
   * CentOS 8.2 64bits
-  * Fedora 31 Server 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 18.04 and Ubuntu 20.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2 and CentOS 8.2:
+  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python2
      $ sudo alternatives --set python /usr/bin/python2 
-  ```
-  * On Fedora 31:
-  ```
-     $ sudo yum groupinstall 'C Development Tools and Libraries'
   ```
 
 ### Install the Intel(R) SGX SDK
@@ -330,7 +321,7 @@ NOTE: You need to set up the needed environment variables before compiling your 
 ### Test the Intel(R) SGX SDK Package with the Code Samples
 - Compile and run each code sample in Simulation mode to make sure the package works well:    
 ```
-  $ cd SampleCode/LocalAttestation
+  $ cd ${sgx-sdk-install-path}/SampleCode/LocalAttestation
   $ make SGX_MODE=SIM
   $ cd bin
   $ ./app
@@ -344,7 +335,7 @@ See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for informat
 See the later topic, *Install Intel(R) SGX PSW*, for information on how to install the PSW package.
 - Compile and run each code sample in Hardware mode, Debug build, as follows:  
 ```
-  $ cd SampleCode/LocalAttestation
+  $ cd ${sgx-sdk-install-path}/SampleCode/LocalAttestation
   $ make
   $ cd bin
   $ ./app
@@ -360,10 +351,8 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 7.6 64bits
   * Red Hat Enterprise Linux Server release 8.2 64bits
   * CentOS 8.2 64bits
-  * Fedora 31 Server 64bits
 - Ensure that you have a system with the following required hardware:  
   * 6th Generation Intel(R) Core(TM) Processor or newer
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
@@ -373,7 +362,7 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2 and Fedora 31:  
+  * On Red Hat Enterprise Linux 8.2:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -387,7 +376,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 18.04 and Ubuntu 20.04|Red Hat Enterprise Linux 7.6, Red Hat Enterprise Linux 8.2, CentOS 8.2, Fedora 31|
+|   |Ubuntu 18.04 and Ubuntu 20.04|Red Hat Enterprise Linux 8.2, CentOS 8.2|
 | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|

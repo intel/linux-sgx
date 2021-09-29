@@ -68,16 +68,28 @@ void signal_handler(int sig)
 }
 
 int main(int argc, char *argv[]) {
-    // The only command line option that is supported is --no-daemon.
-    bool noDaemon = argc == 2 && (strcmp(argv[1], "--no-daemon") == 0);
-    AESM_LOG_INIT();
-    if ((argc > 2) || (argc == 2 && !noDaemon)) {
+    bool noDaemon = false, noSyslog = false;
+
+    if (argc > 3) {
+        AESM_LOG_INIT();
         AESM_LOG_FATAL("Invalid command line.");
         AESM_LOG_FINI();
         exit(1);
     }
-    if(!noDaemon && daemon(0, 0) < 0)
-    {
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--no-daemon") {
+            noDaemon = true;
+        }
+        else if (arg == "--no-syslog"){
+            noSyslog = true;
+        }
+    }
+
+    AESM_LOG_INIT_EX(noSyslog);
+
+    if(!noDaemon && daemon(0, 0) < 0) {
         AESM_LOG_FATAL("Fail to set daemon.");
         AESM_LOG_FINI();
         exit(1);
@@ -117,5 +129,6 @@ int main(int argc, char *argv[]) {
     }
 
     AESM_LOG_FINI();
+
     return 0;
 }

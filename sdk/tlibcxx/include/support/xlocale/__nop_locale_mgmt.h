@@ -15,6 +15,14 @@
 extern "C" {
 #endif
 
+#define LC_CTYPE    0
+#define LC_NUMERIC  1
+#define LC_TIME     2
+#define LC_COLLATE  3
+#define LC_MONETARY 4
+#define LC_MESSAGES 5
+#define LC_ALL      6
+
 // Patch over lack of extended locale support
 typedef void *locale_t;
 static inline locale_t duplocale(locale_t) {

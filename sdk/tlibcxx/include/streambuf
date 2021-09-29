@@ -110,7 +110,6 @@ protected:
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <iosfwd>
 #include <ios>
 
@@ -584,6 +583,5 @@ _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS basic_ios<wchar_t>)
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_STEAMBUF

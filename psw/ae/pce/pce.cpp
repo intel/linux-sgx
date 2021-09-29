@@ -274,6 +274,8 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
     cec_prv_key oec_prv_key_buf;	
     auto* oec_prv_key = oec_prv_key_buf.instantiate_object();	
     auto* pec_prv_key = &oec_prv_key->v;
+    sgx_ec256_public_t  ec_pub_key;
+    uint8_t verify_result = SGX_EC_INVALID_SIGNATURE;
 
     sgx_status_t sgx_status = SGX_SUCCESS;
 
@@ -311,6 +313,22 @@ uint32_t certify_enclave(const psvn_t* cert_psvn,
         ae_ret = AE_FAILURE;
         goto ret_point;
     }
+    sgx_status = sgx_ecc256_calculate_pub_from_priv(pec_prv_key, &ec_pub_key);
+    if (SGX_SUCCESS != sgx_status) {
+        ae_ret = AE_FAILURE;
+        goto ret_point;
+    }
+
+    sgx_status = sgx_ecdsa_verify(reinterpret_cast<const uint8_t *>(&report->body),
+        sizeof(report->body),
+        &ec_pub_key,
+        reinterpret_cast<sgx_ec256_signature_t *>(signature),
+        &verify_result,
+        handle);
+    if (SGX_SUCCESS != sgx_status || SGX_EC_VALID != verify_result) {
+        ae_ret = AE_FAILURE;
+        goto ret_point;
+    }
     //swap from little endian used in sgx_crypto to big endian used in network byte order
     SWAP_ENDIAN_32B(reinterpret_cast<sgx_ec256_signature_t *>(signature)->x);
     SWAP_ENDIAN_32B(reinterpret_cast<sgx_ec256_signature_t *>(signature)->y);
@@ -323,7 +341,8 @@ ret_point:
         sgx_ecc256_close_context(handle);
     }
     if(AE_SUCCESS != ae_ret){
-        (void)memset_s(signature, signature_buf_size, 0, sizeof(sgx_ec256_signature_t));
+        if(SGX_SUCCESS != sgx_read_rand((unsigned char*)signature, signature_buf_size))
+            (void)memset_s(signature, signature_buf_size, 0, sizeof(sgx_ec256_signature_t));
     }
     return ae_ret;
 }

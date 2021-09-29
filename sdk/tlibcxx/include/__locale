@@ -13,14 +13,15 @@
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <string>
 #include <memory>
 #include <utility>
 #include <mutex>
 #include <cstdint>
 #include <cctype>
+#if !defined(_LIBCPP_SGX_CONFIG)
 #include <locale.h>
+#endif
 #if defined(_LIBCPP_MSVCRT) || defined(__MINGW32__)
 # include <support/win32/locale_win32.h>
 #elif defined(_AIX)
@@ -41,6 +42,8 @@
 # include <xlocale.h>
 #elif defined(_LIBCPP_HAS_MUSL_LIBC)
 # include <support/musl/xlocale.h>
+#elif defined(_LIBCPP_SGX_CONFIG)
+# include <support/sgx/xlocale.h>
 #endif // __GLIBC__ || __APPLE__ || __FreeBSD__ || __sun__ || __EMSCRIPTEN__ || __IBMCPP__
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -71,21 +74,29 @@ public:
     typedef int category;
     static const category // values assigned here are for exposition only
         none     = 0,
+#if !defined(_LIBCPP_SGX_CONFIG)
         collate  = LC_COLLATE_MASK,
+#endif
         ctype    = LC_CTYPE_MASK,
+#if !defined(_LIBCPP_SGX_CONFIG)
         monetary = LC_MONETARY_MASK,
         numeric  = LC_NUMERIC_MASK,
         time     = LC_TIME_MASK,
         messages = LC_MESSAGES_MASK,
         all = collate | ctype | monetary | numeric | time | messages;
+#else
+        all = ctype;
+#endif
 
     // construct/copy/destroy:
     locale()  _NOEXCEPT;
     locale(const locale&)  _NOEXCEPT;
+#if !defined(_LIBCPP_SGX_CONFIG)
     explicit locale(const char*);
     explicit locale(const string&);
     locale(const locale&, const char*, category);
     locale(const locale&, const string&, category);
+#endif
     template <class _Facet>
         _LIBCPP_INLINE_VISIBILITY locale(const locale&, _Facet*);
     locale(const locale&, const locale&, category);
@@ -190,6 +201,7 @@ use_facet(const locale& __l)
     return static_cast<const _Facet&>(*__l.use_facet(_Facet::id));
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 // template <class _CharT> class collate;
 
 template <class _CharT>
@@ -327,6 +339,7 @@ locale::operator()(const basic_string<_CharT, _Traits, _Allocator>& __x,
                                        __x.data(), __x.data() + __x.size(),
                                        __y.data(), __y.data() + __y.size()) < 0;
 }
+#endif
 
 // template <class charT> class ctype
 
@@ -1159,6 +1172,7 @@ protected:
     virtual int do_max_length() const  _NOEXCEPT;
 };
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 // template <class _InternT, class _ExternT, class _StateT> class codecvt_byname
 
 template <class _InternT, class _ExternT, class _StateT>
@@ -1185,6 +1199,7 @@ _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS codecvt_byname<char, char, mbsta
 _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS codecvt_byname<wchar_t, char, mbstate_t>)
 _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS codecvt_byname<char16_t, char, mbstate_t>)
 _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS codecvt_byname<char32_t, char, mbstate_t>)
+#endif
 
 _LIBCPP_FUNC_VIS void __throw_runtime_error(const char*);
 
@@ -1368,6 +1383,7 @@ struct __widen_from_utf8<32>
     }
 };
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 // template <class charT> class numpunct
 
 template <class _CharT> class _LIBCPP_TYPE_VIS_ONLY numpunct;
@@ -1473,9 +1489,9 @@ protected:
 private:
     void __init(const char*);
 };
+#endif
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP___LOCALE

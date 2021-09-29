@@ -45,7 +45,6 @@ template <class charT, class traits, class Allocator>
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <istream>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -274,6 +273,7 @@ setw(int __n)
     return __iom_t6(__n);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 // get_money
 
 template <class _MoneyT> class __iom_t7;
@@ -513,6 +513,7 @@ put_time(const tm* __tm, const _CharT* __fmt)
 {
     return __iom_t10<_CharT>(__tm, __fmt);
 }
+#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 template <class _CharT, class _Traits, class _ForwardIterator>
 std::basic_ostream<_CharT, _Traits> &
@@ -672,6 +673,5 @@ quoted ( basic_string <_CharT, _Traits, _Allocator> &__s, _CharT __delim = _Char
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_IOMANIP

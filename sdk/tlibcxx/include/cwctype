@@ -64,7 +64,6 @@ using ::wint_t;
 using ::wctrans_t;
 using ::wctype_t;
 
-#ifndef _LIBCPP_SGX_CONFIG
 #ifdef iswalnum
 inline _LIBCPP_INLINE_VISIBILITY int __libcpp_iswalnum(wint_t __wc) {return iswalnum(__wc);}
 #undef iswalnum
@@ -208,7 +207,6 @@ inline _LIBCPP_INLINE_VISIBILITY wctrans_t wctrans(const char* __p) {return __li
 #else  // wctrans
 using ::wctrans;
 #endif
-#endif //_LIBCPP_SGX_CONFIG
 
 _LIBCPP_END_NAMESPACE_STD
 

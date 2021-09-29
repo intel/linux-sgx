@@ -149,14 +149,15 @@ build_ae()
 build_binutils()
 {
     pushd .
-    cd $binutils_repo && ./configure && make
-    cd $binutils_repo/gold && ./configure && make
+    cd $binutils_repo && ./configure --enable-deterministic-archives && make
     local binutils_out="$script_dir/out/binutils"
     mkdir -p $binutils_out
     cp $binutils_repo/gas/as-new $binutils_out/as && strip $binutils_out/as
     cp $binutils_repo/ld/ld-new  $binutils_out/ld && strip $binutils_out/ld 
     cp $binutils_repo/binutils/objdump $binutils_out/ && strip $binutils_out/objdump
-    cp $binutils_repo/gold/ld-new $binutils_out/ld.gold && strip $binutils_out/ld.gold
+    cp $binutils_repo/binutils/ar $binutils_out/ && strip $binutils_out/ar
+    cp $binutils_repo/binutils/objcopy $binutils_out/ && strip $binutils_out/objcopy
+    cp $binutils_repo/binutils/ranlib $binutils_out/ && strip $binutils_out/ranlib
     popd
     toolset_dir="$binutils_out"
 }
@@ -193,6 +194,7 @@ clean_repo
 case "$type" in
     "all")
         build_binutils
+        export PATH=$toolset_dir:$PATH
         build_ipp
         build_sdk
         build_ae $sdk_installer $toolset_dir
@@ -204,15 +206,20 @@ case "$type" in
         ;;
     "ae")
         toolset_dir="$script_dir/sgx/external/toolset/nix"
+        export PATH=$toolset_dir:$PATH
         sdk_installer=$(ls $script_dir/sgx_linux_x64_sdk_*.bin)
         build_ae $sdk_installer $toolset_dir
         echo "The built out AEs could be found under $build_out/ae"
         ;;
     "sdk")
+        toolset_dir="$script_dir/sgx/external/toolset/nix"
+        export PATH=$toolset_dir:$PATH
         build_sdk
         echo "SGX SDK installer has been built out. $sdk_installer"
         ;;
     "ipp")
+        toolset_dir="$script_dir/sgx/external/toolset/nix"
+        export PATH=$toolset_dir:$PATH
         build_ipp
         echo "The built out IPP crypto libs could be found under $build_out/ipp"
         ;;

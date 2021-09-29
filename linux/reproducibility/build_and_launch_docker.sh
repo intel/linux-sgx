@@ -76,8 +76,9 @@ mount_dir="/linux-sgx"
 sdk_installer=""
 sgx_src=""
 
-default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.14.100.1.bin
-default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.14/distro/nix_reproducibility/$default_sdk_installer
+default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.15.100.1.bin
+default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.15/distro/nix_reproducibility/$default_sdk_installer
+
 
 usage()
 {
@@ -178,7 +179,7 @@ prepare_sgx_src()
     if [ "$sgx_src" != "" ]; then
         mkdir -p "$sgx_repo" && cp -a "$sgx_src/." "$sgx_repo"
     else
-        git clone -b sgx_2.14_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
+        git clone -b sgx_2.15_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
     fi
 
     cd "$sgx_repo" && make preparation
@@ -186,6 +187,16 @@ prepare_sgx_src()
 
 }
 
+prepare_ipp_src()
+{
+    pushd .
+    ipp_dir="$sgx_repo/external/ippcp_internal"
+    
+    # Apply the patch
+    cd $ipp_dir/ipp-crypto
+    git apply ../0001-IPP-crypto-for-SGX.patch > /dev/null 2>&1 ||  git apply ../0001-IPP-crypto-for-SGX.patch --check -R
+    popd
+}
 
 prepare_binutils_src()
 {
@@ -194,8 +205,8 @@ prepare_binutils_src()
         rm -rf $binutils_repo
     fi
 
-    git clone https://github.com/bminor/binutils-gdb.git --branch binutils-2_35 --depth 1 $binutils_repo
-    #git clone https://sourceware.org/git/binutils-gdb.git --branch binutils-2_35 --depth 1 $binutils_repo
+    git clone https://github.com/bminor/binutils-gdb.git --branch binutils-2_36_1 --depth 1 $binutils_repo
+    #git clone https://sourceware.org/git/binutils-gdb.git --branch binutils-2_36_1 --depth 1 $binutils_repo
 }
 
 
@@ -238,6 +249,7 @@ case $type in
     "all")
         prepare_binutils_src
         prepare_sgx_src
+        prepare_ipp_src
         ;;
     "sdk")
         prepare_sgx_src
@@ -248,6 +260,7 @@ case $type in
         ;;
     "ipp")
         prepare_sgx_src
+        prepare_ipp_src
         ;;
     *)
         echo "Unsupported reproducibility type."
