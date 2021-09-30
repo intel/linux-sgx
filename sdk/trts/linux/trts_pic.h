@@ -79,12 +79,34 @@
 /* OCALL command */
 #define OCALL_FLAG          0x04F434944
 
+#define dtv    SE_WORDSIZE
+#define tls    0 
 .macro READ_TD_DATA offset
+#ifdef SE_SIM
+/* TLS support in simulation mode
+ * see "sdk/simulation/uinst/linux/set_tls.c"
+ * and "sdk/simulation/assembly/linux/gnu_tls.h"
+ * TD address (tcs->ofs_base) is set to tcb_head->dtv->value.
+ * The offset of tcb_head->dtv->value is SE_WORDSIZE.
+ */
+
+#if defined(LINUX32)
+    mov     %gs:dtv, %xax
+#elif defined(LINUX64)
+    mov     %fs:dtv, %xax
+#endif
+    mov     tls(%xax), %xax
+    mov     \offset(%xax), %xax
+
+#else /* SE_SIM */
+
 #if defined(LINUX32)
     mov     %fs:\offset, %xax
 #elif defined(LINUX64)
     mov     %gs:\offset, %xax
 #endif
+
+#endif /* !SE_SIM */
 .endm
 
 .macro GET_STACK_BASE tcs

@@ -1,9 +1,11 @@
-From 87db3f93811d743fb820224e5a74c41ef54580a8 Mon Sep 17 00:00:00 2001
-From: zhoul1 <liang.a.zhou@intel.com>
-Date: Thu, 7 Nov 2019 02:20:39 +0800
+From 5d41c9520ef8d199c130d95d2908e067bec8e0a6 Mon Sep 17 00:00:00 2001
+From: Zhang Lili <lili.z.zhang@intel.com>
+Date: Fri, 30 Jul 2021 14:21:39 +0000
 Subject: [PATCH] SGX mkl-dnn.
 
+Signed-off-by: Zhang Lili <lili.z.zhang@intel.com>
 ---
+ CMakeLists.txt                                |  3 ++
  cmake/options.cmake                           | 11 ++--
  cmake/platform.cmake                          |  8 ++-
  src/CMakeLists.txt                            |  4 ++
@@ -17,8 +19,22 @@ Subject: [PATCH] SGX mkl-dnn.
  src/cpu/jit_utils/jitprofiling/jitprofiling.c |  5 ++
  src/cpu/xbyak/xbyak.h                         | 54 +++++++++++++++++++
  src/cpu/xbyak/xbyak_util.h                    | 28 ++++++++++
- 13 files changed, 147 insertions(+), 4 deletions(-)
+ 14 files changed, 150 insertions(+), 4 deletions(-)
 
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e2eef3b91..e59f9a688 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -48,6 +48,9 @@ set(PROJECT_VERSION "1.1.1")
+ 
+ set(LIB_NAME dnnl)
+ 
++set(SGX_PROGRAM_SEARCH_PATH)
++LIST(APPEND CMAKE_PROGRAM_PATH  "/usr/local/bin/"  ${SGX_PROGRAM_SEARCH_PATH} ...)
++
+ if (CMAKE_VERSION VERSION_LESS 3.0)
+     project(${PROJECT_NAME} C CXX)
+ else()
 diff --git a/cmake/options.cmake b/cmake/options.cmake
 index 0f77e936a..ead9f472a 100644
 --- a/cmake/options.cmake

@@ -37,8 +37,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
-#include <asm/prctl.h>
-#include <sys/prctl.h>
 #include <errno.h>
 
 #include "arch.h"
@@ -61,8 +59,7 @@ static uintptr_t _EINIT(secs_t* secs, enclave_css_t* css, token_t* launch);
 static uintptr_t _ECREATE (page_info_t* pi);
 static uintptr_t _EADD (page_info_t* pi, void* epc_lin_addr);
 static uintptr_t _EREMOVE(const void* epc_lin_addr);
-extern "C" int arch_prctl(int code, unsigned long addr);
-
+extern "C" void* get_td_addr(void);
 extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_start_address);
 
 
@@ -129,8 +126,7 @@ void sig_handler_sim(int signum, siginfo_t *siginfo, void *priv)
 {
     GP_ON(signum != SIGFPE && signum != SIGSEGV);
 
-    thread_data_t *thread_data = 0;
-    arch_prctl(ARCH_GET_GS, (unsigned long)&thread_data);
+    thread_data_t *thread_data = (thread_data_t*)get_td_addr();
     if (thread_data != NULL && (uintptr_t)thread_data == (uintptr_t)thread_data->self_addr)
     {
         // first SSA can be used to get tcs, even cssa > 0.
@@ -148,15 +144,6 @@ void sig_handler_sim(int signum, siginfo_t *siginfo, void *priv)
             {
                 size_t tcs_target_state = TCS_STATE_INACTIVE;
                 __atomic_store(&tcs_sim->tcs_state, &tcs_target_state, __ATOMIC_RELAXED);
-
-                // save FS, GS base address
-                uint64_t tmp_fs_base=0, tmp_gs_base=0;
-                arch_prctl(ARCH_GET_FS, (unsigned long)&tmp_fs_base);
-                arch_prctl(ARCH_GET_GS, (unsigned long)&tmp_gs_base);
-
-                // restore FS, GS base address
-                arch_prctl(ARCH_SET_FS, tcs_sim->saved_fs_base);
-                arch_prctl(ARCH_SET_GS, tcs_sim->saved_gs_base);
 
                 CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
                 assert(mngr != NULL);
@@ -189,8 +176,6 @@ void sig_handler_sim(int signum, siginfo_t *siginfo, void *priv)
                         p_ssa_gpr->r14 = context->uc_mcontext.gregs[REG_R14];
                         p_ssa_gpr->r15 = context->uc_mcontext.gregs[REG_R15];
                         p_ssa_gpr->rflags = context->uc_flags;
-                        p_ssa_gpr->fs = tmp_fs_base;
-                        p_ssa_gpr->gs = tmp_gs_base;
 
                         context->uc_mcontext.gregs[REG_RAX] = SE_ERESUME;
                         context->uc_mcontext.gregs[REG_RBX] = (size_t)tcs;
@@ -484,11 +469,10 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
 
         xip = reinterpret_cast<uintptr_t>(enclave_base_addr);
         GP_ON_EENTER(xip == 0);
- 
-        // save FS, GS base address
-        arch_prctl(ARCH_GET_FS, (unsigned long)&tcs_sim->saved_fs_base);
-        arch_prctl(ARCH_GET_GS, (unsigned long)&tcs_sim->saved_gs_base);
 
+        //set the _tls_array to point to the self_addr of TLS section inside the enclave
+        GP_ON_EENTER(td_mngr_set_td(enclave_base_addr, tcs) == false);
+ 
         // Destination depends on STATE
         xip += (uintptr_t)tcs->oentry;
 
@@ -510,10 +494,6 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         regs.xbp = p_ssa_gpr->REG(bp_u);
         regs.xsp = p_ssa_gpr->REG(sp_u);
         regs.xip = xip;
-
-        // adjust the FS, GS base address
-        arch_prctl(ARCH_SET_FS, (unsigned long)enclave_base_addr + tcs->ofs_base);
-        arch_prctl(ARCH_SET_GS, (unsigned long)enclave_base_addr + tcs->ogs_base);
 
         load_regs(&regs);
 
@@ -563,10 +543,6 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
         regs.xsp = p_ssa_gpr->REG(sp);
         regs.xbp = p_ssa_gpr->REG(bp);
         regs.xip = p_ssa_gpr->REG(ip);
-
-	// adjust the FS, GS base address
-        arch_prctl(ARCH_SET_FS, p_ssa_gpr->fs);
-        arch_prctl(ARCH_SET_GS, p_ssa_gpr->gs);
 
         load_regs(&regs);
         return;

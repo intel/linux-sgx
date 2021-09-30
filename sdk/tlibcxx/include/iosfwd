@@ -95,14 +95,11 @@ typedef fpos<char_traits<wchar_t>::state_type> wstreampos;
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 // Not supported in SGX.
-#if !defined(_LIBCPP_SGX_CONFIG)
 class _LIBCPP_TYPE_VIS ios_base;
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 template<class _CharT>  struct _LIBCPP_TYPE_VIS_ONLY char_traits;
 template<class _Tp>     class _LIBCPP_TYPE_VIS_ONLY allocator;
 
-#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _Traits = char_traits<_CharT> >
     class _LIBCPP_TYPE_VIS_ONLY basic_ios;
 
@@ -189,8 +186,6 @@ typedef long int streamoff;         // for char_traits in <string>
 #else
 typedef long long streamoff;        // for char_traits in <string>
 #endif
-
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 template <class _CharT,             // for <stdexcept>
           class _Traits = char_traits<_CharT>,

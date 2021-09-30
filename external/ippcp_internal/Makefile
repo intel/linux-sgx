@@ -49,6 +49,8 @@ ENC_CXXFLAGS = $(ENC_CFLAGS)
 IPP_CONFIG += -DCMAKE_C_FLAGS="$(ENC_CFLAGS)"
 IPP_CONFIG += -DCMAKE_CXX_FLAGS="$(ENC_CXXFLAGS)"
 
+IPP_CONFIG += -DSGX_PROGRAM_SEARCH_PATH="$(EXT_BINUTILS_DIR)"
+
 SUB_DIR = no_mitigation
 ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
 	SUB_DIR = cve_2020_0551_load
@@ -59,12 +61,17 @@ else ifeq ($(MITIGATION-CVE-2020-0551), CF)
 endif
 OUT_DIR = lib/linux/$(ARCH)/$(SUB_DIR)/
 
+PATCH_LOG = $(shell cd ./$(IPP_SOURCE) && git log --oneline --grep='IPP crypto for SGX.' | cut -d' ' -f 5)
+CHECK_PATCHED :=
+
 CHECK_SOURCE :=
 # For reproducibility build in docker, the code should be 
 # prepared before build. So skip the code check to avoid
 # triggering network request 
 ifneq ($(origin NIX_PATH), environment)
+ifneq ($(PATCH_LOG), SGX.)
 CHECK_SOURCE:= ipp_source
+endif
 endif
 
 .PHONY: all build_ipp
@@ -73,7 +80,7 @@ all: build_ipp
 	$(MKDIR) $(OUT_DIR)
 	$(CP) ipp-crypto/build/.build/RELEASE/lib/libippcp.a $(OUT_DIR)
 	$(CP) ipp-crypto/include/* ./inc/
-	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp20u3.patch -o ./inc/ippcp.h
+	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp21u3.patch -o ./inc/ippcp.h
 	$(MKDIR) license
 	$(CP) ipp-crypto/LICENSE ./license/
 
@@ -86,8 +93,9 @@ ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
 else
 	$(RM) -rf $(IPP_SOURCE)
-	git clone -b ipp-crypto_2020_update3 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
+	git clone -b ippcp_2021.3 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
 endif
+	cd $(IPP_SOURCE) && git am ../0001-IPP-crypto-for-SGX.patch
 
 .PHONY: clean
 clean:

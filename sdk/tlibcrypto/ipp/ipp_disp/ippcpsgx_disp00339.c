@@ -43,43 +43,49 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPGetSizeStd521r1,(int* pSize))
-IPPAPI(IppStatus, l9_ippsECCPGetSizeStd521r1,(int* pSize))
+IPPAPI( const char*, y8_ippsECCGetResultString, (IppECResult code))
+IPPAPI( const char*, l9_ippsECCGetResultString, (IppECResult code))
+IPPAPI( const char*, k1_ippsECCGetResultString, (IppECResult code))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd521r1,(int* pSize))
+IPPFUN( const char*,sgx_disp_ippsECCGetResultString, (IppECResult code))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsECCGetResultString( code );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPGetSizeStd521r1( pSize );
+        return l9_ippsECCGetResultString( code );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPGetSizeStd521r1( pSize );
+        return y8_ippsECCGetResultString( code );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPGetSizeStd521r1,(int* pSize))
-IPPAPI(IppStatus, h9_ippsECCPGetSizeStd521r1,(int* pSize))
+IPPAPI( const char*, p8_ippsECCGetResultString, (IppECResult code))
+IPPAPI( const char*, h9_ippsECCGetResultString, (IppECResult code))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd521r1,(int* pSize))
+IPPFUN( const char*,sgx_disp_ippsECCGetResultString, (IppECResult code))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPGetSizeStd521r1( pSize );
+        return h9_ippsECCGetResultString( code );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPGetSizeStd521r1( pSize );
+        return p8_ippsECCGetResultString( code );
       } else 
-        return ippStsCpuNotSupportedErr;
+        return NULL;
 }
 #endif

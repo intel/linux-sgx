@@ -129,7 +129,6 @@ private:
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <ostream>
 #include <istream>
 
@@ -399,6 +398,5 @@ private:
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_STRSTREAM

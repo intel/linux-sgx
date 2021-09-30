@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPGetSizeStd192r1,(int* pSize))
-IPPAPI(IppStatus, l9_ippsECCPGetSizeStd192r1,(int* pSize))
+IPPAPI(IppStatus, y8_ippsDLPGenerateDSA,(const IppsBigNumState* pSeedIn, int nTrials, IppsDLPState* pCtx, IppsBigNumState* pSeedOut, int* pCounter, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, l9_ippsDLPGenerateDSA,(const IppsBigNumState* pSeedIn, int nTrials, IppsDLPState* pCtx, IppsBigNumState* pSeedOut, int* pCounter, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, k1_ippsDLPGenerateDSA,(const IppsBigNumState* pSeedIn, int nTrials, IppsDLPState* pCtx, IppsBigNumState* pSeedOut, int* pCounter, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd192r1,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsDLPGenerateDSA,(const IppsBigNumState* pSeedIn, int nTrials, IppsDLPState* pCtx, IppsBigNumState* pSeedOut, int* pCounter, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsDLPGenerateDSA( pSeedIn, nTrials, pCtx, pSeedOut, pCounter, rndFunc, pRndParam );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPGetSizeStd192r1( pSize );
+        return l9_ippsDLPGenerateDSA( pSeedIn, nTrials, pCtx, pSeedOut, pCounter, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPGetSizeStd192r1( pSize );
+        return y8_ippsDLPGenerateDSA( pSeedIn, nTrials, pCtx, pSeedOut, pCounter, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPGetSizeStd192r1,(int* pSize))
-IPPAPI(IppStatus, h9_ippsECCPGetSizeStd192r1,(int* pSize))
+IPPAPI(IppStatus, p8_ippsDLPGenerateDSA,(const IppsBigNumState* pSeedIn, int nTrials, IppsDLPState* pCtx, IppsBigNumState* pSeedOut, int* pCounter, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, h9_ippsDLPGenerateDSA,(const IppsBigNumState* pSeedIn, int nTrials, IppsDLPState* pCtx, IppsBigNumState* pSeedOut, int* pCounter, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPGetSizeStd192r1,(int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsDLPGenerateDSA,(const IppsBigNumState* pSeedIn, int nTrials, IppsDLPState* pCtx, IppsBigNumState* pSeedOut, int* pCounter, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPGetSizeStd192r1( pSize );
+        return h9_ippsDLPGenerateDSA( pSeedIn, nTrials, pCtx, pSeedOut, pCounter, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPGetSizeStd192r1( pSize );
+        return p8_ippsDLPGenerateDSA( pSeedIn, nTrials, pCtx, pSeedOut, pCounter, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }

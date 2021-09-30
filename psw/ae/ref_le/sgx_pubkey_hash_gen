@@ -30,7 +30,6 @@
 #
 #
 
-
 if test $# -eq 1 && test -f $1; then
 	(openssl version) >/dev/null 2>&1 || (echo "Error: openssl not found." && exit 1)
 	(xxd -v) >/dev/null 2>&1 || (echo "Error: xxd not found." && exit 1)

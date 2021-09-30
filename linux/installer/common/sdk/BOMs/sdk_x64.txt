@@ -4,6 +4,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/gdb-sgx-plugin/load_symbol_cmd.py	<installdir>/package/lib64/gdb-sgx-plugin/load_symbol_cmd.py	0	main	STP
 <deliverydir>/build/linux/gdb-sgx-plugin/readelf.py	<installdir>/package/lib64/gdb-sgx-plugin/readelf.py	0	main	STP
 <deliverydir>/build/linux/gdb-sgx-plugin/sgx_emmt.py	<installdir>/package/lib64/gdb-sgx-plugin/sgx_emmt.py	0	main	STP
+<deliverydir>/build/linux/gdb-sgx-plugin/printers.py	<installdir>/package/lib64/gdb-sgx-plugin/printers.py	0	main	STP
 <deliverydir>/build/linux/libsgx_ptrace.so	<installdir>/package/lib64/libsgx_ptrace.so	0	main	STP
 <deliverydir>/build/linux/libsgx_tcrypto.a	<installdir>/package/lib64/libsgx_tcrypto.a	0	main	STP
 <deliverydir>/build/linux/libsgx_tkey_exchange.a	<installdir>/package/lib64/libsgx_tkey_exchange.a	0	main	STP
@@ -38,8 +39,10 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/sgx_edger8r	<installdir>/package/bin/x64/sgx_edger8r	0	main	STP
 <deliverydir>/build/linux/sgx_sign	<installdir>/package/bin/x64/sgx_sign	0	main	STP
 <deliverydir>/build/linux/sgx_encrypt	<installdir>/package/bin/x64/sgx_encrypt	0	main	STP
+<deliverydir>/build/linux/sgx_protoc	<installdir>/package/bin/x64/sgx_protoc	0	main	STP
 <deliverydir>/build/linux/libsgx_pthread.a	<installdir>/package/lib64/libsgx_pthread.a	0	main	STP
 <deliverydir>/build/linux/libsgx_omp.a	<installdir>/package/lib64/libsgx_omp.a	0	main	STP
+<deliverydir>/build/linux/libsgx_protobuf.a	<installdir>/package/lib64/libsgx_protobuf.a	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libsgx_dcap_tvl.a	<installdir>/package/lib64/libsgx_dcap_tvl.a	0	main	STP
 <deliverydir>/linux/installer/common/sdk/installConfig.x64	<installdir>/scripts/installConfig	0	main	STP
 <deliverydir>/linux/installer/common/sdk/pkgconfig/x64/libsgx_uae_service_sim.pc	<installdir>/package/pkgconfig/libsgx_uae_service_sim.pc	0	main	STP

@@ -46,4 +46,4 @@ else
 fi
 
 export PYTHONPATH=$GDB_SGX_PLUGIN_PATH
-LD_PRELOAD=$SGX_LIBRARY_PATH/libsgx_ptrace.so $GDB -iex "directory $GDB_SGX_PLUGIN_PATH" -iex "source $GDB_SGX_PLUGIN_PATH/gdb_sgx_plugin.py" -iex "set environment LD_PRELOAD" -iex "add-auto-load-safe-path /usr/lib" "$@"
+LD_PRELOAD=$SGX_LIBRARY_PATH/libsgx_ptrace.so $GDB -iex "directory $GDB_SGX_PLUGIN_PATH" -iex "source $GDB_SGX_PLUGIN_PATH/gdb_sgx_plugin.py" -iex "set environment LD_PRELOAD" -iex "add-auto-load-safe-path /usr/lib" -iex "source $GDB_SGX_PLUGIN_PATH/printers.py" -iex "python register_libcxx_printer_loader()" "$@"

@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSA_SetPrivateKeyType2,(const IppsBigNumState* pFactorP, const IppsBigNumState* pFactorQ, const IppsBigNumState* pCrtExpP, const IppsBigNumState* pCrtExpQ, const IppsBigNumState* pInverseQ, IppsRSAPrivateKeyState* pKey))
-IPPAPI(IppStatus, l9_ippsRSA_SetPrivateKeyType2,(const IppsBigNumState* pFactorP, const IppsBigNumState* pFactorQ, const IppsBigNumState* pCrtExpP, const IppsBigNumState* pCrtExpQ, const IppsBigNumState* pInverseQ, IppsRSAPrivateKeyState* pKey))
+IPPAPI(IppStatus, y8_ippsPrimeGen_BN,(IppsBigNumState* pPrime, int nBits, int nTrials, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, l9_ippsPrimeGen_BN,(IppsBigNumState* pPrime, int nBits, int nTrials, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, k1_ippsPrimeGen_BN,(IppsBigNumState* pPrime, int nBits, int nTrials, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_SetPrivateKeyType2,(const IppsBigNumState* pFactorP, const IppsBigNumState* pFactorQ, const IppsBigNumState* pCrtExpP, const IppsBigNumState* pCrtExpQ, const IppsBigNumState* pInverseQ, IppsRSAPrivateKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeGen_BN,(IppsBigNumState* pPrime, int nBits, int nTrials, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsPrimeGen_BN( pPrime, nBits, nTrials, pCtx, rndFunc, pRndParam );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSA_SetPrivateKeyType2( pFactorP, pFactorQ, pCrtExpP, pCrtExpQ, pInverseQ, pKey );
+        return l9_ippsPrimeGen_BN( pPrime, nBits, nTrials, pCtx, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSA_SetPrivateKeyType2( pFactorP, pFactorQ, pCrtExpP, pCrtExpQ, pInverseQ, pKey );
+        return y8_ippsPrimeGen_BN( pPrime, nBits, nTrials, pCtx, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSA_SetPrivateKeyType2,(const IppsBigNumState* pFactorP, const IppsBigNumState* pFactorQ, const IppsBigNumState* pCrtExpP, const IppsBigNumState* pCrtExpQ, const IppsBigNumState* pInverseQ, IppsRSAPrivateKeyState* pKey))
-IPPAPI(IppStatus, h9_ippsRSA_SetPrivateKeyType2,(const IppsBigNumState* pFactorP, const IppsBigNumState* pFactorQ, const IppsBigNumState* pCrtExpP, const IppsBigNumState* pCrtExpQ, const IppsBigNumState* pInverseQ, IppsRSAPrivateKeyState* pKey))
+IPPAPI(IppStatus, p8_ippsPrimeGen_BN,(IppsBigNumState* pPrime, int nBits, int nTrials, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, h9_ippsPrimeGen_BN,(IppsBigNumState* pPrime, int nBits, int nTrials, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_SetPrivateKeyType2,(const IppsBigNumState* pFactorP, const IppsBigNumState* pFactorQ, const IppsBigNumState* pCrtExpP, const IppsBigNumState* pCrtExpQ, const IppsBigNumState* pInverseQ, IppsRSAPrivateKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeGen_BN,(IppsBigNumState* pPrime, int nBits, int nTrials, IppsPrimeState* pCtx, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSA_SetPrivateKeyType2( pFactorP, pFactorQ, pCrtExpP, pCrtExpQ, pInverseQ, pKey );
+        return h9_ippsPrimeGen_BN( pPrime, nBits, nTrials, pCtx, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSA_SetPrivateKeyType2( pFactorP, pFactorQ, pCrtExpP, pCrtExpQ, pInverseQ, pKey );
+        return p8_ippsPrimeGen_BN( pPrime, nBits, nTrials, pCtx, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }

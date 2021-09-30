@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, l9_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, y8_ippsGFpECGetSubgroup,(IppsGFpState** const ppGFp, IppsGFpElement* pX, IppsGFpElement* pY, IppsBigNumState* pOrder,IppsBigNumState* pCofactor, const IppsGFpECState* pEC))
+IPPAPI(IppStatus, l9_ippsGFpECGetSubgroup,(IppsGFpState** const ppGFp, IppsGFpElement* pX, IppsGFpElement* pY, IppsBigNumState* pOrder,IppsBigNumState* pCofactor, const IppsGFpECState* pEC))
+IPPAPI(IppStatus, k1_ippsGFpECGetSubgroup,(IppsGFpState** const ppGFp, IppsGFpElement* pX, IppsGFpElement* pY, IppsBigNumState* pOrder,IppsBigNumState* pCofactor, const IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECGetSubgroup,(IppsGFpState** const ppGFp, IppsGFpElement* pX, IppsGFpElement* pY, IppsBigNumState* pOrder,IppsBigNumState* pCofactor, const IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsGFpECGetSubgroup( ppGFp, pX, pY, pOrder, pCofactor, pEC );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return l9_ippsGFpECGetSubgroup( ppGFp, pX, pY, pOrder, pCofactor, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return y8_ippsGFpECGetSubgroup( ppGFp, pX, pY, pOrder, pCofactor, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, h9_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, p8_ippsGFpECGetSubgroup,(IppsGFpState** const ppGFp, IppsGFpElement* pX, IppsGFpElement* pY, IppsBigNumState* pOrder,IppsBigNumState* pCofactor, const IppsGFpECState* pEC))
+IPPAPI(IppStatus, h9_ippsGFpECGetSubgroup,(IppsGFpState** const ppGFp, IppsGFpElement* pX, IppsGFpElement* pY, IppsBigNumState* pOrder,IppsBigNumState* pCofactor, const IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECSetPointRandom,(IppsGFpECPoint* pPoint, IppsGFpECState* pEC, IppBitSupplier rndFunc, void* pRndParam, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECGetSubgroup,(IppsGFpState** const ppGFp, IppsGFpElement* pX, IppsGFpElement* pY, IppsBigNumState* pOrder,IppsBigNumState* pCofactor, const IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return h9_ippsGFpECGetSubgroup( ppGFp, pX, pY, pOrder, pCofactor, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpECSetPointRandom( pPoint, pEC, rndFunc, pRndParam, pScratchBuffer );
+        return p8_ippsGFpECGetSubgroup( ppGFp, pX, pY, pOrder, pCofactor, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "__config"
-#if !defined(_LIBCPP_SGX_CONFIG)
 
 #include "ios"
 
@@ -466,4 +465,3 @@ ios_base::sync_with_stdio(bool sync)
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)

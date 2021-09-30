@@ -6,6 +6,7 @@
 #include <cppmicroservices/GetBundleContext.h>
 
 #include <iostream>
+#include <dlfcn.h>
 #include "aesm_logic.h"
 #include "sgx_quote_3.h"
 #include "sgx_ql_quote.h"
@@ -18,6 +19,19 @@ using namespace cppmicroservices;
 std::shared_ptr<IPceService> g_pce_service;
 static AESMLogicMutex ecdsa_quote_mutex;
 extern const sgx_ql_att_key_id_t g_default_ecdsa_p256_att_key_id;
+extern "C" void* get_qpl_handle();
+
+typedef quote3_error_t(*sgx_ql_set_logging_callback_t)(sgx_ql_logging_callback_t logger);
+
+void sgx_ql_logging_callback(sgx_ql_log_level_t level, const char* message)
+{
+    if (level == SGX_QL_LOG_ERROR) {
+        sgx_proc_log_report(1, message);
+    }
+    else if (level == SGX_QL_LOG_INFO) {
+        sgx_proc_log_report(3, message);
+    }
+}
 
 static sgx_pce_error_t ae_error_to_pce_error(uint32_t input)
 {
@@ -258,6 +272,20 @@ public:
             AESM_LOG_ERROR("Failed to load QE3: 0x%x", ret);
             AESM_DBG_ERROR("Starting ecdsa bundle failed because QE3 failed to load");
             return AE_FAILURE;
+        }
+                    
+        // Set logging callback for default quote provider library
+        void* handle = get_qpl_handle();
+        if (handle != NULL) {
+            char *error;
+            sgx_ql_set_logging_callback_t ql_set_logging_callback = (sgx_ql_set_logging_callback_t)dlsym(handle, "sgx_ql_set_logging_callback");
+            if ((error = dlerror()) == NULL && ql_set_logging_callback != NULL)  {
+                // Set logging function detected
+                ql_set_logging_callback(sgx_ql_logging_callback);
+            }
+            else {
+                AESM_LOG_ERROR("Failed to set logging callback for the quote provider library.");
+            }
         }
 
         initialized = true;

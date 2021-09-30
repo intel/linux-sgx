@@ -42,6 +42,7 @@
 #        - tcmalloc:      libsgx_tcmalloc.a
 #        - sgx_pcl:       libsgx_pcl.a
 #        - openmp:        libsgx_omp.a
+#        - protobuf:      libsgx_protobuf.a
 #  - Untrtusted libraries
 #        - ukey_exchange: libsgx_ukey_exchange.a
 #        - uprotected_fs: libsgx_uprotected_fs.a
@@ -53,6 +54,7 @@
 #        - signtool:      sgx_sign
 #        - edger8r:       sgx_edger8r
 #        - sgx_encrypt:  sgx_encrypt
+#        - sgx_protoc:    sgx_protoc
 #  - Simulation libraries and tools
 #        - simulation:    libsgx_trts_sim.a, libsgx_tservice_sim.a, libsgx_urts_sim.so, libsgx_uae_service_sim.so, sgx_config_cpusvn
 #
@@ -62,7 +64,7 @@ LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp
+components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp protobuf
 
 # ---------------------------------------------------
 #  tstdc
@@ -199,6 +201,10 @@ sgx_pcl:
 .PHONY: openmp
 openmp:
 	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/openmp
+
+.PHONY: protobuf
+protobuf:
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/protobuf
 # ---------------------------------------------------
 #  Untrusted libraries
 # ---------------------------------------------------
@@ -292,5 +298,6 @@ clean:
 	$(MAKE) -C tmm_rsrv/                           clean
 	$(MAKE) -C pthread                             clean
 	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/openmp        clean
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/protobuf      clean
 	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt

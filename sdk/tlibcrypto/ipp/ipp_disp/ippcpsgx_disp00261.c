@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsPrimeGetSize,(int nMaxBits, int* pSize))
-IPPAPI(IppStatus, l9_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPAPI(IppStatus, y8_ippsMontForm,(const IppsBigNumState* pA, IppsMontState* pCtx, IppsBigNumState* pR))
+IPPAPI(IppStatus, l9_ippsMontForm,(const IppsBigNumState* pA, IppsMontState* pCtx, IppsBigNumState* pR))
+IPPAPI(IppStatus, k1_ippsMontForm,(const IppsBigNumState* pA, IppsMontState* pCtx, IppsBigNumState* pR))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsMontForm,(const IppsBigNumState* pA, IppsMontState* pCtx, IppsBigNumState* pR))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsMontForm( pA, pCtx, pR );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsPrimeGetSize( nMaxBits, pSize );
+        return l9_ippsMontForm( pA, pCtx, pR );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsPrimeGetSize( nMaxBits, pSize );
+        return y8_ippsMontForm( pA, pCtx, pR );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsPrimeGetSize,(int nMaxBits, int* pSize))
-IPPAPI(IppStatus, h9_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPAPI(IppStatus, p8_ippsMontForm,(const IppsBigNumState* pA, IppsMontState* pCtx, IppsBigNumState* pR))
+IPPAPI(IppStatus, h9_ippsMontForm,(const IppsBigNumState* pA, IppsMontState* pCtx, IppsBigNumState* pR))
 
-IPPFUN(IppStatus,sgx_disp_ippsPrimeGetSize,(int nMaxBits, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsMontForm,(const IppsBigNumState* pA, IppsMontState* pCtx, IppsBigNumState* pR))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsPrimeGetSize( nMaxBits, pSize );
+        return h9_ippsMontForm( pA, pCtx, pR );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsPrimeGetSize( nMaxBits, pSize );
+        return p8_ippsMontForm( pA, pCtx, pR );
       } else 
         return ippStsCpuNotSupportedErr;
 }

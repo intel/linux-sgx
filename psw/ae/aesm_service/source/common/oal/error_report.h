@@ -42,6 +42,7 @@ extern "C" {
 #endif/*__cplusplus*/
     void sgx_proc_log_report(int level, const char *format, ...);
     void aesm_log_init(void);
+    void aesm_log_init_ex(bool nosyslog);
     void aesm_log_fini(void);
 #ifdef __cplusplus
 };
@@ -88,6 +89,7 @@ extern "C" {
         AESM_DBG_INFO("[ADMIN]" format, ## args); \
     }while(0)
 #define AESM_LOG_INIT() aesm_log_init()
+#define AESM_LOG_INIT_EX(nosyslog) aesm_log_init_ex(nosyslog)
 #define AESM_LOG_FINI() aesm_log_fini()
 #define AESM_LOG_ERROR_UNICODE AESM_LOG_ERROR
 

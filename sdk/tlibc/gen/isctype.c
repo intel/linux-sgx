@@ -122,3 +122,10 @@ isxdigit(int c)
 	return (c == EOF ? 0 : ((_ctype_ + 1)[(unsigned char)c] & (_N|_X)));
 }
 
+#undef isascii
+int
+isascii(int c)
+{
+    return ((unsigned int)c <= 0177);
+}
+

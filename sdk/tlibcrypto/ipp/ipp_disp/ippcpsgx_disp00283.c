@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsRSA_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* pKey))
-IPPAPI(IppStatus, l9_ippsRSA_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* pKey))
+IPPAPI(IppStatus, y8_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
+IPPAPI(IppStatus, l9_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
+IPPAPI(IppStatus, k1_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsPrimeGet( pPrime, pLen, pCtx );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsRSA_GetBufferSizePublicKey( pBufferSize, pKey );
+        return l9_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsRSA_GetBufferSizePublicKey( pBufferSize, pKey );
+        return y8_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsRSA_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* pKey))
-IPPAPI(IppStatus, h9_ippsRSA_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* pKey))
+IPPAPI(IppStatus, p8_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
+IPPAPI(IppStatus, h9_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 
-IPPFUN(IppStatus,sgx_disp_ippsRSA_GetBufferSizePublicKey,(int* pBufferSize, const IppsRSAPublicKeyState* pKey))
+IPPFUN(IppStatus,sgx_disp_ippsPrimeGet, (Ipp32u* pPrime, int* pLen, const IppsPrimeState* pCtx))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsRSA_GetBufferSizePublicKey( pBufferSize, pKey );
+        return h9_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsRSA_GetBufferSizePublicKey( pBufferSize, pKey );
+        return p8_ippsPrimeGet( pPrime, pLen, pCtx );
       } else 
         return ippStsCpuNotSupportedErr;
 }

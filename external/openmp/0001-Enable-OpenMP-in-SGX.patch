@@ -1,11 +1,11 @@
-From 0ce73c45cfd4850de6c28f05d836b2fd1ed4eee0 Mon Sep 17 00:00:00 2001
-From: Zhang Lili Z <lili.z.zhang@intel.com>
-Date: Tue, 18 Aug 2020 18:58:53 +0800
+From bff36a2672ae0905af3e3af7822e7155911310dc Mon Sep 17 00:00:00 2001
+From: Zhang Lili <lili.z.zhang@intel.com>
+Date: Thu, 15 Jul 2021 16:19:43 +0000
 Subject: [PATCH] Enable OpenMP in SGX
 
-Signed-off-by: Zhang Lili Z <lili.z.zhang@intel.com>
+Signed-off-by: Zhang Lili <lili.z.zhang@intel.com>
 ---
- final/CMakeLists.txt                        |  2 +-
+ final/CMakeLists.txt                        |  5 +-
  final/runtime/CMakeLists.txt                | 12 +++-
  final/runtime/cmake/LibompDefinitions.cmake |  1 +
  final/runtime/cmake/LibompHandleFlags.cmake |  7 ++
@@ -30,15 +30,25 @@ Signed-off-by: Zhang Lili Z <lili.z.zhang@intel.com>
  final/runtime/src/sgx_stub.cpp              | 63 ++++++++++++++++
  final/runtime/src/sgx_stub.h                | 51 +++++++++++++
  final/runtime/src/z_Linux_util.cpp          | 79 +++++++++++++++++++--
- 25 files changed, 397 insertions(+), 21 deletions(-)
+ 25 files changed, 400 insertions(+), 21 deletions(-)
  create mode 100644 final/runtime/src/sgx_stub.cpp
  create mode 100644 final/runtime/src/sgx_stub.h
 
 diff --git a/final/CMakeLists.txt b/final/CMakeLists.txt
-index 597eedc..bfeda38 100644
+index 597eedc..8d820a1 100644
 --- a/final/CMakeLists.txt
 +++ b/final/CMakeLists.txt
-@@ -58,7 +58,7 @@ set(OPENMP_TEST_OPENMP_FLAGS ${OPENMP_TEST_COMPILER_OPENMP_FLAGS} CACHE STRING
+@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+ # Add cmake directory to search for custom cmake functions.
+ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+ 
++set(SGX_PROGRAM_SEARCH_PATH)
++LIST(APPEND CMAKE_PROGRAM_PATH  "/usr/local/bin/"  ${SGX_PROGRAM_SEARCH_PATH} ...)
++
+ # llvm/runtimes/ will set OPENMP_STANDALONE_BUILD.
+ if (OPENMP_STANDALONE_BUILD OR "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+   set(OPENMP_STANDALONE_BUILD TRUE)
+@@ -58,7 +61,7 @@ set(OPENMP_TEST_OPENMP_FLAGS ${OPENMP_TEST_COMPILER_OPENMP_FLAGS} CACHE STRING
  add_subdirectory(runtime)
  
  

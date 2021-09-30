@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsExtGet_BN,(IppsBigNumSGN* pSgn, int* pBitSize, Ipp32u* pData, const IppsBigNumState* pBN))
-IPPAPI(IppStatus, l9_ippsExtGet_BN,(IppsBigNumSGN* pSgn, int* pBitSize, Ipp32u* pData, const IppsBigNumState* pBN))
+IPPAPI(IppStatus, y8_ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen, IppsHMACState_rmf* pCtx, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, l9_ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen, IppsHMACState_rmf* pCtx, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, k1_ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen, IppsHMACState_rmf* pCtx, const IppsHashMethod* pMethod))
 
-IPPFUN(IppStatus,sgx_disp_ippsExtGet_BN,(IppsBigNumSGN* pSgn, int* pBitSize, Ipp32u* pData, const IppsBigNumState* pBN))
+IPPFUN(IppStatus,sgx_disp_ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen, IppsHMACState_rmf* pCtx, const IppsHashMethod* pMethod))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsHMACInit_rmf( pKey, keyLen, pCtx, pMethod );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsExtGet_BN( pSgn, pBitSize, pData, pBN );
+        return l9_ippsHMACInit_rmf( pKey, keyLen, pCtx, pMethod );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsExtGet_BN( pSgn, pBitSize, pData, pBN );
+        return y8_ippsHMACInit_rmf( pKey, keyLen, pCtx, pMethod );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsExtGet_BN,(IppsBigNumSGN* pSgn, int* pBitSize, Ipp32u* pData, const IppsBigNumState* pBN))
-IPPAPI(IppStatus, h9_ippsExtGet_BN,(IppsBigNumSGN* pSgn, int* pBitSize, Ipp32u* pData, const IppsBigNumState* pBN))
+IPPAPI(IppStatus, p8_ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen, IppsHMACState_rmf* pCtx, const IppsHashMethod* pMethod))
+IPPAPI(IppStatus, h9_ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen, IppsHMACState_rmf* pCtx, const IppsHashMethod* pMethod))
 
-IPPFUN(IppStatus,sgx_disp_ippsExtGet_BN,(IppsBigNumSGN* pSgn, int* pBitSize, Ipp32u* pData, const IppsBigNumState* pBN))
+IPPFUN(IppStatus,sgx_disp_ippsHMACInit_rmf,(const Ipp8u* pKey, int keyLen, IppsHMACState_rmf* pCtx, const IppsHashMethod* pMethod))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsExtGet_BN( pSgn, pBitSize, pData, pBN );
+        return h9_ippsHMACInit_rmf( pKey, keyLen, pCtx, pMethod );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsExtGet_BN( pSgn, pBitSize, pData, pBN );
+        return p8_ippsHMACInit_rmf( pKey, keyLen, pCtx, pMethod );
       } else 
         return ippStsCpuNotSupportedErr;
 }

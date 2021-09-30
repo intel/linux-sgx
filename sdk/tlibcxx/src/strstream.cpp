@@ -9,7 +9,6 @@
 
 // Not SGX compatible.
 #include "__config"
-#if !defined(_LIBCPP_SGX_CONFIG)
 
 #include "strstream"
 #include "algorithm"
@@ -335,4 +334,3 @@ strstream::~strstream()
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)

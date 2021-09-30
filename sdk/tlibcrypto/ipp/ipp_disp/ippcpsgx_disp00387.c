@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPSignNR,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPSignNR,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPGenKeyPair,(IppsBigNumState* pPrivate, IppsECCPPointState* pPublic, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, l9_ippsECCPGenKeyPair,(IppsBigNumState* pPrivate, IppsECCPPointState* pPublic, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, k1_ippsECCPGenKeyPair,(IppsBigNumState* pPrivate, IppsECCPPointState* pPublic, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPSignNR,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGenKeyPair,(IppsBigNumState* pPrivate, IppsECCPPointState* pPublic, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsECCPGenKeyPair( pPrivate, pPublic, pEC, rndFunc, pRndParam );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPSignNR( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
+        return l9_ippsECCPGenKeyPair( pPrivate, pPublic, pEC, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPSignNR( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
+        return y8_ippsECCPGenKeyPair( pPrivate, pPublic, pEC, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPSignNR,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPSignNR,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPGenKeyPair,(IppsBigNumState* pPrivate, IppsECCPPointState* pPublic, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
+IPPAPI(IppStatus, h9_ippsECCPGenKeyPair,(IppsBigNumState* pPrivate, IppsECCPPointState* pPublic, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPSignNR,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPGenKeyPair,(IppsBigNumState* pPrivate, IppsECCPPointState* pPublic, IppsECCPState* pEC, IppBitSupplier rndFunc, void* pRndParam))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPSignNR( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
+        return h9_ippsECCPGenKeyPair( pPrivate, pPublic, pEC, rndFunc, pRndParam );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPSignNR( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
+        return p8_ippsECCPGenKeyPair( pPrivate, pPublic, pEC, rndFunc, pRndParam );
       } else 
         return ippStsCpuNotSupportedErr;
 }

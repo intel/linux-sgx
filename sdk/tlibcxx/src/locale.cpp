@@ -8,7 +8,6 @@
 //===----------------------------------------------------------------------===//
 
 #include "__config"
-#if !defined(_LIBCPP_SGX_CONFIG)
 
 // On Solaris, we need to define something to make the C99 parts of localeconv
 // visible.
@@ -31,8 +30,10 @@
 #include "__sso_allocator"
 #if defined(_LIBCPP_MSVCRT) || defined(__MINGW32__)
 #include "support/win32/locale_win32.h"
+#if !defined(_LIBCPP_SGX_CONFIG)
 #elif !defined(__ANDROID__)
 #include <langinfo.h>
+#endif
 #endif
 #include <stdlib.h>
 #include <stdio.h>
@@ -118,12 +119,14 @@ countof(const T * const begin, const T * const end)
 #endif
 
 const locale::category locale::none;
-const locale::category locale::collate;
 const locale::category locale::ctype;
+#if !defined(_LIBCPP_SGX_CONFIG)
+const locale::category locale::collate;
 const locale::category locale::monetary;
 const locale::category locale::numeric;
 const locale::category locale::time;
 const locale::category locale::messages;
+#endif
 const locale::category locale::all;
 
 class _LIBCPP_HIDDEN locale::__imp
@@ -167,10 +170,13 @@ locale::__imp::__imp(size_t refs)
       name_("C")
 {
     facets_.clear();
+#if !defined(_LIBCPP_SGX_CONFIG)
     install(&make<_VSTD::collate<char> >(1u));
     install(&make<_VSTD::collate<wchar_t> >(1u));
+#endif
     install(&make<_VSTD::ctype<char> >(nullptr, false, 1u));
     install(&make<_VSTD::ctype<wchar_t> >(1u));
+#if !defined(_LIBCPP_SGX_CONFIG)
     install(&make<codecvt<char, char, mbstate_t> >(1u));
     install(&make<codecvt<wchar_t, char, mbstate_t> >(1u));
     install(&make<codecvt<char16_t, char, mbstate_t> >(1u));
@@ -195,6 +201,7 @@ locale::__imp::__imp(size_t refs)
     install(&make<time_put<wchar_t> >(1u));
     install(&make<_VSTD::messages<char> >(1u));
     install(&make<_VSTD::messages<wchar_t> >(1u));
+#endif
 }
 
 locale::__imp::__imp(const string& name, size_t refs)
@@ -210,10 +217,13 @@ locale::__imp::__imp(const string& name, size_t refs)
         for (unsigned i = 0; i < facets_.size(); ++i)
             if (facets_[i])
                 facets_[i]->__add_shared();
+#if !defined(_LIBCPP_SGX_CONFIG)
         install(new collate_byname<char>(name_));
         install(new collate_byname<wchar_t>(name_));
+#endif
         install(new ctype_byname<char>(name_));
         install(new ctype_byname<wchar_t>(name_));
+#if !defined(_LIBCPP_SGX_CONFIG)
         install(new codecvt_byname<char, char, mbstate_t>(name_));
         install(new codecvt_byname<wchar_t, char, mbstate_t>(name_));
         install(new codecvt_byname<char16_t, char, mbstate_t>(name_));
@@ -230,6 +240,7 @@ locale::__imp::__imp(const string& name, size_t refs)
         install(new time_put_byname<wchar_t>(name_));
         install(new messages_byname<char>(name_));
         install(new messages_byname<wchar_t>(name_));
+#endif
 #ifndef _LIBCPP_NO_EXCEPTIONS
     }
     catch (...)
@@ -275,20 +286,25 @@ locale::__imp::__imp(const __imp& other, const string& name, locale::category c)
     try
     {
 #endif  // _LIBCPP_NO_EXCEPTIONS
+#if !defined(_LIBCPP_SGX_CONFIG)
         if (c & locale::collate)
         {
             install(new collate_byname<char>(name));
             install(new collate_byname<wchar_t>(name));
         }
+#endif
         if (c & locale::ctype)
         {
             install(new ctype_byname<char>(name));
             install(new ctype_byname<wchar_t>(name));
+#if !defined(_LIBCPP_SGX_CONFIG)
             install(new codecvt_byname<char, char, mbstate_t>(name));
             install(new codecvt_byname<wchar_t, char, mbstate_t>(name));
             install(new codecvt_byname<char16_t, char, mbstate_t>(name));
             install(new codecvt_byname<char32_t, char, mbstate_t>(name));
+#endif
         }
+#if !defined(_LIBCPP_SGX_CONFIG)
         if (c & locale::monetary)
         {
             install(new moneypunct_byname<char, false>(name));
@@ -313,6 +329,7 @@ locale::__imp::__imp(const __imp& other, const string& name, locale::category c)
             install(new messages_byname<char>(name));
             install(new messages_byname<wchar_t>(name));
         }
+#endif
 #ifndef _LIBCPP_NO_EXCEPTIONS
     }
     catch (...)
@@ -346,20 +363,25 @@ locale::__imp::__imp(const __imp& other, const __imp& one, locale::category c)
     try
     {
 #endif  // _LIBCPP_NO_EXCEPTIONS
+#if !defined(_LIBCPP_SGX_CONFIG)
         if (c & locale::collate)
         {
             install_from<_VSTD::collate<char> >(one);
             install_from<_VSTD::collate<wchar_t> >(one);
         }
+#endif
         if (c & locale::ctype)
         {
             install_from<_VSTD::ctype<char> >(one);
             install_from<_VSTD::ctype<wchar_t> >(one);
+#if !defined(_LIBCPP_SGX_CONFIG)
             install_from<_VSTD::codecvt<char, char, mbstate_t> >(one);
             install_from<_VSTD::codecvt<char16_t, char, mbstate_t> >(one);
             install_from<_VSTD::codecvt<char32_t, char, mbstate_t> >(one);
             install_from<_VSTD::codecvt<wchar_t, char, mbstate_t> >(one);
+#endif
         }
+#if !defined(_LIBCPP_SGX_CONFIG)
         if (c & locale::monetary)
         {
             install_from<moneypunct<char, false> >(one);
@@ -392,6 +414,7 @@ locale::__imp::__imp(const __imp& other, const __imp& one, locale::category c)
             install_from<_VSTD::messages<char> >(one);
             install_from<_VSTD::messages<wchar_t> >(one);
         }
+#endif
 #ifndef _LIBCPP_NO_EXCEPTIONS
     }
     catch (...)
@@ -507,6 +530,7 @@ locale::operator=(const locale& other)  _NOEXCEPT
     return *this;
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 locale::locale(const char* name)
 #ifndef _LIBCPP_NO_EXCEPTIONS
     : __locale_(name ? new __imp(name)
@@ -540,6 +564,7 @@ locale::locale(const locale& other, const string& name, category c)
 {
     __locale_->__add_shared();
 }
+#endif
 
 locale::locale(const locale& other, const locale& one, category c)
     : __locale_(new __imp(*other.__locale_, *one.__locale_, c))
@@ -569,9 +594,11 @@ locale::global(const locale& loc)
     locale& g = __global();
     locale r = g;
     g = loc;
+#if !defined(_LIBCPP_SGX_CONFIG)
 #ifndef __CloudABI__
     if (g.name() != "*")
         setlocale(LC_ALL, g.name().c_str());
+#endif
 #endif
     return r;
 }
@@ -643,6 +670,7 @@ locale::id::__init()
     __id_ = __sync_add_and_fetch(&__next_id, 1);
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 // template <> class collate_byname<char>
 
 collate_byname<char>::collate_byname(const char* n, size_t refs)
@@ -746,6 +774,7 @@ collate_byname<wchar_t>::do_transform(const char_type* lo, const char_type* hi) 
     wcsxfrm_l(const_cast<wchar_t*>(out.c_str()), in.c_str(), out.size()+1, __l);
     return out;
 }
+#endif
 
 // template <> class ctype<wchar_t>;
 
@@ -1123,7 +1152,9 @@ ctype<char>::classic_table()  _NOEXCEPT
     // Platform not supported: abort so the person doing the port knows what to
     // fix
 # warning  ctype<char>::classic_table() is not implemented
+#if !defined(_LIBCPP_SGX_CONFIG)
     printf("ctype<char>::classic_table() is not implemented\n");
+#endif
     abort();
     return NULL;
 #endif
@@ -4194,6 +4225,7 @@ __widen_from_utf8<32>::~__widen_from_utf8()
 {
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 // numpunct<char> && numpunct<wchar_t>
 
 locale::id numpunct< char  >::id;
@@ -6044,6 +6076,7 @@ moneypunct_byname<wchar_t, true>::init(const char* nm)
                lc->int_n_sign_posn, L' ');
 #endif // !_LIBCPP_MSVCRT
 }
+#endif
 
 void __do_nothing(void*) {}
 
@@ -6056,6 +6089,7 @@ void __throw_runtime_error(const char* msg)
 #endif
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template class collate<char>;
 template class collate<wchar_t>;
 
@@ -6115,9 +6149,9 @@ template class codecvt_byname<char, char, mbstate_t>;
 template class codecvt_byname<wchar_t, char, mbstate_t>;
 template class codecvt_byname<char16_t, char, mbstate_t>;
 template class codecvt_byname<char32_t, char, mbstate_t>;
+#endif
 
 template class __vector_base_common<true>;
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)

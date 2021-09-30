@@ -1,0 +1,7 @@
+package lm; 
+message Person
+{ 
+    required int32     id = 1;  // ID   
+    optional string    str = 2;  // str  
+    optional string    email = 3;  //optional field 
+}

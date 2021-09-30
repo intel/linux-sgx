@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECGetSize,(const IppsGFpState* pGFp, int* pSize))
-IPPAPI(IppStatus, l9_ippsGFpECGetSize,(const IppsGFpState* pGFp, int* pSize))
+IPPAPI(IppStatus, y8_ippsGFpSub, (const IppsGFpElement* pA, const IppsGFpElement* pB, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, l9_ippsGFpSub, (const IppsGFpElement* pA, const IppsGFpElement* pB, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, k1_ippsGFpSub, (const IppsGFpElement* pA, const IppsGFpElement* pB, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECGetSize,(const IppsGFpState* pGFp, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSub, (const IppsGFpElement* pA, const IppsGFpElement* pB, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsGFpSub( pA, pB, pR, pGFp );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECGetSize( pGFp, pSize );
+        return l9_ippsGFpSub( pA, pB, pR, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpECGetSize( pGFp, pSize );
+        return y8_ippsGFpSub( pA, pB, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECGetSize,(const IppsGFpState* pGFp, int* pSize))
-IPPAPI(IppStatus, h9_ippsGFpECGetSize,(const IppsGFpState* pGFp, int* pSize))
+IPPAPI(IppStatus, p8_ippsGFpSub, (const IppsGFpElement* pA, const IppsGFpElement* pB, IppsGFpElement* pR, IppsGFpState* pGFp))
+IPPAPI(IppStatus, h9_ippsGFpSub, (const IppsGFpElement* pA, const IppsGFpElement* pB, IppsGFpElement* pR, IppsGFpState* pGFp))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECGetSize,(const IppsGFpState* pGFp, int* pSize))
+IPPFUN(IppStatus,sgx_disp_ippsGFpSub, (const IppsGFpElement* pA, const IppsGFpElement* pB, IppsGFpElement* pR, IppsGFpState* pGFp))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpECGetSize( pGFp, pSize );
+        return h9_ippsGFpSub( pA, pB, pR, pGFp );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpECGetSize( pGFp, pSize );
+        return p8_ippsGFpSub( pA, pB, pR, pGFp );
       } else 
         return ippStsCpuNotSupportedErr;
 }

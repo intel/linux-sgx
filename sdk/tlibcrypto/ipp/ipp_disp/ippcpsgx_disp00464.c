@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpECVerify,(IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, l9_ippsGFpECVerify,(IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, y8_ippsGFpECBindGxyTblStd224r1,(IppsGFpECState* pEC))
+IPPAPI(IppStatus, l9_ippsGFpECBindGxyTblStd224r1,(IppsGFpECState* pEC))
+IPPAPI(IppStatus, k1_ippsGFpECBindGxyTblStd224r1,(IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECVerify,(IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECBindGxyTblStd224r1,(IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsGFpECBindGxyTblStd224r1( pEC );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECVerify( pResult, pEC, pScratchBuffer );
+        return l9_ippsGFpECBindGxyTblStd224r1( pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpECVerify( pResult, pEC, pScratchBuffer );
+        return y8_ippsGFpECBindGxyTblStd224r1( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpECVerify,(IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, h9_ippsGFpECVerify,(IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, p8_ippsGFpECBindGxyTblStd224r1,(IppsGFpECState* pEC))
+IPPAPI(IppStatus, h9_ippsGFpECBindGxyTblStd224r1,(IppsGFpECState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpECVerify,(IppECResult* pResult, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus,sgx_disp_ippsGFpECBindGxyTblStd224r1,(IppsGFpECState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpECVerify( pResult, pEC, pScratchBuffer );
+        return h9_ippsGFpECBindGxyTblStd224r1( pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpECVerify( pResult, pEC, pScratchBuffer );
+        return p8_ippsGFpECBindGxyTblStd224r1( pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

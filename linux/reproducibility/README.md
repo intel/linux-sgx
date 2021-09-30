@@ -10,8 +10,8 @@ In order to reproduce the enclave build, there are three requirements:1. stable 
  - The script [build_and_launch_docker.sh](./build_and_launch_docker.sh) is the interface to automate the reproducibility process for Intel(R) SGX. You can directly run this script in the host machine to verify the reproducibility. Currently below five reproducible types are supported:   
     * sdk: specify this type if you want to verify the reproducibility for Intel(R) SGX SDK. The script will prepare the SDK code in the host machine and trigger SDK build in the launched container.      
     * ipp: specify this type if you want to verify the reproducibility for the prebuilt IPP crypto. The script will prepare the IPP crypto code in the host machine and trigger the build in the launched container.    
-    * binutils: specify this type if you want to verify the reproducibilty for the prebuilt binutils. Th script will prepare the binutils code in the host machine and trigger the corresponding build in the launched container.       
-    * ae:  specify this type if you want to verify the reproducibilty for the prebuilt AEs. The script will prepare materials for AE repredocible build in the hose machine and trigger the corresponding build in the launched container.    
+    * binutils: specify this type if you want to verify the reproducibility for the prebuilt binutils. Th script will prepare the binutils code in the host machine and trigger the corresponding build in the launched container.       
+    * ae:  specify this type if you want to verify the reproducibility for the prebuilt AEs. The script will prepare materials for AE reproducible build in the hose machine and trigger the corresponding build in the launched container.    
     * all: specify this type if you want to verify all of the above components. The script will prepare materials for all the targets and trigger  the build in the launched container.   
  See `$ ./build_and_launch_docker.sh -h` for details  
  - The script [start_build.sh.tmp](./start_build.sh.tmp) is aimed to be run in the NIX environment in the launched container. It helps to automate the reproducible build in the container.
@@ -41,10 +41,10 @@ In order to reproduce the enclave build, there are three requirements:1. stable 
 To reproduce QVE, you need to apply below patch to the [build_and_launch_docker.sh](./build_and_launch_docker.sh) before start the reproducible build with the script.
 ```
 diff --git a/linux/reproducibility/build_and_launch_docker.sh b/linux/reproducibility/build_and_launch_docker.sh
-index 19ffdda7..ecec0145 100755
+index ad9d3902..5183790d 100755
 --- a/linux/reproducibility/build_and_launch_docker.sh
 +++ b/linux/reproducibility/build_and_launch_docker.sh
-@@ -182,6 +182,7 @@ prepare_sgx_src()
+@@ -183,6 +183,7 @@ prepare_sgx_src()
      fi
 
      cd "$sgx_repo" && make preparation
@@ -52,6 +52,4 @@ index 19ffdda7..ecec0145 100755
      popd
 
  }
-
 ```
-

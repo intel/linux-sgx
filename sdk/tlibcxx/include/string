@@ -466,7 +466,6 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 
 // fpos
 
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
 template <class _StateT>
 class _LIBCPP_TYPE_VIS_ONLY fpos
 {
@@ -501,7 +500,6 @@ template <class _StateT>
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator!=(const fpos<_StateT>& __x, const fpos<_StateT>& __y)
     {return streamoff(__x) != streamoff(__y);}
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
 
 // char_traits
 
@@ -510,10 +508,8 @@ struct _LIBCPP_TYPE_VIS_ONLY char_traits
 {
     typedef _CharT    char_type;
     typedef int       int_type;
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef streamoff off_type;
     typedef streampos pos_type;
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef mbstate_t state_type;
 
     static inline void assign(char_type& __c1, const char_type& __c2) _NOEXCEPT
@@ -635,10 +631,8 @@ struct _LIBCPP_TYPE_VIS_ONLY char_traits<char>
 {
     typedef char      char_type;
     typedef int       int_type;
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef streamoff off_type;
     typedef streampos pos_type;
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef mbstate_t state_type;
 
     static inline void assign(char_type& __c1, const char_type& __c2) _NOEXCEPT
@@ -682,10 +676,8 @@ struct _LIBCPP_TYPE_VIS_ONLY char_traits<wchar_t>
 {
     typedef wchar_t   char_type;
     typedef wint_t    int_type;
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef streamoff off_type;
     typedef streampos pos_type;
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef mbstate_t state_type;
 
     static inline void assign(char_type& __c1, const char_type& __c2) _NOEXCEPT
@@ -730,10 +722,8 @@ struct _LIBCPP_TYPE_VIS_ONLY char_traits<char16_t>
 {
     typedef char16_t       char_type;
     typedef uint_least16_t int_type;
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef streamoff      off_type;
     typedef u16streampos   pos_type;
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef mbstate_t      state_type;
 
     static inline void assign(char_type& __c1, const char_type& __c2) _NOEXCEPT
@@ -851,10 +841,8 @@ struct _LIBCPP_TYPE_VIS_ONLY char_traits<char32_t>
 {
     typedef char32_t       char_type;
     typedef uint_least32_t int_type;
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef streamoff      off_type;
     typedef u32streampos   pos_type;
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
     typedef mbstate_t      state_type;
 
     static inline void assign(char_type& __c1, const char_type& __c2) _NOEXCEPT
@@ -4213,7 +4201,6 @@ hash<basic_string<_CharT, _Traits, _Allocator> >::operator()(
     return __do_string_hash(__val.data(), __val.data() + __val.size());
 }
 
-#if !defined(_LIBCPP_SGX_NO_IOSTREAMS)
 template<class _CharT, class _Traits, class _Allocator>
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os,
@@ -4250,7 +4237,6 @@ getline(basic_istream<_CharT, _Traits>&& __is,
         basic_string<_CharT, _Traits, _Allocator>& __str);
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#endif // !defined(_LIBCPP_SGX_NO_IOSTREAMS)
 
 #if _LIBCPP_DEBUG_LEVEL >= 2
 

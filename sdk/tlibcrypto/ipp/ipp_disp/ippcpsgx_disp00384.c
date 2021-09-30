@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsECCPSharedSecretDHC,(const IppsBigNumState* pPrivateA, const IppsECCPPointState* pPublicB, IppsBigNumState* pShare, IppsECCPState* pEC))
-IPPAPI(IppStatus, l9_ippsECCPSharedSecretDHC,(const IppsBigNumState* pPrivateA, const IppsECCPPointState* pPublicB, IppsBigNumState* pShare, IppsECCPState* pEC))
+IPPAPI(IppStatus, y8_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, l9_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, k1_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPSharedSecretDHC,(const IppsBigNumState* pPrivateA, const IppsECCPPointState* pPublicB, IppsBigNumState* pShare, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsECCPNegativePoint( pP, pR, pEC );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsECCPSharedSecretDHC( pPrivateA, pPublicB, pShare, pEC );
+        return l9_ippsECCPNegativePoint( pP, pR, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsECCPSharedSecretDHC( pPrivateA, pPublicB, pShare, pEC );
+        return y8_ippsECCPNegativePoint( pP, pR, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsECCPSharedSecretDHC,(const IppsBigNumState* pPrivateA, const IppsECCPPointState* pPublicB, IppsBigNumState* pShare, IppsECCPState* pEC))
-IPPAPI(IppStatus, h9_ippsECCPSharedSecretDHC,(const IppsBigNumState* pPrivateA, const IppsECCPPointState* pPublicB, IppsBigNumState* pShare, IppsECCPState* pEC))
+IPPAPI(IppStatus, p8_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
+IPPAPI(IppStatus, h9_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsECCPSharedSecretDHC,(const IppsBigNumState* pPrivateA, const IppsECCPPointState* pPublicB, IppsBigNumState* pShare, IppsECCPState* pEC))
+IPPFUN(IppStatus,sgx_disp_ippsECCPNegativePoint,(const IppsECCPPointState* pP, IppsECCPPointState* pR, IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsECCPSharedSecretDHC( pPrivateA, pPublicB, pShare, pEC );
+        return h9_ippsECCPNegativePoint( pP, pR, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsECCPSharedSecretDHC( pPrivateA, pPublicB, pShare, pEC );
+        return p8_ippsECCPNegativePoint( pP, pR, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

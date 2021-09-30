@@ -112,6 +112,10 @@ size_t wcsrtombs(char* restrict dst, const wchar_t** restrict src, size_t len,
 #endif // !defined(_LIBCPP_SGX_CONFIG)
 #endif // _LIBCPP_MSVCRT
 
+#if defined(_LIBCPP_SGX_CONFIG)
+#include <support/sgx/support.h>
+#endif
+
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif

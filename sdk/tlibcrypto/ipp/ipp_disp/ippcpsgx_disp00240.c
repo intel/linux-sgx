@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGetOctString_BN,(Ipp8u* pStr, int strLen, const IppsBigNumState* pBN))
-IPPAPI(IppStatus, l9_ippsGetOctString_BN,(Ipp8u* pStr, int strLen, const IppsBigNumState* pBN))
+IPPAPI(IppStatus, y8_ippsCmpZero_BN,(const IppsBigNumState* pBN, Ipp32u* pResult))
+IPPAPI(IppStatus, l9_ippsCmpZero_BN,(const IppsBigNumState* pBN, Ipp32u* pResult))
+IPPAPI(IppStatus, k1_ippsCmpZero_BN,(const IppsBigNumState* pBN, Ipp32u* pResult))
 
-IPPFUN(IppStatus,sgx_disp_ippsGetOctString_BN,(Ipp8u* pStr, int strLen, const IppsBigNumState* pBN))
+IPPFUN(IppStatus,sgx_disp_ippsCmpZero_BN,(const IppsBigNumState* pBN, Ipp32u* pResult))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsCmpZero_BN( pBN, pResult );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGetOctString_BN( pStr, strLen, pBN );
+        return l9_ippsCmpZero_BN( pBN, pResult );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGetOctString_BN( pStr, strLen, pBN );
+        return y8_ippsCmpZero_BN( pBN, pResult );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGetOctString_BN,(Ipp8u* pStr, int strLen, const IppsBigNumState* pBN))
-IPPAPI(IppStatus, h9_ippsGetOctString_BN,(Ipp8u* pStr, int strLen, const IppsBigNumState* pBN))
+IPPAPI(IppStatus, p8_ippsCmpZero_BN,(const IppsBigNumState* pBN, Ipp32u* pResult))
+IPPAPI(IppStatus, h9_ippsCmpZero_BN,(const IppsBigNumState* pBN, Ipp32u* pResult))
 
-IPPFUN(IppStatus,sgx_disp_ippsGetOctString_BN,(Ipp8u* pStr, int strLen, const IppsBigNumState* pBN))
+IPPFUN(IppStatus,sgx_disp_ippsCmpZero_BN,(const IppsBigNumState* pBN, Ipp32u* pResult))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGetOctString_BN( pStr, strLen, pBN );
+        return h9_ippsCmpZero_BN( pBN, pResult );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGetOctString_BN( pStr, strLen, pBN );
+        return p8_ippsCmpZero_BN( pBN, pResult );
       } else 
         return ippStsCpuNotSupportedErr;
 }

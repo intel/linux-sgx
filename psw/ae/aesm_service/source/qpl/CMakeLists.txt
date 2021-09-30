@@ -1,4 +1,11 @@
+find_package(OpenSSL REQUIRED)
+if(OpenSSL_FOUND)
+    message ("OpenSSL found")
+else()
+    message (FATAL_ERROR "Cannot find OpenSSL")
+endif()
 aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qpl _srcs)
+aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qpl/linux _srcs)
 add_library(dcap_quoteprov SHARED ${_srcs})
 
 target_include_directories(dcap_quoteprov PRIVATE
@@ -15,5 +22,5 @@ set_property(TARGET dcap_quoteprov APPEND_STRING PROPERTY LINK_DEPENDS
         ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qpl/linux/sgx_default_quote_provider.lds
     )
 
-target_link_libraries(dcap_quoteprov sgx_default_qcnl_wrapper)
+target_link_libraries(dcap_quoteprov sgx_default_qcnl_wrapper ${OPENSSL_LIBRARIES})
 

@@ -213,7 +213,6 @@ storage-class-specifier const error_category& iostream_category() noexcept;
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <iosfwd>
 #include <__locale>
 #include <system_error>
@@ -293,6 +292,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY streamsize precision(streamsize __prec);
     _LIBCPP_INLINE_VISIBILITY streamsize width() const;
     _LIBCPP_INLINE_VISIBILITY streamsize width(streamsize __wide);
+
 
     // 27.5.2.3 locales:
     locale imbue(const locale& __loc);
@@ -1027,6 +1027,5 @@ public:
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_IOS

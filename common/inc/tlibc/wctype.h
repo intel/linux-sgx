@@ -56,27 +56,24 @@ typedef __wctype_t  wctype_t;
 
 __BEGIN_DECLS
 
-/*
- * Deprecated definitions.
- */
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswalnum, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswalpha, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswblank, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswcntrl, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswdigit, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswgraph, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswlower, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswprint, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswpunct, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswspace, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswupper, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswxdigit, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(int         _TLIBC_CDECL_, iswctype, wint_t, wctype_t);
-_TLIBC_DEPRECATED_FUNCTION_(wint_t      _TLIBC_CDECL_, towctrans, wint_t, wctrans_t);
-_TLIBC_DEPRECATED_FUNCTION_(wint_t      _TLIBC_CDECL_, towlower, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(wint_t      _TLIBC_CDECL_, towupper, wint_t);
-_TLIBC_DEPRECATED_FUNCTION_(wctrans_t   _TLIBC_CDECL_, wctrans, const char *);
-_TLIBC_DEPRECATED_FUNCTION_(wctype_t    _TLIBC_CDECL_, wctype, const char *);
+int       _TLIBC_CDECL_ iswalnum(wint_t);
+int       _TLIBC_CDECL_ iswalpha(wint_t);
+int       _TLIBC_CDECL_ iswblank(wint_t);
+int       _TLIBC_CDECL_ iswcntrl(wint_t);
+int       _TLIBC_CDECL_ iswdigit(wint_t);
+int       _TLIBC_CDECL_ iswgraph(wint_t);
+int       _TLIBC_CDECL_ iswlower(wint_t);
+int       _TLIBC_CDECL_ iswprint(wint_t);
+int       _TLIBC_CDECL_ iswpunct(wint_t);
+int       _TLIBC_CDECL_ iswspace(wint_t);
+int       _TLIBC_CDECL_ iswupper(wint_t);
+int       _TLIBC_CDECL_ iswxdigit(wint_t);
+int       _TLIBC_CDECL_ iswctype(wint_t, wctype_t);
+wint_t    _TLIBC_CDECL_ towctrans(wint_t, wctrans_t);
+wint_t    _TLIBC_CDECL_ towlower(wint_t);
+wint_t    _TLIBC_CDECL_ towupper(wint_t);
+wctrans_t _TLIBC_CDECL_ wctrans(const char *);
+wctype_t  _TLIBC_CDECL_ wctype(const char *);
 
 __END_DECLS
 

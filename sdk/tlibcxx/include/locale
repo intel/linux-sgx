@@ -180,7 +180,6 @@ template <class charT> class messages_byname;
 
 // Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <__locale>
 #include <__debug>
 #include <algorithm>
@@ -201,6 +200,9 @@ template <class charT> class messages_byname;
 // include of <sys/cdefs.h> once https://sourceware.org/ml/newlib-cvs/2014-q3/msg00038.html
 // has had a chance to bake for a bit
 #include <support/newlib/xlocale.h>
+#endif
+#if defined(_LIBCPP_SGX_CONFIG)
+#include <support/sgx/xlocale.h>
 #endif
 #ifdef _LIBCPP_HAS_CATOPEN
 #include <nl_types.h>
@@ -276,7 +278,7 @@ __scan_keyword(_InputIterator& __b, _InputIterator __e,
     {
         __status = (unsigned char*)malloc(__nkw);
         if (__status == 0)
-            __throw_bad_alloc();
+            throw bad_alloc();
         __stat_hold.reset(__status);
     }
     size_t __n_might_match = __nkw;  // At this point, any keyword might match
@@ -366,6 +368,7 @@ __scan_keyword(_InputIterator& __b, _InputIterator __e,
     return __kb;
 }
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 struct _LIBCPP_TYPE_VIS __num_get_base
 {
     static const int __num_get_buf_sz = 40;
@@ -1293,6 +1296,7 @@ protected:
 template <class _CharT, class _OutputIterator>
 locale::id
 num_put<_CharT, _OutputIterator>::id;
+#endif
 
 template <class _CharT, class _OutputIterator>
 _LIBCPP_HIDDEN
@@ -1369,6 +1373,7 @@ __pad_and_output(ostreambuf_iterator<_CharT, _Traits> __s,
 
 #endif
 
+#if !defined(_LIBCPP_SGX_CONFIG)
 template <class _CharT, class _OutputIterator>
 _OutputIterator
 num_put<_CharT, _OutputIterator>::do_put(iter_type __s, ios_base& __iob,
@@ -4252,8 +4257,9 @@ wbuffer_convert<_Codecvt, _Elem, _Tr>::__close()
     return __rt;
 }
 
+#endif
+
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_LOCALE

@@ -43,42 +43,48 @@
 
 #if defined (_M_AMD64) || defined (__x86_64__)
 
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
 #define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
 #define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
 
 
-IPPAPI(IppStatus, y8_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
-IPPAPI(IppStatus, l9_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPAPI(IppStatus, y8_ippsECCPSignDSA,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
+IPPAPI(IppStatus, l9_ippsECCPSignDSA,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
+IPPAPI(IppStatus, k1_ippsECCPSignDSA,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsECCPSignDSA,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
+      if( AVX3I_FEATURES  == ( features & AVX3I_FEATURES  )) {
+        return k1_ippsECCPSignDSA( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
+      } else 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
+        return l9_ippsECCPSignDSA( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return y8_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
+        return y8_ippsECCPSignDSA( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }
 #else
 
 
-IPPAPI(IppStatus, p8_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
-IPPAPI(IppStatus, h9_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPAPI(IppStatus, p8_ippsECCPSignDSA,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
+IPPAPI(IppStatus, h9_ippsECCPSignDSA,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
 
-IPPFUN(IppStatus,sgx_disp_ippsGFpInitFixed,(int primeBitSize, const IppsGFpMethod* pGFpMethod, IppsGFpState* pGFp))
+IPPFUN(IppStatus,sgx_disp_ippsECCPSignDSA,(const IppsBigNumState* pMsgDigest, const IppsBigNumState* pPrivate, IppsBigNumState* pSignX, IppsBigNumState* pSignY, IppsECCPState* pEC))
 {
   Ipp64u features;
   ippcpGetCpuFeatures( &features );
 
       if( ippCPUID_AVX2  == ( features & ippCPUID_AVX2  )) {
-        return h9_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
+        return h9_ippsECCPSignDSA( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
       } else 
       if( ippCPUID_SSE42 == ( features & ippCPUID_SSE42 )) {
-        return p8_ippsGFpInitFixed( primeBitSize, pGFpMethod, pGFp );
+        return p8_ippsECCPSignDSA( pMsgDigest, pPrivate, pSignX, pSignY, pEC );
       } else 
         return ippStsCpuNotSupportedErr;
 }

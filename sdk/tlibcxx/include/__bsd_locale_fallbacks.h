@@ -23,13 +23,6 @@ typedef _VSTD::remove_pointer<locale_t>::type __use_locale_struct;
 typedef _VSTD::unique_ptr<__use_locale_struct, decltype(&uselocale)> __locale_raii;
 
 inline _LIBCPP_ALWAYS_INLINE
-decltype(MB_CUR_MAX) __libcpp_mb_cur_max_l(locale_t __l)
-{
-    __locale_raii __current( uselocale(__l), uselocale );
-    return MB_CUR_MAX;
-}
-
-inline _LIBCPP_ALWAYS_INLINE
 wint_t __libcpp_btowc_l(int __c, locale_t __l)
 {
     __locale_raii __current( uselocale(__l), uselocale );
@@ -41,6 +34,13 @@ int __libcpp_wctob_l(wint_t __c, locale_t __l)
 {
     __locale_raii __current( uselocale(__l), uselocale );
     return wctob(__c);
+}
+
+inline _LIBCPP_ALWAYS_INLINE
+decltype(MB_CUR_MAX) __libcpp_mb_cur_max_l(locale_t __l)
+{
+    __locale_raii __current( uselocale(__l), uselocale );
+    return MB_CUR_MAX;
 }
 
 inline _LIBCPP_ALWAYS_INLINE
@@ -89,18 +89,19 @@ size_t __libcpp_mbrlen_l(const char *__s, size_t __n, mbstate_t *__ps, locale_t 
 }
 
 inline _LIBCPP_ALWAYS_INLINE
-lconv *__libcpp_localeconv_l(locale_t __l)
-{
-    __locale_raii __current( uselocale(__l), uselocale );
-    return localeconv();
-}
-
-inline _LIBCPP_ALWAYS_INLINE
 size_t __libcpp_mbsrtowcs_l(wchar_t *__dest, const char **__src, size_t __len,
                      mbstate_t *__ps, locale_t __l)
 {
     __locale_raii __current( uselocale(__l), uselocale );
     return mbsrtowcs(__dest, __src, __len, __ps);
+}
+
+#if !defined(_LIBCPP_SGX_CONFIG)
+inline _LIBCPP_ALWAYS_INLINE
+lconv *__libcpp_localeconv_l(locale_t __l)
+{
+    __locale_raii __current( uselocale(__l), uselocale );
+    return localeconv();
 }
 
 inline
@@ -132,6 +133,7 @@ int __libcpp_sscanf_l(const char *__s, locale_t __l, const char *__format, ...) 
     va_end(__va);
     return __res;
 }
+#endif
 
 _LIBCPP_END_NAMESPACE_STD
 
