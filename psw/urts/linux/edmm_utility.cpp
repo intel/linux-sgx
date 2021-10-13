@@ -41,7 +41,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <stdio.h>
-
+#include <string.h>
 #define SGX_URTS_CMD "for f in $(find /usr/$(basename $(gcc -print-multi-os-directory)) -name 'libsgx_urts.so' 2> /dev/null); do strings $f|grep 'SGX_URTS_VERSION_2'; done"
 #define SGX_CPUID    0x12
 
@@ -236,8 +236,17 @@ extern "C" bool is_cpu_support_edmm()
 */
 extern "C" bool is_driver_support_edmm(int hdevice)
 {
-    if (-1 == hdevice)
-        return false;
+    if (-1 == hdevice){
+        if(!open_se_device(SGX_DRIVER_IN_KERNEL, &hdevice))
+            return false;
+        struct sgx_page_modp ioc;
+        memset(&ioc, 0, sizeof(ioc));
+
+        int ret = ioctl(hdevice, SGX_IOC_PAGE_MODP, &ioc);
+        bool supported = ret != -1 || (errno != ENOTTY);
+        close_se_device(&hdevice);
+        return supported;
+    }
 
     sgx_modification_param param;
     param.flags = 0;
