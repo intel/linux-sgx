@@ -395,7 +395,6 @@ int EnclaveCreatorHW::remove_range(uint64_t fromaddr, uint64_t numpages)
 
     return SGX_SUCCESS;
 }
- 
 //EDMM is supported if and only if all of the following requirements are met:
 //1. We operate in HW mode
 //2. CPU has EDMM support
