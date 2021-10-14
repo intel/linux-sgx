@@ -285,6 +285,7 @@ void* get_vdso_sym(const char* vdso_func_name)
     return ret;
 }
 
+int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
 
 static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r8, long r9,
             struct sgx_enclave_run *run)
@@ -299,8 +300,9 @@ static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r
         __u64 *user_data = (__u64*)run->user_data;
         void *ocall_table = reinterpret_cast<void *>(user_data[0]);
         CTrustThread* trust_thread = reinterpret_cast<CTrustThread *>(user_data[1]);
-        CEnclave *enclave = trust_thread->get_enclave();
-        unsigned int ret = enclave->ecall(ECMD_EXCEPT, ocall_table, NULL);
+
+        //directly use the original tcs
+        unsigned int ret = do_ecall(ECMD_EXCEPT, ocall_table, NULL, trust_thread);
 
         if(SGX_SUCCESS == ret)
         {
