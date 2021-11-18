@@ -313,6 +313,12 @@ To install the Intel(R) SGX SDK, invoke the installer, as follows:
 $ cd linux/installer/bin
 $ ./sgx_linux_x64_sdk_${version}.bin
 ```
+The above command requires you to specify the installation path. You can use the following command 
+to use the non-interactive installation mode:
+```
+$ cd linux/installer/bin
+$ ./sgx_linux_x64_sdk_${version}.bin --prefix {SDK_INSTALL_PATH_PREFIX}
+```
 NOTE: You need to set up the needed environment variables before compiling your code. To do so, run:
 ```
   $ source ${sgx-sdk-install-path}/environment
