@@ -41,7 +41,7 @@ In order to reproduce the enclave build, there are three requirements:1. stable 
 To reproduce QVE, you need to apply below patch to the [build_and_launch_docker.sh](./build_and_launch_docker.sh) before start the reproducible build with the script.
 ```
 diff --git a/linux/reproducibility/build_and_launch_docker.sh b/linux/reproducibility/build_and_launch_docker.sh
-index ad9d3902..5183790d 100755
+index b85eda85..f8bc6812 100755
 --- a/linux/reproducibility/build_and_launch_docker.sh
 +++ b/linux/reproducibility/build_and_launch_docker.sh
 @@ -183,6 +183,7 @@ prepare_sgx_src()
