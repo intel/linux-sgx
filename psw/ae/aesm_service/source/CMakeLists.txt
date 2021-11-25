@@ -39,7 +39,7 @@ set(CMAKE_SKIP_BUILD_RPATH true)
 ########## SGX SDK Settings ##########
 set(SGX_ARCH x64)
 execute_process (
-    COMMAND /usr/bin/getconf LONG_BIT
+    COMMAND getconf LONG_BIT
     OUTPUT_VARIABLE LONG_BIT
 )
 
