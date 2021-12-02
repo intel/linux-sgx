@@ -1,6 +1,6 @@
 Introduction
 ---------------------------------
-This directory contains a implementation of the Enclave Memory Manager proposed in [this PR](https://github.com/openenclave/openenclave/pull/3991)
+This directory contains an implementation of the Enclave Memory Manager proposed in [this PR](https://github.com/openenclave/openenclave/pull/3991)
 
 The instructions here are for developing and testing the EMM functionality only. Consult the main README for general usages.
 
@@ -21,7 +21,7 @@ $ git checkout sgx/sgx2_not_submitted_v1
 - For step 6, modify .config to set "CONFIG_X86_SGX=y".
 
 #### Verify kernel build and EDMM support
-At root of the kernel source repo,
+At the root of the kernel source repo,
 ```
 $ cd tools/testing/selftests/sgx/ && make
 #./test_sgx
@@ -63,7 +63,7 @@ $ cd $repo_root/psw/urts/linux
 $ make
 $ cd <repo_root>/build/linux
 $ ln -s libsgx_enclave_common.so libsgx_enclave_common.so.1
-$ export LD_LIBRARY_PATH=/home/sdp/linux-sgx2-poc/build/linux/
+$ export LD_LIBRARY_PATH=<repo_root>/build/linux/
 ```
 
 #### To build and run API tests
@@ -81,7 +81,7 @@ Limitations of current implementation
 ---------------------------------------
 1. EMM holds a global recursive mutex for the whole duration of each API invocation.
 	- No support for concurrent operations (modify type/permissions, commit and commit_data) on different regions.
-2. EMM internally uses default heap and stack during its internal operations
+2. EMM internally uses the default heap and stack during its internal operations
 	- The initial heap and stack should be sufficient to bootstrap EMM initializations
 	- Book-keeping for heap should be created when RTS is initialized.
 		- RTS calls mm_init_ema to create region for the static heap (EADDed), and mm_alloc to reserve COMMIT_ON_DEMAND for dynamic heap.
@@ -101,8 +101,8 @@ Limitations of current implementation
 Notes on Intel SDK specific implementation
 -----------------------------------------
 1. 	Intel SDK RTS abstraction layer mutex implementation is a spinlock because there is no built-in OCalls for wait/wake on OS event.
-2. 	Intel SDK signing tool reserves all unused address space as guard pages, leaving no space for user allocation. In this implementation, we simply changed tRTS to leave majority of that space as free. In future, we may need change the signing tool to encode this info in metadata.
+2. 	Intel SDK signing tool reserves all unused address space as guard pages, leaving no space for user allocation. In this implementation, we simply changed tRTS to leave majority of that space as free. In future, we may need change the signing tool to encode this info in the metadata.
 3. 	API tests are built with Intel SDK. Though most of tests are RTS independent, the TCS related tests use hardcoded Intel thread context layout info.
-4. All make files assumes linux-sgx repo layout and environment.
+4. All make files assume linux-sgx repo layout and environment.
 
 
