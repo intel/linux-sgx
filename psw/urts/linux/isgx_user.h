@@ -109,11 +109,11 @@ enum sgx_page_flags {
 #define SGX_IOC_ENCLAVE_SET_ATTRIBUTE \
 	_IOW(SGX_MAGIC, 0x03, struct sgx_enclave_set_attribute)
 #define SGX_IOC_PAGE_MODP \
-	_IOWR(SGX_MAGIC, 0x04, struct sgx_page_modp)
+	_IOWR(SGX_MAGIC, 0x05, struct sgx_page_modp)
 #define SGX_IOC_PAGE_MODT \
-	_IOWR(SGX_MAGIC, 0x05, struct sgx_page_modt)
+	_IOWR(SGX_MAGIC, 0x06, struct sgx_page_modt)
 #define SGX_IOC_PAGE_REMOVE \
-    _IOWR(SGX_MAGIC, 0x06, struct sgx_page_remove)
+    _IOWR(SGX_MAGIC, 0x07, struct sgx_page_remove)
 
 /* Legacy OOT driver support for EDMM */
 #define SGX_IOC_ENCLAVE_EMODPR \
