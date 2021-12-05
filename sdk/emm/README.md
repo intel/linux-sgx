@@ -4,7 +4,7 @@ This directory contains an implementation of the Enclave Memory Manager proposed
 
 The instructions here are for developing and testing the EMM functionality only. Consult the main README for general usages.
 
-**Note:** This implementation is based on the current Linux kernel implementation posted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_not_submitted_v1), which has not been finalized and upstreamed. As the kernel interfaces evolve, the EMM implementation and/or interface may change.
+**Note:** This implementation is based on the current Linux kernel implementation posted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_submitted_v1_plus_rwx), which has not been finalized and upstreamed. As the kernel interfaces evolve, the EMM implementation and/or interface may change.
 
 Prerequisites
 -------------------------------
@@ -16,8 +16,9 @@ On Ubuntu 18.04/20.04, follow the general instructions from [here](https://wiki.
 ```
 $ git clone https://github.com/rchatre/linux.git
 $ cd linux
-$ git checkout sgx/sgx2_not_submitted_v1
+$ git checkout sgx/sgx2_submitted_v1_plus_rwx
 ```
+
 - For step 6, modify .config to set "CONFIG_X86_SGX=y".
 
 #### Verify kernel build and EDMM support
