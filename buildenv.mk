@@ -70,7 +70,7 @@ LINUX_UNITTESTS       := $(ROOT_DIR)/unittests
 DCAP_DIR              := $(LINUX_EXTERNAL_DIR)/dcap_source
 LIBUNWIND_DIR         := $(ROOT_DIR)/sdk/cpprt/linux/libunwind
 
-CP    := /bin/cp -f
+CP    := cp -f
 MKDIR := mkdir -p
 STRIP := strip
 OBJCOPY := objcopy
