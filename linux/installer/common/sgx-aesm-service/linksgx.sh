@@ -35,9 +35,21 @@ if test $(id -u) -ne 0; then
     exit 1
 fi
 
-/usr/bin/getent group sgx_prv &> /dev/null
-if [ $? == "0" ]; then
-    /usr/sbin/usermod -aG sgx_prv aesmd &> /dev/null
+if [ -c /dev/sgx_provision -o -c /dev/sgx/provision ]; then
+    getent group sgx_prv &> /dev/null
+    if [ "$?" != "0" ]; then
+        # Add sgx_prv for dcap driver, which ensures that no matter what 
+        # the order of package installation, aesmd can have access to 
+        # the sgx_provision device file.
+        groupadd sgx_prv
+
+        if ! which udevadm &> /dev/null; then
+            exit 0
+        fi
+        udevadm control --reload || :
+        udevadm trigger || :
+    fi
+    usermod -aG sgx_prv aesmd &> /dev/null
 fi
 
 echo
