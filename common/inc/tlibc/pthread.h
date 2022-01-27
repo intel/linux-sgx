@@ -46,6 +46,14 @@
 #define PTHREAD_RWLOCK_INITIALIZER  SGX_THREAD_LOCK_INITIALIZER
 
 /*
+ * Mutex type values.
+ */
+#define PTHREAD_MUTEX_NORMAL		SGX_THREAD_MUTEX_NONRECURSIVE
+#define PTHREAD_MUTEX_RECURSIVE		SGX_THREAD_MUTEX_RECURSIVE
+#define PTHREAD_MUTEX_DEFAULT		PTHREAD_MUTEX_NORMAL
+// We don't support PTHREAD_MUTEX_ERRORCHECK.
+
+/*
  * Primitive system data type definitions required by P1003.1c.
  *
  * Note that P1003.1c specifies that there are no defined comparison
@@ -87,6 +95,11 @@ int SGXAPI pthread_mutex_destroy(pthread_mutex_t *);
 int SGXAPI pthread_mutex_lock(pthread_mutex_t *);
 int SGXAPI pthread_mutex_trylock(pthread_mutex_t *);
 int SGXAPI pthread_mutex_unlock(pthread_mutex_t *);
+
+int SGXAPI pthread_mutexattr_init(pthread_mutexattr_t *);
+int SGXAPI pthread_mutexattr_destroy(pthread_mutexattr_t *);
+int SGXAPI pthread_mutexattr_gettype(const pthread_mutexattr_t *, int *type);
+int SGXAPI pthread_mutexattr_settype(pthread_mutexattr_t *, int type);
 
 /* Condition Variable */
 int SGXAPI pthread_cond_init(pthread_cond_t *, const pthread_condattr_t *);

@@ -26,10 +26,9 @@
 
 static volatile uint32_t static_init_lock = SGX_SPINLOCK_INITIALIZER;
 
-int pthread_mutex_init(pthread_mutex_t *mutexp, const pthread_mutexattr_t *attr)
+int pthread_mutex_init(pthread_mutex_t *mutexp, const pthread_mutexattr_t *attrp)
 {
-    UNUSED(attr);
-    return sgx_thread_mutex_init(mutexp, NULL);
+    return sgx_thread_mutex_init(mutexp, attrp);
 }
 
 int pthread_mutex_destroy(pthread_mutex_t *mutexp)
@@ -52,3 +51,38 @@ int pthread_mutex_unlock(pthread_mutex_t *mutexp)
     return sgx_thread_mutex_unlock(mutexp);
 }
 
+int pthread_mutexattr_init(pthread_mutexattr_t *attrp)
+{
+    attrp->type = PTHREAD_MUTEX_DEFAULT;
+    return 0;
+}
+
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attrp)
+{
+    if (attrp == NULL)
+        return (EINVAL);
+    return 0;
+}
+
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *attrp, int *type)
+{
+    if (attrp == NULL)
+        return (EINVAL);
+
+    *type = attrp->type;
+    return 0;
+}
+
+int pthread_mutexattr_settype(pthread_mutexattr_t *attrp, int type)
+{
+    if (attrp == NULL)
+        return (EINVAL);
+
+    switch (type) {
+        case PTHREAD_MUTEX_NORMAL:
+        case PTHREAD_MUTEX_RECURSIVE:
+            attrp->type = type;
+            return 0;
+    }
+    return (EINVAL);
+}

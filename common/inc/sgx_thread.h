@@ -83,7 +83,7 @@ typedef struct _sgx_thread_rwlock_t
 
 typedef struct _sgx_thread_mutex_attr_t
 {
-    unsigned char       m_dummy;  /* for C syntax check */
+    int type;
 } sgx_thread_mutexattr_t;
 
 typedef struct _sgx_thread_rwlock_attr_t

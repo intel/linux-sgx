@@ -37,12 +37,14 @@
 #include "util.h"
 #include "sethread_internal.h"
 
-int sgx_thread_mutex_init(sgx_thread_mutex_t *mutex, const sgx_thread_mutexattr_t *unused)
+int sgx_thread_mutex_init(sgx_thread_mutex_t *mutex, const sgx_thread_mutexattr_t *attr)
 {
-    UNUSED(unused);
     CHECK_PARAMETER(mutex);
 
     mutex->m_control = SGX_THREAD_MUTEX_NONRECURSIVE;
+    if (attr != NULL) {
+        mutex->m_control = attr->type;
+    }
     mutex->m_refcount = 0;
     mutex->m_owner = SGX_THREAD_T_NULL;
     mutex->m_lock = SGX_SPINLOCK_INITIALIZER;
