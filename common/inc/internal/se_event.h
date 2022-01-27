@@ -44,6 +44,7 @@ typedef void * se_handle_t;
 #define SE_MUTEX_INVALID    0x1
 #define SE_MUTEX_ERROR_WAKE 0x2
 #define SE_MUTEX_ERROR_WAIT 0x3
+#define SE_MUTEX_TIMEOUT    0x4
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +55,7 @@ void SGXAPI se_event_destroy(se_handle_t);
 
 int SGXAPI se_event_wait(se_handle_t);
 int SGXAPI se_event_wait_timeout(se_handle_t se_event, uint64_t timeout);
+int SGXAPI se_event_wait_deadline(se_handle_t se_event, unsigned long long dl_sec, long dl_nsec);
 int SGXAPI se_event_wake(se_handle_t);
 
 #ifdef __cplusplus

@@ -132,6 +132,7 @@ int SGXAPI sgx_thread_rwlock_trywrlock(sgx_thread_rwlock_t *rwlock);
 int SGXAPI sgx_thread_cond_init(sgx_thread_cond_t *cond, const sgx_thread_condattr_t *unused);
 int SGXAPI sgx_thread_cond_destroy(sgx_thread_cond_t *cond);
 
+int SGXAPI sgx_thread_cond_timedwait(sgx_thread_cond_t *cond, sgx_thread_mutex_t *mutex, unsigned long long dl_sec, long dl_nsec);
 int SGXAPI sgx_thread_cond_wait(sgx_thread_cond_t *cond, sgx_thread_mutex_t *mutex);
 int SGXAPI sgx_thread_cond_signal(sgx_thread_cond_t *cond);
 int SGXAPI sgx_thread_cond_broadcast(sgx_thread_cond_t *cond);

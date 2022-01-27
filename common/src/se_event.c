@@ -32,6 +32,7 @@
 
 #include "se_event.h"
 
+#include <errno.h>
 #include <linux/futex.h>
 #include <sys/time.h>
 
@@ -77,6 +78,33 @@ int se_event_wait_timeout(se_handle_t se_event, uint64_t timeout)
         //If the futex is exit with timeout (se_event still equal to ' -1'), the se_event value need reset to 0.
         //Or the event wait will unworkable in next round checking "if (__sync_fetch_and_add((int*)se_event, -1) == 0)".
         __sync_val_compare_and_swap((int*)se_event, -1, 0);
+    }
+
+    return SE_MUTEX_SUCCESS;
+}
+
+int se_event_wait_deadline(se_handle_t se_event, unsigned long long dl_sec, long dl_nsec)
+{
+    if (se_event == NULL)
+        return SE_MUTEX_INVALID;
+
+    if (__sync_fetch_and_add((int*)se_event, -1) == 0)
+    {
+        struct timespec deadline;
+        deadline.tv_sec = (time_t)dl_sec;
+        deadline.tv_nsec = dl_nsec;
+        // Note: The operation FUTEX_WAIT_BITSET in conjunction with
+        // FUTEX_BITSET_MATCH_ANY is equivalent to the operation FUTEX_WAIT,
+        // except the timeout argument is interpreted as an absolute deadline
+        // rather than a relative delay.
+        syscall(__NR_futex, se_event, FUTEX_WAIT_BITSET, -1, &deadline, NULL, FUTEX_BITSET_MATCH_ANY);
+        //If the futex is exit with timeout (se_event still equal to ' -1'), the se_event value need reset to 0.
+        //Or the event wait will unworkable in next round checking "if (__sync_fetch_and_add((int*)se_event, -1) == 0)".
+        __sync_val_compare_and_swap((int*)se_event, -1, 0);
+        if (errno == ETIMEDOUT) 
+        {
+            return SE_MUTEX_TIMEOUT;
+        }
     }
 
     return SE_MUTEX_SUCCESS;

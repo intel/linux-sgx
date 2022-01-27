@@ -120,8 +120,10 @@ typedef struct _thread_data_t *pTD;
 
 /* Generated OCALLs */
 extern "C" sgx_status_t sgx_thread_wait_untrusted_event_ocall(int* retval, const void *self);
+extern "C" sgx_status_t sgx_thread_timedwait_untrusted_event_ocall(int* retval, const void *self, unsigned long long dl_sec, long dl_nsec);
 extern "C" sgx_status_t sgx_thread_set_untrusted_event_ocall(int* retval, const void *waiter);
 extern "C" sgx_status_t sgx_thread_set_multiple_untrusted_events_ocall(int* retval, const void** waiters, size_t total);
 extern "C" sgx_status_t sgx_thread_setwait_untrusted_events_ocall(int* retval, const void *waiter, const void *self);
+extern "C" sgx_status_t sgx_thread_settimedwait_untrusted_events_ocall(int *retval, const void *waiter, const void *self, unsigned long long dl_sec, long dl_nsec);
 
 extern "C" int sgx_thread_mutex_unlock_lazy(sgx_thread_mutex_t *mutex, sgx_thread_t *pwaiter);

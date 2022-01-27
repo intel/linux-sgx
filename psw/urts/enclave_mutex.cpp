@@ -52,6 +52,42 @@ extern "C" int sgx_thread_wait_untrusted_event_ocall(const void *self)
     return SGX_SUCCESS;
 }
 
+extern "C" int sgx_thread_timedwait_untrusted_event_ocall(const void *self, unsigned long long dl_sec, long dl_nsec)
+{
+    if (self == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    se_handle_t hevent = CEnclavePool::instance()->get_event(self);
+    if (hevent == NULL)
+        return SE_ERROR_MUTEX_GET_EVENT;
+
+    switch (se_event_wait_deadline(hevent, dl_sec, dl_nsec)) {
+        case SE_MUTEX_SUCCESS:  break;
+        case SE_MUTEX_TIMEOUT:  return SE_ERROR_MUTEX_WAIT_EVENT_TIMEOUT;
+        default:                return SE_ERROR_MUTEX_WAIT_EVENT;
+    }
+
+    return SGX_SUCCESS;
+}
+
+extern "C" int sgx_thread_timedwait_untrusted_event_ocall(const void *self, unsigned long long dl_sec, long dl_nsec)
+{
+    if (self == NULL)
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    se_handle_t hevent = CEnclavePool::instance()->get_event(self);
+    if (hevent == NULL)
+        return SE_ERROR_MUTEX_GET_EVENT;
+
+    switch (se_event_wait_deadline(hevent, dl_sec, dl_nsec)) {
+        case SE_MUTEX_SUCCESS:  break;
+        case SE_MUTEX_TIMEOUT:  return SE_ERROR_MUTEX_WAIT_EVENT_TIMEOUT;
+        default:                return SE_ERROR_MUTEX_WAIT_EVENT;
+    }
+
+    return SGX_SUCCESS;
+}
+
 /* set untrusted event */
 extern "C" int sgx_thread_set_untrusted_event_ocall(const void *waiter)
 {
@@ -92,4 +128,20 @@ extern "C" int sgx_thread_setwait_untrusted_events_ocall(const void *waiter, con
     if (ret != SGX_SUCCESS) return ret;
 
     return sgx_thread_wait_untrusted_event_ocall(self);
+}
+
+extern "C" int sgx_thread_settimedwait_untrusted_events_ocall(const void *waiter, const void *self, unsigned long long dl_sec, long dl_nsec)
+{
+    int ret = sgx_thread_set_untrusted_event_ocall(waiter);
+    if (ret != SGX_SUCCESS) return ret;
+
+    return sgx_thread_timedwait_untrusted_event_ocall(self, dl_sec, dl_nsec);
+}
+
+extern "C" int sgx_thread_settimedwait_untrusted_events_ocall(const void *waiter, const void *self, unsigned long long dl_sec, long dl_nsec)
+{
+    int ret = sgx_thread_set_untrusted_event_ocall(waiter);
+    if (ret != SGX_SUCCESS) return ret;
+
+    return sgx_thread_timedwait_untrusted_event_ocall(self, dl_sec, dl_nsec);
 }

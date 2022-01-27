@@ -36,6 +36,7 @@
 
 #include "util.h"
 #include "sethread_internal.h"
+#include "se_error_internal.h"
 
 int sgx_thread_cond_init(sgx_thread_cond_t *cond, const sgx_thread_condattr_t *unused)
 {
@@ -103,6 +104,59 @@ int sgx_thread_cond_wait(sgx_thread_cond_t *cond, sgx_thread_mutex_t *mutex)
     SPIN_UNLOCK(&cond->m_lock);
     sgx_thread_mutex_lock(mutex);
 
+    return 0;
+}
+
+int sgx_thread_cond_timedwait(sgx_thread_cond_t *cond, sgx_thread_mutex_t *mutex, unsigned long long dl_sec, long dl_nsec)
+{
+    CHECK_PARAMETER(cond);
+    CHECK_PARAMETER(mutex);
+
+    sgx_thread_t self = (sgx_thread_t)get_thread_data();
+
+    SPIN_LOCK(&cond->m_lock);
+    QUEUE_INSERT_TAIL(&cond->m_queue, self);
+
+    sgx_thread_t waiter = SGX_THREAD_T_NULL;
+    int ret = sgx_thread_mutex_unlock_lazy(mutex, &waiter);
+    if (ret != 0) {
+        SPIN_UNLOCK(&cond->m_lock);
+        return ret;
+    }
+
+    while (1) {
+        SPIN_UNLOCK(&cond->m_lock);
+
+        if (waiter == SGX_THREAD_T_NULL) {
+            sgx_thread_timedwait_untrusted_event_ocall(&ret, TD2TCS(self), dl_sec, dl_nsec);
+        } else {
+            sgx_thread_settimedwait_untrusted_events_ocall(&ret, TD2TCS(waiter), TD2TCS(self), dl_sec, dl_nsec);
+            waiter = SGX_THREAD_T_NULL;
+        }
+
+        SPIN_LOCK(&cond->m_lock);
+        if (ret == (int)SE_ERROR_MUTEX_WAIT_EVENT_TIMEOUT) {
+            // On timeout, remove ourselves from the queue.
+            QUEUE_REMOVE(&cond->m_queue, self);
+            SPIN_UNLOCK(&cond->m_lock);
+
+            sgx_thread_mutex_lock(mutex);
+            return ETIMEDOUT;
+        }
+
+        // Check if we woke up because of a signal, or if it was spurious.
+        sgx_thread_t tmp = SGX_THREAD_T_NULL;
+        QUEUE_FOREACH(tmp, &cond->m_queue) {
+            // Current thread is in the queue, so we were not signalled. Loop
+            // around and wait again.
+            if (tmp == self) break; 
+        }
+        // If current thread isn't in the queue, we were signalled.
+        if (tmp == SGX_THREAD_T_NULL) break; 
+    }
+
+    SPIN_UNLOCK(&cond->m_lock);
+    sgx_thread_mutex_lock(mutex);
     return 0;
 }
 
