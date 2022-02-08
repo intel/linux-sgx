@@ -81,21 +81,25 @@ uint64_t get_offset_for_address(uint64_t target_address)
 
 static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
 {
-    struct sgx_page_modt ioc;
+    struct sgx_enclave_modt ioc;
     if (length == 0)
         return EINVAL;
-    memset(&ioc, 0, sizeof(ioc));
 
     SE_TRACE(SE_TRACE_DEBUG,
         "MODT for 0x%llX ( %llX ), type: 0x%llX\n",
             addr, length, type);
     memset(&ioc, 0, sizeof(ioc));
-    ioc.type = type;
+
+    sec_info_t sec_info;
+    memset(&sec_info, 0, sizeof(sec_info_t));
+    sec_info.flags = SGX_EMA_PAGE_TYPE(type);
+
+    ioc.secinfo = POINTER_TO_U64(&sec_info);;
     ioc.offset = get_offset_for_address(addr);
     ioc.length = SE_PAGE_SIZE;//TODO: change back to length
     do
     {
-        int ret = ioctl(fd, SGX_IOC_PAGE_MODT, &ioc);
+        int ret = ioctl(fd, SGX_IOC_ENCLAVE_MODIFY_TYPE, &ioc);
         //TODO: use error code
         if (ret && ioc.count == 0 && errno != EBUSY)
         { //total failure
@@ -124,7 +128,7 @@ static int mktcs(int fd, uint64_t addr, size_t length)
 }
 static int trim_accept(int fd, uint64_t addr, size_t length)
 {
-    struct sgx_page_remove remove_ioc;
+    struct sgx_enclave_remove_pages remove_ioc;
     memset(&remove_ioc, 0, sizeof(remove_ioc));
 
     SE_TRACE(SE_TRACE_DEBUG,
@@ -133,7 +137,7 @@ static int trim_accept(int fd, uint64_t addr, size_t length)
     remove_ioc.offset = get_offset_for_address(addr);
     remove_ioc.length = length;
 
-    int ret = ioctl(fd, SGX_IOC_PAGE_REMOVE, &remove_ioc);
+    int ret = ioctl(fd, SGX_IOC_ENCLAVE_REMOVE_PAGES, &remove_ioc);
     if(ret)
     {
         SE_TRACE(SE_TRACE_WARNING,
@@ -145,21 +149,26 @@ static int trim_accept(int fd, uint64_t addr, size_t length)
 }
 static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
 {
-    struct sgx_page_modp ioc;
+    struct sgx_enclave_restrict_perm ioc;
     if (length == 0)
         return EINVAL;
-    memset(&ioc, 0, sizeof(ioc));
 
     SE_TRACE(SE_TRACE_DEBUG,
         "MODP for 0x%llX ( %llX ), prot: 0x%llX\n",
             addr, length, prot);
-    ioc.prot = prot;
+    memset(&ioc, 0, sizeof(ioc));
+
+    sec_info_t sec_info;
+    memset(&sec_info, 0, sizeof(sec_info_t));
+    sec_info.flags = prot;//no shift
+
+    ioc.secinfo = POINTER_TO_U64(&sec_info);
     ioc.offset = get_offset_for_address(addr);
     ioc.length = length;
 
     do
     {
-        int ret = ioctl(fd, SGX_IOC_PAGE_MODP, &ioc);
+        int ret = ioctl(fd, SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS, &ioc);
         //TODO: use error code
         if (ret && ioc.count == 0 && errno != EBUSY )
         { //total failure
@@ -175,6 +184,44 @@ static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
     } while (ioc.length != 0);
 
     return 0;
+}
+static int relaxp(int fd, uint64_t addr, uint64_t length, uint64_t prot)
+{
+    struct sgx_enclave_relax_perm ioc;
+    if (length == 0)
+        return EINVAL;
+
+    SE_TRACE(SE_TRACE_DEBUG,
+        "RELAX_PERM for 0x%llX ( %llX ), prot: 0x%llX\n",
+            addr, length, prot);
+    memset(&ioc, 0, sizeof(ioc));
+
+    sec_info_t sec_info;
+    memset(&sec_info, 0, sizeof(sec_info_t));
+    sec_info.flags = prot;
+
+    ioc.secinfo = POINTER_TO_U64(&sec_info);
+    ioc.offset = get_offset_for_address(addr);
+    ioc.length = length;
+
+    do
+    {
+        int ret = ioctl(fd, SGX_IOC_ENCLAVE_RELAX_PERMISSIONS, &ioc);
+        //TODO: use error code
+        if (ret && ioc.count == 0 && errno != EBUSY )
+        { //total failure
+            SE_TRACE(SE_TRACE_WARNING,
+                "RELAX failed, error = %d for 0x%llX ( %llX ), prot: 0x%llX\n",
+                    errno, addr, length, prot);
+            return errno;
+        }
+        ioc.length -= ioc.count;
+        ioc.offset += ioc.count;
+        ioc.count = 0;
+    } while (ioc.length != 0);
+
+    return 0;
+
 }
 
 // legacy support for EDMM
@@ -245,7 +292,10 @@ static int emodpr_legacy(int fd, uint64_t addr, uint64_t size, uint64_t flag)
 
     return SGX_SUCCESS;
 }
-
+static int relaxp_legacy(int, uint64_t, uint64_t, uint64_t)
+{
+    return 0;
+}
 /*
  * Call OS to change permissions, type, or notify EACCEPT done after TRIM.
  *
@@ -292,6 +342,7 @@ extern "C" int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_f
     function<int(int, uint64_t, size_t)> _trim_accept = trim_accept;
     function<int(int, uint64_t, size_t)> _mktcs = mktcs;
     function<int(int, uint64_t, size_t, int)> _emodpr = emodpr;
+    function<int(int, uint64_t, size_t, int)> _relaxp = relaxp;
     int fd = get_file_handle_from_address((void *)addr);
     if (s_driver_type == SGX_DRIVER_OUT_OF_TREE)
     {
@@ -299,6 +350,7 @@ extern "C" int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_f
         _trim_accept = trim_accept_legacy;
         _mktcs = mktcs_legacy;
         _emodpr = emodpr_legacy;
+        _relaxp = relaxp_legacy;
         fd = s_hdevice;
     }
     if(fd == -1) return EINVAL;
@@ -358,7 +410,7 @@ extern "C" int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_f
         return EINVAL;
     // type_to == type_from
     // this is for emodpr to epcm.NONE, enclave EACCEPT with pte.R
-    // separate mprotecte is needed to change ptt.R to pte.NONE
+    // separate mprotect is needed to change pte.R to pte.NONE
     if (prot_to == prot_from && prot_to == PROT_NONE)
     {
         ret = mprotect((void *)addr, length, prot_to);
@@ -384,6 +436,9 @@ extern "C" int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_f
     //EACCEPT needs at least pte.R, PROT_NONE case done above.
     if (prot_to != PROT_NONE)
     {
+        ret = _relaxp(fd, addr, length, prot_to);
+        if(ret)
+            return ret;
         ret = mprotect((void *)addr, length, prot_to);
         if (ret == -1)
             return errno;
