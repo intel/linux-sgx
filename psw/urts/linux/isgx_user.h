@@ -108,12 +108,16 @@ enum sgx_page_flags {
 	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init)
 #define SGX_IOC_ENCLAVE_SET_ATTRIBUTE \
 	_IOW(SGX_MAGIC, 0x03, struct sgx_enclave_set_attribute)
-#define SGX_IOC_PAGE_MODP \
-	_IOWR(SGX_MAGIC, 0x05, struct sgx_page_modp)
-#define SGX_IOC_PAGE_MODT \
-	_IOWR(SGX_MAGIC, 0x06, struct sgx_page_modt)
-#define SGX_IOC_PAGE_REMOVE \
-    _IOWR(SGX_MAGIC, 0x07, struct sgx_page_remove)
+#define SGX_IOC_VEPC_REMOVE_ALL \
+        _IO(SGX_MAGIC, 0x04)
+#define SGX_IOC_ENCLAVE_RELAX_PERMISSIONS \
+        _IOWR(SGX_MAGIC, 0x05, struct sgx_enclave_relax_perm)
+#define SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS \
+        _IOWR(SGX_MAGIC, 0x06, struct sgx_enclave_restrict_perm)
+#define SGX_IOC_ENCLAVE_MODIFY_TYPE \
+        _IOWR(SGX_MAGIC, 0x07, struct sgx_enclave_modt)
+#define SGX_IOC_ENCLAVE_REMOVE_PAGES \
+        _IOWR(SGX_MAGIC, 0x08, struct sgx_enclave_remove_pages)
 
 /* Legacy OOT driver support for EDMM */
 #define SGX_IOC_ENCLAVE_EMODPR \
@@ -292,56 +296,79 @@ struct sgx_modification_param {
 	unsigned long flags;
 };
 
+
+
 /**
- * struct sgx_page_modp - parameter structure for the %SGX_IOC_PAGE_MODP ioctl
- * @offset:	starting page offset
- * @length:	length of memory (multiple of the page size)
- * @prot:	new protection bits of pages in range described by @offset
- *		and @length.
- * @result:	SGX result code
- * @count:	bytes successfully changed (multiple of page size)
+ * struct sgx_enclave_relax_perm - parameters for ioctl
+ *                                 %SGX_IOC_ENCLAVE_RELAX_PERMISSIONS
+ * @offset:     starting page offset (page aligned relative to enclave base
+ *              address defined in SECS)
+ * @length:     length of memory (multiple of the page size)
+ * @secinfo:    address for the SECINFO data containing the new permission bits
+ *              for pages in range described by @offset and @length
+ * @count:      (output) bytes successfully changed (multiple of page size)
  */
-struct sgx_page_modp {
-	__u64 offset;
-	__u64 length;
-	__u64 prot;
-	__u64 result;
-	__u64 count;
+struct sgx_enclave_relax_perm {
+        __u64 offset;
+        __u64 length;
+        __u64 secinfo;
+        __u64 count;
 };
 
 /**
- * struct sgx_page_modt - parameter structure for the %SGX_IOC_PAGE_MODT ioctl
- * @offset:	starting page offset
- * @length:	length of memory (multiple of the page size)
- * @prot:	new type of pages in range described by @offset and @length.
- * @result:	SGX result code
- * @count:	bytes successfully changed (multiple of page size)
+ * struct sgx_enclave_restrict_perm - parameters for ioctl
+ *                                    %SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS
+ * @offset:     starting page offset (page aligned relative to enclave base
+ *              address defined in SECS)
+ * @length:     length of memory (multiple of the page size)
+ * @secinfo:    address for the SECINFO data containing the new permission bits
+ *              for pages in range described by @offset and @length
+ * @result:     (output) SGX result code of ENCLS[EMODPR] function
+ * @count:      (output) bytes successfully changed (multiple of page size)
  */
-struct sgx_page_modt {
-	__u64 offset;
-	__u64 length;
-	__u64 type;
-	__u64 result;
-	__u64 count;
+struct sgx_enclave_restrict_perm {
+        __u64 offset;
+        __u64 length;
+        __u64 secinfo;
+        __u64 result;
+        __u64 count;
 };
 
 /**
- * struct sgx_page_remove - parameters for the %SGX_IOC_PAGE_REMOVE ioctl
- * @offset: starting page offset (page aligned relative to enclave base
- *      address defined in SECS)
- * @length: length of memory (multiple of the page size)
- * @count:  bytes successfully changed (multiple of page size)
+ * struct sgx_enclave_modt - parameters for %SGX_IOC_ENCLAVE_MODIFY_TYPE
+ * @offset:     starting page offset (page aligned relative to enclave base
+ *              address defined in SECS)
+ * @length:     length of memory (multiple of the page size)
+ * @secinfo:    address for the SECINFO data containing the new type
+ *              for pages in range described by @offset and @length
+ * @result:     (output) SGX result code of ENCLS[EMODT] function
+ * @count:      (output) bytes successfully changed (multiple of page size)
+ */
+struct sgx_enclave_modt {
+        __u64 offset;
+        __u64 length;
+        __u64 secinfo;
+        __u64 result;
+        __u64 count;
+};
+
+/**
+ * struct sgx_enclave_remove_pages - %SGX_IOC_ENCLAVE_REMOVE_PAGES parameters
+ * @offset:     starting page offset (page aligned relative to enclave base
+ *              address defined in SECS)
+ * @length:     length of memory (multiple of the page size)
+ * @count:      (output) bytes successfully changed (multiple of page size)
  *
  * Regular (PT_REG) or TCS (PT_TCS) can be removed from an initialized
- * enclave if the system supports SGX2. First, the %SGX_IOC_PAGE_MODT ioctl
- * should be used to change the page type to PT_TRIM. After that succeeds
- * ENCLU[EACCEPT] should be run from within the enclave and then can this
- * ioctl be used to complete the page removal.
+ * enclave if the system supports SGX2. First, the %SGX_IOC_ENCLAVE_MODIFY_TYPE
+ * ioctl() should be used to change the page type to PT_TRIM. After that
+ * succeeds ENCLU[EACCEPT] should be run from within the enclave and then
+ * %SGX_IOC_ENCLAVE_REMOVE_PAGES can be used to complete the page removal.
  */
-struct sgx_page_remove {
-    __u64 offset;
-    __u64 length;
-    __u64 count;
+struct sgx_enclave_remove_pages {
+        __u64 offset;
+        __u64 length;
+        __u64 count;
 };
 
 
