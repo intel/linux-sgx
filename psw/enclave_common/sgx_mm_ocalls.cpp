@@ -96,7 +96,7 @@ static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
 
     ioc.secinfo = POINTER_TO_U64(&sec_info);;
     ioc.offset = get_offset_for_address(addr);
-    ioc.length = SE_PAGE_SIZE;//TODO: change back to length
+    ioc.length = length;
     do
     {
         int ret = ioctl(fd, SGX_IOC_ENCLAVE_MODIFY_TYPE, &ioc);
@@ -108,10 +108,11 @@ static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
                     errno, addr, length, type);
             return errno;
         }
-        ioc.offset += SE_PAGE_SIZE;
+        //for recoverable partial errors
+        length -= ioc.count;
+        ioc.offset += ioc.count;
         ioc.result = 0;
         ioc.count = 0;
-        length -= SE_PAGE_SIZE;
     } while (length != 0);
 
     return 0;
@@ -128,23 +129,29 @@ static int mktcs(int fd, uint64_t addr, size_t length)
 }
 static int trim_accept(int fd, uint64_t addr, size_t length)
 {
-    struct sgx_enclave_remove_pages remove_ioc;
-    memset(&remove_ioc, 0, sizeof(remove_ioc));
+    struct sgx_enclave_remove_pages ioc;
+    memset(&ioc, 0, sizeof(ioc));
 
     SE_TRACE(SE_TRACE_DEBUG,
         "REMOVE for 0x%llX ( %llX )\n",
             addr, length);
-    remove_ioc.offset = get_offset_for_address(addr);
-    remove_ioc.length = length;
+    ioc.offset = get_offset_for_address(addr);
+    ioc.length = length;
+    int ret = 0;
+    do {
+        ret = ioctl(fd, SGX_IOC_ENCLAVE_REMOVE_PAGES, &ioc);
+        if(ret && ioc.count == 0 && errno != EBUSY && errno != EAGAIN )
+        { //total failure
+            SE_TRACE(SE_TRACE_WARNING,
+                "REMOVE failed, error = %d for 0x%llX ( %llX )\n",
+                errno, addr, length);
+            return errno;
+        }
+        ioc.length -= ioc.count;
+        ioc.offset += ioc.count;
+        ioc.count = 0;
+    } while (ioc.length != 0);
 
-    int ret = ioctl(fd, SGX_IOC_ENCLAVE_REMOVE_PAGES, &remove_ioc);
-    if(ret)
-    {
-        SE_TRACE(SE_TRACE_WARNING,
-            "REMOVE failed, error = %d for 0x%llX ( %llX )\n",
-               errno, addr, length);
-        return errno;
-    }else
     return 0;
 }
 static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
