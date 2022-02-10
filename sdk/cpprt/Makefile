@@ -75,7 +75,8 @@ all: $(CPPRT)
 prepare-libunwind:
 	$(CP) linux/pthread_compat.h $(LIBUNWIND_DIR)/include
 
-$(CPPRT): $(OBJS) prepare-libunwind libunwind
+$(CPPRT): $(OBJS) prepare-libunwind
+	$(Make) libunwind
 	$(CP) $(LIBUNWIND_DIR)/src/.libs/libunwind.a $(CPPRT)
 	$(AR) rs $@ $(OBJS)
 
@@ -89,7 +90,7 @@ libunwind:
 .PHONY: clean
 clean:
 	@$(RM) $(OBJS) $(CPPRT)
-ifeq ("$(shell test -f $(LIBUNWIND_DIR)/Makefile && echo Makefile exists)", "Makefile exists")	
+ifeq ("$(shell test -f $(LIBUNWIND_DIR)/Makefile && echo Makefile exists)", "Makefile exists")
 	@-$(MAKE) -C $(LIBUNWIND_DIR) clean
 endif
 	@$(RM) -r $(LIBUNWIND_DIR)/INSTALL             \
