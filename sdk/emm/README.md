@@ -4,7 +4,9 @@ This directory contains an implementation of the Enclave Memory Manager proposed
 
 The instructions here are for developing and testing the EMM functionality only. Consult the main README for general usages.
 
-**Note:** This implementation is based on the current Linux kernel implementation posted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_submitted_v1_plus_rwx), which has not been finalized and upstreamed. As the kernel interfaces evolve, the EMM implementation and/or interface may change.
+**Note:** The kernel patch series for upstream are under review on LKML in [this thread](https://lore.kernel.org/linux-sgx/cover.1644274683.git.reinette.chatre@intel.com/). Please refer to the cover letter of the series for changes between versions.
+
+This EMM implementation is based on the testing branch for the kernel hosted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_submitted_v2_plus_rwx), which includes a temporary patch to allow RWX pages.  As the kernel interfaces evolve, the EMM implementation and/or interface may change.
 
 Prerequisites
 -------------------------------
@@ -16,7 +18,7 @@ On Ubuntu 18.04/20.04, follow the general instructions from [here](https://wiki.
 ```
 $ git clone https://github.com/rchatre/linux.git
 $ cd linux
-$ git checkout sgx/sgx2_submitted_v1_plus_rwx
+$ git checkout sgx/sgx2_submitted_v2_plus_rwx
 ```
 
 - For step 6, modify .config to set "CONFIG_X86_SGX=y".
@@ -41,7 +43,7 @@ Build and Install SDK and PSW
 ```
 $ git clone https://github.com/intel/linux-sgx.git $repo_root
 $ cd $repo_root
-$ git checkout edmm_v1
+$ git checkout edmm_v2
 ```
 Following steps assume $repo_root is the top directory of the linux-sgx repo you cloned.
 
