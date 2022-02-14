@@ -68,7 +68,7 @@ CHECK_SOURCE :=
 # For reproducibility build in docker, the code should be 
 # prepared before build. So skip the code check to avoid
 # triggering network request 
-ifneq ($(origin NIX_PATH), environment)
+ifneq ($(origin NIX_STORE), environment)
 ifneq ($(PATCH_LOG), SGX.)
 CHECK_SOURCE:= ipp_source
 endif

@@ -208,7 +208,7 @@ else ifeq ($(MITIGATION-CVE-2020-0551), CF)
     MITIGATION_LIB_PATH := cve_2020_0551_cf
 endif
 
-ifneq ($(origin NIX_PATH), environment)
+ifneq ($(origin NIX_STORE), environment)
 BINUTILS_DIR ?= /usr/local/bin
 EXT_BINUTILS_DIR = $(ROOT_DIR)/external/toolset/$(DISTR_ID)$(DISTR_VER)
 else
