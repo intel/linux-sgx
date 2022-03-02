@@ -382,7 +382,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
         return SGX_ERROR_STACK_OVERRUN;
     }
     
-    // sp is within limit_addr and commit_addr, currently only SGX 2.0 under hardware mode will enter this branch.^M
+    // sp is within limit_addr and commit_addr, currently only SGX 2.0 under hardware mode will enter this branch.
     if((size_t)sp < thread_data->stack_commit_addr)
     { 
         int ret = -1;
