@@ -50,6 +50,7 @@ static sgx_errlist_t sgx_errlist[] = {
     {SGX_ERROR_OUT_OF_EPC,               "Out of EPC memory."},
     {SGX_ERROR_NO_DEVICE,                "Invalid SGX device."},
     {SGX_ERROR_MEMORY_MAP_CONFLICT,      "Memory map conflicted."},
+    {SGX_ERROR_MEMORY_MAP_FAILURE,       "Failed to reserve memory for the enclave."},
     {SGX_ERROR_INVALID_METADATA,         "Invalid encalve metadata."},
     {SGX_ERROR_DEVICE_BUSY,              "SGX device is busy."},
     {SGX_ERROR_INVALID_VERSION,          "Enclave metadata version is invalid."},

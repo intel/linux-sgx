@@ -907,7 +907,7 @@ int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metad
 
 int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
 {
-    unsigned int ret = SGX_SUCCESS, map_conflict_count = 3;
+    unsigned int ret = SGX_SUCCESS, map_retry_count = 3;
     bool retry = true;
 
     while (retry)
@@ -919,12 +919,13 @@ int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *m
         case SGX_ERROR_ENCLAVE_LOST:     //caused by loading enclave while power transition occurs
             break;
 
-            //If memroy map conflict occurs, we only retry 3 times.
+            //If memory map fail or conflict occurs, we only retry 3 times.
+        case SGX_ERROR_MEMORY_MAP_FAILURE:
         case SGX_ERROR_MEMORY_MAP_CONFLICT:
-            if(0 == map_conflict_count)
+            if (0 == map_retry_count)
                 retry = false;
             else
-                map_conflict_count--;
+                map_retry_count--;
             break;
 
             //We don't re-load enclave due to other error code.
