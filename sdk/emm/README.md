@@ -1,12 +1,27 @@
 Introduction
 ---------------------------------
-This directory contains an implementation of the Enclave Memory Manager proposed in [this PR](https://github.com/openenclave/openenclave/pull/3991)
+This directory contains an implementation of the Enclave Memory Manager proposed in [this design doc](design_docs/SGX_EMM.md).
 
-The instructions here are for developing and testing the EMM functionality only. Consult the main README for general usages.
+Its public APIs as defined in [sgx_mm.h](include/sgx_mm.h) are intended to encapsulate low level details
+of managing the basic EDMM flows for dynamically allocating/deallocating EPC pages, changing EPC page
+permissions and page types.
 
-**Note:** The kernel patch series for upstream are under review on LKML in [this thread](https://lore.kernel.org/linux-sgx/cover.1644274683.git.reinette.chatre@intel.com/). Please refer to the cover letter of the series for changes between versions.
+The typical target users of these APIs are intermediate level components in SGX runtimes: heap, stack managers
+with dynamic expansion capabilities, mmap/mprotect/pthread API implementations for enclaves, dynamic code
+loader and JIT compilers,etc.
+ 
+This implementation aims to be reusable in any SGX runtime that provides a minimal C runtime (malloc required) and
+implements the abstraction layer APIs as defined in [sgx_mm_rt_abstraction.h](include/sgx_mm_rt_abstraction.h).
 
-This EMM implementation is based on the testing branch for the kernel hosted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_submitted_v2_plus_rwx), which includes a temporary patch to allow RWX pages.  As the kernel interfaces evolve, the EMM implementation and/or interface may change.
+The instructions here are for developing and testing the EMM functionality only.
+Consult the main README of this repo for general usages.
+
+**Note:** The kernel patch series for upstream are under review on LKML in [this thread](https://lore.kernel.org/linux-sgx/cover.1644274683.git.reinette.chatre@intel.com/).
+Please refer to the cover letter of the series for changes between versions.
+
+This EMM implementation is based on the testing branch for the kernel hosted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_submitted_v2_plus_rwx), which includes a temporary patch to allow pages EAUG'ed with RWX permissions.
+
+As the kernel interfaces evolve, this EMM implementation and/or interface may change. However, the goal is to minimize the EMM public API changes so that impact to upper layer implementations are minimized. 
 
 Prerequisites
 -------------------------------
