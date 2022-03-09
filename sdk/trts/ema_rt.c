@@ -28,7 +28,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#include "sgx_thread.h"
+#include "sethread_spinlock.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
@@ -136,7 +136,7 @@ bool sgx_mm_unregister_pfhandler(sgx_mm_pfhandler_t pfhandler)
 }
 
 typedef struct _sgx_mm_mutex {
-    sgx_thread_mutex_t m;
+    sgx_thread_spinlock_t m;
 }sgx_mm_mutex;
 
 static int sgx_mm_mutex_init(sgx_mm_mutex* mutex)
@@ -146,7 +146,7 @@ static int sgx_mm_mutex_init(sgx_mm_mutex* mutex)
     // stack expansion/heap expansion during those calls as we use
     // regular enclave stack and heap for internal processing and
     // book keeping.
-    mutex->m = (sgx_thread_mutex_t)SGX_THREAD_RECURSIVE_MUTEX_INITIALIZER;
+    mutex->m = (sgx_thread_spinlock_t)SGX_THREAD_RECURSIVE_SPINLOCK_INITIALIZER;
     return 0;
 }
 
@@ -163,27 +163,27 @@ sgx_mm_mutex *sgx_mm_mutex_create()
 int sgx_mm_mutex_lock(sgx_mm_mutex* mutex)
 {
     assert(mutex != NULL);
-    //!FIXME
     //Intel SDK does not have
     // WAKE/WAIT event ocalls as builtins.  And TCS
     // pages are addred in a  "utility" thread which
     // does not have those in ocall table for the ecall.
-    // Therefore we must not make ocalls for synchronization.
-    // OE has builtin ocalls for wait/wake so no trylock needed
-    while ( sgx_thread_mutex_trylock(&mutex->m));
+    // Additionally, stack expansion is done in 1st phase
+    // exception handler which does not support ocalls currently.
+    // Therefore we do not make ocalls for synchronization.
+    while ( sgx_thread_spin_trylock(&mutex->m));
     return 0;
 }
 
 int sgx_mm_mutex_unlock(sgx_mm_mutex* mutex)
 {
     assert(mutex != NULL);
-    return sgx_thread_mutex_unlock(&mutex->m);
+    return sgx_thread_spin_unlock(&mutex->m);
 }
 
 int sgx_mm_mutex_destroy(sgx_mm_mutex* mutex)
 {
     assert(mutex != NULL);
-    int ret = sgx_thread_mutex_destroy(&mutex->m);
+    int ret = sgx_thread_spin_destroy(&mutex->m);
     free(mutex);
     return ret;
 }
