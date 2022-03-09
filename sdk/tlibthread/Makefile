@@ -40,6 +40,7 @@ CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
             -I$(LINUX_PSW_DIR)
 
 OBJ := sethread_mutex.o \
+       sethread_spinlock.o \
        sethread_rwlock.o \
        sethread_cond.o \
        sethread_utils.o
