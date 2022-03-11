@@ -142,8 +142,8 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 
 - Copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
   ```
-    $ sudo cp external/toolset/{current_distr}/{as,ld,ld.gold,objdump} /usr/local/bin
-    $ which as ld ld.gold objdump
+    $ sudo cp external/toolset/{current_distr}/* /usr/local/bin
+    $ which ar as ld objcopy objdump ranlib
   ```
     **Note**: The above action is a must even if you copied the previous mitigation tools to /usr/local/bin before. It ensures the updated mitigation tools are used in the later build.
 
