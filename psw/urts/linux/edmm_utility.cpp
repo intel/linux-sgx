@@ -34,7 +34,6 @@
 #include "se_trace.h"
 #include "isgx_user.h"
 #include "cpuid.h"
-#include "arch.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -45,7 +44,7 @@
 #include <string.h>
 #define SGX_URTS_CMD "for f in $(find /usr/$(basename $(gcc -print-multi-os-directory)) -name 'libsgx_urts.so' 2> /dev/null); do strings $f|grep 'SGX_URTS_VERSION_2'; done"
 #define SGX_CPUID    0x12
-#include <sys/mman.h>
+
 /* is_urts_support_edmm()
  * Parameters:
  *      None.
@@ -127,20 +126,6 @@ bool get_driver_type(int *driver_type)
     else
     {
         sgx_driver_type = SGX_DRIVER_IN_KERNEL;
-
-#define ERR_LOG \
-"mmap() failed for PROT_EXEC|PROT_READ.\n" \
-" Was /dev mounted with noexec set?\n" \
-" If so, remount it with exec: sudo mount -o remount,exec /dev\n"
-
-        void* ptr = mmap(NULL, SE_PAGE_SIZE, PROT_READ|PROT_EXEC, MAP_SHARED, hdev, 0);
-        if (ptr == (void *)-1) {
-            SE_PROD_LOG(ERR_LOG);
-            close(hdev);
-            return false;
-        }
-        munmap(ptr, SE_PAGE_SIZE);
-
     }
 
     close(hdev);
