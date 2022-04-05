@@ -16,10 +16,10 @@ implements the abstraction layer APIs as defined in [sgx_mm_rt_abstraction.h](in
 The instructions here are for developing and testing the EMM functionality only.
 Consult the main README of this repo for general usages.
 
-**Note:** The kernel patch series for upstream are under review on LKML in [this thread](https://lore.kernel.org/linux-sgx/cover.1644274683.git.reinette.chatre@intel.com/).
+**Note:** The kernel patch series for upstream are under review on LKML in [this thread](https://lore.kernel.org/linux-sgx/cover.1648847675.git.reinette.chatre@intel.com/).
 Please refer to the cover letter of the series for changes between versions.
 
-This EMM implementation is based on the testing branch for the kernel hosted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_submitted_v2_plus_rwx), which includes a temporary patch to allow pages EAUG'ed with RWX permissions.
+This EMM implementation is based on the testing branch for the kernel hosted [here](https://github.com/rchatre/linux/tree/sgx/sgx2_submitted_v3_plus_rwx), which includes a temporary patch to allow pages EAUG'ed with RWX permissions.
 
 As the kernel interfaces evolve, this EMM implementation and/or interface may change. However, the goal is to minimize the EMM public API changes so that impact to upper layer implementations are minimized. 
 
@@ -33,10 +33,19 @@ On Ubuntu 18.04/20.04, follow the general instructions from [here](https://wiki.
 ```
 $ git clone https://github.com/rchatre/linux.git
 $ cd linux
-$ git checkout sgx/sgx2_submitted_v2_plus_rwx
+$ git checkout sgx/sgx2_submitted_v3_plus_rwx
 ```
 
 - For step 6, modify .config to set "CONFIG_X86_SGX=y".
+
+**Note:** on Ubuntu 20.04,  ensure that /dev does not have noexec set:
+```
+mount | grep "/dev .*noexec"
+```
+If so, remount it executable:
+```
+sudo mount -o remount,exec /dev
+```
 
 #### Verify kernel build and EDMM support
 At the root of the kernel source repo,
@@ -58,7 +67,7 @@ Build and Install SDK and PSW
 ```
 $ git clone https://github.com/intel/linux-sgx.git $repo_root
 $ cd $repo_root
-$ git checkout edmm_v2
+$ git checkout edmm_v3
 ```
 Following steps assume $repo_root is the top directory of the linux-sgx repo you cloned.
 
