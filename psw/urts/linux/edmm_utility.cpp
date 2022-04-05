@@ -239,7 +239,7 @@ extern "C" bool is_driver_support_edmm(int hdevice)
     if (-1 == hdevice){
         if(!open_se_device(SGX_DRIVER_IN_KERNEL, &hdevice))
             return false;
-        struct sgx_enclave_restrict_perm  ioc;
+        struct sgx_enclave_restrict_permissions  ioc;
         memset(&ioc, 0, sizeof(ioc));
 
         int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS, &ioc);
