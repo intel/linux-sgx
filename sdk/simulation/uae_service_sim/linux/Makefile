@@ -49,8 +49,10 @@ INCLUDES := -I..                                            \
             -I$(LINUX_PSW_DIR)/ae/inc/internal              \
             -I$(LINUX_PSW_DIR)/ae/common 
 
-CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g
-CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES)
+
+CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g  -DOPENSSL_API_COMPAT=10101 $(CET_FLAGS)
+CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES) -DOPENSSL_API_COMPAT=10101 $(CET_FLAGS)
+
 
 RDRAND_LIBDIR := $(LINUX_EXTERNAL_DIR)/rdrand/src
 RDRAND_MAKEFILE := $(RDRAND_LIBDIR)/Makefile
@@ -115,10 +117,10 @@ else
 endif
 
 libsgx_%_deploy.so: ../libsgx_%_deploy.c
-	$(CC) -I$(COMMON_DIR)/inc -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so.$(call SPLIT_VERSION,$($(shell echo $(@:libsgx_%_deploy.so=%_version)|tr a-z A-Z)),1)) $< -o $@
+	$(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so.$(call SPLIT_VERSION,$($(shell echo $(@:libsgx_%_deploy.so=%_version)|tr a-z A-Z)),1)) $< -o $@
 
 libsgx_uae_service_deploy.so: $(wildcard ../*_deploy.c)
-	$(CC) -I$(COMMON_DIR)/inc -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so) $^ -o $@
+	$(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so) $^ -o $@
 
 $(BUILD_DIR):
 	@$(MKDIR) $@

@@ -380,7 +380,7 @@ else()
 
   foreach(_cxxflag  -Werror -Wall -Wextra -Wpointer-arith -Winvalid-pch -Wcast-align
                     -Wwrite-strings -Woverloaded-virtual -Wnon-virtual-dtor -Wold-style-cast
-                    -Wstrict-null-sentinel -Wsign-promo -fdiagnostics-show-option -Wno-deprecated-copy)
+                    -Wstrict-null-sentinel -Wsign-promo -fdiagnostics-show-option -Wno-deprecated-copy -Wno-deprecated-declarations)
     usFunctionCheckCompilerFlags(${_cxxflag} US_CXX_FLAGS)
   endforeach()
 

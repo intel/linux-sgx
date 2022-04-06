@@ -91,7 +91,11 @@ psw_install_pkg: psw
 ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so)", "")
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
 endif
+ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_id_enclave.signed.so)", "")
+	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+endif
 	$(CP) external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qe3.signed.so $(BUILD_DIR)
+	$(CP) external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_id_enclave.signed.so $(BUILD_DIR)
 	./linux/installer/bin/build-installpkg.sh psw
 
 .PHONY: deb_libsgx_ae_qe3
@@ -101,6 +105,13 @@ ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/li
 endif
 	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_ae_qe3_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-qe3/libsgx-ae-qe3*.deb ./linux/installer/deb/sgx-aesm-service/
+.PHONY: deb_libsgx_ae_id_enclave
+deb_libsgx_ae_id_enclave:
+ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_id_enclave.signed.so)", "")
+	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+endif
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_ae_id_enclave_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-id-enclave/libsgx-ae-id-enclave*.deb ./linux/installer/deb/sgx-aesm-service/
 .PHONY: deb_libsgx_qe3_logic
 deb_libsgx_qe3_logic: psw
 	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_qe3_logic_pkg
@@ -139,12 +150,12 @@ deb_libsgx_urts: psw
 	./linux/installer/deb/libsgx-urts/build.sh
 
 .PHONY: deb_libsgx_headers_pkg
-deb_libsgx_headers_pkg: 
+deb_libsgx_headers_pkg:
 	./linux/installer/deb/libsgx-headers/build.sh
 
 ifeq ($(CC_BELOW_5_2), 1)
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3
+deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_ae_id_enclave
 else
 .PHONY: deb_libsgx_dcap_default_qpl
 deb_libsgx_dcap_default_qpl:
@@ -188,7 +199,7 @@ deb_sgx_ra_service_pkg:
 
 
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs deb_libsgx_dcap_ql deb_libsgx_ae_qve deb_sgx_dcap_quote_verify deb_sgx_pck_id_retrieval_tool_pkg deb_sgx_ra_service_pkg
+deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_ae_id_enclave deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs deb_libsgx_dcap_ql deb_libsgx_ae_qve deb_sgx_dcap_quote_verify deb_sgx_pck_id_retrieval_tool_pkg deb_sgx_ra_service_pkg
 endif
 
 .PHONY: deb_local_repo
@@ -202,6 +213,13 @@ ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/li
 endif
 	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_ae_qe3_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qe3/libsgx-ae-qe3*.rpm ./linux/installer/rpm/sgx-aesm-service/
+.PHONY: rpm_libsgx_ae_id_enclave
+rpm_libsgx_ae_id_enclave:
+ifeq ("$(wildcard ./external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_id_enclave.signed.so)", "")
+	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+endif
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_ae_id_enclave_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-id-enclave/libsgx-ae-id-enclave*.rpm ./linux/installer/rpm/sgx-aesm-service/
 .PHONY: rpm_libsgx_pce_logic
 rpm_libsgx_pce_logic: psw
 	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_pce_logic_pkg
@@ -244,12 +262,12 @@ rpm_sdk_pkg: sdk
 	./linux/installer/rpm/sdk/build.sh
 
 .PHONY: rpm_libsgx_headers_pkg
-rpm_libsgx_headers_pkg: 
+rpm_libsgx_headers_pkg:
 	./linux/installer/rpm/libsgx-headers/build.sh
 
 ifeq ($(CC_BELOW_5_2), 1)
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3
+rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_ae_id_enclave
 else
 .PHONY: rpm_libsgx_dcap_default_qpl
 rpm_libsgx_dcap_default_qpl:
@@ -291,7 +309,7 @@ rpm_sgx_ra_service_pkg:
 	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/libsgx-ra-*rpm ./linux/installer/rpm/sgx-aesm-service/
 
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_dcap_default_qpl rpm_libsgx_dcap_pccs rpm_libsgx_dcap_ql rpm_libsgx_ae_qve rpm_sgx_dcap_quote_verify rpm_sgx_pck_id_retrieval_tool_pkg rpm_sgx_ra_service_pkg
+rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_ae_id_enclave rpm_libsgx_dcap_default_qpl rpm_libsgx_dcap_pccs rpm_libsgx_dcap_ql rpm_libsgx_ae_qve rpm_sgx_dcap_quote_verify rpm_sgx_pck_id_retrieval_tool_pkg rpm_sgx_ra_service_pkg
 endif
 
 .PHONY: rpm_local_repo
@@ -335,6 +353,7 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	@$(MAKE) -C external/dcap_source/QuoteGeneration    clean
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-qve/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-qe3/clean.sh
+	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-ae-id-enclave/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-default-qpl/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-ql/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-pce-logic/clean.sh
@@ -343,6 +362,7 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/sgx-dcap-pccs/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qve/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qe3/clean.sh
+	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-id-enclave/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-default-qpl/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-ql/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-pce-logic/clean.sh

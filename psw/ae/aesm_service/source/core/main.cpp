@@ -89,10 +89,20 @@ int main(int argc, char *argv[]) {
 
     AESM_LOG_INIT_EX(noSyslog);
 
-    if(!noDaemon && daemon(0, 0) < 0) {
-        AESM_LOG_FATAL("Fail to set daemon.");
-        AESM_LOG_FINI();
-        exit(1);
+    if(!noDaemon) {
+        fprintf (stderr, "aesm_service: warning: Turn to daemon. Use \"--no-daemon\" option to execute in foreground.\n");
+        if(argv[0][0] != '/') {
+            AESM_LOG_FATAL("Require absolute path to set daemon.");
+            fprintf (stderr, "aesm_service: error: Require absolute path to set daemon.\n");
+            AESM_LOG_FINI();
+            exit(1);
+        }
+        if(daemon(0, 0) < 0) {
+            AESM_LOG_FATAL("Fail to set daemon.");
+            fprintf (stderr, "aesm_service: error: Fail to set daemon.\n");
+            AESM_LOG_FINI();
+            exit(1);
+        }
     }
     signal(SIGCHLD, SIG_IGN);
     signal(SIGHUP, signal_handler);
@@ -105,6 +115,9 @@ int main(int argc, char *argv[]) {
             AESMLogicWrapper* aesmLogic = new AESMLogicWrapper();
             if(aesmLogic->service_start()!=AE_SUCCESS){
                 AESM_LOG_ERROR("Fail to start service.");
+                if(noDaemon) {
+                    fprintf (stderr, "aesm_service: error: Fail to start service.\n");
+                }
                 delete aesmLogic;
                 AESM_LOG_FINI();
                 exit(1);

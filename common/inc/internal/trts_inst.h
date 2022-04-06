@@ -35,7 +35,7 @@
 #include "sgx.h"
 #include "arch.h"
 
-/* Attention: 
+/* Attention:
   * if the following alignment requirement changes, go to selib to
   * review the memory allocation of sgx_create_report and sgx_get_key.
   */
@@ -43,6 +43,7 @@
 #define REPORT_DATA_ALIGN_SIZE  128
 #define REPORT_ALIGN_SIZE       512
 #define KEY_REQUEST_ALIGN_SIZE  512
+#define REPORT2_MAC_STRUCT_ALIGN_SIZE    256
 #define KEY_ALIGN_SIZE          16
 
 #define BIT_ERROR(x)            (1 << (x))
@@ -56,6 +57,14 @@ typedef enum _egetkey_status_t
     EGETKEY_INVALID_KEYNAME   = BIT_ERROR(8),
 }  egetkey_status_t;
 
+typedef enum _everifyreport2_status_t
+{
+    EVERIFYREPORT2_SUCCESS                  = 0,
+    EVERIFYREPORT2_INVALID_LEAF             = 1,
+    EVERIFYREPORT2_INVALID_REPORTMACSTRUCT  = BIT_ERROR(4)|BIT_ERROR(3)|BIT_ERROR(2),
+    EVERIFYREPORT2_INVALID_CPUSVN           = BIT_ERROR(5),
+}  everifyreport2_status_t;
+
 struct ms_tcs
 {
     void * ptcs;
@@ -67,6 +76,7 @@ extern "C" {
 
 int sgx_accept_forward(si_flags_t sfl, size_t lo, size_t hi);
 int do_ereport(const sgx_target_info_t *target_info, const sgx_report_data_t *report_data, sgx_report_t *report);
+int do_everifyreport2(const sgx_report2_mac_struct_t *report2_mac_struct);
 int do_egetkey(const sgx_key_request_t *key_request, sgx_key_128bit_t *key);
 uint32_t do_rdrand(uint32_t *rand);
 int do_eaccept(const sec_info_t *, size_t);

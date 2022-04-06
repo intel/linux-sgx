@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_qve.signed.so	<installdir>/lib/libsgx_qve.signed.so	0	main	STP

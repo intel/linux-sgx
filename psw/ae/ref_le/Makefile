@@ -66,7 +66,7 @@ REF_WL_GEN:
 	$(MAKE) -C $(REF_WL_GEN_DIR)
 
 $(SONAME): $(AENAME)_t.o $(OBJ)
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJ) $(AENAME)_t.o -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJ) $(AENAME)_t.o -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=${SIGNED_NAME}.$(call SPLIT_VERSION,$(LE_VER),1) $(LDTFLAGS)
 
 $(OBJ): %.o:%.cpp
 	$(CXX) $(CXXFLAGS) -fno-exceptions -fno-rtti $(INCLUDE) $(DEFINES) -c $< -o $@

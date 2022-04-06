@@ -294,6 +294,7 @@ static int expand_stack_by_pages(void *start_addr, size_t page_count)
 }
 
 extern "C" const char Lereport_inst;
+extern "C" const char Leverifyreport2_inst;
 
 // trts_handle_exception(void *tcs)
 //      the entry point for the exceptoin handling
@@ -410,6 +411,14 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
         // Handle the exception raised by EREPORT instruction
         ssa_gpr->REG(ip) += 3;     // Skip ENCLU, which is always a 3-byte instruction
         ssa_gpr->REG(flags) |= 1;  // Set CF to indicate error condition, see implementation of do_report()
+        return SGX_SUCCESS;
+    }
+    if (size_t(&Leverifyreport2_inst) == ssa_gpr->REG(ip) && SE_EVERIFYREPORT2 == ssa_gpr->REG(ax))
+    {
+        // Handle the exception raised by everifyreport2 instruction
+        ssa_gpr->REG(ip) += 3;     // Skip ENCLU, which is always a 3-byte instruction
+        ssa_gpr->REG(flags) |= 64;  // Set ZF to indicate error condition, see implementation of do_everifyreport2()
+        ssa_gpr->REG(ax) = EVERIFYREPORT2_INVALID_LEAF;
         return SGX_SUCCESS;
     }
 

@@ -37,6 +37,7 @@
 #endif
 #include <link.h>
 
+extern void *get_enclave_base(void);
 /**
  * This function is commonly provided by glibc for application to walk
  * through list of shared objects.  It is needed inside Enclave so that
@@ -51,7 +52,7 @@ int dl_iterate_phdr(
     ElfW(Ehdr)         *ehdr;
 
     memset(&info, 0, sizeof(info));
-    ehdr = (ElfW(Ehdr) *) &__ImageBase;
+    ehdr = (ElfW(Ehdr) *) get_enclave_base();
 
     info.dlpi_addr   = (ElfW(Addr)) ehdr;
     info.dlpi_name  = "";

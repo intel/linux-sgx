@@ -40,7 +40,7 @@ fi
 
 # Create user and group if not exist
 id -u aesmd &> /dev/null || \
-    /usr/sbin/useradd -r -U -c "User for aesmd" \
+    useradd -r -U -c "User for aesmd" \
     -d /var/opt/aesmd -s /sbin/nologin aesmd
 
 # Start the AESMD service
@@ -48,8 +48,8 @@ if [ -d /run/systemd/system ]; then
     systemctl enable aesmd
     systemctl start aesmd
 elif [ -d /etc/init/ ]; then
-    /sbin/initctl reload-configuration
-    /sbin/initctl start aesmd
+    initctl reload-configuration
+    initctl start aesmd
 fi
 
 exit 0

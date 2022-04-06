@@ -381,8 +381,11 @@ bool Reader::readValue() {
     break;
   case tokenNull:
     {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     Value v;
     currentValue().swapPayload(v);
+#pragma GCC diagnostic pop
     }
     break;
   // Else, fall through...
@@ -1224,8 +1227,11 @@ bool OurReader::readValue() {
     break;
   case tokenNull:
     {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
     Value v;
     currentValue().swapPayload(v);
+#pragma GCC diagnostic pop
     }
     break;
   case tokenNaN:
@@ -1253,8 +1259,11 @@ bool OurReader::readValue() {
       // "Un-read" the current token and mark the current value as a null
       // token.
       current_--;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
       Value v;
       currentValue().swapPayload(v);
+#pragma GCC diagnostic pop
       break;
     } // else, fall through ...
   default:

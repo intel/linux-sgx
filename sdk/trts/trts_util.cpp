@@ -35,6 +35,8 @@
 #include "util.h"
 #include "thread_data.h"
 #include "trts_internal.h"
+#include "sgx_attributes.h"
+#include "xsave.h"
 
 // No need to check the state of enclave or thread.
 // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
@@ -50,7 +52,7 @@ size_t get_enclave_end(void)
 
 void * get_heap_base(void)
 {
-    return GET_PTR(void, &__ImageBase, g_global_data.heap_offset);
+    return GET_PTR(void, get_enclave_base(), g_global_data.heap_offset);
 }
 
 size_t get_heap_size(void)
@@ -85,7 +87,7 @@ size_t get_heap_min_size(void)
 
 void * get_rsrv_base(void)
 {
-    return GET_PTR(void, &__ImageBase, g_global_data.rsrv_offset);
+    return GET_PTR(void, get_enclave_base(), g_global_data.rsrv_offset);
 }
 
 size_t get_rsrv_end(void)
@@ -191,7 +193,15 @@ bool is_utility_thread()
     return false;
 }
 
-extern "C" size_t get_max_tcs_num()
+size_t get_max_tcs_num()
 {
     return (size_t)g_global_data.tcs_max_num;
+}
+
+bool is_pkru_enabled()
+{
+    uint64_t xfrm = get_xfeature_state();
+    if((xfrm & SGX_XFRM_PKRU) == SGX_XFRM_PKRU)
+        return true;
+    return false;
 }

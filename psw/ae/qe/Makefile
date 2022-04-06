@@ -36,6 +36,8 @@ include ../buildenv.mk
 CXXFLAGS  += -Werror
 CFLAGS	+= -Werror
 
+QE_VER:= $(shell awk '$$2 ~ /QE_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+
 EXTERNAL_LIB += -L$(EPID_SDK_DIR)/epid/member -lmember \
 				-L$(EPID_SDK_DIR)/epid/common -lcommon
 
@@ -66,7 +68,7 @@ EPID:
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
-	$(CC) $(CFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles $(LDTFLAGS)
+	$(CC) $(CFLAGS) -o $@ $(OBJS) -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call SPLIT_VERSION,$(QE_VER),1) $(LDTFLAGS)
 	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 $(OBJ): $(AENAME)_t.c

@@ -52,6 +52,13 @@ $(error "Unsupported platform - neither systemctl nor initctl is found!")
 endif
 endif
 
+QE_VER=1.0.0
+PVE_VER=1.0.0
+LE_VER=1.0.0
+PCE_VER=1.0.0
+QE3_VER=1.0.0
+SPLIT_VERSION=$(word $2,$(subst ., ,$1))
+
 default:
 
 install: $(PACKAGES)
@@ -71,10 +78,27 @@ install: $(PACKAGES)
 			cp -fr $(DESTDIR)/$(AESM_SERVICE_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm/conf/* \
 				$(DESTDIR)/$(AESM_SERVICE_PACKAGE_NAME)/$(ETC_DIR) && \
 			rm -fr $(DESTDIR)/$(AESM_SERVICE_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm/conf))
+	cd $(shell readlink -m $(DESTDIR)/$(AE_EPID_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm) && \
+	mv libsgx_qe.signed.so libsgx_qe.signed.so.$(QE_VER) && \
+	ln -fs libsgx_qe.signed.so.$(QE_VER) libsgx_qe.signed.so.$(call SPLIT_VERSION,$(QE_VER),1) && \
+	ln -fs libsgx_qe.signed.so.$(call SPLIT_VERSION,$(QE_VER),1) libsgx_qe.signed.so &&\
+	mv libsgx_pve.signed.so libsgx_pve.signed.so.$(PVE_VER) && \
+	ln -fs libsgx_pve.signed.so.$(PVE_VER) libsgx_pve.signed.so.$(call SPLIT_VERSION,$(PVE_VER),1) && \
+	ln -fs libsgx_pve.signed.so.$(call SPLIT_VERSION,$(PVE_VER),1) libsgx_pve.signed.so
+	cd $(shell readlink -m $(DESTDIR)/$(AE_PCE_PACKAGE_NAME)/$(USR_LIB_PATH)) && \
+	mv libsgx_pce.signed.so libsgx_pce.signed.so.$(PCE_VER) && \
+	ln -fs libsgx_pce.signed.so.$(PCE_VER) libsgx_pce.signed.so.$(call SPLIT_VERSION,$(PCE_VER),1) && \
+	ln -fs libsgx_pce.signed.so.$(call SPLIT_VERSION,$(PCE_VER),1) libsgx_pce.signed.so
+	cd $(shell readlink -m $(DESTDIR)/$(AE_LE_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm) && \
+	mv libsgx_le.signed.so libsgx_le.signed.so.$(LE_VER) && \
+	ln -fs libsgx_le.signed.so.$(LE_VER) libsgx_le.signed.so.$(call SPLIT_VERSION,$(LE_VER),1) && \
+	ln -fs libsgx_le.signed.so.$(call SPLIT_VERSION,$(LE_VER),1) libsgx_le.signed.so
 	cd $(shell readlink -m $(DESTDIR)/$(AESM_ECDSA_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm) && \
-	ln -fs $(shell readlink -m $(USR_LIB_PATH)/libsgx_qe3.signed.so) && \
+	ln -fs $(USR_LIB_PATH)/libsgx_qe3.signed.so.$(call SPLIT_VERSION,$(QE3_VER),1) && \
+	ln -fs $(USR_LIB_PATH)/libsgx_qe3.signed.so && \
 	cd $(shell readlink -m $(DESTDIR)/$(AESM_PCE_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm) && \
-	ln -fs $(shell readlink -m $(USR_LIB_PATH)/libsgx_pce.signed.so) && \
+	ln -fs $(USR_LIB_PATH)/libsgx_pce.signed.so.$(call SPLIT_VERSION,$(PCE_VER),1) && \
+	ln -fs $(USR_LIB_PATH)/libsgx_pce.signed.so && \
 	ln -fs liburts_internal.so libsgx_urts.so
 	
 $(PACKAGES):

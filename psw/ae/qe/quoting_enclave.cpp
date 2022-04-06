@@ -292,13 +292,15 @@ uint32_t verify_blob(
         return QE_PARAMETER_ERROR;
 
     if(SGX_TRUSTED_EPID_BLOB_SIZE_SDK != blob_size)
+    {
         return QE_PARAMETER_ERROR;
+    }
 
-	//
-	// if we mispredict here and blob_size is too
-	// small, we might overflow
-	//
-	sgx_lfence();
+    //
+    // if we mispredict here and blob_size is too
+    // small, we might overflow
+    //
+    sgx_lfence();
 
     if(!sgx_is_within_enclave(p_blob, blob_size))
         return QE_PARAMETER_ERROR;

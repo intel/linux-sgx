@@ -32,6 +32,7 @@
 
 #include "se_detect.h"
 #include "cpuid.h"
+#include "sgx_attributes.h"
 
 bool is_se_supported()
 {
@@ -70,6 +71,29 @@ bool try_read_xcr0(uint64_t *value)
     return true;
 }
 
+bool check_pkru()
+{
+    int cpu_info[4] = {0, 0, 0, 0};
+
+    // Check if CR4.PKE is set. If yes, protection keys for usermode pages are enabled
+    // and OS supports the use of PKRU register.
+    __cpuidex(cpu_info, CPUID_FEATURE_FLAGS, 0);
+    if(!(cpu_info[2] & (1 << PKU_SHIFT)) || !(cpu_info[2] & (1 << PKE_SHIFT)))
+    {
+        return false;
+    }
+
+    // Check if SECS.ATTRIBUTES.XFRM.PKRU can be set
+    cpu_info[0] = cpu_info[1] = cpu_info[2] = cpu_info[3] = 0;
+    __cpuidex(cpu_info, SE_LEAF, 1);
+    
+    if(!(cpu_info[2] & (1 << PKRU_SHIFT)))
+    {
+        return false;
+    }
+    return true;
+}
+
 bool get_plat_cap_by_cpuid(sgx_misc_attribute_t *se_misc_attr)
 {
     int cpu_info[4] = {0, 0, 0, 0};
@@ -90,6 +114,11 @@ bool get_plat_cap_by_cpuid(sgx_misc_attribute_t *se_misc_attr)
     else
     {
         se_misc_attr->secs_attr.xfrm &= (((uint64_t)cpu_info[3] << 32) | cpu_info[2]);
+    }
+    
+    if(check_pkru() == false)
+    {
+        se_misc_attr->secs_attr.xfrm &= ~(SGX_XFRM_PKRU);
     }
     // use cpuid to get the misc_select
     __cpuidex(cpu_info, SE_LEAF, 0);

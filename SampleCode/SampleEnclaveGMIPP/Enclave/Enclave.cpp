@@ -34,12 +34,16 @@
 #include <stdarg.h>
 #include <stdio.h> /* vsnprintf */
 #include <string.h>
+#include "sgx_trts.h"
 
 #include <ippcp.h> /* ipp library */
 
 #ifndef SAFE_FREE
 #define SAFE_FREE(ptr, size) do {if (NULL != (ptr)) {memset_s(ptr, size, 0, size); free(ptr); (ptr)=NULL;}} while(0);
 #endif
+
+const unsigned int order[] = {0x39D54123, 0x53BBF409, 0x21C6052B, 0x7203DF6B, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE};
+const int ordSize = sizeof(order) / sizeof(unsigned int);
 
 /* 
  * printf: 
@@ -157,54 +161,531 @@ static IppsBigNumState* new_BN(int len, const unsigned int* pData)
 	return pBN;
 }
 
+/* Convert bit size into 32-bit word size */
+static int Bitsize2Wordsize(int nBits)
+{
+	return (nBits+31)>>5;
+}
+
+/* Set up an array of 32-bit items with random number */
+static int rand(void)
+{
+	int num = 0;
+	sgx_read_rand((unsigned char*)&num, sizeof(int));
+	return num;
+}
+static unsigned int* rand32(unsigned int* pX, int size)
+{
+	for(int n = 0; n < size; n++)
+		pX[n] = rand();
+	return pX;
+}
+
 /* Define Pseudo-random generation context */
 static IppsPRNGState* new_PRNG(void)
 {
-	int ctxSize = 0;
+	int size = 0;
 	IppsPRNGState* pPRNG = NULL;
-	IppStatus status = ippStsNoErr;
+	IppsBigNumState* pBN = NULL;
+	IppStatus ipp_ret = ippStsNoErr;
+	int seedBitsize = 160;
+	int seedSize = Bitsize2Wordsize(seedBitsize);
+	unsigned int* seed = NULL;
+	unsigned int* augm = NULL;
 
-	status = ippsPRNGGetSize(&ctxSize);
-	if (status != ippStsNoErr) {
+	ipp_ret = ippsPRNGGetSize(&size);
+	if (ipp_ret != ippStsNoErr) {
 		printf("Error: fail to get size of PRNG\n");
 		return NULL;
 	}
 
-	pPRNG = (IppsPRNGState*)(malloc(ctxSize));
+	pPRNG = (IppsPRNGState*)malloc(size);
 	if (pPRNG == NULL) {
 		printf("Error: fail to allocate memory for PRNG\n");
 		return NULL;
 	}
 
-	status = ippsPRNGInit(256, pPRNG);
-	if (status != ippStsNoErr) {
+	ipp_ret = ippsPRNGInit(seedBitsize, pPRNG);
+	if (ipp_ret != ippStsNoErr) {
 		printf("Error: fail to initialize PRNG\n");
-		SAFE_FREE(pPRNG, ctxSize);
+		SAFE_FREE(pPRNG, size);
+		return NULL;
+	}
+
+	seed = (unsigned int*)malloc(seedSize);
+	augm = (unsigned int*)malloc(seedSize);
+	ipp_ret = ippsPRNGSetSeed(pBN=new_BN(seedSize, rand32(seed, seedSize)), pPRNG);
+	if (ipp_ret != ippStsNoErr) {
+		printf("Error: fail to set the seed value of PRNG\n");
+		SAFE_FREE(pPRNG, size);
+		SAFE_FREE(pBN, sizeof(pBN));
+		SAFE_FREE(pBN, sizeof(augm));
+		SAFE_FREE(pBN, sizeof(seed));
+		return NULL;
+	}
+	SAFE_FREE(pBN, sizeof(pBN));
+	ipp_ret = ippsPRNGSetAugment(pBN=new_BN(seedSize, rand32(augm, seedSize)), pPRNG);
+	if (ipp_ret != ippStsNoErr) {
+		printf("Error: fail to set the entropy augmentation of PRNG\n");
+		SAFE_FREE(pPRNG, size);
+		SAFE_FREE(pBN, sizeof(pBN));
+		SAFE_FREE(pBN, sizeof(augm));
+		SAFE_FREE(pBN, sizeof(seed));
 		return NULL;
 	}
 
 	return pPRNG;
 }
 
+/* Calculate ZA = H256(ENTLA || IDA || a || b || xG || yG || xA || yA) */
+static int hash_digest_z(const IppsHashMethod *hash_method, const char *id, const int id_len, const IppsBigNumState *pubX, const IppsBigNumState *pubY, unsigned char *z_digest)
+{
+	int ctx_size = 0;
+	IppsHashState_rmf* hash_handle = NULL;
+	IppStatus ipp_ret = ippStsNoErr;
+	int ret = 0;
+
+	int id_bit_len = id_len * 8;
+	unsigned char entl[2] = {0};
+	entl[0] = (id_bit_len & 0xff00) >> 8;
+	entl[1] = id_bit_len & 0xff;
+	unsigned char a[32] = {
+		0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00,
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfc};
+	unsigned char b[32] = {
+		0x28, 0xe9, 0xfa, 0x9e, 0x9d, 0x9f, 0x5e, 0x34,
+		0x4d, 0x5a, 0x9e, 0x4b, 0xcf, 0x65, 0x09, 0xa7,
+		0xf3, 0x97, 0x89, 0xf5, 0x15, 0xab, 0x8f, 0x92,
+		0xdd, 0xbc, 0xbd, 0x41, 0x4d, 0x94, 0x0e, 0x93};
+	unsigned char xG[32] = {
+		0x32, 0xc4, 0xae, 0x2c, 0x1f, 0x19, 0x81, 0x19,
+		0x5f, 0x99, 0x04, 0x46, 0x6a, 0x39, 0xc9, 0x94,
+		0x8f, 0xe3, 0x0b, 0xbf, 0xf2, 0x66, 0x0b, 0xe1,
+		0x71, 0x5a, 0x45, 0x89, 0x33, 0x4c, 0x74, 0xc7};
+	unsigned char yG[32] = {
+		0xbc, 0x37, 0x36, 0xa2, 0xf4, 0xf6, 0x77, 0x9c,
+		0x59, 0xbd, 0xce, 0xe3, 0x6b, 0x69, 0x21, 0x53,
+		0xd0, 0xa9, 0x87, 0x7c, 0xc6, 0x2a, 0x47, 0x40,
+		0x02, 0xdf, 0x32, 0xe5, 0x21, 0x39, 0xf0, 0xa0};
+	unsigned char xA[32] = {0};
+	unsigned char yA[32] = {0};
+
+	do {
+		ipp_ret = ippsGetOctString_BN(xA, 32, pubX);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to Convert BN value pubX into octet string xA\n");
+			ret = -1;
+			break;
+		}
+		ipp_ret = ippsGetOctString_BN(yA, 32, pubY);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to Convert BN value pubY into octet string yA\n");
+			ret = -2;
+			break;
+		}
+
+		ipp_ret = ippsHashGetSize_rmf(&ctx_size);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to get size of ippsHashGetSize_rmf\n");
+			ret = -3;
+			break;
+		}
+
+		hash_handle = (IppsHashState_rmf*)(malloc(ctx_size));
+		if (!hash_handle)
+		{
+			printf("Error: fail to allocate memory for ippsHashGetSize_rmf\n");
+			ret = -4;
+			break;
+		}
+
+		// Set Hash 256 handler:
+		// SM3 - ippsHashMethod_SM3()
+		// SHA256 - ippsHashMethod_SHA256_TT()
+		ipp_ret = ippsHashInit_rmf(hash_handle, hash_method);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to set hash 256 handler\n");
+			ret = -5;
+			break;
+		}
+
+		// ZA = H256(ENTLA || IDA || a || b || xG || yG || xA || yA)
+		ipp_ret = ippsHashUpdate_rmf(entl, sizeof(entl), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of ENTLA\n");
+			ret = -6;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf((unsigned char*)id, id_len, hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of IDA\n");
+			ret = -7;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf(a, sizeof(a), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of a\n");
+			ret = -8;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf(b, sizeof(b), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of b\n");
+			ret = -9;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf(xG, sizeof(xG), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of xG\n");
+			ret = -10;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf(yG, sizeof(yG), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of yG\n");
+			ret = -11;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf(xA, sizeof(xA), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of xA\n");
+			ret = -12;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf(yA, sizeof(yA), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of yA\n");
+			ret = -13;
+			break;
+		}
+		ipp_ret = ippsHashFinal_rmf(z_digest, hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to complete message digesting and return digest\n");
+			ret = -14;
+			break;
+		}
+	} while(0);
+
+	SAFE_FREE(hash_handle, sizeof(hash_handle));
+
+	return ret;
+}
+
+/* Calculate ZA = H256(Z||M) */
+static int hash_digest_with_preprocess(const IppsHashMethod *hash_method, const char *msg, const int msg_len, const char *id, const int id_len, const IppsBigNumState* pubX, const IppsBigNumState* pubY, unsigned char *digest)
+{
+	int ctx_size = 0;
+	IppsHashState_rmf* hash_handle = NULL;
+	IppStatus ipp_ret = ippStsNoErr;
+	int ret = 0;
+	unsigned char z_digest[32] = {0};
+
+	do {
+		ret = hash_digest_z(hash_method, id, id_len, pubX, pubY, z_digest);
+		if (ret != 0)
+		{
+			printf("Error: fail to complete SM3 digest of leading data Z\n");
+			return -1;
+			break;
+		}
+
+		ipp_ret = ippsHashGetSize_rmf(&ctx_size);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to get size of IppsHashState_rmf\n");
+			ret = -2;
+			break;
+		}
+
+		hash_handle = (IppsHashState_rmf*)(malloc(ctx_size));
+		if (!hash_handle)
+		{
+			printf("Error: fail to allocate memory for IppsHashState_rmf\n");
+			ret = -3;
+			break;
+		}
+
+		// Set Hash 256 handler:
+		// SM3 - ippsHashMethod_SM3()
+		// SHA256 - ippsHashMethod_SHA256_TT()
+		ipp_ret = ippsHashInit_rmf(hash_handle, hash_method);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to initialize IppsHashState_rmf\n");
+			ret = -4;
+			break;
+		}
+
+		// ZA = H256(Z||M)
+		ipp_ret = ippsHashUpdate_rmf(z_digest, sizeof(z_digest), hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of Z\n");
+			ret = -5;
+			break;
+		}
+		ipp_ret = ippsHashUpdate_rmf((unsigned char *)msg, msg_len, hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to update hash value of M\n");
+			ret = -6;
+			break;
+		}
+		ipp_ret = ippsHashFinal_rmf(digest, hash_handle);
+		if (ipp_ret != ippStsNoErr)
+		{
+			printf("Error: fail to complete message digesting and return digest\n");
+			ret = -7;
+			break;
+		}
+	} while(0);
+
+	SAFE_FREE(hash_handle, sizeof(hash_handle));
+
+	return ret;
+}
+
+/* SM2 sign */
+static int sm2_do_sign(const IppsBigNumState *regPrivateKey, const IppsHashMethod *hash_method, const char *id, const int id_len, const char *msg, const int msg_len, IppsBigNumState* signX, IppsBigNumState* signY)
+{
+	IppsECCPState *pECCPS = NULL;
+	IppsPRNGState *pPRNGS = NULL;
+	IppsBigNumState *ephPrivateKey = NULL;
+	IppsECCPPointState *regPublicKey = NULL, *ephPublicKey = NULL;
+	IppsBigNumState *pMsg = NULL;
+	IppsBigNumState *pX = NULL, *pY = NULL;
+	IppStatus ipp_ret = ippStsNoErr;
+	int ret = 0;
+	unsigned char hash[32] = {0};
+
+	do {
+		// 1. Create ECC context for SM2
+		pECCPS = new_ECC_sm2();
+		if (pECCPS == NULL) {
+			printf("Error: fail to create pECCPS\n");
+			ret = -1;
+			break;
+		}
+
+		// 2. Create ephemeral private key and public key, regular public key
+		ephPrivateKey = new_BN(ordSize, 0);
+		if (ephPrivateKey == NULL) {
+			printf("Error: fail to create ephemeral private key\n");
+			ret = -2;
+			break;
+		}
+		ephPublicKey = new_ECC_Point();
+		if (ephPublicKey == NULL) {
+			printf("Error: fail to create ephemeral public key\n");
+			ret = -3;
+			break;
+		}
+		regPublicKey = new_ECC_Point();
+		if (regPublicKey == NULL) {
+			printf("Error: fail to create regular public key\n");
+			ret = -4;
+			break;
+		}
+		ipp_ret = ippsECCPPublicKey(regPrivateKey, regPublicKey, pECCPS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to calculate regular public key\n");
+			ret = -5;
+			break;
+		}
+
+		// 3. Generate ephemeral key pairs
+		pPRNGS = new_PRNG();
+		if (pPRNGS == NULL) {
+			printf("Error: fail to create pPRNGS\n");
+			ret = -6;
+			break;
+		}
+
+		ipp_ret = ippsECCPGenKeyPair(ephPrivateKey, ephPublicKey, pECCPS, ippsPRNGen, pPRNGS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to generate ephemeral key pairs\n");
+			ret = -7;
+			break;
+		}
+
+		// 4. Create pX and pY
+		pX = new_BN(ordSize, 0);
+		if (pX == NULL){
+			printf("Error: fail to create pX\n");
+			ret = -8;
+			break;			
+		}
+		pY = new_BN(ordSize, 0);
+		if (pY == NULL){
+			printf("Error: fail to create pY\n");
+			ret = -9;
+			break;			
+		}
+		ipp_ret = ippsECCPGetPoint(pX, pY, regPublicKey, pECCPS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to convert internal presentation EC point into regular affine coordinates EC point\n");
+			ret = -10;
+			break;	
+		}
+
+		// 5. Do user message digest
+		ret = hash_digest_with_preprocess(hash_method, msg, msg_len, id, id_len, pX, pY, hash);
+		if (ret != 0) {
+			printf("Error: fail to do hash digest with preprocess\n");
+			ret = -11;
+			break;
+		}
+		pMsg = new_BN(ordSize, 0);
+		if (pMsg == NULL) {
+			printf("Error: fail to create BN\n");
+			ret = -12;
+			break;			
+		}
+		ipp_ret = ippsSetOctString_BN(hash, sizeof(hash), pMsg);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to convert octet string into BN value\n");
+			ret = -13;
+			break;
+		}
+
+		// 6. Sign using ECC context for SM2
+		ipp_ret = ippsECCPSetKeyPair(ephPrivateKey, ephPublicKey, ippFalse, pECCPS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to set ephemeral key pairs\n");
+			ret = -14;
+			break;
+		}
+		ipp_ret = ippsECCPSignSM2(pMsg, regPrivateKey, ephPrivateKey, signX, signY, pECCPS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to compute signature\n");
+			ret = -15;
+			break;
+		}
+	} while(0);
+
+	// 7. Final, remove secret and release resources
+	SAFE_FREE(pY, sizeof(pY));
+	SAFE_FREE(pX, sizeof(pX));
+	SAFE_FREE(pMsg, sizeof(pMsg));
+	SAFE_FREE(regPublicKey, sizeof(regPublicKey));
+	SAFE_FREE(ephPublicKey, sizeof(ephPublicKey));
+	SAFE_FREE(ephPrivateKey, sizeof(ephPrivateKey));
+	SAFE_FREE(pPRNGS, sizeof(pPRNGS));
+	SAFE_FREE(pECCPS, sizeof(pECCPS));
+
+	return ret;
+}
+
+/* SM2 verify */
+static int sm2_do_verify(const IppsECCPPointState *regPublicKey, const IppsHashMethod *hash_method, const char *id, const int id_len, const char *msg, const int msg_len, IppsBigNumState* signX, IppsBigNumState* signY)
+{
+	IppsECCPState *pECCPS = NULL;
+	IppsBigNumState* pMsg = NULL;
+	IppsBigNumState *pX = NULL, *pY = NULL;
+	IppStatus ipp_ret = ippStsNoErr;
+	IppECResult eccResult = ippECValid;
+	int ret = 0;
+	unsigned char hash[32] = {0};
+
+	do {
+		// 1. Create ECC context for SM2
+		pECCPS = new_ECC_sm2();
+		if (pECCPS == NULL) {
+			printf("Error: fail to create pECCPS\n");
+			ret = -1;
+			break;
+		}
+
+		// 2. Create pX and pY
+		pX = new_BN(ordSize, 0);
+		if (pX == NULL){
+			printf("Error: fail to create pX\n");
+			ret = -2;
+			break;			
+		}
+		pY = new_BN(ordSize, 0);
+		if (pY == NULL){
+			printf("Error: fail to create pY\n");
+			ret = -3;
+			break;			
+		}
+		ipp_ret = ippsECCPGetPoint(pX, pY, regPublicKey, pECCPS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to convert internal presentation EC point into regular affine coordinates EC point\n");
+			ret = -4;
+			break;	
+		}
+
+		// 3. Do user message digest
+		ret = hash_digest_with_preprocess(hash_method, msg, msg_len, id, id_len, pX, pY, hash);
+		if (ret != 0) {
+			printf("Error: fail to do hash digest with preprocess\n");
+			ret = -5;
+			break;
+		}
+		pMsg = new_BN(ordSize, 0);
+		if (pMsg == NULL) {
+			printf("Error: fail to create BN\n");
+			ret = -6;
+			break;
+		}
+		ipp_ret = ippsSetOctString_BN(hash, sizeof(hash), pMsg);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to convert octet string into BN value\n");
+			ret = -7;
+			break;
+		}
+
+		// 4. Verify using ECC context for SM2	
+		ipp_ret = ippsECCPSetKeyPair(NULL, regPublicKey, ippTrue, pECCPS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to set regular public key\n");
+			ret = -8;
+			break;
+		}
+		ipp_ret = ippsECCPVerifySM2(pMsg, regPublicKey, signX, signY, &eccResult, pECCPS);
+		if((ipp_ret != ippStsNoErr) || (eccResult != ippECValid)) {
+			printf("Error: fail to verify signature\n");
+			ret = -9;
+			break;
+		}
+	} while(0);
+
+	// 5. Final, remove secret and release resources
+	SAFE_FREE(pY, sizeof(pY));
+	SAFE_FREE(pX, sizeof(pX));
+	SAFE_FREE(pMsg, sizeof(pMsg));
+	SAFE_FREE(pECCPS, sizeof(pECCPS));
+
+	return ret;
+}
+
 /* Signing and verification using ECC context for SM2 */
 int ecall_sm2(void)
 {
 	IppsECCPState *pECCPS = NULL;
-	IppsBigNumState *pBNS = NULL;
-	IppsPRNGState *pPRNGS = NULL;
-	IppsBigNumState *pRandMsg = NULL;
-	IppsBigNumState *pMsg = NULL;
-	IppsBigNumState *regPrivateKey = NULL, *ephPrivateKey = NULL;
-	IppsECCPPointState *regPublicKey = NULL, *ephPublicKey = NULL;
+	IppsBigNumState *regPrivateKey = NULL;
+	IppsECCPPointState *regPublicKey = NULL;
 	IppsBigNumState *signX = NULL, *signY = NULL;
-
-	IppStatus status = ippStsNoErr;
-	IppECResult eccResult = ippECValid;
+	IppStatus ipp_ret = ippStsNoErr;
 	int ret = 0;
 
-	const unsigned int order[] = {0x39D54123, 0x53BBF409, 0x21C6052B, 0x7203DF6B, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFE};
-	const int ordSize = sizeof(order) / sizeof(unsigned int);
-	unsigned int tmpData[ordSize];
+	char *message = "context need to be signed";
+	char *user_id = "1234567812345678";
+	unsigned char priKey[] = "\xd0\x91\x56\x73\x30\x17\xbd\xad\x80\x9f\xd9\xbb\xd8\xc6\x93\xf6\x02\x30\x59\x31\x69\xb6\xf9\x4a\xaf\x1c\x8e\xe1\x38\xcc\x99\xb5";
 
 	do {
 		// 1. Create ECC context for SM2
@@ -215,138 +696,72 @@ int ecall_sm2(void)
 			break;
 		}
 
-		// 2. Get order of ECC context for SM2
-		pBNS = new_BN(ordSize, order);
-		if (pBNS == NULL) {
-			printf("Error: fail to get order of ecc context for sm2\n");
-			ret = -2;
-			break;
-		}
-
-		// 3. Create a random message to be signed
-		pPRNGS = new_PRNG();
-		if (pPRNGS == NULL) {
-			printf("Error: fail to create pseudo-random generation context\n");
-			ret = -3;
-			break;
-		}
-		status = ippsPRNGen(tmpData, 256, pPRNGS);
-		if (status != ippStsNoErr) {
-			printf("Error: fail to generate a pseudorandom bit sequence\n");
-			ret = -4;
-			break;
-		}
-		pRandMsg = new_BN(ordSize, tmpData);
-		if (pRandMsg == NULL) {
-			printf("Error: fail to create a random message\n");
-			ret = -5;
-			break;
-		}
-		pMsg = new_BN(ordSize, 0);
-		if (pMsg == NULL) {
-			printf("Error: fail to create a message to be signed\n");
-			ret = -6;
-			break;
-		}
-		status = ippsMod_BN(pRandMsg, pBNS, pMsg);
-		if (status != ippStsNoErr) {
-			printf("Error: fail to compute modular reduction for input big number\n");
-			ret = -7;
-			break;
-		}
-
-		// 4. Create regular and ephemeral private key and public key
+		// 2. Create regular private key and public key
 		regPrivateKey = new_BN(ordSize, 0);
 		if (regPrivateKey == NULL) {
 			printf("Error: fail to create regular private key\n");
-			ret = -8;
-			break;
-		}
-		ephPrivateKey = new_BN(ordSize, 0);
-		if (ephPrivateKey == NULL) {
-			printf("Error: fail to create ephemeral private key\n");
-			ret = -9;
+			ret = -2;
 			break;
 		}
 		regPublicKey = new_ECC_Point();
 		if (regPublicKey == NULL) {
 			printf("Error: fail to create regular public key\n");
-			ret = -10;
-			break;
-		}		
-		ephPublicKey = new_ECC_Point();
-		if (ephPublicKey == NULL) {
-			printf("Error: fail to create ephemeral public key\n");
-			ret = -11;
+			ret = -3;
 			break;
 		}
 
-		// 5. Generate regular and ephemeral key pairs
-		status = ippsECCPGenKeyPair(regPrivateKey, regPublicKey, pECCPS, ippsPRNGen, pPRNGS);
-		if (status != ippStsNoErr) {
-			printf("Error: fail to generate regular key pairs\n");
-			ret = -12;
+		// 3. Create regular private and public key pairs
+		ipp_ret = ippsSetOctString_BN(priKey, sizeof(priKey)-1, regPrivateKey);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to convert octet string into BN value\n");
+			ret = -4;
 			break;
 		}
-		status = ippsECCPGenKeyPair(ephPrivateKey, ephPublicKey, pECCPS, ippsPRNGen, pPRNGS);
-		if (status != ippStsNoErr) {
-			printf("Error: fail to generate ephemeral key pairs\n");
-			ret = -13;
+		ipp_ret = ippsECCPPublicKey(regPrivateKey, regPublicKey, pECCPS);
+		if (ipp_ret != ippStsNoErr) {
+			printf("Error: fail to calculate regular public key\n");
+			ret = -5;
 			break;
 		}
 
-		// 6. Sign using ECC context for SM2
-		status = ippsECCPSetKeyPair(ephPrivateKey, ephPublicKey, ippFalse, pECCPS);
-		if (status != ippStsNoErr) {
-			printf("Error: fail to set ephemeral key pairs\n");
-			ret = -14;
-			break;
-		}
+		// 4. Create signX and signY
 		signX = new_BN(ordSize, 0);
 		if (signX == NULL) {
 			printf("Error: fail to create signX\n");
-			ret = -15;
+			ret = -6;
 			break;
 		}		
 		signY = new_BN(ordSize, 0);
 		if (signY == NULL) {
 			printf("Error: fail to create signY\n");
-			ret = -16;
+			ret = -7;
 			break;
-		}
-		status = ippsECCPSignSM2(pMsg, regPrivateKey, ephPrivateKey, signX, signY, pECCPS);
-		if (status != ippStsNoErr) {
-			printf("Error: fail to compute signature\n");
-			ret = -17;
+		}		
+
+		// 5. Sign using ECC context for SM2
+		ret = sm2_do_sign(regPrivateKey, ippsHashMethod_SM3(), user_id, strlen(user_id), message, strlen(message), signX, signY);
+		if(ret != 0)
+		{
+			printf("Error: fail to sign\n");
+			ret = -8;
 			break;
 		}
 
-		// 7. Verify using ECC context for SM2
-		status = ippsECCPSetKeyPair(NULL, regPublicKey, ippTrue, pECCPS);
-		if (status != ippStsNoErr) {
-			printf("Error: fail to set regular public key\n");
-			ret = -18;
-			break;
-		}
-		status = ippsECCPVerifySM2(pMsg, regPublicKey, signX, signY, &eccResult, pECCPS);
-		if((status != ippStsNoErr) || (eccResult != ippECValid)) {
-			printf("Error: fail to verify signature\n");
-			ret = -19;
+		// 6. Verify using ECC context for SM2
+		ret = sm2_do_verify(regPublicKey, ippsHashMethod_SM3(), user_id, strlen(user_id), message, strlen(message), signX, signY);
+		if (ret != 0)
+		{
+			printf("Error: fail to verify\n");
+			ret = -9;
 			break;
 		}
 	} while(0);
 
-	// 8. Final, remove secret and release resources
-	SAFE_FREE(signX, sizeof(signX));
+	// 7. Final, remove secret and release resources
 	SAFE_FREE(signY, sizeof(signY));
-	SAFE_FREE(ephPublicKey, sizeof(ephPublicKey));
-	SAFE_FREE(ephPrivateKey, sizeof(ephPrivateKey));
+	SAFE_FREE(signX, sizeof(signX));
 	SAFE_FREE(regPublicKey, sizeof(regPublicKey));
 	SAFE_FREE(regPrivateKey, sizeof(regPrivateKey));
-	SAFE_FREE(pRandMsg, sizeof(pRandMsg));
-	SAFE_FREE(pMsg, sizeof(pMsg));
-	SAFE_FREE(pPRNGS, sizeof(pPRNGS));
-	SAFE_FREE(pBNS, sizeof(pBNS));
 	SAFE_FREE(pECCPS, sizeof(pECCPS));
 
 	return ret;

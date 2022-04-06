@@ -98,12 +98,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         // LFENCE before pcl_entry
         sgx_lfence();
-        system_features_t * csi = (system_features_t *)ms;
-        if(NULL == csi->sealed_key)
-        {
-            return -1;
-        }
-        sgx_status_t ret = pcl_entry(enclave_base, csi->sealed_key);
+        sgx_status_t ret = pcl_entry(enclave_base, ms);
         if(SGX_SUCCESS != ret)
         {
             return -1;
@@ -116,7 +111,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
         return -1;
     }
 
-    g_enclave_base = (uint64_t)&__ImageBase;
+    g_enclave_base = (uint64_t)get_enclave_base();
     g_enclave_size = g_global_data.elrange_size;
     //we are not allowed to set enclave_image_address to 0 if elrange is set
     //so if enclave_image_address is 0, it means elrange is not set

@@ -43,7 +43,7 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/               \
             -I$(LINUX_PSW_DIR)/urts            \
             -I$(LINUX_PSW_DIR)/urts/linux
 
-CXXFLAGS += -fPIC -Werror
+CXXFLAGS += -fPIC -Werror $(CET_FLAGS)
 
 .PHONY: all
 all: driver_api.o

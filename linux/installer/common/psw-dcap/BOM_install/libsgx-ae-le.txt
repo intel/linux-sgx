@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/libsgx_le.signed.so	<installdir>/aesm/libsgx_le.signed.so	0	main	STP
+<deliverydir>/build/linux/le_prod_css.bin	<installdir>/aesm/le_prod_css.bin	0	main	STP

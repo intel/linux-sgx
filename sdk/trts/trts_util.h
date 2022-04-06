@@ -58,6 +58,7 @@ int heap_init(void *_heap_base, size_t _heap_size, size_t _heap_min_size, int _i
 int feature_supported(const uint64_t *feature_set, uint32_t feature_shift);
 bool is_utility_thread();
 size_t get_max_tcs_num();
+bool is_pkru_enabled();
 
 #ifdef __cplusplus
 }

@@ -43,6 +43,8 @@ License:        BSD License
 URL:            https://github.com/intel/linux-sgx
 Source0:        %{name}-%{version}.tar.gz
 
+AutoProv:       no
+
 %description
 Intel(R) Software Guard Extensions PCE
 
@@ -78,7 +80,7 @@ trigger_udev() {
 
 # Add sgx_prv for in-kernel driver.
 if [ -c /dev/sgx_provision -o -c /dev/sgx/provision ]; then
-    /usr/bin/getent group sgx_prv &> /dev/null || /usr/sbin/groupadd sgx_prv
+    getent group sgx_prv &> /dev/null || groupadd sgx_prv
     trigger_udev
 fi
 

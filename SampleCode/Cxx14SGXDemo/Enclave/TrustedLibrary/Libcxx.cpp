@@ -294,8 +294,8 @@ void ecall_cxx14_equal_mismatch_permutation_new_overloads()
     printf("first pair of different values: (%d, %d)\n",
            *diff_pair.first, *diff_pair.second);
 
-    constexpr auto v_permu1 = {1, 2, 3, 4, 5};
-    constexpr auto v_permu2 = {3, 5, 4, 1, 9};
+    auto v_permu1 = {1, 2, 3, 4, 5};
+    auto v_permu2 = {3, 5, 4, 1, 9};
     printf("v_permu1 and v_permu2 is_permutation: %s\n",
            std::is_permutation(v_permu1.begin(), v_permu1.end(),
                                      v_permu2.begin()) ? "True" : "False");

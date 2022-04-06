@@ -1,0 +1,2 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/bundles/libecdsa_quote_service_bundle.so	<installdir>/aesm/bundles/libecdsa_quote_service_bundle.so	0	main	STP

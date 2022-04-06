@@ -14,6 +14,7 @@ target_include_directories(sgx_default_qcnl_wrapper PRIVATE
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/pce_wrapper/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/common/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal
+    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson
 )
 
 set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")

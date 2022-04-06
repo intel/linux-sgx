@@ -52,14 +52,14 @@ CPP_OBJS := $(CPP_SRCS:.cpp=.o)
 ALL_OBJS := $(CPP_OBJS) $(C_OBJS) 
 
 SL_CXXFLAGS := $(CXXFLAGS)
-SL_CXXFLAGS += -fPIC
+SL_CXXFLAGS += -fPIC $(CET_FLAGS)
 SL_CXXFLAGS += -I$(COMMON_DIR)/inc          \
           -I$(COMMON_DIR)/inc/internal \
           -I$(SL_DIR)/inc
 
 
 SL_CFLAGS := $(CFLAGS)
-SL_CFLAGS += -Werror -D_GNU_SOURCE -fPIC
+SL_CFLAGS += -Werror -D_GNU_SOURCE -fPIC $(CET_FLAGS)
 SL_CFLAGS += $(ADDED_INC)
 SL_CFLAGS += -I$(COMMON_DIR)/inc          \
           -I$(COMMON_DIR)/inc/internal \

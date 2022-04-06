@@ -83,7 +83,7 @@ $(CPPRT): $(OBJS) prepare-libunwind libunwind
 libunwind:
 	cd $(LIBUNWIND_DIR)/ && \
 		( test -f Makefile || CFLAGS="$(CFLAGS)" ./autogen.sh ) && \
-		$(MAKE) -j5
+		$(MAKE) -j$(shell nproc)
 
 
 .PHONY: clean

@@ -35,7 +35,7 @@
 #include <sgx_lfence.h>
 #include <pcl_common.h>
 #include <pcl_internal.h>
-
+#include "rts.h"
 /*
  * g_tbl holds the PCL table. Its content is set by enclave encryption tool at build time
  * It is located in its own section (PCLTBL_SECTION_NAME) so that 
@@ -66,7 +66,7 @@ uintptr_t g_pcl_imagebase = 0;
  * trusted runtime entry point. It extracts the decryption key from the sealed blob 
  * and use it to decrypt the encrypted portions of the enclave binary. 
  * @param INOUT void* elf_base, base address of enclave
- * @param IN void* sealed_blob, the sealed blob
+ * @param IN void* ms, the marshaling struture passed by urts
  * @return sgx_status_t
  * SGX_ERROR_UNEXPECTED if
  *    1. Table inconsistencies:
@@ -76,7 +76,7 @@ uintptr_t g_pcl_imagebase = 0;
  * Respective error returned from pcl_unseal_data, pcl_sha256, pcl_gcm_decrypt or pcl_increment_iv
  * SGX_SUCCESS if successfull
  */
-sgx_status_t pcl_entry(void* elf_base, void* sealed_blob)
+sgx_status_t pcl_entry(void* elf_base, void* ms)
 {
     sgx_status_t ret = SGX_SUCCESS;  
     pcl_table_t* tbl = &g_tbl;
@@ -100,6 +100,18 @@ sgx_status_t pcl_entry(void* elf_base, void* sealed_blob)
 
     // Verify the buffer size: 
     if(PCL_SEALED_BLOB_SIZE != tbl->sealed_blob_size)
+    {
+        return SGX_ERROR_UNEXPECTED;
+    }
+    system_features_t * csi = (system_features_t *)ms;
+    if(!(pcl_is_outside_enclave(csi, sizeof(*csi))))
+    {
+        return SGX_ERROR_UNEXPECTED;
+    }
+    sgx_lfence();
+
+    void *sealed_blob = csi->sealed_key;
+    if(NULL == sealed_blob)
     {
         return SGX_ERROR_UNEXPECTED;
     }
