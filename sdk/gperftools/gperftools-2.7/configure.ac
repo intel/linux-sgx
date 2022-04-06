@@ -160,7 +160,7 @@ AS_IF([test -n "$OBJCOPY"], [dnl
   [gpt_cv_objcopy_weaken=no])
 AM_CONDITIONAL(HAVE_OBJCOPY_WEAKEN, test $gpt_cv_objcopy_weaken = yes)
 
-AC_PROG_LIBTOOL
+LT_INIT
 
 AC_C_INLINE
 AX_C___ATTRIBUTE__

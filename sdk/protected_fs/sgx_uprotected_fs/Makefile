@@ -36,7 +36,7 @@ INCLUDE += -I. \
            -I$(COMMON_DIR)/inc/internal \
            -I$(COMMON_DIR)/inc
 
-CXXFLAGS += -fPIC -fno-rtti -Werror $(INCLUDE)
+CXXFLAGS += -fPIC -fno-rtti -Werror $(INCLUDE) $(CET_FLAGS)
 
 SRC := $(wildcard *.cpp)
 OBJ := $(sort $(SRC:.cpp=.o))

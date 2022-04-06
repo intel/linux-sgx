@@ -35,6 +35,7 @@
 #include "sgx_error.h"
 #include "stddef.h"
 #include "sgx_defs.h"
+#include "stdint.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +82,24 @@ int SGXAPI sgx_is_enclave_crashed(void) __attribute__((section(".nipx")));
  *      SGX_ERROR_UNEXPECTED - HW failure of RDRAND instruction
 */
 sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
+
+/* sgx_rdpkru()
+ * Parameters:
+ *      val - the output PRKU
+ * Return Value:
+ *      1 - read successfully
+ *      0 - failed to read
+ */
+int SGXAPI sgx_rdpkru(uint32_t *val);
+
+/* sgx_wrpkru()
+ * Parameters:
+ *      val - the target value to be written into PKRU
+ * Return Value:
+ *      1 - write successfully
+ *      0 - failed to write
+ */
+int SGXAPI sgx_wrpkru(uint32_t val);
 
 #ifdef __cplusplus
 }

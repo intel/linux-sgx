@@ -43,11 +43,13 @@
 #        - sgx_pcl:       libsgx_pcl.a
 #        - openmp:        libsgx_omp.a
 #        - protobuf:      libsgx_protobuf.a
+#        - ttls:          libsgx_ttls.a
 #  - Untrtusted libraries
 #        - ukey_exchange: libsgx_ukey_exchange.a
 #        - uprotected_fs: libsgx_uprotected_fs.a
 #        - ptrace:        libsgx_ptrace.so, gdb-sgx-plugin
 #        - sample_crypto: libsample_crypto.so (for sample code use)
+#        - utls:          libsgx_utls.a
 #  - Standalone, untrusted libraries
 #        - libcapable:    libsgx_capable.a libsgx_capable.so
 #  - Tools
@@ -64,7 +66,7 @@ LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp protobuf
+components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp protobuf ttls utls
 
 # ---------------------------------------------------
 #  tstdc
@@ -74,7 +76,7 @@ components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotec
 tstdc: $(LIBTLIBC)
 
 $(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp tmm_rsrv
-	$(MAKE) -C tlibc/ -j4 2> /dev/null
+	$(MAKE) -C tlibc/ -j$(shell nproc) 2> /dev/null
 	@$(MKDIR) $(BUILD_DIR)/.compiler-rt $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 	@$(RM) -f $(BUILD_DIR)/.compiler-rt/*   && cd $(BUILD_DIR)/.compiler-rt && $(AR) x $(LINUX_SDK_DIR)/compiler-rt/libcompiler-rt.a
 	@$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
@@ -204,7 +206,16 @@ openmp:
 
 .PHONY: protobuf
 protobuf:
+ifeq ($(MITIGATION-CVE-2020-0551),)
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/protobuf BUILD_PROTOC=1
+else
 	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/protobuf
+endif
+
+.PHONY: ttls
+ttls: edger8r
+	$(MAKE) -C ttls
+
 # ---------------------------------------------------
 #  Untrusted libraries
 # ---------------------------------------------------
@@ -223,6 +234,10 @@ ptrace:
 .PHONY: sample_crypto
 sample_crypto:
 	$(MAKE) -C sample_libcrypto
+
+.PHONY: utls
+utls:
+	$(MAKE) -C utls
 
 # ---------------------------------------------------
 #  standalone, untrusted libraries
@@ -299,5 +314,7 @@ clean:
 	$(MAKE) -C pthread                             clean
 	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/openmp        clean
 	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/protobuf      clean
+	$(MAKE) -C ttls						           clean
+	$(MAKE) -C utls						           clean
 	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt

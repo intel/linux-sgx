@@ -141,6 +141,8 @@ build_ae()
     cp qe.so $ae_out
     cd $sgx_repo/external/dcap_source/QuoteGeneration/quote_wrapper/quote/enclave/linux && make
     cp qe3.so $ae_out
+    cd $sgx_repo/external/dcap_source/QuoteGeneration/quote_wrapper/quote/id_enclave/linux && make
+    cp id_enclave.so $ae_out
     cd $sgx_repo/external/dcap_source/QuoteVerification/QvE && make
     cp qve.so $ae_out
     popd

@@ -40,6 +40,8 @@
 #define CPUID_FEATURE_FLAGS 7
 #define SE_FEATURE_SHIFT 2
 #define SE1_SHIFT 0
+// ECX[9]
+#define PKRU_SHIFT 9
 
 // CPUID function 1 
 // ECX[26] enums general support for XSAVE
@@ -50,6 +52,12 @@
 // CPUID function 0DH, sub-function 1
 // EAX[1] enums support for compaction extensions to XSAVE
 #define XSAVEC_SHIFT 1
+
+// CPUID function 07H, sub-function 0
+// ECX[3] enums whether protection key feature is supported for user mode pages.
+// ECX[4] enums whether the OS supports use of the PKRU or not
+#define PKU_SHIFT 3
+#define PKE_SHIFT 4
 
 bool is_se_supported();
 

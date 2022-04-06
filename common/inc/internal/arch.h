@@ -37,7 +37,9 @@
 #include "sgx_attributes.h"
 #include "sgx_key.h"
 #include "sgx_report.h"
+#include "sgx_report2.h"
 #include "sgx_tcrypto.h"
+
 
 #define SE_PAGE_SIZE 0x1000
 #define TCS_SIZE SE_PAGE_SIZE

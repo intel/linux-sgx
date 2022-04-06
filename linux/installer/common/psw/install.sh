@@ -230,7 +230,7 @@ trigger_udev() {
 
 # Add sgx_prv for in-kernel driver.
 if [ -c /dev/sgx_provision -o -c /dev/sgx/provision ]; then
-    /usr/bin/getent group sgx_prv &> /dev/null || /usr/sbin/groupadd sgx_prv
+    getent group sgx_prv &> /dev/null || groupadd sgx_prv
     trigger_udev
 fi
 

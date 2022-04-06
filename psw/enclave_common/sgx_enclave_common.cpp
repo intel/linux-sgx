@@ -474,6 +474,11 @@ static void enclave_set_provision_access(int hdevice, void* enclave_base)
         hdev_prov = open("/dev/sgx/provision", O_RDWR);
         if (-1 == hdev_prov)
         {
+            //if /dev/sgx/provision is not present, try to open /dev/sgx_provision
+            hdev_prov = open("/dev/sgx_provision", O_RDWR);
+        }
+        if (-1 == hdev_prov)
+        {
             //in-kernel driver can still succeed if the MRSIGNER is whitelisted for provision key
             SE_TRACE(SE_TRACE_WARNING, "\nOpen in-kernel driver node, failed: errno = %d\n", errno);
         }

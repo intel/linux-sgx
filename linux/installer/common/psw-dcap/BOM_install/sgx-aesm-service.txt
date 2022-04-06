@@ -1,0 +1,14 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/bundles/liblinux_network_service_bundle.so	<installdir>/aesm/bundles/liblinux_network_service_bundle.so	0	main	STP
+<deliverydir>/build/linux/libipc.so	<installdir>/aesm/libipc.so	0	main	STP
+<deliverydir>/build/linux/liboal.so	<installdir>/aesm/liboal.so	0	main	STP
+<deliverydir>/build/linux/libutils.so	<installdir>/aesm/libutils.so	0	main	STP
+<deliverydir>/build/linux/liburts_internal.so	<installdir>/aesm/liburts_internal.so	0	main	STP
+<deliverydir>/build/linux/libCppMicroServices.so.4.0.0	<installdir>/aesm/libCppMicroServices.so.4.0.0	0	main	STP
+<deliverydir>/build/linux/aesmd.conf	<installdir>/aesm/aesmd.conf	0	main	STP
+<deliverydir>/build/linux/aesmd.service	<installdir>/aesm/aesmd.service	0	main	STP
+<deliverydir>/build/linux/aesm_service	<installdir>/aesm/aesm_service	0	main	STP
+<deliverydir>/psw/ae/aesm_service/config/network/aesmd.conf	<installdir>/aesm/conf/aesmd.conf	0	main	STP
+<deliverydir>/linux/installer/common/psw-dcap/linksgx.sh	<installdir>/aesm/linksgx.sh	0	main	STP
+<deliverydir>/linux/installer/common/psw-dcap/startup.sh	<installdir>/startup.sh	0	main	STP
+<deliverydir>/linux/installer/common/psw-dcap/cleanup.sh	<installdir>/cleanup.sh	0	main	STP

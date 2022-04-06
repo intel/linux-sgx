@@ -51,9 +51,14 @@ CHECK_SOURCE := protobuf_code
 endif
 
 .PHONY: all
+ifeq ($(BUILD_PROTOC), 1)
 all: $(LIBPB) $(PROTOCPB) $(BUILD_DIR)
 	$(CP) $(LIBPB) $(BUILD_DIR)/libsgx_protobuf.a
 	$(CP) $(PROTOCPB) $(BUILD_DIR)/sgx_protoc
+else
+all: $(LIBPB) $(BUILD_DIR)
+	$(CP) $(LIBPB) $(BUILD_DIR)/libsgx_protobuf.a
+endif
 
 $(BUILD_DIR):
 	@$(MKDIR) $@
@@ -73,10 +78,12 @@ $(LIBPB): $(CHECK_SOURCE)
 ifeq ("$(wildcard $(PB_DIR)/cmake/libsgx_protobuf.cmake)", "")
 	cd $(PB_DIR) && git apply ../sgx_protobuf.patch&& cd ..
 endif
-	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_PROTOC_BINARIES=FALSE -Dprotobuf_BUILD_TESTS=FALSE -DSGX=TRUE ../../cmake && make 
+	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_PROTOC_BINARIES=FALSE -Dprotobuf_BUILD_TESTS=FALSE -DProtobuf_LITE_LIBRARIES=FALSE -DSGX=TRUE ../../cmake && make 
 
+ifeq ($(BUILD_PROTOC), 1)
 $(PROTOCPB): $(CHECK_SOURCE)
 	$(MKDIR) protobuf_code/final_protocPB/build && cd protobuf_code/final_protocPB/build && cmake  -Dprotobuf_BUILD_PROTOC_BINARIES=TRUE -Dprotobuf_BUILD_TESTS=FALSE -DSGX=FALSE ../../cmake && make 
+endif
 
 .PHONY: clean
 clean:

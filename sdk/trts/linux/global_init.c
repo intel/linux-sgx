@@ -135,6 +135,7 @@ static void do_atexit_aux(void)
     }
 }
 
+extern void* get_enclave_base(void);
 /* auxiliary routines */
 static void do_ctors_aux(void)
 {
@@ -143,7 +144,7 @@ static void do_ctors_aux(void)
     fp_t *p = NULL;
     uintptr_t init_array_addr = 0;
     size_t init_array_size = 0;
-    const void *enclave_start = (const void*)&__ImageBase;
+    const void *enclave_start = get_enclave_base();
 
     if (0 != elf_get_init_array(enclave_start, &init_array_addr, &init_array_size)|| init_array_addr == 0 || init_array_size == 0)
         return;
@@ -164,7 +165,7 @@ static void do_dtors_aux(void)
     fp_t *p = NULL;
     uintptr_t uninit_array_addr;
     size_t uninit_array_size;
-    const void *enclave_start = (const void*)&__ImageBase;
+    const void *enclave_start = get_enclave_base();
 
     elf_get_uninit_array(enclave_start, &uninit_array_addr, &uninit_array_size);
 

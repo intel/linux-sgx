@@ -2,6 +2,11 @@ PACKAGE_NAME=@PACKAGE_NAME@
 PACKAGE_VERSION=@PACKAGE_VERSION@
 CC=@CC@
 CFLAGS=@CFLAGS@ -O2
+CC_VERSION := $(shell $(CC) -dumpversion)
+CC_NO_LESS_THAN_8 := $(shell expr $(CC_VERSION) \>\= "8")
+ifeq ($(CC_NO_LESS_THAN_8), 1)
+    CFLAGS += -fcf-protection
+endif
 AR=ar
 
 TEST_OBJ=main.o

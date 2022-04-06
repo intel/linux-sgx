@@ -46,6 +46,7 @@
 
 #define SGX_SHA1_HASH_SIZE              20
 #define SGX_SHA256_HASH_SIZE            32
+#define SGX_SHA384_HASH_SIZE            48
 #define SGX_ECP256_KEY_SIZE             32
 #define SGX_NISTP_ECP256_KEY_SIZE       (SGX_ECP256_KEY_SIZE/sizeof(uint32_t))
 #define SGX_AESGCM_IV_SIZE              12
@@ -105,6 +106,7 @@ typedef void* sgx_aes_state_handle_t;
 
 typedef uint8_t sgx_sha1_hash_t[SGX_SHA1_HASH_SIZE];
 typedef uint8_t sgx_sha256_hash_t[SGX_SHA256_HASH_SIZE];
+typedef uint8_t sgx_sha384_hash_t[SGX_SHA384_HASH_SIZE];
 
 typedef uint8_t sgx_aes_gcm_128bit_key_t[SGX_AESGCM_KEY_SIZE];
 typedef uint8_t sgx_aes_gcm_128bit_tag_t[SGX_AESGCM_MAC_SIZE];
@@ -217,6 +219,7 @@ extern "C" {
     *           uint32_t src_len - Length of the input stream to be hashed
     *   Output: sgx_sha#_hash_t *p_hash - Resultant hash from operation
    */
+    sgx_status_t SGXAPI sgx_sha384_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha384_hash_t *p_hash);
     sgx_status_t SGXAPI sgx_sha256_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha256_hash_t *p_hash);
     sgx_status_t SGXAPI sgx_sha1_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha1_hash_t *p_hash);
 
@@ -226,6 +229,7 @@ extern "C" {
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
     *   Output: sgx_sha_state_handle_t *p_sha_handle - Pointer to the handle of the SHA state
    */
+    sgx_status_t SGXAPI sgx_sha384_init(sgx_sha_state_handle_t* p_sha_handle);
     sgx_status_t SGXAPI sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle);
     sgx_status_t SGXAPI sgx_sha1_init(sgx_sha_state_handle_t* p_sha_handle);
 
@@ -237,6 +241,7 @@ extern "C" {
     *           uint8_t *p_src - Pointer to the input stream to be hashed
     *           uint32_t src_len - Length of the input stream to be hashed
     */
+    sgx_status_t SGXAPI sgx_sha384_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_state_handle_t sha_handle);
     sgx_status_t SGXAPI sgx_sha256_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_state_handle_t sha_handle);
     sgx_status_t SGXAPI sgx_sha1_update(const uint8_t *p_src, size_t src_len, sgx_sha_state_handle_t sha_handle);
 
@@ -247,6 +252,7 @@ extern "C" {
     *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA state
     *   Output: sgx_sha#_hash_t *p_hash - Resultant hash from operation
     */
+    sgx_status_t SGXAPI sgx_sha384_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha384_hash_t *p_hash);
     sgx_status_t SGXAPI sgx_sha256_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha256_hash_t *p_hash);
     sgx_status_t SGXAPI sgx_sha1_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha1_hash_t *p_hash);
 
@@ -256,6 +262,7 @@ extern "C" {
     *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
     *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA state
     */
+    sgx_status_t SGXAPI sgx_sha384_close(sgx_sha_state_handle_t sha_handle);
     sgx_status_t SGXAPI sgx_sha256_close(sgx_sha_state_handle_t sha_handle);
     sgx_status_t SGXAPI sgx_sha1_close(sgx_sha_state_handle_t sha_handle);
 

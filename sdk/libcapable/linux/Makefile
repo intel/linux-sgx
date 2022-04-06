@@ -36,9 +36,9 @@ CXXFLAGS += -DDISABLE_TRACE
 CFLAGS += -DDISABLE_TRACE
 endif
 
-CXXFLAGS += -fPIC -Werror
+CXXFLAGS += -fPIC -Werror $(CET_FLAGS)
 
-CFLAGS += -fPIC -Werror
+CFLAGS += -fPIC -Werror $(CET_FLAGS)
 LDFLAGS += $(COMMON_LDFLAGS)
 
 INC += -I$(COMMON_DIR)/inc                \

@@ -122,7 +122,7 @@ sgx_status_t sgx_aes_ctr_encrypt(const sgx_aes_ctr_128bit_key_t *p_key, const ui
 			break;
 		}
 
-		// Encryption success, increment counter
+		// Encryption success, increment the counter parameter to align with the behavior of IPP version.
 		//
 		len = src_len;
 		while (len >= 0) {
@@ -191,7 +191,7 @@ sgx_status_t sgx_aes_ctr_decrypt(const sgx_aes_ctr_128bit_key_t *p_key, const ui
 			break;
 		}
 		// Success
-		// Increment counter
+		// Increment the counter parameter to align with the behavior of IPP version.
 		//
 		len = src_len;
 		while (len >= 0) {

@@ -333,6 +333,24 @@ bool CMetadata::fill_enclave_css(const xml_parameter_t *para)
     //default setting
     m_metadata->enclave_css.body.attributes.xfrm = SGX_XFRM_LEGACY;
     m_metadata->enclave_css.body.attribute_mask.xfrm = SGX_XFRM_LEGACY | SGX_XFRM_RESERVED; // LEGACY and reservied bits would be checked.
+    switch(para[PKRU].value)
+    {
+        case FEATURE_MUST_BE_DISABLED:
+                // PKRU must be disabled
+                m_metadata->enclave_css.body.attributes.xfrm &= ~SGX_XFRM_PKRU;
+                m_metadata->enclave_css.body.attribute_mask.xfrm |= SGX_XFRM_PKRU;
+                break;
+        case FEATURE_MUST_BE_ENABLED:
+                // PKRU must be enabled
+                m_metadata->enclave_css.body.attributes.xfrm |= SGX_XFRM_PKRU;
+                m_metadata->enclave_css.body.attribute_mask.xfrm |= SGX_XFRM_PKRU;
+                break;
+        case FEATURE_LOADER_SELECTS:
+        default:
+                m_metadata->enclave_css.body.attributes.xfrm &= ~SGX_XFRM_PKRU;
+                m_metadata->enclave_css.body.attribute_mask.xfrm &= ~SGX_XFRM_PKRU;
+                break;
+    }
 
     m_metadata->enclave_css.body.isv_prod_id = (uint16_t)para[PRODID].value;
     m_metadata->enclave_css.body.isv_svn = (uint16_t)para[ISVSVN].value;
@@ -1160,7 +1178,8 @@ bool CMetadata::get_xsave_size(uint64_t xfrm, uint32_t *xsave_size)
         {SGX_XFRM_AVX,    512 + 64 + 256},              // 256 for YMM0_H - YMM15_H registers
         {SGX_XFRM_MPX,    512 + 64 + 256 + 256},        // 256 for MPX
         {SGX_XFRM_AVX512, 512 + 64 + 256 + 256 + 1600}, // 1600 for k0 - k7, ZMM0_H - ZMM15_H, ZMM16 - ZMM31
-//      PT, PKRU ...
+	// Ignore PT as PT is a supervisor state.
+        {SGX_XFRM_PKRU,     512 + 64 + 256 + 256 + 1600 + 64}, // 8 for PKRU, 56 for alignment
     };
     bool ret = true;
     *xsave_size = 0;

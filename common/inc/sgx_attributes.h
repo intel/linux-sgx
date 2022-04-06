@@ -47,8 +47,9 @@
 #define SGX_XFRM_AVX             0x0000000000000006ULL     /* AVX XFRM which includes AVX state(0x04) and SSE state(0x02) required by AVX */
 #define SGX_XFRM_AVX512          0x00000000000000E6ULL     /* AVX-512 XFRM - not supported */
 #define SGX_XFRM_MPX             0x0000000000000018ULL     /* MPX XFRM - not supported */
+#define SGX_XFRM_PKRU            0x0000000000000200ULL     /* PKRU state */
 
-#define SGX_XFRM_RESERVED        (~(SGX_XFRM_LEGACY | SGX_XFRM_AVX | SGX_XFRM_AVX512))
+#define SGX_XFRM_RESERVED        (~(SGX_XFRM_LEGACY | SGX_XFRM_AVX | SGX_XFRM_AVX512 | SGX_XFRM_PKRU))
 
 typedef struct _attributes_t
 {

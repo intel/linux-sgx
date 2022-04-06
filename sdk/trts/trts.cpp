@@ -39,6 +39,7 @@
 #include "global_data.h"
 #include "trts_internal.h"
 #include "internal/rts.h"
+#include "trts_util.h"
 
 #ifdef SE_SIM
 #include "t_instructions.h"    /* for `g_global_data_sim' */
@@ -318,3 +319,36 @@ int check_static_stack_canary(void *tcs)
     return 0;
 }
 
+int SGXAPI sgx_rdpkru(uint32_t *val)
+{
+    if(!is_pkru_enabled())
+    {
+        return 0;
+    }
+   
+    uint32_t c = 0;
+    uint32_t d, pkru;
+
+    //Reads the value of PKRU into EAX and clears EDX. ECX must be 0 when RDPKRU is executed
+    asm volatile(".byte 0x0f,0x01,0xee" /* rdpkru */
+	     : "=a" (pkru), "=d" (d)
+	     : "c" (c));
+
+    *val =  pkru;
+    return 1;
+}
+
+int SGXAPI sgx_wrpkru(uint32_t val)
+{
+    if(!is_pkru_enabled())
+    {
+        return 0;
+    }
+    uint32_t c = 0, d = 0;
+
+    // Writes the value of EAX into PKRU. ECX and EDX must be 0 when WRPKRU is executed
+    asm volatile(".byte 0x0f,0x01,0xef" /* wrpkru */
+	     : 
+	     : "a" (val), "c"(c), "d"(d));
+    return 1; 
+}

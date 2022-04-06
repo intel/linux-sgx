@@ -34,8 +34,8 @@ include ../../../buildenv.mk
 CXXFLAGS += -Werror
 CFLAGS   += -Werror
 
-CFLAGS += -fpie
-CXXFLAGS += -fpie
+CFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
+CXXFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
 LDFLAGS := -pie $(COMMON_LDFLAGS)
 
 INC += $(ADDED_INC)

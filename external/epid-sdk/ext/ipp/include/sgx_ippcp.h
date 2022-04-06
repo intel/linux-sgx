@@ -30,6 +30,7 @@
  */
 
 
+
 #ifndef _SGX_IPPCP_H_
 #define _SGX_IPPCP_H_
 
@@ -235,6 +236,22 @@ extern "C" {
   #define ippsHashMethod_SHA384 sgx_disp_ippsHashMethod_SHA384
   #define ippsHashMethod_SHA512_256 sgx_disp_ippsHashMethod_SHA512_256
   #define ippsHashMethod_SHA512_224 sgx_disp_ippsHashMethod_SHA512_224
+  #define ippsHashMethodGetSize sgx_disp_ippsHashMethodGetSize
+  #define ippsHashMethodSet_MD5 sgx_disp_ippsHashMethodSet_MD5
+  #define ippsHashMethodSet_SM3 sgx_disp_ippsHashMethodSet_SM3
+  #define ippsHashMethodSet_SHA1 sgx_disp_ippsHashMethodSet_SHA1
+  #define ippsHashMethodSet_SHA1_NI sgx_disp_ippsHashMethodSet_SHA1_NI
+  #define ippsHashMethodSet_SHA1_TT sgx_disp_ippsHashMethodSet_SHA1_TT
+  #define ippsHashMethodSet_SHA256 sgx_disp_ippsHashMethodSet_SHA256
+  #define ippsHashMethodSet_SHA256_NI sgx_disp_ippsHashMethodSet_SHA256_NI
+  #define ippsHashMethodSet_SHA256_TT sgx_disp_ippsHashMethodSet_SHA256_TT
+  #define ippsHashMethodSet_SHA224 sgx_disp_ippsHashMethodSet_SHA224
+  #define ippsHashMethodSet_SHA224_NI sgx_disp_ippsHashMethodSet_SHA224_NI
+  #define ippsHashMethodSet_SHA224_TT sgx_disp_ippsHashMethodSet_SHA224_TT
+  #define ippsHashMethodSet_SHA512 sgx_disp_ippsHashMethodSet_SHA512
+  #define ippsHashMethodSet_SHA384 sgx_disp_ippsHashMethodSet_SHA384
+  #define ippsHashMethodSet_SHA512_256 sgx_disp_ippsHashMethodSet_SHA512_256
+  #define ippsHashMethodSet_SHA512_224 sgx_disp_ippsHashMethodSet_SHA512_224
   #define ippsHashGetSize_rmf sgx_disp_ippsHashGetSize_rmf
   #define ippsHashInit_rmf sgx_disp_ippsHashInit_rmf
   #define ippsHashPack_rmf sgx_disp_ippsHashPack_rmf
@@ -348,14 +365,6 @@ extern "C" {
   #define ippsRSAVerify_PKCS1v15 sgx_disp_ippsRSAVerify_PKCS1v15
   #define ippsRSASign_PKCS1v15_rmf sgx_disp_ippsRSASign_PKCS1v15_rmf
   #define ippsRSAVerify_PKCS1v15_rmf sgx_disp_ippsRSAVerify_PKCS1v15_rmf
-  #define ippsRSA_MB_GetBufferSizePublicKey sgx_disp_ippsRSA_MB_GetBufferSizePublicKey
-  #define ippsRSA_MB_GetBufferSizePrivateKey sgx_disp_ippsRSA_MB_GetBufferSizePrivateKey
-  #define ippsRSA_MB_Encrypt sgx_disp_ippsRSA_MB_Encrypt
-  #define ippsRSA_MB_Decrypt sgx_disp_ippsRSA_MB_Decrypt
-  #define ippsRSA_MB_Sign_PSS_rmf sgx_disp_ippsRSA_MB_Sign_PSS_rmf
-  #define ippsRSA_MB_Verify_PSS_rmf sgx_disp_ippsRSA_MB_Verify_PSS_rmf
-  #define ippsRSA_MB_Sign_PKCS1v15_rmf sgx_disp_ippsRSA_MB_Sign_PKCS1v15_rmf
-  #define ippsRSA_MB_Verify_PKCS1v15_rmf sgx_disp_ippsRSA_MB_Verify_PKCS1v15_rmf
   #define ippsDLGetResultString sgx_disp_ippsDLGetResultString
   #define ippsDLPGetSize sgx_disp_ippsDLPGetSize
   #define ippsDLPInit sgx_disp_ippsDLPInit

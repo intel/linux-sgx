@@ -42,6 +42,7 @@
 
 #include "sgx.h"
 #include "sgx_defs.h"
+#include "sgx_report2.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,12 +85,23 @@ sgx_status_t SGXAPI sgx_self_target(sgx_target_info_t *target_info);
  * Purpose: Software verification for  the input report
  *
  *  Paramters:
- *      report - [IN] ponter to the cryptographic report to be verified.
+ *      report - [IN] pointer to the cryptographic report to be verified.
  *
  *  Return value:
  *      sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h.
 */
 sgx_status_t SGXAPI sgx_verify_report(const sgx_report_t *report);
+
+/* sgx_verify_report2
+ * Purpose: Software verification for the mac structure of the cryptographic report
+ *
+ *  Parameters:
+ *      report_mac_struct - [IN] pointer to the mac structure of the cryptographic report to be verified.
+ *
+ *  Return value:
+ *      sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h.
+*/
+sgx_status_t SGXAPI sgx_verify_report2(const sgx_report2_mac_struct_t *report_mac_struct);
 
 /*sgx_get_key
  *  Purpose: Generate a 128-bit secret key with the input information.

@@ -39,8 +39,8 @@ CXXFLAGS += -DDISABLE_TRACE
 CFLAGS += -DDISABLE_TRACE
 endif
 
-CXXFLAGS += -fPIC -DSE_SIM -Werror -g
-CFLAGS   += -fPIC -DSE_SIM -Werror -g
+CXXFLAGS += -fPIC -DSE_SIM -Werror -g $(CET_FLAGS)
+CFLAGS   += -fPIC -DSE_SIM -Werror -g $(CET_FLAGS)
 
 CPPFLAGS += $(ADDED_INC) #for ubuntu 11 and later version
 CPPFLAGS += -I$(COMMON_DIR)/inc                \
@@ -181,7 +181,7 @@ ittnotify:
 	CFLAGS= CXXFLAGS= $(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify/
 
 $(LIBURTS_DEPLOY):../urts_deploy.c
-	 $(CC) -I$(COMMON_DIR)/inc -shared -fPIC -Wl,-soname=libsgx_urts.so $< -o $@
+	 $(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -shared -fPIC -Wl,-soname=libsgx_urts.so $< -o $@
 
 .PHONY: clean
 clean::

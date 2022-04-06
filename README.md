@@ -91,8 +91,8 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 8.2 64bits
-  * CentOS 8.2 64bits
+  * Red Hat Enterprise Linux Server release 8.4 64bits
+  * CentOS Stream 8 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
   * On Ubuntu 18.04:
@@ -103,13 +103,13 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python-is-python3 libssl-dev git cmake perl
   ```
-  * On Red Hat Enterprise Linux 8.2:
+  * On Red Hat Enterprise Linux 8.4:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel git cmake perl
     $ sudo alternatives --set python /usr/bin/python2
   ```
-  * On CentOS 8.2:
+  * On CentOS Stream 8:
   ```
     $ sudo dnf group install 'Development Tools'
     $ sudo dnf --enablerepo=PowerTools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python2
@@ -122,11 +122,11 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip
       ```
-      * On Red Hat Enterprise Linux 8.2:
+      * On Red Hat Enterprise Linux 8.4:
       ```
         $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
       ```
-      * On CentOS 8.2:
+      * On CentOS Stream 8:
       ```
         $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
       ```
@@ -231,7 +231,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   ```
   $ make deb_psw_pkg DEBUG=1
   ```
-  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
+  * On Red Hat Enterprise Linux 8.4 and CentOS Stream 8:
   ```
   $ make rpm_psw_pkg
   ```
@@ -275,12 +275,12 @@ You can find the tools and libraries generated in the `build/linux` directory.
   **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. Since the local package repository is not signed with GPG, you should ignore the gpgcheck when installing the packages.
 
   - To add the local RPM package repository to the system repository configuration, you can use the following command. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
+  * On Red Hat Enterprise Linux 8.4 and CentOS Stream 8:
   ```
   $ sudo yum-config-manager --add-repo file://PATH_TO_LOCAL_REPO
   ```
   - To ignore the gpgcheck when you install the package, enter the following command:
-  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
+  * On Red Hat Enterprise Linux 8.4 and CentOS Stream 8:
   ```
   $ sudo yum --nogpgcheck install <package>
   ```
@@ -293,14 +293,14 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 8.2 64bits
-  * CentOS 8.2 64bits
+  * Red Hat Enterprise Linux Server release 8.4 64bits
+  * CentOS Stream 8 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 18.04 and Ubuntu 20.04:
   ```  
     $ sudo apt-get install build-essential python
   ```
-  * On Red Hat Enterprise Linux 8.2 and CentOS 8.2:
+  * On Red Hat Enterprise Linux 8.4 and CentOS Stream 8:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python2
@@ -357,8 +357,8 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 8.2 64bits
-  * CentOS 8.2 64bits
+  * Red Hat Enterprise Linux Server release 8.4 64bits
+  * CentOS Stream 8 64bits
 - Ensure that you have a system with the following required hardware:  
   * 6th Generation Intel(R) Core(TM) Processor or newer
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
@@ -368,11 +368,11 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 8.2:  
+  * On Red Hat Enterprise Linux 8.4:  
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
-  * On CentOS 8.2:
+  * On CentOS Stream 8:
   ```
     $ sudo dnf --enablerepo=PowerTools install libcurl-devel protobuf-devel
   ```
@@ -382,7 +382,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 18.04 and Ubuntu 20.04|Red Hat Enterprise Linux 8.2, CentOS 8.2|
+|   |Ubuntu 18.04 and Ubuntu 20.04|Red Hat Enterprise Linux 8.4, CentOS Stream 8|
 | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|
@@ -407,7 +407,10 @@ Some packages are configured with recommended dependency on other packages that 
 ```
   --no-install-recommends
 ```
-**NOTE** On rpm based system, rpmbuild>=4.12 is required to enable similar features. 
+* On Red Hat Enterprise Linux 8.4 and CentOS Stream 8:
+```
+  --setopt=install_weak_deps=False
+```
 
 ### ECDSA attestation
 To enable ECDSA attestation    

@@ -217,13 +217,34 @@ all: .config_$(Build_Mode)_$(SGX_ARCH)$(SGX_PCL)
 	@$(MAKE) target
 
 ifeq ($(Build_Mode), HW_RELEASE)
+ifeq ($(SGX_PCL), 1)
 target: $(App_Name) $(Enclave_Name) $(Seal_Enclave_Name)
+	@echo "The project has been built in release hardware mode."
+	@echo "Note that there are 2 enclaves in this project"
+	@echo "$(Enclave_Name) and $(Seal_Enclave_Name)"
+	@echo "Therefore, there are 2 steps involved for this project in release hardware mode"
+	@echo "Step 1: encrypt the enclave - $(Enclave_Name)"
+	@echo "First encrypt the $(Enclave_Name) with the encryption key before signing the enclave"
+	@echo "To encrypt the $(Enclave_Name) use this command:"
+	@echo "		$(Pcl_Encryption_Tool) -i $(Enclave_Name) -o $(Encrypted_Enclave_Name) -k <encryption key>"
+	@echo "Step 2: sign $(Encrypted_Enclave_Name) and $(Seal_Enclave_Name)"
+	@echo "Please sign the $(Encrypted_Enclave_Name) with enclave signing key"
+	@echo "and also sign the $(Seal_Enclave_Name) with seal enclave signing key before you run the $(App_Name) to launch and access the enclaves."
+	@echo "To sign the seal enclave (i.e. $(Seal_Enclave_Name)) use the command"
+	@echo "		$(SGX_ENCLAVE_SIGNER) sign -key <seal enclave sign key> -enclave $(Seal_Enclave_Name) -out $(Signed_Seal_Enclave_Name) -config $(Seal_Enclave_Config_File)"
+	@echo "To sign the encrypted enclave (i.e. $(Encrypted_Enclave_Name)) from step 1, use the command:"
+	@echo "		$(SGX_ENCLAVE_SIGNER) sign -key <enclave signing key> -enclave $(Encrypted_Enclave_Name) -out $(Signed_Enclave_Name) -config $(Enclave_Config_File)"
+	@echo "You can also sign the enclave using an external signing tool."
+	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
+else
+target: $(App_Name) $(Enclave_Name) 
 	@echo "The project has been built in release hardware mode."
 	@echo "Please sign the $(Enclave_Name) first with your signing key before you run the $(App_Name) to launch and access the enclave."
 	@echo "To sign the enclave use the command:"
 	@echo "   $(SGX_ENCLAVE_SIGNER) sign -key <your key> -enclave $(Enclave_Name) -out <$(Signed_Enclave_Name)> -config $(Enclave_Config_File)"
 	@echo "You can also sign the enclave using an external signing tool."
 	@echo "To build the project in simulation mode set SGX_MODE=SIM. To build the project in prerelease mode set SGX_PRERELEASE=1 and SGX_MODE=HW."
+endif
 else
 target: $(Signed_Seal_Enclave_Name) $(App_Name) $(Signed_Enclave_Name)
 ifeq ($(Build_Mode), HW_DEBUG)

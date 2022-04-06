@@ -46,6 +46,10 @@
 #define SSA_NUM        2
 #define SSA_FRAME_SIZE 1
 
+#define FEATURE_MUST_BE_DISABLED    0
+#define FEATURE_MUST_BE_ENABLED     1
+#define FEATURE_LOADER_SELECTS      2
+
 typedef enum _para_type_t
 {
     PRODID = 0,
@@ -78,7 +82,8 @@ typedef enum _para_type_t
     ISVEXTPRODID_L,
     ENCLAVEIMAGEADDRESS,
     ELRANGESTARTADDRESS,
-    ELRANGESIZE
+    ELRANGESIZE,
+    PKRU
 } para_type_t;
 
 typedef struct _xml_parameter_t

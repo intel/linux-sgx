@@ -1,11 +1,13 @@
-From fe8fb72edd288b34f56d29655b31628418ece297 Mon Sep 17 00:00:00 2001
+From 1fd736c2c796b7ff475a0e26c28acb6a48eb9b5e Mon Sep 17 00:00:00 2001
 From: yanxue <yan.xue@intel.com>
-Date: Wed, 18 Aug 2021 16:38:10 +0800
+Date: Wed, 16 Feb 2022 16:44:18 +0800
 Subject: [PATCH] Enable Protobuf in SGX
 
 ---
  cmake/CMakeLists.txt                          |  31 +++-
  cmake/libsgx_protobuf.cmake                   | 137 ++++++++++++++++++
+ configure.ac                                  |   2 +-
+ src/google/protobuf/compiler/cpp/cpp_file.cc  |   2 +
  src/google/protobuf/generated_message_util.cc |  10 ++
  src/google/protobuf/io/coded_stream.h         |   4 +
  .../protobuf/io/zero_copy_stream_impl.cc      |   8 +-
@@ -26,11 +28,11 @@ Subject: [PATCH] Enable Protobuf in SGX
  .../protobuf/util/delimited_message_util.cc   |   2 +
  .../protobuf/util/delimited_message_util.h    |   7 +-
  src/google/protobuf/util/time_util.h          |   4 +
- 22 files changed, 293 insertions(+), 13 deletions(-)
+ 24 files changed, 296 insertions(+), 14 deletions(-)
  create mode 100644 cmake/libsgx_protobuf.cmake
 
 diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
-index 52661f5..1d8a2d7 100644
+index 52661f522..1d8a2d71a 100644
 --- a/cmake/CMakeLists.txt
 +++ b/cmake/CMakeLists.txt
 @@ -19,6 +19,13 @@ endif()
@@ -87,7 +89,7 @@ index 52661f5..1d8a2d7 100644
  endif (protobuf_BUILD_LIBPROTOC)
 diff --git a/cmake/libsgx_protobuf.cmake b/cmake/libsgx_protobuf.cmake
 new file mode 100644
-index 0000000..262129e
+index 000000000..262129e49
 --- /dev/null
 +++ b/cmake/libsgx_protobuf.cmake
 @@ -0,0 +1,137 @@
@@ -228,8 +230,34 @@ index 0000000..262129e
 +    OUTPUT_NAME ${LIB_PREFIX}protobuf
 +    DEBUG_POSTFIX "${protobuf_DEBUG_POSTFIX}")
 +add_library(protobuf::libprotobuf ALIAS libprotobuf)
+diff --git a/configure.ac b/configure.ac
+index eb70a76e1..3402990f8 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -106,7 +106,7 @@ ACX_CHECK_SUNCC
+ 
+ # Have to do libtool after SUNCC, other wise it "helpfully" adds Crun Cstd
+ # to the link
+-AC_PROG_LIBTOOL
++LT_INIT
+ 
+ # Check whether the linker supports version scripts
+ AC_MSG_CHECKING([whether the linker supports version scripts])
+diff --git a/src/google/protobuf/compiler/cpp/cpp_file.cc b/src/google/protobuf/compiler/cpp/cpp_file.cc
+index 875beec9f..732b0e915 100644
+--- a/src/google/protobuf/compiler/cpp/cpp_file.cc
++++ b/src/google/protobuf/compiler/cpp/cpp_file.cc
+@@ -75,6 +75,8 @@ std::string GetSortKey<FileDescriptor>(const FileDescriptor& val) {
+ 
+ template <>
+ std::string GetSortKey<SCC>(const SCC& val) {
++  if (val.GetRepresentative() == nullptr)
++    return std::string("");
+   return val.GetRepresentative()->full_name();
+ }
+ 
 diff --git a/src/google/protobuf/generated_message_util.cc b/src/google/protobuf/generated_message_util.cc
-index f1f6f88..b02f91d 100644
+index f1f6f8833..b02f91d0d 100644
 --- a/src/google/protobuf/generated_message_util.cc
 +++ b/src/google/protobuf/generated_message_util.cc
 @@ -39,7 +39,11 @@
@@ -277,7 +305,7 @@ index f1f6f88..b02f91d 100644
  
  }  // namespace internal
 diff --git a/src/google/protobuf/io/coded_stream.h b/src/google/protobuf/io/coded_stream.h
-index 0fff178..431a1c9 100644
+index 0fff1782c..431a1c994 100644
 --- a/src/google/protobuf/io/coded_stream.h
 +++ b/src/google/protobuf/io/coded_stream.h
 @@ -131,7 +131,11 @@
@@ -293,7 +321,7 @@ index 0fff178..431a1c9 100644
       (defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN)) && \
      !defined(PROTOBUF_DISABLE_LITTLE_ENDIAN_OPT_FOR_TEST)
 diff --git a/src/google/protobuf/io/zero_copy_stream_impl.cc b/src/google/protobuf/io/zero_copy_stream_impl.cc
-index 52617e9..08de285 100644
+index 52617e9ef..08de285a3 100644
 --- a/src/google/protobuf/io/zero_copy_stream_impl.cc
 +++ b/src/google/protobuf/io/zero_copy_stream_impl.cc
 @@ -33,15 +33,20 @@
@@ -335,7 +363,7 @@ index 52617e9..08de285 100644
  
  ConcatenatingInputStream::ConcatenatingInputStream(
 diff --git a/src/google/protobuf/io/zero_copy_stream_impl.h b/src/google/protobuf/io/zero_copy_stream_impl.h
-index 0206e38..1f0b19c 100644
+index 0206e3887..1f0b19ce3 100644
 --- a/src/google/protobuf/io/zero_copy_stream_impl.h
 +++ b/src/google/protobuf/io/zero_copy_stream_impl.h
 @@ -53,7 +53,7 @@
@@ -357,7 +385,7 @@ index 0206e38..1f0b19c 100644
  
  // A ZeroCopyInputStream which reads from several other streams in sequence.
 diff --git a/src/google/protobuf/message_lite.cc b/src/google/protobuf/message_lite.cc
-index 0e85991..c533c9f 100644
+index 0e8599147..c533c9f3e 100644
 --- a/src/google/protobuf/message_lite.cc
 +++ b/src/google/protobuf/message_lite.cc
 @@ -272,7 +272,7 @@ bool MessageLite::ParsePartialFromZeroCopyStream(
@@ -396,7 +424,7 @@ index 0e85991..c533c9f 100644
    GOOGLE_DCHECK(IsInitialized()) << InitializationErrorMessage("serialize", *this);
    return AppendPartialToString(output);
 diff --git a/src/google/protobuf/message_lite.h b/src/google/protobuf/message_lite.h
-index a76c16e..cc62911 100644
+index a76c16e5a..cc6291162 100644
 --- a/src/google/protobuf/message_lite.h
 +++ b/src/google/protobuf/message_lite.h
 @@ -310,11 +310,15 @@ class PROTOBUF_EXPORT MessageLite {
@@ -431,7 +459,7 @@ index a76c16e..cc62911 100644
    // existing contents.  All required fields must be set.
    bool AppendToString(std::string* output) const;
 diff --git a/src/google/protobuf/stubs/common.cc b/src/google/protobuf/stubs/common.cc
-index bc150f5..c7be73d 100644
+index bc150f56a..c7be73d57 100644
 --- a/src/google/protobuf/stubs/common.cc
 +++ b/src/google/protobuf/stubs/common.cc
 @@ -35,7 +35,11 @@
@@ -487,7 +515,7 @@ index bc150f5..c7be73d 100644
  }
  
 diff --git a/src/google/protobuf/stubs/int128.cc b/src/google/protobuf/stubs/int128.cc
-index 2119e65..6896876 100644
+index 2119e6550..68968760e 100644
 --- a/src/google/protobuf/stubs/int128.cc
 +++ b/src/google/protobuf/stubs/int128.cc
 @@ -31,7 +31,9 @@
@@ -517,7 +545,7 @@ index 2119e65..6896876 100644
  }  // namespace protobuf
  }  // namespace google
 diff --git a/src/google/protobuf/stubs/int128.h b/src/google/protobuf/stubs/int128.h
-index dc70d96..bfca3bf 100644
+index dc70d96eb..bfca3bfc6 100644
 --- a/src/google/protobuf/stubs/int128.h
 +++ b/src/google/protobuf/stubs/int128.h
 @@ -85,9 +85,11 @@ class PROTOBUF_EXPORT uint128 {
@@ -545,7 +573,7 @@ index dc70d96..bfca3bf 100644
  // Methods to access low and high pieces of 128-bit value.
  // Defined externally from uint128 to facilitate conversion
 diff --git a/src/google/protobuf/stubs/port.h b/src/google/protobuf/stubs/port.h
-index 0fcee68..8e017b7 100644
+index 0fcee6891..8e017b735 100644
 --- a/src/google/protobuf/stubs/port.h
 +++ b/src/google/protobuf/stubs/port.h
 @@ -57,9 +57,13 @@
@@ -563,7 +591,7 @@ index 0fcee68..8e017b7 100644
    #if ((defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)) || \
           (defined(__BYTE_ORDER) && __BYTE_ORDER == __LITTLE_ENDIAN) || \
 diff --git a/src/google/protobuf/stubs/status.cc b/src/google/protobuf/stubs/status.cc
-index 03b37c3..f53c178 100644
+index 03b37c365..f53c1781e 100644
 --- a/src/google/protobuf/stubs/status.cc
 +++ b/src/google/protobuf/stubs/status.cc
 @@ -29,7 +29,9 @@
@@ -590,7 +618,7 @@ index 03b37c3..f53c178 100644
  }  // namespace util
  }  // namespace protobuf
 diff --git a/src/google/protobuf/stubs/status.h b/src/google/protobuf/stubs/status.h
-index bededad..2d82c8c 100644
+index bededad54..2d82c8c76 100644
 --- a/src/google/protobuf/stubs/status.h
 +++ b/src/google/protobuf/stubs/status.h
 @@ -113,8 +113,10 @@ class PROTOBUF_EXPORT Status {
@@ -605,7 +633,7 @@ index bededad..2d82c8c 100644
  }  // namespace util
  }  // namespace protobuf
 diff --git a/src/google/protobuf/stubs/stringpiece.cc b/src/google/protobuf/stubs/stringpiece.cc
-index 353c78c..1ed4546 100644
+index 353c78cad..1ed4546ba 100644
 --- a/src/google/protobuf/stubs/stringpiece.cc
 +++ b/src/google/protobuf/stubs/stringpiece.cc
 @@ -33,16 +33,20 @@
@@ -630,7 +658,7 @@ index 353c78c..1ed4546 100644
  // Out-of-line error path.
  void StringPiece::LogFatalSizeTooBig(size_t size, const char* details) {
 diff --git a/src/google/protobuf/stubs/stringpiece.h b/src/google/protobuf/stubs/stringpiece.h
-index fbcb20a..afd567e 100644
+index fbcb20afc..afd567eed 100644
 --- a/src/google/protobuf/stubs/stringpiece.h
 +++ b/src/google/protobuf/stubs/stringpiece.h
 @@ -423,8 +423,10 @@ inline bool operator>=(StringPiece x, StringPiece y) {
@@ -645,7 +673,7 @@ index fbcb20a..afd567e 100644
  namespace internal {
  // StringPiece is not a POD and can not be used in an union (pre C++11). We
 diff --git a/src/google/protobuf/stubs/strutil.cc b/src/google/protobuf/stubs/strutil.cc
-index 2ecdb2b..4944f63 100644
+index 2ecdb2bf7..4944f6380 100644
 --- a/src/google/protobuf/stubs/strutil.cc
 +++ b/src/google/protobuf/stubs/strutil.cc
 @@ -39,6 +39,9 @@
@@ -728,7 +756,7 @@ index 2ecdb2b..4944f63 100644
    int snprintf_result =
      snprintf(buffer, kFloatToBufferSize, "%.*g", FLT_DIG, value);
 diff --git a/src/google/protobuf/stubs/time.cc b/src/google/protobuf/stubs/time.cc
-index 922be76..4efb2e8 100644
+index 922be76d1..4efb2e85e 100644
 --- a/src/google/protobuf/stubs/time.cc
 +++ b/src/google/protobuf/stubs/time.cc
 @@ -264,7 +264,11 @@ bool DateTimeToSeconds(const DateTime& time, int64* seconds) {
@@ -744,7 +772,7 @@ index 922be76..4efb2e8 100644
  }
  
 diff --git a/src/google/protobuf/text_format.cc b/src/google/protobuf/text_format.cc
-index f47d4e8..afd178c 100644
+index f47d4e8d0..afd178c6f 100644
 --- a/src/google/protobuf/text_format.cc
 +++ b/src/google/protobuf/text_format.cc
 @@ -63,6 +63,9 @@
@@ -758,7 +786,7 @@ index f47d4e8..afd178c 100644
  namespace google {
  namespace protobuf {
 diff --git a/src/google/protobuf/util/delimited_message_util.cc b/src/google/protobuf/util/delimited_message_util.cc
-index 425dc2c..d07637d 100644
+index 425dc2cfd..d07637d3b 100644
 --- a/src/google/protobuf/util/delimited_message_util.cc
 +++ b/src/google/protobuf/util/delimited_message_util.cc
 @@ -38,6 +38,7 @@ namespace google {
@@ -778,7 +806,7 @@ index 425dc2c..d07637d 100644
  bool ParseDelimitedFromCodedStream(MessageLite* message,
                                     io::CodedInputStream* input,
 diff --git a/src/google/protobuf/util/delimited_message_util.h b/src/google/protobuf/util/delimited_message_util.h
-index d3f7dbe..4fe6fd1 100644
+index d3f7dbe8a..4fe6fd190 100644
 --- a/src/google/protobuf/util/delimited_message_util.h
 +++ b/src/google/protobuf/util/delimited_message_util.h
 @@ -34,8 +34,9 @@
@@ -818,7 +846,7 @@ index d3f7dbe..4fe6fd1 100644
  bool PROTOBUF_EXPORT ParseDelimitedFromCodedStream(MessageLite* message,
                                                     io::CodedInputStream* input,
 diff --git a/src/google/protobuf/util/time_util.h b/src/google/protobuf/util/time_util.h
-index 95063fc..084c996 100644
+index 95063fc49..084c996a1 100644
 --- a/src/google/protobuf/util/time_util.h
 +++ b/src/google/protobuf/util/time_util.h
 @@ -43,10 +43,14 @@ struct timeval {

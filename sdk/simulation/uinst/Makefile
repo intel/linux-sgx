@@ -46,7 +46,7 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/         \
             -I$(LINUX_PSW_DIR)/urts      \
             -I$(LINUX_PSW_DIR)/urts/linux
 
-CXXFLAGS += -Werror -fPIC
+CXXFLAGS += -Werror -fPIC $(CET_FLAGS)
 
 OBJ1 := linux/set_tls.o \
         linux/restore_tls.o \

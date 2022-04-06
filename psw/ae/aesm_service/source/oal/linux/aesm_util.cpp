@@ -198,14 +198,33 @@ ae_error_t aesm_get_pathname(aesm_data_type_t type, aesm_data_id_t id, char *buf
         if (xgid != INVALID_EGID){
             return AE_FAILURE;
         }
-        if(strnlen(info->name, MAX_PATH)>=MAX_PATH-UPBOUND_OF_FORMAT){
+        size_t length = strnlen(info->name, MAX_PATH);
+        if (length >= MAX_PATH-UPBOUND_OF_FORMAT) {
             return AE_FAILURE;//info->name is a constant string and the length of it should not be too long so that the defense in depth codition here should never be triggered.
         }
-        num_bytes = snprintf(local_info_name,MAX_PATH, "libsgx_%s.signed.so",info->name);
-        if(num_bytes<0||num_bytes>=MAX_PATH){
+        strncpy(local_info_name, info->name, length + 1);
+        char * p_match = strstr(local_info_name, "signed.so");
+        if (!p_match) {
             return AE_FAILURE;
         }
-        return aesm_get_path(local_info_name, buf, buf_size);
+        size_t signed_so_length = strlen("signed.so");
+        if (p_match -local_info_name == length - signed_so_length) {
+            //info->name ends with "signed.so". Use whole name.
+            return aesm_get_path(local_info_name, buf, buf_size);
+        }
+        else if (p_match[signed_so_length] != '.') {
+            return AE_FAILURE;
+        }
+        else {
+            //info->name ends with "signed.so.<major>.<minor>". Use "signed.so.<major>".
+            //skip "signed.so." and find next '.'
+            char* p_next_dot = strchr(p_match + signed_so_length + 1, '.' );
+            if ( p_next_dot != NULL )
+            {
+                *p_next_dot = '\0';  //null terminate the string
+            }
+            return aesm_get_path(local_info_name, buf, buf_size);
+        }
     }else if(info->loc == AESM_LOCATION_DATA){
         if (xgid != INVALID_EGID){
             return AE_FAILURE;
