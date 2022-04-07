@@ -416,7 +416,7 @@ def retrieve_enclave_info(info_addr = 0):
             td_fmt = '4Q'
 
         #get thread_data_t address
-        if (info_tuple[8] == info_tuple[1]) or ((info_tuple[3] & ET_SIM) == ET_SIM):
+        if (info_tuple[8] == 0) or (info_tuple[8] == info_tuple[1]) or ((info_tuple[3] & ET_SIM) == ET_SIM):
             td_addr = tcs_t_tuple[7] + info_tuple[1]     #thread_data_t = tcs.of_base + debug_enclave_info.start_addr
         else:
             td_addr = tcs_t_tuple[7] + info_tuple[8]     #thread_data_t = tcs.of_base + debug_enclave_info.elrange_start_address
