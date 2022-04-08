@@ -89,6 +89,7 @@ namespace {
         global_data->heap_size = (sys_word_t)(create_param->heap_init_size);
         global_data->thread_policy = (sys_word_t)metadata->tcs_policy;
         global_data->tcs_max_num = (sys_word_t)create_param->tcs_max_num;
+        global_data->tcs_num = (sys_word_t)create_param->tcs_num;
         thread_data_t *thread_data = &global_data->td_template;
 
         thread_data->stack_limit_addr = (sys_word_t)create_param->stack_limit_addr;
