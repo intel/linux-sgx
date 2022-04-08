@@ -60,7 +60,7 @@ uint64_t g_enclave_base __attribute__((section(RELRO_SECTION_NAME))) = 0;
 uint64_t g_enclave_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 
-const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0,
+const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0, 0,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0};
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 uint32_t g_cpu_core_num __attribute__((section(RELRO_SECTION_NAME))) = 0;
