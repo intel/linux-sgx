@@ -353,10 +353,11 @@ static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r
                 return 0;
             }
             //move the ocall return result to rsi and set rdi to ECMD_ORET for ocall return to trts
-            __asm__ __volatile__("mov %%rax, %%rsi\n"
-                    "mov %0, %%rdi\n"
+            __asm__ __volatile__("mov $0, %%rsi\n"
+                    "movl %0, %%esi\n"
+                    "mov %1, %%rdi\n"
                     :
-                    :"i"(ECMD_ORET)
+                    :"r"(status),"i"(ECMD_ORET)
                     :"rsi","rdi");
             return SE_EENTER;
         }
