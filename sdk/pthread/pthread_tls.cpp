@@ -173,7 +173,7 @@ void _pthread_tls_destructors(void)
     struct sgx_pthread_storage *rs;
     int i;
 
-    if(NULL == pthread_info_tls.m_pthread)
+    if(NULL == pthread_info_tls.m_local_storage)
         //do nothing
         return;
 
