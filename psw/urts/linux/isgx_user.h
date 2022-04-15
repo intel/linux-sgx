@@ -4,7 +4,7 @@
  *
  * GPL LICENSE SUMMARY
  *
- * Copyright(c) 2016 Intel Corporation.
+ * Copyright(c) 2016-2022 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -21,7 +21,7 @@
  *
  * BSD LICENSE
  *
- * Copyright(c) 2016 Intel Corporation.
+ * Copyright(c) 2016-2022 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,6 +55,7 @@
  * Suresh Siddha <suresh.b.siddha@intel.com>
  * Serge Ayoun <serge.ayoun@intel.com>
  * Shay Katz-zamir <shay.katz-zamir@intel.com>
+ * Haitao Huang <haitao.huang@linux.intel.com>
  */
 
 #ifndef _UAPI_ASM_X86_SGX_H
@@ -112,8 +113,8 @@ enum sgx_page_flags {
         _IO(SGX_MAGIC, 0x04)
 #define SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS \
     _IOWR(SGX_MAGIC, 0x05, struct sgx_enclave_restrict_permissions)
-#define SGX_IOC_ENCLAVE_MODIFY_TYPE \
-    _IOWR(SGX_MAGIC, 0x06, struct sgx_enclave_modify_type)
+#define SGX_IOC_ENCLAVE_MODIFY_TYPES \
+    _IOWR(SGX_MAGIC, 0x06, struct sgx_enclave_modify_types)
 #define SGX_IOC_ENCLAVE_REMOVE_PAGES \
     _IOWR(SGX_MAGIC, 0x07, struct sgx_enclave_remove_pages)
 
@@ -295,39 +296,39 @@ struct sgx_modification_param {
 	unsigned long flags;
 };
 
+
 /**
  * struct sgx_enclave_restrict_permissions - parameters for ioctl
  *                                        %SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS
  * @offset: starting page offset (page aligned relative to enclave base
  *      address defined in SECS)
  * @length: length of memory (multiple of the page size)
- * @secinfo:    address for the SECINFO data containing the new permission bits
- *      for pages in range described by @offset and @length
+ * @permissions:new permission bits for pages in range described by @offset
+ *              and @length
  * @result: (output) SGX result code of ENCLS[EMODPR] function
  * @count:  (output) bytes successfully changed (multiple of page size)
  */
 struct sgx_enclave_restrict_permissions {
     __u64 offset;
     __u64 length;
-    __u64 secinfo;
+    __u64 permissions;
     __u64 result;
     __u64 count;
 };
 
 /**
- * struct sgx_enclave_modify_type - parameters for %SGX_IOC_ENCLAVE_MODIFY_TYPE
+ * struct sgx_enclave_modify_type - parameters for %SGX_IOC_ENCLAVE_MODIFY_TYPES
  * @offset: starting page offset (page aligned relative to enclave base
  *      address defined in SECS)
  * @length: length of memory (multiple of the page size)
- * @secinfo:    address for the SECINFO data containing the new type
- *      for pages in range described by @offset and @length
+ * @page_type:  new type for pages in range described by @offset and @length
  * @result: (output) SGX result code of ENCLS[EMODT] function
  * @count:  (output) bytes successfully changed (multiple of page size)
  */
-struct sgx_enclave_modify_type {
+struct sgx_enclave_modify_types {
     __u64 offset;
     __u64 length;
-    __u64 secinfo;
+    __u64 page_type;
     __u64 result;
     __u64 count;
 };
