@@ -81,7 +81,7 @@ uint64_t get_offset_for_address(uint64_t target_address)
 
 static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
 {
-    struct sgx_enclave_modify_type ioc;
+    struct sgx_enclave_modify_types ioc;
     if (length == 0)
         return EINVAL;
 
@@ -90,16 +90,12 @@ static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
             addr, length, type);
     memset(&ioc, 0, sizeof(ioc));
 
-    sec_info_t sec_info;
-    memset(&sec_info, 0, sizeof(sec_info_t));
-    sec_info.flags = SGX_EMA_PAGE_TYPE(type);
-
-    ioc.secinfo = POINTER_TO_U64(&sec_info);;
+    ioc.page_type = type;
     ioc.offset = get_offset_for_address(addr);
     ioc.length = length;
     do
     {
-        int ret = ioctl(fd, SGX_IOC_ENCLAVE_MODIFY_TYPE, &ioc);
+        int ret = ioctl(fd, SGX_IOC_ENCLAVE_MODIFY_TYPES, &ioc);
         //TODO: use error code
         if (ret && ioc.count == 0 && errno != EBUSY)
         { //total failure
@@ -165,11 +161,7 @@ static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
             addr, length, prot);
     memset(&ioc, 0, sizeof(ioc));
 
-    sec_info_t sec_info;
-    memset(&sec_info, 0, sizeof(sec_info_t));
-    sec_info.flags = prot;//no shift
-
-    ioc.secinfo = POINTER_TO_U64(&sec_info);
+    ioc.permissions = prot;
     ioc.offset = get_offset_for_address(addr);
     ioc.length = length;
 
