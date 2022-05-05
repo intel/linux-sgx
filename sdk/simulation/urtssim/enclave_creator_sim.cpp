@@ -239,6 +239,12 @@ int EnclaveCreatorSim::destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enc
 
     if(enclave == NULL)
         return SGX_ERROR_INVALID_ENCLAVE_ID;
+
+    if(s_enclave_elrange_map.count(enclave->get_start_address()) != 0)
+    {
+        s_enclave_elrange_map.erase(enclave->get_start_address());
+    }
+
     return ::destroy_enclave(enclave_id);
 }
 
