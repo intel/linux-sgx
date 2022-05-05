@@ -75,7 +75,7 @@ static std::map<void*, int> s_hfile;            //enclave file handles for drive
 static std::map<void*, size_t> s_enclave_size;
 static std::map<void*, bool> s_enclave_init;
 static std::map<void*, sgx_attributes_t> s_secs_attr;
-static std::map<void *, enclave_elrange_t*>s_enclave_elrange_map;
+static std::map<void *, enclave_elrange_t>s_enclave_elrange_map;
 
 typedef struct _mem_region_t {
     void* addr;
@@ -177,9 +177,9 @@ static bool get_elrange_from_base_address(void* base_address, enclave_elrange_t*
     {
         if(enclave_elrange != NULL)
         {
-            enclave_elrange->elrange_size = s_enclave_elrange_map[base_address]->elrange_size;
-            enclave_elrange->elrange_start_address = s_enclave_elrange_map[base_address]->elrange_start_address;
-            enclave_elrange->enclave_image_address = s_enclave_elrange_map[base_address]->enclave_image_address;
+            enclave_elrange->elrange_size = s_enclave_elrange_map[base_address].elrange_size;
+            enclave_elrange->elrange_start_address = s_enclave_elrange_map[base_address].elrange_start_address;
+            enclave_elrange->enclave_image_address = s_enclave_elrange_map[base_address].enclave_image_address;
         }
         return true;
     }
@@ -235,20 +235,10 @@ static void close_sofile(void)
 }
 
 
-static void release_enclave_elrange_map()
-{
-    for (auto &res:s_enclave_elrange_map)
-    {
-        auto elrange = res.second;
-        delete elrange;
-        elrange = NULL;
-    }
-}
 static void __attribute__((destructor)) enclave_fini(void)
 {
     close_device();
     close_sofile();
-    release_enclave_elrange_map();
 }
 
 static uint32_t error_driver2api(int driver_error, int err_no)
@@ -788,24 +778,9 @@ extern "C" void* COMM_API enclave_create_ex(
         s_enclave_mem_region[enclave_base].prot = 0;
         if(enclave_elrange != NULL)
         {
-            enclave_elrange_t *tmp_enclave_elrange = new(std::nothrow) enclave_elrange_t;
-            if (tmp_enclave_elrange == NULL)
-            {
-                if (enclave_error)
-                {
-                    *enclave_error = ENCLAVE_OUT_OF_MEMORY;
-                }
-
-                //if in-kernel driver then close the file handle
-                if (s_driver_type == SGX_DRIVER_IN_KERNEL)
-                {
-                    close_file(&hdevice_temp);
-                }
-                munmap(enclave_base, virtual_size);
-                return NULL;
-            }
-            memset(tmp_enclave_elrange, 0, sizeof(enclave_elrange_t));
-            if (memcpy_s(tmp_enclave_elrange, sizeof(enclave_elrange_t), enclave_elrange, sizeof(enclave_elrange_t)))
+            enclave_elrange_t tmp_enclave_elrange;
+            memset(&tmp_enclave_elrange, 0, sizeof(enclave_elrange_t));
+            if (memcpy_s(&tmp_enclave_elrange, sizeof(enclave_elrange_t), enclave_elrange, sizeof(enclave_elrange_t)))
             {
                 if (enclave_error)
                 {
@@ -1285,13 +1260,7 @@ extern "C" bool COMM_API enclave_delete(
 
         if(s_enclave_elrange_map.count(base_address) != 0)
         {
-            enclave_elrange_t *enclave_elrange = s_enclave_elrange_map[base_address];
-            if (enclave_elrange != NULL)
-            {
-                s_enclave_elrange_map.erase(base_address);
-                delete enclave_elrange;
-                enclave_elrange = NULL;
-            } 
+            s_enclave_elrange_map.erase(base_address);
         }
     }
 
