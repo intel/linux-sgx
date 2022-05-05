@@ -75,18 +75,8 @@ static void cleanup_openssl(void)
 
 
 static Mutex s_enclave_info_mutex;
-static std::map<void *, enclave_elrange_t*>s_enclave_elrange_map;
+static std::map<void *, enclave_elrange_t>s_enclave_elrange_map;
 
-__attribute__((destructor)) 
-static void enclave_elrange_cleanup(void)
-{
-    for (auto &res:s_enclave_elrange_map)
-    {
-        auto elrange = res.second;
-        delete elrange;
-        elrange = NULL;
-    }
-}
 
 extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_start_address)
 {
@@ -94,7 +84,7 @@ extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_
     bool ret = false;
     if(s_enclave_elrange_map.count(base_address) != 0)
     {
-        elrange_start_address = s_enclave_elrange_map[base_address]->elrange_start_address;
+        elrange_start_address = s_enclave_elrange_map[base_address].elrange_start_address;
         ret = true;
     }
     return ret;  
@@ -118,30 +108,22 @@ int EnclaveCreatorSim::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id
         LockGuard lock(&s_enclave_info_mutex);
         if (s_enclave_elrange_map.count(base_address) != 0)
         {
-            enclave_elrange_t *enclave_elrange = s_enclave_elrange_map[base_address];
-            if (enclave_elrange == NULL)
-            {
-                return SGX_ERROR_UNEXPECTED;
-            }
+            enclave_elrange_t enclave_elrange = s_enclave_elrange_map[base_address];
 
-            if (memcpy_s(enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
+            if (memcpy_s(&enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
             {
                 return SGX_ERROR_UNEXPECTED;
             }
         }
         else
         {
-            enclave_elrange_t *enclave_elrange = new(std::nothrow) enclave_elrange_t;
-            if (enclave_elrange == NULL)
-            {
-                return SGX_ERROR_OUT_OF_MEMORY;
-            }
-            memset(enclave_elrange, 0, sizeof(enclave_elrange_t));
-            if (memcpy_s(enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
+            enclave_elrange_t enclave_elrange;
+            memset(&enclave_elrange, 0, sizeof(enclave_elrange_t));
+            if (memcpy_s(&enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
             {
                 return SGX_ERROR_UNEXPECTED;
             }
-            s_enclave_elrange_map[base_address] = enclave_elrange;  
+            s_enclave_elrange_map[base_address] = enclave_elrange;
         }
     }
     return ::create_enclave(secs, enclave_id, start_addr);
