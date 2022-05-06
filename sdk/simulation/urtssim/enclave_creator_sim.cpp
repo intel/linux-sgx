@@ -106,25 +106,7 @@ int EnclaveCreatorSim::create_enclave(secs_t *secs, sgx_enclave_id_t *enclave_id
         enclave_elrange_t *tmp_enclave_elrange =  reinterpret_cast<enclave_elrange_t *>(const_cast<void *>(ex_features_p[ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX]));
         void *base_address = reinterpret_cast<void*>(tmp_enclave_elrange->enclave_image_address);
         LockGuard lock(&s_enclave_info_mutex);
-        if (s_enclave_elrange_map.count(base_address) != 0)
-        {
-            enclave_elrange_t enclave_elrange = s_enclave_elrange_map[base_address];
-
-            if (memcpy_s(&enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
-            {
-                return SGX_ERROR_UNEXPECTED;
-            }
-        }
-        else
-        {
-            enclave_elrange_t enclave_elrange;
-            memset(&enclave_elrange, 0, sizeof(enclave_elrange_t));
-            if (memcpy_s(&enclave_elrange, sizeof(enclave_elrange_t), tmp_enclave_elrange, sizeof(enclave_elrange_t)))
-            {
-                return SGX_ERROR_UNEXPECTED;
-            }
-            s_enclave_elrange_map[base_address] = enclave_elrange;
-        }
+        s_enclave_elrange_map[base_address] = *tmp_enclave_elrange;
     }
     return ::create_enclave(secs, enclave_id, start_addr);
 }
@@ -240,10 +222,7 @@ int EnclaveCreatorSim::destroy_enclave(sgx_enclave_id_t enclave_id, uint64_t enc
     if(enclave == NULL)
         return SGX_ERROR_INVALID_ENCLAVE_ID;
 
-    if(s_enclave_elrange_map.count(enclave->get_start_address()) != 0)
-    {
-        s_enclave_elrange_map.erase(enclave->get_start_address());
-    }
+    s_enclave_elrange_map.erase(enclave->get_start_address());
 
     return ::destroy_enclave(enclave_id);
 }

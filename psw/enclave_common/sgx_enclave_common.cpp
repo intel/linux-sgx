@@ -778,23 +778,7 @@ extern "C" void* COMM_API enclave_create_ex(
         s_enclave_mem_region[enclave_base].prot = 0;
         if(enclave_elrange != NULL)
         {
-            enclave_elrange_t tmp_enclave_elrange;
-            memset(&tmp_enclave_elrange, 0, sizeof(enclave_elrange_t));
-            if (memcpy_s(&tmp_enclave_elrange, sizeof(enclave_elrange_t), enclave_elrange, sizeof(enclave_elrange_t)))
-            {
-                if (enclave_error)
-                {
-                    *enclave_error = ENCLAVE_UNEXPECTED;
-                }
-                //if in-kernel driver then close the file handle
-                if (s_driver_type == SGX_DRIVER_IN_KERNEL)
-                {
-                    close_file(&hdevice_temp);
-                }
-                munmap(enclave_base, virtual_size);
-                return NULL;
-            }
-            s_enclave_elrange_map[enclave_base] = tmp_enclave_elrange;
+            s_enclave_elrange_map[enclave_base] = *enclave_elrange;
         }
     }
     
@@ -1258,10 +1242,7 @@ extern "C" bool COMM_API enclave_delete(
             s_hfile.erase(base_address);
         }
 
-        if(s_enclave_elrange_map.count(base_address) != 0)
-        {
-            s_enclave_elrange_map.erase(base_address);
-        }
+        s_enclave_elrange_map.erase(base_address);
     }
 
     if (0 != munmap(base_address, enclave_size)) {
