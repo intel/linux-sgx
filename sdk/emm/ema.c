@@ -668,9 +668,9 @@ int ema_do_commit_loop(ema_t *first, ema_t *last, size_t start, size_t end)
     return ret;
 }
 
-int ema_do_uncommit(ema_t *node, size_t start, size_t end)
+static int ema_do_uncommit_real(ema_t *node, size_t real_start, size_t real_end,
+        int prot)
 {
-    int prot = node->si_flags & SGX_EMA_PROT_MASK;
     int type = node->si_flags & SGX_EMA_PAGE_TYPE_MASK;
     uint32_t alloc_flags = node->alloc_flags & SGX_EMA_ALLOC_FLAGS_MASK;
 
@@ -680,39 +680,66 @@ int ema_do_uncommit(ema_t *node, size_t start, size_t end)
     }
 
     assert(node->eaccept_map); //TODO: refactor bit_array_test/set
-    size_t real_start = MAX(start, node->start_addr);
-    size_t real_end = MIN(end, node->start_addr + node->size);
 
     sec_info_t si SGX_SECINFO_ALIGN = { SGX_EMA_PAGE_TYPE_TRIM |
                                         SGX_EMA_STATE_MODIFIED,
                                         0};
-
-    for(size_t addr = real_start; addr < real_end; addr += SGX_PAGE_SIZE)
+    
+    while (real_start < real_end)
     {
-        size_t pos = (addr - node->start_addr) >> SGX_PAGE_SHIFT;
-        // only for committed page
-        if (bit_array_test(node->eaccept_map, pos)) {
-            int ret = sgx_mm_modify_ocall(addr, SGX_PAGE_SIZE,
-                                  prot | type, prot | SGX_EMA_PAGE_TYPE_TRIM);
-            if (ret != 0) {
-                return ret;
+        size_t block_start = real_start;
+        while (block_start < real_end ){
+            size_t pos = (block_start - node->start_addr) >> SGX_PAGE_SHIFT;
+            if (bit_array_test(node->eaccept_map, pos)) {
+                break;
+            } else {
+                block_start += SGX_PAGE_SIZE; 
             }
-
-            ret = do_eaccept(&si, addr);
-            if (ret != 0) {
-                return ret;
-            }
-            bit_array_reset(node->eaccept_map, pos);
-            //eaccept trim notify
-            ret =sgx_mm_modify_ocall(addr, SGX_PAGE_SIZE,
-                                    prot | SGX_EMA_PAGE_TYPE_TRIM,
-                                    prot | SGX_EMA_PAGE_TYPE_TRIM);
-            if(ret) return ret;
         }
+        if (block_start == real_end)
+            break;
+        
+        size_t block_end = block_start + SGX_PAGE_SIZE;
+        while (block_end < real_end) {
+            size_t pos = (block_end - node->start_addr) >> SGX_PAGE_SHIFT;
+            if (bit_array_test(node->eaccept_map, pos)) {
+                block_end += SGX_PAGE_SIZE;
+            }
+            else
+                break;
+        }
+        assert(block_end > block_start);
+        // only for committed page
+        size_t block_length = block_end - block_start;
+        int ret = sgx_mm_modify_ocall(block_start, block_length,
+                          prot | type, prot | SGX_EMA_PAGE_TYPE_TRIM);
+        if (ret != 0) {
+            return ret;
+        }
+
+        ret = eaccept_range_forward(&si, block_start, block_end);
+        if (ret != 0) {
+            return ret;
+        }
+        bit_array_reset_range(node->eaccept_map, (block_start - node->start_addr) >> SGX_PAGE_SHIFT, block_length >> SGX_PAGE_SHIFT);
+        //eaccept trim notify
+        ret =sgx_mm_modify_ocall(block_start, block_length,
+                            prot | SGX_EMA_PAGE_TYPE_TRIM,
+                            prot | SGX_EMA_PAGE_TYPE_TRIM);
+        if(ret) return ret;
+
+        real_start = block_end;
     }
     return 0;
 }
 
+int ema_do_uncommit(ema_t *node, size_t start, size_t end)
+{
+    size_t real_start = MAX(start, node->start_addr);
+    size_t real_end = MIN(end, node->start_addr + node->size);
+    int prot = node->si_flags & SGX_EMA_PROT_MASK;
+    return ema_do_uncommit_real(node, real_start, real_end, prot);
+}
 static int ema_can_uncommit(ema_t* first, ema_t* last,
                                 size_t start, size_t end)
 {
@@ -754,8 +781,6 @@ int ema_do_uncommit_loop(ema_t *first, ema_t *last, size_t start, size_t end)
 
 int ema_do_dealloc(ema_t *node, size_t start, size_t end)
 {
-    int prot = node->si_flags & SGX_EMA_PROT_MASK;
-    int type = node->si_flags & SGX_EMA_PAGE_TYPE_MASK;
     int alloc_flag = node->alloc_flags & SGX_EMA_ALLOC_FLAGS_MASK;
 
     if (alloc_flag & SGX_EMA_RESERVE)
@@ -767,45 +792,15 @@ int ema_do_dealloc(ema_t *node, size_t start, size_t end)
     size_t real_start = MAX(start, node->start_addr);
     size_t real_end = MIN(end, node->start_addr + node->size);
 
-    sec_info_t si SGX_SECINFO_ALIGN = { SGX_EMA_PAGE_TYPE_TRIM |
-                                        SGX_EMA_STATE_MODIFIED,
-                                        0};
-
-    for(size_t page = real_start; page < real_end; page += SGX_PAGE_SIZE)
-    {
-        size_t pos = (page - node->start_addr) >> SGX_PAGE_SHIFT;
-
-        // only for committed page
-        //!TODO combine ocalls for multiple pages
-        if (bit_array_test(node->eaccept_map, pos)) {
-            //Make ocall to trim, make sure to keep READ for eaccept
-            int ret = sgx_mm_modify_ocall(page, SGX_PAGE_SIZE,
-                                prot | SGX_EMA_PROT_READ | type,
-                                prot | SGX_EMA_PROT_READ | SGX_EMA_PAGE_TYPE_TRIM );
-            if (ret != 0) {
-                return ret;
-            }
-
-            ret = do_eaccept(&si, page);
-            if (ret != 0) {
-                return ret;
-            }
-            bit_array_reset(node->eaccept_map, pos);
-
-            //notify kernel to remove, clear all protection bits
-            ret = sgx_mm_modify_ocall(page, SGX_PAGE_SIZE,
-                                prot | SGX_EMA_PAGE_TYPE_TRIM,
-                                SGX_EMA_PROT_NONE | SGX_EMA_PAGE_TYPE_TRIM);
-            if (ret != 0) {
-                return ret;
-            }
-        }
-    }
+    //clear protections flag
+    int ret = ema_do_uncommit_real (node, real_start, real_end, SGX_EMA_PROT_NONE);
+    if (ret != 0)
+        return ret;
 
     // potential ema split
     ema_t *tmp_node = NULL;
     if (real_start > node->start_addr) {
-        int ret = ema_split(node, real_start, false, &tmp_node);
+        ret = ema_split(node, real_start, false, &tmp_node);
         if(ret) return ret;
         assert(tmp_node);
         node = tmp_node;
@@ -813,7 +808,7 @@ int ema_do_dealloc(ema_t *node, size_t start, size_t end)
 
     tmp_node = NULL;
     if (real_end < (node->start_addr + node->size)) {
-        int ret = ema_split(node, real_end, true, &tmp_node);
+        ret = ema_split(node, real_end, true, &tmp_node);
         if(ret) return ret;
         assert(tmp_node);
         node = tmp_node;
