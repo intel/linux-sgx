@@ -96,8 +96,7 @@ static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
     do
     {
         int ret = ioctl(fd, SGX_IOC_ENCLAVE_MODIFY_TYPES, &ioc);
-        //TODO: use error code
-        if (ret && ioc.count == 0 && errno != EBUSY)
+        if (ret && ioc.count == 0 && errno != EBUSY && errno != EAGAIN)
         { //total failure
             SE_TRACE(SE_TRACE_WARNING,
                 "MODT failed, error = %d for 0x%llX ( %llX ), type: 0x%llX\n",
@@ -169,7 +168,7 @@ static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
     {
         int ret = ioctl(fd, SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS, &ioc);
         //TODO: use error code
-        if (ret && ioc.count == 0 && errno != EBUSY )
+        if (ret && ioc.count == 0 && errno != EBUSY && errno!=EAGAIN )
         { //total failure
             SE_TRACE(SE_TRACE_WARNING,
                 "MODP failed, error = %d for 0x%llX ( %llX ), prot: 0x%llX\n",
@@ -345,9 +344,6 @@ extern "C" int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_f
     {
         assert(type_from != SGX_EMA_PAGE_TYPE_TRIM);
         if (prot_to != prot_from)
-            return EINVAL;
-        //user must be able to  do EACCEPT
-        if (prot_to == PROT_NONE)
             return EINVAL;
         return _trim(fd, addr, length);
     }
