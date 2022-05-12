@@ -58,7 +58,6 @@ struct ema_t_ {
                                         // Or'd with one of EMA_PAGE_TYPE_REG, EMA_PAGE_TYPE_TCS, EMA_PAGE_TYPE_TRIM
     bit_array *         eaccept_map;    // bitmap for EACCEPT status, bit 0 in eaccept_map[0] for the page at start address
                                         // bit i in eaccept_map[j] for page at start_address+(i+j<<3)<<12
-    sgx_mm_mutex *      lock;           // lock to prevent concurrent modification, could be sgx_thread_mutex_t/rwlock_t
     int                 transition;     // state to indicate whether a transition in progress, e.g page type/permission changes.
     sgx_enclave_fault_handler_t
                         handler;              // custom PF handler  (for EACCEPTCOPY use)
@@ -541,7 +540,6 @@ ema_t *ema_new(size_t addr, size_t size, uint32_t alloc_flags,
                 alloc_flags,
                 si_flags,
                 NULL,
-                NULL, //TODO, use lock?
                 0,
                 handler,
                 private_data,
