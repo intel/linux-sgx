@@ -36,6 +36,7 @@ CPPFLAGS += -Iinclude                       \
 
 OBJS := bit_array.o          \
         ema.o                \
+        emalloc.o                \
         emm_private.o        \
         sgx_mm.o
 

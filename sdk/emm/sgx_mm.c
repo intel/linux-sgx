@@ -34,14 +34,15 @@
 #include <assert.h>
 #include "sgx_mm.h"
 #include "ema.h"
+#include "emalloc.h"
 #include "sgx_mm_rt_abstraction.h"
 
 extern ema_root_t g_user_ema_root;
 extern ema_root_t g_rts_ema_root;
 #define  LEGAL_ALLOC_PAGE_TYPE (SGX_EMA_PAGE_TYPE_REG | SGX_EMA_PAGE_TYPE_SS_FIRST | SGX_EMA_PAGE_TYPE_SS_REST)
-#define TRIM_TO(x, align)  ((x) & ~(align-1))
 sgx_mm_mutex *mm_lock = NULL;
-
+size_t mm_user_base = 0;
+size_t mm_user_end = 0;
 //!FIXME: assume user and system EMAs are not interleaved
 // user EMAs are above the last system EMA
 int mm_alloc_internal(void *addr, size_t size, int flags,
@@ -81,7 +82,7 @@ int mm_alloc_internal(void *addr, size_t size, int flags,
     if(sgx_mm_mutex_lock(mm_lock))
         return EFAULT;
 
-    if (ema_root_empty(&g_rts_ema_root)){
+    if (mm_user_base == 0){
         //the rts is not initialized
         status = EFAULT;
         goto unlock;
@@ -183,6 +184,12 @@ int sgx_mm_alloc(void *addr, size_t size, int flags,
                  void *private, void **out_addr)
 {
     if (flags & SGX_EMA_SYSTEM) return EINVAL;
+    if(addr)
+    {
+        size_t tmp = (size_t)addr;
+        if (tmp >= mm_user_end || tmp < mm_user_base)
+           return EPERM;
+    }
     return mm_alloc_internal(addr, size, flags,
             handler, private, out_addr, &g_user_ema_root);
 }
@@ -435,8 +442,11 @@ unlock:
     return ret;
 }
 
-void sgx_mm_init(void)
+void sgx_mm_init(size_t user_base, size_t user_end)
 {
     mm_lock = sgx_mm_mutex_create();
+    mm_user_base = user_base;
+    mm_user_end = user_end;
     sgx_mm_register_pfhandler(sgx_mm_enclave_pfhandler);
+    emalloc_init();
 }

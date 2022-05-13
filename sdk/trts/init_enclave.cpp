@@ -79,7 +79,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section
 extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
 extern "C" int init_segment_emas(void* enclave_base);
 extern "C" int init_rts_contexts_emas(layout_t *start, layout_t *end, uint64_t delta);
-extern "C" void sgx_mm_init();
+extern "C" void sgx_mm_init(size_t, size_t);
 // init_enclave()
 //      Initialize enclave.
 // Parameters:
@@ -269,12 +269,21 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
     g_enclave_state = ENCLAVE_INIT_DONE;
     if (EDMM_supported)
     {
-        sgx_mm_init();
+        //!TODO take user base and size from config
+        layout_t* last_layout = (layout_t*)(g_global_data.layout_table + g_global_data.layout_entry_num - 1);
+        if(IS_GROUP_ID(last_layout->group.id)) return SGX_ERROR_UNEXPECTED;
+        layout_entry_t *last_entry = &last_layout->entry;
+        size_t user_base = last_entry->rva + g_enclave_base;
+        size_t user_end = user_base + (((size_t)last_entry->page_count) << SE_PAGE_SHIFT);
+        assert(last_entry->si_flags == 0 && user_end == g_enclave_size + g_enclave_base); //last guard pages
+        user_base += 0x10000ULL; //reserve guard page, same number used in ema_init.c
+        if(user_base>=user_end)
+            return SGX_ERROR_UNEXPECTED;
+        sgx_mm_init(user_base, user_end);
         void* enclave_start = (void*)&__ImageBase;
         if (init_segment_emas(enclave_start))
             return SGX_ERROR_UNEXPECTED;
-        int ret = init_rts_contexts_emas((layout_t*)g_global_data.layout_table,
-            (layout_t*)(g_global_data.layout_table + g_global_data.layout_entry_num), 0);
+        int ret = init_rts_contexts_emas((layout_t*)g_global_data.layout_table, last_layout, 0);
         if (ret != SGX_SUCCESS) {
             return SGX_ERROR_UNEXPECTED;
         }

@@ -405,7 +405,7 @@ int SGX_CDECL main(int argc, char *argv[])
     int ret = 0;
 
     //17 threads for 100 iterations passed when this is checked in
-    ret += test_sgx_mm_functions(17);
+    ret += test_sgx_mm_functions(247);
     ret += test_unsafe();
 
     sgx_destroy_enclave(global_eid);

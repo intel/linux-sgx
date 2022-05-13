@@ -35,8 +35,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include "bit_array.h"
+#include "emalloc.h"
 
-#define ROUND_TO(x, align)  ((size_t)((x) + ((align)-1)) & (size_t)(~((align)-1)))
 #define NUM_OF_BYTES(nbits) (ROUND_TO((nbits), 8) >> 3)
 #define TEST_BIT(A, p)      ((A)[((p)/8)] & ((uint8_t)(1 << ((p)%8))))
 #define SET_BIT(A, p)       ((A)[((p)/8)] |= ((uint8_t)(1 << ((p)%8))))
@@ -60,14 +60,14 @@ bit_array *bit_array_new(size_t num_of_bits)
     if (n_bytes == 0)
         return NULL;
 
-    bit_array *ba = (bit_array *)malloc(sizeof(bit_array));
-    if (!ba) return NULL;
+    bit_array *ba = (bit_array *)emalloc(sizeof(bit_array));
+    if(!ba) return NULL;
     ba->n_bytes = n_bytes;
     ba->n_bits = num_of_bits;
-    ba->data = (uint8_t*)malloc(n_bytes);
+    ba->data = (uint8_t*)emalloc(n_bytes);
     if (!ba->data)
     {
-        free(ba);
+        efree(ba);
         return NULL;
     }
     return ba;
@@ -101,7 +101,7 @@ bit_array *bit_array_new_reset(size_t num_of_bits)
 void bit_array_reattach(bit_array *ba, size_t num_of_bits, uint8_t *data)
 {
     if (ba->data) {
-        free(ba->data);
+        efree(ba->data);
     }
 
     size_t n_bytes = NUM_OF_BYTES(num_of_bits);
@@ -113,8 +113,8 @@ void bit_array_reattach(bit_array *ba, size_t num_of_bits, uint8_t *data)
 // Delete the bit_array 'ba' and the data it owns
 void bit_array_delete(bit_array *ba)
 {
-    free(ba->data);
-    free(ba);
+    efree(ba->data);
+    efree(ba);
 }
 
 #if 0
@@ -392,7 +392,7 @@ int bit_array_split(bit_array *ba, size_t pos, bit_array **new_lower, bit_array 
     size_t r_bits = ba->n_bits - l_bits;
 
     // new data for bit_array of lower pages
-    uint8_t *data = (uint8_t *)malloc(l_bytes);
+    uint8_t *data = (uint8_t *)emalloc(l_bytes);
     if (!data) return ENOMEM;
     size_t i;
     for (i = 0; i < byte_index; ++i) {
@@ -408,7 +408,7 @@ int bit_array_split(bit_array *ba, size_t pos, bit_array **new_lower, bit_array 
     bit_array *ba2 = bit_array_new(r_bits);
     if(!ba2)
     {
-        free(data);
+        efree(data);
         return ENOMEM;
     }
 

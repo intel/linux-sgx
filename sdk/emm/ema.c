@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ema.h"
+#include "emalloc.h"
 #include "bit_array.h"
 #include "sgx_mm.h"
 #include "sgx_mm_primitives.h"
@@ -44,10 +45,6 @@
 #define SGX_EMA_STATE_PENDING   0x8UL
 #define SGX_EMA_STATE_MODIFIED  0x10UL
 #define SGX_EMA_STATE_PR        0x20UL
-#define ROUND_TO(x, align)        (((x) + (align-1)) & ~(align-1))
-#define TRIM_TO(x, align)        ((x) & ~(align-1))
-#define MIN(x, y) (((x)>(y))?(y):(x))
-#define MAX(x, y) (((x)>(y))?(x):(y))
 #define UNUSED(x) ((void)(x))
 struct ema_t_ {
     size_t              start_addr;     // starting address, should be on a page boundary
@@ -69,7 +66,8 @@ struct ema_t_ {
 struct ema_root_ {
     ema_t *guard;
 };
-
+extern size_t mm_user_base;
+extern size_t mm_user_end;
 ema_t dummy_user_ema = {.next = &dummy_user_ema,
                         .prev = &dummy_user_ema};
 ema_root_t g_user_ema_root = {.guard = &dummy_user_ema};
@@ -355,7 +353,7 @@ int ema_split(ema_t *ema, size_t addr, bool new_lower, ema_t** ret_node)
         return EINVAL;
     }
 
-    ema_t *new_node = (ema_t *)malloc(sizeof(ema_t));
+    ema_t *new_node = (ema_t *)emalloc(sizeof(ema_t));
     if (!new_node) {
         return ENOMEM;
     }
@@ -365,7 +363,7 @@ int ema_split(ema_t *ema, size_t addr, bool new_lower, ema_t** ret_node)
         size_t pos = (addr - ema->start_addr) >> SGX_PAGE_SHIFT;
         int ret = bit_array_split(ema->eaccept_map, pos, &low, &high);
         if(ret) {
-            free(new_node);
+            efree(new_node);
             return ret;
         }
     }
@@ -439,12 +437,19 @@ bool find_free_region(ema_root_t *root, size_t size,
 {
     ema_t *ema_begin = root->guard->next;
     ema_t *ema_end = root->guard;
-
-    // we need at least one node before calling this.
+    bool is_system = (root == &g_rts_ema_root);
     if(ema_begin == ema_end){
-        if(ema_root_empty(&g_rts_ema_root))
-            return false;//rts has to be inited at this time
-        size_t tmp = ema_root_end(&g_rts_ema_root);
+        size_t tmp = 0;
+        if (is_system)
+        {
+            // we need at least one node before calling this.
+            if(ema_root_empty(&g_rts_ema_root))
+                return false;//rts has to be inited at this time
+            tmp = ema_root_end(&g_rts_ema_root);
+        }else
+        {
+            tmp = mm_user_base;
+        }
         tmp = ROUND_TO(tmp, align);
         if(!sgx_mm_is_within_enclave((void*)tmp, size))
             return false;
@@ -474,14 +479,17 @@ bool find_free_region(ema_root_t *root, size_t size,
     {
         *next_ema = next;
         *addr = ema_aligned_end(curr, align);
-        return true;
+        size_t end = *addr + size;
+        if( (is_system && (end <=mm_user_base || *addr > mm_user_base))
+                || (!is_system && end < mm_user_end))
+            return true;
     }
     // we look for space in front, but do not mix user with rts
     size_t tmp = ema_begin->start_addr - size;
     tmp = TRIM_TO(tmp, align);
-    if (root == &g_user_ema_root)
+    if (!is_system)
     {
-        if (ema_root_end(&g_rts_ema_root) < tmp){
+        if (mm_user_base < tmp){
             //we found gap bigger enough
             *addr = tmp;
             *next_ema = ema_begin;
@@ -531,7 +539,7 @@ ema_t *ema_new(size_t addr, size_t size, uint32_t alloc_flags,
                  void *private_data,
                  ema_t* next_ema)
 {
-    ema_t *node = (ema_t *)malloc(sizeof(ema_t));
+    ema_t *node = (ema_t *)emalloc(sizeof(ema_t));
     if (!node)
         return NULL;
     *node = (ema_t){
@@ -557,7 +565,7 @@ void ema_destroy(ema_t *ema)
     {
         bit_array_delete(ema->eaccept_map);
     }
-    free(ema);
+    efree(ema);
 }
 
 static int eaccept_range_forward(const sec_info_t *si, size_t start, size_t end)

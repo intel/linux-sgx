@@ -1,16 +1,16 @@
 <EnclaveConfiguration>
   <ProdID>0</ProdID>
   <ISVSVN>0</ISVSVN>
-  <TCSNum>8</TCSNum>
+  <TCSNum>248</TCSNum>
   <TCSMinPool>3</TCSMinPool>
   <TCSPolicy>1</TCSPolicy>
-  <TCSMaxNum>18</TCSMaxNum>
+  <TCSMaxNum>248</TCSMaxNum>
 
   <StackMaxSize>0x10000</StackMaxSize>
   <StackMinSize>0x2000</StackMinSize>
-  <HeapMaxSize>0x900000</HeapMaxSize>
-  <HeapInitSize>0x90000</HeapInitSize>
-  <HeapMinSize>0x080000</HeapMinSize>
+  <HeapMaxSize>0xF0000000</HeapMaxSize>
+  <HeapInitSize>0x9000</HeapInitSize>
+  <HeapMinSize>0x08000</HeapMinSize>
   <ReservedMemMinSize>  0x00001000</ReservedMemMinSize>
   <ReservedMemInitSize> 0x00100000</ReservedMemInitSize>
   <ReservedMemMaxSize>  0x90000000</ReservedMemMaxSize>

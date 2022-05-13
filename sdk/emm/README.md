@@ -106,18 +106,18 @@ $ tail -f nohup.out
 
 Limitations of current implementation
 ---------------------------------------
-1. EMM holds a global recursive mutex for the whole duration of each API invocation.
+1. The EMM holds a global recursive mutex for the whole duration of each API invocation.
 	- No support for concurrent operations (modify type/permissions, commit and commit_data) on different regions.
-2. EMM internally uses the default heap and stack during its internal operations
-	- The initial heap and stack should be sufficient to bootstrap EMM initializations
-	- Book-keeping for heap should be created when RTS is initialized.
-		- RTS calls mm_init_ema to create region for the static heap (EADDed), and mm_alloc to reserve COMMIT_ON_DEMAND for dynamic heap.
-	- Stack expansion should be done in 1st phase exception handler and use a reserved static stack
-		- Such that stack is not overrun in sgx_mm API calls during stack expansion.
-3. EMM requires all RTS allocations(with SGX_EMA_SYSTEM flag) are reserved up front during RTS/enclave initializations.
-	- EMM won't allocate any user requested region below the highest address in RTS regions.
-	- EMM won't serve any user request unless at least one RTS region is reserved.
-4. EMM relies on vDSO interface to guarantee that fault handler is called on the same OS thread where fault happened.
+2. The EMM internally uses a separate dynamic allocator (emalloc) to manage its internal memory usage: allocations for EMA objects and bitmaps of the regions.
+    - During initialization, the EMM emalloc will create an initial reserve region from the user range (given by RTS, see below). And it may add more reserves later also from the user range if needed.
+    - RTS and SDK signing tools can estimate this overhead with (total size of all RTS regions and user regions)/2^14. And account for it when calculating the enclave size.
+	- Before calling any EMM APIs, the RTS needs initialize EMM by calling sgx_mm_init pass in an address range [user_start, user_end) for user allocation.
+        - The EMM allocates all user requested region(via sgx_mm_alloc API) in this range only.
+3. Allocations created by the RTS enclave loader at fixed address ranges can be reserved with SGX_EMA_SYSTEM flag after EMM initializations.
+	- For example, for a heap region to be dynamically expanded:
+		- The RTS calls mm_init_ema to create region for the static heap (EADDed), and mm_alloc to reserve COMMIT_ON_DEMAND for dynamic heap.
+	- Stack expansion should be done in 1st phase exception handler and use a reserved static stack so that stack is not overrun in sgx_mm API calls during stack expansion.
+4. The EMM relies on vDSO interface to guarantee that fault handler is called on the same OS thread where fault happened.
 	- This is due to the use of the global recursive mutex. If fault handler comes in from different thread while the mutex is held, it will deadlock.
 	- Note a #PF could happen when more stack is needed inside EMM functions while the mutex is locked.
 		- vDSO user handler should ensure it re-enters enclave with the original TCS and on the same OS thread.
