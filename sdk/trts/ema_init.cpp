@@ -74,7 +74,7 @@ static int build_rts_context_nodes(layout_entry_t *entry, uint64_t offset)
         Intel SDK specific. Last guard page area fills up remaining enclave space
         we cut off to leave space for user.
         ************************/
-        if((addr + size) == enclave_end)
+        if((addr + size) == enclave_end && size > 0x10000ULL)
             size = 0x10000;
         int ret = mm_init_ema((void*)addr,
                          size,

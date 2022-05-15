@@ -61,10 +61,15 @@ bit_array *bit_array_new(size_t num_of_bits)
         return NULL;
 
     bit_array *ba = (bit_array *)malloc(sizeof(bit_array));
-    if(!ba) return NULL;
+    if (!ba) return NULL;
     ba->n_bytes = n_bytes;
     ba->n_bits = num_of_bits;
     ba->data = (uint8_t*)malloc(n_bytes);
+    if (!ba->data)
+    {
+        free(ba);
+        return NULL;
+    }
     return ba;
 }
 
@@ -401,6 +406,11 @@ int bit_array_split(bit_array *ba, size_t pos, bit_array **new_lower, bit_array 
 
     // new bit_array for higher pages
     bit_array *ba2 = bit_array_new(r_bits);
+    if(!ba2)
+    {
+        free(data);
+        return ENOMEM;
+    }
 
     size_t bits_remain = r_bits;
     size_t curr_byte = byte_index;
@@ -437,7 +447,7 @@ bit_array* bit_array_merge(bit_array *ba1, bit_array *ba2)
 {
     size_t total_bits = ba1->n_bits + ba2->n_bits;
     bit_array *ba = bit_array_new(total_bits);
-
+    if (!ba) return NULL;
 
     // copy ba1 data into new bit_array
     memcpy(ba->data, ba1->data, ba1->n_bytes);

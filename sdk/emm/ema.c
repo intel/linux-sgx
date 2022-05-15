@@ -553,8 +553,9 @@ ema_t *ema_new(size_t addr, size_t size, uint32_t alloc_flags,
 void ema_destroy(ema_t *ema)
 {
     remove_ema(ema);
-    if (ema->eaccept_map) {
-        free(ema->eaccept_map);
+    if (ema->eaccept_map)
+    {
+        bit_array_delete(ema->eaccept_map);
     }
     free(ema);
 }
