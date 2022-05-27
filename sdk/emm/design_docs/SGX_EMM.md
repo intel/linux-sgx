@@ -554,31 +554,43 @@ Intel SGX SDK) before any other clients can use it. Therefore, code and data
 of the memory manager will be part of initial enclave image that are loaded
 with EADD before EINIT, and as a part of the trusted runtime.
 
-The trusted runtime should enumerate all initial committed regions (code,
-data, heap, stack, TCS, and SSA), and call the EMM internal APIs to set up
-initial entries in the EMA list to track existing regions and mark some
-of them as not modifiable by EMM public APIs. The runtime also ensures there is
-enough reserved space on the heap for EMM to create the initial EMA list and
-the entries. Once initialized, the memory manager can reserve its own
-space for future expansion of the EMA list, and special EMAs to hold
-EMA objects. To keep it simple, the expansion can be done eagerly: commit
-more pages for EMA list once unused committed space in the EMA List Region
-below certain threshold.
+To initialize EMM internals, the trusted runtime should first invoke sgx_mm_init,
+passing in an address range available for non-system or so-called user allocations.
 
-Alternative option: At build time, the enclave signing tool can precalculate
-and fill in EMA entries that hold info on initial regions to be committed by
-EADD during enclave load. The calculated start addresses in these EMAs can be
-relative to enclave secs->base. The runtime can patch those entries at
-initialization by adding secs->base. The EMM can directly use those EMAs as
-the initial entries of the EMA list. It only needs to reserve and commit
-a number of additional pages for future EMA list expansion.
+```
+/*
+ * Initialize the EMM internals and reserve the whole range available for user
+ * allocations via the public sgx_mm_alloc API. This should be called before
+ * any other APIs invoked. The runtime should not intend to allocate any subregion
+ * in [user_start, user_end) for system usage, i.e., the EMM will fail any allocation
+ * request with SGX_EMA_SYSTEM flag in this range and return an EINVAL error.
+ * @param[in] user_start The start of the user address range, page aligned.
+ * @param[in] user_end The end (exclusive) of the user address range, page aligned.
+ */
+void sgx_mm_init(size_t user_start, size_t user_end);
+```
 
+The EMM consumes some minimal amount of memory to store the EMA objects for
+book keeping of all allocations. During initialization, the EMM reserves an initial area
+in the user range for those internal use. And it would allocate more of such reserves on
+demand as EMAs created for allocation requests and the active reserves run out. The size
+of the user range accomodate this internal consumption overhead, which can be estimated as
+the total size of all regions to be tracked (both system and expected user allocations)
+divided by 2^14. At runtime, in case the EMM could not find space to allocate EMA objects
+then its API would return ENOMEM.
+
+After initialization, the trusted runtime should enumerate all initial committed regions (code,
+data, heap, stack, TCS, and SSA), and call the EMM private APIs to set up
+initial entries in the EMA list to track existing regions. These regions
+are typically created by the enclave loader at predetermined locations and
+some are loaded with content from the enclave image. Thus it's necessary to
+reserve their ranges this way so that they won't be modifiable by EMM public APIs.
 
 ### EMM Private APIs for Trusted Runtimes
 These private APIs can be used by the trusted runtime to reserve and allocate
 regions not accessible from public APIs. They have the identical signature
-as the public API counterparts and replace "sgx_mm_" prefix with "ema_" prefix.
-The main difference is that the private ema_alloc allows an extra flag
+as the public API counterparts and replace "sgx_mm_" prefix with "mm_" prefix.
+The main difference is that the private mm_alloc allows an extra flag
 SGX_EMA_SYSTEM passed in.
 
 ```
@@ -695,3 +707,6 @@ file), any reserved region for special purposes, e.g., minimal heap, stack,
 TCS areas, SSAs for expected minimal number of threads, etc. The runtime
 would read those info to populate the initial EMAs described in the section
 above on [Support for EMM Initialization](#support-for-emm-initialization)
+The memory layout can also contain an entry for the user range mentioned
+above if the enclave intends to dynamically allocate and manage some regions
+using the EMM public APIs.
