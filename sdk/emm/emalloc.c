@@ -55,7 +55,7 @@ static size_t meta_used;
  * initial reserve size
  * TODO: make it configurable by RTS
  */
-static const size_t initial_reserve_size = 0x10000ULL;
+#define initial_reserve_size 0x10000ULL
 
 // this is enough for bit map of an 8T EMA
 static const size_t max_emalloc_size = 0x10000000ULL;
@@ -80,9 +80,9 @@ typedef struct _block
 } block_t;
 
 #define num_exact_list 0x100
-static const size_t header_size = sizeof(uint64_t);
-static const size_t exact_match_increment = 0x8;
-static const size_t min_block_size = 0x10; //include 8-byte header
+size_t header_size = sizeof(uint64_t);
+#define exact_match_increment 0x8
+#define min_block_size 0x10 //include 8-byte header
 static const size_t max_exact_size = min_block_size + exact_match_increment * (num_exact_list -1);
 static block_t* exact_block_list[num_exact_list];
 
@@ -90,8 +90,8 @@ static block_t* exact_block_list[num_exact_list];
 // 1 == allocated/in-use, 0 == free
 static const uint64_t alloc_mask = 1ULL;
 //block size align to 8 bytes
-static const uint64_t size_mask = ~((uint64_t)(exact_match_increment-1));
-// We don't expect many latge blocks
+uint64_t size_mask = ~((uint64_t)(exact_match_increment-1));
+// We don't expect many large blocks
 // !TODO: optimize if needed
 static block_t* large_block_list = NULL;
 
@@ -152,7 +152,7 @@ static mm_reserve_t* find_used_in_reserve(size_t addr, size_t size)
 
 static size_t get_list_idx(size_t size)
 {
-    assert(size%exact_match_increment ==0);
+    assert(size % exact_match_increment == 0);
     if(size < min_block_size) return 0;
     size_t list = (size - min_block_size)/exact_match_increment;
     assert(list < num_exact_list);
@@ -400,16 +400,16 @@ static int add_reserve (size_t rsize)
     //!TODO
     //create a separate internal API to remove circular calls
     int ret = sgx_mm_alloc(NULL, chunk_size + 2*guard_size, SGX_EMA_RESERVE,
-                 NULL, NULL,&base);
+                 NULL, NULL, &base);
     if (ret)
 	    return ret;
     ret = sgx_mm_alloc((void*)((size_t)base + guard_size), chunk_size,
-                SGX_EMA_COMMIT_ON_DEMAND, NULL, NULL,&base);
+                SGX_EMA_COMMIT_ON_DEMAND, NULL, NULL, &base);
     if(ret)
         return ret;
 
-    new_reserve(base, chunk_size);
     sgx_mm_commit(base, rsize);
+    new_reserve(base, chunk_size);
     chunk_size = chunk_size * 2; //double next time
     if (chunk_size > max_emalloc_size)
         chunk_size = max_emalloc_size;
@@ -419,7 +419,7 @@ static int add_reserve (size_t rsize)
     return 0;
 }
 
-void* alloc_from_meta(size_t bsize)
+static void* alloc_from_meta(size_t bsize)
 {
     if (meta_used + bsize> META_RESERVE_SIZE) return NULL;
     block_t* b = (block_t*) (&meta_reserve[meta_used]);
@@ -498,6 +498,8 @@ void efree(void* payload)
         if (adding_reserve)
         {   //we don't expect a lot of free blocks allocated
             // in meta reserve. Do nothing now
+            assert (bstart >= (size_t)(&meta_reserve[0]));
+            assert (bstart + bsize <= (size_t)(&meta_reserve[META_RESERVE_SIZE]));
             return;
         }
         else
