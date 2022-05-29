@@ -359,15 +359,6 @@ extern "C" int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_f
 
     if (type_to != type_from)
         return EINVAL;
-    // type_to == type_from
-    // this is for emodpr to epcm.NONE, enclave EACCEPT with pte.R
-    // separate mprotect is needed to change pte.R to pte.NONE
-    if (prot_to == prot_from && prot_to == PROT_NONE)
-    {
-        ret = mprotect((void *)addr, length, prot_to);
-        if (ret == -1)
-            return errno;
-    }
 
     if (prot_to == prot_from)
     {
@@ -384,12 +375,8 @@ extern "C" int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_f
     {
         return EINVAL;
     }
-    //EACCEPT needs at least pte.R, PROT_NONE case done above.
-    if (prot_to != PROT_NONE)
-    {
-        ret = mprotect((void *)addr, length, prot_to);
-        if (ret == -1)
-            return errno;
-    }
+    ret = mprotect((void *)addr, length, prot_to);
+    if (ret == -1)
+        return errno;
     return ret;
 }
