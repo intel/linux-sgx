@@ -89,7 +89,10 @@ __thread pthread_info pthread_info_tls = {NULL, NULL, {0, 0, 0, 0, 0, 0, 0, 0}, 
 
 bool _pthread_enabled(void)
 {
-    pthread_info_tls.m_local_storage = NULL;
+    if(is_tcs_binding_mode() == false)
+    {
+        pthread_info_tls.m_local_storage = NULL;
+    }
     pthread_info_tls.m_pthread = NULL;
     pthread_info_tls.m_state = SGX_SUCCESS;
     memset((char*)&pthread_info_tls.m_mark, 0x00, sizeof(jmp_buf));
