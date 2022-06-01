@@ -25,6 +25,7 @@
 #include "internal/arch.h"
 #include "internal/thread_data.h"
 #include "trts_internal.h"
+#include "trts_util.h"
 
 #define PTHREAD_DESTRUCTOR_ITERATIONS		4
 #define PTHREAD_KEYS_MAX			256
@@ -173,7 +174,13 @@ void _pthread_tls_destructors(void)
     struct sgx_pthread_storage *rs;
     int i;
 
-    if(NULL == pthread_info_tls.m_pthread)
+    // For a child thread created inside enclave, we need to clear the TLS when
+    // the thread exits.
+    // In other cases, we need to make decision based on the tcs policy:
+    //   1) Unbinding mode, we need to clear the TLS before the root ecall exits.
+    //   2) Binding mode, we need to persist the TLS across multiple ECALLs. In this
+    //      case, the destructor should not be called.
+    if(NULL == pthread_info_tls.m_pthread && true == is_tcs_binding_mode())
         //do nothing
         return;
 

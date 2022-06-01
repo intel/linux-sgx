@@ -213,3 +213,8 @@ bool is_pkru_enabled()
         return true;
     return false;
 }
+
+bool is_tcs_binding_mode()
+{
+    return g_global_data.thread_policy == 0 ? true : false;
+}
