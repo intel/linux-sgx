@@ -83,7 +83,8 @@ typedef enum _para_type_t
     ENCLAVEIMAGEADDRESS,
     ELRANGESTARTADDRESS,
     ELRANGESIZE,
-    PKRU
+    PKRU,
+    USERREGIONSIZE
 } para_type_t;
 
 typedef struct _xml_parameter_t

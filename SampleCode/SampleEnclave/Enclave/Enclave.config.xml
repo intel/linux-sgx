@@ -13,9 +13,8 @@
   -->
   <StackMaxSize>0x4000</StackMaxSize>
   <StackMinSize>0x2000</StackMinSize>
-  <HeapMaxSize>0x900000</HeapMaxSize>
-  <HeapInitSize>0x90000</HeapInitSize>
-  <HeapMinSize>0x0022000</HeapMinSize>
+  <HeapMaxSize>0x5000</HeapMaxSize>
+  <UserRegionSize>0x50000</UserRegionSize>
 
   <!-- Recommend changing 'DisableDebug' to 1 to make the enclave undebuggable for enclave release -->
   <DisableDebug>0</DisableDebug>

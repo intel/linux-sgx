@@ -77,8 +77,7 @@ extern sgx_status_t pcl_entry(void* enclave_base,void* ms) __attribute__((weak))
 extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section(".nipx")));
 
 extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
-extern "C" int init_segment_emas(void* enclave_base);
-extern "C" int init_rts_contexts_emas(layout_t *start, layout_t *end, uint64_t delta);
+extern "C" int init_rts_emas(size_t rts_base, size_t rts_end, layout_t *start, layout_t *end);
 extern "C" void sgx_mm_init(size_t, size_t);
 // init_enclave()
 //      Initialize enclave.
@@ -269,21 +268,34 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
     g_enclave_state = ENCLAVE_INIT_DONE;
     if (EDMM_supported)
     {
-        //!TODO take user base and size from config
-        layout_t* last_layout = (layout_t*)(g_global_data.layout_table + g_global_data.layout_entry_num - 1);
-        if(IS_GROUP_ID(last_layout->group.id)) return SGX_ERROR_UNEXPECTED;
-        layout_entry_t *last_entry = &last_layout->entry;
-        size_t user_base = last_entry->rva + g_enclave_base;
-        size_t user_end = user_base + (((size_t)last_entry->page_count) << SE_PAGE_SHIFT);
-        assert(last_entry->si_flags == 0 && user_end == g_enclave_size + g_enclave_base); //last guard pages
-        user_base += 0x10000ULL; //reserve guard page, same number used in ema_init.c
-        if(user_base>=user_end)
-            return SGX_ERROR_UNEXPECTED;
+        size_t rts_base = g_enclave_base;
+        size_t rts_end = g_enclave_base + g_enclave_size;
+        size_t user_base = 0;
+        size_t user_end = 0;
+
+        layout_t *layout_start = (layout_t*)g_global_data.layout_table;
+        layout_t *layout_end = (layout_t*)(g_global_data.layout_table + g_global_data.layout_entry_num);
+
+        // find potential user_region layout
+        layout_t *layout = layout_start;
+        for (;layout < layout_end; layout++)
+            if (layout->entry.id == LAYOUT_ID_USER_REGION)
+                break;
+
+        // there exists user_region layout
+        if (layout != layout_end)
+        {   
+            user_base = g_enclave_base + layout->entry.rva;
+            user_end = user_base + (((size_t)layout->entry.page_count) << SE_PAGE_SHIFT);
+            if(user_base > user_end)
+                return SGX_ERROR_UNEXPECTED;
+
+            rts_end = user_base;
+        }
+
         sgx_mm_init(user_base, user_end);
-        void* enclave_start = (void*)&__ImageBase;
-        if (init_segment_emas(enclave_start))
-            return SGX_ERROR_UNEXPECTED;
-        int ret = init_rts_contexts_emas((layout_t*)g_global_data.layout_table, last_layout, 0);
+
+        int ret = init_rts_emas(rts_base, rts_end, layout_start, layout);
         if (ret != SGX_SUCCESS) {
             return SGX_ERROR_UNEXPECTED;
         }

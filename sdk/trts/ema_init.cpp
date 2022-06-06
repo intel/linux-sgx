@@ -64,18 +64,11 @@ static int build_rts_context_nodes(layout_entry_t *entry, uint64_t offset)
     assert(IS_PAGE_ALIGNED(rva));
 
     size_t addr = (size_t)get_enclave_base() + rva;
-    size_t size = ((size_t)entry->page_count) << SE_PAGE_SHIFT;
-    size_t enclave_end = (size_t)get_enclave_base() + get_enclave_size();
+    size_t size = entry->page_count << SE_PAGE_SHIFT;
 
     // entry is guard page or has EREMOVE, build a reserved ema
     if ((entry->si_flags == 0) ||
-        (entry->attributes & PAGE_ATTR_EREMOVE)) {//TODO:is EREMOVE EVER used for sgx2?
-        /***********************
-        Intel SDK specific. Last guard page area fills up remaining enclave space
-        we cut off to leave space for user.
-        ************************/
-        if((addr + size) == enclave_end && size > 0x10000ULL)
-            size = 0x10000;
+        (entry->attributes & PAGE_ATTR_EREMOVE)) {
         int ret = mm_init_ema((void*)addr,
                          size,
                          SGX_EMA_RESERVE | SGX_EMA_SYSTEM,
@@ -144,7 +137,7 @@ static int build_rts_context_nodes(layout_entry_t *entry, uint64_t offset)
     return SGX_SUCCESS;
 }
 
-extern "C" int init_rts_contexts_emas(layout_t *start, layout_t *end, uint64_t delta)
+static int init_rts_contexts_emas(layout_t *start, layout_t *end, uint64_t delta)
 {
     int ret = SGX_ERROR_UNEXPECTED;
 
@@ -169,5 +162,24 @@ extern "C" int init_rts_contexts_emas(layout_t *start, layout_t *end, uint64_t d
         }
     }
     return SGX_SUCCESS;
+}
+
+extern "C" void init_rts_ema_root(size_t, size_t);
+extern "C" int init_segment_emas(void* enclave_base);
+
+extern "C" int init_rts_emas(size_t rts_base, size_t rts_end,
+                         layout_t *layout_start, layout_t *layout_end)
+{
+    int ret = SGX_ERROR_UNEXPECTED;
+
+    init_rts_ema_root(rts_base, rts_end);
+
+    ret = init_segment_emas((void *)rts_base);
+    if (SGX_SUCCESS != ret) {
+        return ret;
+    }
+
+    ret = init_rts_contexts_emas(layout_start, layout_end, 0);
+    return ret;
 }
 

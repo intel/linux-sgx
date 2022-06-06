@@ -489,6 +489,12 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
        }
    }
 
+    if ((parameter[USERREGIONSIZE].value % ALIGN_SIZE))
+    {
+        se_trace(SE_TRACE_ERROR, SET_USER_REGION_SIZE_ALIGN_ERROR);
+        return false;
+    }
+
     // LE setting:  HW != 0, Licensekey = 1
     // Other enclave setting: HW = 0, Licensekey = 0
     if((parameter[HW].value == 0 && parameter[LAUNCHKEY].value != 0) ||
@@ -547,6 +553,7 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     m_create_param.rsrv_min_size = parameter[RSRVMINSIZE].value;
     m_create_param.rsrv_max_size = parameter[RSRVMAXSIZE].value;
     m_create_param.rsrv_executable = parameter[RSRVEXECUTABLE].flag ? parameter[RSRVEXECUTABLE].value : 0;
+    m_create_param.user_region_size = parameter[USERREGIONSIZE].value;
     m_create_param.stack_max_size = parameter[STACKMAXSIZE].value;
     m_create_param.stack_min_size = parameter[STACKMINSIZE].value;
     m_create_param.tcs_num = (uint32_t)parameter[TCSNUM].value;
@@ -558,6 +565,7 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     SE_TRACE_DEBUG("RSRV_MIN_SIZE  = 0x%016llX\n", m_create_param.rsrv_min_size);
     SE_TRACE_DEBUG("RSRV_INIT_SIZE = 0x%016llX\n", m_create_param.rsrv_init_size);
     SE_TRACE_DEBUG("RSRV_MAX_SIZE  = 0x%016llX\n", m_create_param.rsrv_max_size);
+    SE_TRACE_DEBUG("USER_REGION_SIZE  = 0x%016llX\n", m_create_param.user_region_size);
 
     return true;
 }
@@ -998,6 +1006,17 @@ bool CMetadata::build_layout_table()
         }
     }
 
+    // USER_REGION
+    if (m_create_param.user_region_size > 0)
+    {
+        memset(&layout, 0, sizeof(layout));
+        layout.entry.id = LAYOUT_ID_USER_REGION;
+        layout.entry.page_count = (uint32_t)(m_create_param.user_region_size >> SE_PAGE_SHIFT);
+        layout.entry.attributes = PAGE_ATTR_POST_ADD;
+        layout.entry.si_flags = SI_FLAGS_RW;
+        m_layouts.push_back(layout);
+    }
+
     // update layout entries
     if(false == update_layout_entries())
     {
@@ -1217,6 +1236,16 @@ bool CMetadata::build_gd_template(uint8_t *data, uint32_t *data_size)
     else
     {
         m_create_param.rsrv_offset = (size_t)layout_rsrv->rva;
+    }
+
+    layout_entry_t * layout_user = get_entry_by_id(LAYOUT_ID_USER_REGION, false);
+    if (NULL == layout_user)
+    {
+        m_create_param.user_region_offset = (size_t)0;
+    }
+    else
+    {
+        m_create_param.user_region_offset = (size_t)layout_user->rva;
     }
 
     size_t tmp_tls_addr = (size_t)(get_entry_by_id(LAYOUT_ID_TD)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva);

@@ -84,6 +84,7 @@
 #define HEAP_SIZE_MAX       0x1000000 /*  16 MB */
 #define RSRV_SIZE_MIN       0x0000000 /*   0 KB */
 #define RSRV_SIZE_MAX       0x0000000 /*   0 KB */
+#define USER_REGION_SIZE    0x0000000 /*   0 KB */
 #define DEFAULT_MISC_SELECT 0
 #define DEFAULT_MISC_MASK   0xFFFFFFFF
 #define ISVFAMILYID_MAX     0xFFFFFFFFFFFFFFFFULL
@@ -128,6 +129,7 @@ typedef enum
 #define LAYOUT_ID_RSRV_MIN     (20)
 #define LAYOUT_ID_RSRV_INIT    (21)
 #define LAYOUT_ID_RSRV_MAX     (22)
+#define LAYOUT_ID_USER_REGION  (23)
 
 extern const char * layout_id_str[];
 
