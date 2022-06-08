@@ -1,7 +1,7 @@
 SGX Enclave Memory Manager
 =================================
 
-## Motivation ##
+## Introduction ##
 
 An enclave's memory is backed by a special reserved region in RAM, called
 Enclave Page Cache (EPC). Enclave memory management tasks include
@@ -16,21 +16,35 @@ address ranges, and modify attributes of the reserved/committed pages.
 
 For details of specific memory management related flows, please refer to
 [the SGX EDMM driver API spec](SGX_EDMM_driver_interface.md).
-The public EMM APIs defined here are most likely invoked by some intermediate
-runtime level components for specific usages, such as dynamic heap/stack, mmap,
-mprotect, higher level language JIT compiler, etc.
+
+As shown in the figure below,  the EMM provides a set of public APIs to be invoked
+by upper layer components for specific usages, such as dynamic heap/stack, mmap,
+mprotect, higher level language JIT compiler, etc. Another goal of this design is
+to make the EMM implementation portable across different runtimes such as
+Intel SGX SDK and OpenEnclave. To achieve that, it requires the runtimes to implement
+a runtime abstraction layer with APIs defined in this document. The main purpose of
+the abstraction layer is to provide an OCall bridge to the enclave common loader outside
+the enclave, which interacts with the OS to support the EDMM flows.
+
+![SGX2 EMM architecture](images/SGX2_emm_arch.svg)
+
 
 **Note:**  As the EMM is a component inside enclave, it should not have direct OS dependencies.
-However, the design proposed in this document only considers call flows and semantics for Linux. 
+However, the design proposed in this document only considers call flows and semantics for Linux.
+And the OCall implementation in enclave common loader is currently specified for Linux only though
+similar implementation is possible on other OSes. 
+
 
 ## User Experience ##
 
-**Runtime Abstraction**
+**Porting EMM to Different Runtimes**
 
-To make the EMM implementation portable across different SGX enclave runtimes, e.g., the Open Enclave and Intel SGX SDKs,
-this document also proposes a set of abstraction layer APIs for the runtimes to implement. The runtime abstraction
-layer APIs encapsulate runtime specific support such as making OCalls, registering callbacks on page faults, on which
-the EMM implementation relies to collaborate with the OS.
+To port EMM implementation portable across different SGX enclave runtimes, e.g., the Open Enclave and Intel SGX SDKs,
+the runtimes needs to implement the runtime abstraction layer APIs. These APIs  encapsulate runtime specific support
+such as making OCalls, registering callbacks on page faults, on which the EMM implementation relies to collaborate with the OS.
+
+Additionally, the runtime needs to properly initialize the EMM and reserve its own regions using the private APIs
+as described in the section on [Support for EMM Initialization](#support-for-emm-initialization).  
 
 The EMM source code will be hosted and maintained in the [Intel SGX PSW and SDK repository](https://github.com/intel/linux-sgx).
 The EMM can be built as a separate library then linked into any runtime that implements the abstraction layer APIs.
