@@ -251,7 +251,7 @@ bool COMM_API enclave_set_information(
 /*
  * Call OS to reserve region for EAUG, immediately or on-demand.
  *
- * @param[in] addr Desired page aligned start address, NULL if no desired address.
+ * @param[in] addr Desired page aligned start address.
  * @param[in] length Size of the region in bytes of multiples of page size.
  * @param[in] flags A bitwise OR of flags describing committing mode, committing
  *                     order, address preference, page type. The untrusted side.
@@ -259,7 +259,6 @@ bool COMM_API enclave_set_information(
  *    translate following additional bits to proper parameters invoking mmap or other SGX specific
  *    syscall(s) provided by the kernel.
  *        The flags param of this interface should include exactly one of following for committing mode:
- *            - SGX_EMA_RESERVE: kernel map an address range with PROT_NONE, no EPC EAUGed.
  *            - SGX_EMA_COMMIT_NOW: reserves memory range with SGX_EMA_PROT_READ|SGX_EMA_PROT_WRITE, if supported,
  *                   kernel is given a hint to EAUG EPC pages for the area as soon as possible.
  *            - SGX_EMA_COMMIT_ON_DEMAND: reserves memory range, EPC pages can be EAUGed upon #PF.

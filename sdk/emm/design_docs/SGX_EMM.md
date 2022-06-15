@@ -471,7 +471,7 @@ bool sgx_mm_unregister_pfhandler(sgx_mm_pfhandler_t pfhandler);
 /*
  * Call OS to reserve region for EAUG, immediately or on-demand.
  *
- * @param[in] addr Desired page aligned start address, NULL if no desired address.
+ * @param[in] addr Desired page aligned start address.
  * @param[in] length Size of the region in bytes of multiples of page size.
  * @param[in] flags A bitwise OR of flags describing committing mode, committing
  *                     order, address preference, page type. The untrusted side.
