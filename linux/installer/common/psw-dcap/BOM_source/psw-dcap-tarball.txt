@@ -17,3 +17,4 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/linux/installer/rpm/psw-dcap/build.sh	<installdir>/linux/installer/rpm/psw-dcap/build.sh	0	main	STP
 <deliverydir>/linux/installer/rpm/psw-dcap/clean.sh	<installdir>/linux/installer/rpm/psw-dcap/clean.sh	0	main	STP
 <deliverydir>/linux/installer/rpm/psw-dcap/psw-dcap.spec.tmpl	<installdir>/linux/installer/rpm/psw-dcap/psw-dcap.spec.tmpl	0	main	STP
+<deliverydir>/external/ippcp_internal/Makefile.psw_dcap	<installdir>/external/ippcp_internal/Makefile	0	main	STP

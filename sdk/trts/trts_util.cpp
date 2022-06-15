@@ -195,7 +195,15 @@ bool is_utility_thread()
 
 size_t get_max_tcs_num()
 {
-    return (size_t)g_global_data.tcs_max_num;
+    if (EDMM_supported == 1)
+    {
+        return (size_t)g_global_data.tcs_max_num;
+    }
+    else
+    {
+	return (size_t)g_global_data.tcs_num;
+    }
+
 }
 
 bool is_pkru_enabled()

@@ -152,9 +152,9 @@ sgx_status_t initialize_enclave(const char *enclave_path)
 
     if (ret != SGX_SUCCESS)
     {
-		print_error_message(ret);
-		return ret;
-	}
+        print_error_message(ret);
+        return ret;
+    }
     return ret;
 }
 
@@ -166,14 +166,8 @@ void terminate_enclave()
 
 int main(int argc, const char* argv[])
 {
-    uint8_t* encrypted_msg = NULL;
-    size_t encrypted_msg_size = 0;
     sgx_status_t result = SGX_SUCCESS;
     int ret = 1;
-    uint8_t* pem_key = NULL;
-    size_t pem_key_size = 0;
-    uint8_t* remote_report = NULL;
-    size_t remote_report_size = 0;
     char* server_name = NULL;
     char* server_port = NULL;
 
@@ -229,7 +223,7 @@ int main(int argc, const char* argv[])
 
     printf("Host: launch TLS client to initiate TLS connection\n");
     result = launch_tls_client(client_global_eid, &ret, server_name, server_port);
-    if (ret != 0)
+    if (result != SGX_SUCCESS || ret != 0)
     {
         printf("Host: launch_tls_client failed\n");
         goto exit;
@@ -237,7 +231,7 @@ int main(int argc, const char* argv[])
     ret = 0;
 exit:
 
-	terminate_enclave();
+    terminate_enclave();
 
     printf("Host:  %s \n", (ret == 0) ? "succeeded" : "failed");
     return ret;

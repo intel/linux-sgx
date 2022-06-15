@@ -70,7 +70,7 @@ ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update -f --init $(PB_DIR)
 else
 	$(RM) -r $(PB_DIR)/
-	git clone https://github.com/protocolbuffers/protobuf.git -b v3.14.0 --depth 1 $(PB_DIR)
+	git clone https://github.com/protocolbuffers/protobuf.git -b 3.20.x --depth 1 $(PB_DIR)
 endif
 
 
@@ -78,11 +78,11 @@ $(LIBPB): $(CHECK_SOURCE)
 ifeq ("$(wildcard $(PB_DIR)/cmake/libsgx_protobuf.cmake)", "")
 	cd $(PB_DIR) && git apply ../sgx_protobuf.patch&& cd ..
 endif
-	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_PROTOC_BINARIES=FALSE -Dprotobuf_BUILD_TESTS=FALSE -DProtobuf_LITE_LIBRARIES=FALSE -DSGX=TRUE ../../cmake && make 
+	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_TESTS=FALSE -DSGX=TRUE ../../cmake && make libprotobuf
 
 ifeq ($(BUILD_PROTOC), 1)
 $(PROTOCPB): $(CHECK_SOURCE)
-	$(MKDIR) protobuf_code/final_protocPB/build && cd protobuf_code/final_protocPB/build && cmake  -Dprotobuf_BUILD_PROTOC_BINARIES=TRUE -Dprotobuf_BUILD_TESTS=FALSE -DSGX=FALSE ../../cmake && make 
+	$(MKDIR) protobuf_code/final_protocPB/build && cd protobuf_code/final_protocPB/build && cmake -Dprotobuf_BUILD_TESTS=FALSE -DSGX=FALSE -DCMAKE_SKIP_RPATH=TRUE ../../cmake && make protoc
 endif
 
 .PHONY: clean

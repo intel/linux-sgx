@@ -576,7 +576,7 @@ extern "C" sgx_status_t sgx_ra_get_msg3_trusted(
         }
 
         memcpy(&msg3_except_quote_in.mac, mac, sizeof(mac));
-        memcpy(emp_msg3, &msg3_except_quote_in, offsetof(sgx_ra_msg3_t, quote));
+        memcpy_verw(emp_msg3, &msg3_except_quote_in, offsetof(sgx_ra_msg3_t, quote));
         se_ret = SGX_SUCCESS;
     }while(0);
     memset_s(&smk_key, sizeof(smk_key), 0, sizeof(smk_key));

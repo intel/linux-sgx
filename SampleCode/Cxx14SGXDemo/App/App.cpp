@@ -132,6 +132,11 @@ static sgx_errlist_t sgx_errlist[] = {
         "The enclave is signed as product enclave, and can not be created as debuggable enclave.",
         NULL
     },
+    {
+        SGX_ERROR_MEMORY_MAP_FAILURE,
+        "Failed to reserve memory for the enclave.",
+        NULL
+    },
 };
 
 /* Check error conditions for loading enclave */

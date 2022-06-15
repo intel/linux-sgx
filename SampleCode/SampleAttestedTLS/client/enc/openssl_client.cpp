@@ -118,7 +118,7 @@ int communicate_with_server(SSL* ssl)
                 SERVER_PAYLOAD_SIZE,
                 bytes_read);
             ret = bytes_read;
-            goto done;
+            break;
         }
         else
         {
@@ -128,7 +128,6 @@ int communicate_with_server(SSL* ssl)
             break;
         }
     } while (1);
-    ret = 0;
 done:
     return ret;
 }
@@ -137,12 +136,8 @@ done:
 int create_socket(char* server_name, char* server_port)
 {
     int sockfd = -1;
-    char* addr_ptr = nullptr;
-    int port = 0;
 	struct sockaddr_in dest_sock;
-    //struct addrinfo dest_info;//hints, *dest_info = nullptr, *curr_di = nullptr;
     int res = -1;
-	char *err_str = nullptr;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
@@ -151,14 +146,14 @@ int create_socket(char* server_name, char* server_port)
         goto done;
     }
 
-	dest_sock.sin_family = AF_INET;
-	dest_sock.sin_port = htons(atoi(server_port));
-	dest_sock.sin_addr.s_addr = inet_addr2(server_name);
-	bzero(&(dest_sock.sin_zero), sizeof(dest_sock.sin_zero));
+    dest_sock.sin_family = AF_INET;
+    dest_sock.sin_port = htons(atoi(server_port));
+    dest_sock.sin_addr.s_addr = inet_addr2(server_name);
+    bzero(&(dest_sock.sin_zero), sizeof(dest_sock.sin_zero));
     
-	if (connect(
-            sockfd, (sockaddr*) &dest_sock,
-            sizeof(struct sockaddr)) == -1)
+    if (connect(
+                sockfd, (sockaddr*) &dest_sock,
+                sizeof(struct sockaddr)) == -1)
     {
         t_print(
             TLS_CLIENT "failed to connect to %s:%s (errno=%d)\n",
@@ -166,8 +161,8 @@ int create_socket(char* server_name, char* server_port)
             server_port,
             errno);
         ocall_close(&res, sockfd);
-		if (res != 0) 
-			t_print(TLS_CLIENT "OCALL: error closing socket\n");
+        if (res != 0)
+            t_print(TLS_CLIENT "OCALL: error closing socket\n");
         sockfd = -1;
         goto done;
     }
@@ -266,13 +261,13 @@ int launch_tls_client(char* server_name, char* server_port)
 done:
 
     if (client_socket != -1) 
-	{
+    {
         ocall_close(&ret, client_socket);
-		if (ret != 0)
-			t_print(TLS_CLIENT "OCALL: error close socket\n");
-	}
+        if (ret != 0)
+            t_print(TLS_CLIENT "OCALL: error close socket\n");
+    }
 
-	if (ssl_session)
+    if (ssl_session)
     {
         SSL_shutdown(ssl_session);
         SSL_free(ssl_session);

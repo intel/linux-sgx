@@ -29,7 +29,7 @@
 sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
 {
     quote3_error_t qresult = SGX_QL_SUCCESS;
-	sgx_status_t result = SGX_ERROR_UNEXPECTED;
+    sgx_status_t result = SGX_ERROR_UNEXPECTED;
     uint8_t* output_certificate = NULL;
     size_t output_certificate_size = 0;
     uint8_t* private_key_buffer = nullptr;
@@ -38,15 +38,15 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
     size_t public_key_buffer_size = 0;
     const unsigned char* certificate_buffer_ptr = nullptr;
     BIO* mem = nullptr;
-	int key_type = RSA_TYPE;
+    int key_type = RSA_TYPE;
 
-	if (key_type) {
-		t_print(" generating keys by EC P-384\n");
-	}
-	else
-	{
-		t_print(" generating keys by RSA 3072\n");
-	}
+    if (key_type) {
+        t_print(" generating keys by EC P-384\n");
+    }
+    else
+    {
+        t_print(" generating keys by RSA 3072\n");
+    }
     result = generate_key_pair(
         key_type, &public_key_buffer,
         &public_key_buffer_size,
@@ -73,8 +73,8 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
 
     if (qresult != SGX_QL_SUCCESS || output_certificate == nullptr)
     {
-		if (output_certificate == nullptr)
-		  t_print(" null certificate\n");
+        if (output_certificate == nullptr)
+            t_print(" null certificate\n");
         p_sgx_tls_qe_err_msg(qresult);
         goto done;
     }
@@ -84,7 +84,7 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
     // data. sending certificate_buffer_ptr as argument will keep
     // output_certificate pointer undisturbed.
 
-	certificate_buffer_ptr = output_certificate;
+    certificate_buffer_ptr = output_certificate;
 
     if ((certificate = d2i_X509(
              nullptr,
@@ -108,11 +108,10 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
 
     result = SGX_SUCCESS;
 done:
-
     if (private_key_buffer)
-		free(private_key_buffer);
-	if (public_key_buffer)
-		free(public_key_buffer);
+        free(private_key_buffer);
+    if (public_key_buffer)
+        free(public_key_buffer);
     certificate_buffer_ptr = nullptr;
 
     if (mem)
@@ -135,11 +134,11 @@ sgx_status_t load_tls_certificates_and_keys(
         goto exit;
     }
 
-	if (certificate == nullptr)
-	{
-		t_print("null cert\n");
-		goto exit;
-	}
+    if (certificate == nullptr)
+    {
+        t_print("null cert\n");
+        goto exit;
+    }
 
     if (!SSL_CTX_use_certificate(ctx, certificate))
     {
@@ -249,7 +248,7 @@ int read_from_session_peer(
     int bytes_read = 0;
     do
     {
-        int len = sizeof(buffer) - 1;
+        unsigned int len = sizeof(buffer) - 1;
         memset(buffer, 0, sizeof(buffer));
         bytes_read = SSL_read(ssl_session, buffer, (size_t)len);
 

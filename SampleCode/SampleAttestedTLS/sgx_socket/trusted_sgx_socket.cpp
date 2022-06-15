@@ -46,84 +46,84 @@
 
 int socket(int domain, int type, int protocol)
 {
-	int ret = -1;
-	
-	if (u_socket(&ret, domain, type, protocol) == SGX_SUCCESS) 
-	  return ret;
+    int ret = -1;
 
-	return -1;
+    if (u_socket(&ret, domain, type, protocol) == SGX_SUCCESS) 
+        return ret;
+
+    return -1;
 }
 
 int connect (int sockfd, const struct sockaddr *servaddr, socklen_t addrlen)
 {
-	int ret = -1;
+    int ret = -1;
 	
-	if (u_connect(&ret, sockfd, servaddr, addrlen) == SGX_SUCCESS)
-	  return ret;
+    if (u_connect(&ret, sockfd, servaddr, addrlen) == SGX_SUCCESS)
+        return ret;
 
-	return -1;
+    return -1;
 }
 
 int bind(int sockfd, const struct sockaddr* servaddr, socklen_t addrlen)
 {
-	int ret = -1;
-	
-	if (u_bind(&ret, sockfd, servaddr, addrlen) == SGX_SUCCESS)
-	  return ret;
+    int ret = -1;
 
-	return -1;
+    if (u_bind(&ret, sockfd, servaddr, addrlen) == SGX_SUCCESS)
+        return ret;
+
+    return -1;
 }
 
 int listen(int sockfd, int backlog)
 {
-	int ret = -1;
+    int ret = -1;
 
-	if (u_listen(&ret, sockfd, backlog) == SGX_SUCCESS)
-	  return ret;
+    if (u_listen(&ret, sockfd, backlog) == SGX_SUCCESS)
+        return ret;
 
-	return -1;
+    return -1;
 }
 
 
 int accept(int sockfd, struct sockaddr* addr, socklen_t *addrlen)
 {
-	int ret = -1;
-	socklen_t addrlen_in = 0;
+    int ret = -1;
+    socklen_t addrlen_in = 0;
 
-	if ((addr && !addrlen) || (addrlen && !addr)) 
-	{
-		return -1;
-	}
+    if ((addr && !addrlen) || (addrlen && !addr)) 
+    {
+        return -1;
+    }
 
-	if (addr && addrlen)
-	{
-		addrlen_in = *addrlen;
-	}
+    if (addr && addrlen)
+    {
+        addrlen_in = *addrlen;
+    }
 
-	if (u_accept(&ret, sockfd, addr, addrlen_in, addrlen) == SGX_SUCCESS)
-	  return ret;
+    if (u_accept(&ret, sockfd, addr, addrlen_in, addrlen) == SGX_SUCCESS)
+        return ret;
 
-	return -1;
+    return -1;
 }
 
 ssize_t send(int sockfd, const void *buf, size_t nbytes, int flags)
 {
-	ssize_t ret = 0; 
+    ssize_t ret = 0; 
 
-	if (u_send(&ret, sockfd, buf, nbytes, flags) == SGX_SUCCESS)
-	  return ret;
+    if (u_send(&ret, sockfd, buf, nbytes, flags) == SGX_SUCCESS)
+        return ret;
 
-	return -1;
+    return -1;
 }
 
 ssize_t recv(int fd, void *buf, size_t len, int flags)
 {
-	ssize_t ret = 0;
+    ssize_t ret = 0;
 
-	if (u_recv(&ret, fd, buf, len, flags) == SGX_SUCCESS)
-	  return ret;
+    if (u_recv(&ret, fd, buf, len, flags) == SGX_SUCCESS)
+        return ret;
 	
-	return -1;
+    return -1;
 }
 
 int setsockopt(
@@ -154,9 +154,9 @@ int setsockopt(
 
 int close(int sockfd)
 {
-	int ret = -1;
-	if (u_close(&ret, sockfd) == SGX_SUCCESS)
-	  return ret;
+    int ret = -1;
+    if (u_close(&ret, sockfd) == SGX_SUCCESS)
+        return ret;
 
-	return -1;
+    return -1;
 }

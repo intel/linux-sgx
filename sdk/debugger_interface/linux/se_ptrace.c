@@ -36,10 +36,8 @@
 #include "se_trace.h"
 #include "se_memory.h"
 #include <unistd.h>
-#include <sys/ptrace.h>
 #include <dlfcn.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdio.h>
 #include <sys/user.h>
 #include <sys/ptrace.h>

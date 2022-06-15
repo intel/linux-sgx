@@ -32,17 +32,16 @@
 
 enclave {
     from "sgx_tstdc.edl" import *;
-	from "enclave.edl" import *;
-	from "sgx_socket.edl" import *;
-	from "sgx_tsgxssl.edl" import *;
-	from "sgx_ttls.edl" import *;
-	from "sgx_pthread.edl" import *;
+    from "enclave.edl" import *;
+    from "sgx_socket.edl" import *;
+    from "sgx_tsgxssl.edl" import *;
+    from "sgx_ttls.edl" import *;
+    from "sgx_pthread.edl" import *;
 
-	include "sgx_ttls.h"
-	trusted {
-		public int launch_tls_client(
-                       [in, string] char* server_name,
-                       [in, string] char* server_port);
+    include "sgx_ttls.h"
+    trusted {
+        public int launch_tls_client(
+                [in, string] char* server_name,
+                [in, string] char* server_port);
     };
-
 };

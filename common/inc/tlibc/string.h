@@ -61,8 +61,11 @@ __BEGIN_DECLS
 void * _TLIBC_CDECL_ memchr(const void *, int, size_t);
 int    _TLIBC_CDECL_ memcmp(const void *, const void *, size_t);
 void * _TLIBC_CDECL_ memcpy(void *, const void *, size_t);
+void * _TLIBC_CDECL_ memcpy_verw(void *, const void *, size_t);
 void * _TLIBC_CDECL_ memmove(void *, const void *, size_t);
+void * _TLIBC_CDECL_ memmove_verw(void *, const void *, size_t);
 void * _TLIBC_CDECL_ memset(void *, int, size_t);
+void * _TLIBC_CDECL_ memset_verw(void *, int, size_t);
 char * _TLIBC_CDECL_ strchr(const char *, int);
 int    _TLIBC_CDECL_ strcmp(const char *, const char *);
 int    _TLIBC_CDECL_ strcoll(const char *, const char *);
@@ -80,6 +83,7 @@ char * _TLIBC_CDECL_ strtok(char *, const char *);
 size_t _TLIBC_CDECL_ strxfrm(char *, const char *, size_t);
 size_t _TLIBC_CDECL_ strlcpy(char *, const char *, size_t);
 errno_t _TLIBC_CDECL_ memset_s(void *s, size_t smax, int c, size_t n);
+errno_t _TLIBC_CDECL_ memset_verw_s(void *s, size_t smax, int c, size_t n);
 
 /*
  * Deprecated C99.

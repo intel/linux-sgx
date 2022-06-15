@@ -50,6 +50,11 @@ if [ -c /dev/sgx_provision -o -c /dev/sgx/provision ]; then
         udevadm trigger || :
     fi
     usermod -aG sgx_prv aesmd &> /dev/null
+
+    # For systemd which supports https://github.com/systemd/systemd/pull/18944/files
+    if [ "sgx" = "$(stat -c '%G' /dev/sgx_enclave 2>/dev/null)" ]; then
+        usermod -aG sgx aesmd &> /dev/null
+    fi
 fi
 
 echo

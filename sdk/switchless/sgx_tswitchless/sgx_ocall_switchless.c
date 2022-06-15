@@ -75,6 +75,12 @@ static int_type init_tswitchless_ocall_mngr(void* param)
 /*=========================================================================
  * The implementation of switchless OCall
  *========================================================================*/
+#include <string.h>
+#define SET_VALUE_HARDEN(dest, value, value_type)                     \
+    do {                                                              \
+        value_type tmp = value;                                       \
+        memcpy_verw((void*)(dest), &tmp, sizeof(value_type));         \
+    } while(0)
 
 sgx_status_t sgx_ocall_switchless(const unsigned int index, void* ms) 
 {
@@ -97,7 +103,7 @@ sgx_status_t sgx_ocall_switchless(const unsigned int index, void* ms)
     // if there are sleeping workers, wake them up
     if (g_uswitchless_handle->us_uworkers.num_sleeping > 0)
     {
-        g_uswitchless_handle->us_wake_workers = 1;
+	SET_VALUE_HARDEN(&g_uswitchless_handle->us_wake_workers, 1, uint64_t);
     }
 
     struct sl_call_task call_task;
@@ -118,7 +124,7 @@ sgx_status_t sgx_ocall_switchless(const unsigned int index, void* ms)
 
 on_fallback:
     lock_inc(&g_uswitchless_handle->us_uworkers.stats.missed);
-    g_uswitchless_handle->us_has_new_ocall_fallback = 1;
+    SET_VALUE_HARDEN(&g_uswitchless_handle->us_has_new_ocall_fallback, 1, uint64_t);
     return sgx_ocall(index, ms);
 }
 

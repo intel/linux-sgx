@@ -102,6 +102,11 @@ static sgx_errlist_t sgx_errlist[] = {
         "Can't open enclave file.",
         NULL
     },
+    {
+        SGX_ERROR_MEMORY_MAP_FAILURE,
+        "Failed to reserve memory for the enclave.",
+        NULL
+    },
 };
 
 /* Check error conditions for loading enclave */

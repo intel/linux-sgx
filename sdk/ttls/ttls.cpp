@@ -41,6 +41,9 @@
 
 static const char* oid_sgx_quote = X509_OID_FOR_QUOTE_STRING;
 
+//The ISVSVN threshold of Intel signed QvE
+const sgx_isv_svn_t qve_isvsvn_threshold = 6;
+
 extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
     const unsigned char *p_subject_name,
     const uint8_t *p_prv_key,
@@ -87,7 +90,7 @@ extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
             func_ret = SGX_QL_ERROR_UNEXPECTED;
             break;
         }
-        
+
         ret = sgx_sha256_update(p_pub_key, (uint32_t)public_key_size, sha_handle);
         if (ret != SGX_SUCCESS) {
             func_ret = SGX_QL_ERROR_UNEXPECTED;
@@ -182,7 +185,7 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
     uint8_t *p_quote = NULL;
     uint32_t quote_size = 0;
     sgx_ql_qe_report_info_t qve_report_info;
-    uint32_t collateral_expiration_status = 0; 
+    uint32_t collateral_expiration_status = 0;
 
     sgx_cert_t cert = {0};
     uint8_t *pub_key_buff = NULL;
@@ -191,9 +194,7 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
     sgx_report_data_t *p_report_data = NULL;
     sgx_report_data_t cert_pub_hash;
     sgx_sha_state_handle_t sha_handle = NULL;
-    
-    //The ISVSVN threshold of Intel signed QvE  
-    const sgx_isv_svn_t qve_isvsvn_threshold = 4;
+
 
     memset(&cert_pub_hash, 0, sizeof(sgx_report_data_t));
 
@@ -203,7 +204,7 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
         p_supplemental_data_size == NULL)
         return SGX_QL_ERROR_INVALID_PARAMETER;
 
-    
+
     do {
         //verify X.509 certificate
         pub_key_buff = (uint8_t*)malloc(KEY_BUFF_SIZE);
@@ -343,7 +344,7 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
 
         // get report data from quote
         p_sgx_quote = (sgx_quote3_t *) p_quote;
-        
+
         if (p_sgx_quote != NULL) {
             p_report_data = &(p_sgx_quote->report_body.report_data);
         }

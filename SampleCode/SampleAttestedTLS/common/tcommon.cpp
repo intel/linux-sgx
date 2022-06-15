@@ -53,5 +53,5 @@ void t_print(const char *fmt, ...)
 
 void t_time(time_t *current_t)
 {
-	ocall_get_current_time((uint64_t*)current_t);
+    ocall_get_current_time((uint64_t*)current_t);
 }

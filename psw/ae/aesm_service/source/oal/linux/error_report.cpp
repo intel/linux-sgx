@@ -63,22 +63,26 @@ void sgx_proc_log_report(int level, const char *format, ...)
 {
     int priority = 0;
     va_list ap;
+    // Make sure strlen(format) >= 1
+    // so we can always add newline
+    if (!format || !(*format))
+        return;//ignore
     va_start(ap, format);
     switch(level){
-    case AESM_LOG_REPORT_FATAL:
-       priority = LOG_CRIT;
-       break;
-    case AESM_LOG_REPORT_ERROR:
-       priority = LOG_ERR;
-       break;
-   case AESM_LOG_REPORT_WARNING:
-       priority = LOG_WARNING;
-       break;
-   case AESM_LOG_REPORT_INFO:
-       priority = LOG_INFO;
-       break;
-   default:
-      return;//ignore
+        case AESM_LOG_REPORT_FATAL:
+            priority = LOG_CRIT;
+            break;
+        case AESM_LOG_REPORT_ERROR:
+            priority = LOG_ERR;
+            break;
+        case AESM_LOG_REPORT_WARNING:
+            priority = LOG_WARNING;
+            break;
+        case AESM_LOG_REPORT_INFO:
+            priority = LOG_INFO;
+            break;
+        default:
+            return;//ignore
     }
     if (!_nosyslog) {
         vsyslog(priority, format, ap);

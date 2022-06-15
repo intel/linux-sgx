@@ -1,5 +1,10 @@
 aux_source_directory(. _srcs)
 
+#Disable CET
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 8)
+  add_compile_options(-fcf-protection=none)
+endif()
+
 if(NOT US_BUILD_SHARED_LIBS)
   # Set up dependencies to resources from static bundles
   usFunctionGetResourceSource(TARGET aesm_service OUT _srcs)

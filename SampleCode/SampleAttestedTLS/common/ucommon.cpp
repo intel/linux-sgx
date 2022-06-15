@@ -40,7 +40,7 @@
 
 int ocall_close(int fd)
 {
-	return close(fd);
+    return close(fd);
 }
 
 void ocall_get_current_time(uint64_t *p_current_time)
@@ -56,5 +56,5 @@ void ocall_get_current_time(uint64_t *p_current_time)
 
 void ocall_print_string(const char *str)
 {
-	printf("%s", str);
+    printf("%s", str);
 }

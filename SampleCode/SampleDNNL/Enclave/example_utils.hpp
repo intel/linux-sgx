@@ -39,7 +39,7 @@
 
 #include "dnnl.hpp"
 
-extern "C" void printf(const char *fmt, ...);
+extern "C" int printf(const char *fmt, ...);
 
 static dnnl::engine::kind parse_engine_kind(
         int argc, char **argv, int extra_args = 0) {

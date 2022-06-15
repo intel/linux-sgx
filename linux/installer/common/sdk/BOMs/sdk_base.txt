@@ -92,6 +92,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h	<installdir>/package/include/./sgx_ql_lib_common.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/pce_wrapper/inc/sgx_pce.h	<installdir>/package/include/./sgx_pce.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h	<installdir>/package/include/./sgx_quote_3.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_quote_4.h	<installdir>/package/include/./sgx_quote_4.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_quote.h	<installdir>/package/include/./sgx_ql_quote.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteVerification/QvE/Include/sgx_qve_header.h	<installdir>/package/include/./sgx_qve_header.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteVerification/dcap_tvl/sgx_dcap_tvl.h	<installdir>/package/include/./sgx_dcap_tvl.h	0	main	STP
@@ -116,7 +117,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/LocalAttestation/App/UntrustedEnclaveMessageExchange.cpp	<installdir>/package/SampleCode/LocalAttestation/App/UntrustedEnclaveMessageExchange.cpp	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/App/UntrustedEnclaveMessageExchange.h	<installdir>/package/SampleCode/LocalAttestation/App/UntrustedEnclaveMessageExchange.h	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/buildenv.mk	<installdir>/package/SampleCode/LocalAttestation/buildenv.mk	0	main	STP
-<deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/datatypes.h	<installdir>/SampleCode/LocalAttestation/EnclaveInitiator/datatypes.h	0	main	STP
+<deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/datatypes.h	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/datatypes.h	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.config.xml	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.config.xml	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.cpp	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.cpp	0	main	STP
 <deliverydir>/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.edl	<installdir>/package/SampleCode/LocalAttestation/EnclaveInitiator/EnclaveInitiator.edl	0	main	STP
@@ -539,6 +540,10 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/sdk/tlibcxx/include/utility	<installdir>/package/include/libcxx/utility	0	main	STP
 <deliverydir>/sdk/tlibcxx/include/valarray	<installdir>/package/include/libcxx/valarray	0	main	STP
 <deliverydir>/sdk/tlibcxx/include/vector	<installdir>/package/include/libcxx/vector	0	main	STP
+<deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/arenaz_sampler.h	<installdir>/package/include/tprotobuf/google/protobuf/arenaz_sampler.h	0	main	STP
+<deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/inlined_string_field.h	<installdir>/package/include/tprotobuf/google/protobuf/inlined_string_field.h	0	main	STP
+<deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/repeated_ptr_field.h	<installdir>/package/include/tprotobuf/google/protobuf/repeated_ptr_field.h	0	main	STP
+<deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/explicitly_constructed.h	<installdir>/package/include/tprotobuf/google/protobuf/explicitly_constructed.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/any.h	<installdir>/package/include/tprotobuf/google/protobuf/any.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/any.pb.h	<installdir>/package/include/tprotobuf/google/protobuf/any.pb.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/api.pb.h	<installdir>/package/include/tprotobuf/google/protobuf/api.pb.h	0	main	STP
@@ -556,7 +561,6 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/generated_enum_reflection.h	<installdir>/package/include/tprotobuf/google/protobuf/generated_enum_reflection.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/generated_enum_util.h	<installdir>/package/include/tprotobuf/google/protobuf/generated_enum_util.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/generated_message_reflection.h	<installdir>/package/include/tprotobuf/google/protobuf/generated_message_reflection.h	0	main	STP
-<deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/generated_message_table_driven.h	<installdir>/package/include/tprotobuf/google/protobuf/generated_message_table_driven.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/generated_message_util.h	<installdir>/package/include/tprotobuf/google/protobuf/generated_message_util.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/has_bits.h	<installdir>/package/include/tprotobuf/google/protobuf/has_bits.h	0	main	STP
 <deliverydir>/external/protobuf/protobuf_code/src/google/protobuf/implicit_weak_message.h	<installdir>/package/include/tprotobuf/google/protobuf/implicit_weak_message.h	0	main	STP

@@ -150,8 +150,8 @@ sgx_status_t initialize_enclave(const char *enclave_path)
     if (ret != SGX_SUCCESS)
     {
         print_error_message(ret);
-		return ret;
-	}
+        return ret;
+    }
     return ret;
 }
 
@@ -218,7 +218,7 @@ read_port:
 
     printf("Host: calling setup_tls_server\n");
     result = set_up_tls_server(server_global_eid, &ret, server_port, keep_server_up);
-    if (ret != 0)
+    if (result != SGX_SUCCESS || ret != 0)
     {
         printf("Host: setup_tls_server failed\n");
         goto exit;

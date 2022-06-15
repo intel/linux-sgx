@@ -84,6 +84,12 @@ extern "C" {
    to be signed by EPID. So we need to minus sizeof(uint32_t). */
 #define QE_QUOTE_BODY_SIZE  (sizeof(sgx_quote_t) - sizeof(uint32_t))
 
+static void memcpy_t2u(void *dst, const void *src, uint32_t size)
+{
+    // Use PRT mitigated version of memcpy to copy buffer to untrusted memory
+    memcpy_verw(dst, src, size);
+}
+
 /*
  * An internal function used to verify EPID Blob, get EPID Group Cert
  * and get EPID context, at the same time, you can check whether EPID blob has
@@ -514,11 +520,11 @@ static ae_error_t qe_epid_sign(
     }
 
     /* Copy the wrap_key_t into output buffer. */
-    memcpy(&emp_p->wrap_key, &wrap_key, sizeof(wrap_key));
+    memcpy_t2u(&emp_p->wrap_key, &wrap_key, sizeof(wrap_key));
     /* Copy the AES IV into output buffer. */
-    memcpy(&emp_p->iv, aes_iv, sizeof(aes_iv));
+    memcpy_t2u(&emp_p->iv, aes_iv, sizeof(aes_iv));
     /* Copy the AES Blob payload size into output buffer. */
-    memcpy(&emp_p->payload_size, &sign_size, sizeof(sign_size));
+    memcpy_t2u(&emp_p->payload_size, &sign_size, sizeof(sign_size));
 
 
     se_ret = sgx_aes_gcm128_enc_init(
@@ -549,7 +555,7 @@ static ae_error_t qe_epid_sign(
     }
 
     /* Copy the encrypted basic signature into output buffer. */
-    memcpy(&emp_p->basic_sign, &encrypted_basic_sig,
+    memcpy_t2u(&emp_p->basic_sign, &encrypted_basic_sig,
            sizeof(encrypted_basic_sig));
 
     if(p_qe_report)
@@ -620,9 +626,9 @@ static ae_error_t qe_epid_sign(
             goto CLEANUP;
         }
 
-        memcpy(&(emp_p->rl_ver), &encrypted_rl_ver,
+        memcpy_t2u(&(emp_p->rl_ver), &encrypted_rl_ver,
                sizeof(encrypted_rl_ver));
-        memcpy(&(emp_p->rl_num), &encrypted_n2,
+        memcpy_t2u(&(emp_p->rl_num), &encrypted_n2,
                sizeof(encrypted_n2));
         if(p_qe_report)
         {
@@ -694,7 +700,7 @@ static ae_error_t qe_epid_sign(
                 goto CLEANUP;
             }
 
-            memcpy(emp_nr, &encrypted_temp_nr, sizeof(encrypted_temp_nr));
+            memcpy_t2u(emp_nr, &encrypted_temp_nr, sizeof(encrypted_temp_nr));
 
             if(p_qe_report)
             {
@@ -771,7 +777,7 @@ static ae_error_t qe_epid_sign(
         }
         /* This will copy both encrypted rl_ver and encrypted rl_num into
            Output buffer. */
-        memcpy(&emp_p->rl_ver, &encrypted_temp_buf,
+        memcpy_t2u(&emp_p->rl_ver, &encrypted_temp_buf,
                sizeof(encrypted_temp_buf));
 
         if(p_qe_report)
@@ -794,7 +800,7 @@ static ae_error_t qe_epid_sign(
         goto CLEANUP;
     }
 
-    memcpy((uint8_t *)&(emp_p->basic_sign) + sign_size, &aes_tag,
+    memcpy_t2u((uint8_t *)&(emp_p->basic_sign) + sign_size, &aes_tag,
            sizeof(aes_tag));
 
     if(p_qe_report)
@@ -1084,7 +1090,7 @@ uint32_t get_quote(
     sgx_lfence();
 
     /* Copy the data in the report into quote body. */
-    memset(emp_quote, 0, quote_size);
+    memset_verw(emp_quote, 0, quote_size);
     quote_body.version = QE_QUOTE_VERSION;
     quote_body.sign_type = (uint16_t)quote_type;
     quote_body.pce_svn = pce_isvsvn; // Both are little endian
@@ -1136,12 +1142,12 @@ uint32_t get_quote(
     if(AE_SUCCESS != ret)
     {
         // Only need to clean the buffer after the fixed length part.
-        memset_s(emp_quote + sizeof(sgx_quote_t), quote_size - sizeof(sgx_quote_t),
+        memset_verw_s(emp_quote + sizeof(sgx_quote_t), quote_size - sizeof(sgx_quote_t),
                  0, quote_size - sizeof(sgx_quote_t));
         goto CLEANUP;
     }
 
-    memcpy(emp_quote, &quote_body, sizeof(sgx_quote_t));
+    memcpy_t2u(emp_quote, &quote_body, sizeof(sgx_quote_t));
 
 CLEANUP:
     if(p_epid_context)

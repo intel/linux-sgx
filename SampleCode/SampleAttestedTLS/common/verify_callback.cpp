@@ -80,12 +80,12 @@ int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
 
     // convert a cert into a buffer in DER format
     der_len = i2d_X509(crt, nullptr);
-	if (der_len <= 0) {
-		PRINT(TLS_CLIENT "i2d_X509 failed(der_len=%d)\n", der_len);
+    if (der_len <= 0) {
+        PRINT(TLS_CLIENT "i2d_X509 failed(der_len=%d)\n", der_len);
         goto done;
-	}
+    }
 
-	buff = (unsigned char*)malloc(der_len);
+    buff = (unsigned char*)malloc(der_len);
     if (buff == nullptr)
     {
         PRINT(TLS_CLIENT "malloc failed (der_len=%d)\n", der_len);
@@ -115,11 +115,11 @@ int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
 	GETCURRTIME(&current_time);
 
 	// verify tls certificate
-	result = VERIFY_CALLBACK(
-				der, der_len, current_time, &qv_result, &sup_data, (uint32_t *)&sup_data_len);
+    result = VERIFY_CALLBACK(
+            der, der_len, current_time, &qv_result, &sup_data, (uint32_t *)&sup_data_len);
 
    // result != SGX_QL_SUCCESS means critical error
-	if (result != SGX_QL_SUCCESS)
+    if (result != SGX_QL_SUCCESS)
     {
         PRINT(TLS_CLIENT "Quote Verification Failed with result(%x) - \n", result);
         p_sgx_tls_qe_err_msg(result);
@@ -136,10 +136,10 @@ int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
         }
     }
 
-	FREE_SUPDATA(sup_data);
+    FREE_SUPDATA(sup_data);
 
     PRINT(" verifying certificate end\n");
-	ret = 1;
+    ret = 1;
 done:
 
     if (der)

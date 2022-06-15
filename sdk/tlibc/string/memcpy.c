@@ -48,6 +48,7 @@ typedef	long word;		/* "word" used for optimal copy speed */
 extern void *_intel_fast_memcpy(void *, void *, size_t);
 #endif
 
+
 /*
  * Copy a block of memory, not handling overlap.
  */
@@ -100,6 +101,49 @@ done:
 	return (dst0);
 }
 
+extern void* __memcpy_verw(void *dst0, const void *src0);
+extern void* __memcpy_8a(void *dst0, const void *src0);
+// use in the enclave when dst is outside the enclave
+void* memcpy_verw(void *dst0, const void *src0, size_t len)
+{
+    char* dst = dst0;
+    const char *src = (const char *)src0;
+    if(len == 0 || dst == src)
+    {
+        return dst0;
+    }
+
+    //abort if overlap exist
+    if ((dst < src && dst + len > src) ||
+        (src < dst && src + len > dst))
+    {
+        abort();
+    }
+
+    while (len >= 8) {
+        if((unsigned long long)dst%8 == 0) {
+            // 8-byte-aligned - don't need <VERW><MFENCE LFENCE> bracketing
+            __memcpy_8a(dst, src);
+            src += 8;
+            dst += 8;
+            len -= 8;
+        }
+        else{
+            // not 8-byte-aligned - need <VERW><MFENCE LFENCE> bracketing
+            __memcpy_verw(dst, src);
+            src++;
+            dst++;
+            len--;
+        }
+    }
+    // less than 8 bytes left - need <VERW> <MFENCE LFENCE> bracketing
+    for (unsigned i = 0; i < len; i++) {
+            __memcpy_verw(dst, src);
+            src++;
+            dst++;
+    }
+    return dst0;
+}
 
 void *
 memcpy(void *dst0, const void *src0, size_t length)

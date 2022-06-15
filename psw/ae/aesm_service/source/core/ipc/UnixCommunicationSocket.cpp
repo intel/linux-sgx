@@ -225,11 +225,6 @@ bool UnixCommunicationSocket::init()
             SE_PROD_LOG("Failed to connect to socket %s\n", serv_addr.sun_path);
             return false;
         }
-        if (mSocket < 0)
-        {
-            SE_PROD_LOG("Invalid socket fd\n");
-            return false;
-        }
     }
     return true;
 }

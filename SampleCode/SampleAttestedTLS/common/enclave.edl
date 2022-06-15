@@ -38,7 +38,7 @@ enclave {
      */
     untrusted {
         void ocall_print_string([in, string] const char *str);
-		int ocall_close(int fd);
-		void ocall_get_current_time([out] uint64_t *p_current_time);
-	};
+        int ocall_close(int fd);
+        void ocall_get_current_time([out] uint64_t *p_current_time);
+    };
 };

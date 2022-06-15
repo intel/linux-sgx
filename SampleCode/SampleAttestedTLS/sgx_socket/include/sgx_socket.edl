@@ -44,8 +44,8 @@ enclave {
         int u_connect (int fd, [in, size=len] const struct sockaddr *addr, socklen_t len) propagate_errno;
         ssize_t u_send (int fd, [in, size=n] const void *buf, size_t n, int flags) propagate_errno;
 
-		ssize_t u_recv (int fd, [out, size=n] void *buf, size_t n, int flags) propagate_errno;
-		int u_setsockopt (int fd, int level, int optname, [in, size=optlen] const void *optval, socklen_t optlen) propagate_errno;
-		int u_close(int fd);
+        ssize_t u_recv (int fd, [out, size=n] void *buf, size_t n, int flags) propagate_errno;
+        int u_setsockopt (int fd, int level, int optname, [in, size=optlen] const void *optval, socklen_t optlen) propagate_errno;
+        int u_close(int fd);
     };
 };

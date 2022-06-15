@@ -42,7 +42,7 @@ The [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterA
 
 **Note**: Ice Lake Xeon-SP (and the future Xeon-SP platforms) doesn't support EPID attestation.
 
-The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the other out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used to support Enhanced Privacy Identification (EPID) based attestation on the platforms without *Flexible Launch Control*. 
+The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the other out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used to support Enhanced Privacy Identification (EPID) based attestation on the platforms without *Flexible Launch Control*.
 
 The [intel-device-plugins-for-kubernetes](https://github.com/intel/intel-device-plugins-for-kubernetes) project enables users to run container applications running Intel(R) SGX enclaves in Kubernetes clusters. It also gives instructions how to set up ECDSA based attestation in a cluster.
 
@@ -77,16 +77,16 @@ $ cd docker/build && ./build_compose_run.sh
 ```
 $ cd linux/installer/docker && ./build_compose_run.sh
 ```
- 
+
 Build and Install the Intel(R) SGX Driver
 -----------------------------------------
-Follow the [README.md](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/master/driver/linux/README.md) in the [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project to build and install the Intel(R) SGX driver.     
+Follow the [README.md](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/master/driver/linux/README.md) in the [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project to build and install the Intel(R) SGX driver.
 **NOTE**: The above Intel(R) SGX driver requires *Flexible Launch Control* and *Intel(R) AES New Instructions* support. If your platform doesn't meet the requirement, please follow  the instructions in the [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project to build and install this version of Intel(R) SGX driver.
 
 Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
-- Ensure that you have one of the following required operating systems:  
+- Ensure that you have one of the following required operating systems:
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
@@ -94,7 +94,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Red Hat Enterprise Linux Server release 8.4 64bits
   * CentOS Stream 8 64bits
 
-- Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:  
+- Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:
   * On Ubuntu 18.04:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git cmake perl
@@ -112,23 +112,27 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * On CentOS Stream 8:
   ```
     $ sudo dnf group install 'Development Tools'
-    $ sudo dnf --enablerepo=PowerTools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python2
+    $ sudo dnf --enablerepo=powertools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python2
     $ sudo alternatives --set python /usr/bin/python2
   ```
    **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above.
-- Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:  
+- Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:
   1)  To install the additional required tools:
-      * On Ubuntu 18.04 and Ubuntu 20.04:
+      * On Ubuntu 18.04:
       ```
-        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release
+      ```
+      * On Ubuntu 20.04:
+      ```
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev protobuf-c-compiler libprotobuf-c-dev lsb-release
       ```
       * On Red Hat Enterprise Linux 8.4:
       ```
-        $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
+        $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel
       ```
       * On CentOS Stream 8:
       ```
-        $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils
+        $ sudo dnf --enablerepo=powertools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel
       ```
   2) To install latest Intel(R) SGX SDK Installer
   Ensure that you have downloaded latest Intel(R) SGX SDK Installer from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and followed the Installation Guide in the same page to install latest Intel(R) SGX SDK Installer.
@@ -138,7 +142,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
    $ git clone https://github.com/intel/linux-sgx.git
    $ cd linux-sgx && make preparation
 ```
-  The above ``make preparation`` would trigger the script ``download_prebuilt.sh`` to download the prebuilt binaries. You may need to set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)  
+  The above ``make preparation`` would trigger the script ``download_prebuilt.sh`` to download the prebuilt binaries. You may need to set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)
 
 - Copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
   ```
@@ -152,28 +156,28 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 - To build Intel(R) SGX SDK with default configuration, enter the following command:
 ```
   $ make sdk
-```  
+```
 You can find the three flavors of tools and libraries generated in the `build` directory.
 
 - This repository supports to build the Intel(R) SGX SDK with below three combinations:
   * `USE_OPT_LIBS=0` --- build SDK using SGXSSL and open sourced String/Math
   * `USE_OPT_LIBS=1` --- build SDK using optimized IPP crypto and open sourced String/Math
-  * `USE_OPT_LIBS=2` --- build SDK with no mitigation using SGXSSL and optimized String/Math   
-  * `USE_OPT_LIBS=3` --- build SDK with no mitigation using IPP crypto and optimized String/Math   
+  * `USE_OPT_LIBS=2` --- build SDK with no mitigation using SGXSSL and optimized String/Math
+  * `USE_OPT_LIBS=3` --- build SDK with no mitigation using IPP crypto and optimized String/Math
   The default build uses `USE_OPT_LIBS=1`, if you directly type `$ make sdk` as above.
   You can switch to the other build combinations instead by entering the following command:
 ```
   $ make sdk USE_OPT_LIBS=0
 ```
-or  
+or
 ```
   $ make sdk_no_mitigation USE_OPT_LIBS=2
 ```
-or  
+or
 ```
   $ make sdk_no_mitigation USE_OPT_LIBS=3
 ```
-  **Note**: Building the Intel(R) SGX PSW with open sourced SGXSSL/string/math libraries is not supported. 
+  **Note**: Building the Intel(R) SGX PSW with open sourced SGXSSL/string/math libraries is not supported.
   **Note**: Building mitigation SDK with `USE_OPT_LIBS=2` or `USE_OPT_LIBS=3` is not allowed.
 
 - To build Intel(R) SGX SDK with debug information, enter the following command:
@@ -181,7 +185,7 @@ or
   $ make sdk DEBUG=1
 ```
 
-- To clean the files generated by previous `make sdk` command, enter the following command:  
+- To clean the files generated by previous `make sdk` command, enter the following command:
 ```
   $ make clean
 ```
@@ -202,12 +206,12 @@ You can find the generated Intel(R) SGX SDK installer ``sgx_linux_x64_sdk_${vers
   $ make psw
 ```
 You can find the tools and libraries generated in the `build/linux` directory.
-  **Note**: You can also go to the `psw` folder and use the `make` command to build the Intel(R) SGX PSW component only.  
+  **Note**: You can also go to the `psw` folder and use the `make` command to build the Intel(R) SGX PSW component only.
 - To build Intel(R) SGX PSW with debug information, enter the following command:
 ```
   $ make psw DEBUG=1
 ```
-- To clean the files generated by previous `make psw` command, enter the following command:  
+- To clean the files generated by previous `make psw` command, enter the following command:
 ```
   $ make clean
 ```
@@ -216,7 +220,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
 ```
   $ cd psw/ae/le
   $ make
-``` 
+```
 - To build the Intel(R) SGX PSW installer, enter the following command:
   * On Ubuntu 18.04 and Ubuntu 20.04:
    ```
@@ -224,7 +228,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   ```
   You can find the generated Intel(R) SGX PSW installers located under `linux/installer/deb/libsgx-urts`, `linux/installer/deb/libsgx-enclave-common`, `linux/installer/deb/libsgx-uae-service`, `linux/installer/deb/libsgx-epid`, `linux/installer/deb/libsgx-launch`, `linux/installer/deb/libsgx-quote-ex` and `linux/installer/deb/sgx-aesm-service` respectively.
 
-  **Note**: On Ubuntu 18.04 and Ubuntu 20.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``package-name-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose. 
+  **Note**: On Ubuntu 18.04 and Ubuntu 20.04, besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``package-name-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose.
   **Note**: Starting with the 2.10 release, besides the Intel(R) SGX PSW installer, the above command generates [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) installers as well.
 
   **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer without optimization and with full debug information kept in the tools and libraries, enter the following command:
@@ -247,11 +251,11 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make deb_local_repo
   ```
   You can find the local package repository located under `linux/installer/deb/sgx_debian_local_repo`.
-  
+
     **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. The local package repository is not signed, you need to trust it for the purpose of development.
 
   - To add the local Debian package repository to the system repository configuration, append the following line to /etc/apt/sources.list. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-  
+
   * On Ubuntu 18.04:
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO bionic main
@@ -271,7 +275,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make rpm_local_repo
   ```
   You can find the local package repository located under `linux/installer/rpm/sgx_rpm_local_repo`.
-  
+
   **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. Since the local package repository is not signed with GPG, you should ignore the gpgcheck when installing the packages.
 
   - To add the local RPM package repository to the system repository configuration, you can use the following command. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
@@ -288,7 +292,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
 Install the Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
-- Ensure that you have one of the following operating systems:  
+- Ensure that you have one of the following operating systems:
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
@@ -297,14 +301,14 @@ Install the Intel(R) SGX SDK
   * CentOS Stream 8 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 18.04 and Ubuntu 20.04:
-  ```  
+  ```
     $ sudo apt-get install build-essential python
   ```
   * On Red Hat Enterprise Linux 8.4 and CentOS Stream 8:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python2
-     $ sudo alternatives --set python /usr/bin/python2 
+     $ sudo alternatives --set python /usr/bin/python2
   ```
 
 ### Install the Intel(R) SGX SDK
@@ -313,7 +317,7 @@ To install the Intel(R) SGX SDK, invoke the installer, as follows:
 $ cd linux/installer/bin
 $ ./sgx_linux_x64_sdk_${version}.bin
 ```
-The above command requires you to specify the installation path. You can use the following command 
+The above command requires you to specify the installation path. You can use the following command
 to use the non-interactive installation mode:
 ```
 $ cd linux/installer/bin
@@ -325,7 +329,7 @@ NOTE: You need to set up the needed environment variables before compiling your 
 ```
 
 ### Test the Intel(R) SGX SDK Package with the Code Samples
-- Compile and run each code sample in Simulation mode to make sure the package works well:    
+- Compile and run each code sample in Simulation mode to make sure the package works well:
 ```
   $ cd ${sgx-sdk-install-path}/SampleCode/LocalAttestation
   $ make SGX_MODE=SIM
@@ -336,10 +340,10 @@ NOTE: You need to set up the needed environment variables before compiling your 
 
 ### Compile and Run the Code Samples in the Hardware Mode
 If you use an Intel SGX hardware enabled machine, you can run the code samples in Hardware mode.
-Ensure that you install Intel(R) SGX driver and Intel(R) SGX PSW installer on the machine.  
-See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.  
+Ensure that you install Intel(R) SGX driver and Intel(R) SGX PSW installer on the machine.
+See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 See the later topic, *Install Intel(R) SGX PSW*, for information on how to install the PSW package.
-- Compile and run each code sample in Hardware mode, Debug build, as follows:  
+- Compile and run each code sample in Hardware mode, Debug build, as follows:
 ```
   $ cd ${sgx-sdk-install-path}/SampleCode/LocalAttestation
   $ make
@@ -352,23 +356,23 @@ See the later topic, *Install Intel(R) SGX PSW*, for information on how to insta
 Install the Intel(R) SGX PSW
 ----------------------------
 ### Prerequisites
-- Ensure that you have one of the following operating systems:  
+- Ensure that you have one of the following operating systems:
   * Ubuntu\* 18.04 LTS Desktop 64bits
   * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 8.4 64bits
   * CentOS Stream 8 64bits
-- Ensure that you have a system with the following required hardware:  
+- Ensure that you have a system with the following required hardware:
   * 6th Generation Intel(R) Core(TM) Processor or newer
-- Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.  
+- Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
-- Install the library using the following command:  
+- Install the library using the following command:
   * On Ubuntu 18.04 and Ubuntu 20.04:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 8.4:  
+  * On Red Hat Enterprise Linux 8.4:
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
@@ -378,7 +382,7 @@ Install the Intel(R) SGX PSW
   ```
 
 ### Install the Intel(R) SGX PSW
-The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm agnostic attestation. Starting with the 2.8 release, the SGX PSW is split into smaller packages and the user can choose which features and services to install. There are 2 methods to install the required packages: Using individual packages or using the local repo generated by the build system. Using the local repo is recommended since the system will resolve the dependencies automatically. Currently, we support .deb and .rpm based repos. 
+The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm agnostic attestation. Starting with the 2.8 release, the SGX PSW is split into smaller packages and the user can choose which features and services to install. There are 2 methods to install the required packages: Using individual packages or using the local repo generated by the build system. Using the local repo is recommended since the system will resolve the dependencies automatically. Currently, we support .deb and .rpm based repos.
 
 #### Using the local repo(recommended)
 
@@ -413,7 +417,7 @@ Some packages are configured with recommended dependency on other packages that 
 ```
 
 ### ECDSA attestation
-To enable ECDSA attestation    
+To enable ECDSA attestation
 - Ensure that you have the following required hardware:
   * 8th Generation Intel(R) Core(TM) Processor or newer with **Flexible Launch Control** support*
   * Intel(R) Atom(TM) Processor with **Flexible Launch Control** support*
@@ -429,15 +433,15 @@ Service, please refer to [SGXDataCenterAttestationPrimitives](https://github.com
 - Ensure the PCK Caching Service is setup correctly by local administrator or data center administrator. Also make sure that the configure file of quote provider library (/etc/sgx_default_qcnl.conf) is consistent with the real environment, for example: PCS_URL=https://your_pcs_server:8081/sgx/certification/v1/
 
 ### Start or Stop aesmd Service
-The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.  
-To stop the service: `$ sudo service aesmd stop`  
-To start the service: `$ sudo service aesmd start`  
+The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.
+To stop the service: `$ sudo service aesmd stop`
+To start the service: `$ sudo service aesmd start`
 To restart the service: `$ sudo service aesmd restart`
 
 ### Configure the Proxy for aesmd Service
-The aesmd service uses the HTTP protocol to initialize some services.  
-If a proxy is required for the HTTP protocol, you may need to manually set up the proxy for the aesmd service.  
-You should manually edit the file `/etc/aesmd.conf` (refer to the comments in the file) to set the proxy for the aesmd service.  
+The aesmd service uses the HTTP protocol to initialize some services.
+If a proxy is required for the HTTP protocol, you may need to manually set up the proxy for the aesmd service.
+You should manually edit the file `/etc/aesmd.conf` (refer to the comments in the file) to set the proxy for the aesmd service.
 After you configure the proxy, you need to restart the service to enable the proxy.
 
 Reproducibility

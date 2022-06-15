@@ -34,6 +34,7 @@
 #include "sgx_trts.h"
 #include "../Enclave.h"
 #include "Enclave_t.h"
+#include <string.h>
 
 /* ecall_array_user_check:
  *   [user_check] parameter does not perfrom copy operations.
@@ -45,7 +46,12 @@ void ecall_array_user_check(int arr[4])
     
     for (int i = 0; i < 4; i++) {
         assert(arr[i] == i);
-        arr[i] = 3 - i;
+	/* Below code performs as arr[i] = (3 - i)
+	 * It writes 4 bytes to untrusted memory, not 8 bytes aligned.
+	 * So we need to use memcpy_verw() for security consideration.
+	 * */
+        int tmp = 3 - i;
+        memcpy_verw(&arr[i], &tmp, sizeof(int));
     }
 }
 
@@ -97,6 +103,11 @@ void ecall_array_isary(array_t arr)
     int n = sizeof(array_t)/sizeof(arr[0]);
     for (int i = 0; i < n; i++) {
         assert(arr[i] == i);
-        arr[i] = (n - 1 - i);
+	/* Below code performs as arr[i] = (n - 1 - i);
+	 * It writes 4 bytes to untrusted memory, not 8 bytes aligned.
+	 * So we need to use memcpy_verw() for security consideration.
+	 * */
+	int tmp = n -1 - i;
+	memcpy_verw(&arr[i], &tmp, sizeof(int));
     }
 }

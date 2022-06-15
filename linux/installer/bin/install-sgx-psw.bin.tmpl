@@ -80,7 +80,7 @@ if [ -d "$INSTALL_PATH" ]; then
     exit 4
 fi
 
-PATH=/usr/bin:/bin
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
 umask 022
 
 PSWPKG=`mktemp -t sgx-psw-pkg.XXXXXX`

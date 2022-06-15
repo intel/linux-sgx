@@ -42,57 +42,54 @@ SDK_LIB_INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(SDK_LIB_PATH))
 USR_LIB_PATH=$(shell readlink -m /usr/$(or $(notdir $(shell gcc -print-multi-os-directory 2> /dev/null)),$(if $(wildcard /usr/lib64/.*),lib64),lib)/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null))
 USR_LIB_INSTALL_PATH=$(shell readlink -m $(DESTDIR)/$(USR_LIB_PATH))
 USR_BIN_INSTALL_PATH=$(shell readlink -m $(DESTDIR)/usr/bin)
+SOURCE_INSTALL_SGX_GDB=$(SOURCE_INSTALL_PATH)/bin/sgx-gdb
 
-default:
-
+.PHONY: install
 install: install_source install_script install_gdb install_library install_pkgconfig update_pkgconfig
 
+.PHONY: install_source
 install_source: #for all format
-	install -d $(SOURCE_INSTALL_PATH)
-	cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
+	@install -d $(SOURCE_INSTALL_PATH)
+	@cp -r $(SOURCE_FOLDER)/* $(SOURCE_INSTALL_PATH)
 
+.PHONY: install_script
 install_script: #for bin format
 ifeq ($(INSTALLER_FORMAT),BIN)
-	install -d $(SCRIPTS_INSTALL_PATH)
-	install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
+	@install -d $(SCRIPTS_INSTALL_PATH)
+	@install $(SCRIPTS_FOLDER)/* $(SCRIPTS_INSTALL_PATH)
 endif
 
+.PHONY: install_gdb
 install_gdb:
-	@sed -i "s#@SDK_LIB_PATH@#$(SDK_LIB_PATH)#" $(SOURCE_INSTALL_PATH)/bin/sgx-gdb
-	chmod +x $(SOURCE_INSTALL_PATH)/bin/sgx-gdb
+	@sed -i "s#@SDK_LIB_PATH@#$(SDK_LIB_PATH)#" $(SOURCE_INSTALL_SGX_GDB)
+	@chmod +x $(SOURCE_INSTALL_SGX_GDB)
 ifneq ($(INSTALLER_FORMAT),BIN)
-	install -d $(USR_BIN_INSTALL_PATH)
-	mv $(SOURCE_INSTALL_PATH)/bin/sgx-gdb $(USR_BIN_INSTALL_PATH)
+	@install -d $(USR_BIN_INSTALL_PATH)
+	@mv $(SOURCE_INSTALL_SGX_GDB) $(USR_BIN_INSTALL_PATH)
 endif
 
+.PHONY: install_library
 install_library: #for deb & rpm format
 ifneq ($(INSTALLER_FORMAT),BIN)
-	install -d $(USR_LIB_INSTALL_PATH)
-	mv $(SDK_LIB_INSTALL_PATH)/libsgx_uae_service_sim.so $(USR_LIB_INSTALL_PATH)
-	mv $(SDK_LIB_INSTALL_PATH)/libsgx_urts_sim.so $(USR_LIB_INSTALL_PATH)
+	@install -d $(USR_LIB_INSTALL_PATH)
+	@mv $(wildcard $(SDK_LIB_INSTALL_PATH)/*_sim.so) $(USR_LIB_INSTALL_PATH)
 endif
 
+.PHONY: install_pkgconfig
 install_pkgconfig: #for deb & rpm format
 ifneq ($(INSTALLER_FORMAT),BIN)
-	install -d $(USR_LIB_INSTALL_PATH)/pkgconfig
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
-	mv $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts.pc $(USR_LIB_INSTALL_PATH)/pkgconfig
-	@sed -i "s#\(libdir=\).*#\1$(USR_LIB_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
-	@sed -i "s#\(libdir=\).*#\1$(USR_LIB_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
-	rm -fr $(SOURCE_INSTALL_PATH)/pkgconfig
+	@install -d $(USR_LIB_INSTALL_PATH)/pkgconfig
+	@mv $(SOURCE_INSTALL_PATH)/pkgconfig $(USR_LIB_INSTALL_PATH)
 endif
 
-update_pkgconfig: #for bin format
+.PHONY: update_pkgconfig
+update_pkgconfig:
 ifeq ($(INSTALLER_FORMAT),BIN)
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" $(SOURCE_INSTALL_PATH)/pkgconfig/libsgx_urts.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_INSTALL_PATH)#" \
+		$(wildcard $(SOURCE_INSTALL_PATH)/pkgconfig/*.pc)
 else
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_uae_service_sim.pc
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_urts_sim.pc
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_uae_service.pc
-	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" $(USR_LIB_INSTALL_PATH)/pkgconfig/libsgx_urts.pc
+	@sed -i "s#\(prefix=\).*#\1$(SOURCE_PATH)#" \
+		$(wildcard $(USR_LIB_INSTALL_PATH)/pkgconfig/*.pc)
+	@sed -i "s#\(libdir=\).*#\1$(USR_LIB_PATH)#" \
+		$(wildcard $(USR_LIB_INSTALL_PATH)/pkgconfig/*_sim.pc)
 endif

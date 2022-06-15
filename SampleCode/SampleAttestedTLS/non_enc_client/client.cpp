@@ -54,7 +54,7 @@ int parse_arguments(
 {
     int ret = 1;
     const char* option = nullptr;
-    int param_len = 0;
+    unsigned int param_len = 0;
 
     if (argc != 3)
         goto print_usage;
@@ -87,7 +87,7 @@ int communicate_with_server(SSL* ssl)
     unsigned char buf[200];
     int ret = 1;
     int error = 0;
-    int len = 0;
+    unsigned int len = 0;
     int bytes_written = 0;
     int bytes_read = 0;
 
@@ -121,7 +121,7 @@ int communicate_with_server(SSL* ssl)
 
             printf(TLS_CLIENT "Failed! SSL_read returned error=%d\n", error);
             ret = bytes_read;
-            break;
+            goto done;
         }
 
         printf(TLS_CLIENT " %d bytes read\n", bytes_read);
@@ -143,10 +143,9 @@ int communicate_with_server(SSL* ssl)
             printf(TLS_CLIENT
                    " received all the expected data from server\n\n");
             ret = 0;
+            printf("Verified: the contents of server payload were expected\n\n");
             break;
         }
-        printf("Verified: the contents of server payload were expected\n\n");
-    
     } while (1);
     ret = 0;
 done:
@@ -157,8 +156,6 @@ done:
 int create_socket(char* server_name, char* server_port)
 {
     int sockfd = -1;
-    char* addr_ptr = nullptr;
-    int port = 0;
     struct addrinfo hints, *dest_info, *curr_di;
     int res;
 
@@ -227,7 +224,6 @@ done:
 int main(int argc, char** argv)
 {
     int ret = 1;
-    X509* cert = nullptr;
     SSL_CTX* ctx = nullptr;
     SSL* ssl = nullptr;
     int serversocket = 0;
@@ -268,7 +264,7 @@ int main(int argc, char** argv)
     SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1);
     SSL_CTX_set_options(ctx, SSL_OP_NO_TLSv1_1);
     // specify the verify_callback for custom verification
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, &verify_callback);
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, &verify_callback);
     
     if ((ssl = SSL_new(ctx)) == nullptr)
     {
@@ -290,7 +286,7 @@ int main(int argc, char** argv)
         goto done;
     }
 
-	printf(
+    printf(
             TLS_CLIENT
             "create a socket and initate a TCP connect to server: %s:%s "
             "\n",
@@ -319,16 +315,13 @@ int main(int argc, char** argv)
     }
 
     // Free the structures we don't need anymore
+    ret = 0;
+done:
     if (serversocket != -1)
         close(serversocket);
 
-    ret = 0;
-done:
     if (ssl)
         SSL_free(ssl);
-
-    if (cert)
-        X509_free(cert);
 
     if (ctx)
         SSL_CTX_free(ctx);

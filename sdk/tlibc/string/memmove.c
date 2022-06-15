@@ -62,3 +62,75 @@ memmove(void *dst0, const void *src0, size_t length)
 #endif
 }
 
+extern void* __memcpy_verw(void *dst0, const void *src0);
+extern void* __memcpy_8a(void *dst0, const void *src0);
+void *
+memmove_verw(void *dst, const void *src, size_t count)
+{
+    if(count == 0 || dst == src)
+    {
+        return dst;
+    }
+
+    if (dst < src)
+    {
+        // if src is above dst, we have to copy front to back
+        // to avoid overwriting the data we want to copy.
+        char* dst0 = (char*)dst;
+        const char *src0 = (const char *)src;
+        while (count >= 8) {
+            if((unsigned long long)dst0%8 == 0) {
+                // 8-byte-aligned - don't need <VERW><MFENCE LFENCE> bracketing
+                __memcpy_8a(dst0, src0);
+                src0 += 8;
+                dst0 += 8;
+                count -= 8;
+            }
+            else{
+                // not 8-byte-aligned - need <VERW><MFENCE LFENCE> bracketing
+                __memcpy_verw(dst0, src0);
+                src0++;
+                dst0++;
+                count--;
+            }
+        }
+        // less than 8 bytes left - need <VERW> <MFENCE LFENCE> bracketing
+        for (unsigned i = 0; i < count; i++) {
+                __memcpy_verw(dst0, src0);
+                src0++;
+                dst0++;
+        }
+    }
+    else
+    {
+        // If dst is above src, we have to copy back to front
+        // to avoid overwriting the data we want to copy.
+        char* dst0 = (char*)dst + count -1;
+        const char *src0 = (const char *)src + count -1;
+        while (count >= 8) {
+            if((unsigned long long)dst0%8 == 7) {
+                // 8-byte-aligned - don't need <VERW><MFENCE LFENCE> bracketing
+                __memcpy_8a(dst0 - 7, src0 - 7);
+                src0 -= 8;
+                dst0 -= 8;
+                count -= 8;
+            }
+            else{
+                // not 8-byte-aligned - need <VERW><MFENCE LFENCE> bracketing
+                __memcpy_verw(dst0, src0);
+                src0--;
+                dst0--;
+                count--;
+            }
+        }
+        // less than 8 bytes left - need <VERW> <MFENCE LFENCE> bracketing
+        for (unsigned i = 0; i < count; i++) {
+                __memcpy_verw(dst0, src0);
+                src0--;
+                dst0--;
+        }
+    }
+
+    return dst;
+}
+

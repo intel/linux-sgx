@@ -90,6 +90,20 @@ static inline uint32_t sl_call_mngr_process(struct sl_call_mngr* mngr)
     return sl_siglines_process_signals(&mngr->siglns);
 }
 
+#ifdef SL_INSIDE_ENCLAVE /* Trusted */
+#include <string.h>
+#define SET_VALUE_HARDEN_FOR_PROCESS_TASK(dest, value, value_type)    \
+    do {                                                              \
+        value_type tmp = value;                                       \
+        memcpy_verw((void*)(dest), &tmp, sizeof(value_type));         \
+    } while(0)
+#else /* Untrusted */
+#define SET_VALUE_HARDEN_FOR_PROCESS_TASK(dest, value, value_type)    \
+    do {                                                              \
+        *(dest) = value;                                              \
+    } while(0)
+#endif
+
 static inline void process_switchless_call(struct sl_siglines* siglns, uint32_t line)
 {
     /*
@@ -124,7 +138,7 @@ static inline void process_switchless_call(struct sl_siglines* siglns, uint32_t 
     struct sl_call_task *call_task_u = &mngr->tasks[line];
 
     BUG_ON(call_task_u->status != SL_SUBMITTED);
-    call_task_u->status = SL_ACCEPTED;
+    SET_VALUE_HARDEN_FOR_PROCESS_TASK(&call_task_u->status, SL_ACCEPTED, sl_call_status_t);
 
     uint32_t func_id = call_task_u->func_id;
 
@@ -132,7 +146,7 @@ static inline void process_switchless_call(struct sl_siglines* siglns, uint32_t 
     sl_call_func_t call_func_ptr = NULL;
     if (unlikely(func_id >= call_table->size))
     {
-        call_task_u->ret_code = SGX_ERROR_INVALID_FUNCTION;
+        SET_VALUE_HARDEN_FOR_PROCESS_TASK(&call_task_u->ret_code, SGX_ERROR_INVALID_FUNCTION, sgx_status_t);
         goto on_done;
     }
 
@@ -141,26 +155,40 @@ static inline void process_switchless_call(struct sl_siglines* siglns, uint32_t 
     call_func_ptr = call_table->funcs[func_id];
     if (unlikely(call_func_ptr == NULL))
     {
-        call_task_u->ret_code = mngr->type == SL_TYPE_ECALL ?
-            SGX_ERROR_ECALL_NOT_ALLOWED :
-            SGX_ERROR_OCALL_NOT_ALLOWED;
+        SET_VALUE_HARDEN_FOR_PROCESS_TASK(&call_task_u->ret_code,
+                        mngr->type == SL_TYPE_ECALL ? SGX_ERROR_ECALL_NOT_ALLOWED : SGX_ERROR_OCALL_NOT_ALLOWED,
+                        sgx_status_t);
         goto on_done;
     }
 
     // Do the call.
     // func_data should point to untrusted buffer and should be checked by invoked function
     // in our case, edre8r generated code is performing the check
-    call_task_u->ret_code = call_func_ptr(call_task_u->func_data);
+    {
+        sgx_status_t ret = call_func_ptr(call_task_u->func_data);
+        SET_VALUE_HARDEN_FOR_PROCESS_TASK(&call_task_u->ret_code, ret, sgx_status_t);
+    }
 
 on_done:
     /* Notify the caller that the switchless is done by updating the status.
     * The memory barrier ensures that switchless results are visible to the
     * caller when it finds out that the status becomes SL_DONE. */
-    call_task_u->status = SL_DONE;
+    SET_VALUE_HARDEN_FOR_PROCESS_TASK(&call_task_u->status, SL_DONE, sl_call_status_t);
     sgx_mfence();
 }
 
-
+#ifdef SL_INSIDE_ENCLAVE
+#define SET_VALUE_HARDEN_FOR_SEND_TASK(dest, value, value_type)        \
+    do {                                                               \
+        value_type tmp = value;                                        \
+        memcpy_verw((void*)(dest), &tmp, sizeof(value_type));          \
+    } while(0)
+#else
+#define SET_VALUE_HARDEN_FOR_SEND_TASK(dest, value, value_type)        \
+    do {                                                               \
+        *(dest) = value;                                               \
+    } while(0)
+#endif
 
 static inline int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_task* call_task, uint32_t max_tries)
 {
@@ -185,10 +213,10 @@ static inline int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_ta
         return -EAGAIN;
 
     BUG_ON(call_task->status != SL_INIT);
-    call_task->status = SL_SUBMITTED;
+    SET_VALUE_HARDEN_FOR_SEND_TASK(&call_task->status, SL_SUBMITTED, sl_call_status_t);
 
     // copy task data to internal array accessable by both sides (trusted & untrusted)
-    mngr->tasks[line] = *call_task;
+    SET_VALUE_HARDEN_FOR_SEND_TASK(&mngr->tasks[line], *call_task, struct sl_call_task);
 
     /* Send a signal so that workers will access the buffer for switchless call
      * requests. Here, a memory barrier is used to make sure the buffer is
@@ -232,7 +260,7 @@ static inline int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_ta
     call_task->ret_code = mngr->tasks[line].ret_code;
 
 on_exit:
-    mngr->tasks[line].func_id = SL_INVALID_FUNC_ID;
+    SET_VALUE_HARDEN_FOR_SEND_TASK(&mngr->tasks[line].func_id, SL_INVALID_FUNC_ID, uint32_t);
     sl_siglines_free_line(siglns, line);
     return ret;
 }

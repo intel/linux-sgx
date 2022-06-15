@@ -28,25 +28,37 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include "DEFS.h"
 
+	/*
+	 * void* __memcpy_verw(void *dst, const void *src)
+	 * 
+	 */
 
-#include <stdarg.h>
-#include <stdio.h>      /* vsnprintf */
+ENTRY(__memcpy_verw)
+	RETGUARD_SETUP(__memcpy_verw, r10)
+	movb (%rsi), %al
+	sub $8, %rsp
+	mov %ds, (%rsp)
+	verw (%rsp)
+	movb %al, (%rdi)
+	mfence
+	lfence
+	add $8, %rsp
+	movq %rdi, %rax
+	RETGUARD_CHECK(__memcpy_verw, r10)
+	ret
+END_STRONG(__memcpy_verw)
 
-#include "Enclave.h"
-#include "Enclave_t.h"  /* print_string */
-
-/* 
- * printf: 
- *   Invokes OCALL to display the enclave buffer to the terminal.
- */
-int printf(const char *fmt, ...)
-{
-    char buf[BUFSIZ] = {'\0'};
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(buf, BUFSIZ, fmt, ap);
-    va_end(ap);
-    ocall_print_string(buf);
-    return 0;
-}
+	/*
+	 * void* __memcpy_8a(void *dst, const void *src)
+	 *
+	 */
+ENTRY(__memcpy_8a)
+	RETGUARD_SETUP(__memcpy_8a, r10)
+	movq (%rsi), %rax
+	movq %rax, (%rdi)
+	movq %rdi, %rax
+	RETGUARD_CHECK(__memcpy_8a, r10)
+	ret
+END_STRONG(__memcpy_8a)

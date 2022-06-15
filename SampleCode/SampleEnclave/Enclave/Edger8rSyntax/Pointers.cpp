@@ -85,7 +85,7 @@ size_t ecall_pointer_user_check(void* val, size_t sz)
         val, len, (unsigned int)sum);
 
     /* modify outside memory directly */
-    memcpy(val, "SGX_SUCCESS", len > 12 ? 12 : len);
+    memcpy_verw(val, "SGX_SUCCESS", len > 12 ? 12 : len);
 
     return len;
 }

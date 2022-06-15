@@ -37,6 +37,12 @@ PACKAGES=$(notdir $(wildcard $(PACKAGE_ROOT_FOLDER)/*))
 USR_LIB_PATH=/usr/$(notdir $(shell gcc -print-multi-os-directory))/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null)
 USR_INC_PATH=/usr/$(INC_DIR)
 
+ifeq ($(shell LD_PRELOAD= stat -c "%G" /dev/sgx_enclave 2>/dev/null),sgx)
+SGX_UDEV_RULE_DEL=/etc/udev/rules.d/91-sgx-enclave.rules
+else
+SGX_UDEV_RULE_DEL=/etc/udev/rules.d/94-sgx-enclave.rules
+endif
+
 ECL_VER=1.0.0
 SPLIT_VERSION=$(word $2,$(subst ., ,$1))
 
@@ -48,6 +54,7 @@ install: $(PACKAGES)
 	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1)
 	cd $(shell readlink -m $(DESTDIR)/$(ENCLAVE_COMMON_DEV_PACKAGE_NAME)/$(USR_LIB_PATH)) && \
 	ln -fs libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1) libsgx_enclave_common.so
+	rm -f $(DESTDIR)/$(ENCLAVE_COMMON_PACKAGE_NAME)/$(SGX_UDEV_RULE_DEL)
 
 $(PACKAGES):
 	install -d $(shell readlink -m $(DESTDIR)/$@)
