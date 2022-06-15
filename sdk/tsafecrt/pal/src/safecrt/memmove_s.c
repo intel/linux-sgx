@@ -117,3 +117,39 @@ int __cdecl memmove_s(
     void *ret_val = memmove_xplat(dst, src, count);
     return ret_val != NULL ? 0 : ENOMEM; // memmove_xplat returns `NULL` only if ENOMEM
 }
+
+
+/*
+dest
+    Destination object.
+
+sizeInBytes
+    Size of the destination buffer.
+
+src
+    Source object.
+
+count
+    Number of bytes (memmove_s) or characters (wmemmove_s) to copy.
+*/
+int __cdecl memmove_verw_s(
+    void * dst,
+    size_t sizeInBytes,
+    const void * src,
+    size_t count
+)
+{
+    if (count == 0)
+    {
+        /* nothing to do */
+        return 0;
+    }
+
+    /* validation section */
+    _VALIDATE_RETURN_ERRCODE(dst != NULL, EINVAL);
+    _VALIDATE_RETURN_ERRCODE(src != NULL, EINVAL);
+    _VALIDATE_RETURN_ERRCODE(sizeInBytes >= count, ERANGE);
+
+    void *ret_val = memmove_verw(dst, src, count);
+    return ret_val != NULL ? 0 : ENOMEM; // memmove_verw returns `NULL` only if ENOMEM
+}

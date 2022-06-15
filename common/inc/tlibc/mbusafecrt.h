@@ -74,7 +74,9 @@ extern int _vswprintf_s( WCHAR* string, size_t sizeInWords, const WCHAR* format,
 extern int _vsnwprintf_s( WCHAR* string, size_t sizeInWords, size_t count, const WCHAR* format, va_list arglist );
 
 extern errno_t memcpy_s( void * dst, size_t sizeInBytes, const void * src, size_t count );
+extern errno_t memcpy_verw_s( void * dst, size_t sizeInBytes, const void * src, size_t count );
 extern errno_t memmove_s( void * dst, size_t sizeInBytes, const void * src, size_t count );
+extern errno_t memmove_verw_s( void * dst, size_t sizeInBytes, const void * src, size_t count );
 
 #ifdef __cplusplus
     }

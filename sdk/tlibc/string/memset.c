@@ -32,12 +32,50 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
+#include <sys/types.h>
 
 #ifdef _TLIBC_USE_INTEL_FAST_STRING_
 extern void *_intel_fast_memset(void *, void *, size_t);
 #else
 extern void *__memset(void *dst, int c, size_t n);
 #endif
+
+extern void* __memcpy_verw(void *dst0, const void *src0);
+extern void* __memcpy_8a(void *dst0, const void *src0);
+
+void *
+memset_verw(void *dst, int c, size_t len)
+{
+    char* dst0 = dst;
+    if (len == 0 || dst == NULL)
+    {
+        return dst;
+    }
+    unsigned char tt = (unsigned char)c;
+    uint64_t tmp = 0;
+    memset((void*)&tmp, c, 8);
+    while (len >= 8) {
+        if((unsigned long long)dst0%8 == 0) {
+            // 8-byte-aligned - don't need <VERW><MFENCE LFENCE> bracketing
+            __memcpy_8a(dst0, (void*)&tmp);
+            dst0 += 8;
+            len -= 8;
+        }
+        else{
+            // not 8-byte-aligned - need <VERW><MFENCE LFENCE> bracketing
+            __memcpy_verw(dst0, (void *)&tt);
+            dst0++;
+            len--;
+        }
+    }
+    // less than 8 bytes left - need <VERW> <MFENCE LFENCE> bracketing
+    for (unsigned i = 0; i < len; i++) {
+            __memcpy_verw(dst0, (void *)&tt);
+            dst0++;
+    }
+    return dst;
+}
 
 void *
 memset(void *dst, int c, size_t n)
@@ -48,4 +86,3 @@ memset(void *dst, int c, size_t n)
 	return __memset(dst, c, n);
 #endif /* !_TLIBC_USE_INTEL_FAST_STRING_ */	
 }
-

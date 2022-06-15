@@ -79,3 +79,59 @@ errno_t __cdecl memcpy_s(
     memcpy(dst, src, count);
     return 0;
 }
+
+
+/***
+*memcpy_verw_s - Copy source buffer to destination buffer
+*
+*Purpose:
+*       memcpy_verw_s() copies a source memory buffer to a destination memory buffer.
+*       This routine handles the suitation that the destination buffer's address or
+*       the number of bytes to copy is not 8 byte aligned.
+*       This routine does NOT recognize overlapping buffers, and thus can lead
+*       to propagation.
+*
+*
+*Entry:
+*       void *dst = pointer to destination buffer
+*       size_t sizeInBytes = size in bytes of the destination buffer
+*       const void *src = pointer to source buffer
+*       size_t count = number of bytes to copy
+*
+*Exit:
+*       Returns 0 if everything is ok, else return the error code.
+*
+*Exceptions:
+*       Input parameters are validated. Refer to the validation section of the function.
+*       On error, the error code is returned.
+*
+*******************************************************************************/
+errno_t __cdecl memcpy_verw_s(
+    void * dst,
+    size_t sizeInBytes,
+    const void * src,
+    size_t count
+)
+{
+    if (count == 0)
+    {
+        /* nothing to do */
+        return 0;
+    }
+
+    /* validation section */
+    _VALIDATE_RETURN_ERRCODE(dst != NULL, EINVAL);
+    if (src == NULL || sizeInBytes < count)
+    {
+        /* zeroes the destination buffer */
+        memset_verw(dst, 0, sizeInBytes);
+
+        _VALIDATE_RETURN_ERRCODE(src != NULL, EINVAL);
+        _VALIDATE_RETURN_ERRCODE(sizeInBytes >= count, ERANGE);
+        /* useless, but prefast is confused */
+        return EINVAL;
+    }
+
+    memcpy_verw(dst, src, count);
+    return 0;
+}

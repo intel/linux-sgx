@@ -922,7 +922,7 @@ int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *m
             //If memory map fail or conflict occurs, we only retry 3 times.
         case SGX_ERROR_MEMORY_MAP_FAILURE:
         case SGX_ERROR_MEMORY_MAP_CONFLICT:
-            if (0 == map_retry_count)
+            if(0 == map_retry_count)
                 retry = false;
             else
                 map_retry_count--;

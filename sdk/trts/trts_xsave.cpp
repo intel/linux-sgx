@@ -43,7 +43,7 @@
 //XRSTOR in compacted mode will ignore the first 512 bytes.
 extern "C" SE_DECLSPEC_ALIGN(XSAVE_ALIGN_SIZE) const uint32_t
 SYNTHETIC_STATE[SYNTHETIC_STATE_SIZE/sizeof(uint32_t)] __attribute__((section(".niprod"))) = {
-    0x037F, 0, 0, 0, 0, 0, 0x1F80, 0xFFFF, 0, 0, 0, 0, 0, 0, 0, 0,
+    0x037F, 0, 0, 0, 0, 0, 0x1FBF, 0xFFFF, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -51,7 +51,7 @@ SYNTHETIC_STATE[SYNTHETIC_STATE_SIZE/sizeof(uint32_t)] __attribute__((section(".
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // XCOMP_BV[63] = 1, compaction mode
+    2, 0, 2, 0x80000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,   // XCOMP_BV[63] = 1, compaction mode
 };
 
 int g_xsave_enabled __attribute__((section(".nipd"))) = 0;         // flag to indicate whether xsave is enabled or not

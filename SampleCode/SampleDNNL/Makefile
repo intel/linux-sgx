@@ -131,7 +131,7 @@ ifeq ($(CC_BELOW_4_9), 1)
 else
 	Enclave_Compile_CFlags := -fstack-protector-strong
 endif
-Enclave_Compile_CFlags += -nostdinc -ffreestanding -fvisibility=hidden -fpie -ffunction-sections -fdata-sections $(Enclave_Include_Paths) -fomit-frame-pointer
+Enclave_Compile_CFlags += -nostdinc -ffreestanding -fvisibility=hidden -fpie -ffunction-sections -fdata-sections $(Enclave_Include_Paths) -fomit-frame-pointer -fno-builtin-printf
 Enclave_Compile_CXXFlags := -nostdinc++ $(Enclave_Compile_CFlags) -fomit-frame-pointer
 
 # Enable the security flags

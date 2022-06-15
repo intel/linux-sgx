@@ -41,6 +41,9 @@
 
 static const char* oid_sgx_quote = X509_OID_FOR_QUOTE_STRING;
 
+//The ISVSVN threshold of Intel signed QvE
+const sgx_isv_svn_t qve_isvsvn_threshold = 6;
+
 extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
     const unsigned char *p_subject_name,
     const uint8_t *p_prv_key,
@@ -192,8 +195,6 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
     sgx_report_data_t cert_pub_hash;
     sgx_sha_state_handle_t sha_handle = NULL;
 
-    //The ISVSVN threshold of Intel signed QvE
-    const sgx_isv_svn_t qve_isvsvn_threshold = 5;
 
     memset(&cert_pub_hash, 0, sizeof(sgx_report_data_t));
 

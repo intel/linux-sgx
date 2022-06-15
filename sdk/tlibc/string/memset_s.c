@@ -81,3 +81,38 @@ memset_s(void *s, size_t smax, int c, size_t n)
         return err;
     }
 }
+
+
+errno_t
+memset_verw_s(void *s, size_t smax, int c, size_t n)
+{
+    errno_t err = 0;
+
+    if (s == NULL) {
+        err = EINVAL;
+        goto out;
+    }
+    if (smax > SIZE_MAX) {
+        err = E2BIG;
+        goto out;
+    }
+    if (n > SIZE_MAX) {
+        err = E2BIG;
+        n = smax;
+    }
+    if (n > smax) {
+        err = EOVERFLOW;
+        n = smax;
+    }
+
+    memset_verw(s, c, n);
+
+    out:
+    if (err == 0)
+        return 0;
+    else {
+        errno = err;
+        /* XXX call runtime-constraint handler */
+        return err;
+    }
+}

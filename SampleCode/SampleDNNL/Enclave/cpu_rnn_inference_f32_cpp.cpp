@@ -58,7 +58,7 @@
 
 #include "dnnl.hpp"
 
-extern "C" void printf(const char *fmt, ...);
+extern "C" int printf(const char *fmt, ...);
 
 // MSVC doesn't support collapse clause in omp parallel
 

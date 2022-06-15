@@ -67,7 +67,6 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/external/dcap_source/QuoteGeneration/pccs/x509/x509.js	<installdir>/x509/x509.js	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/pccs/install.sh	<installdir>/install.sh	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/pccs/package.json	<installdir>/package.json	0	main	STP
-<deliverydir>/external/dcap_source/QuoteGeneration/pccs/npm-shrinkwrap.json	<installdir>/npm-shrinkwrap.json	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/pccs/pccs_server.js	<installdir>/pccs_server.js	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/pccs/pccs.service	<installdir>/pccs.service	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/pccs/startup.sh	<installdir>/startup.sh	0	main	STP

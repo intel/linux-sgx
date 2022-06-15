@@ -193,7 +193,8 @@ pve_status_t get_pve_psk(
 //simple wrapper for memcpy but checking type of parameter
 void pve_memcpy_out(external_memory_byte_t *dst, const void *src, uint32_t size)
 {
-    memcpy(dst, src, size);
+    // Use PRT mitigated version of memcpy to copy buffer to untrusted memory 
+    memcpy_verw(dst, src, size);
 }
 
 void pve_memcpy_in(void *dst, const external_memory_byte_t *src, uint32_t size)

@@ -1,0 +1,2 @@
+# Only for systemd which supports https://github.com/systemd/systemd/pull/18944/files
+SUBSYSTEM=="misc",KERNEL=="sgx_enclave",SYMLINK+="sgx/enclave"

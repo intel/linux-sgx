@@ -169,6 +169,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
     mov     %xdi, (%xsp)
 #endif
     call    restore_xregs
+    lfence
     add     $(4*SE_WORDSIZE), %xsp
 
     /* switch to C code */
@@ -188,6 +189,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
     mov     %xdi, (%xsp)
 #endif
     call    restore_xregs
+    lfence
 
 /* set xdi and xsi */
     mov     $OCMD_ERET, %xdi
@@ -337,6 +339,7 @@ DECLARE_LOCAL_FUNC do_ocall
     lea_pic SYNTHETIC_STATE, %xdi
     mov     %xdi, (%xsp)
     call    restore_xregs
+    lfence
 
     /* set xdi and xsi using the input parameters */
 #ifdef LINUX64
@@ -451,6 +454,7 @@ DECLARE_GLOBAL_FUNC asm_oret
     mov     %xdi, (%xsp)
 #endif
     call    restore_xregs
+    lfence
 
 /* memset_s */
     xor     %xax, %xax

@@ -77,7 +77,6 @@ static void cleanup_openssl(void)
 static Mutex s_enclave_info_mutex;
 static std::map<void *, enclave_elrange_t>s_enclave_elrange_map;
 
-
 extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_start_address)
 {
     LockGuard lock(&s_enclave_info_mutex);

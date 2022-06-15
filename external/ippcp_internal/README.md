@@ -10,7 +10,7 @@ In order to build your own IPP crypto, please follow below steps:
    a. Build the target ippcp library with All-Loads-Mitigation:
       $ make MITIGATION-CVE-2020-0551=LOAD
    b. Build the target ippcp library with Branch-Mitigation:
-      $ make MITIGATION-CVE-2020-0551=C
+      $ make MITIGATION-CVE-2020-0551=CF
    c. Build the target ippcp library with No-Mitigation:
       $ make
 The built-out static library `libippcp.a` and header files will be copied into the right place.
