@@ -67,7 +67,7 @@ sed -i 's#^/etc/aesmd.conf#%config &#' %{_specdir}/list-%{name}
 
 %files -f %{_specdir}/list-%{name}
 
-%post
+%posttrans
 if [ -x %{_install_path}/startup.sh ]; then %{_install_path}/startup.sh; fi
 
 %preun
