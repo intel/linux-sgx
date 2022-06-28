@@ -41,7 +41,8 @@ typedef struct ms_alloc_ocall_t {
 	int32_t  retval;
     size_t addr;
     size_t size;
-    uint32_t flags;
+    uint32_t page_properties;
+    uint32_t alloc_flags;
 } ms_emm_alloc_ocall_t;
 
 extern "C" sgx_status_t SGX_CDECL ocall_emm_alloc(void* pms)
@@ -49,9 +50,9 @@ extern "C" sgx_status_t SGX_CDECL ocall_emm_alloc(void* pms)
    
    ms_emm_alloc_ocall_t* ms = SGX_CAST(ms_emm_alloc_ocall_t*, pms);
 #ifdef SE_SIM
-   ms->retval = mprotect((void*)ms->addr, ms->size, ms->flags|PROT_MASK);
+   ms->retval = mprotect((void*)ms->addr, ms->size, ms->page_properties|PROT_MASK);
 #else
-   ms->retval = enclave_alloc(ms->addr, ms->size, ms->flags);
+   ms->retval = enclave_alloc(ms->addr, ms->size,ms->page_properties,  ms->alloc_flags);
 #endif
    return SGX_SUCCESS;
 }

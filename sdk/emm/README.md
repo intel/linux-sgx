@@ -10,7 +10,7 @@ The typical target users of these APIs are intermediate level components in SGX 
 with dynamic expansion capabilities, mmap/mprotect/pthread API implementations for enclaves, dynamic code
 loader and JIT compilers,etc.
  
-This implementation aims to be reusable in any SGX runtime that provides a minimal C runtime (malloc required) and
+This implementation aims to be reusable in any SGX runtime that provides a minimal C runtime and
 implements the abstraction layer APIs as defined in [sgx_mm_rt_abstraction.h](include/sgx_mm_rt_abstraction.h).
 
 The instructions here are for developing and testing the EMM functionality only.

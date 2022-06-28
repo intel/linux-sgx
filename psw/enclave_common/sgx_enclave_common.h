@@ -86,8 +86,27 @@ typedef enum {
     ENCLAVE_PAGE_WRITE = 1 << 1,          /* Enables write access to the committed region of pages. */
     ENCLAVE_PAGE_EXECUTE = 1 << 2,        /* Enables execute access to the committed region of pages. */
     ENCLAVE_PAGE_THREAD_CONTROL = 1 << 8, /* The page contains a thread control structure. */
+    ENCLAVE_PAGE_REG = 2 << 8,            /* The page contains a PT_REG page. */
+    ENCLAVE_PAGE_SS_FIRST = 5 << 8,       /* The page contains the first page of a Shadow Stack (future). */
+    ENCLAVE_PAGE_SS_REST = 6 << 8,        /* The page contains a non-first page of a Shadow Stack (future). */
     ENCLAVE_PAGE_UNVALIDATED = 1 << 12,   /* The page contents that you supply are excluded from measurement and content validation. */
 } enclave_page_properties_t;
+
+/*
+ * Hints to OS on how application may use the pages allocated with enclave_alloc.
+ */
+typedef enum {
+    ENCLAVE_EMA_NONE = 0,                /* No suggestions provided. */
+    ENCLAVE_EMA_RESERVE = 1,             /* Suggest that the kernel should reserve the memory range and not immediately EAUG pages. */
+    ENCLAVE_EMA_COMMIT_NOW = 2,          /* Gives a hint that the kernel should EAUG pages immediately. */
+    ENCLAVE_EMA_COMMIT_ON_DEMAND  = 4,   /* Gives a hint that the kernel can EAUG pages later. */
+    ENCLAVE_EMA_GROWSDOWN = 16,          /* Gives a hint to the kernel that the application will access pages above the
+                                            last accessed page.  The kernel may want to EAUG pages from higher to lower addresses
+                                            with no gaps in addresses above the last committed page. */
+    ENCLAVE_EMA_GROWSUP = 32,            /* Gives a hint to the kernel that the application will access pages below the
+                                            last accessed page.  The kernel may want to EAUG pages from lower to higher addresses
+                                            with no gaps in addresses below the last committed page. */
+} enclave_alloc_flags;
 
 typedef enum {
     ENCLAVE_LAUNCH_TOKEN = 0x1
@@ -100,7 +119,7 @@ typedef enum {
 #define ENCLAVE_CREATE_EX_EL_RANGE              (1 << ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX) // Reserve Bit 0 for the el_range config
 
 //update the following when adding new extended feature
-#define _ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_  ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX 
+#define _ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_  ENCLAVE_CREATE_EX_EL_RANGE_BIT_IDX
 
 #define _ENCLAVE_CREATE_EX_FEATURES_MASK_ (((uint32_t)-1) >> (ENCLAVE_CREATE_MAX_EX_FEATURES_COUNT - 1  - _ENCLAVE_CREATE_LAST_EX_FEATURE_IDX_))
 
@@ -148,7 +167,7 @@ void* COMM_API enclave_create_ex(
     COMM_IN const uint32_t ex_features,
     COMM_IN const void* ex_features_p[32],
     COMM_OUT_OPT uint32_t* enclave_error);
-    
+
 
 /* enclave_create()
  * Parameters:
@@ -175,7 +194,7 @@ void* COMM_API enclave_create(
 /* enclave_load_data()
  * Parameters:
  *      target_address [in] - The address in the enclave where you want to load the data.
- *      target_size [in] - The size of the range that you want to load in the enclave, in bytes. 
+ *      target_size [in] - The size of the range that you want to load in the enclave, in bytes.
  *      source_buffer [in, optional] - An optional pointer to the data you want to load into the enclave.
  *      data_properties [in] - The properties of the pages you want to add to the enclave.
  *      enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
@@ -193,7 +212,7 @@ size_t COMM_API enclave_load_data(
 /* enclave_initialize()
  * Parameters:
  *      base_address [in] - The enclave base address as returned from the enclave_create API.
- *      info [in] - A pointer to the architecture-specific information to use to initialize the enclave. 
+ *      info [in] - A pointer to the architecture-specific information to use to initialize the enclave.
  *      info_size [in] - The length of the structure that the info parameter points to, in bytes.
  *      enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  * Return Value:
@@ -224,7 +243,7 @@ bool COMM_API enclave_delete(
  * info_type[in] - Identifies the type of information requested. initialized.
  * output_info[out] - Pointer to information returned by the API
  * output_info_size[in, out] - Size of the output_info buffer, in bytes.  If the API succeeds, then this will return the number of bytes returned in output_info.  If the API fails with, ENCLAVE_INVALID_SIZE, then this will return the required size
- * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code. 
+ * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  */
 bool COMM_API enclave_get_information(
     COMM_IN void* base_address,
@@ -239,7 +258,7 @@ bool COMM_API enclave_get_information(
  * info_type[in] - Identifies the type of information requested. not been initialized.
  * input_info[in] - Pointer to information provided to the API
  * input_info_size[in] - Size of the information, in bytes, provided in input_info from the API.
- * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code. 
+ * enclave_error [out, optional] - An optional pointer to a variable that receives an enclave error code.
  */
 bool COMM_API enclave_set_information(
     COMM_IN void* base_address,
@@ -253,56 +272,102 @@ bool COMM_API enclave_set_information(
  *
  * @param[in] addr Desired page aligned start address.
  * @param[in] length Size of the region in bytes of multiples of page size.
- * @param[in] flags A bitwise OR of flags describing committing mode, committing
+ * @param[in] page_properties Page types to be allocated, must be one of these:
+ *             - ENCLAVE_PAGE_REG: regular page type. This is the default if not specified.
+ *             - ENCLAVE_PAGE_SS_FIRST: the first page in shadow stack.
+ *             - ENCLAVE_PAGE_SS_REST: the rest page in shadow stack.
+ * @param[in] alloc_flags A bitwise OR of flags describing committing mode, committing
  *                     order, address preference, page type. The untrusted side.
  *    implementation should always invoke mmap syscall with MAP_SHARED|MAP_FIXED_NOREPLACE, and
  *    translate following additional bits to proper parameters invoking mmap or other SGX specific
  *    syscall(s) provided by the kernel.
- *        The flags param of this interface should include exactly one of following for committing mode:
- *            - SGX_EMA_COMMIT_NOW: reserves memory range with SGX_EMA_PROT_READ|SGX_EMA_PROT_WRITE, if supported,
+ *        The alloc_flags param of this interface should include exactly one of following for committing mode:
+ *            - ENCLAVE_EMA_COMMIT_NOW: reserves memory range with ENCLAVE_PAGE_READ|SGX_EMA_PROT_WRITE, if supported,
  *                   kernel is given a hint to EAUG EPC pages for the area as soon as possible.
- *            - SGX_EMA_COMMIT_ON_DEMAND: reserves memory range, EPC pages can be EAUGed upon #PF.
+ *            - ENCLAVE_EMA_COMMIT_ON_DEMAND: reserves memory range, EPC pages can be EAUGed upon #PF.
  *        ORed with zero or one of the committing order flags:
- *            - SGX_EMA_GROWSDOWN: if supported, a hint given for the kernel to EAUG pages from higher
+ *            - ENCLAVE_EMA_GROWSDOWN: if supported, a hint given for the kernel to EAUG pages from higher
  *                              to lower addresses, no gaps in addresses above the last committed.
- *            - SGX_EMA_GROWSUP: if supported, a hint given for the kernel to EAUG pages from lower
+ *            - ENCLAVE_EMA_GROWSUP: if supported, a hint given for the kernel to EAUG pages from lower
  *                              to higher addresses, no gaps in addresses below the last committed.
- *        Optionally ORed with one of following page types:
- *             - SGX_EMA_PAGE_TYPE_REG: regular page type. This is the default if not specified.
- *             - SGX_EMA_PAGE_TYPE_SS_FIRST: the first page in shadow stack.
- *             - SGX_EMA_PAGE_TYPE_SS_REST: the rest page in shadow stack.
- * @retval 0 The operation was successful.
- * @retval EINVAL Any parameter passed in is not valid.
- * @retval errno Error as reported by dependent syscalls, e.g., mmap().
+ * @retval ENCLAVE_ERROR_SUCCESS(0) The operation was successful.
+ * @retval ENCLAVE_NOT_SUPPORTED: Enavle feature is not supported by the system
+ * @retval ENCLAVE_LOST: may be returned if the enclave has been removed or if it has not been initialized (via EINIT)
+ * @retval ENCLAVE_INVALID_ADDRESS: the start address does not point to an enclave.
+ * @retval ENCLAVE_INVALID_PARAMETER: an invalid combination of flags was provided.
+ * @retval ENCLAVE_OUT_OF_MEMORY: No EPC left (some OSes like Linux), or system is out of memory for internal allocation by OS or this function.
+ * @retval ENCLAVE_DEVICE_NO_MEMORY: NO EPC left (some OSes like Windows)
+ * @retval ENCLAVE_INVALID_ADDRESS: address does not point to an enclave or valid memory within the enclave
+ * @retval ENCLAVE_NOT_INITIALIZED: may be returned if the enclave has not been initialized (via EINIT).
+ *                                  Some configurations may give ENCLAVE_LOST if the enclave has not been initialized.
+ * @retval ENCLAVE_UNEXPECTED, unexpected error.
  */
-int COMM_API enclave_alloc(uint64_t addr, size_t length, int flags);
+
+uint32_t COMM_API enclave_alloc(
+    COMM_IN uint64_t addr,
+    COMM_IN size_t length,
+    COMM_IN uint32_t page_properties,
+    COMM_IN uint32_t alloc_flags);
 
 /*
  * Call OS to change permissions, type, or notify EACCEPT done after TRIM.
  *
  * @param[in] addr Start address of the memory to change protections.
  * @param[in] length Length of the area.  This must be a multiple of the page size.
- * @param[in] flags_from The original EPCM flags of the EPC pages to be modified. 
+ * @param[in] page_properties_from The original EPCM flags of the EPC pages to be modified.
  *            Must be bitwise OR of following:
- *            SGX_EMA_PROT_READ
- *            SGX_EMA_PROT_WRITE
- *            SGX_EMA_PROT_EXEC
- *            SGX_EMA_PAGE_TYPE_REG: regular page, changeable to TRIM or TCS
- *            SGX_EMA_PAGE_TYPE_TRIM: signal to the kernel EACCEPT is done for TRIM pages.
- * @param[in] flags_to The target EPCM flags. This must be bitwise OR of following:
- *            SGX_EMA_PROT_READ
- *            SGX_EMA_PROT_WRITE
- *            SGX_EMA_PROT_EXEC
- *            SGX_EMA_PAGE_TYPE_TRIM: change the page type to PT_TRIM. Note the address
+ *            ENCLAVE_PAGE_READ
+ *            ENCLAVE_PAGE_WRITE
+ *            ENCLAVE_PAGE_EXEC
+ *            ENCLAVE_PAGE_REG: regular page, changeable to TRIM or TCS
+ *            ENCLAVE_PAGE_TRIM: signal to the kernel EACCEPT is done for TRIM pages.
+ * @param[in] page_properties_to The target EPCM flags. This must be bitwise OR of following:
+ *            ENCLAVE_PAGE_READ
+ *            ENCLAVE_PAGE_WRITE
+ *            ENCLAVE_PAGE_EXEC
+ *            ENCLAVE_PAGE_TRIM: change the page type to PT_TRIM. Note the address
  *                      range for trimmed pages may still be reserved by enclave with
  *                      proper permissions.
- *            SGX_EMA_PAGE_TYPE_TCS: change the page type to PT_TCS
- * @retval 0 The operation was successful.
- * @retval EINVAL A parameter passed in is not valid.
- * @retval errno Error as reported by dependent syscalls, e.g., mprotect().
+ *            ENCLAVE_PAGE_TCS: change the page type to PT_TCS
+ * @retval ENCLAVE_ERROR_SUCCESS(0) The operation was successful.
+ * @retval ENCLAVE_NOT_SUPPORTED: Enclave feature is not supported by the system
+ * @retval ENCLAVE_LOST: may be returned if the enclave has been removed or if it has not been initialized (via EINIT)
+ * @retval ENCLAVE_INVALID_PARAMETER: an invalid combination of flags was provided.
+ * @retval ENCLAVE_OUT_OF_MEMORY: No EPC left (some OSes like Linux), or system is out of memory for internal allocation by OS or this function.
+ * @retval ENCLAVE_DEVICE_NO_MEMORY: NO EPC left (some OSes like Windows)
+ * @retval ENCLAVE_INVALID_ADDRESS: address does not point to an enclave or valid memory within the enclave
+ * @retval ENCLAVE_NOT_INITIALIZED: may be returned if the enclave has not been initialized (via EINIT).
+ *                                  Some configurations may give ENCLAVE_LOST if the enclave has not been initialized.
+ * @retval ENCLAVE_UNEXPECTED, unexpected error.
  */
 
-int COMM_API enclave_modify(uint64_t addr, size_t length, int flags_from, int flags_to);
+uint32_t COMM_API enclave_modify(
+    COMM_IN uint64_t addr,
+    COMM_IN size_t length,
+    COMM_IN uint32_t page_properties_from,
+    COMM_IN uint32_t page_properties_to);
+
+
+
+
+/**
+ * The enclave features flags describe additional enclave features
+ * which are supported by the platform.  A value of 0 indicates not features are supported.
+ */
+typedef enum
+{
+    ENCLAVE_FEATURE_NONE = 0,
+    ENCLAVE_FEATURE_SGX1 = 0x00000001, /* The platform (HW and OS) supports SGX1 */
+    ENCLAVE_FEATURE_SGX2 = 0x00000002, /* The platform (HW and OS) supports SGX2 */
+}enclave_features;
+
+/*
+ * Get enclave features which are supported by the platform.
+ * @return an enclave_features enum  indicating enclave features which are supported on the platform
+ *
+ */
+uint32_t COMM_API enclave_get_features();
+
 
 #ifdef __cplusplus
 }

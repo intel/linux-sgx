@@ -308,7 +308,7 @@ void EnclaveCreatorHW::close_device()
 
 int EnclaveCreatorHW::alloc(uint64_t addr, uint64_t size, int flag)
 {
-	int ret = enclave_alloc(addr, size, flag);
+	int ret = enclave_alloc(addr, size, flag, SGX_EMA_COMMIT_ON_DEMAND);
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_alloc failed %d\n", ret);

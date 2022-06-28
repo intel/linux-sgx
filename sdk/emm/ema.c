@@ -721,7 +721,7 @@ static int ema_do_uncommit_real(ema_t *node, size_t real_start, size_t real_end,
         int ret = sgx_mm_modify_ocall(block_start, block_length,
                           prot | type, prot | SGX_EMA_PAGE_TYPE_TRIM);
         if (ret != 0) {
-            return ret;
+            return EFAULT;
         }
 
         ret = eaccept_range_forward(&si, block_start, block_end);
@@ -733,7 +733,7 @@ static int ema_do_uncommit_real(ema_t *node, size_t real_start, size_t real_end,
         ret =sgx_mm_modify_ocall(block_start, block_length,
                             prot | SGX_EMA_PAGE_TYPE_TRIM,
                             prot | SGX_EMA_PAGE_TYPE_TRIM);
-        if(ret) return ret;
+        if(ret) return EFAULT;
 
         real_start = block_end;
     }
@@ -867,6 +867,7 @@ int ema_change_to_tcs(ema_t *node, size_t addr)
     int ret = sgx_mm_modify_ocall(addr, SGX_PAGE_SIZE, prot | type,
                         prot | SGX_EMA_PAGE_TYPE_TCS);
     if (ret != 0) {
+        ret = EFAULT;
         goto fail;
     }
 
@@ -906,6 +907,7 @@ int ema_modify_permissions(ema_t *node, size_t start, size_t end, int new_prot)
     int ret = sgx_mm_modify_ocall(real_start, real_end - real_start,
                                     prot | type, new_prot | type);
     if (ret != 0) {
+        ret = EFAULT;
         goto fail;
     }
 
@@ -951,6 +953,8 @@ int ema_modify_permissions(ema_t *node, size_t start, size_t end, int new_prot)
     {//do mprotect if target is PROT_NONE
         ret = sgx_mm_modify_ocall(real_start, real_end - real_start,
                                     type | SGX_EMA_PROT_NONE,  type | SGX_EMA_PROT_NONE);
+        if (ret)
+            ret = EFAULT;
     }
 fail:
     node->transition = 0;
@@ -1157,8 +1161,9 @@ int ema_do_alloc(ema_t* node)
     size_t tmp_addr = node->start_addr;
     size_t size = node->size;
     int ret = sgx_mm_alloc_ocall(tmp_addr, size,
-                (int)(alloc_flags | (node->si_flags & SGX_EMA_PAGE_TYPE_MASK)));
+                (int)(node->si_flags & SGX_EMA_PAGE_TYPE_MASK), (int)alloc_flags);
     if (ret) {
+        ret = EFAULT;
         return ret;
     }
 

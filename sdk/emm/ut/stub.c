@@ -51,7 +51,7 @@ int do_emodpe(const sec_info_t* si, size_t addr)
     return 0;
 }
 
-int sgx_mm_alloc_ocall(size_t addr, size_t length, int flags)
+int sgx_mm_alloc_ocall(size_t addr, size_t length, int props, int flags)
 {
     return 0;
 }

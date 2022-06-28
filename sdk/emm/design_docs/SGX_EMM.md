@@ -365,7 +365,7 @@ int sgx_mm_modify_permissions(void *addr, size_t length, int prot);
  * @retval EACCES Original page type can not be changed to target type.
  * @retval EINVAL The memory region was not allocated or outside enclave
  *                or other invalid parameters that are not supported.
- * @retval EPERM  Target page type is no allowed by this API, e.g., PT_TRIM,
+ * @retval EPERM  Target page type is not allowed by this API, e.g., PT_TRIM,
  *               PT_SS_FIRST, PT_SS_REST.
  */
 int sgx_mm_modify_type(void *addr, size_t length, int type);
@@ -468,16 +468,20 @@ bool sgx_mm_unregister_pfhandler(sgx_mm_pfhandler_t pfhandler);
 ### OCalls
 
 ```
+
 /*
  * Call OS to reserve region for EAUG, immediately or on-demand.
  *
  * @param[in] addr Desired page aligned start address.
  * @param[in] length Size of the region in bytes of multiples of page size.
- * @param[in] flags A bitwise OR of flags describing committing mode, committing
+ * @param[in] page_type One of following page types:
+ *             - SGX_EMA_PAGE_TYPE_REG: regular page type. This is the default if not specified.
+ *             - SGX_EMA_PAGE_TYPE_SS_FIRST: the first page in shadow stack.
+ *             - SGX_EMA_PAGE_TYPE_SS_REST: the rest page in shadow stack.
+ * @param[in] alloc_flags A bitwise OR of flags describing committing mode, committing
  *                     order, address preference, page type. The untrusted side.
- *    implementation should always invoke mmap syscall with MAP_SHARED|MAP_FIXED, and
- *    translate following additional bits to proper parameters invoking mmap or other SGX specific
- *    syscall(s) provided by the kernel.
+ *    implementation should translate following additional bits to proper
+ *    parameters invoking syscall(mmap on Linux) provided by the kernel.
  *        The flags param of this interface should include exactly one of following for committing mode:
  *            - SGX_EMA_COMMIT_NOW: reserves memory range with SGX_EMA_PROT_READ|SGX_EMA_PROT_WRITE, if supported,
  *                   kernel is given a hint to EAUG EPC pages for the area as soon as possible.
@@ -487,15 +491,11 @@ bool sgx_mm_unregister_pfhandler(sgx_mm_pfhandler_t pfhandler);
  *                              to lower addresses, no gaps in addresses above the last committed.
  *            - SGX_EMA_GROWSUP: if supported, a hint given for the kernel to EAUG pages from lower
  *                              to higher addresses, no gaps in addresses below the last committed.
- *        Optionally ORed with one of following page types:
- *             - SGX_EMA_PAGE_TYPE_REG: regular page type. This is the default if not specified.
- *             - SGX_EMA_PAGE_TYPE_SS_FIRST: the first page in shadow stack.
- *             - SGX_EMA_PAGE_TYPE_SS_REST: the rest page in shadow stack.
  * @retval 0 The operation was successful.
- * @retval EINVAL Any parameter passed in is not valid.
- * @retval errno Error as reported by dependent syscalls, e.g., mmap().
+ * @retval EFAULT for all failures.
  */
-int sgx_mm_alloc_ocall(uint64_t addr, size_t length, int flags);
+
+int sgx_mm_alloc_ocall(uint64_t addr, size_t length, int page_type, int alloc_flags);
 
 /*
  * Call OS to change permissions, type, or notify EACCEPT done after TRIM.
@@ -518,8 +518,7 @@ int sgx_mm_alloc_ocall(uint64_t addr, size_t length, int flags);
  *                      proper permissions.
  *            SGX_EMA_PAGE_TYPE_TCS: change the page type to PT_TCS
  * @retval 0 The operation was successful.
- * @retval EINVAL A parameter passed in is not valid.
- * @retval errno Error as reported by dependent syscalls, e.g., mprotect().
+ * @retval EFAULT for all failures.
  */
 
 int sgx_mm_modify_ocall(uint64_t addr, size_t length, int flags_from, int flags_to);

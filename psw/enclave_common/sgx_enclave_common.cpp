@@ -1311,4 +1311,9 @@ extern "C" bool COMM_API enclave_set_information(
 
     return false;
 }
+uint32_t COMM_API enclave_get_features()
+{
+    //!TODO
+    return 0;
+}
 #include "sgx_mm_ocalls.cpp"

@@ -50,10 +50,11 @@ typedef struct ms_emm_alloc_ocall_t {
 	int retval;
     size_t addr;
     size_t size;
-    int flags;
+    int page_type;
+    int alloc_flags;
 } ms_emm_alloc_ocall_t;
 
-int SGXAPI sgx_mm_alloc_ocall(size_t addr, size_t size, int flags)
+int SGXAPI sgx_mm_alloc_ocall(size_t addr, size_t size, int page_type, int alloc_flags)
 {
 #ifdef SE_SIM
     (void)addr;
@@ -68,11 +69,12 @@ int SGXAPI sgx_mm_alloc_ocall(size_t addr, size_t size, int flags)
 
     ms->addr = (size_t)addr;
     ms->size = size;
-    ms->flags = flags;
+    ms->page_type = page_type;
+    ms->alloc_flags = alloc_flags;
 
     status = sgx_ocall((unsigned int)EDMM_ALLOC, ms);
-	if(status == SGX_SUCCESS)
-		ret = ms->retval;
+	if(status == SGX_SUCCESS && ms->retval == SGX_SUCCESS)
+		ret = 0;
 
     sgx_ocfree();
     return ret;
@@ -106,8 +108,8 @@ int SGXAPI sgx_mm_modify_ocall(size_t addr, size_t size, int flags_from, int fla
     ms->flags_from = flags_from;
     ms->flags_to = flags_to;
     status = sgx_ocall((unsigned int)EDMM_MODIFY, ms);
-	if(status == SGX_SUCCESS)
-		ret = ms->retval;
+	if(status == SGX_SUCCESS && ms->retval == SGX_SUCCESS)
+		ret = 0;
 
     sgx_ocfree();
     return ret;
