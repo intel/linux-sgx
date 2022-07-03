@@ -107,6 +107,10 @@ public:
     CMetadata(metadata_t *metadata, BinParser *parser);
     ~CMetadata();
     bool build_metadata(const xml_parameter_t *parameter);
+    bool rts_dynamic();
+    bool user_dynamic();
+    sgx_misc_select_t get_config_misc_select();
+    sgx_misc_select_t get_config_misc_mask();
 private:
     bool get_time(uint32_t *date);
     bool modify_metadata(const xml_parameter_t *parameter);
@@ -129,6 +133,8 @@ private:
     void* get_rawdata_by_rva(uint64_t rva);
     bool vaildate_elrange_config();
     bool build_elrange_config_entry();
+    uint64_t calculate_heap_overhead();
+    bool warn_config();
 
     metadata_t *m_metadata;
     BinParser *m_parser;

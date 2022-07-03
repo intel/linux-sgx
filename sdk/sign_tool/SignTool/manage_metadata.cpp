@@ -401,7 +401,8 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     //set bits that have been set '1' and need to be checked
     m_metadata->attributes.xfrm |= (m_metadata->enclave_css.body.attributes.xfrm & m_metadata->enclave_css.body.attribute_mask.xfrm);
 
-    return true;
+    bool ret = warn_config();
+    return ret;
 }
 
 bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
@@ -1354,6 +1355,106 @@ uint64_t CMetadata::calculate_enclave_size(uint64_t size)
         return (uint64_t)-1;
 
     return round_size;
+}
+
+bool CMetadata::rts_dynamic()
+{
+    bool no_dynamic_heap =
+        ((m_create_param.heap_init_size == m_create_param.heap_min_size) &&
+        (m_create_param.heap_init_size == m_create_param.heap_max_size));
+
+    bool no_dynamic_stack =
+        (m_create_param.stack_max_size == m_create_param.stack_min_size);
+
+    bool no_dynamic_rsrv =
+        ((m_create_param.rsrv_init_size == m_create_param.rsrv_min_size) &&
+        (m_create_param.rsrv_init_size == m_create_param.rsrv_max_size));
+
+
+    uint32_t tcs_min_pool = 0;
+    if(m_create_param.tcs_min_pool > m_create_param.tcs_num - 1)
+    {
+        tcs_min_pool = m_create_param.tcs_num - 1;
+    }
+    else
+    {
+        tcs_min_pool = m_create_param.tcs_min_pool;
+    }
+
+    bool no_dynamic_thread = (m_create_param.tcs_max_num == tcs_min_pool + 1);
+
+    bool no_rts_dynamic = (no_dynamic_heap && no_dynamic_stack &&
+                          no_dynamic_rsrv && no_dynamic_thread);
+
+    return !no_rts_dynamic;
+}
+
+bool CMetadata::user_dynamic()
+{
+    return (m_create_param.user_region_size > 0);
+}
+
+sgx_misc_select_t CMetadata::get_config_misc_select()
+{
+    return m_metadata->enclave_css.body.misc_select;
+}
+
+sgx_misc_select_t CMetadata::get_config_misc_mask()
+{
+    return m_metadata->enclave_css.body.misc_mask;
+}
+
+bool CMetadata::warn_config()
+{
+    uint32_t misc_select_0 = (uint32_t)get_config_misc_select() & 1u;
+    uint32_t misc_mask_0 = (uint32_t)get_config_misc_mask() & 1u;
+
+    bool has_rts_dynamic = rts_dynamic();
+    bool has_user_dynamic = user_dynamic();
+
+    // user region configured, either mask or select, or both are zero
+    if (has_user_dynamic)
+    {
+        if ((misc_mask_0 && misc_select_0) == 0)
+        {
+            se_trace(SE_TRACE_ERROR, "ERROR: Enclave configuration 'UserRegionSize' requires MiscSelect[0] and MiscMask[0] set to 1.\n");
+            return false;
+        }
+        else
+        {
+            se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'UserRegionSize' requires the enclave to be run on SGX2 platform.\n");
+            return true;
+        }
+    }
+
+    if (has_rts_dynamic)
+    {
+        if (misc_select_0 == 0)
+        {
+            se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from using dynamic features. To use the dynamic features on SGX2 platform, suggest to set MiscSelectMask[0]=0 and MiscSelect[0]=1.\n");
+            return true;
+        }
+
+        if (misc_mask_0 == 1)
+        {
+            se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform. To make it run on SGX1 platform, suggest to set MiscSelectMask[0]=0 and MiscSelect[0]=1.\n");
+            return true;
+        }
+
+        se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will work on SGX1 and SGX2 platforms with respective metadata.\n");
+        return true;
+    }
+
+    if (misc_select_0 == 1)
+    {
+        se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform.\n");
+        return true;
+    }
+    else
+    {
+        se_trace(SE_TRACE_ERROR, "INFO: SGX1 only enclave, which will run on all platforms.\n");
+        return true;
+    }
 }
 
 bool update_metadata(const char *path, const metadata_t *metadata, uint64_t meta_offset)
