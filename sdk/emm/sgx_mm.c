@@ -357,6 +357,8 @@ int mm_modify_permissions_internal(void *addr, size_t size, int prot, ema_root_t
     if (size == 0) return EINVAL;
     if (size % SGX_PAGE_SIZE) return EINVAL;
     if (start % SGX_PAGE_SIZE) return EINVAL;
+    if ((prot & SGX_EMA_PROT_EXEC) && !(prot & SGX_EMA_PROT_READ))
+        return EINVAL;
 
     ema_t *first = NULL, *last = NULL;
 
@@ -397,18 +399,14 @@ int sgx_mm_enclave_pfhandler(const sgx_pfinfo *pfinfo)
     }
     if (ema_page_committed(ema, addr))
     {
-        if (is_ema_transition(ema))
-        {//as long as permissions expected, transition will be done
-        // TODO: check EXEC?
-        //This is never reached because of global lock
-            if ((pfinfo->pfec.rw == 0 && 0 == (get_ema_si_flags(ema) & SGX_EMA_PROT_READ)) ||
-                (pfinfo->pfec.rw == 1 && 0 == (get_ema_si_flags(ema) & SGX_EMA_PROT_WRITE)))
-            {
-                ret = SGX_MM_EXCEPTION_CONTINUE_SEARCH;
-            }
-            else
-                ret = SGX_MM_EXCEPTION_CONTINUE_EXECUTION;
+        // Check for spurious #PF
+        if ((pfinfo->pfec.rw == 0 && 0 == (get_ema_si_flags(ema) & SGX_EMA_PROT_READ)) ||
+            (pfinfo->pfec.rw == 1 && 0 == (get_ema_si_flags(ema) & SGX_EMA_PROT_WRITE)))
+        {
+            ret = SGX_MM_EXCEPTION_CONTINUE_SEARCH;
         }
+        else
+            ret = SGX_MM_EXCEPTION_CONTINUE_EXECUTION;
         goto unlock;
     }
     if (get_ema_alloc_flags(ema) & SGX_EMA_COMMIT_ON_DEMAND)
