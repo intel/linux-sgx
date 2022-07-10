@@ -48,6 +48,8 @@
 #include "crypto_wrapper.h"
 #include "global_data.h"
 #include "se_version.h"
+#include "ema_imp.h"
+#include "bit_array_imp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -401,7 +403,7 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     //set bits that have been set '1' and need to be checked
     m_metadata->attributes.xfrm |= (m_metadata->enclave_css.body.attributes.xfrm & m_metadata->enclave_css.body.attribute_mask.xfrm);
 
-    bool ret = warn_config();
+    bool ret = check_config();
     return ret;
 }
 
@@ -569,6 +571,147 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     SE_TRACE_DEBUG("USER_REGION_SIZE  = 0x%016llX\n", m_create_param.user_region_size);
 
     return true;
+}
+
+uint64_t CMetadata::calculate_rts_bk_overhead()
+{
+    uint64_t ema_overhead = sizeof(struct ema_t_);
+    uint64_t bit_array_overhead = sizeof(struct bit_array_);
+
+    // MIN heap
+    uint32_t page_count = (uint32_t)(m_create_param.heap_min_size >> SE_PAGE_SHIFT);
+    uint64_t heap_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+
+    if(m_create_param.heap_init_size > m_create_param.heap_min_size)
+    {
+        // INIT heap
+        page_count = (uint32_t)((m_create_param.heap_init_size - m_create_param.heap_min_size) >> SE_PAGE_SHIFT);
+        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+
+    if(m_create_param.heap_max_size > m_create_param.heap_init_size)
+    {
+        page_count = (uint32_t)((m_create_param.heap_max_size - m_create_param.heap_init_size) >> SE_PAGE_SHIFT);
+        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+
+    page_count = (uint32_t)(m_create_param.rsrv_min_size >> SE_PAGE_SHIFT);
+    uint64_t rsrv_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+
+    if(m_create_param.rsrv_init_size > m_create_param.rsrv_min_size)
+    {
+        // INIT RSRV
+        page_count = (uint32_t)((m_create_param.rsrv_init_size - m_create_param.rsrv_min_size) >> SE_PAGE_SHIFT);
+        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+
+    if(m_create_param.rsrv_max_size > m_create_param.rsrv_init_size)
+    {
+        page_count = (uint32_t)((m_create_param.rsrv_max_size - m_create_param.rsrv_init_size) >> SE_PAGE_SHIFT);
+        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+    // guard page | stack | guard page | TCS | SSA | guard page | TLS
+
+    // guard page
+    uint64_t non_removed_ctx_overhead = ema_overhead;
+    uint64_t removed_ctx_overhead = ema_overhead;
+
+    // stack
+    page_count = (uint32_t)(m_create_param.stack_min_size >> SE_PAGE_SHIFT);
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+
+    if(m_create_param.stack_max_size > m_create_param.stack_min_size)
+    {
+        page_count = (uint32_t)((m_create_param.stack_max_size - m_create_param.stack_min_size) >> SE_PAGE_SHIFT);
+        non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+        removed_ctx_overhead += ema_overhead;
+    }
+
+    // guard page
+    non_removed_ctx_overhead += ema_overhead;
+    removed_ctx_overhead += ema_overhead;
+
+    // tcs
+    page_count = TCS_SIZE >> SE_PAGE_SHIFT;
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+
+    // ssa
+    page_count = SSA_FRAME_SIZE * SSA_NUM;
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+
+    // guard page
+    non_removed_ctx_overhead += ema_overhead;
+    removed_ctx_overhead += ema_overhead;
+
+    // td
+    page_count = 1;
+    const Section *section = m_parser->get_tls_section();
+    if(section)
+    {
+        page_count += (uint32_t)(ROUND_TO_PAGE(section->virtual_size()) >> SE_PAGE_SHIFT);
+    }
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+    
+    uint32_t tcs_min_pool = 0; /* Number of static threads (EADD) */
+    uint32_t tcs_eremove = 0;
+    if(m_create_param.tcs_min_pool > m_create_param.tcs_num - 1)
+    {
+        tcs_min_pool = m_create_param.tcs_num - 1;
+        tcs_eremove = 0;
+    }
+    else
+    {
+        tcs_min_pool = m_create_param.tcs_min_pool;
+        tcs_eremove = m_create_param.tcs_num -1 - m_create_param.tcs_min_pool;
+    }
+
+    // static thread contexts
+    uint64_t total_non_removed_ctx_overhead = non_removed_ctx_overhead;
+    if (tcs_min_pool > 0)
+    {
+        total_non_removed_ctx_overhead += non_removed_ctx_overhead;
+
+        if (tcs_min_pool > 1)
+        {
+            total_non_removed_ctx_overhead += non_removed_ctx_overhead * (tcs_min_pool - 1);
+        }
+    }
+
+    // eremoved thread contexts
+    uint64_t total_removed_ctx_overhead = removed_ctx_overhead;
+    if (tcs_eremove > 0)
+    {
+        total_removed_ctx_overhead += removed_ctx_overhead;
+
+        if (tcs_eremove > 1)
+        {
+            total_removed_ctx_overhead += removed_ctx_overhead * (tcs_eremove - 1);
+        }
+    }
+
+    // dynamic thread contexts
+    if (m_create_param.tcs_max_num > tcs_min_pool + 1)
+    {
+        total_non_removed_ctx_overhead += non_removed_ctx_overhead * (m_create_param.tcs_max_num - tcs_min_pool);
+    }
+
+    // PT_LOAD segments
+    uint64_t total_sections_overhead = 0;
+    std::vector<Section*> sections = m_parser->get_sections();
+    for (auto s : sections) {
+        uint32_t p_count = (uint32_t)(ROUND_TO_PAGE(s->virtual_size()) >> SE_PAGE_SHIFT);
+        total_sections_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(p_count, 8) >> 3);
+    }
+
+    return heap_node_overhead +
+           rsrv_node_overhead +
+           total_non_removed_ctx_overhead +
+           total_removed_ctx_overhead +
+           total_sections_overhead;
 }
 
 void *CMetadata::alloc_buffer_from_metadata(uint32_t size)
@@ -1008,11 +1151,21 @@ bool CMetadata::build_layout_table()
     }
 
     // USER_REGION
-    if (m_create_param.user_region_size > 0)
+    uint8_t meta_versions = get_meta_versions();
+    // SGX2 metadata required
+    if ((meta_versions & 2u) == 2u)
     {
+        uint64_t rts_bk_overhead = calculate_rts_bk_overhead();
+        uint64_t user_region_size = ROUND_TO_PAGE(rts_bk_overhead);
+        se_trace(SE_TRACE_ERROR, "RTS bookkeeping overhead: 0x%016llX\n", user_region_size);
+
+        if (m_create_param.user_region_size > 0)
+        {
+            user_region_size += m_create_param.user_region_size;
+        }
         memset(&layout, 0, sizeof(layout));
         layout.entry.id = LAYOUT_ID_USER_REGION;
-        layout.entry.page_count = (uint32_t)(m_create_param.user_region_size >> SE_PAGE_SHIFT);
+        layout.entry.page_count = (uint32_t)(user_region_size >> SE_PAGE_SHIFT);
         layout.entry.attributes = PAGE_ATTR_POST_ADD;
         layout.entry.si_flags = SI_FLAGS_RW;
         m_layouts.push_back(layout);
@@ -1404,7 +1557,7 @@ sgx_misc_select_t CMetadata::get_config_misc_mask()
     return m_metadata->enclave_css.body.misc_mask;
 }
 
-bool CMetadata::warn_config()
+bool CMetadata::check_config()
 {
     uint32_t misc_select_0 = (uint32_t)get_config_misc_select() & 1u;
     uint32_t misc_mask_0 = (uint32_t)get_config_misc_mask() & 1u;
@@ -1417,12 +1570,15 @@ bool CMetadata::warn_config()
     {
         if ((misc_mask_0 && misc_select_0) == 0)
         {
-            se_trace(SE_TRACE_ERROR, "ERROR: Enclave configuration 'UserRegionSize' requires MiscSelect[0] and MiscMask[0] set to 1.\n");
+            m_meta_verions = 0;
+            se_trace(SE_TRACE_ERROR, "\033[0;31mERROR: Enclave configuration 'UserRegionSize' requires MiscSelect[0] and MiscMask[0] set to 1.\n\033[0m");
             return false;
         }
         else
         {
-            se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'UserRegionSize' requires the enclave to be run on SGX2 platform.\n");
+            // SGX2 metadata only
+            m_meta_verions = 1u << 1;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'UserRegionSize' requires the enclave to be run on SGX2 platform.\n\033[0m");
             return true;
         }
     }
@@ -1431,28 +1587,36 @@ bool CMetadata::warn_config()
     {
         if (misc_select_0 == 0)
         {
-            se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from using dynamic features. To use the dynamic features on SGX2 platform, suggest to set MiscSelectMask[0]=0 and MiscSelect[0]=1.\n");
+            // SGX1 metadata only
+            m_meta_verions = 1u;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from using dynamic features. To use the dynamic features on SGX2 platform, suggest to set MiscSelectMask[0]=0 and MiscSelect[0]=1.\n\033[0m");
             return true;
         }
 
         if (misc_mask_0 == 1)
         {
-            se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform. To make it run on SGX1 platform, suggest to set MiscSelectMask[0]=0 and MiscSelect[0]=1.\n");
+            // SGX2 metadata only
+            m_meta_verions = 1u << 1;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform. To make it run on SGX1 platform, suggest to set MiscSelectMask[0]=0 and MiscSelect[0]=1.\n\033[0m");
             return true;
         }
 
-        se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will work on SGX1 and SGX2 platforms with respective metadata.\n");
+        // SGX1 and SGX2 metadata
+        m_meta_verions = (1u << 1) | 1u;
+        se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will work on SGX1 and SGX2 platforms with respective metadata.\n\033[0m");
         return true;
     }
 
+    // SGX1 metadata only
+    m_meta_verions = 1u;
     if (misc_select_0 == 1)
     {
-        se_trace(SE_TRACE_ERROR, "INFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform.\n");
+        se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform.\n\033[0m");
         return true;
     }
     else
     {
-        se_trace(SE_TRACE_ERROR, "INFO: SGX1 only enclave, which will run on all platforms.\n");
+        se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: SGX1 only enclave, which will run on all platforms.\n\033[0m");
         return true;
     }
 }

@@ -141,9 +141,9 @@ static bool get_enclave_info(BinParser *parser, bin_fmt_t *bf, uint64_t * meta_o
 // measure_enclave():
 //    1. Get the enclave hash by loading enclave
 //    2. Get the enclave info - metadata offset and enclave file format
-static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parameter_t *parameter, uint32_t option_flag_bits, metadata_t *metadata, uint64_t *meta_offset)
+static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parameter_t *parameter, uint32_t option_flag_bits, metadata_t *metadata, uint64_t *meta_offset, uint8_t *meta_versions)
 {
-    assert(hash && dllpath && metadata && meta_offset);
+    assert(hash && dllpath && metadata && meta_offset && meta_versions);
     bool res = false;
     off_t file_size = 0;
     uint64_t quota = 0;
@@ -188,6 +188,9 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
         close_handle(fh);
         return false;
     }
+
+    // get the versions of metadata we need to output
+    *meta_versions = meta.get_meta_versions();
 
     // Collect enclave info
     if(get_enclave_info(parser.get(), &bin_fmt, meta_offset, false, ENABLE_RESIGN(option_flag_bits)) == false)
@@ -1066,28 +1069,64 @@ static bool append_compatible_metadata(metadata_t *compat_metadata, metadata_t *
     return true;
 }
 
-static bool generate_compatible_metadata(metadata_t *metadata, const xml_parameter_t *parameter)
+static bool handle_compatible_metadata(metadata_t *compat_metadata, metadata_t *metadata, bool append)
 {
+    if (append) {
+        se_trace(SE_TRACE_ERROR, "%s: Append metadata version 0x%lx\n", __FUNCTION__, compat_metadata->version);
+        return append_compatible_metadata(compat_metadata, metadata);
+    } else {
+        // overwrite
+        memset(metadata, 0, METADATA_SIZE);
+        if(memcpy_s(metadata, METADATA_SIZE, compat_metadata, compat_metadata->size))
+            return false;
+        se_trace(SE_TRACE_ERROR, "%s: Overwrite with metadata version 0x%lx\n", __FUNCTION__, metadata->version);
+        return true;
+    }
+}
+
+static bool generate_compatible_metadata(metadata_t *metadata, const xml_parameter_t *parameter, uint8_t meta_versions)
+{
+    if(meta_versions == 0)
+    {
+        se_trace(SE_TRACE_ERROR, "metadata version is invalid");
+        return false;
+    }
+
+    bool meta_sgx1_only = ((meta_versions & 3u) == 1u);
+    bool meta_sgx2_only = ((meta_versions & 3u) == 2u);
+    bool append = (meta_sgx1_only ? false : true);
+
     metadata_t *metadata2 = (metadata_t *)malloc(metadata->size);
     if(!metadata2)
     {
         se_trace(SE_TRACE_ERROR, NO_MEMORY_ERROR);
         return false;
     }
-
     SE_TRACE_DEBUG("\n");
-    
-    // append 2_0 metadata
-    memcpy_s(metadata2, metadata->size, metadata, metadata->size);
-    //if elrange is set, we can remove this metadata 
-    if(parameter[ELRANGESIZE].value == 0)
-    {
-        metadata2->version = META_DATA_MAKE_VERSION(SGX_2_0_MAJOR_VERSION,SGX_2_0_MINOR_VERSION);
-        if (!append_compatible_metadata(metadata2, metadata))
+
+    if (memcpy_s(metadata2, metadata->size, metadata, metadata->size)) {
+        se_trace(SE_TRACE_ERROR, "%s: Error memcpy_s failed\n", __FUNCTION__);
+        free(metadata2);
+        return false;
+    }
+
+    if (!meta_sgx1_only) {
+        // append 2_0 metadata
+        // if elrange is set, we can remove this metadata
+        if(parameter[ELRANGESIZE].value == 0)
         {
-            free(metadata2);
-            return false;
+            metadata2->version = META_DATA_MAKE_VERSION(SGX_2_0_MAJOR_VERSION,SGX_2_0_MINOR_VERSION);
+            if (!append_compatible_metadata(metadata2, metadata))
+            {
+                free(metadata2);
+                return false;
+            }
         }
+    }
+
+    if (meta_sgx2_only) {
+        se_trace(SE_TRACE_ERROR, "%s: Only requires SGX2 metadata\n", __FUNCTION__);
+        return true;
     }
 
     // append 1_9 metadata
@@ -1157,7 +1196,7 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     {
         se_trace(SE_TRACE_DEBUG, "%s: Utility thread TD is the last layout\n", __FUNCTION__);
         metadata_cleanup(metadata2, 0);
-        ret = append_compatible_metadata(metadata2, metadata);
+        ret = handle_compatible_metadata(metadata2, metadata, append);
         free(metadata2);
         return ret;
     }
@@ -1176,7 +1215,7 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
             max_rsrv_entry->entry.si_flags = SI_FLAG_NONE;
             max_rsrv_entry->entry.attributes &= (uint16_t)(~PAGE_ATTR_POST_ADD);
         }
-        ret = append_compatible_metadata(metadata2, metadata);
+        ret = handle_compatible_metadata(metadata2, metadata, append);
         free(metadata2);
         return ret;
     }
@@ -1204,7 +1243,7 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
         if (false == ret)
             goto end;
     }
-    ret = append_compatible_metadata(metadata2, metadata);
+    ret = handle_compatible_metadata(metadata2, metadata, append);
     if (false == ret)
         goto end;
     ret = dump_metadata_layout(metadata);
@@ -1319,7 +1358,7 @@ int main(int argc, char* argv[])
     uint32_t option_flag_bits = 0;
     RSA *rsa = NULL;
     memset(&metadata_raw, 0, sizeof(metadata_raw));
-
+    uint8_t meta_versions = 0;
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
     OpenSSL_add_all_algorithms();
@@ -1370,7 +1409,7 @@ int main(int argc, char* argv[])
         goto clear_return;
     }
 
-    if(measure_enclave(enclave_hash, path[OUTPUT], parameter, option_flag_bits, metadata, &meta_offset) == false)
+    if(measure_enclave(enclave_hash, path[OUTPUT], parameter, option_flag_bits, metadata, &meta_offset, &meta_versions) == false)
     {
         se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
         goto clear_return;
@@ -1389,7 +1428,7 @@ int main(int argc, char* argv[])
             se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
             goto clear_return;
         }
-        if(false == generate_compatible_metadata(metadata, parameter))
+        if(false == generate_compatible_metadata(metadata, parameter, meta_versions))
         {
             se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
             goto clear_return;

@@ -1,0 +1,1 @@
+../../../external/sgx-emm/emm_src/include/ema_imp.h
