@@ -529,7 +529,7 @@ int sgx_mm_modify_ocall(uint64_t addr, size_t length, int flags_from, int flags_
 
 ```
 /*
- * Define a mutex and create/lock/unlock/destroy functions.
+ * Define a recursive mutex and create/lock/unlock/destroy functions.
  */
 typedef struct _sgx_mm_mutex sgx_mm_mutex;
 sgx_mm_mutex *sgx_mm_mutex_create(void);
