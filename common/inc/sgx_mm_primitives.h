@@ -1,1 +1,1 @@
-../../sdk/emm/include/sgx_mm_primitives.h
+../../external/sgx-emm/emm_src/include/sgx_mm_primitives.h

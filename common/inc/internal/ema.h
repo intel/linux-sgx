@@ -1,1 +1,1 @@
-../../../sdk/emm/include/ema.h
+../../../external/sgx-emm/emm_src/include/ema.h

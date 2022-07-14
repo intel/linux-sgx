@@ -178,7 +178,7 @@ ec_dh_lib:
 # ---------------------------------------------------
 .PHONY: sgx_mm
 sgx_mm:
-	$(MAKE) -C emm/
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/sgx-emm/
 
 .PHONY: trts
 trts:
@@ -295,7 +295,7 @@ clean:
 	$(MAKE) -C tlibcxx/                            clean
 	$(MAKE) -C tseal/linux/                        clean
 	$(MAKE) -C selib/linux/                        clean
-	$(MAKE) -C emm/                                clean
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/sgx-emm/      clean
 	$(MAKE) -C trts/                               clean
 	$(MAKE) -C tsetjmp/                            clean
 	$(MAKE) -C tsafecrt/                           clean

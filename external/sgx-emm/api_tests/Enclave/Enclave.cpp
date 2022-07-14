@@ -35,7 +35,7 @@
 #include <stdio.h> /* vsnprintf */
 #include <string.h>
 #include <errno.h>
-#include "../../include/sgx_mm.h"
+#include "../../emm_src/include/sgx_mm.h"
 #define SGX_PAGE_SIZE 4096
 #include "sgx_thread.h"
 #include <vector>

@@ -1,1 +1,1 @@
-../../../sdk/emm/include/emm_private.h
+../../../external/sgx-emm/emm_src/include/emm_private.h

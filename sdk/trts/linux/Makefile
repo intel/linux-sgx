@@ -59,7 +59,7 @@ OBJS      += $(ASM_SRCS:.S=.o)
 OBJS      := $(sort $(OBJS))
 
 LIBTRTS = libsgx_trts.a
-LIBSGX_MM_PATH = $(LINUX_SDK_DIR)/emm
+LIBSGX_MM_PATH = $(LINUX_EXTERNAL_DIR)/sgx-emm
 LIBSGX_MM = libsgx_mm.a
 
 .PHONY: all

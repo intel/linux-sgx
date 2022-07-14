@@ -1,1 +1,1 @@
-../../../sdk/emm/include/bit_array.h
+../../../external/sgx-emm/emm_src/include/bit_array.h

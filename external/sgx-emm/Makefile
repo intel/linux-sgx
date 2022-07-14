@@ -30,18 +30,16 @@ include ../../buildenv.mk
 
 HAVE_PRIMITIVES ?= 1
 
-CPPFLAGS += -Iinclude                       \
+CPPFLAGS += -Iemm_src/include                       \
             -I$(COMMON_DIR)/inc/tlibc       \
             -Wno-missing-braces -Wno-unused-parameter
 
-OBJS := bit_array.o          \
-        ema.o                \
-        emalloc.o                \
-        emm_private.o        \
-        sgx_mm.o
+C_Files := $(wildcard emm_src/*.c)
+OBJS := $(C_Files:.c=.o)
+OBJS := $(sort $(OBJS))
 
 ifneq ($(HAVE_PRIMITIVES), 1)
-ASM_OBJ := sgx_primitives.o
+ASM_OBJ := emm_src/sgx_primitives.o
 endif
 
 LIB_NAME := libsgx_mm.a
