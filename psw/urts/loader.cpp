@@ -952,6 +952,7 @@ int CLoader::set_memory_protection()
         return SGX_ERROR_UNEXPECTED;
     }
 
+#if 0
     if ((META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION) <= m_metadata->version) &&
             get_enclave_creator()->is_EDMM_supported(get_enclave_id()))
     {
@@ -980,6 +981,7 @@ int CLoader::set_memory_protection()
             }
         }
     }
+#endif
 
     //set memory protection for context
     ret = set_context_protection(GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset),

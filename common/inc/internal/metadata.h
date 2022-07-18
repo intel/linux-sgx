@@ -37,10 +37,10 @@
 #pragma pack(1)
 
  /* version of metadata */
-#define MAJOR_VERSION 2                 //MAJOR_VERSION should not larger than 0ffffffff
-#define MINOR_VERSION 4                 //MINOR_VERSION should not larger than 0ffffffff
+#define MAJOR_VERSION 3                 //MAJOR_VERSION should not larger than 0ffffffff
+#define MINOR_VERSION 0                 //MINOR_VERSION should not larger than 0ffffffff
 
-#define SGX_2_ELRANGE_MAJOR_VERSION 12
+#define SGX_2_ELRANGE_MAJOR_VERSION 13
 #define SGX_1_ELRANGE_MAJOR_VERSION 11
 
 #define SGX_MAJOR_VERSION_GAP 10

@@ -375,7 +375,7 @@ int EnclaveCreatorHW::trim_accept(uint64_t addr)
 //1. We operate in HW mode
 //2. CPU has EDMM support
 //3. Driver has EDMM support
-//4. Both the uRTS version and enclave (metadata) version are higher than 1.5
+//4. SDK version >= 3.0
 bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
 {
     bool supported = false, driver_supported = false, cpu_edmm = false;
@@ -388,7 +388,7 @@ bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
     driver_supported = is_driver_compatible();
 
     //return value of get_enclave_version() considers the version of uRTS and enclave metadata
-    supported = use_se_hw() && cpu_edmm && driver_supported && (enclave->get_enclave_version() >= SDK_VERSION_2_0);
+    supported = use_se_hw() && cpu_edmm && driver_supported && (enclave->get_enclave_version() >= SDK_VERSION_3_0);
 
     return supported;
 }

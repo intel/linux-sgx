@@ -155,6 +155,11 @@ static bool check_metadata_version(uint64_t urts_version, uint64_t metadata_vers
         return false;
     }
     
+    if (MAJOR_VERSION_OF_METADATA(metadata_version)%SGX_MAJOR_VERSION_GAP == 2)
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -284,12 +289,7 @@ static int __create_enclave(BinParser &parser,
     if (MAJOR_VERSION_OF_METADATA(metadata->version) % SGX_MAJOR_VERSION_GAP == MAJOR_VERSION_OF_METADATA(urts_version)% SGX_MAJOR_VERSION_GAP &&
         MINOR_VERSION_OF_METADATA(metadata->version) >= MINOR_VERSION_OF_METADATA(urts_version))
     {
-        enclave_version = SDK_VERSION_2_3;
-    }
-    else if (MAJOR_VERSION_OF_METADATA(metadata->version) % SGX_MAJOR_VERSION_GAP == MAJOR_VERSION_OF_METADATA(urts_version)% SGX_MAJOR_VERSION_GAP &&
-             MINOR_VERSION_OF_METADATA(metadata->version) < MINOR_VERSION_OF_METADATA(urts_version))
-    {
-        enclave_version = SDK_VERSION_2_0;
+        enclave_version = SDK_VERSION_3_0;
     }
 
     // initialize the enclave object

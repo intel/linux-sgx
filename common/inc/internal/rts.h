@@ -65,7 +65,8 @@ typedef enum
     SDK_VERSION_2_0,
     SDK_VERSION_2_1,
     SDK_VERSION_2_2,
-    SDK_VERSION_2_3
+    SDK_VERSION_2_3,
+    SDK_VERSION_3_0,
 } sdk_version_t;
 
 typedef struct _system_features

@@ -1096,6 +1096,11 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
     bool meta_sgx2_only = ((meta_versions & 3u) == 2u);
     bool append = (meta_sgx1_only ? false : true);
 
+    if (meta_sgx2_only) {
+        se_trace(SE_TRACE_ERROR, "%s: Only requires SGX2 metadata\n", __FUNCTION__);
+        return true;
+    }
+
     metadata_t *metadata2 = (metadata_t *)malloc(metadata->size);
     if(!metadata2)
     {
@@ -1110,6 +1115,7 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
         return false;
     }
 
+#if 0
     if (!meta_sgx1_only) {
         // append 2_0 metadata
         // if elrange is set, we can remove this metadata
@@ -1123,11 +1129,7 @@ static bool generate_compatible_metadata(metadata_t *metadata, const xml_paramet
             }
         }
     }
-
-    if (meta_sgx2_only) {
-        se_trace(SE_TRACE_ERROR, "%s: Only requires SGX2 metadata\n", __FUNCTION__);
-        return true;
-    }
+#endif
 
     // append 1_9 metadata
     if(parameter[ELRANGESIZE].value != 0)

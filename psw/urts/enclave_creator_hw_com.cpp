@@ -65,7 +65,7 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
     init_cpuinfo((uint32_t *)info.cpuinfo_table);
     info.system_feature_set[0] |= (1ULL << SYS_FEATURE_EXTEND);
     info.size = sizeof(system_features_t);
-    info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_2_3, enclave->get_enclave_version());
+    info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_3_0, enclave->get_enclave_version());
     info.sealed_key = enclave->get_sealed_key();
     info.cpu_core_num = (uint32_t)sysconf(_SC_NPROCESSORS_ONLN);
     if (is_EDMM_supported(enclave_id))

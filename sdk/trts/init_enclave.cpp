@@ -162,7 +162,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         EDMM_supported = 0;
     }
-    else if (g_sdk_version >= SDK_VERSION_2_0)
+    else if (g_sdk_version >= SDK_VERSION_3_0)
     {
         EDMM_supported = feature_supported((const uint64_t *)sys_features.system_feature_set, 0);
     }
