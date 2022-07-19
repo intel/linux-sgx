@@ -11,9 +11,7 @@
   <HeapMaxSize>0xF0000000</HeapMaxSize>
   <HeapInitSize>0x9000</HeapInitSize>
   <HeapMinSize>0x08000</HeapMinSize>
-  <ReservedMemMinSize>  0x00001000</ReservedMemMinSize>
-  <ReservedMemInitSize> 0x00100000</ReservedMemInitSize>
-  <ReservedMemMaxSize>  0x90000000</ReservedMemMaxSize>
+  <UserRegionSize>  0x90000000</UserRegionSize>
   <!--  Intel SDK reserved memory is specified here to
 	  only force sign_tool to alloc more EPC
   -->
