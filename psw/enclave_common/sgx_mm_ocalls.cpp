@@ -6,83 +6,72 @@
 using namespace std;
 #define PROT_MASK (PROT_READ|PROT_WRITE|PROT_EXEC)
 
-/*
- * Call OS to reserve region for EAUG, immediately or on-demand.
- *
- * @param[in] addr Desired page aligned start address.
- * @param[in] length Size of the region in bytes of multiples of page size.
- * @param[in] page_properties Page types to be allocated, must be one of these:
- *             - ENCLAVE_PAGE_REG: regular page type. This is the default if not specified.
- *             - ENCLAVE_PAGE_SS_FIRST: the first page in shadow stack.
- *             - ENCLAVE_PAGE_SS_REST: the rest page in shadow stack.
- * @param[in] alloc_flags A bitwise OR of flags describing committing mode, committing
- *                     order, address preference, page type. The untrusted side.
- *    implementation should always invoke mmap syscall with MAP_SHARED|MAP_FIXED_NOREPLACE, and
- *    translate following additional bits to proper parameters invoking mmap or other SGX specific
- *    syscall(s) provided by the kernel.
- *        The alloc_flags param of this interface should include exactly one of following for committing mode:
- *            - ENCLAVE_EMA_COMMIT_NOW: reserves memory range with ENCLAVE_PAGE_READ|SGX_EMA_PROT_WRITE, if supported,
- *                   kernel is given a hint to EAUG EPC pages for the area as soon as possible.
- *            - ENCLAVE_EMA_COMMIT_ON_DEMAND: reserves memory range, EPC pages can be EAUGed upon #PF.
- *        ORed with zero or one of the committing order flags:
- *            - ENCLAVE_EMA_GROWSDOWN: if supported, a hint given for the kernel to EAUG pages from higher
- *                              to lower addresses, no gaps in addresses above the last committed.
- *            - ENCLAVE_EMA_GROWSUP: if supported, a hint given for the kernel to EAUG pages from lower
- *                              to higher addresses, no gaps in addresses below the last committed.
- * @retval ENCLAVE_ERROR_SUCCESS(0) The operation was successful.
- * @retval ENCLAVE_NOT_SUPPORTED: feature is not supported by the system
- * @retval ENCLAVE_LOST: may be returned if the enclave has been removed or if it has not been initialized (via EINIT)
- * @retval ENCLAVE_INVALID_ADDRESS: the start address does not point to an enclave.
- * @retval ENCLAVE_INVALID_PARAMETER: an invalid combinations of parameters.
- * @retval ENCLAVE_OUT_OF_MEMORY: No EPC left (some OSes like Linux), or system is out of memory for internal allocation by OS or this function.
- * @retval ENCLAVE_DEVICE_NO_MEMORY: NO EPC left (some OSes like Windows)
- * @retval ENCLAVE_INVALID_ADDRESS: address does not point to an enclave or valid memory within the enclave
- * @retval ENCLAVE_NOT_INITIALIZED: may be returned if the enclave has not been initialized (via EINIT).
- *                                  Some configurations may give ENCLAVE_LOST if the enclave has not been initialized.
- * @retval ENCLAVE_UNEXPECTED, unexpected error.
- */
-
 uint32_t COMM_API enclave_alloc(
-    COMM_IN uint64_t addr,
-    COMM_IN size_t length,
-    COMM_IN uint32_t page_properties,
-    COMM_IN uint32_t alloc_flags)
+    COMM_IN void* target_addr,
+    COMM_IN size_t target_size,
+    COMM_IN uint32_t data_properties,
+    COMM_IN uint32_t alloc_flags,
+    COMM_OUT_OPT uint32_t* enclave_error)
 {
     int ret = ENCLAVE_UNEXPECTED;
     SE_TRACE(SE_TRACE_DEBUG,
-        "enclave_alloc for 0x%llX ( %llX ) with alloc flags = 0x%lX\n",
-            addr, length, alloc_flags);
+        "enclave_alloc for %p ( %llX ) with alloc flags = 0x%lX\n",
+            target_addr, target_size, alloc_flags);
 
     if (s_driver_type == SGX_DRIVER_DCAP)
     {
+        if (enclave_error != NULL)
+            *enclave_error = ret;
         return ret;
     }
     if (s_driver_type == SGX_DRIVER_OUT_OF_TREE)
     {
-        return mprotect((void *)addr, length, PROT_WRITE | PROT_READ);
+        ret = mprotect(target_addr, target_size, PROT_WRITE | PROT_READ);
+        if ((ret != 0) && (enclave_error != NILL))
+        {
+            *enclave_error = ENCLAVE_UNEXPECTED;
+        }
+        return ret;
     }
-    int enclave_fd = get_file_handle_from_address((void *)addr);
+    int enclave_fd = get_file_handle_from_address(target_addr);
     if (enclave_fd == -1)
+    {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_ADDRESS;
         return ENCLAVE_INVALID_ADDRESS;
+    }
     int map_flags = MAP_SHARED | MAP_FIXED;
     //!TODO: support COMMIT_NOW when kernel supports
     if (alloc_flags & ENCLAVE_EMA_COMMIT_NOW)
     {
     }
     //!TODO support CET
-    int type = page_properties;
+    int type = data_properties;
     if((type == ENCLAVE_PAGE_SS_FIRST) | (type == ENCLAVE_PAGE_SS_REST))
+    {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_NOT_SUPPORTED;
         return ENCLAVE_NOT_SUPPORTED;
-    if((type == ENCLAVE_PAGE_SS_FIRST) && length > SE_PAGE_SIZE)
+    }
+    if((type == ENCLAVE_PAGE_SS_FIRST) && target_size > SE_PAGE_SIZE)
+    {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
-    void *out = mmap((void *)addr, length, PROT_WRITE | PROT_READ, map_flags, enclave_fd, 0);
+    }
+    void *out = mmap(target_addr, target_size, PROT_WRITE | PROT_READ, map_flags, enclave_fd, 0);
     if (out == MAP_FAILED)
     {
         ret = errno;
         SE_TRACE(SE_TRACE_WARNING, "mmap failed, error = %d\n", ret);
         ret = error_driver2api(-1, ret);
-    }else
+        if (enclave_error != NULL)
+            *enclave_error = ret;
+    }
+    else
+    {
         ret = 0;
+    }
     return ret;
 }
 
@@ -272,64 +261,41 @@ static int emodpr_legacy(int fd, uint64_t addr, uint64_t size, uint64_t flag)
     return SGX_SUCCESS;
 }
 
-/*
- * Call OS to change permissions, type, or notify EACCEPT done after TRIM.
- *
- * @param[in] addr Start address of the memory to change protections.
- * @param[in] length Length of the area.  This must be a multiple of the page size.
- * @param[in] page_properties_from The original EPCM flags of the EPC pages to be modified.
- *            Must be bitwise OR of following:
- *            ENCLAVE_PAGE_READ
- *            ENCLAVE_PAGE_WRITE
- *            ENCLAVE_PAGE_EXEC
- *            ENCLAVE_PAGE_REG: regular page, changeable to TRIM or TCS
- *            ENCLAVE_PAGE_TRIM: signal to the kernel EACCEPT is done for TRIM pages.
- * @param[in] page_properties_to The target EPCM flags. This must be bitwise OR of following:
- *            ENCLAVE_PAGE_READ
- *            ENCLAVE_PAGE_WRITE
- *            ENCLAVE_PAGE_EXEC
- *            ENCLAVE_PAGE_TRIM: change the page type to PT_TRIM. Note the address
- *                      range for trimmed pages may still be reserved by enclave with
- *                      proper permissions.
- *            ENCLAVE_PAGE_TCS: change the page type to PT_TCS
- * @retval ENCLAVE_ERROR_SUCCESS(0) The operation was successful.
- * @retval ENCLAVE_NOT_SUPPORTED: SGX EDMM is not supported by the system
- * @retval ENCLAVE_LOST: may be returned if the enclave has been removed or if it has not been initialized (via EINIT)
- * @retval ENCLAVE_INVALID_PARAMETER: an invalid combination of flags was provided.
- * @retval ENCLAVE_OUT_OF_MEMORY: No EPC left (some OSes like Linux), or system is out of memory for internal allocation by OS or this function.
- * @retval ENCLAVE_DEVICE_NO_MEMORY: NO EPC left (some OSes like Windows)
- * @retval ENCLAVE_INVALID_ADDRESS: address does not point to an enclave or valid memory within the enclave
- * @retval ENCLAVE_NOT_INITIALIZED: may be returned if the enclave has not been initialized (via EINIT).
- *                                  Some configurations may give ENCLAVE_LOST if the enclave has not been initialized.
- * @retval ENCLAVE_UNEXPECTED, unexpected error.
- */
-
 uint32_t COMM_API enclave_modify(
-    COMM_IN uint64_t addr,
-    COMM_IN size_t length,
-    COMM_IN uint32_t page_properties_from,
-    COMM_IN uint32_t page_properties_to)
+    COMM_IN void* target_addr,
+    COMM_IN size_t target_size,
+    COMM_IN uint32_t from_data_properties,
+    COMM_IN uint32_t to_data_properties,
+    COMM_OUT_OPT uint32_t* enclave_error)
 {
     int ret = ENCLAVE_UNEXPECTED;
     SE_TRACE(SE_TRACE_DEBUG,
-        "enclave_modify for 0x%llX ( %llX ) from 0x%lX to %lX\n",
-            addr, length, page_properties_from, page_properties_to);
+        "enclave_modify for %p ( %llX ) from 0x%lX to %lX\n",
+            target_addr, target_size, from_data_properties, to_data_properties);
     if (s_driver_type == SGX_DRIVER_DCAP)
     {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_NOT_SUPPORTED;
         return ENCLAVE_NOT_SUPPORTED;
     }
-    uint64_t enclave_base = (uint64_t)get_enclave_base_address_from_address((void *)addr);
+    uint64_t enclave_base = (uint64_t)get_enclave_base_address_from_address(target_addr);
     if (enclave_base == 0)
     {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_ADDRESS;
         return ENCLAVE_INVALID_ADDRESS;
     }
-    if (length % SE_PAGE_SIZE != 0)
+    if (target_size % SE_PAGE_SIZE != 0)
+    {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
+    }
     function<int(int, uint64_t, size_t)> _trim = trim;
     function<int(int, uint64_t, size_t)> _trim_accept = trim_accept;
     function<int(int, uint64_t, size_t)> _mktcs = mktcs;
     function<int(int, uint64_t, size_t, int)> _emodpr = emodpr;
-    int fd = get_file_handle_from_address((void *)addr);
+    int fd = get_file_handle_from_address(target_addr);
     if (s_driver_type == SGX_DRIVER_OUT_OF_TREE)
     {
         _trim = trim_legacy;
@@ -338,35 +304,54 @@ uint32_t COMM_API enclave_modify(
         _emodpr = emodpr_legacy;
         fd = s_hdevice;
     }
-    if(fd == -1) return ENCLAVE_INVALID_ADDRESS;
+    if(fd == -1)
+    {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_ADDRESS;
+        return ENCLAVE_INVALID_ADDRESS;
+    }
 
-    int type_to = (page_properties_to & SGX_EMA_PAGE_TYPE_MASK);
-    int type_from = (page_properties_from & SGX_EMA_PAGE_TYPE_MASK);
+    int type_to = (to_data_properties & SGX_EMA_PAGE_TYPE_MASK);
+    int type_from = (from_data_properties & SGX_EMA_PAGE_TYPE_MASK);
     if (type_from == SGX_EMA_PAGE_TYPE_TRIM && type_to != SGX_EMA_PAGE_TYPE_TRIM)
     {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
     }
-    int prot_to = (page_properties_to & PROT_MASK);
-    int prot_from = (page_properties_from & PROT_MASK);
+    int prot_to = (to_data_properties & PROT_MASK);
+    int prot_from = (from_data_properties & PROT_MASK);
     if ((prot_to != prot_from) && (type_to != type_from))
     {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
     }
 
     if ((type_from & type_to & SGX_EMA_PAGE_TYPE_TRIM))
     {
         //user space can only do EACCEPT for PT_TRIM type
-        ret = _trim_accept(fd, addr, length);
+        ret = _trim_accept(fd, target_addr, target_size);
         if (ret)
-            return error_driver2api(-1, ret);
+        {
+            ret = error_driver2api(-1, ret);
+            if (enclave_error != NULL)
+                *enclave_error = ret;
+            return ret;
+        }
         if (prot_to == PROT_NONE)
         {
             //EACCEPT done and notified.
             //if user wants to remove permissions,
             //only mprotect is needed
-            ret = mprotect((void *)addr, length, prot_to);
+            ret = mprotect(target_addr, target_size, prot_to);
             if (ret == -1)
-                return error_driver2api(ret, errno);
+            {
+                ret = error_driver2api(ret, errno);
+                if (enclave_error != NULL)
+                    *enclave_error = ret;
+                return ret;
+            }
         }
         return ret;
     }
@@ -375,26 +360,51 @@ uint32_t COMM_API enclave_modify(
     {
         assert(type_from != SGX_EMA_PAGE_TYPE_TRIM);
         if (prot_to != prot_from)
+        {
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_INVALID_PARAMETER;
             return ENCLAVE_INVALID_PARAMETER;
-        ret = _trim(fd, addr, length);
+        }
+        ret = _trim(fd, target_addr, target_size);
         if (ret)
-            return error_driver2api(-1, ret);
+        {
+            ret = error_driver2api(-1, ret);
+            if (enclave_error != NULL)
+                *enclave_error = ret;
+            return ret;
+        }
         return 0;
     }
 
     if (type_to == SGX_EMA_PAGE_TYPE_TCS)
     {
         if (type_from != SGX_EMA_PAGE_TYPE_REG)
+        {
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_INVALID_PARAMETER;
             return ENCLAVE_INVALID_PARAMETER;
+        }
         if ((prot_from != (SGX_EMA_PROT_READ_WRITE)) && prot_to != prot_from)
+        {
+            if (enclave_error != NULL)
+                *enclave_error = ENCLAVE_INVALID_PARAMETER;
             return ENCLAVE_INVALID_PARAMETER;
-        ret =  _mktcs(fd, addr, length);
+        }
+        ret =  _mktcs(fd, target_addr, target_size);
         if (ret)
-            return error_driver2api(-1, ret);
+        {
+            ret = error_driver2api(-1, ret);
+            if (enclave_error != NULL)
+                *enclave_error = ret;
+            return ret;
+        }
         return 0;
     }
 
     if (type_to != type_from)
+    {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
     // type_to == type_from
     // this is for emodpr to epcm.NONE, enclave EACCEPT with pte.R
@@ -403,7 +413,12 @@ uint32_t COMM_API enclave_modify(
     {
         ret = mprotect((void *)addr, length, prot_to);
         if (ret == -1)
-            return error_driver2api(ret, errno);
+        {
+            ret = error_driver2api(ret, errno);
+            if (enclave_error != NULL)
+                *enclave_error = ret;
+            return ret;
+        }
     }
 
     if (prot_to == prot_from)
@@ -413,12 +428,19 @@ uint32_t COMM_API enclave_modify(
     // Permissions changes. Only do emodpr for PT_REG pages
     if ((type_from & type_to & SGX_EMA_PAGE_TYPE_MASK) == SGX_EMA_PAGE_TYPE_REG)
     {
-        ret = _emodpr(fd, addr, length, prot_to);
+        ret = _emodpr(fd, target_addr, target_size, prot_to);
         if (ret)
-            return error_driver2api(-1, ret);
+        {
+            ret = error_driver2api(-1, ret);
+            if (enclave_error != NULL)
+                *enclave_error = ret;
+            return ret;
+        }
     }
     else
     {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
     }
     //EACCEPT needs at least pte.R, PROT_NONE case done above.
@@ -426,7 +448,12 @@ uint32_t COMM_API enclave_modify(
     {
         ret = mprotect((void *)addr, length, prot_to);
         if (ret == -1)
-            return error_driver2api(ret, errno);
+        {
+            ret = error_driver2api(ret, errno);
+            if (enclave_error != NULL)
+                *enclave_error = ret;
+            return ret;
+        }
     }
     return ret;
 }

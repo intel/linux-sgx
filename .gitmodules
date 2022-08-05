@@ -20,3 +20,4 @@
 [submodule "external/sgx-emm/emm_src"]
 	path = external/sgx-emm/emm_src
 	url = https://github.com/intel/sgx-emm
+	branch = dev
