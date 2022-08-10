@@ -211,11 +211,13 @@ let retval_declr = { Ast.identifier = retval_name; Ast.array_dims = []; }
 let eid_name = "eid"
 let ms_ptr_name = "pms"
 let ms_struct_val = "ms"
+let ms_in_struct_val = "__in_ms"
 let mk_ms_member_name (pname: string) = "ms_" ^ pname
 let mk_ms_struct_name (fname: string) = "ms_" ^ fname ^ "_t"
 let ms_retval_name = mk_ms_member_name retval_name
 let mk_tbridge_name (fname: string) = "sgx_" ^ fname
 let mk_parm_accessor name = sprintf "%s->%s" ms_struct_val (mk_ms_member_name name)
+let mk_in_parm_accessor name = sprintf "%s.%s" ms_in_struct_val (mk_ms_member_name name)
 let mk_tmp_var name = "_tmp_" ^ name
 let mk_tmp_var2 name1 name2 = "_tmp_" ^ name1 ^ "_" ^ name2
 let mk_len_var name = "_len_" ^ name
@@ -241,14 +243,6 @@ extern \"C\" {\n\
 
 (* Header footer *)
 let header_footer = "\n#ifdef __cplusplus\n}\n#endif /* __cplusplus */\n\n#endif\n"
-
-(* NO_HARDEN_EXT_WRITES Macro *)
-let mk_no_harden_macro = sprintf "\n#ifdef NO_HARDEN_EXT_WRITES\n%s\n#else\n%s\n#endif /* NO_HARDEN_EXT_WRITES */\n"
-
-(* NO_HARDEN_EXT_WRITES Macro *)
-let memcpy_macro = mk_no_harden_macro
-                     "#define MEMCPY_S memcpy_s\n#define MEMSET memset"
-                     "#define MEMCPY_S memcpy_verw_s\n#define MEMSET memset_verw"
 
 (* Little functions for generating file names. *)
 let get_uheader_short_name (file_shortnm: string) = file_shortnm ^ "_u.h"
@@ -738,7 +732,7 @@ let gen_theader_preemble (guard: string) (inclist: string) =
 #include <wchar.h>\n\
 #include <stddef.h>\n\
 #include \"sgx_edger8r.h\" /* for sgx_ocall etc. */\n\n" in
-    grd_hdr ^ inc_exp ^ inclist ^ "\n" ^ common_macros ^ memcpy_macro
+    grd_hdr ^ inc_exp ^ inclist ^ "\n" ^ common_macros
 
 (* Generate trusted header for enclave *)
 let gen_trusted_header (ec: enclave_content) =
@@ -761,7 +755,7 @@ let gen_trusted_header (ec: enclave_content) =
     close_out out_chan
 
 (* It generates function invocation expression. *)
-let mk_parm_name_raw (pt: Ast.parameter_type) (declr: Ast.declarator) =
+let mk_parm_name_raw (pt: Ast.parameter_type) (declr: Ast.declarator) (tbridge: bool)=
   let cast_expr =
     let tystr = get_param_tystr pt in
     if Ast.is_array declr && List.length declr.Ast.array_dims > 1
@@ -770,31 +764,29 @@ let mk_parm_name_raw (pt: Ast.parameter_type) (declr: Ast.declarator) =
         sprintf "(%s (*)%s)"  tystr dims
     else ""
   in
-    cast_expr ^ mk_parm_accessor declr.Ast.identifier
+    cast_expr ^ (if tbridge then mk_in_parm_accessor else mk_parm_accessor) declr.Ast.identifier
 
 (* We passed foreign array `foo_array_t foo' as `&foo[0]', thus we
  * need to get back `foo' by '* array_ptr' where
  *   array_ptr = &foo[0]
 *)
 let add_foreign_array_ptrref
-    (f: Ast.parameter_type -> Ast.declarator -> string)
-    (pt: Ast.parameter_type)
-    (declr: Ast.declarator) =
-  let arg = f pt declr in
+    (arg: string)
+    (pt: Ast.parameter_type) =
     if is_foreign_array pt
     then sprintf "(%s != NULL) ? (*%s) : NULL" arg arg
     else arg
 
 let mk_parm_name_ubridge (pt: Ast.parameter_type) (declr: Ast.declarator) =
-  add_foreign_array_ptrref mk_parm_name_raw pt declr
+  add_foreign_array_ptrref (mk_parm_name_raw pt declr false) pt
 
 let mk_parm_name_ext (pt: Ast.parameter_type) (declr: Ast.declarator) =
   let name = declr.Ast.identifier in
     match pt with
-        Ast.PTVal _ -> mk_parm_name_raw pt declr
+        Ast.PTVal _ -> mk_parm_name_raw pt declr true
       | Ast.PTPtr (_, attr) ->
           match attr.Ast.pa_direction with
-            | Ast.PtrNoDirection -> mk_parm_name_raw pt declr
+            | Ast.PtrNoDirection -> mk_parm_name_raw pt declr true
             | _ -> mk_in_var name
 
 let gen_func_invoking (fd: Ast.func_decl)
@@ -968,7 +960,7 @@ let gen_ptr_size (ty: Ast.atype) (pattr: Ast.ptr_attr) (name: string) (get_parm:
            else
              (* genrerate ms_parm_len only for ecall with string/wstring in _t.c.*)
              if (pattr.Ast.pa_isstr || pattr.Ast.pa_iswstr) && parm_name <> name then
-                 sprintf "%s_len " (mk_parm_accessor name)
+                 sprintf "%s_len " (mk_in_parm_accessor name)
                else
                  (* genrerate strlen(param)/wcslen(param) only for ocall with string/wstring in _t.c.*)
                  if pattr.Ast.pa_isstr then
@@ -1407,7 +1399,7 @@ let gen_struct_ptr_direction_post (param_direction: Ast.ptr_direction) (struct_t
                 "\t\tstatus = SGX_ERROR_INVALID_PARAMETER;";
                 "\t\tbreak;";
                 "\t}";
-                sprintf "\tif (MEMCPY_S(%s, %s, %s, %s)) {" in_ptr_name in_len_ptr_var in_struct_member out_len_ptr_var;
+                sprintf "\tif (memcpy_verw_s(%s, %s, %s, %s)) {" in_ptr_name in_len_ptr_var in_struct_member out_len_ptr_var;
                 sprintf "\t\tstatus = SGX_ERROR_UNEXPECTED;";
                 "\t\tbreak;";
                 "\t}";
@@ -1449,7 +1441,7 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
                   "\t{";
                   sprintf "\t\t%s[%s - 1] = '\\0';" in_ptr_name len_var;
                   sprintf "\t\t%s = strlen(%s) + 1;" len_var in_ptr_name;
-                  sprintf "\t\tif (MEMCPY_S((void*)%s, %s, %s, %s)) {" (mk_tmp_var name) len_var in_ptr_name len_var;
+                  sprintf "\t\tif (memcpy_verw_s((void*)%s, %s, %s, %s)) {" (mk_tmp_var name) len_var in_ptr_name len_var;
                   "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
                   "\t\t\tgoto err;";
                   "\t\t}";
@@ -1463,7 +1455,7 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
                   "\t{";
                   sprintf "\t\t%s[(%s - sizeof(wchar_t))/sizeof(wchar_t)] = (wchar_t)0;" in_ptr_name len_var;
                   sprintf "\t\t%s = (wcslen(%s) + 1) * sizeof(wchar_t);" len_var in_ptr_name;
-                  sprintf "\t\tif (MEMCPY_S((void*)%s, %s, %s, %s)) {" (mk_tmp_var name) len_var in_ptr_name len_var;
+                  sprintf "\t\tif (memcpy_verw_s((void*)%s, %s, %s, %s)) {" (mk_tmp_var name) len_var in_ptr_name len_var;
                   "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
                   "\t\t\tgoto err;";
                   "\t\t}";
@@ -1474,7 +1466,7 @@ let gen_parm_ptr_direction_post (plist: Ast.pdecl list) =
             else
                 let code_template  = [ 
                   sprintf "\tif (%s) {" in_ptr_name;
-                  sprintf "%s\t\tif (MEMCPY_S(%s, %s, %s, %s)) {" struct_deep_copy_post (mk_tmp_var name) len_var in_ptr_name len_var;
+                  sprintf "%s\t\tif (memcpy_verw_s(%s, %s, %s, %s)) {" struct_deep_copy_post (mk_tmp_var name) len_var in_ptr_name len_var;
                   "\t\t\tstatus = SGX_ERROR_UNEXPECTED;";
                   "\t\t\tgoto err;";
                   "\t\t}";
@@ -1547,7 +1539,7 @@ let gen_tmp_size (pattr: Ast.ptr_attr) (plist: Ast.pdecl list) =
     else
       let param_tystr = find_param_type s plist in
       let tmp_var     = mk_tmp_var s in
-      let parm_str    = mk_parm_accessor s in
+      let parm_str    = mk_in_parm_accessor s in
         Hashtbl.add param_cache s true;
         sprintf "\t%s %s = %s;\n" param_tystr tmp_var parm_str
   in
@@ -1602,7 +1594,7 @@ let tbridge_mk_parm_name_ext (pt: Ast.parameter_type) (declr: Ast.declarator) =
   else mk_parm_name_ext pt declr
 
 let mk_parm_name_tbridge (pt: Ast.parameter_type) (declr: Ast.declarator) =
-  add_foreign_array_ptrref tbridge_mk_parm_name_ext pt declr
+  add_foreign_array_ptrref (tbridge_mk_parm_name_ext pt declr) pt
 
 (* Generate local variables required for the trusted bridge. *)
 let gen_tbridge_local_vars (plist: Ast.pdecl list) =
@@ -1612,7 +1604,7 @@ let gen_tbridge_local_vars (plist: Ast.pdecl list) =
     let ty = Ast.get_param_atype pt in
     let tmp_var =
       (* Save a copy of pointer in case it might be modified in the marshaling structure. *)
-      sprintf "\t%s%s %s = %s;\n" qual (Ast.get_tystr ty) (mk_tmp_var name) (mk_parm_accessor name)
+      sprintf "\t%s%s %s = %s;\n" qual (Ast.get_tystr ty) (mk_tmp_var name) (mk_in_parm_accessor name)
     in
     let len_var =
       if not attr.Ast.pa_chkptr then ""
@@ -1637,7 +1629,7 @@ let gen_tbridge_local_vars (plist: Ast.pdecl list) =
   let gen_local_var_for_foreign_array (ty: Ast.atype) (attr: Ast.ptr_attr) (name: string) =
     let tystr = Ast.get_tystr ty in
     let tmp_var =
-      sprintf "\t%s* %s = %s;\n" tystr (mk_tmp_var name) (mk_parm_accessor name)
+      sprintf "\t%s* %s = %s;\n" tystr (mk_tmp_var name) (mk_in_parm_accessor name)
     in
     let len_var = sprintf "\tsize_t %s = sizeof(%s);\n" (mk_len_var name) tystr
     in
@@ -1681,13 +1673,28 @@ let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
                                ms_struct_val
                                ms_struct_name
                                ms_ptr_name in
+  let declare_ms = sprintf "%s %s;"
+                               ms_struct_name
+                               ms_in_struct_val in
+  let copy_ms =
+    let code_template =[
+                     sprintf "if (memcpy_s(&%s, sizeof(%s), %s, sizeof(%s))) {"
+                        ms_in_struct_val
+                        ms_struct_name
+                        ms_struct_val
+                        ms_struct_name;
+                     "\treturn SGX_ERROR_UNEXPECTED;";
+                     "}";
+                    ]
+    in 
+    List.fold_left (fun acc s -> acc ^ "\t" ^ s ^ "\n") "" code_template in
 
   let invoke_func   = gen_func_invoking fd mk_parm_name_tbridge in
   
   let update_retval =
     let code_template =[
                      sprintf "%s = %s"(mk_in_var retval_name) invoke_func;
-                     sprintf "if (MEMCPY_S(&%s, sizeof(%s), &%s, sizeof(%s))) {"
+                     sprintf "if (memcpy_verw_s(&%s, sizeof(%s), &%s, sizeof(%s))) {"
                         (mk_parm_accessor retval_name)
                         (mk_parm_accessor retval_name)
                         (mk_in_var retval_name)
@@ -1705,10 +1712,12 @@ let gen_func_tbridge (fd: Ast.func_decl) (dummy_var: string) =
       in
         sprintf "%s%s%s\t%s\n\t%s\n%s" func_open local_vars dummy_var check_pms invoke_func func_close
     else
-      sprintf "%s%s\t%s\n%s\n%s%s\n%s%s%s\n%s\n%s%s"
+      sprintf "%s%s\t%s\n\t%s\n%s%s\n%s%s\n%s%s%s\n%s\n%s%s"
         func_open
         (mk_check_pms fd.Ast.fname)
         declare_ms_ptr
+        declare_ms
+        copy_ms
         local_vars
         (gen_check_tbridge_length_overflow fd.Ast.plist)
         (gen_check_tbridge_ptr_parms fd.Ast.plist)
@@ -1726,7 +1735,7 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
   let parm_accessor = mk_parm_accessor name in
   let sgx_ocfree_fn = get_sgx_fname SGX_OCFREE is_ocall_switchless in
   let copy_ms_val_filed = [
-    sprintf "\tif (MEMCPY_S(&%s, sizeof(%s), &%s, sizeof(%s))) {"
+    sprintf "\tif (memcpy_verw_s(&%s, sizeof(%s), &%s, sizeof(%s))) {"
       parm_accessor
       parm_accessor
       name
@@ -1786,7 +1795,7 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
                         in
                         let post =
                             let code_template =[
-                                             sprintf "\tif (MEMCPY_S((void *)((size_t)__tmp + sizeof(__local_%s) * i), sizeof(__local_%s), &__local_%s, sizeof(__local_%s))) {" name name name name;
+                                             sprintf "\tif (memcpy_verw_s((void *)((size_t)__tmp + sizeof(__local_%s) * i), sizeof(__local_%s), &__local_%s, sizeof(__local_%s))) {" name name name name;
                                              sprintf "\t\t%s();" sgx_ocfree_fn;
                                              "\t\treturn SGX_ERROR_UNEXPECTED;";
                                              "\t}";
@@ -1801,7 +1810,7 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
                     let non_deep_copy_out =
                         let code_template =
                           [
-                           sprintf "if (MEMCPY_S(__tmp, ocalloc_size, %s, %s)) {"  name len_var;
+                           sprintf "if (memcpy_verw_s(__tmp, ocalloc_size, %s, %s)) {"  name len_var;
                            sprintf "\t\t%s();" sgx_ocfree_fn;
                            "\t\treturn SGX_ERROR_UNEXPECTED;";
                            "\t}";
@@ -1811,7 +1820,7 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
                     if deep_copy_out = "" then non_deep_copy_out else deep_copy_out
                 in
                 let assign_tmp_to_ptr = [
-                    sprintf "\tif (MEMCPY_S(&%s, sizeof(%s), &__tmp, sizeof(%s))) {"
+                    sprintf "\tif (memcpy_verw_s(&%s, sizeof(%s), &__tmp, sizeof(%s))) {"
                       parm_accessor
                       tystr
                       tystr;
@@ -1830,7 +1839,7 @@ let tproxy_fill_ms_field (pd: Ast.pdecl) (is_ocall_switchless: bool) =
                       ]
                       @ check_size @
                       [
-                       sprintf "\tMEMSET(__tmp_%s, 0, %s);" name len_var;
+                       sprintf "\tmemset_verw(__tmp_%s, 0, %s);" name len_var;
                        sprintf "\t__tmp = (void *)((size_t)__tmp + %s);" len_var;
                        sprintf "\tocalloc_size -= %s;" len_var;
                        "} else {";
@@ -1887,8 +1896,8 @@ let tproxy_fill_structure(pd: Ast.pdecl) (is_ocall_switchless: bool)=
                       [
                        sprintf "%s = %s;"  len_member_name (gen_struct_ptr_size ty attr name para_struct);
                        sprintf "\tif (%s != NULL && %s != 0) {" para_struct_member len_member_name;
-                       sprintf "\t\tif (MEMCPY_S(__tmp, %s, %s, %s) ||" len_member_name para_struct_member len_member_name;
-                       sprintf "\t\t\tMEMCPY_S(&%s, sizeof(%s), &__tmp, sizeof(%s))) {" in_struct_member (Ast.get_tystr ty) (Ast.get_tystr ty);
+                       sprintf "\t\tif (memcpy_verw_s(__tmp, %s, %s, %s) ||" len_member_name para_struct_member len_member_name;
+                       sprintf "\t\t\tmemcpy_verw_s(&%s, sizeof(%s), &__tmp, sizeof(%s))) {" in_struct_member (Ast.get_tystr ty) (Ast.get_tystr ty);
                        sprintf "\t\t\t%s();" sgx_ocfree_fn;
                        "\t\t\treturn SGX_ERROR_UNEXPECTED;";
                        "\t\t}";
@@ -2224,7 +2233,12 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
                              Ast.PTVal _ -> acc
                | Ast.PTPtr(ty, attr) -> acc ^ copy_memory ty attr declr) "" plist in
 
-  let set_errno = if propagate_errno then "\t\terrno = ms->ocall_errno;\n" else "" in
+  let set_errno = if propagate_errno then sprintf "%s\n%s\n%s\n%s\n"
+                      "\t\tif (memcpy_s((void*)&errno, sizeof(errno), &ms->ocall_errno, sizeof(ms->ocall_errno))) {"
+                      (sprintf "\t\t\t%s();" sgx_ocfree_fn)
+                      "\t\t\treturn SGX_ERROR_UNEXPECTED;"
+                      "\t\t}"
+                  else "" in
   let func_close = sprintf "%s%s%s\n%s%s\n"
                            (handle_out_ptr fd.Ast.plist)
                            set_errno
@@ -2234,8 +2248,13 @@ let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
   let sgx_ocall_fn = get_sgx_fname SGX_OCALL ufunc.Ast.uf_is_switchless in
   let ocall_null = sprintf "\tstatus = %s(%d, NULL);\n" sgx_ocall_fn idx in
   let ocall_with_ms = sprintf "\tstatus = %s(%d, %s);\n" sgx_ocall_fn idx ms_struct_val in
-  let update_retval = sprintf "\t\tif (%s) *%s = %s;"
-                              retval_name retval_name (mk_parm_accessor retval_name) in
+  let update_retval = sprintf "%s\n%s\n%s\n%s\n%s\n%s"
+                        (sprintf "\t\tif (%s) {" retval_name)
+                        (sprintf "\t\t\tif (memcpy_s((void*)%s, sizeof(*%s), &%s, sizeof(%s))) {" retval_name retval_name (mk_parm_accessor retval_name) (mk_parm_accessor retval_name))
+                        (sprintf "\t\t\t\t%s();" sgx_ocfree_fn)
+                        "\t\t\t\treturn SGX_ERROR_UNEXPECTED;"
+                        "\t\t\t}"
+                        "\t\t}" in
   let func_body = ref [] in
     if (is_naked_func fd) && (propagate_errno = false) then
         sprintf "%s%s%s%s" func_open local_vars ocall_null "\n\treturn status;\n}"

@@ -60,6 +60,7 @@ __BEGIN_DECLS
 
 void * _TLIBC_CDECL_ memchr(const void *, int, size_t);
 int    _TLIBC_CDECL_ memcmp(const void *, const void *, size_t);
+void * _TLIBC_CDECL_ memcpy_nochecks(void *, const void *, size_t);
 void * _TLIBC_CDECL_ memcpy(void *, const void *, size_t);
 void * _TLIBC_CDECL_ memcpy_verw(void *, const void *, size_t);
 void * _TLIBC_CDECL_ memmove(void *, const void *, size_t);
