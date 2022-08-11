@@ -308,7 +308,7 @@ void EnclaveCreatorHW::close_device()
 
 int EnclaveCreatorHW::alloc(uint64_t addr, uint64_t size, int flag)
 {
-	int ret = enclave_alloc(addr, size, flag, SGX_EMA_COMMIT_ON_DEMAND, NULL);
+	int ret = enclave_alloc((void *)addr, size, flag, SGX_EMA_COMMIT_ON_DEMAND, NULL);
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_alloc failed %d\n", ret);
@@ -321,7 +321,7 @@ int EnclaveCreatorHW::alloc(uint64_t addr, uint64_t size, int flag)
 int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
 {
 
-    int ret = enclave_modify(addr, size, PROT_READ|PROT_WRITE|PROT_EXEC|SGX_EMA_PAGE_TYPE_REG,
+    int ret = enclave_modify((void *)addr, size, PROT_READ|PROT_WRITE|PROT_EXEC|SGX_EMA_PAGE_TYPE_REG,
 			(int) (flag|SGX_EMA_PAGE_TYPE_REG), NULL);
     if (ret)
     {
@@ -334,7 +334,7 @@ int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
  
 int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
 {
-    int ret = enclave_modify(tcs_addr, SE_PAGE_SIZE, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_REG, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_TCS, NULL);
+    int ret = enclave_modify((void *)tcs_addr, SE_PAGE_SIZE, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_REG, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_TCS, NULL);
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "MODIFY_TYPE failed %d\n", ret);
@@ -347,7 +347,7 @@ int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
 int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
 {
 
-    int ret= enclave_modify( fromaddr, toaddr - fromaddr, PROT_READ|PROT_WRITE, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_TRIM, NULL);
+    int ret= enclave_modify( (void *)fromaddr, toaddr - fromaddr, PROT_READ|PROT_WRITE, PROT_READ|PROT_WRITE|SGX_EMA_PAGE_TYPE_TRIM, NULL);
     if (ret)
     {
         SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_TRIM failed %d\n", ret);
@@ -360,7 +360,7 @@ int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
  
 int EnclaveCreatorHW::trim_accept(uint64_t addr)
 {
-    int ret = enclave_modify(addr, SE_PAGE_SIZE, SGX_EMA_PAGE_TYPE_TRIM|PROT_READ|PROT_WRITE
+    int ret = enclave_modify((void *)addr, SE_PAGE_SIZE, SGX_EMA_PAGE_TYPE_TRIM|PROT_READ|PROT_WRITE
 	                     , SGX_EMA_PAGE_TYPE_TRIM|PROT_READ|PROT_WRITE, NULL); 
 
     if (ret)

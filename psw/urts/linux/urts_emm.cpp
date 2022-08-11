@@ -52,7 +52,7 @@ extern "C" sgx_status_t SGX_CDECL ocall_emm_alloc(void* pms)
 #ifdef SE_SIM
    ms->retval = mprotect((void*)ms->addr, ms->size, ms->page_properties|PROT_MASK);
 #else
-   ms->retval = enclave_alloc(ms->addr, ms->size,ms->page_properties,  ms->alloc_flags, NULL);
+   ms->retval = enclave_alloc((void *)ms->addr, ms->size,ms->page_properties,  ms->alloc_flags, NULL);
 #endif
    return SGX_SUCCESS;
 }
@@ -73,7 +73,7 @@ extern "C" sgx_status_t SGX_CDECL ocall_emm_modify(void* pms)
 #ifdef SE_SIM
    ms->retval = mprotect((void*)ms->addr, ms->size, ms->flags_to|PROT_MASK);
 #else
-   ms->retval = enclave_modify(ms->addr, ms->size, ms->flags_from, ms->flags_to, NULL);
+   ms->retval = enclave_modify((void *)ms->addr, ms->size, ms->flags_from, ms->flags_to, NULL);
 #endif
    return SGX_SUCCESS;
 }

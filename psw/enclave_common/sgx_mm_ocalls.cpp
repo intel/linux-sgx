@@ -27,7 +27,7 @@ uint32_t COMM_API enclave_alloc(
     if (s_driver_type == SGX_DRIVER_OUT_OF_TREE)
     {
         ret = mprotect(target_addr, target_size, PROT_WRITE | PROT_READ);
-        if ((ret != 0) && (enclave_error != NILL))
+        if ((ret != 0) && (enclave_error != NULL))
         {
             *enclave_error = ENCLAVE_UNEXPECTED;
         }
@@ -83,19 +83,19 @@ uint64_t get_offset_for_address(uint64_t target_address)
     return (uint64_t)target_address - (uint64_t)enclave_base_addr;
 }
 
-static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
+static int emodt(int fd, void *addr, size_t length, uint64_t type)
 {
     struct sgx_enclave_modify_types ioc;
     if (length == 0)
         return EINVAL;
 
     SE_TRACE(SE_TRACE_DEBUG,
-        "MODT for 0x%llX ( %llX ), type: 0x%llX\n",
+        "MODT for %p ( %llX ), type: 0x%llX\n",
             addr, length, type);
     memset(&ioc, 0, sizeof(ioc));
 
     ioc.page_type = type;
-    ioc.offset = get_offset_for_address(addr);
+    ioc.offset = get_offset_for_address((uint64_t)addr);
     ioc.length = length;
     do
     {
@@ -105,7 +105,7 @@ static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
         { //total failure
             int err = errno;
             SE_TRACE(SE_TRACE_WARNING,
-                "MODT failed, error = %d for 0x%llX ( %llX ), type: 0x%llX\n",
+                "MODT failed, error = %d for %p ( %llX ), type: 0x%llX\n",
                     err, addr, length, type);
             return err;
         }
@@ -119,16 +119,16 @@ static int emodt(int fd, uint64_t addr, size_t length, uint64_t type)
     return 0;
 }
 
-static int trim(int fd, uint64_t addr, size_t length)
+static int trim(int fd, void *addr, size_t length)
 {
     return emodt(fd, addr, length, (SGX_EMA_PAGE_TYPE_TRIM >> SGX_EMA_PAGE_TYPE_SHIFT));
 }
-static int mktcs(int fd, uint64_t addr, size_t length)
+static int mktcs(int fd, void *addr, size_t length)
 {
 
     return emodt(fd, addr, length, (SGX_EMA_PAGE_TYPE_TCS >> SGX_EMA_PAGE_TYPE_SHIFT));
 }
-static int trim_accept(int fd, uint64_t addr, size_t length)
+static int trim_accept(int fd, void *addr, size_t length)
 {
     struct sgx_enclave_remove_pages ioc;
     memset(&ioc, 0, sizeof(ioc));
@@ -136,7 +136,7 @@ static int trim_accept(int fd, uint64_t addr, size_t length)
     SE_TRACE(SE_TRACE_DEBUG,
         "REMOVE for 0x%llX ( %llX )\n",
             addr, length);
-    ioc.offset = get_offset_for_address(addr);
+    ioc.offset = get_offset_for_address((uint64_t)addr);
     ioc.length = length;
     int ret = 0;
     do {
@@ -156,7 +156,7 @@ static int trim_accept(int fd, uint64_t addr, size_t length)
 
     return 0;
 }
-static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
+static int emodpr(int fd, void *addr, size_t length, uint64_t prot)
 {
     struct sgx_enclave_restrict_permissions ioc;
     if (length == 0)
@@ -168,7 +168,7 @@ static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
     memset(&ioc, 0, sizeof(ioc));
 
     ioc.permissions = prot;
-    ioc.offset = get_offset_for_address(addr);
+    ioc.offset = get_offset_for_address((uint64_t)addr);
     ioc.length = length;
 
     do
@@ -194,7 +194,7 @@ static int emodpr(int fd, uint64_t addr, size_t length, uint64_t prot)
 
 // legacy support for EDMM
 
-static int trim_accept_legacy(int fd, uint64_t addr, size_t len)
+static int trim_accept_legacy(int fd, void *addr, size_t len)
 {
     sgx_range params;
     memset(&params, 0, sizeof(sgx_range));
@@ -211,7 +211,7 @@ static int trim_accept_legacy(int fd, uint64_t addr, size_t len)
     return SGX_SUCCESS;
 }
 
-static int trim_legacy(int fd, uint64_t fromaddr, uint64_t len)
+static int trim_legacy(int fd, void *fromaddr, uint64_t len)
 {
     sgx_range params;
     memset(&params, 0, sizeof(sgx_range));
@@ -227,7 +227,7 @@ static int trim_legacy(int fd, uint64_t fromaddr, uint64_t len)
     return SGX_SUCCESS;
 }
 
-static int mktcs_legacy(int fd, uint64_t tcs_addr, size_t len)
+static int mktcs_legacy(int fd, void *tcs_addr, size_t len)
 {
     if (len != SE_PAGE_SIZE)
         return EINVAL;
@@ -244,7 +244,7 @@ static int mktcs_legacy(int fd, uint64_t tcs_addr, size_t len)
     return SGX_SUCCESS;
 }
 
-static int emodpr_legacy(int fd, uint64_t addr, uint64_t size, uint64_t flag)
+static int emodpr_legacy(int fd, void *addr, uint64_t size, uint64_t flag)
 {
     sgx_modification_param params;
     memset(&params, 0, sizeof(sgx_modification_param));
@@ -291,10 +291,10 @@ uint32_t COMM_API enclave_modify(
             *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
     }
-    function<int(int, uint64_t, size_t)> _trim = trim;
-    function<int(int, uint64_t, size_t)> _trim_accept = trim_accept;
-    function<int(int, uint64_t, size_t)> _mktcs = mktcs;
-    function<int(int, uint64_t, size_t, int)> _emodpr = emodpr;
+    function<int(int, void *, size_t)> _trim = trim;
+    function<int(int, void *, size_t)> _trim_accept = trim_accept;
+    function<int(int, void *, size_t)> _mktcs = mktcs;
+    function<int(int, void *, size_t, int)> _emodpr = emodpr;
     int fd = get_file_handle_from_address(target_addr);
     if (s_driver_type == SGX_DRIVER_OUT_OF_TREE)
     {
