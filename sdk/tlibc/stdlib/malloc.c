@@ -844,6 +844,7 @@ extern "C" {
   void* __attribute__((weak)) realloc(void* ptr, size_t size)    ALIAS(dlrealloc);
   void* __attribute__((weak)) calloc(size_t n, size_t size)      ALIAS(dlcalloc);
   void* __attribute__((weak)) memalign(size_t align, size_t s)  ALIAS(dlmemalign); 
+  int __attribute__((weak)) posix_memalign(void**pptr, size_t align, size_t size)  ALIAS(dlposix_memalign);
   struct mallinfo __attribute__((weak)) mallinfo(void)         ALIAS(dlmallinfo);
 #ifdef USE_MALLOC_DEPRECATED
 #define dlposix_memalign       posix_memalign
@@ -952,7 +953,6 @@ DLMALLOC_EXPORT void* dlrealloc_in_place(void*, size_t);
 */
 DLMALLOC_EXPORT void* dlmemalign(size_t, size_t);
 
-#ifdef USE_MALLOC_DEPRECATED
 /*
   int posix_memalign(void** pp, size_t alignment, size_t n);
   Allocates a chunk of n bytes, aligned in accord with the alignment
@@ -963,6 +963,7 @@ DLMALLOC_EXPORT void* dlmemalign(size_t, size_t);
 */
 DLMALLOC_EXPORT int dlposix_memalign(void**, size_t, size_t);
 
+#ifdef USE_MALLOC_DEPRECATED
 /*
   valloc(size_t n);
   Equivalent to memalign(pagesize, n), where pagesize is the page
@@ -5335,7 +5336,6 @@ void* dlmemalign(size_t alignment, size_t bytes) {
   return internal_memalign(gm, alignment, bytes);
 }
 
-#ifdef USE_MALLOC_DEPRECATED
 int dlposix_memalign(void** pp, size_t alignment, size_t bytes) {
   void* mem = 0;
   if (alignment == MALLOC_ALIGNMENT)
@@ -5359,6 +5359,7 @@ int dlposix_memalign(void** pp, size_t alignment, size_t bytes) {
   }
 }
 
+#ifdef USE_MALLOC_DEPRECATED
 void* dlvalloc(size_t bytes) {
   size_t pagesz;
   ensure_initialization();

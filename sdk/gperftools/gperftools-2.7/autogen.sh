@@ -82,7 +82,6 @@ sed -i 's/#define HAVE_PROGRAM_INVOCATION_NAME/\/\/#define HAVE_PROGRAM_INVOCATI
 #  extern "C" char *getenv(const char *name);
 #  extern "C" int GetSystemCPUsCount();
 #  enum { STDIN_FILENO = 0, STDOUT_FILENO = 1, STDERR_FILENO = 2 };
-#  extern "C" size_t write(int fd, const void *buf, size_t count);
 #  extern "C" int getpagesize();  //it didn't delare include enclave's <unistd.h>
 #  #endif
 ################################
@@ -99,8 +98,7 @@ sed -i '/#define pthread_self sgx_thread_self/a\/\*SGX special, implemented in s
 sed -i '/\/\*SGX special, implemented in sgx_utils.cc\*\//aextern "C" char \*getenv(const char \*name);' src/config.h
 sed -i '/extern "C" char \*getenv(const char \*name);/aextern "C" int GetSystemCPUsCount();' src/config.h
 sed -i '/extern "C" int GetSystemCPUsCount();/aenum { STDIN_FILENO = 0, STDOUT_FILENO = 1, STDERR_FILENO = 2 };' src/config.h
-sed -i '/enum { STDIN_FILENO = 0, STDOUT_FILENO = 1, STDERR_FILENO = 2 };/aextern "C" size_t write(int fd, const void \*buf, size_t count);' src/config.h
-sed -i '/extern "C" size_t write(int fd, const void \*buf, size_t count);/aextern "C" int getpagesize\(\);' src/config.h
+sed -i '/enum { STDIN_FILENO = 0, STDOUT_FILENO = 1, STDERR_FILENO = 2 };/aextern "C" int getpagesize\(\);' src/config.h
 sed -i '/extern "C" int getpagesize();/a#endif  \/\* #ifdef TCMALLOC_SGX \*\/' src/config.h
 
 

@@ -54,7 +54,6 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
            -I$(SGX_QV_PATH)/../QuoteGeneration/quote_wrapper/common/inc \
            -I$(SGX_QV_PATH)/../QuoteGeneration/pce_wrapper/inc \
            -I$(SGX_QV_PATH)/dcap_tvl \
-           -include./tsgxsslio.h \
            -I$(PREBUILT_OPENSSL_PATH)/inc
 
 CXXFLAGS += $(COMMON_FLAGS) $(ENCLAVE_CXXFLAGS)

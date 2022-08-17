@@ -362,7 +362,7 @@ int pthread_join(pthread_t thread, void **retval)
 /*
  *: obtain ID of the calling thread
  */
-pthread_t pthread_self(void)
+__attribute__((weak)) pthread_t pthread_self(void)
 {
     return (pthread_t)(pthread_info_tls.m_pthread);
 }

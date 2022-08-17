@@ -109,6 +109,13 @@ void* memcpy_verw(void *dst0, const void *src0, size_t len)
         return dst0;
     }
 
+    //abort if overlap exist
+    if ((dst < src && dst + len > src) ||
+        (src < dst && src + len > dst))
+    {
+        abort();
+    }
+
     while (len >= 8) {
         if((unsigned long long)dst%8 == 0) {
             // 8-byte-aligned - don't need <VERW><MFENCE LFENCE> bracketing

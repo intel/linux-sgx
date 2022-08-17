@@ -1,0 +1,637 @@
+/*
+ * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in
+ *     the documentation and/or other materials provided with the
+ *     distribution.
+ *   * Neither the name of Intel Corporation nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+enclave {
+
+    include "dirent.h"
+    include "stdio.h"
+    include "time.h"
+    include "fcntl.h"
+    include "pwd.h"
+    include "grp.h"
+    include "netdb.h"
+    include "sys/time.h"
+    include "sys/stat.h"
+    include "sys/select.h"
+    include "sys/socket.h"
+    include "sys/poll.h"
+    include "sys/utsname.h"
+    include "sys/epoll.h"
+    include "sys/types.h"
+
+    struct _iovec_t
+    {
+        [size=iov_len] void* iov_base;
+        size_t iov_len;
+    };
+
+    untrusted {
+        DIR *u_opendir(
+            [in, string] const char* name)
+            propagate_errno;
+
+        struct dirent *u_readdir(
+            [user_check] DIR *dirp)
+            propagate_errno;
+
+        void u_rewinddir(
+            [user_check] DIR *dirp);
+
+        int u_closedir(
+            [user_check] DIR *dirp)
+            propagate_errno;
+
+        long u_telldir(
+            [user_check] DIR *dirp)
+            propagate_errno;
+
+        void u_seekdir([
+            user_check] DIR *dirp, long loc);
+
+        int u_getdents64(
+            unsigned int fd, 
+            [out, size=count] struct dirent *dirp,
+            unsigned int count)
+            propagate_errno;
+
+        int u_fcntl(
+            int fd, 
+            int cmd, 
+            int arg, 
+            uint64_t argsize, 
+            [in,out,size=argsize] void* argout)
+            propagate_errno;
+
+        int u_open(
+            [in, string] const char* pathname, 
+            int flags, mode_t mode)
+            propagate_errno;
+
+        int u_openat(
+            int dirfd, 
+            [in, string] const char* pathname, 
+            int flags, 
+            mode_t mode)
+            propagate_errno;
+
+        int u_stat(
+            [in, string] const char* pathname,
+            [out] struct stat* buf)
+            propagate_errno;
+ 
+        int u_lstat(
+            [in, string] const char* pathname,
+            [out] struct stat* buf)
+            propagate_errno;
+
+        int u_fstat(
+            int fd,
+            [out] struct stat* buf)
+            propagate_errno;
+
+        int u_mkdir(
+            [in, string] const char* pathname,
+            mode_t mode)
+            propagate_errno;
+
+        int u_fchmod(
+            int fd,
+            mode_t mode)
+            propagate_errno;
+ 
+        int u_socket (
+            int domain, 
+            int type, 
+            int protocol) 
+            propagate_errno;
+
+        int u_bind (
+            int fd, 
+            [in, size=len] const struct sockaddr *addr, 
+            socklen_t len) 
+            propagate_errno;
+
+        int u_listen (
+            int fd, 
+            int n) 
+            propagate_errno;
+
+        int u_accept (
+            int fd, 
+            [out, size=addrlen_in] struct sockaddr *addr, 
+            socklen_t addrlen_in, 
+            [out] socklen_t *addrlen_out) 
+            propagate_errno;
+
+        int u_connect (
+            int fd, 
+            [in, size=len] const struct sockaddr *addr, 
+            socklen_t len) 
+            propagate_errno;
+
+        ssize_t u_send (
+            int fd, 
+            [in, size=n] const void *buf, 
+            size_t n, 
+            int flags) 
+            propagate_errno;
+
+        ssize_t u_sendto (
+            int fd, 
+            [in, size=n] const void *buf, 
+            size_t n, 
+            int flags,
+            [in, size=addr_len] const struct sockaddr *addr, 
+            socklen_t addr_len) 
+            propagate_errno;
+
+        ssize_t u_sendmsg(
+            int sockfd, 
+            [user_check] const struct msghdr *msg, 
+            int flags) 
+            propagate_errno;
+
+        ssize_t u_recv (
+            int fd, 
+            [out, size=n] void *buf, 
+            size_t n, 
+            int flags) 
+            propagate_errno;
+
+        ssize_t u_recvfrom (
+            int fd, 
+            [out, size=n] void *buf, 
+            size_t n, 
+            int flags, 
+            [out, size=addrlen_in] struct sockaddr *addr, 
+            socklen_t addrlen_in, 
+            [out] socklen_t *addrlen_out)
+            propagate_errno;
+
+        ssize_t u_recvmsg(
+            int sockfd, 
+            [user_check] struct msghdr *msg, 
+            int flags) 
+            propagate_errno;
+
+        int u_getsockopt (
+            int fd, 
+            int level, 
+            int optname, 
+            [out, size=optlen_in] 
+            void *optval, 
+            socklen_t optlen_in, 
+            [out] socklen_t *optlen_out)
+            propagate_errno;
+
+        int u_setsockopt (
+            int fd, 
+            int level, 
+            int optname, 
+            [in, size=optlen] const void *optval, 
+            socklen_t optlen)
+            propagate_errno;
+
+        int u_poll (
+            [in, out, count=nfds] struct pollfd *fds, 
+            nfds_t nfds, 
+            int timeout) 
+            propagate_errno;
+
+        int u_select (
+            int nfds, 
+            [in, out] fd_set *readfds, 
+            [in, out] fd_set *writefds, 
+            [in, out] fd_set *exceptfds, 
+            [in, out] struct timeval *timeout) 
+            propagate_errno;
+
+        int u_getsockname(
+            int sockfd, 
+            [out, size=addrlen_in] struct sockaddr *addr, 
+            socklen_t addrlen_in, 
+            [out] socklen_t *addrlen_out)
+            propagate_errno;
+
+        int u_getpeername(
+            int sockfd, 
+            [out, 
+            size=addrlen_in] struct sockaddr *addr, 
+            socklen_t addrlen_in, 
+            [out] socklen_t *addrlen_out)
+            propagate_errno;
+
+        int u_socketpair(
+            int domain,
+            int type,
+            int protocol,
+            [out] int retfd[2])
+            propagate_errno;
+
+        int u_shutdown(
+            int sockfd,
+            int how)
+            propagate_errno;
+
+        char* u_realpath(
+            [in,string] const char *path) 
+            propagate_errno;
+
+        void u_fprintf(
+            [user_check] FILE *stream,
+            [in, string] const char* str,
+            size_t maxlen);
+
+        char *u_fgets(
+            [out, size=size] char *s, 
+            int size, 
+            [user_check] FILE *stream);
+
+        FILE *u_fopen(
+            [in, string] const char *pathname, 
+            [in] const char *mode)
+            propagate_errno;
+
+        FILE *u_fdopen(
+            int fd, 
+            [in] const char *mode)
+            propagate_errno;
+
+        int u_fclose(
+            [user_check] FILE *stream)
+            propagate_errno;
+
+        size_t u_fread(
+            [out, size=size, count=nmemb] void *ptr, 
+            size_t size, 
+            size_t nmemb, 
+            [user_check] FILE *stream);
+
+        size_t u_fwrite(
+            [in, size=size, count=nmemb] const void *ptr, 
+            size_t size, 
+            size_t nmemb, 
+            [user_check] FILE *stream);
+
+        void u_rewind(
+            [user_check] FILE *stream);
+
+        int u_fflush(
+            [user_check] FILE *stream)
+            propagate_errno;
+
+        void u_clearerr(
+            [user_check] FILE *stream);
+
+        int u_feof(
+            [user_check] FILE *stream);
+
+        int u_ferror(
+            [user_check] FILE *stream);
+
+        int u_fileno(
+            [user_check] FILE *stream)
+            propagate_errno;
+
+        ssize_t u_getline(
+            [in, out] char **lineptr, 
+            [in, out] size_t *n, 
+            [user_check] FILE *stream)
+            propagate_errno;
+
+        ssize_t u_getdelim(
+            [in, out] char **lineptr, 
+            [in, out] size_t *n, 
+            int delim, 
+            [user_check] FILE *stream)
+            propagate_errno;
+
+        void *u_malloc(
+            size_t size)
+            propagate_errno;
+
+        void u_free(
+            [user_check] void *ptr);
+
+        int u_uname(
+            [out] struct utsname *buf)
+            propagate_errno;
+
+        int u_epoll_create1(
+            int flags)
+            propagate_errno;
+
+        int u_epoll_wait(
+            int epfd,
+            [out, count=maxevents] struct epoll_event *events,
+            unsigned int maxevents,
+            int timeout)
+            propagate_errno;
+
+        int u_epoll_ctl(
+            int epfd,
+            int op,
+            int fd,
+            [in] struct epoll_event* event)
+            propagate_errno;
+
+        int u_mount(
+            [in, string] const char* source,
+            [in, string] const char* target,
+            [in, string] const char* filesystemtype,
+            unsigned long mountflags)
+            propagate_errno;
+
+        int u_umount2(
+            [in, string] const char* target, 
+            int flags) 
+            propagate_errno;
+
+        int u_gethostname(
+            [out, size=len] char* name, 
+            size_t len)
+            propagate_errno;
+
+        int u_getdomainname(
+            [out, size=len] char* name, 
+            size_t len)
+            propagate_errno;
+
+        char* u_getcwd(
+            [out, size=size] char* buf, 
+            size_t size)
+            propagate_errno;
+
+        int u_chdir(
+            [in, string] const char* path)
+            propagate_errno;
+
+        int u_nanosleep(
+            [in] struct timespec* req, 
+            [in, out] struct timespec* rem)
+            propagate_errno;
+
+        int u_clock_nanosleep(
+            clockid_t clockid,
+            int flag,
+            [in] struct timespec* req,
+            [in, out] struct timespec* rem);
+
+        pid_t u_getpid();
+
+        pid_t u_getppid();
+
+        pid_t u_getpgrp()
+            propagate_errno;
+
+        uid_t u_getuid();
+
+        uid_t u_geteuid();
+
+        gid_t u_getgid();
+
+        gid_t u_getegid();
+
+        pid_t u_getpgid(
+            int pid)
+            propagate_errno;
+
+        int u_getgroups(
+            size_t size,
+            [out, count=size] unsigned int* list)
+            propagate_errno;
+
+       ssize_t u_read(
+            int fd,
+            [out, size=count] void* buf,
+            size_t count)
+            propagate_errno;
+
+        ssize_t u_write(
+            int fd,
+            [in, size=count] const void* buf,
+            size_t count)
+            propagate_errno;
+
+        int u_close(
+            int fd) 
+            propagate_errno;
+
+        int u_flock(
+            int fd,
+            int operation)
+            propagate_errno;
+
+        int u_fsync(
+            int fd)
+            propagate_errno;
+
+        int u_fdatasync(
+            int fd)
+            propagate_errno;
+
+        int u_fchown(
+            int fd,
+            unsigned int uid,
+            unsigned int gid)
+            propagate_errno;
+ 
+        int u_dup(
+            int oldfd)
+            propagate_errno;
+
+        int u_dup2(
+            int oldfd, 
+            int newfd)
+            propagate_errno;
+
+        int u_rmdir(
+            [in, string] const char* pathname)
+            propagate_errno;
+
+        int u_link(
+            [in, string] const char* oldpath,
+            [in, string] const char* newpath)
+            propagate_errno;
+
+        int u_unlink(
+            [in, string] const char* pathname)
+            propagate_errno;
+
+        int u_truncate(
+            [in, string] const char* path,
+            off_t length)
+            propagate_errno;
+
+        int u_ftruncate(
+            int fd,
+            off_t length)
+            propagate_errno;
+
+        off_t u_lseek(
+            int fd,
+            off_t offset,
+            int whence)
+            propagate_errno;
+
+        ssize_t u_pread(
+            int fd,
+            [out, size=count] void* buf,
+            size_t count,
+            off_t offset)
+            propagate_errno;
+
+        ssize_t u_pwrite(
+            int fd,
+            [in, size=count] const void* buf,
+            size_t count,
+            off_t offset)
+            propagate_errno;
+
+
+        ssize_t u_readv(
+            int fd,
+            [in, out, count=iovcnt] struct _iovec_t* iov,
+            int iovcnt)
+            propagate_errno;
+ 
+        ssize_t u_writev(
+            int fd,
+            [in, count=iovcnt] struct _iovec_t* iov,
+            int iovcnt)
+            propagate_errno;
+
+        int u_access(
+            [in, string] const char* pathname,
+            int mode)
+            propagate_errno;
+
+        ssize_t u_readlink(
+            [in, string] const char * pathname, 
+            [out, size=bufsize] char * buf, 
+            size_t bufsize)
+            propagate_errno;
+
+        long u_sysconf(
+            int name)
+            propagate_errno;
+
+        int u_rename(
+            [in, string] const char* oldpath,
+            [in, string] const char* newpath)
+            propagate_errno;
+
+        int u_remove(
+            [in, string] const char* pathname)
+            propagate_errno;
+
+        char* u_getenv(
+            [in, string]const char* name);
+
+        int u_getgrgid_r(
+            gid_t gid, 
+            [user_check] struct group *grp,
+            [user_check]char *buf, 
+            size_t buflen, 
+            [out]struct group **result)
+            propagate_errno;
+
+        struct passwd *u_getpwuid(
+            uid_t uid)
+            propagate_errno;
+
+        int u_getpwuid_r(
+            uid_t uid, 
+            [user_check]struct passwd *pwd,
+            [user_check]char *buf, 
+            size_t buflen, 
+            [out]struct passwd **result)
+            propagate_errno;
+
+        long u_fpathconf(
+            int fd, 
+            int name)
+            propagate_errno;
+
+        long u_pathconf(
+            [in, string] const char *path, 
+            int name)
+            propagate_errno;
+
+        time_t u_time(
+            [out] time_t *tloc)
+            propagate_errno;
+
+        int u_utimes(
+            [in, string] const char *filename, 
+            [in, count=2] const struct timeval *times)
+            propagate_errno;
+
+        struct tm *u_localtime(
+            [in] const time_t *t)
+            propagate_errno;
+
+        int u_gettimeofday (
+            [out] struct timeval * tv)
+            propagate_errno;
+
+        int u_clock_gettime(
+            clockid_t clk_id, 
+            [out] struct timespec *tp)
+            propagate_errno;
+
+        int u_getaddrinfo (
+            [in, string] const char *node,
+            [in, string] const char *service,
+            [in] const struct addrinfo *hints,
+            [out] struct addrinfo **res)
+            propagate_errno;
+
+        void u_freeaddrinfo (
+            [user_check] struct addrinfo *res);
+
+        int u_getnameinfo(
+            [in, size=salen] const struct sockaddr* sa,
+            socklen_t salen,
+            [out, size=hostlen] char* host,
+            socklen_t hostlen,
+            [out, size=servlen] char* serv,
+            socklen_t servlen,
+            int flags)
+            propagate_errno;
+
+        char *u_gai_strerror(int errcode);
+
+        int u_sched_yield()
+            propagate_errno;
+
+    };
+};

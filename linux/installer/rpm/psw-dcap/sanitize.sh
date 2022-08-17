@@ -47,7 +47,11 @@ make -C ${root_dir} preparation
 # Prepare ipp-crypto source
 pushd ${root_dir}/external/ippcp_internal/
 
-cd ipp-crypto && git apply ../0001-IPP-crypto-for-SGX_psw_dcap.patch >/dev/null 2>&1 ||  git apply ../0001-IPP-crypto-for-SGX_psw_dcap.patch --check -R
+# cd ipp-crypto && git apply ../0001-IPP-crypto-for-SGX_psw_dcap.patch >/dev/null 2>&1 ||  git apply ../0001-IPP-crypto-for-SGX_psw_dcap.patch --check -R
+# TODO - Need to remove below lines and enable the above content when opensource 
+rm -rf ipp-crypto
+git clone -b ippcp_2021.3 https://github.com/intel/ipp-crypto.git --depth 1 ipp-crypto
+cd ipp-crypto && git apply ../0001-IPP-crypto-for-SGX_psw_dcap.patch
 
 popd
 

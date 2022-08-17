@@ -29,9 +29,36 @@
  *
  */
 
-#ifndef _TSGXSSL_IO_H_
-#define _TSGXSSL_IO_H_
+#include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <sys/mman.h>
 
-typedef void FILE;
+char* u_realpath (const char *path)
+{
+    errno = 0;
 
-#endif // _TSGXSSL_IO_H_
+    return realpath(path, NULL);
+}
+char* u_getenv(const char* name)
+{
+    errno = 0;
+
+    return getenv(name);
+}
+
+void *u_malloc(size_t size)
+{
+    errno = 0;
+
+    return malloc(size);
+}
+
+void u_free(void *ptr)
+{
+    errno = 0;
+
+    return free(ptr);
+}
+

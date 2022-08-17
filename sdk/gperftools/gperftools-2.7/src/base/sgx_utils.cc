@@ -49,7 +49,7 @@ int GetSystemCPUsCount() {
     return ENCLAVE_CPU_COUNT;
 }
 
-size_t write(int fd, const void *buf, size_t count) {
+ssize_t write(int fd, const void *buf, size_t count) {
     return 0;
 }
 

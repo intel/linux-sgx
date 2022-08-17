@@ -39,7 +39,7 @@
 #define _STDIO_H_
 
 #include <sys/cdefs.h>
-#include <sys/_types.h>
+#include <sys/types.h>
 
 #include <stdarg.h>
 
@@ -60,32 +60,75 @@ typedef __size_t    size_t;
 
 #define EOF     (-1)
 
+typedef struct __sFILE FILE;
+
 __BEGIN_DECLS
 
 int _TLIBC_CDECL_ snprintf(char *, size_t, const char *, ...) _GCC_PRINTF_FORMAT_(3, 4);
 int _TLIBC_CDECL_ vsnprintf(char *, size_t, const char *, __va_list) _GCC_PRINTF_FORMAT_(3, 0);
 
+int rename(const char* oldpath, const char* newpath);
+int remove(const char* pathname);
+
+int _TLIBC_CDECL_ printf(const char *, ...);
+int _TLIBC_CDECL_ vprintf(const char *, __va_list);
+
+int _TLIBC_CDECL_ sprintf(char *, const char *, ...);
+int _TLIBC_CDECL_ vsprintf(char *, const char *, __va_list);
+
+int _TLIBC_CDECL_ puts(const char *);
+
+int _TLIBC_CDECL_ fprintf(FILE *, const char *, ...);
+int _TLIBC_CDECL_ vfprintf(FILE *, const char *, __va_list);
+
+char *fgets(char *s, int size, FILE *stream);
+FILE *fopen(const char *pathname, const char *mode);
+FILE *fdopen(int fd, const char *mode);
+int fclose(FILE *stream);
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t fwrite(const void *ptr, size_t size, size_t nmemb, FILE *stream);
+void clearerr(FILE *stream);
+int feof(FILE *stream);
+int ferror(FILE *stream);
+int fileno(FILE *stream);
+int fflush(FILE *stream);
+void rewind(FILE *stream);
+/*
+ * getline
+ * lineptr - [IN, OUT] inside enclave. *lineptr is outside enclave. 
+ * Before the call to getline,  *lineptr can be allocated by omalloc, or set to NULL.
+ * If *lineptr is set NULL, and *n is set 0, getline() will allocate a  buffer  outside the enclave.
+ * After the call to getline, call ofree to free the memory pointed by *lineptr.
+ */
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+
+/*
+ * getdelim
+ * lineptr - [IN, OUT] inside enclave. *lineptr is outside enclave. 
+ * Before the call to getdelim,  *lineptr can be allocated by omalloc, or set to NULL.
+ * If *lineptr is set NULL, and *n is set 0, getdelim() will allocate a  buffer  outside the enclave.
+ * After the call to getdelim, call ofree to free the memory pointed by *lineptr.
+ */
+ssize_t getdelim(char **lineptr, size_t *n, int delim, FILE *stream);
+
+extern FILE* const stdin;
+extern FILE* const stdout;
+extern FILE* const stderr;
+
 /*
  * Deprecated definitions.
  */
 #if 0 /* No FILE */
-_TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, fprintf, FILE *, const char *, ...);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, putc, int, FILE *);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, fputc, int, FILE *);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, fputs, const char *, FILE *);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, fscanf, FILE *, const char *, ...);
 _TLIBC_DEPRECATED_FUNCTION_(size_t _TLIBC_CDECL_, fwrite, const void *, size_t, size_t, FILE *);
-_TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, printf, const char *, ...);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, putchar, int);
-_TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, puts, const char *);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, scanf, const char *, ...);
-_TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, sprintf, char *, const char *, ...);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, sscanf, const char *, const char *, ...);
-_TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, vfprintf, FILE *, const char *, __va_list);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, vfscanf, FILE *, const char *, __va_list);
-_TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, vprintf, const char *, __va_list);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, vscanf, const char *, __va_list);
-_TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, vsprintf, char *, const char *, __va_list);
 _TLIBC_DEPRECATED_FUNCTION_(int _TLIBC_CDECL_, vsscanf, const char *, const char *, __va_list);
 #endif
 

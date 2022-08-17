@@ -125,4 +125,15 @@ typedef __ssize_t   ssize_t;
 typedef __off_t     off_t;
 #endif
 
+#ifndef __pid_t_defined
+typedef int pid_t;
+# define __pid_t_defined
+#endif
+
+#ifndef __time_t_defined
+typedef long time_t;
+#define __time_t_defined
+# endif
+
+
 #endif /* !_SYS_TYPES_H_ */

@@ -99,6 +99,7 @@ long    _TLIBC_CDECL_ labs(long);
 ldiv_t  _TLIBC_CDECL_ ldiv(long, long);
 void *  _TLIBC_CDECL_ malloc(size_t);
 void *  _TLIBC_CDECL_ memalign(size_t, size_t);
+int     _TLIBC_CDECL_ posix_memalign(void**, size_t, size_t);
 void    _TLIBC_CDECL_ qsort(void *, size_t, size_t, int (*)(const void *, const void *));
 void *  _TLIBC_CDECL_ realloc(void *, size_t);
 double  _TLIBC_CDECL_ strtod(const char *, char **);
@@ -141,6 +142,35 @@ _TLIBC_DEPRECATED_FUNCTION_(int     _TLIBC_CDECL_, system, const char *);
  * Non-C99 Functions.
  */
 void *  _TLIBC_CDECL_ alloca(size_t);
+
+/*
+ * realpath
+ * resolved_path - must be NULL, because the length of resolved_path cannot be determine
+ * return value - outside enclave, the caller needs to call ofree to free the pointer when it's not used
+ */
+char* realpath(const char* path, char* resolved_path);
+
+_TLIBC_NORETURN_ void exit(int status);
+
+/* 
+ * getenv
+ * return value - outside enclave
+ */
+char *getenv(const char *name);
+
+/* 
+ * omalloc
+ * allocate heap memory outside enclave
+ * return value - outside enclave
+ */
+void *omalloc(size_t size);
+
+/*
+ * ofree
+ * free the memory allocated by omalloc
+ * prt - [IN] outside enclave
+ */
+void ofree(void *ptr);
 
 /*
  * Deprecated Non-C99.

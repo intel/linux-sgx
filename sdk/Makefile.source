@@ -44,6 +44,7 @@
 #        - openmp:        libsgx_omp.a
 #        - protobuf:      libsgx_protobuf.a
 #        - ttls:          libsgx_ttls.a
+#        - zlib:          libsgx_z.a
 #  - Untrtusted libraries
 #        - ukey_exchange: libsgx_ukey_exchange.a
 #        - uprotected_fs: libsgx_uprotected_fs.a
@@ -66,7 +67,7 @@ LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp protobuf ttls utls
+components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp protobuf ttls utls zlib tstdc_ex ustdc_ex
 
 # ---------------------------------------------------
 #  tstdc
@@ -216,6 +217,9 @@ endif
 ttls: edger8r
 	$(MAKE) -C ttls
 
+.PHONY: zlib
+zlib:
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/zlib
 # ---------------------------------------------------
 #  Untrusted libraries
 # ---------------------------------------------------
@@ -257,6 +261,14 @@ sgx_tswitchless: trts tlibc edger8r
 sgx_uswitchless: edger8r
 	$(MAKE) -C switchless/sgx_uswitchless
 
+.PHONY: tstdc_ex
+tstdc_ex: edger8r
+	$(MAKE) -C libc_ex/tlibc_ex
+
+.PHONY: ustdc_ex
+ustdc_ex: edger8r
+	$(MAKE) -C libc_ex/ulibc_ex
+
 # ---------------------------------------------------
 #  simualtion libraries and tools
 # ---------------------------------------------------
@@ -291,6 +303,8 @@ clean:
 	$(MAKE) -C tlibcxx/                            clean
 	$(MAKE) -C tseal/linux/                        clean
 	$(MAKE) -C selib/linux/                        clean
+	$(MAKE) -C libc_ex/tlibc_ex/                   clean
+	$(MAKE) -C libc_ex/ulibc_ex/                   clean
 	$(MAKE) -C trts/                               clean
 	$(MAKE) -C tsetjmp/                            clean
 	$(MAKE) -C tsafecrt/                           clean
@@ -316,5 +330,6 @@ clean:
 	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/protobuf      clean
 	$(MAKE) -C ttls						           clean
 	$(MAKE) -C utls						           clean
+	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/zlib          clean
 	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt

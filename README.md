@@ -1,4 +1,17 @@
+Extended C Standard Library
+==========================
+# Introduction
+This branch provides a subset of C standard library, which is called sgx_tstdc_ex/sgx_ustdc_ex. The APIs in the library are implemented through OCALLs.
 
+# Usage
+To use the library inside an enclave, you need
+- Include `sgx_stdc_ex.edl` in the enclave EDL file
+- Add `$(SGX_SDK)/include/tlibc` to the enclave include path
+- Link `libsgx_tstdc_ex.a` in the enclave link options
+- Link `libsgx_ustdc_ex.a` in the untrusted application link options
+
+# Caution
+The APIs in this libary depend on OCALLs, so it's NOT recommended to use this library to directly handle any sensitive data. This library is for advanced security developers only. If you want to use this library in a production-level software, you need to clearly understand and carefully analyze the security risks before making the decision. 
 
 Intel(R) Software Guard Extensions for Linux\* OS
 ================================================

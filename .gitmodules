@@ -17,3 +17,6 @@
 	path = external/protobuf/protobuf_code
 	url = https://github.com/protocolbuffers/protobuf.git
 	branch = 3.20.x
+[submodule "external/zlib/zlib_code"]
+	path = external/zlib/zlib_code
+	url = https://github.com/madler/zlib.git
