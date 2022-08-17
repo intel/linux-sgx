@@ -328,8 +328,9 @@ int test_sgx_mm_permissions()
     EXPECT_NEQ (pd.pf.pfec.errcd, 0); //WRITE suceess with PF
     EXPECT_EQ (pd.pf.pfec.rw, 1); //WRITE indicated in PFEC
 
-    memset((void*) &pd, 0, sizeof(pd));
-    pd.access = SGX_EMA_PROT_READ|SGX_EMA_PROT_EXEC;
+    // permissions reduction
+    ret = sgx_mm_modify_permissions(addr + ALLOC_SIZE/2, ALLOC_SIZE/2, SGX_EMA_PROT_NONE);
+    EXPECT_EQ(ret, 0);
 
     //no longer used, ready to be released by any thread
     //we could dealloc here but to make it more interesting...
