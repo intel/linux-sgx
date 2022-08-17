@@ -396,6 +396,15 @@ uint32_t COMM_API enclave_modify(
 
     if (type_to != type_from)
         return ENCLAVE_INVALID_PARAMETER;
+    // type_to == type_from
+    // this is for emodpr to epcm.NONE, enclave EACCEPT with pte.R
+    // separate mprotect is needed to change pte.R to pte.NONE
+    if (prot_to == prot_from && prot_to == PROT_NONE)
+    {
+        ret = mprotect((void *)addr, length, prot_to);
+        if (ret == -1)
+            return error_driver2api(ret, errno);
+    }
 
     if (prot_to == prot_from)
     {
@@ -412,8 +421,12 @@ uint32_t COMM_API enclave_modify(
     {
         return ENCLAVE_INVALID_PARAMETER;
     }
-    ret = mprotect((void *)addr, length, prot_to);
-    if (ret == -1)
-        return error_driver2api(ret, errno);
+    //EACCEPT needs at least pte.R, PROT_NONE case done above.
+    if (prot_to != PROT_NONE)
+    {
+        ret = mprotect((void *)addr, length, prot_to);
+        if (ret == -1)
+            return error_driver2api(ret, errno);
+    }
     return ret;
 }
