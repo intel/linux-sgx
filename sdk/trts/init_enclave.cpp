@@ -78,7 +78,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section
 
 extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
 extern "C" int init_rts_emas(size_t rts_base, size_t rts_end, layout_t *start, layout_t *end);
-extern "C" void sgx_mm_init(size_t, size_t);
+extern "C" int sgx_mm_init(size_t, size_t);
 // init_enclave()
 //      Initialize enclave.
 // Parameters:
@@ -293,7 +293,8 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
             rts_end = user_base;
         }
 
-        sgx_mm_init(user_base, user_end);
+        if (sgx_mm_init(user_base, user_end))
+            return SGX_ERROR_UNEXPECTED;
 
         int ret = init_rts_emas(rts_base, rts_end, layout_start, layout);
         if (ret != SGX_SUCCESS) {
