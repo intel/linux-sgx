@@ -1155,7 +1155,7 @@ bool CMetadata::build_layout_table()
     // SGX2 metadata required
     if ((meta_versions & 2u) == 2u)
     {
-        uint64_t rts_bk_overhead = calculate_rts_bk_overhead();
+        uint64_t rts_bk_overhead = calculate_rts_bk_overhead() + 0x20000;
         uint64_t user_region_size = ROUND_TO_PAGE(rts_bk_overhead);
         se_trace(SE_TRACE_ERROR, "RTS bookkeeping overhead: 0x%016llX\n", user_region_size);
 
