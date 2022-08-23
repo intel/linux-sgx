@@ -364,7 +364,12 @@ int pthread_join(pthread_t thread, void **retval)
  */
 pthread_t pthread_self(void)
 {
-    return (pthread_t)(pthread_info_tls.m_pthread);
+    pthread_t t = (pthread_t)(pthread_info_tls.m_pthread);
+    // For threads that are created outside enclave t value is NULL
+    if (!t) { 
+        return (pthread_t)(sgx_thread_self());
+    }
+    return t;
 }
 
 /*
