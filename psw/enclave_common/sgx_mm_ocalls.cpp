@@ -41,11 +41,11 @@ uint32_t COMM_API enclave_alloc(
         return ENCLAVE_INVALID_ADDRESS;
     }
     int map_flags = MAP_SHARED | MAP_FIXED;
-    //!TODO: support COMMIT_NOW when kernel supports
+    //COMMIT_NOW not supported by  kernel yet
     if (alloc_flags & ENCLAVE_EMA_COMMIT_NOW)
     {
     }
-    //!TODO support CET
+    //CET pages not supported by kernel yet
     int type = data_properties;
     if((type == ENCLAVE_PAGE_SS_FIRST) | (type == ENCLAVE_PAGE_SS_REST))
     {
@@ -406,12 +406,13 @@ uint32_t COMM_API enclave_modify(
         if (enclave_error != NULL)
             *enclave_error = ENCLAVE_INVALID_PARAMETER;
         return ENCLAVE_INVALID_PARAMETER;
+    }
     // type_to == type_from
     // this is for emodpr to epcm.NONE, enclave EACCEPT with pte.R
     // separate mprotect is needed to change pte.R to pte.NONE
     if (prot_to == prot_from && prot_to == PROT_NONE)
     {
-        ret = mprotect((void *)addr, length, prot_to);
+        ret = mprotect(target_addr, target_size, prot_to);
         if (ret == -1)
         {
             ret = error_driver2api(ret, errno);
@@ -446,7 +447,7 @@ uint32_t COMM_API enclave_modify(
     //EACCEPT needs at least pte.R, PROT_NONE case done above.
     if (prot_to != PROT_NONE)
     {
-        ret = mprotect((void *)addr, length, prot_to);
+        ret = mprotect((void *)target_addr, target_size, prot_to);
         if (ret == -1)
         {
             ret = error_driver2api(ret, errno);
