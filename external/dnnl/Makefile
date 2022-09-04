@@ -81,11 +81,11 @@ dnnl_src:
 ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	@$(RM) -r $(DNNL_DIR)/*
 	git submodule update -f --init dnnl
-	cd $(DNNL_DIR) && git am ../sgx_dnnl.patch
+	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
 else
 	@$(RM) -r $(DNNL_DIR)
 	git clone https://github.com/intel/mkl-dnn.git -b v1.1.1 --depth 1  $(DNNL_DIR)
-	cd $(DNNL_DIR) && git am ../sgx_dnnl.patch
+	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
 endif
 
 $(LIBDNNL):$(CHECK_SOURCE)
