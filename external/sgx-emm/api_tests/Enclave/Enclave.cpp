@@ -234,6 +234,7 @@ int test_sgx_mm_alloc_dealloc_unsafe1()
     return 0;
 }
 
+#include <setjmp.h>
 typedef struct _pfdata
 {
     sgx_pfinfo pf;
@@ -242,7 +243,58 @@ typedef struct _pfdata
         int magic;
     };
     void* addr_expected;
+    jmp_buf jbuf; // used for jmp_handler only
 } pf_data_t;
+
+int jmp_handler(const sgx_pfinfo *pfinfo, void *private_data)
+{
+    pf_data_t* pd = (pf_data_t *) private_data;
+    memcpy(private_data, pfinfo, sizeof(*pfinfo));
+    void* addr = (void*) pd->pf.maddr;
+    if (pd->pf.pfec.rw == 0
+                && addr == pd->addr_expected)
+    {
+        int ret = sgx_mm_commit(addr, SGX_PAGE_SIZE);
+        if (ret) abort();
+        memset(addr, pd->magic, SGX_PAGE_SIZE);
+        longjmp(pd->jbuf, 1);
+        abort(); //won't reach here
+    }
+    return SGX_MM_EXCEPTION_CONTINUE_SEARCH;
+}
+
+int test_sgx_mm_alloc_jmp()
+{
+
+    void* addr = 0;
+    pf_data_t pd;
+    memset((void*) &pd, 0, sizeof(pd));
+    int ret = sgx_mm_alloc(NULL, ALLOC_SIZE,
+            SGX_EMA_COMMIT_ON_DEMAND, &jmp_handler, &pd, &addr);
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_NEQ(addr, NULL);
+    const int MAGIC = 0x55UL;
+
+    uint8_t* data = (uint8_t*)addr;
+    pd.magic = MAGIC;
+    pd.addr_expected = addr;
+    if (0 == setjmp(pd.jbuf)) {
+        uint8_t d0 = 0;
+        d0 = data[0];
+        EXPECT_NEQ (d0, 0); //should not come here
+    }else {
+        uint8_t d0 = data[0];
+
+        EXPECT_EQ (d0, MAGIC);
+        EXPECT_EQ (pd.pf.pfec.rw, 0); //Read  caused PF
+        EXPECT_EQ (pd.pf.pfec.sgx, 1); // sgx bit set
+    }
+
+    ret = sgx_mm_dealloc(addr, ALLOC_SIZE);
+    EXPECT_EQ(ret, 0);
+    return 0;
+}
 
 int permissions_handler(const sgx_pfinfo *pfinfo, void *private_data)
 {
@@ -568,7 +620,6 @@ int test_sgx_mm_commit_data()
 // TODO:
 // - alloc big buf on stack to trigger expansion
 // - alloc ondemand in handler with a nested hanndler
-// - do setjmp at allocation and long jmp in handler?
 // - random addrss allocation and deallocation
 //
 int ecall_test_sgx_mm(int sid)
@@ -580,6 +631,7 @@ int ecall_test_sgx_mm(int sid)
     failures += test_sgx_mm_permissions_dealloc();
     failures += test_sgx_mm_commit_data();
     failures += test_sgx_mm_dealloc();
+    failures += test_sgx_mm_alloc_jmp();
     if(failures)
         LOG("!!! %d fail(s) in thread %d\n",  failures, sid);
     return failures;
