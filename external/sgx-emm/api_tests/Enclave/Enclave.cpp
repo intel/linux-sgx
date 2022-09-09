@@ -343,6 +343,52 @@ int commit_data_handler(const sgx_pfinfo *pfinfo, void *private_data)
         return SGX_MM_EXCEPTION_CONTINUE_SEARCH;
 }
 
+static const int MAX_NESTED_HANDLER = 10;
+int nested_handler(const sgx_pfinfo *pfinfo, void *private_data)
+{
+    pf_data_t* orig_pd = (pf_data_t *) private_data;
+    memcpy(private_data, pfinfo, sizeof(*pfinfo));
+    void* addr = (void*) orig_pd->pf.maddr;
+
+    if (addr == orig_pd->addr_expected)
+    {
+        void* data = 0;
+        if (orig_pd->magic == MAX_NESTED_HANDLER)
+        {
+            int ret = sgx_mm_alloc(NULL, SGX_PAGE_SIZE, SGX_EMA_COMMIT_NOW,
+                                    NULL, NULL, &data);
+            if (ret) abort();
+            assert(data!=0);
+            memset(data, orig_pd->magic, SGX_PAGE_SIZE);
+            ret = sgx_mm_commit_data(addr, SGX_PAGE_SIZE, (uint8_t*)data,
+                                            SGX_EMA_PROT_READ);
+            if (ret) abort();
+        } else
+        {
+            pf_data_t nested_pd;
+            memset((void*) &nested_pd, 0, sizeof(nested_pd));
+            int ret = sgx_mm_alloc(NULL, SGX_PAGE_SIZE,
+                                SGX_EMA_COMMIT_ON_DEMAND,
+                                &nested_handler,
+                                &nested_pd, &data);
+
+            if (ret) abort();
+            assert(data != 0);
+            nested_pd.addr_expected = data;
+            nested_pd.magic = orig_pd->magic + 1;
+            ret = sgx_mm_commit_data(addr, SGX_PAGE_SIZE, (uint8_t*)data,
+                                            SGX_EMA_PROT_READ);
+            if (ret) abort();
+            if (nested_pd.pf.pfec.errcd == 0) abort(); //READ suceess with PF
+            if (nested_pd.pf.pfec.rw != 0) abort(); //READ indicated in PFEC
+        }
+        int ret = sgx_mm_dealloc((void*)data, SGX_PAGE_SIZE);
+        if (ret) abort();
+        return SGX_MM_EXCEPTION_CONTINUE_EXECUTION;
+    }else
+        return SGX_MM_EXCEPTION_CONTINUE_SEARCH;
+}
+
 int test_sgx_mm_permissions()
 {
 
@@ -392,7 +438,6 @@ int test_sgx_mm_permissions()
 
     return 0;
 }
-
 
 int test_sgx_mm_permissions_dealloc()
 {
@@ -615,11 +660,38 @@ int test_sgx_mm_commit_data()
     return 0;
 }
 
+int test_sgx_mm_alloc_nested()
+{
+    void* addr = 0;
+    pf_data_t pd;
+    memset((void*) &pd, 0, sizeof(pd));
+    int ret = sgx_mm_alloc(NULL, ALLOC_SIZE,
+                                SGX_EMA_COMMIT_ON_DEMAND,
+                                &nested_handler,
+                                &pd, &addr);
+
+    EXPECT_EQ(ret, 0);
+    EXPECT_NEQ(addr, NULL);
+
+    pd.addr_expected = addr;
+    pd.magic = 1;
+
+    uint8_t* data = (uint8_t*)addr;
+    for (int i =0; i<SGX_PAGE_SIZE; i++)
+    {
+        EXPECT_EQ(data[i], MAX_NESTED_HANDLER);
+    }
+    EXPECT_NEQ (pd.pf.pfec.errcd, 0); //READ suceess with PF
+    EXPECT_EQ (pd.pf.pfec.rw, 0); //READ indicated in PFEC
+
+    ret = sgx_mm_dealloc(addr, ALLOC_SIZE);
+    EXPECT_EQ(ret, 0);
+    return 0;
+}
 
 // Thread-safe tests in separate threads
 // TODO:
 // - alloc big buf on stack to trigger expansion
-// - alloc ondemand in handler with a nested hanndler
 // - random addrss allocation and deallocation
 //
 int ecall_test_sgx_mm(int sid)
@@ -632,6 +704,7 @@ int ecall_test_sgx_mm(int sid)
     failures += test_sgx_mm_commit_data();
     failures += test_sgx_mm_dealloc();
     failures += test_sgx_mm_alloc_jmp();
+    failures += test_sgx_mm_alloc_nested();
     if(failures)
         LOG("!!! %d fail(s) in thread %d\n",  failures, sid);
     return failures;
