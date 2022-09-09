@@ -39,6 +39,7 @@
 #define SGX_PAGE_SIZE 4096
 #include "sgx_thread.h"
 #include <vector>
+#include "sgx_trts.h"
 #include "../tcs.h"
 using namespace std;
 /*
@@ -688,11 +689,56 @@ int test_sgx_mm_alloc_nested()
     EXPECT_EQ(ret, 0);
     return 0;
 }
+int test_sgx_mm_stack_expansion()
+{
+    static const int BUF_SIZE = 0x8000; // slightly smaller than max set in config
+    uint8_t buf[BUF_SIZE];
+    for (int i = 0; i < BUF_SIZE; i++)
+    {
+        buf[i] = (uint8_t)(i % 256);
+    }
+    for ( int i = 0; i < BUF_SIZE; i++)
+    {
+        uint8_t expected = (uint8_t)(i % 256);
+        EXPECT_EQ (buf[i], expected);
+    }
+    return 0;
+}
+#define ROUND_TO(x, align)  ((size_t)((x) + ((align)-1)) & (size_t)(~((align)-1)))
+
+extern uint8_t  __ImageBase;
+extern size_t g_enclave_size;
+int test_sgx_mm_alloc_random()
+{
+    //randomly choose 5000 address to alloc and dealloc
+    //make sure no crashes
+    static const int MAX_ITERATIONS = 5000;
+    size_t enclave_base = (size_t)(&__ImageBase);//from Makefile
+    for (int i = 0; i < MAX_ITERATIONS; i++)
+    {
+        size_t r = 0;
+        do
+        {
+            if(SGX_SUCCESS != sgx_read_rand((unsigned char *)&r, sizeof(r)))
+            {
+                return 1;
+            }
+        } while(r == 0);
+        r = enclave_base + (r % g_enclave_size) - 2 * ALLOC_SIZE;
+        void* addr = (void*) ROUND_TO (r, SGX_PAGE_SIZE);
+        void* addr_alloc = 0;
+        int ret =  sgx_mm_alloc(addr, ALLOC_SIZE,
+            SGX_EMA_COMMIT_NOW|SGX_EMA_FIXED, NULL, NULL, &addr_alloc);
+        if (!ret) {
+            EXPECT_EQ (addr, addr_alloc);
+            ret = sgx_mm_dealloc(addr, ALLOC_SIZE);
+            EXPECT_EQ (ret, 0);
+        }
+    }
+    return 0;
+}
 
 // Thread-safe tests in separate threads
-// TODO:
-// - alloc big buf on stack to trigger expansion
-// - random addrss allocation and deallocation
 //
 int ecall_test_sgx_mm(int sid)
 {
@@ -705,6 +751,8 @@ int ecall_test_sgx_mm(int sid)
     failures += test_sgx_mm_dealloc();
     failures += test_sgx_mm_alloc_jmp();
     failures += test_sgx_mm_alloc_nested();
+    failures += test_sgx_mm_stack_expansion();
+    failures += test_sgx_mm_alloc_random();
     if(failures)
         LOG("!!! %d fail(s) in thread %d\n",  failures, sid);
     return failures;
@@ -763,7 +811,6 @@ int ecall_test_sgx_mm_unsafe()
 
 typedef void (*entry_t)(void);
 extern entry_t  enclave_entry;
-extern uint8_t  __ImageBase;
 size_t ecall_alloc_context()
 {
      // Intel SDK thread context memory layout
