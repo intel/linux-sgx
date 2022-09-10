@@ -710,8 +710,11 @@ extern uint8_t  __ImageBase;
 extern size_t g_enclave_size;
 int test_sgx_mm_alloc_random()
 {
-    //randomly choose 5000 address to alloc and dealloc
+    //randomly choose some address to alloc and dealloc
     //make sure no crashes
+    // Reduce the value if kernel ever returns ENOMEM from mmap in enclave_alloc.
+    // this is not safe to run with other threads that allocates with SGX_EMA_RESERVE
+    // flag as it may take those reserves away
     static const int MAX_ITERATIONS = 5000;
     size_t enclave_base = (size_t)(&__ImageBase);//from Makefile
     for (int i = 0; i < MAX_ITERATIONS; i++)
@@ -752,7 +755,6 @@ int ecall_test_sgx_mm(int sid)
     failures += test_sgx_mm_alloc_jmp();
     failures += test_sgx_mm_alloc_nested();
     failures += test_sgx_mm_stack_expansion();
-    failures += test_sgx_mm_alloc_random();
     if(failures)
         LOG("!!! %d fail(s) in thread %d\n",  failures, sid);
     return failures;
@@ -805,6 +807,7 @@ int ecall_test_sgx_mm_unsafe()
     int failures = 0;
     failures += test_sgx_mm_alloc_dealloc_unsafe1();
     failures += test_sgx_mm_alloc_dealloc_unsafe2();
+    failures += test_sgx_mm_alloc_random();
     return failures;
 }
 
