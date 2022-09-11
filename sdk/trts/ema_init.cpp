@@ -164,15 +164,11 @@ static int init_rts_contexts_emas(layout_t *start, layout_t *end, uint64_t delta
     return SGX_SUCCESS;
 }
 
-extern "C" void init_rts_ema_root(size_t, size_t);
 extern "C" int init_segment_emas(void* enclave_base);
 
-extern "C" int init_rts_emas(size_t rts_base, size_t rts_end,
-                         layout_t *layout_start, layout_t *layout_end)
+extern "C" int init_rts_emas(size_t rts_base, layout_t *layout_start, layout_t *layout_end)
 {
     int ret = SGX_ERROR_UNEXPECTED;
-
-    init_rts_ema_root(rts_base, rts_end);
 
     ret = init_segment_emas((void *)rts_base);
     if (SGX_SUCCESS != ret) {

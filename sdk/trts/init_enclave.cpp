@@ -77,7 +77,7 @@ extern sgx_status_t pcl_entry(void* enclave_base,void* ms) __attribute__((weak))
 extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section(".nipx")));
 
 extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
-extern "C" int init_rts_emas(size_t rts_base, size_t rts_end, layout_t *start, layout_t *end);
+extern "C" int init_rts_emas(size_t rts_base, layout_t *start, layout_t *end);
 extern "C" int sgx_mm_init(size_t, size_t);
 // init_enclave()
 //      Initialize enclave.
@@ -269,7 +269,6 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
     if (EDMM_supported)
     {
         size_t rts_base = g_enclave_base;
-        size_t rts_end = g_enclave_base + g_enclave_size;
         size_t user_base = 0;
         size_t user_end = 0;
 
@@ -290,13 +289,12 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
             if(user_base > user_end)
                 return SGX_ERROR_UNEXPECTED;
 
-            rts_end = user_base;
         }
 
         if (sgx_mm_init(user_base, user_end))
             return SGX_ERROR_UNEXPECTED;
 
-        int ret = init_rts_emas(rts_base, rts_end, layout_start, layout);
+        int ret = init_rts_emas(rts_base, layout_start, layout);
         if (ret != SGX_SUCCESS) {
             return SGX_ERROR_UNEXPECTED;
         }
