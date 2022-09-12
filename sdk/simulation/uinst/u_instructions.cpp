@@ -52,6 +52,7 @@
 #include "sgxsim.h"
 #include "enclave_mngr.h"
 #include "u_instructions.h"
+#include "rts_sim.h"
 
 #include "crypto_wrapper.h"
 
@@ -276,10 +277,23 @@ uintptr_t _EINIT(secs_t* secs, enclave_css_t *css, token_t *launch)
             return SGX_ERROR_INVALID_ATTRIBUTE;
         }
 
+        isv_ext_id_t* isv_ext_id = reinterpret_cast<isv_ext_id_t *>(this_secs->reserved4);
+        if (!(this_secs->attributes.flags & SGX_FLAGS_KSS))
+        {
+            const uint8_t* u8ptr = (uint8_t *)(&(css->body.isv_family_id));
+            for (unsigned i = 0; i < sizeof(css->body.isv_family_id); ++i)
+                if (u8ptr[i] != (uint8_t)0) return SGX_ERROR_INVALID_SIGNATURE;
+
+            u8ptr = (uint8_t *)(&(css->body.isvext_prod_id));
+            for (unsigned i = 0; i < sizeof(css->body.isvext_prod_id); ++i)
+                if (u8ptr[i] != (uint8_t)0) return SGX_ERROR_INVALID_SIGNATURE;
+        }
+
         mcp_same_size(&this_secs->mr_enclave, &css->body.enclave_hash, sizeof(sgx_measurement_t));
         this_secs->isv_prod_id = css->body.isv_prod_id;
         this_secs->isv_svn = css->body.isv_svn;
-        
+        mcp_same_size(&isv_ext_id->isv_family_id, &css->body.isv_family_id, sizeof(sgx_isvfamily_id_t));
+        mcp_same_size(&isv_ext_id->isv_ext_prod_id, &css->body.isvext_prod_id, sizeof(sgx_isvext_prod_id_t));
         uint8_t signer[SGX_HASH_SIZE] = {0};
         unsigned int signer_len = SGX_HASH_SIZE;
         sgx_status_t ret = sgx_EVP_Digest(EVP_sha256(), css->key.modulus, SE_KEY_SIZE, signer, &signer_len);
@@ -323,6 +337,13 @@ uintptr_t _ECREATE(page_info_t* pi)
     // Enclave size must be at least 2 pages and a power of 2.
     GP_ON(!is_power_of_two((size_t)secs->size));
     GP_ON(secs->size < (SE_PAGE_SIZE << 1));
+    if(!(secs->attributes.flags & SGX_FLAGS_KSS))
+    {
+        GP_ON(secs->config_svn != 0);
+        const uint8_t* u8ptr = (uint8_t *)(&(secs->config_id));
+        for (unsigned i = 0; i < sizeof(secs->config_id); ++i)
+            GP_ON(u8ptr[i] != (uint8_t)0);
+    }
 
     CEnclaveSim* ce = new CEnclaveSim(secs);
     void*   addr;

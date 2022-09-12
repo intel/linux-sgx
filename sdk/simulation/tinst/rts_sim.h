@@ -59,6 +59,12 @@ const sgx_cpu_svn_t DOWNGRADED_CPUSVN = {
     }
 };
 
+// use secs->reserved4 field to save isv_family_id and isv_ext_prod_id.
+typedef struct _isv_ext_id_t
+{
+    sgx_isvfamily_id_t isv_family_id;      /* ISV assigned Family ID */
+    sgx_isvext_prod_id_t isv_ext_prod_id;  /* ISV assigned Extended Product ID */
+} isv_ext_id_t;
 
 typedef struct _global_data_sim_t
 {
