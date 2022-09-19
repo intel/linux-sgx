@@ -351,7 +351,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     sp_u = ssa_gpr->REG(sp_u);
     if (!sgx_is_outside_enclave((void *)sp_u, sizeof(sp_u)))
     {
-        g_enclave_state = ENCLAVE_CRASHED;
+        set_enclave_state(ENCLAVE_CRASHED);
         return SGX_ERROR_STACK_OVERRUN;
     }
 
@@ -360,13 +360,13 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     sp = ssa_gpr->REG(sp);
     if (sp_u == sp)
     {
-        g_enclave_state = ENCLAVE_CRASHED;
+        set_enclave_state(ENCLAVE_CRASHED);
         return SGX_ERROR_STACK_OVERRUN;
     }
 
     if(!is_stack_addr((void*)sp, 0))  // check stack overrun only, alignment will be checked after exception handled
     {
-        g_enclave_state = ENCLAVE_CRASHED;
+        set_enclave_state(ENCLAVE_CRASHED);
         return SGX_ERROR_STACK_OVERRUN;
     }
 
@@ -383,7 +383,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     // check the decreased sp to make sure it is in the trusted stack range
     if(!is_stack_addr((void *)sp, size))
     {
-        g_enclave_state = ENCLAVE_CRASHED;
+        set_enclave_state(ENCLAVE_CRASHED);
         return SGX_ERROR_STACK_OVERRUN;
     }
 
@@ -393,7 +393,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     sp -= size;
     if(!is_stack_addr((void *)sp, size))
     {
-        g_enclave_state = ENCLAVE_CRASHED;
+        set_enclave_state(ENCLAVE_CRASHED);
         return SGX_ERROR_STACK_OVERRUN;
     }
     
@@ -416,7 +416,7 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
         }
         else
         {
-            g_enclave_state = ENCLAVE_CRASHED;
+            set_enclave_state(ENCLAVE_CRASHED);
             return SGX_ERROR_STACK_OVERRUN;
         }
     }
@@ -486,6 +486,6 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     return SGX_SUCCESS;
  
 default_handler:
-    g_enclave_state = ENCLAVE_CRASHED;
+    set_enclave_state(ENCLAVE_CRASHED);
     return SGX_ERROR_ENCLAVE_CRASHED;
 }

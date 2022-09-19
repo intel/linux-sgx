@@ -36,6 +36,7 @@
 #include "sgx_trts.h"
 #include "sgx_attributes.h"
 #include "global_data.h"
+#include "trts_internal.h"
 
 extern "C" int sgx_init_string_lib(uint64_t cpu_feature_indicator);
 extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator, uint32_t *cpuinfo_table);
@@ -94,7 +95,7 @@ static int set_global_feature_indicator(uint64_t feature_bit_array, uint64_t xfr
 
 extern "C" int init_optimized_libs(const uint64_t feature_bit_array, uint32_t *cpuinfo_table, uint64_t xfrm)
 {
-    if (g_enclave_state != ENCLAVE_INIT_IN_PROGRESS)
+    if (get_enclave_state() != ENCLAVE_INIT_IN_PROGRESS)
     {
         return -1;
     }
