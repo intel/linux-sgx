@@ -433,7 +433,7 @@ CTrustThread * CTrustThreadPool::acquire_thread(int ecall_cmd)
     }
 
     if(is_special_ecall != true &&
-       need_to_new_thread() == true)
+       need_to_new_thread() == true && NULL != m_utility_thread)
     {     
         m_utility_thread->get_enclave()->fill_tcs_mini_pool_fn();
     }
