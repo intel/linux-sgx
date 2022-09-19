@@ -82,7 +82,6 @@ else
 	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
 endif
 	mkdir -p $(DNNL_DIR)/build
-	@echo "success" > $(DNNL_DIR)/build/apply_patch
 
 $(LIBDNNL): $(DNNL_DIR)/build
 	cd $(DNNL_DIR)/build && cmake -DCMAKE_CXX_ENCLAVE_FLAGS="$(CXX_ENCLAVE_FLAGS)" -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" $(DNNL_CONFIG) .. && $(MAKE)
