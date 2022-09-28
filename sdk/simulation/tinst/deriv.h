@@ -48,8 +48,11 @@ typedef uint8_t se_owner_epoch_t[OWNEREPOCH_SIZE];
 /* Derive data for seal key */
 typedef struct {
     uint16_t             key_name;        /* should always be 'SGX_KEYSELECT_SEAL' */
+    uint16_t             key_policy;      /* Key policy from KEYREQUEST */
     sgx_attributes_t     tmp_attr;
     sgx_attributes_t     attribute_mask;  /* attribute mask from KEYREQUEST */
+    sgx_misc_select_t    tmp_misc;
+    sgx_misc_select_t    misc_mask;       /* MiscSelect mask form KEYREQUEST */
     se_owner_epoch_t     csr_owner_epoch;
     sgx_cpu_svn_t        cpu_svn;         /* CPUSVN from KEYREQUEST */
     sgx_isv_svn_t        isv_svn;         /* ISVSVN from KEYREQUEST */
@@ -67,6 +70,7 @@ typedef struct {
 typedef struct {
     uint16_t          key_name;        /* should always be 'SGX_KEYSELECT_REPORT' */
     sgx_attributes_t  attributes;      /* attributes from SECS */
+    sgx_misc_select_t misc_select;     /* MiscSelect from SECS */
     se_owner_epoch_t  csr_owner_epoch;
     sgx_measurement_t mrenclave;
     sgx_cpu_svn_t     cpu_svn;         /* CPUSVN from CPUSVN register */
@@ -79,6 +83,7 @@ typedef struct {
 typedef struct {
     uint16_t          key_name;        /* should always be 'SGX_KEYSELECT_EINITTOKEN' */
     sgx_attributes_t  tmp_attr;
+    sgx_misc_select_t tmp_misc;
     se_owner_epoch_t  csr_owner_epoch;
     sgx_cpu_svn_t     cpu_svn;         /* CPUSVN from KEYREQUEST */
     sgx_isv_svn_t     isv_svn;         /* ISVSVN from KEYREQUEST */
@@ -92,6 +97,8 @@ typedef struct {
     uint16_t          key_name;        /* should always be 'SGX_KEYSELECT_PROVISION' */
     sgx_attributes_t  tmp_attr;
     sgx_attributes_t  attribute_mask;  /* attribute mask from KEYREQUEST */
+    sgx_misc_select_t tmp_misc;
+    sgx_misc_select_t misc_mask;       /* MiscSelect mask form KEYREQUEST */
     sgx_cpu_svn_t     cpu_svn;         /* CPUSVN from KEYREQUEST */
     sgx_isv_svn_t     isv_svn;         /* ISVSVN from KEYREQUEST */
     sgx_prod_id_t     isv_prod_id;     /* ISV PRODID from SECS   */
@@ -101,8 +108,11 @@ typedef struct {
 /* Derive data for provision seal key */
 typedef struct {
     uint16_t             key_name;        /* should always be 'SGX_KEYSELECT_SEAL' */
+    uint16_t             key_policy;      /* Key policy from KEYREQUEST */
     sgx_attributes_t     tmp_attr;
     sgx_attributes_t     attribute_mask;  /* attribute mask from KEYREQUEST */
+    sgx_misc_select_t    tmp_misc;
+    sgx_misc_select_t    misc_mask;       /* MiscSelect mask form KEYREQUEST */
     sgx_cpu_svn_t        cpu_svn;         /* CPUSVN from KEYREQUEST */
     sgx_isv_svn_t        isv_svn;         /* ISVSVN from KEYREQUEST */
     sgx_prod_id_t        isv_prod_id;     /* ISV PRODID from SECS   */
