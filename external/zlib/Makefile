@@ -63,7 +63,7 @@ ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update -f --init $(ZLIB_DIR)
 else
 	$(RM) -r $(ZLIB_DIR)/
-	git clone https://github.com/madler/zlib.git -b v1.2.12 --depth 1 $(ZLIB_DIR)
+	git clone https://github.com/madler/zlib.git -b v1.2.13 --depth 1 $(ZLIB_DIR)
 endif
 
 
