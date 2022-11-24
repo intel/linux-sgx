@@ -41,11 +41,11 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
     int key_type = RSA_TYPE;
 
     if (key_type) {
-        t_print(" generating keys by EC P-384\n");
+        PRINT(" generating keys by EC P-384\n");
     }
     else
     {
-        t_print(" generating keys by RSA 3072\n");
+        PRINT(" generating keys by RSA 3072\n");
     }
     result = generate_key_pair(
         key_type, &public_key_buffer,
@@ -54,14 +54,14 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
         &private_key_buffer_size);
     if (result != SGX_SUCCESS)
     {
-        t_print(" failed to generate RSA key pair\n");
+        PRINT(" failed to generate RSA key pair\n");
         goto done;
     }
 
-    t_print("public_key_buf_size:[%ld]\n", public_key_buffer_size);
-    t_print("%s\n", public_key_buffer);
-	t_print("private_key_buf_size:[%ld]\n", private_key_buffer_size);
-	t_print("%s\n", private_key_buffer);
+    PRINT("public_key_buf_size:[%ld]\n", public_key_buffer_size);
+    PRINT("%s\n", public_key_buffer);
+	PRINT("private_key_buf_size:[%ld]\n", private_key_buffer_size);
+	PRINT("%s\n", private_key_buffer);
     qresult = tee_get_certificate_with_evidence(
         certificate_subject_name,
         private_key_buffer,
@@ -74,7 +74,7 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
     if (qresult != SGX_QL_SUCCESS || output_certificate == nullptr)
     {
         if (output_certificate == nullptr)
-            t_print(" null certificate\n");
+            PRINT(" null certificate\n");
         p_sgx_tls_qe_err_msg(qresult);
         goto done;
     }
@@ -91,18 +91,18 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
              &certificate_buffer_ptr,
              (long)output_certificate_size)) == nullptr)
     {
-        t_print("Failed to convert DER format certificate to X509 structure\n");
+        PRINT("Failed to convert DER format certificate to X509 structure\n");
         goto done;
     }
     mem = BIO_new_mem_buf((void*)private_key_buffer, -1);
     if (!mem)
     {
-        t_print("Failed to convert private key buf into BIO_mem\n");
+        PRINT("Failed to convert private key buf into BIO_mem\n");
         goto done;
     }
     if ((pkey = PEM_read_bio_PrivateKey(mem, nullptr, 0, nullptr)) == nullptr)
     {
-        t_print("Failed to convert private key buffer into EVP_KEY format\n");
+        PRINT("Failed to convert private key buffer into EVP_KEY format\n");
         goto done;
     }
 
@@ -130,32 +130,32 @@ sgx_status_t load_tls_certificates_and_keys(
 
     if (generate_certificate_and_pkey(certificate, pkey) != SGX_SUCCESS)
     {
-        t_print("Cannot generate certificate and pkey\n");
+        PRINT("Cannot generate certificate and pkey\n");
         goto exit;
     }
 
     if (certificate == nullptr)
     {
-        t_print("null cert\n");
+        PRINT("null cert\n");
         goto exit;
     }
 
     if (!SSL_CTX_use_certificate(ctx, certificate))
     {
-        t_print("Cannot load certificate on the server\n");
+        PRINT("Cannot load certificate on the server\n");
         goto exit;
     }
 
     if (!SSL_CTX_use_PrivateKey(ctx, pkey))
     {
-        t_print("Cannot load private key on the server\n");
+        PRINT("Cannot load private key on the server\n");
         goto exit;
     }
 
     /* verify private key */
     if (!SSL_CTX_check_private_key(ctx))
     {
-        t_print("Private key does not match the public certificate\n");
+        PRINT("Private key does not match the public certificate\n");
         goto exit;
     }
     result = SGX_SUCCESS;
@@ -185,7 +185,7 @@ sgx_status_t initalize_ssl_context(SSL_CONF_CTX*& ssl_conf_ctx, SSL_CTX*& ctx)
     if ((ssl_conf_return_value =
              SSL_CONF_cmd(ssl_conf_ctx, "MinProtocol", "TLSv1.2")) < 0)
     {
-        t_print(
+        PRINT(
             "Setting MinProtocol for ssl context configuration failed with "
             "error %d \n",
             ssl_conf_return_value);
@@ -194,7 +194,7 @@ sgx_status_t initalize_ssl_context(SSL_CONF_CTX*& ssl_conf_ctx, SSL_CTX*& ctx)
     if ((ssl_conf_return_value =
              SSL_CONF_cmd(ssl_conf_ctx, "MaxProtocol", "TLSv1.3")) < 0)
     {
-        t_print(
+        PRINT(
             "Setting MaxProtocol for ssl context configuration failed with "
             "error %d \n",
             ssl_conf_return_value);
@@ -203,7 +203,7 @@ sgx_status_t initalize_ssl_context(SSL_CONF_CTX*& ssl_conf_ctx, SSL_CTX*& ctx)
     if ((ssl_conf_return_value = SSL_CONF_cmd(
              ssl_conf_ctx, "CipherString", cipher_list_tlsv12_below)) < 0)
     {
-        t_print(
+        PRINT(
             "Setting CipherString for ssl context configuration failed with "
             "error %d \n",
             ssl_conf_return_value);
@@ -212,7 +212,7 @@ sgx_status_t initalize_ssl_context(SSL_CONF_CTX*& ssl_conf_ctx, SSL_CTX*& ctx)
     if ((ssl_conf_return_value = SSL_CONF_cmd(
              ssl_conf_ctx, "Ciphersuites", cipher_list_tlsv13)) < 0)
     {
-        t_print(
+        PRINT(
             "Setting Ciphersuites for ssl context configuration failed with "
             "error %d \n",
             ssl_conf_return_value);
@@ -221,7 +221,7 @@ sgx_status_t initalize_ssl_context(SSL_CONF_CTX*& ssl_conf_ctx, SSL_CTX*& ctx)
     if ((ssl_conf_return_value =
              SSL_CONF_cmd(ssl_conf_ctx, "Curves", supported_curves)) < 0)
     {
-        t_print(
+        PRINT(
             "Setting Curves for ssl context configuration failed with error %d "
             "\n",
             ssl_conf_return_value);
@@ -229,7 +229,7 @@ sgx_status_t initalize_ssl_context(SSL_CONF_CTX*& ssl_conf_ctx, SSL_CTX*& ctx)
     }
     if (!SSL_CONF_CTX_finish(ssl_conf_ctx))
     {
-        t_print("Error finishing ssl context configuration \n");
+        PRINT("Error finishing ssl context configuration \n");
         goto exit;
     }
     ret = SGX_SUCCESS;
@@ -258,18 +258,18 @@ int read_from_session_peer(
             if (error == SSL_ERROR_WANT_READ)
                 continue;
 
-            t_print("Failed! SSL_read returned error=%d\n", error);
+            PRINT("Failed! SSL_read returned error=%d\n", error);
             ret = bytes_read;
             break;
         }
 
-        t_print(" %d bytes read from session peer\n", bytes_read);
+        PRINT(" %d bytes read from session peer\n", bytes_read);
 
         // check to see if received payload is expected
         if ((bytes_read != payload_length) ||
             (memcmp(payload, buffer, bytes_read) != 0))
         {
-            t_print(
+            PRINT(
                 "ERROR: expected reading %lu bytes but only "
                 "received %d bytes\n",
                 payload_length,
@@ -279,7 +279,7 @@ int read_from_session_peer(
         }
         else
         {
-            t_print(" received all the expected data from the session peer\n\n");
+            PRINT(" received all the expected data from the session peer\n\n");
             ret = 0;
             break;
         }
@@ -303,12 +303,12 @@ int write_to_session_peer(
         int error = SSL_get_error(ssl_session, bytes_written);
         if (error == SSL_ERROR_WANT_WRITE)
             continue;
-        t_print("Failed! SSL_write returned %d\n", error);
+        PRINT("Failed! SSL_write returned %d\n", error);
         ret = bytes_written;
         goto exit;
     }
 
-    t_print("%lu bytes written to session peer\n\n", payload_length);
+    PRINT("%lu bytes written to session peer\n\n", payload_length);
 exit:
     return ret;
 }

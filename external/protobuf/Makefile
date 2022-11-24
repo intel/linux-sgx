@@ -70,7 +70,7 @@ ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update -f --init $(PB_DIR)
 else
 	$(RM) -r $(PB_DIR)/
-	git clone https://github.com/protocolbuffers/protobuf.git -b 3.20.x --depth 1 $(PB_DIR)
+	git clone https://github.com/protocolbuffers/protobuf.git -b v3.20.1 --depth 1 $(PB_DIR)
 endif
 
 

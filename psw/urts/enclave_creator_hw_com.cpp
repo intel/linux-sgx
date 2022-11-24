@@ -39,9 +39,12 @@
 #include "se_error_internal.h"
 #include "prd_css_util.h"
 #include "se_memcpy.h"
+#include "se_detect.h"
 #include <unistd.h>
 
 #define EDMM_ENABLE_BIT 0x1ULL
+#define ARCH_REQ_XCOMP_PERM 0x1023
+extern "C" int arch_prctl(int code, unsigned long addr);
 
 bool EnclaveCreatorHW::use_se_hw() const
 {
@@ -65,7 +68,7 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
     init_cpuinfo((uint32_t *)info.cpuinfo_table);
     info.system_feature_set[0] |= (1ULL << SYS_FEATURE_EXTEND);
     info.size = sizeof(system_features_t);
-    info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_2_3, enclave->get_enclave_version());
+    info.version = (sdk_version_t)MIN((uint32_t)SDK_VERSION_3_0, enclave->get_enclave_version());
     info.sealed_key = enclave->get_sealed_key();
     info.cpu_core_num = (uint32_t)sysconf(_SC_NPROCESSORS_ONLN);
     if (is_EDMM_supported(enclave_id))
@@ -153,6 +156,13 @@ int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
     if(~(se_cap.misc_select) & (enclave_css->body.misc_select & enclave_css->body.misc_mask))
         return SGX_ERROR_INVALID_MISC;
 
+    if(secs_attr->xfrm & (1 << AMX_TILEDATA_SHIFT))
+    {
+        if(0 != arch_prctl(ARCH_REQ_XCOMP_PERM, AMX_TILEDATA_SHIFT))
+        {
+            return SGX_ERROR_UNEXPECTED;
+        }
+    }
     // try to use maximum ablity of cpu
     sgx_misc_attr->misc_select = se_cap.misc_select & enclave_css->body.misc_select;
 

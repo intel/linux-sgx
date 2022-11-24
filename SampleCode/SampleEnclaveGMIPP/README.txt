@@ -9,11 +9,14 @@ More details about GM SM2/SM3/SM4 functions in IPP, please refer to IPP official
 How to Build/Execute the Sample Code
 ------------------------------------
 1. Install Intel(R) SGX SDK for Linux* OS
-2. Make sure your environment is set:
+2. Enclave test key(two options):
+    a. Install openssl first, then the project will generate a test key<Enclave_private_test.pem> automatically when you build the project.
+    b. Rename your test key(3072-bit RSA private key) to <Enclave_private_test.pem> and put it under the <Enclave> folder.
+3. Make sure your environment is set:
     $ source ${sgx-sdk-install-path}/environment
-3. Ensure IPP header file folder is included in Makefile:
+4. Ensure IPP header file folder is included in Makefile:
 	Enclave_Include_Paths := [other Enclave_Include_Paths] -I$(SGX_SDK)/include/ipp
-4. Build the project with the prepared Makefile:
+5. Build the project with the prepared Makefile:
     a. Hardware Mode, Debug build:
         1) Enclave with no mitigation:
             $ make
@@ -41,6 +44,6 @@ How to Build/Execute the Sample Code
         $ make SGX_MODE=SIM SGX_PRERELEASE=1 SGX_DEBUG=0
     f. Simulation Mode, Release build:
         $ make SGX_MODE=SIM SGX_DEBUG=0
-5. Execute the binary directly:
+6. Execute the binary directly:
     $ ./app
-6. Remember to "make clean" before switching build mode
+7. Remember to "make clean" before switching build mode

@@ -94,6 +94,29 @@ SGX_FILE* SGXAPI sgx_fopen(const char* filename, const char* mode, const sgx_key
 SGX_FILE* SGXAPI sgx_fopen_auto_key(const char* filename, const char* mode);
 
 
+/* sgx_fopen_ex
+ *  Purpose: Expert version of sgx_fopen/sgx_fopen_auto_key which is used if you want to control the internal `cache size`.
+ *           The specified `cache size` must be page (4KB by default) aligned.
+ *           Note that `sgx_fexport_auto_key` and `sgx_fimport_auto_key` don't support configuring `cache_size` right now
+ *
+ *  Parameters:
+ *      filename - [IN] the name of the file to open/create.
+ *      mode - [IN] open mode. only supports 'r' or 'w' or 'a' (one and only one of them must be present), and optionally 'b' and/or '+'.
+ *      key - [IN] encryption key that will be used for the file encryption.
+ *            If it's NULL, we will swtich back to `sgx_fopen_auto_key and use enclave's seal key to protect the file
+ *      NOTE - the key is actually used as a KDK (key derivation key) and only for the meta-data node, and not used directly for the encryption of any part of the file
+ *             this is important in order to prevent hitting the key wear-out problem, and some other issues with GCM encryptions using the same key
+ *      cache_size - [IN] Internal cache size in byte, which used to cache R/W data in enclave before flush to actual file
+ *                   It must larger than default cache size (192KB), and must be page (4KB by default) aligned
+ *                   a) Please make sure enclave heap is enough for the `cache`, e.g. Configure enough heap in enclave config file
+ *                   b) All the data in cache may lost after exeception, please try to call `sgx_fflush` explicitly to avoid data loss
+ *
+ *  Return value:
+ *     SGX_FILE*  - pointer to the newly created file handle, NULL if an error occurred - check errno for the error code.
+*/
+SGX_FILE* SGXAPI sgx_fopen_ex(const char* filename, const char* mode, const sgx_key_128bit_t *key, const uint64_t cache_size);
+
+
 /* sgx_fwrite
  *  Purpose: write data to a file (see c++ fwrite documentation for more details).
  *

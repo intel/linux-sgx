@@ -66,6 +66,7 @@ SOCKETINCDIR = $(SOCKET_DIR)/include #socket EDL search path
 SSLINCDIR = $(SGXSSL_PKG_PATH)/include
 ENC_TLS_CLIENT_Name := tls_client_enclave.so
 Signed_ENC_TLS_CLIENT_Name := tls_client_enclave.signed.so
+Enclave_Test_Key := private_test_key.pem
 
 .PHONY: all build clean run
 
@@ -89,7 +90,12 @@ build:
 	$(CXX) -o $(ENC_TLS_CLIENT_Name) $(OBJ_FILES) $(Enclave_Link_Flags)
 
 sign:
-	$(SGX_ENCLAVE_SIGNER) sign -key private_test_key.pem -enclave $(ENC_TLS_CLIENT_Name) \
+ifeq ($(wildcard $(Enclave_Test_Key)),)
+	@echo "There is no enclave test key<Enclave_private_test.pem>."
+	@echo "The project will generate a key<Enclave_private_test.pem> for test."
+	@openssl genrsa -out $(Enclave_Test_Key) -3 3072
+endif
+	$(SGX_ENCLAVE_SIGNER) sign -key $(Enclave_Test_Key) -enclave $(ENC_TLS_CLIENT_Name) \
 		-out $(Signed_ENC_TLS_CLIENT_Name) -config client_enc.config.xml
 
 clean:

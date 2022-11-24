@@ -89,7 +89,10 @@ __thread pthread_info pthread_info_tls = {NULL, NULL, {0, 0, 0, 0, 0, 0, 0, 0}, 
 
 bool _pthread_enabled(void)
 {
-    pthread_info_tls.m_local_storage = NULL;
+    if(is_tcs_binding_mode() == false)
+    {
+        pthread_info_tls.m_local_storage = NULL;
+    }
     pthread_info_tls.m_pthread = NULL;
     pthread_info_tls.m_state = SGX_SUCCESS;
     memset((char*)&pthread_info_tls.m_mark, 0x00, sizeof(jmp_buf));
@@ -361,7 +364,12 @@ int pthread_join(pthread_t thread, void **retval)
  */
 pthread_t pthread_self(void)
 {
-    return (pthread_t)(pthread_info_tls.m_pthread);
+    pthread_t t = (pthread_t)(pthread_info_tls.m_pthread);
+    // For threads that are created outside enclave t value is NULL
+    if (!t) {
+        return (pthread_t)(sgx_thread_self());
+    }
+    return t;
 }
 
 /*

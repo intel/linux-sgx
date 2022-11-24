@@ -46,7 +46,6 @@
 #include <time.h>
 #include "sgx_enclave_common.h"
 #include <map>
-
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/crypto.h>
@@ -307,45 +306,4 @@ bool EnclaveCreatorSim::get_plat_cap(sgx_misc_attribute_t *se_attr)
     UNUSED(se_attr);
     return false;
 }
-
-int EnclaveCreatorSim::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
-{
-    UNUSED(addr);
-    UNUSED(size);
-    UNUSED(flag);
-
-    return SGX_SUCCESS;
-}
-
-int EnclaveCreatorSim::mktcs(uint64_t tcs_addr)
-{
-    UNUSED(tcs_addr);
-
-    return SGX_SUCCESS;
-}
-
-int EnclaveCreatorSim::trim_range(uint64_t fromaddr, uint64_t toaddr)
-{
-    UNUSED(fromaddr);
-    UNUSED(toaddr);
-
-    return SGX_SUCCESS;
-
-}
-
-int EnclaveCreatorSim::trim_accept(uint64_t addr)
-{
-    UNUSED(addr);
-
-    return SGX_SUCCESS;
-}
-
-int EnclaveCreatorSim::remove_range(uint64_t fromaddr, uint64_t numpages)
-{
-    UNUSED(fromaddr);
-    UNUSED(numpages);
-
-    return SGX_SUCCESS;
-}
-
 

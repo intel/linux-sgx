@@ -87,6 +87,10 @@ static const sample_ec_pub_t g_sp_pub_key = {
     }
 };
 
+// This is a hardcode sgx_ql_att_key_id_list_t with one sgx_att_key_id_ext_t in
+// it. The sgx_att_key_id_ext_t consists of the intel QE3's measurements.
+// Using this hardcode sgx_ql_att_key_id_list_t ensures the AESM will only use
+// Intel QE3 to generate the ECDSA quote.
 const uint8_t g_ecdsa_p256_att_key_id_list[] = {
     0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x8c, 0x4f,
@@ -122,6 +126,13 @@ const uint8_t g_ecdsa_p256_att_key_id_list[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
+
+// This is a hardcode sgx_ql_att_key_id_list_t with one sgx_att_key_id_ext_t in
+// it. The sgx_att_key_id_ext_t consists of the intel EPID QE's measurements.
+// Using this hardcode sgx_ql_att_key_id_list_t ensures the AESM will only use
+// Intel EPID QE to generate the EPID quote. It also set att_key_type to
+// SGX_UNLINKABLE_SIGNATURE(0), so Intel EPID QE will generate an unlinkable
+// EPID quote.
 const uint8_t g_epid_unlinkable_att_key_id_list[] = {
     0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0xec, 0x15,

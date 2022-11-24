@@ -32,13 +32,17 @@
 #ifndef _SL_ATOMIC_H_
 #define _SL_ATOMIC_H_
 
+#include <stdlib.h>
 #include <sl_types.h>
 #include "sgx_lfence.h"
 
-
+// check 8-byte-aligned to the untrusted address.
+//if the check fails, it should be hacked. call abort directly
+#define CHECK_ALIGNMENT(x)             if (((uint64_t)x) % 8 != 0) abort();
 
 static inline void lock_or64(volatile uint64_t* p, uint64_t v)
 {
+    CHECK_ALIGNMENT(p);
     __asm__( "lock ; orq %1, %0"
         : "=m"(*p) : "r"(v) : "memory" );
 }
@@ -47,6 +51,7 @@ static inline void lock_or64(volatile uint64_t* p, uint64_t v)
 
 static inline void lock_and64(volatile uint64_t *p, uint64_t v)
 {
+    CHECK_ALIGNMENT(p);
     __asm__( "lock ; andq %1, %0"
              : "=m"(*p) : "r"(v) : "memory" );
 }
@@ -55,6 +60,7 @@ static inline void lock_and64(volatile uint64_t *p, uint64_t v)
 
 static inline uint64_t lock_cmpxchg64(volatile uint64_t *p, uint64_t old_val, uint64_t new_val)
 {
+    CHECK_ALIGNMENT(p);
     __asm__( "lock ; cmpxchgq %3, %1"
         : "=a"(old_val), "=m"(*p) : "a"(old_val), "r"(new_val) : "memory" );
     return old_val;
@@ -69,6 +75,7 @@ static inline void* lock_cmpxchg_ptr(void * volatile *p, void* old_val, void* ne
 
 static inline uint64_t xchg64(volatile uint64_t* x, uint64_t v)
 {
+    CHECK_ALIGNMENT(x);
     __asm__( "xchgq %0, %1" : "=r"(v), "=m"(*x) : "0"(v) : "memory" );
     return v;
 }
@@ -77,6 +84,7 @@ static inline uint64_t xchg64(volatile uint64_t* x, uint64_t v)
 
 static inline void lock_inc64(volatile uint64_t *x)
 {
+    CHECK_ALIGNMENT(x);
     __asm__( "lock ; incq %0" : "=m"(*x) : "m"(*x) : "memory" );
 }
 
@@ -84,6 +92,7 @@ static inline void lock_inc64(volatile uint64_t *x)
 
 static inline void lock_dec64(volatile uint64_t *x)
 {
+    CHECK_ALIGNMENT(x);
     __asm__( "lock ; decq %0" : "=m"(*x) : "m"(*x) : "memory" );
 }
 

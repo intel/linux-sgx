@@ -37,7 +37,7 @@
 
 #include <sgx_trts.h>
 
-bool protected_fs_file::flush(/*bool mc*/)
+bool protected_fs_file::flush()
 {
 	bool result = false;
 
@@ -56,7 +56,7 @@ bool protected_fs_file::flush(/*bool mc*/)
 		return false;
 	}
 	
-	result = internal_flush(/*mc,*/ true);
+	result = internal_flush(true);
 	if (result == false)
 	{
 		assert(file_status != SGX_FILE_STATUS_OK);
@@ -70,18 +70,11 @@ bool protected_fs_file::flush(/*bool mc*/)
 }
 
 
-bool protected_fs_file::internal_flush(/*bool mc,*/ bool flush_to_disk)
+bool protected_fs_file::internal_flush(bool flush_to_disk)
 {
 	if (need_writing == false) // no changes at all
 		return true;
 
-/*
-	if (mc == true && encrypted_part_plain.mc_value > (UINT_MAX-2))
-	{
-		last_error = SGX_ERROR_FILE_MONOTONIC_COUNTER_AT_MAX;
-		return false;
-	}
-*/
 	if (encrypted_part_plain.size > MD_USER_DATA_SIZE && root_mht.need_writing == true) // otherwise it's just one write - the meta-data node
 	{
 		if (_RECOVERY_HOOK_(0) || write_recovery_file() != true)
@@ -104,44 +97,17 @@ bool protected_fs_file::internal_flush(/*bool mc,*/ bool flush_to_disk)
 		}
 	}
 
-/*
-	sgx_status_t status;
-
-	if (mc == true)
-	{
-		// increase monotonic counter local value - only if everything is ok, we will increase the real counter
-		if (encrypted_part_plain.mc_value == 0)
-		{
-			// no monotonic counter so far, need to create a new one
-			status = sgx_create_monotonic_counter(&encrypted_part_plain.mc_uuid, &encrypted_part_plain.mc_value);
-			if (status != SGX_SUCCESS)
-			{
-				clear_update_flag();
-				file_status = SGX_FILE_STATUS_FLUSH_ERROR;
-				last_error = status;
-				return false;
-			}
-		}
-		encrypted_part_plain.mc_value++;
-	}
-*/
 	if (_RECOVERY_HOOK_(3) || update_meta_data_node() != true)
 	{
 		clear_update_flag();
-		/*
-		if (mc == true)
-			encrypted_part_plain.mc_value--; // don't have to do this as the file cannot be fixed, but doing it anyway to prevent future errors
-		*/
+
 		file_status = SGX_FILE_STATUS_CRYPTO_ERROR; // this is something that shouldn't happen, can't fix this...
 		return false;
 	}
 
 	if (_RECOVERY_HOOK_(4) || write_all_changes_to_disk(flush_to_disk) != true)
 	{
-		//if (mc == false)
-			file_status = SGX_FILE_STATUS_WRITE_TO_DISK_FAILED; // special case, need only to repeat write_all_changes_to_disk in order to repair it
-		//else
-			//file_status = SGX_FILE_STATUS_WRITE_TO_DISK_FAILED_NEED_MC; // special case, need to repeat write_all_changes_to_disk AND increase the monotonic counter in order to repair it
+		file_status = SGX_FILE_STATUS_WRITE_TO_DISK_FAILED; // special case, need only to repeat write_all_changes_to_disk in order to repair it
 
 		return false;
 	}
@@ -156,20 +122,7 @@ bool protected_fs_file::internal_flush(/*bool mc,*/ bool flush_to_disk)
 		erase_recovery_file();
 	}
 */
-/*
-	if (mc == true)
-	{
-		uint32_t mc_value;
-		status = sgx_increment_monotonic_counter(&encrypted_part_plain.mc_uuid, &mc_value);
-		if (status != SGX_SUCCESS)
-		{
-			file_status = SGX_FILE_STATUS_MC_NOT_INCREMENTED; // special case - need only to increase the MC in order to repair it
-			last_error = status;
-			return false;
-		}
-		assert(mc_value == encrypted_part_plain.mc_value);
-	}
-*/
+
 	return true;
 }
 
@@ -545,5 +498,3 @@ void protected_fs_file::erase_recovery_file()
 	status = u_sgxprotectedfs_remove(&result32, recovery_filename);
 	(void)status; // don't care if it succeeded or failed...just remove the warning
 }
-
-

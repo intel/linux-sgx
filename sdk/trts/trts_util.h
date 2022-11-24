@@ -60,6 +60,10 @@ bool is_utility_thread();
 size_t get_max_tcs_num();
 bool is_pkru_enabled();
 
+bool is_tcs_binding_mode();
+
+size_t get_xsave_size();
+
 #ifdef __cplusplus
 }
 #endif

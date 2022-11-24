@@ -2,6 +2,7 @@
  The audience is assumed to be familiar:
  [What is an Attested TLS channel](AttestedTLSREADME.md#what-is-an-attested-tls-channel)
 
+ The `QuoteGenerationSample` and `QuoteVerificationSample` can be run successfully on server and client machines. (`tdx-quote-generation-sample` and `tdx-quote-verification-sample` for TDX)
 # The Attested TLS sample
 
 It has the following properties:
@@ -39,7 +40,7 @@ Note: Both of them can run on the same machine or separate machines.
   - Host part (tls_server_host)
     - Instantiate an enclave before transitioning the control into the enclave via an ecall.
   - Enclave (tls_server_enclave.signed.so)
-    - Call tee_get_certificate_with_evidence to generate an certificate
+    - Call tee_get_certificate_with_evidence to generate a certificate
     - Use SgxSSL API to configure a TLS server using the generated certificate
     - Launch a TLS server and wait for client connection request
     - Read client payload and reply with server payload
@@ -71,6 +72,36 @@ Note: Both of them can run on the same machine or separate machines.
 ```
 ./non_enc_client/tls_non_enc_client -server:localhost -port:12341
 ```
+
+## TDX Sample Configration
+
+The sample supports creating attested TLS channel between:
+- two TD-guests
+- TD-guest and SGX enclave
+- TD-guest and non TEE environment
+
+> **Note**: 
+> In order to connect to the port on guest TD from host or other machihnes, port forwarding needs to be set using QEMU command when starting the guest TD.  
+Use the following QEMU command:
+>```
+>hostfwd=tcp::HOSTPORT-:GUESTPORT
+>```
+
+### TDX server application
+
+  - Call tee_get_certificate_with_evidence to generate a certificate
+  - Use OpenSSL API to configure a TLS server using the generated certificate
+  - Launch a TLS server and wait for client connection request
+  - Read client payload and reply with server payload
+  - To run TDX server application, copy `./server_tdx/tls_server` to TD-guest and run the following command:
+
+  ```
+./tls_server -port:12341
+  ```
+
+### TDX client application
+
+The TDX client applicaiton is the same as non-enclave client application, except that it is running in guest TD.
 
 ## Build and run
   ```bash

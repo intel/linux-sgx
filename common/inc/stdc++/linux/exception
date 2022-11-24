@@ -61,8 +61,16 @@ namespace std
         virtual const char* what() const throw();
     };
 
+#  if  __cplusplus < 201103L
     bool uncaught_exception() throw();
-	
+#  elif __cplusplus <= 201703L
+    bool uncaught_exception() noexcept;
+#  endif
+
+#  if  __cplusplus >= 201703L
+    int uncaught_exceptions() noexcept;
+#  endif
+
     typedef void (*unexpected_handler)();
     unexpected_handler set_unexpected(unexpected_handler) throw();
     void unexpected();

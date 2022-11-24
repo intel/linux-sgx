@@ -83,7 +83,9 @@ typedef enum _para_type_t
     ENCLAVEIMAGEADDRESS,
     ELRANGESTARTADDRESS,
     ELRANGESIZE,
-    PKRU
+    PKRU,
+    AMX,
+    USERREGIONSIZE
 } para_type_t;
 
 typedef struct _xml_parameter_t
@@ -106,6 +108,11 @@ public:
     CMetadata(metadata_t *metadata, BinParser *parser);
     ~CMetadata();
     bool build_metadata(const xml_parameter_t *parameter);
+    bool rts_dynamic();
+    bool user_dynamic();
+    sgx_misc_select_t get_config_misc_select();
+    sgx_misc_select_t get_config_misc_mask();
+    uint8_t get_meta_versions() { return m_meta_verions; }
 private:
     bool get_time(uint32_t *date);
     bool modify_metadata(const xml_parameter_t *parameter);
@@ -128,6 +135,9 @@ private:
     void* get_rawdata_by_rva(uint64_t rva);
     bool vaildate_elrange_config();
     bool build_elrange_config_entry();
+    uint64_t calculate_rts_bk_overhead();
+    bool check_config();
+    uint8_t m_meta_verions;
 
     metadata_t *m_metadata;
     BinParser *m_parser;

@@ -35,9 +35,9 @@ project_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "project_dir is $project_dir"
 sgxssl_dir=$project_dir/sgxssl
 openssl_out_dir=$sgxssl_dir/openssl_source
-openssl_ver_name=openssl-1.1.1m
+openssl_ver_name=openssl-1.1.1q
 sgxssl_github_archive=https://github.com/01org/intel-sgx-ssl/archive
-sgxssl_file_name=support_tls_lin_1.1.1m
+sgxssl_file_name=support_tls_lin_1.1.1q
 build_script=$sgxssl_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
 full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
@@ -56,8 +56,8 @@ if [ $debug == true ] ; then
 	read -n 1 -p "download souce code only, because we need to build ourselves"
 fi
 
-openssl_chksum=f89199be8b23ca45fc7cb9f1d8d3ee67312318286ad030f5316aca6462db6c96
-sgxssl_chksum=e645b5e9b0d81da4470d454b7f7d838cc310dd72427bd343bfe744c82493b39e
+openssl_chksum=d7939ce614029cdff0b6c20f0e2e5703158a489a72b2507b8bd51bf8c8fd10ca
+sgxssl_chksum=0ab6f62bda33e760422d502ba4812d058e50516ebb82e6c7713c78f580a7d622
 rm -f check_sum_openssl.txt check_sum_sgxssl.txt
 if [ ! -f $build_script ]; then
     wget $sgxssl_github_archive/$sgxssl_file_name.zip -P $sgxssl_dir/ || exit 1

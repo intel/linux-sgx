@@ -52,11 +52,13 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
            -I$(LINUX_SDK_DIR)/tlibcxx/include \
            -I$(SGX_QV_PATH)/QvE/Include \
            -I$(SGX_QV_PATH)/../QuoteGeneration/quote_wrapper/common/inc \
+           -I$(SGX_QV_PATH)/../QuoteGeneration/quote_wrapper/tdx_attest \
            -I$(SGX_QV_PATH)/../QuoteGeneration/pce_wrapper/inc \
            -I$(SGX_QV_PATH)/dcap_tvl \
            -include./tsgxsslio.h \
            -I$(PREBUILT_OPENSSL_PATH)/inc
 
+CXXFLAGS_TDX := $(CXXFLAGS) $(COMMON_FLAGS) $(COMMON_LDFLAGS) -fPIC -Werror -Wno-unused-parameter -g
 CXXFLAGS += $(COMMON_FLAGS) $(ENCLAVE_CXXFLAGS)
 
 EDGER8R_DIR    := $(LINUX_SDK_DIR)/edger8r/linux
@@ -65,12 +67,15 @@ EDGER8R        := $(EDGER8R_DIR)/_build/Edger8r.native
 SRC := $(wildcard *.cpp)
 
 OBJ := $(sort $(SRC:.cpp=.o))
+OBJ_TDX := $(addprefix tdx_, $(OBJ))
 
 LIBNAME := libsgx_ttls.a
+LIBNAME_TDX := libtdx_tls.a
 
 .PHONY: all PREPARE_SGX_SSL
-all: $(LIBNAME) | $(BUILD_DIR)
+all: $(LIBNAME) $(LIBNAME_TDX) | $(BUILD_DIR)
 	$(CP) $(LIBNAME) $|
+	$(CP) $(LIBNAME_TDX) $|
 
 $(TLSNAME)_t.h: $(EDLFILE) $(EDGER8R)
 	$(EDGER8R) --trusted --header-only --search-path $(TOP_DIR)/common/inc $<
@@ -81,9 +86,14 @@ $(EDGER8R):
 $(LIBNAME): $(OBJ)
 	$(AR) rs $@ $(OBJ)
 
+$(LIBNAME_TDX): $(OBJ_TDX)
+	$(AR) rs $@ $^
+
 $(OBJ): $(TLSNAME)_t.h
 $(OBJ): %.o :%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
+$(OBJ_TDX): tdx_%.o :%.cpp
+	$(CXX) $(CXXFLAGS_TDX) $(INCLUDE) -DTDX_ENV -c $< -o $@
 
 .PHONY: clean
 clean:
@@ -91,6 +101,7 @@ clean:
 	@$(RM) $(COMMON_DIR)/src/*.o
 	@$(RM) *_t.* *_u.*
 	@$(RM) $(LIBNAME) $(BUILD_DIR)/$(LIBNAME)
+	@$(RM) $(LIBNAME_TDX) $(BUILD_DIR)/$(LIBNAME_TDX)
 	$(MAKE) -C $(EDGER8R_DIR) clean
 
 .PHONY: rebuild

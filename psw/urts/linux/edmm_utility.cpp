@@ -41,7 +41,7 @@
 #include <sys/ioctl.h>
 #include <errno.h>
 #include <stdio.h>
-
+#include <string.h>
 #define SGX_URTS_CMD "for f in $(find /usr/$(basename $(gcc -print-multi-os-directory)) -name 'libsgx_urts.so' 2> /dev/null); do strings $f|grep 'SGX_URTS_VERSION_2'; done"
 #define SGX_CPUID    0x12
 
@@ -102,11 +102,6 @@ bool get_driver_type(int *driver_type)
     int hdev = open("/dev/sgx/enclave", O_RDWR);    //attempt to open the in-kernel driver
     if (-1 == hdev)
     {
-        //if /dev/sgx/enclave is not present, try to open /dev/sgx_enclave
-        hdev = open("/dev/sgx_enclave", O_RDWR);
-    }
-    if (-1 == hdev)
-    {
         hdev = open("/dev/isgx", O_RDWR);    //attempt to open the out-of-tree driver
         if (-1 == hdev)
         {
@@ -155,11 +150,6 @@ extern "C" bool open_se_device(int driver_type, int *hdevice)
     if (driver_type == SGX_DRIVER_IN_KERNEL)
     {
         *hdevice = open("/dev/sgx/enclave", O_RDWR);    //attempt to open the in-kernel driver
-        //if /dev/sgx/enclave is not present, try to open /dev/sgx_enclave
-        if(-1 == *hdevice)
-        {
-            *hdevice = open("/dev/sgx_enclave", O_RDWR);
-        }
     }
     else if (driver_type == SGX_DRIVER_DCAP)
     {
@@ -236,8 +226,17 @@ extern "C" bool is_cpu_support_edmm()
 */
 extern "C" bool is_driver_support_edmm(int hdevice)
 {
-    if (-1 == hdevice)
-        return false;
+    if (-1 == hdevice){
+        if(!open_se_device(SGX_DRIVER_IN_KERNEL, &hdevice))
+            return false;
+        struct sgx_enclave_restrict_permissions  ioc;
+        memset(&ioc, 0, sizeof(ioc));
+
+        int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS, &ioc);
+        bool supported = ret != -1 || (errno != ENOTTY);
+        close_se_device(&hdevice);
+        return supported;
+    }
 
     sgx_modification_param param;
     param.flags = 0;

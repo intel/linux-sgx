@@ -47,10 +47,6 @@
 const unsigned char certificate_subject_name[] =
     "CN=Intel SGX Enclave, O=Intel Corporation,C=US";
 
-void t_time(time_t *c_time);
-
-void t_print(const char* fmt, ...);
-
 sgx_status_t generate_key_pair(
     int type,
 	uint8_t** public_key,

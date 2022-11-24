@@ -35,6 +35,7 @@
 #include <sgx_defs.h>
 #include <stddef.h>
 #include <exception>
+#include <stdlib.h>
 
 
 namespace std
@@ -49,21 +50,45 @@ namespace std
 	 * handler and a bad allocation exception is thrown if an allocation fails.
 	 */
 	new_handler set_new_handler(new_handler handler);
+
+    enum class align_val_t : size_t { };
+
+    inline void* __libcpp_aligned_alloc(size_t __alignment, size_t __size) {
+        void* __result = nullptr;
+        ::posix_memalign(&__result, __alignment, __size);
+         return __result;
+    }
+
+    inline void __libcpp_aligned_free(void* __ptr) {
+        ::free(__ptr);
+    }
 };
 
 void* SGXAPI operator new (size_t);
+void* SGXAPI operator new (size_t, std::align_val_t);
 void* SGXAPI operator new[] (size_t);
+void* SGXAPI operator new[] (size_t, std::align_val_t);
 
 void* SGXAPI operator new (size_t, const std::nothrow_t&);
+void* SGXAPI operator new (size_t, std::align_val_t, const std::nothrow_t&);
 inline void* SGXAPI operator new (size_t, void* __p)  {return __p;};
 void* SGXAPI operator new[] (size_t, const std::nothrow_t&);
+void* SGXAPI operator new[] (size_t, std::align_val_t, const std::nothrow_t&);
 inline void* SGXAPI operator new[] (size_t, void* __p)  {return __p;};
 
 void SGXAPI operator delete (void*);
+void SGXAPI operator delete (void*, std::align_val_t);
+void SGXAPI operator delete (void*, size_t);
+void SGXAPI operator delete (void*, size_t, std::align_val_t);
 void SGXAPI operator delete (void*, const std::nothrow_t&);
+void SGXAPI operator delete (void*, std::align_val_t, const std::nothrow_t&);
 inline void SGXAPI operator delete (void*, void*){};
 void SGXAPI operator delete[] (void*);
+void SGXAPI operator delete[] (void*, std::align_val_t);
+void SGXAPI operator delete[] (void*, size_t);
+void SGXAPI operator delete[] (void*, size_t, std::align_val_t);
 void SGXAPI operator delete[] (void*, const std::nothrow_t&);
+void SGXAPI operator delete[] (void*, std::align_val_t, const std::nothrow_t&);
 inline void SGXAPI operator delete[] (void*, void*){};
 
 #endif /* _NEW_ */

@@ -65,7 +65,8 @@ typedef enum
     SDK_VERSION_2_0,
     SDK_VERSION_2_1,
     SDK_VERSION_2_2,
-    SDK_VERSION_2_3
+    SDK_VERSION_2_3,
+    SDK_VERSION_3_0,
 } sdk_version_t;
 
 typedef struct _system_features
@@ -95,6 +96,8 @@ typedef struct _system_features
 #define BUILTIN_OCALL_2  -3
 #define BUILTIN_OCALL_3  -4
 #define BUILTIN_OCALL_4  -5
+#define BUILTIN_OCALL_5  -6
+#define BUILTIN_OCALL_6  -7
 
 typedef enum
 {
@@ -102,10 +105,12 @@ typedef enum
     EDMM_TRIM_COMMIT = BUILTIN_OCALL_2,
     EDMM_MODPR = BUILTIN_OCALL_3,
     EDMM_MPROTECT = BUILTIN_OCALL_4,
+    EDMM_ALLOC = BUILTIN_OCALL_5,
+    EDMM_MODIFY = BUILTIN_OCALL_6,
 }edmm_ocall_t;
 
 
-#define is_builtin_ocall(ocall_val) (((int)ocall_val >= BUILTIN_OCALL_4) && ((int)ocall_val <= BUILTIN_OCALL_1))
+#define is_builtin_ocall(ocall_val) (((int)ocall_val >= BUILTIN_OCALL_6) && ((int)ocall_val <= BUILTIN_OCALL_1))
 
 #pragma pack(pop)
 

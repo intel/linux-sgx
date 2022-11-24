@@ -59,12 +59,12 @@ uint32_t sl_siglines_clone(struct sl_siglines* sglns,
 
     BUG_ON(is_direction_sender(direction) && (handler != NULL));
 
-    uint32_t num_lines = untrusted->num_lines;
+    uint64_t num_lines = untrusted->num_lines;
     if ((num_lines <= 0) || ((num_lines % NBITS_PER_LINE) != 0))
         return EINVAL;
 
     sglns->num_lines = num_lines;
-    uint32_t nlong = num_lines / NBITS_PER_LINE;
+    uint64_t nlong = num_lines / NBITS_PER_LINE;
 
     sl_sigline_t* event_lines_u = untrusted->event_lines;
     if (event_lines_u == NULL)

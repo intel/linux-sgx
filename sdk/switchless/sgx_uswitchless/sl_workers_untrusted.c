@@ -56,7 +56,7 @@ uint32_t sl_workers_init(struct sl_workers* workers,
     workers->handle = handle;
     workers->type = type;
 
-    uint32_t num_workers = type == SL_WORKER_TYPE_UNTRUSTED ?
+    uint64_t num_workers = type == SL_WORKER_TYPE_UNTRUSTED ?
                                     handle->us_config.num_uworkers :
                                     handle->us_config.num_tworkers ;
     workers->num_all = num_workers;
@@ -282,8 +282,8 @@ static uint32_t uworker_process_calls(struct sl_workers* workers)
     struct sl_uswitchless* handle = workers->handle;
     struct sl_call_mngr* ocall_mngr = &handle->us_ocall_mngr;
 
-	uint32_t max_retries = handle->us_config.retries_before_sleep;
-	uint32_t retries = 0;
+	uint64_t max_retries = handle->us_config.retries_before_sleep;
+	uint64_t retries = 0;
 	
 	while (retries < max_retries)
 	{

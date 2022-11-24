@@ -1,0 +1,4 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/build/linux/libsgx_enclave_common.so	<installdir>/lib/libsgx_enclave_common.so	0	main	STP
+<deliverydir>/linux/installer/common/psw-tdx/91-sgx-enclave.rules	<installdir>/etc/udev/rules.d/91-sgx-enclave.rules	0	main	STP
+<deliverydir>/linux/installer/common/psw-tdx/remount-dev-exec.service	<installdir>/usr/lib/systemd/system/remount-dev-exec.service	0	main	STP

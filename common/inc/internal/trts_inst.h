@@ -74,17 +74,13 @@ struct ms_tcs
 extern "C" {
 #endif
 
-int sgx_accept_forward(si_flags_t sfl, size_t lo, size_t hi);
 int do_ereport(const sgx_target_info_t *target_info, const sgx_report_data_t *report_data, sgx_report_t *report);
 int do_everifyreport2(const sgx_report2_mac_struct_t *report2_mac_struct);
 int do_egetkey(const sgx_key_request_t *key_request, sgx_key_128bit_t *key);
 uint32_t do_rdrand(uint32_t *rand);
 int do_eaccept(const sec_info_t *, size_t);
+int do_eacceptcopy(const sec_info_t *, size_t, size_t);
 int do_emodpe(const sec_info_t*, size_t);
-int apply_EPC_pages(void *start_address, size_t page_number);
-int apply_pages_within_exception(void *start_address, size_t page_count);
-int trim_EPC_pages(void *start_address, size_t page_number);
-sgx_status_t SGXAPI trts_mprotect(size_t start, size_t size, uint64_t perms);
 sgx_status_t do_add_thread(void *ms);
 int is_dynamic_thread(void *tcs);
 int is_dynamic_thread_exist(void);

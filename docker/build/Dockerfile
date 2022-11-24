@@ -47,6 +47,7 @@ RUN apt-get update && apt-get install  -y \
     ocamlbuild \
     protobuf-compiler \
     python \
+    reprepro \
     wget
 
 # We assume this docker file is invoked with root at the top of linux-sgx repo, see shell scripts for example.
@@ -61,20 +62,39 @@ RUN sh -c 'echo yes | /linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_*.bin'
 WORKDIR /linux-sgx
 RUN make psw_install_pkg
 
+RUN  make deb_local_repo
 
-FROM ubuntu:18.04 as aesm 
+FROM ubuntu:18.04 as aesm
 RUN apt-get update && apt-get install -y \
     libcurl4 \
     libprotobuf10 \
     libssl1.1 \
     make \
     module-init-tools
- 
+
 WORKDIR /installer
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
 RUN ./sgx_linux_x64_psw*.bin --no-start-aesm
-USER aesmd
 WORKDIR /opt/intel/sgxpsw/aesm/
+ENV LD_LIBRARY_PATH=.
+CMD ./aesm_service --no-daemon
+
+FROM ubuntu:18.04 as aesm_deb
+RUN apt-get update && apt-get install -y \
+    libcurl4 \
+    libprotobuf10 \
+    libssl1.1 \
+    make \
+    module-init-tools
+
+WORKDIR /deb_local_repo
+
+COPY --from=builder /linux-sgx/linux/installer/deb/sgx_debian_local_repo/ ./
+RUN echo "deb [trusted=yes arch=amd64] file:///deb_local_repo bionic main">>/etc/apt/sources.list
+RUN apt-get update
+RUN apt-get install -y libsgx-aesm-launch-plugin libsgx-aesm-quote-ex-plugin
+
+WORKDIR /opt/intel/sgx-aesm-service/aesm/
 ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon
 
@@ -101,3 +121,31 @@ USER sgxuser
 
 CMD ./app
 
+
+FROM ubuntu:18.04 as sample_deb
+RUN apt-get update && apt-get install -y \
+    g++ \
+    libcurl4-openssl-dev \
+    libprotobuf-dev \
+    libssl-dev \
+    make \
+    module-init-tools
+
+WORKDIR /deb_local_repo
+
+COPY --from=builder /linux-sgx/linux/installer/deb/sgx_debian_local_repo/ ./
+RUN echo "deb [trusted=yes arch=amd64] file:///deb_local_repo bionic main">>/etc/apt/sources.list
+RUN apt-get update
+RUN apt-get install -y libsgx-urts
+
+WORKDIR /opt/intel
+COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
+RUN sh -c 'echo yes | ./sgx_linux_x64_sdk_*.bin'
+
+WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
+RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
+
+RUN adduser -q --disabled-password --gecos "" --no-create-home sgxuser
+USER sgxuser
+
+CMD ./app

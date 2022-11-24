@@ -95,8 +95,7 @@ OBJ2 := urts.o               \
         debugger_support.o   \
         get_thread_id.o      \
         prd_css_util.o       \
-        urts_emodpr.o        \
-        urts_trim.o          \
+        urts_emm.o           \
         edmm_utility.o
 
 OBJ3 := enter_enclave.o \

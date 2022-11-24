@@ -77,10 +77,10 @@ ifndef DEBUG
 	@$(CP) $(LIBSGX_ENCLAVE_COMMON_DEBUG)    $|
 endif
 
-$(LIBSGX_ENCLAVE_COMMON): $(OBJ) $(LIBWRAPPER) sgx_launch
+$(LIBSGX_ENCLAVE_COMMON): $(OBJ) $(LIBWRAPPER)
 	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@.$(call SPLIT_VERSION,$(ECL_VER),1) $(LIB) -o $@  $(OBJ) $(LDFLAGS)
 
-$(LIBSGX_ENCLAVE_COMMON_STATIC): $(OBJ) $(LIBWRAPPER) sgx_launch
+$(LIBSGX_ENCLAVE_COMMON_STATIC): $(OBJ) $(LIBWRAPPER)
 	$(CP) $(COMMON_DIR)/se_wrapper_psw/libwrapper.a $@
 	$(AR) rcs $@ $(OBJ)
 
@@ -98,10 +98,6 @@ $(OBJ): %.o: %.cpp
 $(LIBWRAPPER):
 	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/
 
-.PHONY:sgx_launch
-sgx_launch:
-	$(MAKE) -C $(LINUX_PSW_DIR)/uae_service/linux
-
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
@@ -111,4 +107,3 @@ clean::
 	@$(RM) $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON) $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON_DEBUG) $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON_STATIC)
 	@$(RM) $(LIBSGX_ENCLAVE_COMMON).orig $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON_DEBUG)
 	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/                   clean
-	$(MAKE) -C $(LINUX_PSW_DIR)/uae_service/linux/         clean

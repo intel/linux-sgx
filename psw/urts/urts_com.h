@@ -196,6 +196,14 @@ static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t 
             SE_TRACE(SE_TRACE_ERROR, "ERROR: metadata's size can't be zero.\n");
             return SGX_ERROR_INVALID_METADATA;
         }
+
+        // bypass metadata 2.x
+        if (MAJOR_VERSION_OF_METADATA((*metadata)->version)%SGX_MAJOR_VERSION_GAP == 2)
+        {
+            meta_rva += (*metadata)->size;
+            continue;
+        }
+
         //check metadata version
         if(check_metadata_version(urts_version, (*metadata)->version) == true)
         {
@@ -284,12 +292,7 @@ static int __create_enclave(BinParser &parser,
     if (MAJOR_VERSION_OF_METADATA(metadata->version) % SGX_MAJOR_VERSION_GAP == MAJOR_VERSION_OF_METADATA(urts_version)% SGX_MAJOR_VERSION_GAP &&
         MINOR_VERSION_OF_METADATA(metadata->version) >= MINOR_VERSION_OF_METADATA(urts_version))
     {
-        enclave_version = SDK_VERSION_2_3;
-    }
-    else if (MAJOR_VERSION_OF_METADATA(metadata->version) % SGX_MAJOR_VERSION_GAP == MAJOR_VERSION_OF_METADATA(urts_version)% SGX_MAJOR_VERSION_GAP &&
-             MINOR_VERSION_OF_METADATA(metadata->version) < MINOR_VERSION_OF_METADATA(urts_version))
-    {
-        enclave_version = SDK_VERSION_2_0;
+        enclave_version = SDK_VERSION_3_0;
     }
 
     // initialize the enclave object
@@ -406,20 +409,6 @@ static int __create_enclave(BinParser &parser,
     //generate load debug event after EINIT
     generate_enclave_debug_event(URTS_EXCEPTION_POSTINITENCLAVE, debug_info);
 
-    if (get_enclave_creator()->is_EDMM_supported(loader.get_enclave_id()))
-    {
-        layout_t *layout_start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
-        layout_t *layout_end = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
-        if (SGX_SUCCESS != (ret = loader.post_init_action(layout_start, layout_end, 0)))
-        {
-            SE_TRACE(SE_TRACE_ERROR, "trim range error.\n");
-            sgx_status_t status = SGX_SUCCESS;
-            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
-            CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
-            goto fail;
-        }
-    }
-
     //call trts to do some initialization
     if(SGX_SUCCESS != (ret = get_enclave_creator()->initialize(loader.get_enclave_id())))
     {
@@ -427,21 +416,6 @@ static int __create_enclave(BinParser &parser,
         generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
         CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
         goto fail;
-    }
-
-    if (get_enclave_creator()->is_EDMM_supported(loader.get_enclave_id()))
-    {
-        
-        layout_t *layout_start = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset);
-        layout_t *layout_end = GET_PTR(layout_t, metadata, metadata->dirs[DIR_LAYOUT].offset + metadata->dirs[DIR_LAYOUT].size);
-        if (SGX_SUCCESS != (ret = loader.post_init_action_commit(layout_start, layout_end, 0)))
-        {
-            SE_TRACE(SE_TRACE_ERROR, "trim page commit error.\n");
-            sgx_status_t status = SGX_SUCCESS;
-            generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
-            CEnclavePool::instance()->remove_enclave(loader.get_enclave_id(), status);
-            goto fail;
-        }
     }
 
     if(SGX_SUCCESS != (ret = loader.set_memory_protection()))

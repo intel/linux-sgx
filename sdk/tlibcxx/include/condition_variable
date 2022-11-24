@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===---------------------- condition_variable ----------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -109,7 +108,7 @@ public:
 
 #include <__config>
 #if defined(_LIBCPP_SGX_CONFIG)
-#include <support/sgx/sgx_condition_variable>
+#include <__support/sgx/sgx_condition_variable>
 #else // !defined(_LIBCPP_SGX_CONFIG)
 #include <__mutex_base>
 #include <memory>
@@ -136,12 +135,14 @@ public:
     void notify_all() _NOEXCEPT;
 
     template <class _Lock>
+        _LIBCPP_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS
         void wait(_Lock& __lock);
     template <class _Lock, class _Predicate>
         _LIBCPP_INLINE_VISIBILITY
         void wait(_Lock& __lock, _Predicate __pred);
 
     template <class _Lock, class _Clock, class _Duration>
+        _LIBCPP_METHOD_TEMPLATE_IMPLICIT_INSTANTIATION_VIS
         cv_status
         wait_until(_Lock& __lock,
                    const chrono::time_point<_Clock, _Duration>& __t);

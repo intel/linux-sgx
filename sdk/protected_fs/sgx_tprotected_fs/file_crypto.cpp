@@ -283,5 +283,3 @@ bool protected_fs_file::restore_current_meta_data_key(const sgx_aes_gcm_128bit_k
 
 	return true;
 }
-
-

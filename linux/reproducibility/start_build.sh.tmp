@@ -37,7 +37,6 @@ set -e
 
 script_dir="$( cd "$( dirname "$0" )" >> /dev/null 2>&1 && pwd )"
 sgx_repo="$script_dir/sgx"
-binutils_repo="$script_dir/binutils"
 build_out="$script_dir/out"
 
 sdk_prefix="/linux-sgx/"
@@ -55,14 +54,6 @@ clean_repo()
     fi
     if [ -f $sgx_repo/Makefile ]; then
         cd $sgx_repo/ && make clean
-    fi
-    if [ -f $binutils_repo/Makefile ]; then
-        cd $binutils_repo && make clean 
-        rm -f Makefile
-    fi
-    if [ -f $binutils_repo/gold/Makefile ]; then
-        cd $binutils_repo/gold && make clean
-        rm -f Makefile
     fi
     # uninstall SDK installer
     if [ -x "$sdk_install_path/uninstall.sh" ]; then
@@ -104,29 +95,19 @@ build_ae()
 {
     # Requires two input args:
     #   $1: sdk installer path
-    #   $2: binutils location
-    if [ $# != 2 ]; then
+    if [ $# != 1 ]; then
         echo "Invalid input parameter"
         exit 1
     fi
 
     local sdk_installer="$1"
-    local toolset_dir="$2"
     if [ ! -f "$sdk_installer" ]; then
         echo "SDK installer is not found. $sdk_installer"
-        exit 1
-    fi
-    if [ ! -d "$toolset_dir" ]; then
-        echo "LVI toolset is not found. $toolset_dir"
         exit 1
     fi
     # Install sdk installer and source environment
     $sdk_installer --prefix=$sdk_prefix
     source $sdk_install_path/environment
-
-    # Current export MITIGATION_CFLAGS+=-B{toolset_dir}
-    # We can copy binutils to sdk installation folder
-    export MITIGATION_CFLAGS+=-B$toolset_dir
 
     pushd .
     local ae_out="$build_out/ae"
@@ -150,22 +131,6 @@ build_ae()
     popd
 }
 
-build_binutils()
-{
-    pushd .
-    cd $binutils_repo && ./configure --enable-deterministic-archives && make
-    local binutils_out="$script_dir/out/binutils"
-    mkdir -p $binutils_out
-    cp $binutils_repo/gas/as-new $binutils_out/as && strip $binutils_out/as
-    cp $binutils_repo/ld/ld-new  $binutils_out/ld && strip $binutils_out/ld 
-    cp $binutils_repo/binutils/objdump $binutils_out/ && strip $binutils_out/objdump
-    cp $binutils_repo/binutils/ar $binutils_out/ && strip $binutils_out/ar
-    cp $binutils_repo/binutils/objcopy $binutils_out/ && strip $binutils_out/objcopy
-    cp $binutils_repo/binutils/ranlib $binutils_out/ && strip $binutils_out/ranlib
-    popd
-    toolset_dir="$binutils_out"
-}
-
 usage()
 {
     echo "
@@ -174,7 +139,7 @@ usage()
 
     Description:
         Automate the reproducible build in the container. The reproducibility TYPE
-        should be provied and could be one of [ all | sdk | ae | ipp | binutils ]
+        should be provied and could be one of [ all | sdk | ae | ipp ]
     "
 }
 
@@ -183,12 +148,9 @@ usage()
 type="$1"
 if [ "$type" = "" ]; then
     echo "Invalid input parameter. Please input the reproducibility type.
-          Possible options: [ all | sdk | ae | ipp | binutils ]"
+          Possible options: [ all | sdk | ae | ipp ]"
     exit 1
-elif [ ! -d "$binutils_repo" -a "$type" = "binutils" ]; then
-    echo "No binutils source code."
-    exit 1
-elif [ ! -d "$sgx_repo" -a "$type" != "binutils" ]; then
+elif [ ! -d "$sgx_repo" ]; then
     echo "No sgx source code."
     exit 1
 fi
@@ -197,33 +159,21 @@ clean_repo
 
 case "$type" in
     "all")
-        build_binutils
-        export PATH=$toolset_dir:$PATH
         build_ipp
         build_sdk
-        build_ae $sdk_installer $toolset_dir
+        build_ae $sdk_installer
         echo "All the targets are built out and could be found under $build_out"
         ;;
-    "binutils")
-        build_binutils
-        echo "The output binutils could be found under $toolset_dir"
-        ;;
     "ae")
-        toolset_dir="$script_dir/sgx/external/toolset/nix"
-        export PATH=$toolset_dir:$PATH
         sdk_installer=$(ls $script_dir/sgx_linux_x64_sdk_*.bin)
-        build_ae $sdk_installer $toolset_dir
+        build_ae $sdk_installer
         echo "The built out AEs could be found under $build_out/ae"
         ;;
     "sdk")
-        toolset_dir="$script_dir/sgx/external/toolset/nix"
-        export PATH=$toolset_dir:$PATH
         build_sdk
         echo "SGX SDK installer has been built out. $sdk_installer"
         ;;
     "ipp")
-        toolset_dir="$script_dir/sgx/external/toolset/nix"
-        export PATH=$toolset_dir:$PATH
         build_ipp
         echo "The built out IPP crypto libs could be found under $build_out/ipp"
         ;;

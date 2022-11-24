@@ -87,8 +87,7 @@ OBJ2 := urts.o             \
         sig_handler.o      \
         debugger_support.o \
         get_thread_id.o    \
-        urts_trim.o        \
-        urts_emodpr.o
+        urts_emm.o
 
 OBJ3 := section.o \
         elfparser.o

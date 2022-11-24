@@ -312,7 +312,7 @@ void get_node_numbers(uint64_t offset, uint64_t* mht_node_number, uint64_t* data
 	// node 1 - mht
 	// nodes 2-97 - data (ATTACHED_DATA_NODES_COUNT == 96)
 	// node 98 - mht
-	// node 99-195 - data
+	// node 99-194 - data
 	// etc.
 	uint64_t _mht_node_number;
 	uint64_t _data_node_number;
@@ -370,7 +370,7 @@ file_data_node_t* protected_fs_file::get_data_node()
 	}
 
 	// even if we didn't get the required data_node, we might have read other nodes in the process
-	while (cache.size() > MAX_PAGES_IN_CACHE)
+	while (cache.size() > max_cache_page)
 	{
 		void* data = cache.get_last();
 		assert(data != NULL);
@@ -654,4 +654,3 @@ file_mht_node_t* protected_fs_file::read_mht_node(uint64_t mht_node_number)
 
 	return file_mht_node;
 }
-

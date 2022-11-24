@@ -124,6 +124,8 @@ typedef struct _exit_info_t
 #define SE_VECTOR_BP    3
 #define SE_VECTOR_BR    5
 #define SE_VECTOR_UD    6
+#define SE_VECTOR_GP    13
+#define SE_VECTOR_PF    14
 #define SE_VECTOR_MF    16
 #define SE_VECTOR_AC    17
 #define SE_VECTOR_XM    19
@@ -155,6 +157,15 @@ typedef struct _ssa_gpr_t
     uint64_t    fs;                     /* (168) FS register */
     uint64_t    gs;                     /* (176) GS register */
 } ssa_gpr_t;
+
+typedef struct _misc_exinfo
+{
+    uint64_t maddr; // address for #PF, #GP.
+    uint32_t errcd;
+    uint32_t reserved;
+} misc_exinfo_t;
+
+#define MISC_BYTE_SIZE sizeof(misc_exinfo_t)
 
 typedef uint64_t si_flags_t;
 

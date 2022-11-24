@@ -120,6 +120,14 @@ bool get_plat_cap_by_cpuid(sgx_misc_attribute_t *se_misc_attr)
     {
         se_misc_attr->secs_attr.xfrm &= ~(SGX_XFRM_PKRU);
     }
+
+    // Check AMX
+    // XTILECFG and XTILEDATA should be set at the same time
+    if ((se_misc_attr->secs_attr.xfrm & SGX_XFRM_AMX) &&
+        ((se_misc_attr->secs_attr.xfrm & SGX_XFRM_AMX) != SGX_XFRM_AMX))
+    {
+        se_misc_attr->secs_attr.xfrm &= ~(SGX_XFRM_AMX);
+    }
     // use cpuid to get the misc_select
     __cpuidex(cpu_info, SE_LEAF, 0);
     se_misc_attr->misc_select = cpu_info[1];

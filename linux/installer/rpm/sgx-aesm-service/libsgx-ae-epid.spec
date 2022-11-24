@@ -66,8 +66,6 @@ rm -fr %{?buildroot}/%{name}
 
 %files -f %{_specdir}/list-%{name}
 
-%debug_package
-
 %changelog
 * Mon Jul 29 2019 SGX Team
 - Initial Release

@@ -35,6 +35,7 @@
 #include <sl_debug.h>
 #include <sgx_trts.h>
 
+#define CHECK_ALIGNMENT(x)             if (((uint64_t)x) % 8 != 0) abort();
 
 // holds the pointer to untrusted structure describing switchless configuration
 // pointer is assigned only after all necessary checks
@@ -49,9 +50,18 @@ sgx_status_t sl_init_switchless(void* _handle_u)
     PANIC_ON(!sgx_is_outside_enclave(handle_u, sizeof(*handle_u)));
     sgx_lfence();
 
-    if (lock_cmpxchg_ptr((void*)&g_uswitchless_handle, NULL, (void*)handle_u) != NULL)
+    if (lock_cmpxchg_ptr((void * volatile *)&g_uswitchless_handle, NULL, (void*)handle_u) != NULL)
     {
         return SGX_ERROR_UNEXPECTED;
     }
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_config);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_has_new_ocall_fallback);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_ocall_mngr);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_ecall_mngr);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_should_stop);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_uworkers.num_running);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_uworkers.num_sleeping);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_uworkers.stats);
+    CHECK_ALIGNMENT(&g_uswitchless_handle->us_wake_workers);
     return SGX_SUCCESS;
 }

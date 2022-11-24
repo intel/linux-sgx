@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===--------------------------- __debug ----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -13,28 +12,76 @@
 
 // Not supported.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
+//#if !defined(_LIBCPP_SGX_CONFIG)
+
+#include <iosfwd>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif
 
-#if _LIBCPP_DEBUG_LEVEL >= 1
+#if defined(_LIBCPP_HAS_NO_NULLPTR)
+# include <cstddef>
+#endif
+
+#if _LIBCPP_DEBUG_LEVEL >= 1 || defined(_LIBCPP_BUILDING_LIBRARY)
 #   include <cstdlib>
 #   include <cstdio>
 #   include <cstddef>
-#   ifndef _LIBCPP_ASSERT
-#      define _LIBCPP_ASSERT(x, m) ((x) ? (void)0 : (_VSTD::fprintf(stderr, "%s\n", m), _VSTD::abort()))
-#   endif
 #endif
 
-#ifndef _LIBCPP_ASSERT
-#   define _LIBCPP_ASSERT(x, m) ((void)0)
+#if _LIBCPP_DEBUG_LEVEL == 0
+#   define _LIBCPP_DEBUG_ASSERT(x, m) ((void)0)
+#   define _LIBCPP_ASSERT_IMPL(x, m) ((void)0)
+#elif _LIBCPP_DEBUG_LEVEL == 1
+#   define _LIBCPP_DEBUG_ASSERT(x, m) ((void)0)
+#   define _LIBCPP_ASSERT_IMPL(x, m) ((x) ? (void)0 : _VSTD::__libcpp_debug_function(_VSTD::__libcpp_debug_info(__FILE__, __LINE__, #x, m)))
+#elif _LIBCPP_DEBUG_LEVEL == 2
+#   define _LIBCPP_DEBUG_ASSERT(x, m) _LIBCPP_ASSERT(x, m)
+#   define _LIBCPP_ASSERT_IMPL(x, m) ((x) ? (void)0 : _VSTD::__libcpp_debug_function(_VSTD::__libcpp_debug_info(__FILE__, __LINE__, #x, m)))
+#else
+#   error _LIBCPP_DEBUG_LEVEL must be one of 0, 1, 2
 #endif
 
-#if _LIBCPP_DEBUG_LEVEL >= 2
+#if !defined(_LIBCPP_ASSERT)
+#   define _LIBCPP_ASSERT(x, m) _LIBCPP_ASSERT_IMPL(x, m)
+#endif
 
 _LIBCPP_BEGIN_NAMESPACE_STD
+
+struct _LIBCPP_TEMPLATE_VIS __libcpp_debug_info {
+  _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
+  __libcpp_debug_info()
+      : __file_(nullptr), __line_(-1), __pred_(nullptr), __msg_(nullptr) {}
+  _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
+  __libcpp_debug_info(const char* __f, int __l, const char* __p, const char* __m)
+    : __file_(__f), __line_(__l), __pred_(__p), __msg_(__m) {}
+
+  _LIBCPP_FUNC_VIS string what() const;
+
+  const char* __file_;
+  int __line_;
+  const char* __pred_;
+  const char* __msg_;
+};
+
+/// __libcpp_debug_function_type - The type of the assertion failure handler.
+typedef void(*__libcpp_debug_function_type)(__libcpp_debug_info const&);
+
+/// __libcpp_debug_function - The handler function called when a _LIBCPP_ASSERT
+///    fails.
+extern _LIBCPP_EXPORTED_FROM_ABI __libcpp_debug_function_type __libcpp_debug_function;
+
+/// __libcpp_abort_debug_function - A debug handler that aborts when called.
+_LIBCPP_NORETURN _LIBCPP_FUNC_VIS
+void __libcpp_abort_debug_function(__libcpp_debug_info const&);
+
+/// __libcpp_set_debug_function - Set the debug handler to the specified
+///    function.
+_LIBCPP_FUNC_VIS
+bool __libcpp_set_debug_function(__libcpp_debug_function_type __func);
+
+#if _LIBCPP_DEBUG_LEVEL == 2 || defined(_LIBCPP_BUILDING_LIBRARY)
 
 struct _LIBCPP_TYPE_VIS __c_node;
 
@@ -44,7 +91,7 @@ struct _LIBCPP_TYPE_VIS __i_node
     __i_node* __next_;
     __c_node* __c_;
 
-#ifndef _LIBCPP_HAS_NO_DELETED_FUNCTIONS
+#ifndef _LIBCPP_CXX03_LANG
     __i_node(const __i_node&) = delete;
     __i_node& operator=(const __i_node&) = delete;
 #else
@@ -67,7 +114,7 @@ struct _LIBCPP_TYPE_VIS __c_node
     __i_node** end_;
     __i_node** cap_;
 
-#ifndef _LIBCPP_HAS_NO_DELETED_FUNCTIONS
+#ifndef _LIBCPP_CXX03_LANG
     __c_node(const __c_node&) = delete;
     __c_node& operator=(const __c_node&) = delete;
 #else
@@ -104,7 +151,7 @@ struct _C_node
 };
 
 template <class _Cont>
-bool
+inline bool
 _C_node<_Cont>::__dereferenceable(const void* __i) const
 {
     typedef typename _Cont::const_iterator iterator;
@@ -114,7 +161,7 @@ _C_node<_Cont>::__dereferenceable(const void* __i) const
 }
 
 template <class _Cont>
-bool
+inline bool
 _C_node<_Cont>::__decrementable(const void* __i) const
 {
     typedef typename _Cont::const_iterator iterator;
@@ -124,7 +171,7 @@ _C_node<_Cont>::__decrementable(const void* __i) const
 }
 
 template <class _Cont>
-bool
+inline bool
 _C_node<_Cont>::__addable(const void* __i, ptrdiff_t __n) const
 {
     typedef typename _Cont::const_iterator iterator;
@@ -134,7 +181,7 @@ _C_node<_Cont>::__addable(const void* __i, ptrdiff_t __n) const
 }
 
 template <class _Cont>
-bool
+inline bool
 _C_node<_Cont>::__subscriptable(const void* __i, ptrdiff_t __n) const
 {
     typedef typename _Cont::const_iterator iterator;
@@ -154,7 +201,7 @@ class _LIBCPP_TYPE_VIS __libcpp_db
 
     __libcpp_db();
 public:
-#ifndef _LIBCPP_HAS_NO_DELETED_FUNCTIONS
+#ifndef _LIBCPP_CXX03_LANG
     __libcpp_db(const __libcpp_db&) = delete;
     __libcpp_db& operator=(const __libcpp_db&) = delete;
 #else
@@ -173,16 +220,22 @@ public:
     __db_c_const_iterator __c_end() const;
     __db_i_const_iterator __i_end() const;
 
+    typedef __c_node*(_InsertConstruct)(void*, void*, __c_node*);
+
+    template <class _Cont>
+    _LIBCPP_INLINE_VISIBILITY static __c_node* __create_C_node(void *__mem, void *__c, __c_node *__next) {
+        return ::new (__mem) _C_node<_Cont>(__c, __next);
+    }
+
     template <class _Cont>
     _LIBCPP_INLINE_VISIBILITY
     void __insert_c(_Cont* __c)
     {
-        __c_node* __n = __insert_c(static_cast<void*>(__c));
-        ::new(__n) _C_node<_Cont>(__n->__c_, __n->__next_);
+        __insert_c(static_cast<void*>(__c), &__create_C_node<_Cont>);
     }
 
     void __insert_i(void* __i);
-    __c_node* __insert_c(void* __c);
+    void __insert_c(void* __c, _InsertConstruct* __fn);
     void __erase_c(void* __c);
 
     void __insert_ic(void* __i, const void* __c);
@@ -216,11 +269,10 @@ _LIBCPP_FUNC_VIS __libcpp_db* __get_db();
 _LIBCPP_FUNC_VIS const __libcpp_db* __get_const_db();
 
 
+#endif // _LIBCPP_DEBUG_LEVEL == 2 || defined(_LIBCPP_BUILDING_LIBRARY)
+
 _LIBCPP_END_NAMESPACE_STD
 
-#endif
-
-#endif // !defined(_LIBCPP_SGX_CONFIG)
+//#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 #endif  // _LIBCPP_DEBUG_H
-

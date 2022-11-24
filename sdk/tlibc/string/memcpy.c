@@ -34,6 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include "sgx_trts.h"
+#include <stdbool.h>
 
 /*
  * sizeof(word) MUST BE A POWER OF TWO
@@ -61,12 +63,6 @@ __memcpy(void *dst0, const void *src0, size_t length)
 
 	if (length == 0 || dst == src)		/* nothing to do */
 		goto done;
-
-	if ((dst < src && dst + length > src) ||
-	    (src < dst && src + length > dst)) {
-        /* backwards memcpy */
-		abort();
-	}
 
 	/*
 	 * Macros: loop-t-times; and loop-t-times, t>0
@@ -113,13 +109,6 @@ void* memcpy_verw(void *dst0, const void *src0, size_t len)
         return dst0;
     }
 
-    //abort if overlap exist
-    if ((dst < src && dst + len > src) ||
-        (src < dst && src + len > dst))
-    {
-        abort();
-    }
-
     while (len >= 8) {
         if((unsigned long long)dst%8 == 0) {
             // 8-byte-aligned - don't need <VERW><MFENCE LFENCE> bracketing
@@ -146,11 +135,83 @@ void* memcpy_verw(void *dst0, const void *src0, size_t len)
 }
 
 void *
-memcpy(void *dst0, const void *src0, size_t length)
+memcpy_nochecks(void *dst0, const void *src0, size_t length)
 {
 #ifdef _TLIBC_USE_INTEL_FAST_STRING_
  	return _intel_fast_memcpy(dst0, (void*)src0, length);
 #else
 	return __memcpy(dst0, src0, length);
 #endif
+}
+
+
+//deal the case that src is outside the enclave, count <= 8
+static void
+copy_external_memory(void* dst, const void* src, size_t count, bool is_dst_external)
+{
+    unsigned char tmp_buf[16]={0};
+    unsigned int off_src = (unsigned long long)src%8;
+    if(count == 0)
+    {
+        return;
+    }
+    
+    //if src is 8-byte-aligned, copy 8 bytes from outside the enclave to the buffer
+    //if src is not 8-byte-aligned and off_src + count > 8, copy 16 bytes from outside the enclave to the buffer
+    __memcpy_8a(tmp_buf, src - off_src);
+    if(off_src != 0 && off_src + count > 8)
+    {
+        __memcpy_8a(tmp_buf + 8, src - off_src + 8);
+    }
+    if(is_dst_external)
+    {
+        memcpy_verw(dst, tmp_buf + off_src, count);
+    }
+    else
+    {
+        memcpy_nochecks(dst, tmp_buf + off_src, count);
+    }
+    return;
+}
+
+void *
+memcpy(void *dst0, const void *src0, size_t length)
+{
+    if(length == 0 || dst0 == src0)
+    {
+        return dst0;
+    }
+
+    bool is_src_external = !sgx_is_within_enclave(src0, length);
+    bool is_dst_external = !sgx_is_within_enclave(dst0, length);
+
+    //src is inside the enclave
+    if(!is_src_external)
+    {
+        if(is_dst_external)
+        {
+            return memcpy_verw(dst0, src0, length);
+        }
+        else
+        {
+            return memcpy_nochecks(dst0, src0, length);
+        }
+    }
+
+    //src is outside the enclave
+    unsigned int len = 0;
+    char* dst = dst0;
+    const char *src = (const char *)src0;
+    while(length >= 8)
+    {
+        len = 8 - (unsigned long long)dst%8;
+        copy_external_memory(dst, src, len, is_dst_external);
+        src += len;
+        dst += len;
+        length -= len;
+    }
+    //less than 8 bytes left
+    copy_external_memory(dst, src, length, is_dst_external);
+
+    return dst0;
 }

@@ -43,9 +43,15 @@ Crypto_Library_Name := sgx_tcrypto
 
 ENCLAVE_NAME := libenclave_initiator.so
 SIGNED_ENCLAVE_NAME := libenclave_initiator.signed.so
+Enclave_Test_Key := EnclaveInitiator_private_test.pem
 
 $(SIGNED_ENCLAVE_NAME) : $(ENCLAVE_NAME)
-	@$(SGX_ENCLAVE_SIGNER) sign -key EnclaveInitiator_private_test.pem -enclave $(ENCLAVE_NAME) -out $@ -config EnclaveInitiator.config.xml
+ifeq ($(wildcard $(Enclave_Test_Key)),)
+	@echo "There is no enclave test key<EnclaveInitiator_private_test.pem>."
+	@echo "The project will generate a key<EnclaveInitiator_private_test.pem> for test."
+	@openssl genrsa -out $(Enclave_Test_Key) -3 3072
+endif
+	@$(SGX_ENCLAVE_SIGNER) sign -key $(Enclave_Test_Key) -enclave $(ENCLAVE_NAME) -out $@ -config EnclaveInitiator.config.xml
 	@cp $(SIGNED_ENCLAVE_NAME) $(TOPDIR)/$(OUTDIR)/
 	@echo "SIGN =>  $@"
 

@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===--------------------------- cstdlib ----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -84,14 +83,15 @@ void *aligned_alloc(size_t alignment, size_t size);                       // C11
 
 #include <__config>
 #include <stdlib.h>
-#ifdef _LIBCPP_MSVCRT
-#ifndef _LIBCPP_SGX_CONFIG
-#include "support/win32/locale_win32.h"
-#endif _LIBCPP_SGX_CONFIG
-#endif // _LIBCPP_MSVCRT
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
+#endif
+
+#ifdef __GNUC__
+#define _LIBCPP_UNREACHABLE() __builtin_unreachable()
+#else
+#define _LIBCPP_UNREACHABLE() _VSTD::abort()
 #endif
 
 _LIBCPP_BEGIN_NAMESPACE_STD
@@ -123,7 +123,7 @@ using ::strtoull;
 #ifndef _LIBCPP_SGX_CONFIG
 using ::rand;
 using ::srand;
-#endif //_LIBCPP_SGX_CONFIG
+#endif
 
 using ::calloc;
 using ::free;
@@ -135,44 +135,37 @@ using ::abort;
 using ::atexit;
 using ::exit;
 using ::_Exit;
+#ifndef _LIBCPP_WINDOWS_STORE_APP
 using ::getenv;
 using ::system;
-#endif //_LIBCPP_SGX_CONFIG
+#endif
+#endif
 
 using ::bsearch;
 using ::qsort;
-#undef abs
 using ::abs;
-#undef labs
 using ::labs;
 #ifndef _LIBCPP_HAS_NO_LONG_LONG
-#undef llabs
 using ::llabs;
 #endif // _LIBCPP_HAS_NO_LONG_LONG
-#undef div
 using ::div;
-#undef ldiv
 using ::ldiv;
 #ifndef _LIBCPP_HAS_NO_LONG_LONG
-#undef lldiv
 using ::lldiv;
 #endif // _LIBCPP_HAS_NO_LONG_LONG
-#ifndef _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
 using ::mblen;
 using ::mbtowc;
 using ::wctomb;
-#endif
 using ::mbstowcs;
 using ::wcstombs;
-#ifdef _LIBCPP_HAS_QUICK_EXIT
+#if !defined(_LIBCPP_CXX03_LANG) && defined(_LIBCPP_HAS_QUICK_EXIT)
 using ::at_quick_exit;
 using ::quick_exit;
 #endif
-#ifdef _LIBCPP_HAS_C11_FEATURES
+#if _LIBCPP_STD_VER > 14 && defined(_LIBCPP_HAS_ALIGNED_ALLOC)
 using ::aligned_alloc;
 #endif
 
-// MSVCRT already has the correct prototype in <stdlib.h> #ifdef __cplusplus
 #if (!defined(_LIBCPP_MSVCRT) && !defined(__sun__) && !defined(_AIX)) || defined(_LIBCPP_SGX_CONFIG)
 inline _LIBCPP_INLINE_VISIBILITY long      abs(     long __x) _NOEXCEPT {return  labs(__x);}
 #ifndef _LIBCPP_HAS_NO_LONG_LONG

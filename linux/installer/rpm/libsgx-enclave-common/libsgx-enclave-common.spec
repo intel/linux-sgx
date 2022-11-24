@@ -36,6 +36,11 @@ Version:        @version@
 Release:        1%{?dist}
 Summary:        Intel(R) Software Guard Extensions Enclave Common Loader
 Group:          Development/Libraries
+%if 0%{?suse_version}
+BuildRequires:  libsystemd0
+%else
+BuildRequires:  systemd-libs
+%endif
 Recommends:     libsgx-launch >= %{version}-%{release}
 
 License:        BSD License

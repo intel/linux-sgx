@@ -31,8 +31,10 @@
 
 
 include ../../buildenv.mk
-ifndef $(VERBOSE)
-	VERBOSE	:= @
+ifndef VERBOSE
+	PCLVERBOSE := @
+else
+	PCLVERBOSE := 
 endif
 
 INC_DIR	:= -I$(COMMON_DIR)/inc -I$(COMMON_DIR)/inc/internal -I.
@@ -47,22 +49,22 @@ TOOL_NAME := sgx_encrypt
 .PHONY: all
 
 all: $(TOOL_NAME) | $(BUILD_DIR)
-	$(VERBOSE)$(CP) $< $|
+	$(PCLVERBOSE)$(CP) $< $|
 
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
 $(OBJS): $(CPP_FILES)
-	$(VERBOSE)$(CXX) -c $< -o $@ $(CXXFLAGS)
+	$(PCLVERBOSE)$(CXX) -c $< -o $@ $(CXXFLAGS)
 	@echo "CXX  =>  $@"
 
 $(TOOL_NAME): $(OBJS)
-	$(VERBOSE)$(CXX) $^ -o $@ $(LINK_FLAGS) $(LDFLAGS)
+	$(PCLVERBOSE)$(CXX) $^ -o $@ $(LINK_FLAGS) $(LDFLAGS)
 	@echo "LINK =>  $@"
 
 .PHONY: clean
 clean:
-	$(VERBOSE)$(RM) $(TOOL_NAME) $(OBJS) $(BUILD_DIR)/$(TOOL_NAME)
+	$(PCLVERBOSE)$(RM) $(TOOL_NAME) $(OBJS) $(BUILD_DIR)/$(TOOL_NAME)
 
 .PHONY: rebuild
 rebuild:

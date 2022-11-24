@@ -49,7 +49,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 #include <stdlib.h>
-
+#include "sgx_mm.h"
 #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
   
 static EnclaveCreatorHW g_enclave_creator_hw;
@@ -306,103 +306,11 @@ void EnclaveCreatorHW::close_device()
     m_hdevice = -1;
 }
 
-int EnclaveCreatorHW::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
-{
-    sgx_modification_param params;
-    memset(&params, 0 ,sizeof(sgx_modification_param));
-    params.range.start_addr = (unsigned long)addr;
-    params.range.nr_pages = (unsigned int)(size/SE_PAGE_SIZE);
-    params.flags = (unsigned long)flag;
-
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_EMODPR, &params);
-    if (ret)
-    {
-        SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_EMODPR failed %d\n", errno);
-        return error_driver2urts(ret, errno);
-    }
-
-    return SGX_SUCCESS;
-}
- 
-int EnclaveCreatorHW::mktcs(uint64_t tcs_addr)
-{
-    sgx_range params;
-    memset(&params, 0 ,sizeof(sgx_range));
-    params.start_addr = (unsigned long)tcs_addr;
-    params.nr_pages = 1;
-
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_MKTCS, &params);
-    if (ret)
-    {
-        SE_TRACE(SE_TRACE_ERROR, "MODIFY_TYPE failed %d\n", errno);
-        return error_driver2urts(ret, errno);
-    }
-
-    return SGX_SUCCESS;
-}
- 
-int EnclaveCreatorHW::trim_range(uint64_t fromaddr, uint64_t toaddr)
-{
-    sgx_range params;
-    memset(&params, 0 ,sizeof(sgx_range));
-    params.start_addr = (unsigned long)fromaddr;
-    params.nr_pages = (unsigned int)((toaddr - fromaddr)/SE_PAGE_SIZE);
-
-    int ret= ioctl(m_hdevice, SGX_IOC_ENCLAVE_TRIM, &params);
-    if (ret)
-    {
-        SE_TRACE(SE_TRACE_ERROR, "SGX_IOC_ENCLAVE_TRIM failed %d\n", errno);
-        return error_driver2urts(ret, errno);
-    }
-
-    return SGX_SUCCESS;
-
-}
- 
-int EnclaveCreatorHW::trim_accept(uint64_t addr)
-{
-    sgx_range params;
-    memset(&params, 0 ,sizeof(sgx_range));
-    params.start_addr = (unsigned long)addr;
-    params.nr_pages = 1;
-
-    int ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_NOTIFY_ACCEPT, &params);
-
-
-    if (ret)
-    {
-        SE_TRACE(SE_TRACE_ERROR, "TRIM_RANGE_COMMIT failed %d\n", errno);
-        return error_driver2urts(ret, errno);
-    }
-
-    return SGX_SUCCESS;
-}
- 
-int EnclaveCreatorHW::remove_range(uint64_t fromaddr, uint64_t numpages)
-{
-    int ret = -1;
-    uint64_t i;
-    unsigned long start;
-
-    for (i = 0; i < numpages; i++)
-    {
-        start = (unsigned long)fromaddr + (unsigned long)(i << SE_PAGE_SHIFT);
-        ret = ioctl(m_hdevice, SGX_IOC_ENCLAVE_PAGE_REMOVE, &start);
-        if (ret)
-        {
-            SE_TRACE(SE_TRACE_ERROR, "PAGE_REMOVE failed %d\n", errno);
-            return error_driver2urts(ret, errno);
-        }
-    }
-
-    return SGX_SUCCESS;
-}
- 
 //EDMM is supported if and only if all of the following requirements are met:
 //1. We operate in HW mode
 //2. CPU has EDMM support
 //3. Driver has EDMM support
-//4. Both the uRTS version and enclave (metadata) version are higher than 1.5
+//4. SDK version >= 3.0
 bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
 {
     bool supported = false, driver_supported = false, cpu_edmm = false;
@@ -415,7 +323,7 @@ bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
     driver_supported = is_driver_compatible();
 
     //return value of get_enclave_version() considers the version of uRTS and enclave metadata
-    supported = use_se_hw() && cpu_edmm && driver_supported && (enclave->get_enclave_version() >= SDK_VERSION_2_0);
+    supported = use_se_hw() && cpu_edmm && driver_supported && (enclave->get_enclave_version() >= SDK_VERSION_3_0);
 
     return supported;
 }
