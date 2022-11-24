@@ -1,9 +1,8 @@
 //===-------------------------- ios.cpp -----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -16,28 +15,13 @@
 #include "__locale"
 #include "algorithm"
 #include "include/config_elast.h"
-#include "istream"
 #include "limits"
 #include "memory"
 #include "new"
-#include "streambuf"
 #include "string"
+#include "__undef_macros"
 
 _LIBCPP_BEGIN_NAMESPACE_STD
-
-template class basic_ios<char>;
-template class basic_ios<wchar_t>;
-
-template class basic_streambuf<char>;
-template class basic_streambuf<wchar_t>;
-
-template class basic_istream<char>;
-template class basic_istream<wchar_t>;
-
-template class basic_ostream<char>;
-template class basic_ostream<wchar_t>;
-
-template class basic_iostream<char>;
 
 class _LIBCPP_HIDDEN __iostream_category
     : public __do_message
@@ -266,10 +250,9 @@ ios_base::clear(iostate state)
         __rdstate_ = state;
     else
         __rdstate_ = state | badbit;
-#ifndef _LIBCPP_NO_EXCEPTIONS
+
     if (((state | (__rdbuf_ ? goodbit : badbit)) & __exceptions_) != 0)
-        throw failure("ios_base::clear");
-#endif  // _LIBCPP_NO_EXCEPTIONS
+        __throw_failure("ios_base::clear");
 }
 
 // init
@@ -309,35 +292,27 @@ ios_base::copyfmt(const ios_base& rhs)
     {
         size_t newesize = sizeof(event_callback) * rhs.__event_size_;
         new_callbacks.reset(static_cast<event_callback*>(malloc(newesize)));
-#ifndef _LIBCPP_NO_EXCEPTIONS
         if (!new_callbacks)
             throw bad_alloc();
-#endif  // _LIBCPP_NO_EXCEPTIONS
 
         size_t newisize = sizeof(int) * rhs.__event_size_;
         new_ints.reset(static_cast<int *>(malloc(newisize)));
-#ifndef _LIBCPP_NO_EXCEPTIONS
         if (!new_ints)
             throw bad_alloc();
-#endif  // _LIBCPP_NO_EXCEPTIONS
     }
     if (__iarray_cap_ < rhs.__iarray_size_)
     {
         size_t newsize = sizeof(long) * rhs.__iarray_size_;
         new_longs.reset(static_cast<long*>(malloc(newsize)));
-#ifndef _LIBCPP_NO_EXCEPTIONS
         if (!new_longs)
             throw bad_alloc();
-#endif  // _LIBCPP_NO_EXCEPTIONS
     }
     if (__parray_cap_ < rhs.__parray_size_)
     {
         size_t newsize = sizeof(void*) * rhs.__parray_size_;
         new_pointers.reset(static_cast<void**>(malloc(newsize)));
-#ifndef _LIBCPP_NO_EXCEPTIONS
         if (!new_pointers)
             throw bad_alloc();
-#endif  // _LIBCPP_NO_EXCEPTIONS
     }
     // Got everything we need.  Copy everything but __rdstate_, __rdbuf_ and __exceptions_
     __fmtflags_ = rhs.__fmtflags_;
@@ -464,4 +439,3 @@ ios_base::sync_with_stdio(bool sync)
 }
 
 _LIBCPP_END_NAMESPACE_STD
-

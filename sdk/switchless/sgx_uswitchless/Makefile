@@ -87,12 +87,12 @@ $(OUT_LIB): $(ALL_OBJS)
 	@echo "$(GREEN)LINK => $@$(NC)"
 
 $(C_OBJS): %.o: %.c sgx_tswitchless_u.h
-	@$(CC) $(SL_CFLAGS) -c $< -o $@
-	@echo "$(CC) <= $@" 
+	@$(CXX) $(SL_CXXFLAGS) -c $< -o $@
+	@echo "$(CXX) <= $@"
 
 $(CPP_OBJS): %.o: %.cpp 
 	@$(CXX) $(SL_CXXFLAGS) -c $< -o $@
-	@echo "$(CXX) <= $@" 
+	@echo "$(CXX) <= $@"
 
 
 sgx_tswitchless_u.h: $(EDGER8R)

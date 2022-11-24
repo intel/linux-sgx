@@ -134,7 +134,7 @@ CFLAGS += -Wjump-misses-init -Wstrict-prototypes -Wunsuffixed-float-constants
 # additional warnings flags for C++
 CXXFLAGS += -Wnon-virtual-dtor
 
-CXXFLAGS += -std=c++14
+CXXFLAGS += -std=c++17
 
 .DEFAULT_GOAL := all
 # this turns off the RCS / SCCS implicit rules of GNU Make
@@ -218,13 +218,10 @@ endif
 ifneq ($(origin NIX_STORE), environment)
 BINUTILS_DIR ?= /usr/local/bin
 EXT_BINUTILS_DIR = $(ROOT_DIR)/external/toolset/$(DISTR_ID)$(DISTR_VER)
-else
-BINUTILS_DIR ?= $(ROOT_DIR)/external/toolset/nix/
-EXT_BINUTILS_DIR = $(ROOT_DIR)/external/toolset/nix/
-endif
-
 # enable -B option for all the build
 MITIGATION_CFLAGS += -B$(BINUTILS_DIR)
+endif
+
 
 ifeq ($(MITIGATION_C), 1)
 ifeq ($(MITIGATION_INDIRECT), 1)

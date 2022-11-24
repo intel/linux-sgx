@@ -320,65 +320,6 @@ int CLoader::build_pages(const uint64_t start_rva, const uint64_t size, const vo
     return SGX_SUCCESS;
 }
 
-int CLoader::post_init_action(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
-{
-    int ret = SGX_SUCCESS;
-
-    for(layout_t *layout = layout_start; layout < layout_end; layout++)
-    {
-        if (!IS_GROUP_ID(layout->group.id) && (layout->entry.attributes & PAGE_ATTR_POST_REMOVE))
-        {
-            uint64_t start_addr = layout->entry.rva + delta + (uint64_t)get_start_addr();
-            uint64_t page_count = (uint64_t)layout->entry.page_count;
-            if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_range(start_addr, start_addr + (page_count << SE_PAGE_SHIFT))))
-                return ret;
-
-        }
-        else if (IS_GROUP_ID(layout->group.id))
-        {
-            uint64_t step = 0;
-            for(uint32_t j = 0; j < layout->group.load_times; j++)
-            {
-                step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = post_init_action(&layout[-layout->group.entry_count], layout, step)))
-                    return ret;
-            }
-        }
-    }
-    return SGX_SUCCESS;
-}
-  
-int CLoader::post_init_action_commit(layout_t *layout_start, layout_t *layout_end, uint64_t delta)
-{
-    int ret = SGX_SUCCESS;
-
-    for(layout_t *layout = layout_start; layout < layout_end; layout++)
-    {
-        if (!IS_GROUP_ID(layout->group.id) && (layout->entry.attributes & PAGE_ATTR_POST_REMOVE))
-        {
-            uint64_t start_addr = layout->entry.rva + delta + (uint64_t)get_start_addr();
-            uint64_t page_count = (uint64_t)layout->entry.page_count;
-
-            for (uint64_t i = 0; i < page_count; i++)
-            {
-                if (SGX_SUCCESS != (ret = get_enclave_creator()->trim_accept(start_addr + (i << SE_PAGE_SHIFT))))
-                    return ret;
-            }
-        }
-        else if (IS_GROUP_ID(layout->group.id))
-        {
-            uint64_t step = 0;
-            for(uint32_t j = 0; j < layout->group.load_times; j++)
-            {
-                step += layout->group.load_step;
-                if(SGX_SUCCESS != (ret = post_init_action_commit(&layout[-layout->group.entry_count], layout, step)))
-                    return ret;
-            }
-        }
-    }
-    return SGX_SUCCESS;
-}
-      
 int CLoader::build_context(const uint64_t start_rva, layout_entry_t *layout)
 {
     int ret = SGX_ERROR_UNEXPECTED;
@@ -952,35 +893,6 @@ int CLoader::set_memory_protection()
         return SGX_ERROR_UNEXPECTED;
     }
 
-    if ((META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION) <= m_metadata->version) &&
-            get_enclave_creator()->is_EDMM_supported(get_enclave_id()))
-    {
-        std::vector<std::tuple<uint64_t, uint64_t, uint32_t>> pages_to_protect;
-        m_parser.get_pages_to_protect((uint64_t)m_start_addr, pages_to_protect);
-        for (auto page : pages_to_protect)
-        {   uint64_t start = 0, len = 0;
-            uint32_t perm = 0;
-            std::tie(start, len, perm) = page;
-            ret = get_enclave_creator()->emodpr(start, len, (uint64_t)perm);
-            if (ret != SGX_SUCCESS)
-                return SGX_ERROR_UNEXPECTED;
-        }
-
-        //On EDMM supported platform, force set <ReservedMemMinSize> rsrv memory region's attribute to RW although it's was set to RWX by <ReservedMemExecutable>1</ReservedMemExecutable>
-        layout_t *layout_start = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset);
-        layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
-        for (layout_t *layout = layout_start; layout < layout_end; layout++)
-        {
-            if (layout->entry.id ==  LAYOUT_ID_RSRV_MIN && layout->entry.si_flags == SI_FLAGS_RWX && layout->entry.page_count > 0)
-            {
-                ret = get_enclave_creator()->emodpr((uint64_t)m_start_addr + layout->entry.rva, (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT, (uint64_t)(SI_FLAG_R |SI_FLAG_W ));
-                if (ret != SGX_SUCCESS)
-                    return SGX_ERROR_UNEXPECTED;
-                break;
-            }
-        }
-    }
-
     //set memory protection for context
     ret = set_context_protection(GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset),
                                     GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size),
@@ -989,7 +901,6 @@ int CLoader::set_memory_protection()
     {
         return ret;
     }
-    
     return SGX_SUCCESS;
 
 }
@@ -1028,10 +939,22 @@ int CLoader::set_context_protection(layout_t *layout_start, layout_t *layout_end
                 }
 #endif                          
             }
-
-            ret = mprotect(GET_PTR(void, m_start_addr, layout->entry.rva + delta), 
+#ifdef SE_SIM
+			ret = mprotect(GET_PTR(void, m_start_addr, layout->entry.rva + delta), 
                                (size_t)layout->entry.page_count << SE_PAGE_SHIFT,
                                prot); 
+#else
+            ret = 0;
+            if((layout->entry.attributes&PAGE_ATTR_EADD))
+            {
+                ret = mprotect(GET_PTR(void, m_start_addr, layout->entry.rva + delta),
+                            (size_t)layout->entry.page_count << SE_PAGE_SHIFT, prot);
+            }
+            else if(prot!=PROT_NONE)
+            {
+                ret = 0;
+            }
+#endif
             if(ret != 0)
             {
                 SE_TRACE(SE_TRACE_WARNING, "mprotect(rva=%" PRIu64 ", len=%" PRIu64 ", flags=%d) failed\n",

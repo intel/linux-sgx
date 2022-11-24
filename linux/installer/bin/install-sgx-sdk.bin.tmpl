@@ -180,7 +180,13 @@ export_the_simulation()
     ln -s ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/${LIB_DIR}/libsgx_quote_ex_sim.so ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/sdk_libs/
     ln -s ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/${LIB_DIR}/libsgx_launch_sim.so ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/sdk_libs/
     ln -s ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/${LIB_DIR}/libsgx_epid_sim.so ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/sdk_libs/
-} 
+}
+
+create_urts_soname_link()
+{
+    URTS_SONAME=`objdump -p ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/${LIB_DIR}/libsgx_urts.so | grep SONAME | awk '{print $2}'`
+    ln -fs ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/${LIB_DIR}/libsgx_urts.so ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/${LIB_DIR}/${URTS_SONAME}
+}
 
 generate_environment_script()
 {
@@ -198,6 +204,7 @@ EOF
 }
 
 export_the_simulation
+create_urts_soname_link
 generate_environment_script
 
 echo """

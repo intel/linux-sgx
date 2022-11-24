@@ -366,7 +366,7 @@ pthread_t pthread_self(void)
 {
     pthread_t t = (pthread_t)(pthread_info_tls.m_pthread);
     // For threads that are created outside enclave t value is NULL
-    if (!t) { 
+    if (!t) {
         return (pthread_t)(sgx_thread_self());
     }
     return t;

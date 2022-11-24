@@ -33,7 +33,7 @@
 /**
  * File: init_enclave.cpp
  * Description:
- *     Initialize enclave by rebasing the image to the enclave base 
+ *     Initialize enclave by rebasing the image to the enclave base
  */
 
 #include <string.h>
@@ -51,7 +51,7 @@
 #include "se_memcpy.h"
 #include "se_cpu_feature.h"
 #include "se_version.h"
-
+#include "sgx_mm_rt_abstraction.h"
 // The global cpu feature bits from uRTS
 uint64_t g_cpu_feature_indicator __attribute__((section(RELRO_SECTION_NAME))) = 0;
 int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
@@ -77,7 +77,10 @@ extern sgx_status_t pcl_entry(void* enclave_base,void* ms) __attribute__((weak))
 extern "C" int init_enclave(void *enclave_base, void *ms) __attribute__((section(".nipx")));
 
 extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t _rsrv_mem_min_size);
-
+#ifndef SE_SIM
+extern "C" int init_rts_emas(size_t rts_base, layout_t *start, layout_t *end);
+extern "C" int sgx_mm_init(size_t, size_t);
+#endif
 // init_enclave()
 //      Initialize enclave.
 // Parameters:
@@ -161,7 +164,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         EDMM_supported = 0;
     }
-    else if (g_sdk_version >= SDK_VERSION_2_0)
+    else if (g_sdk_version >= SDK_VERSION_3_0)
     {
         EDMM_supported = feature_supported((const uint64_t *)sys_features.system_feature_set, 0);
     }
@@ -169,7 +172,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         return -1;
     }
-    
+
     if (heap_init(get_heap_base(), get_heap_size(), get_heap_min_size(), EDMM_supported) != SGX_SUCCESS)
         return -1;
 
@@ -200,7 +203,7 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
             return -1;
         }
     }
-    else 
+    else
     {
         if (0 != init_optimized_libs(cpu_features, NULL, xfrm))
         {
@@ -214,19 +217,17 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
             return -1;
     }
 
-    
+
     if(SGX_SUCCESS != sgx_read_rand((unsigned char*)&__stack_chk_guard,
                                      sizeof(__stack_chk_guard)))
     {
         return -1;
     }
 
+
+
     return 0;
 }
-
-#ifndef SE_SIM
-int accept_post_remove(const volatile layout_t *layout_start, const volatile layout_t *layout_end, size_t offset);
-#endif
 
 extern size_t rsrv_mem_min_size;
 
@@ -254,9 +255,6 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
     /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
     if (EDMM_supported)
     {
-        if (0 != accept_post_remove(&g_global_data.layout_table[0], &g_global_data.layout_table[0] + g_global_data.layout_entry_num, 0))
-            return SGX_ERROR_UNEXPECTED;
-
         size_t heap_min_size = get_heap_min_size();
         memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), heap_min_size, 0, heap_min_size);
 
@@ -270,6 +268,44 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
 #endif
 
     g_enclave_state = ENCLAVE_INIT_DONE;
+
+#ifndef SE_SIM
+    // EDMM initialization makes ocalls which requires ENCLAVE_INIT_DONE being set
+    if (EDMM_supported)
+    {
+        size_t rts_base = (size_t) enclave_base;
+        size_t user_base = 0;
+        size_t user_end = 0;
+
+        layout_t *layout_start = (layout_t*)g_global_data.layout_table;
+        layout_t *layout_end = (layout_t*)(g_global_data.layout_table + g_global_data.layout_entry_num);
+
+        // find potential user_region layout
+        layout_t *layout = layout_start;
+        for (;layout < layout_end; layout++)
+            if (layout->entry.id == LAYOUT_ID_USER_REGION)
+                break;
+
+        // there exists user_region layout
+        if (layout != layout_end)
+        {   
+            user_base = (size_t)enclave_base + layout->entry.rva;
+            user_end = user_base + (((size_t)layout->entry.page_count) << SE_PAGE_SHIFT);
+            if(user_base > user_end)
+                return SGX_ERROR_UNEXPECTED;
+
+        }
+
+        if (sgx_mm_init(user_base, user_end))
+            return SGX_ERROR_UNEXPECTED;
+
+        int ret = init_rts_emas(rts_base, layout_start, layout);
+        if (ret != SGX_SUCCESS) {
+            return SGX_ERROR_UNEXPECTED;
+        }
+    }
+#endif
+
     return SGX_SUCCESS;
 }
 

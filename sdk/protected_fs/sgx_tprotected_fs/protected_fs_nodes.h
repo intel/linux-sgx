@@ -75,17 +75,10 @@ typedef struct _meta_data_plain
 #define MD_USER_DATA_SIZE (NODE_SIZE*3/4)  // 3072
 COMPILE_TIME_ASSERT(md_user_data_size, MD_USER_DATA_SIZE == 3072);
 
-typedef struct _mc_uuid {
-    uint8_t mc_uuid[16];
-} sgx_mc_uuid_t;
-
 typedef struct _meta_data_encrypted
 {
 	char          clean_filename[FILENAME_MAX_LEN];
 	int64_t       size;
-	
-	sgx_mc_uuid_t mc_uuid; // not used
-	uint32_t      mc_value; // not used
 
 	sgx_aes_gcm_128bit_key_t mht_key;
 	sgx_aes_gcm_128bit_tag_t mht_gmac;
@@ -153,4 +146,3 @@ typedef struct _recovery_node
 #pragma pack(pop)
 
 #endif // _PROTECTED_FS_NODES_H_
-

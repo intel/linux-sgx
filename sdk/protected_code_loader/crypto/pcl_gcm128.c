@@ -93,7 +93,17 @@
 #include <pcl_internal.h>
 #include <pcl_crypto_internal.h>
 #include <pcl_modes_lcl.h>
-/* PCL UNUSED START
+#if !defined(U64)
+    # if  defined(_WIN64) && !defined(__MINGW32__)
+	#  define U64(C)     C##UI64
+    # elif defined(__arch64__)
+	#  define U64(C)     C##UL
+    # else
+	#  define U64(C)     C##ULL
+    # endif
+#endif
+ 
+ /* PCL UNUSED START
 #if defined(BSWAP4) && defined(STRICT_ALIGNMENT)
 / * redefine, because alignment is ensured * /
 # undef  GETU32

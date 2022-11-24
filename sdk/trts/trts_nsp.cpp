@@ -51,7 +51,7 @@
 static void __attribute__((section(".nipx"))) init_stack_guard(void *tcs)
 {
     thread_data_t *thread_data = get_thread_data();
-    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
+    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (TCS_POLICY_BIND != g_global_data.thread_policy)))
     {
          thread_data = GET_PTR(thread_data_t, tcs, g_global_data.td_template.self_addr);
     }

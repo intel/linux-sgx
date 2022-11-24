@@ -36,18 +36,24 @@
 #include <errno.h>
 
 
-static SGX_FILE* sgx_fopen_internal(const char* filename, const char* mode, const sgx_key_128bit_t *auto_key, const sgx_key_128bit_t *kdk_key)
+static SGX_FILE* sgx_fopen_internal(const char* filename, const char* mode, const sgx_key_128bit_t *auto_key, const sgx_key_128bit_t *kdk_key, const uint64_t cache_size)
 {
 	protected_fs_file* file = NULL;
+	uint32_t cache_page = 0;
 
-	if (filename == NULL || mode == NULL)
+	if (filename == NULL || mode == NULL ||
+		cache_size < DEFAULT_CACHE_SIZE || cache_size % SE_PAGE_SIZE != 0 ||
+		(cache_size / SE_PAGE_SIZE) > UINT_MAX)
 	{
 		errno = EINVAL;
 		return NULL;
 	}
 
+	// Internal page number should be smaller than UINT_MAX
+	cache_page = (uint32_t) (cache_size / SE_PAGE_SIZE);
+
 	try {
-		file = new protected_fs_file(filename, mode, auto_key, kdk_key);
+		file = new protected_fs_file(filename, mode, auto_key, kdk_key, cache_page);
 	}
 	catch (std::bad_alloc& e) {
 		(void)e; // remove warning
@@ -68,13 +74,19 @@ static SGX_FILE* sgx_fopen_internal(const char* filename, const char* mode, cons
 
 SGX_FILE* sgx_fopen_auto_key(const char* filename, const char* mode)
 {
-	return sgx_fopen_internal(filename, mode, NULL, NULL);
+	return sgx_fopen_internal(filename, mode, NULL, NULL, DEFAULT_CACHE_SIZE);
 }
 
 
 SGX_FILE* sgx_fopen(const char* filename, const char* mode, const sgx_key_128bit_t *key)
 {
-	return sgx_fopen_internal(filename, mode, NULL, key);
+	return sgx_fopen_internal(filename, mode, NULL, key, DEFAULT_CACHE_SIZE);
+}
+
+
+SGX_FILE* SGXAPI sgx_fopen_ex(const char* filename, const char* mode, const sgx_key_128bit_t *key, const uint64_t cache_size)
+{
+	return sgx_fopen_internal(filename, mode, NULL, key, cache_size);
 }
 
 
@@ -131,30 +143,6 @@ int32_t sgx_fflush(SGX_FILE* stream)
 
 	return file->flush(/*false*/) == true ? 0 : EOF;
 }
-
-
-/* sgx_fflush_and_increment_mc
- *  Purpose: force actual write of all the cached data to the disk (see c++ fflush documentation for more details).
- *           in addition, in the first time this function is called, it adds a monotonic counter to the file
- *           in subsequent calls, the monotonic counter is incremented by one every time this function is called
- *           the monotonic counter is a limited resource, please read the SGX documentation for more details
- *
- *  Parameters:
- *      stream - [IN] the file handle (opened with sgx_fopen or sgx_fopen_auto_key)
- *
- *  Return value:
- *     int32_t  - result, 0 on success, 1 in case of an error - check sgx_ferror for error code
- *
-int32_t sgx_fflush_and_increment_mc(SGX_FILE* stream)
-{
-	if (stream == NULL)
-		return 1;
-
-	protected_fs_file* file = (protected_fs_file*)stream;
-
-	return file->flush(true) == true ? 0 : 1;
-}
-*/
 
 
 int32_t sgx_ferror(SGX_FILE* stream)
@@ -222,7 +210,7 @@ int32_t sgx_remove(const char* filename)
 
 int32_t sgx_fexport_auto_key(const char* filename, sgx_key_128bit_t *key)
 {
-	SGX_FILE* stream = sgx_fopen_internal(filename, "r", NULL, NULL);
+	SGX_FILE* stream = sgx_fopen_internal(filename, "r", NULL, NULL, DEFAULT_CACHE_SIZE);
 	if (stream == NULL)
 		return 1;
 
@@ -232,7 +220,7 @@ int32_t sgx_fexport_auto_key(const char* filename, sgx_key_128bit_t *key)
 
 int32_t sgx_fimport_auto_key(const char* filename, const sgx_key_128bit_t *key)
 {
-	SGX_FILE* stream = sgx_fopen_internal(filename, "r+", key, NULL);
+	SGX_FILE* stream = sgx_fopen_internal(filename, "r+", key, NULL, DEFAULT_CACHE_SIZE);
 	if (stream == NULL)
 		return 1;
 
@@ -249,6 +237,3 @@ int32_t sgx_fclear_cache(SGX_FILE* stream)
 
 	return file->clear_cache();
 }
-
-
-

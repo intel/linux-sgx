@@ -37,6 +37,7 @@
 #ifndef SL_INSIDE_ENCLAVE /* Untrusted */
 #include <pthread.h>
 #endif
+#include <stdalign.h>
 
 /*
  * Abbreviations
@@ -60,9 +61,9 @@ struct sl_uswitchless;
 struct sl_workers
 {
     struct sl_uswitchless*              handle;
-    sl_worker_type_t                    type;
+    alignas(8) sl_worker_type_t         type;
     sl_worker_stats_t                   stats;
-    volatile int32_t                    should_wake;
+    alignas(8) volatile int32_t         should_wake;
     uint64_t                            num_all;
     uint64_t                            num_running;
     uint64_t                            num_sleeping;

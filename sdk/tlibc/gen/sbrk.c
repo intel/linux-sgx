@@ -78,7 +78,8 @@ void* sbrk(intptr_t n)
     size_t prev_heap_used = heap_used;
     void * start_addr;
     size_t size = 0;
-
+    assert((heap_used & (SE_PAGE_SIZE - 1)) == 0);
+    
     if (!heap_base)
         return (void *)(~(size_t)0);
 
@@ -113,7 +114,8 @@ void* sbrk(intptr_t n)
                 start_addr = (void *)((size_t)(heap_base) + heap_min_size);
                 size = prev_heap_used - heap_min_size;
             }
-            int ret = trim_EPC_pages(start_addr, size >> SE_PAGE_SHIFT);
+            assert((size & (SE_PAGE_SIZE - 1)) == 0);
+            int ret = mm_uncommit(start_addr, size);
             if (ret != 0)
             {
                 heap_used = prev_heap_used;
@@ -131,6 +133,8 @@ void* sbrk(intptr_t n)
        there's no integer overflow here.
      */  
     heap_ptr = (void *)((size_t)heap_base + (size_t)heap_used);
+    if(n==0) return heap_ptr;
+
     heap_used += n;
 
     /* update g_peak_heap_used */
@@ -154,7 +158,8 @@ void* sbrk(intptr_t n)
             start_addr = (void *)((size_t)(heap_base) + heap_min_size);
             size = heap_used - heap_min_size;
         }
-        int ret = apply_EPC_pages(start_addr, size >> SE_PAGE_SHIFT);
+        assert((size & (SE_PAGE_SIZE - 1)) == 0);
+        int ret = mm_commit(start_addr, size);
         if (ret != 0)
         {
             heap_used = prev_heap_used;

@@ -1,0 +1,13 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/common/inc/sgx_attributes.h	<installdir>/include/sgx_attributes.h	0	main	STP
+<deliverydir>/common/inc/sgx_defs.h	<installdir>/include/sgx_defs.h	0	main	STP
+<deliverydir>/common/inc/sgx_eid.h	<installdir>/include/sgx_eid.h	0	main	STP
+<deliverydir>/common/inc/sgx_error.h	<installdir>/include/sgx_error.h	0	main	STP
+<deliverydir>/common/inc/sgx_report.h	<installdir>/include/sgx_report.h	main	STP
+<deliverydir>/common/inc/sgx_key.h	<installdir>/include/sgx_key.h	0	main	STP
+<deliverydir>/common/inc/sgx_quote.h	<installdir>/include/sgx_quote.h	0	main	STP
+<deliverydir>/common/inc/sgx_urts.h	<installdir>/include/sgx_urts.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h	<installdir>/include/sgx_ql_lib_common.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h	<installdir>/include/sgx_quote_3.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_quote.h	<installdir>/include/sgx_ql_quote.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/pce_wrapper/inc/sgx_pce.h	<installdir>/include/sgx_pce.h	0	main	STP

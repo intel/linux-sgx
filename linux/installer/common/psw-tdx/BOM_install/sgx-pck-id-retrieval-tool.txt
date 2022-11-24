@@ -1,0 +1,5 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/external/dcap_source/tools/PCKRetrievalTool/network_setting.conf	<installdir>/network_setting.conf	0	main	STP
+<deliverydir>/external/dcap_source/tools/PCKRetrievalTool/PCKIDRetrievalTool	<installdir>/PCKIDRetrievalTool	0	main	STP
+<deliverydir>/external/dcap_source/tools/PCKRetrievalTool/README.txt	<installdir>/README.txt	0	main	STP
+<deliverydir>/external/dcap_source/tools/PCKRetrievalTool/License.txt	<installdir>/License.txt	0	main	STP

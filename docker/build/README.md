@@ -60,3 +60,14 @@ The sample scripts and Compose files are compatible with the Flexible Launch Con
 **Note**: When you switch between drivers, make sure you uninstall the previous driver and reboot the system before installing the other one.
 
 **Note**: Earlier versions of the Flexible Launch Control driver and kernel patches may expose the SGX device as a single node at "/dev/sgx".
+
+## Experimental: Build and run TDX QGS in docker container
+###  Prerequisites
+Besides the [Prerequisites](#prerequisites), you need to have docker version >= 20.04 to support host-gateway used in build_and_run_qgs_docker.sh. And Legacy Launch Control driver is not supported.
+
+### Run with Docker directly
+This will start QGS on one terminal directly.
+```
+$ ./build_and_run_qgs_docker.sh
+```
+It will listen on docker volume /var/lib/docker/volumes/qgs-socket. In order to connect to QGS in this configuration, you need to run QEMU with `quote-generation-service=unix:/var/lib/docker/volumes/qgs-socket/_data/qgs.socket` option and use TDVMCall mode(which is the default mode if you installed with rpm/deb package) to get quote within TD guest.

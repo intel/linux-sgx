@@ -45,11 +45,14 @@
 std::map<sgx_enclave_id_t, dh_session_t>g_src_session_info_map;
 
 // this is expected initiator's MRSIGNER for demonstration purpose
+//Please replace with your project responder enclave's MRSIGNER in your project!!!
+//The command to get your signed enclave's MRSIGNER: <SGX_SDK Installation Path>/bin/x64/sgx_sign dump -enclave <Signed Enclave> -dumpfile mrsigner.txt
+//Find the signed enclave's MRSIGNER in the mrsigner.txt<mrsigner->value:>, then replace blow value
 sgx_measurement_t g_initiator_mrsigner = {
-        {
-                0xc3, 0x04, 0x46, 0xb4, 0xbe, 0x9b, 0xaf, 0x0f, 0x69, 0x72, 0x84, 0x23, 0xea, 0x61, 0x3e, 0xf8,
-                0x1a, 0x63, 0xe7, 0x2a, 0xcf, 0x74, 0x39, 0xfa, 0x05, 0x49, 0x00, 0x1f, 0xd5, 0x48, 0x28, 0x35
-        }
+    {
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+        0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff    
+    }
 };
 
 /* Function Description:
@@ -65,9 +68,11 @@ extern "C" uint32_t verify_peer_enclave_trust(sgx_dh_session_enclave_identity_t*
         return INVALID_PARAMETER_ERROR;
 
     // check peer enclave's MRSIGNER
+    // Please enable blow check in your project!!!
+    /*
     if (memcmp((uint8_t *)&peer_enclave_identity->mr_signer, (uint8_t*)&g_initiator_mrsigner, sizeof(sgx_measurement_t)))
         return ENCLAVE_TRUST_ERROR;
-
+    */
     if(peer_enclave_identity->isv_prod_id != 0 || !(peer_enclave_identity->attributes.flags & SGX_FLAGS_INITTED))
         return ENCLAVE_TRUST_ERROR;
 

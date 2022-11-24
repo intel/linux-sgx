@@ -60,11 +60,6 @@ public:
     bool is_driver_compatible();
     int get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadata_t *metadata, SGXLaunchToken * const lc, uint32_t flag);
     bool get_plat_cap(sgx_misc_attribute_t *se_attr);
-    int emodpr(uint64_t addr, uint64_t size, uint64_t flag);
-    int mktcs(uint64_t tcs_addr);
-    int trim_range(uint64_t fromaddr, uint64_t toaddr);
-    int trim_accept(uint64_t addr);
-    int remove_range(uint64_t fromaddr, uint64_t numpages);
 private:
     virtual bool open_device();
     virtual void close_device();

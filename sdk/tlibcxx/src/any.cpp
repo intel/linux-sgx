@@ -1,18 +1,33 @@
 //===---------------------------- any.cpp ---------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
+
+#include "any"
+
+namespace std {
+const char* bad_any_cast::what() const _NOEXCEPT {
+    return "bad any cast";
+}
+}
 
 #include "__config"
 #if !defined(_LIBCPP_SGX_CONFIG)
 
-#include "experimental/any"
+#include <experimental/__config>
 
+//  Preserve std::experimental::any_bad_cast for ABI compatibility
+//  Even though it no longer exists in a header file
 _LIBCPP_BEGIN_NAMESPACE_LFTS
+
+class _LIBCPP_EXCEPTION_ABI _LIBCPP_AVAILABILITY_BAD_ANY_CAST bad_any_cast : public bad_cast
+{
+public:
+    virtual const char* what() const _NOEXCEPT;
+};
 
 const char* bad_any_cast::what() const _NOEXCEPT {
     return "bad any cast";
@@ -20,4 +35,4 @@ const char* bad_any_cast::what() const _NOEXCEPT {
 
 _LIBCPP_END_NAMESPACE_LFTS
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
+#endif

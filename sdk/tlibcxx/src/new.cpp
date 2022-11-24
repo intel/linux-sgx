@@ -1,56 +1,73 @@
 //===--------------------------- new.cpp ----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-
-#define _LIBCPP_BUILDING_NEW
-
-#include <stdlib.h>
 
 #include <__config>
 #if !defined(_LIBCPP_SGX_CONFIG)
 
+#include <stdlib.h>
+
 #include "new"
+#include "include/atomic_support.h"
 
-#if defined(__APPLE__) && !defined(LIBCXXRT)
-    #include <cxxabi.h>
-
-    #ifndef _LIBCPPABI_VERSION
-        // On Darwin, there are two STL shared libraries and a lower level ABI
-        // shared library.  The global holding the current new handler is
-        // in the ABI library and named __cxa_new_handler.
-        #define __new_handler __cxxabiapple::__cxa_new_handler
-    #endif
-#else  // __APPLE__
-    #if defined(LIBCXXRT) || defined(LIBCXX_BUILDING_LIBCXXABI)
-        #include <cxxabi.h>
-    #endif  // defined(LIBCXX_BUILDING_LIBCXXABI)
-    #if !defined(_LIBCPPABI_VERSION) && !defined(__GLIBCXX__)
-        static std::new_handler __new_handler;
-    #endif  // _LIBCPPABI_VERSION
+#if defined(_LIBCPP_ABI_MICROSOFT)
+#   if !defined(_LIBCPP_ABI_VCRUNTIME)
+#       include "support/runtime/new_handler_fallback.ipp"
+#   endif
+#elif defined(LIBCXX_BUILDING_LIBCXXABI)
+#   include <cxxabi.h>
+#elif defined(LIBCXXRT)
+#   include <cxxabi.h>
+#   include "support/runtime/new_handler_fallback.ipp"
+#elif defined(__GLIBCXX__)
+    // nothing to do
+#else
+#   include "support/runtime/new_handler_fallback.ipp"
 #endif
 
+namespace std
+{
+
 #ifndef __GLIBCXX__
+const nothrow_t nothrow{};
+#endif
+
+#ifndef LIBSTDCXX
+
+void
+__throw_bad_alloc()
+{
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    throw bad_alloc();
+#else
+    _VSTD::abort();
+#endif
+}
+
+#endif // !LIBSTDCXX
+
+}  // std
+
+#if !defined(__GLIBCXX__) &&                                                   \
+    !defined(_LIBCPP_ABI_VCRUNTIME) &&      \
+    !defined(_LIBCPP_DISABLE_NEW_DELETE_DEFINITIONS)
 
 // Implement all new and delete operators as weak definitions
 // in this shared library, so that they can be overridden by programs
 // that define non-weak copies of the functions.
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void *
-operator new(std::size_t size)
-#if !__has_feature(cxx_noexcept)
-    throw(std::bad_alloc)
-#endif
+operator new(std::size_t size) _THROW_BAD_ALLOC
 {
     if (size == 0)
         size = 1;
     void* p;
-    while ((p = ::malloc(size)) == 0)
+    while ((p = ::malloc(size)) == nullptr)
     {
         // If malloc fails and there is a new_handler,
         // call it to try free up memory.
@@ -67,11 +84,11 @@ operator new(std::size_t size)
     return p;
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void*
 operator new(size_t size, const std::nothrow_t&) _NOEXCEPT
 {
-    void* p = 0;
+    void* p = nullptr;
 #ifndef _LIBCPP_NO_EXCEPTIONS
     try
     {
@@ -86,21 +103,18 @@ operator new(size_t size, const std::nothrow_t&) _NOEXCEPT
     return p;
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void*
-operator new[](size_t size)
-#if !__has_feature(cxx_noexcept)
-    throw(std::bad_alloc)
-#endif
+operator new[](size_t size) _THROW_BAD_ALLOC
 {
     return ::operator new(size);
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void*
 operator new[](size_t size, const std::nothrow_t&) _NOEXCEPT
 {
-    void* p = 0;
+    void* p = nullptr;
 #ifndef _LIBCPP_NO_EXCEPTIONS
     try
     {
@@ -115,140 +129,169 @@ operator new[](size_t size, const std::nothrow_t&) _NOEXCEPT
     return p;
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void
 operator delete(void* ptr) _NOEXCEPT
 {
-    if (ptr)
-        ::free(ptr);
+    ::free(ptr);
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void
 operator delete(void* ptr, const std::nothrow_t&) _NOEXCEPT
 {
     ::operator delete(ptr);
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void
 operator delete(void* ptr, size_t) _NOEXCEPT
 {
     ::operator delete(ptr);
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void
 operator delete[] (void* ptr) _NOEXCEPT
 {
     ::operator delete(ptr);
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void
 operator delete[] (void* ptr, const std::nothrow_t&) _NOEXCEPT
 {
     ::operator delete[](ptr);
 }
 
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
+_LIBCPP_WEAK
 void
 operator delete[] (void* ptr, size_t) _NOEXCEPT
 {
     ::operator delete[](ptr);
 }
 
-#endif // !__GLIBCXX__
+#if !defined(_LIBCPP_HAS_NO_LIBRARY_ALIGNED_ALLOCATION)
 
-namespace std
+_LIBCPP_WEAK
+void *
+operator new(std::size_t size, std::align_val_t alignment) _THROW_BAD_ALLOC
 {
+    if (size == 0)
+        size = 1;
+    if (static_cast<size_t>(alignment) < sizeof(void*))
+      alignment = std::align_val_t(sizeof(void*));
 
-#ifndef __GLIBCXX__
-const nothrow_t nothrow = {};
-#endif
-
-#ifndef _LIBCPPABI_VERSION
-
-#ifndef __GLIBCXX__
-
-new_handler
-set_new_handler(new_handler handler) _NOEXCEPT
-{
-    return __sync_lock_test_and_set(&__new_handler, handler);
-}
-
-new_handler
-get_new_handler() _NOEXCEPT
-{
-    return __sync_fetch_and_add(&__new_handler, nullptr);
-}
-
-#endif // !__GLIBCXX__
-
-#ifndef LIBCXXRT
-
-bad_alloc::bad_alloc() _NOEXCEPT
-{
-}
-
-#ifndef __GLIBCXX__
-
-bad_alloc::~bad_alloc() _NOEXCEPT
-{
-}
-
-const char*
-bad_alloc::what() const _NOEXCEPT
-{
-    return "std::bad_alloc";
-}
-
-#endif // !__GLIBCXX__
-
-bad_array_new_length::bad_array_new_length() _NOEXCEPT
-{
-}
-
-bad_array_new_length::~bad_array_new_length() _NOEXCEPT
-{
-}
-
-const char*
-bad_array_new_length::what() const _NOEXCEPT
-{
-    return "bad_array_new_length";
-}
-
-#endif //LIBCXXRT
-
-const char*
-bad_array_length::what() const _NOEXCEPT
-{
-    return "bad_array_length";
-}
-
-bad_array_length::bad_array_length() _NOEXCEPT
-{
-}
-
-bad_array_length::~bad_array_length() _NOEXCEPT
-{
-}
-
-#endif // _LIBCPPABI_VERSION
-
-#ifndef LIBSTDCXX
-
-void
-__throw_bad_alloc()
-{
+    // Try allocating memory. If allocation fails and there is a new_handler,
+    // call it to try free up memory, and try again until it succeeds, or until
+    // the new_handler decides to terminate.
+    //
+    // If allocation fails and there is no new_handler, we throw bad_alloc
+    // (or return nullptr if exceptions are disabled).
+    void* p;
+    while ((p = std::__libcpp_aligned_alloc(static_cast<std::size_t>(alignment), size)) == nullptr)
+    {
+        std::new_handler nh = std::get_new_handler();
+        if (nh)
+            nh();
+        else {
 #ifndef _LIBCPP_NO_EXCEPTIONS
-    throw bad_alloc();
+            throw std::bad_alloc();
+#else
+            break;
 #endif
+        }
+    }
+    return p;
 }
 
-#endif // !LIBSTDCXX
+_LIBCPP_WEAK
+void*
+operator new(size_t size, std::align_val_t alignment, const std::nothrow_t&) _NOEXCEPT
+{
+    void* p = nullptr;
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    try
+    {
+#endif  // _LIBCPP_NO_EXCEPTIONS
+        p = ::operator new(size, alignment);
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    }
+    catch (...)
+    {
+    }
+#endif  // _LIBCPP_NO_EXCEPTIONS
+    return p;
+}
 
-}  // std
+_LIBCPP_WEAK
+void*
+operator new[](size_t size, std::align_val_t alignment) _THROW_BAD_ALLOC
+{
+    return ::operator new(size, alignment);
+}
 
+_LIBCPP_WEAK
+void*
+operator new[](size_t size, std::align_val_t alignment, const std::nothrow_t&) _NOEXCEPT
+{
+    void* p = nullptr;
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    try
+    {
+#endif  // _LIBCPP_NO_EXCEPTIONS
+        p = ::operator new[](size, alignment);
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    }
+    catch (...)
+    {
+    }
+#endif  // _LIBCPP_NO_EXCEPTIONS
+    return p;
+}
+
+_LIBCPP_WEAK
+void
+operator delete(void* ptr, std::align_val_t) _NOEXCEPT
+{
+    std::__libcpp_aligned_free(ptr);
+}
+
+_LIBCPP_WEAK
+void
+operator delete(void* ptr, std::align_val_t alignment, const std::nothrow_t&) _NOEXCEPT
+{
+    ::operator delete(ptr, alignment);
+}
+
+_LIBCPP_WEAK
+void
+operator delete(void* ptr, size_t, std::align_val_t alignment) _NOEXCEPT
+{
+    ::operator delete(ptr, alignment);
+}
+
+_LIBCPP_WEAK
+void
+operator delete[] (void* ptr, std::align_val_t alignment) _NOEXCEPT
+{
+    ::operator delete(ptr, alignment);
+}
+
+_LIBCPP_WEAK
+void
+operator delete[] (void* ptr, std::align_val_t alignment, const std::nothrow_t&) _NOEXCEPT
+{
+    ::operator delete[](ptr, alignment);
+}
+
+_LIBCPP_WEAK
+void
+operator delete[] (void* ptr, size_t, std::align_val_t alignment) _NOEXCEPT
+{
+    ::operator delete[](ptr, alignment);
+}
+
+#endif // !_LIBCPP_HAS_NO_LIBRARY_ALIGNED_ALLOCATION
+#endif // !__GLIBCXX__ && !_LIBCPP_ABI_VCRUNTIME && !_LIBCPP_DISABLE_NEW_DELETE_DEFINITIONS
 #endif // !defined(_LIBCPP_SGX_CONFIG)

@@ -33,9 +33,9 @@
 
 uint32_t sl_call_mngr_init(struct sl_call_mngr* mngr,
                        sl_call_type_t type,
-                       uint32_t max_pending_calls)
+                       uint64_t max_pending_calls)
 {
-    uint32_t i;
+    uint64_t i;
     mngr->type = type;
 
     struct sl_call_task* tasks = (struct sl_call_task*)calloc(max_pending_calls, sizeof(tasks[0]));

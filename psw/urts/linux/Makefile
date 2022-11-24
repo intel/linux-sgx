@@ -31,6 +31,8 @@
 
 include ../../../buildenv.mk
 
+URTS_VER:= $(shell awk '$$2 ~ /URTS_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+
 ifndef DEBUG
 CXXFLAGS += -DDISABLE_TRACE
 CFLAGS += -DDISABLE_TRACE
@@ -95,8 +97,7 @@ OBJ2 := urts.o               \
         debugger_support.o   \
         get_thread_id.o      \
         prd_css_util.o       \
-        urts_emodpr.o        \
-        urts_trim.o          \
+        urts_emm.o           \
         edmm_utility.o
 
 OBJ3 := enter_enclave.o \
@@ -140,7 +141,7 @@ $(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) ittn
 	@$(RM) -rf $(BUILD_DIR)/.sgx_enclave_common
 
 $(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) ittnotify
-	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@ $(LIB) -o $@  $(URTS_OBJ) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@.$(call SPLIT_VERSION,$(URTS_VER),1) $(LIB) -o $@  $(URTS_OBJ) $(LDFLAGS)
 
 $(LIBURTS_DEBUG): $(LIBURTS)
 ifndef DEBUG

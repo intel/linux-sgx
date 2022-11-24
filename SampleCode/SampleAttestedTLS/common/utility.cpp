@@ -52,19 +52,19 @@ int get_pkey_by_rsa(EVP_PKEY *pk)
 
     e = BN_new();
     if (!e) {
-        t_print("BN_new failed\n");
+        PRINT("BN_new failed\n");
         return res;
     }
 
     res = BN_set_word(e, (BN_ULONG)RSA_F4);
     if (!res) {
-        t_print("BN_set_word failed (%d)\n", res);
+        PRINT("BN_set_word failed (%d)\n", res);
 		return res;
     }
 
     rsa = RSA_new();
     if (!rsa) {
-        t_print("RSA_new failed\n");
+        PRINT("RSA_new failed\n");
         res = -1;
 		return res;
     }
@@ -78,7 +78,7 @@ int get_pkey_by_rsa(EVP_PKEY *pk)
 
     if (!res)
     {
-        t_print("RSA_generate_key failed (%d)\n", res);
+        PRINT("RSA_generate_key failed (%d)\n", res);
 		return res;
     }
 
@@ -99,14 +99,14 @@ int get_pkey_by_ec(EVP_PKEY *pk)
     res = EVP_PKEY_keygen_init(ctx);
     if (res <= 0)
     {
-        t_print("EC_generate_key failed (%d)\n", res);
+        PRINT("EC_generate_key failed (%d)\n", res);
         return res;
     }
 
     res = EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctx, NID_secp384r1);
     if (res <= 0)
     {
-        t_print("EC_generate_key failed (%d)\n", res);
+        PRINT("EC_generate_key failed (%d)\n", res);
         return res;
     }
 
@@ -114,7 +114,7 @@ int get_pkey_by_ec(EVP_PKEY *pk)
     res = EVP_PKEY_keygen(ctx, &pk);
     if (res <= 0)
     {
-        t_print("EC_generate_key failed (%d)\n", res);
+        PRINT("EC_generate_key failed (%d)\n", res);
         return res;
     }
 
@@ -141,7 +141,7 @@ sgx_status_t generate_key_pair(
     pkey = EVP_PKEY_new();
     if (!pkey)
     {
-        t_print("EVP_PKEY_new failed\n");
+        PRINT("EVP_PKEY_new failed\n");
         result = SGX_ERROR_UNEXPECTED;
         goto done;
     }
@@ -163,7 +163,7 @@ sgx_status_t generate_key_pair(
 
     if (res <= 0)
     {
-        t_print("get_pkey failed (%d)\n", res);
+        PRINT("get_pkey failed (%d)\n", res);
 		result = SGX_ERROR_UNEXPECTED;
 		goto done;
     }
@@ -172,7 +172,7 @@ sgx_status_t generate_key_pair(
     local_public_key = (uint8_t*)malloc(RSA_3072_PUBLIC_KEY_SIZE);
     if (!local_public_key)
     {
-        t_print("out-of-memory:calloc(local_public_key failed\n");
+        PRINT("out-of-memory:calloc(local_public_key failed\n");
         result = SGX_ERROR_OUT_OF_EPC;
         goto done;
     }
@@ -181,7 +181,7 @@ sgx_status_t generate_key_pair(
     local_private_key = (uint8_t*)malloc(RSA_3072_PRIVATE_KEY_SIZE);
     if (!local_private_key)
     {
-        t_print("out-of-memory: calloc(local_private_key) failed\n");
+        PRINT("out-of-memory: calloc(local_private_key) failed\n");
         result = SGX_ERROR_OUT_OF_EPC;
         goto done;
     }
@@ -192,21 +192,21 @@ sgx_status_t generate_key_pair(
     bio = BIO_new(BIO_s_mem());
     if (!bio)
     {
-        t_print("BIO_new for local_public_key failed\n");
+        PRINT("BIO_new for local_public_key failed\n");
 		goto done;
     }
 
     res = PEM_write_bio_PUBKEY(bio, pkey);
     if (!res)
     {
-        t_print("PEM_write_bio_PUBKEY failed (%d)\n", res);
+        PRINT("PEM_write_bio_PUBKEY failed (%d)\n", res);
         goto done;
     }
 
     res = BIO_read(bio, local_public_key, RSA_3072_PUBLIC_KEY_SIZE);
     if (!res)
     {
-        t_print("BIO_read public key failed (%d)\n", res);
+        PRINT("BIO_read public key failed (%d)\n", res);
         goto done;
     }
     BIO_free(bio);
@@ -215,7 +215,7 @@ sgx_status_t generate_key_pair(
     bio = BIO_new(BIO_s_mem());
     if (!bio)
     {
-        t_print("BIO_new for local_public_key failed\n");
+        PRINT("BIO_new for local_public_key failed\n");
         goto done;
     }
 
@@ -223,14 +223,14 @@ sgx_status_t generate_key_pair(
         bio, pkey, nullptr, nullptr, 0, nullptr, nullptr);
     if (!res)
     {
-        t_print("PEM_write_bio_PrivateKey failed (%d)\n", res);
+        PRINT("PEM_write_bio_PrivateKey failed (%d)\n", res);
         goto done;
     }
 
     res = BIO_read(bio, local_private_key, RSA_3072_PRIVATE_KEY_SIZE);
     if (!res)
     {
-        t_print("BIO_read private key failed (%d)\n", res);
+        PRINT("BIO_read private key failed (%d)\n", res);
         goto done;
     }
 
@@ -243,7 +243,7 @@ sgx_status_t generate_key_pair(
     *public_key_size = strlen(reinterpret_cast<const char *>(local_public_key)) + 1;
     *private_key_size = strlen(reinterpret_cast<const char *>(local_private_key)) + 1;
 
-    t_print("public_key_size %d, private_key_size %d\n", *public_key_size, *private_key_size);
+    PRINT("public_key_size %d, private_key_size %d\n", *public_key_size, *private_key_size);
     result = SGX_SUCCESS;
 
 done:

@@ -62,6 +62,8 @@ bool is_pkru_enabled();
 
 bool is_tcs_binding_mode();
 
+size_t get_xsave_size();
+
 #ifdef __cplusplus
 }
 #endif

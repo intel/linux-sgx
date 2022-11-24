@@ -32,7 +32,7 @@
 include ../sgxenv.mk
 
 Client_Include_Path := -I. -I$(SGX_SDK)/include -I/usr/include/openssl 
-Client_Cpp_Flags := -DCLIENT_UNTRUSTED $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(Client_Include_Path)
+Client_Cpp_Flags := -DCLIENT_USE_QVL $(SGX_COMMON_CFLAGS) -fPIC -Wno-attributes $(Client_Include_Path)
 
 ifeq ($(SGX_DEBUG), 1)
 	Client_Cpp_Flags += -DDEBUG -UNDEBUG -UEDEBUG

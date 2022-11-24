@@ -37,14 +37,12 @@ RM = rm -f
 
 ifneq ($(SGX_MODE), HW)
 	URTS_LIB_NAME := sgx_urts_sim
-	UAE_SERVICE_LIB := sgx_uae_service_sim
 else
 	URTS_LIB_NAME := sgx_urts
-	UAE_SERVICE_LIB := sgx_uae_service
 endif
 
 INC:=-I$(SGX_SDK)/include -I../Include
-LIB := -l$(URTS_LIB_NAME) -l$(UAE_SERVICE_LIB) -L$(SGX_SDK)/lib64 -lpthread
+LIB := -l$(URTS_LIB_NAME) -L$(SGX_SDK)/lib64 -lpthread
 CXXFLAGS += $(INC) $(LIB)
 CFLAGS += $(INC) $(LIB)
 

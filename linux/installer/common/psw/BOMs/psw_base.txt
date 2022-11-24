@@ -9,8 +9,8 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/libsgx_default_qcnl_wrapper.so	<installdir>/package/aesm/libsgx_default_qcnl_wrapper.so	0	main	STP
 <deliverydir>/build/linux/liburts_internal.so	<installdir>/package/aesm/liburts_internal.so	0	main	STP
 <deliverydir>/build/linux/libCppMicroServices.so.4.0.0	<installdir>/package/aesm/libCppMicroServices.so.4.0.0	0	main	STP
-<deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libsgx_pce_logic.so	<installdir>/package/aesm/libsgx_pce_logic.so	0	main	STP
-<deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libsgx_qe3_logic.so	<installdir>/package/aesm/libsgx_qe3_logic.so	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libsgx_pce_logic.so	<installdir>/package/aesm/libsgx_pce_logic.so.1	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libsgx_qe3_logic.so	<installdir>/package/aesm/libsgx_qe3_logic.so.1	0	main	STP
 <deliverydir>/build/linux/bundles/libepid_quote_service_bundle.so	<installdir>/package/aesm/bundles/libepid_quote_service_bundle.so	0	main	STP
 <deliverydir>/build/linux/bundles/lible_launch_service_bundle.so	<installdir>/package/aesm/bundles/lible_launch_service_bundle.so	0	main	STP
 <deliverydir>/build/linux/bundles/liblinux_network_service_bundle.so	<installdir>/package/aesm/bundles/liblinux_network_service_bundle.so	0	main	STP

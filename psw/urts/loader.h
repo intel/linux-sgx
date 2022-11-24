@@ -68,8 +68,6 @@ public:
     const std::vector<std::pair<tcs_t *, bool>>& get_tcs_list() const;
     void* get_symbol_address(const char* const sym);
     int set_memory_protection();
-    int post_init_action(layout_t *start, layout_t *end, uint64_t delta);
-    int post_init_action_commit(layout_t *start, layout_t *end, uint64_t delta);
 
 private:
     int build_mem_region(const section_info_t &sec_info);

@@ -11,9 +11,12 @@ Extensions (Intel(R) SGX) SDK:
 How to Build/Execute the Sample Code
 ------------------------------------
 1. Install Intel(R) SGX SDK for Linux* OS
-2. Make sure your environment is set:
+2. Enclave test key(two options):
+    a. Install openssl first, then the project will generate a test key<Enclave_private_test.pem> automatically when you build the project.
+    b. Rename your test key(3072-bit RSA private key) to <Enclave_private_test.pem> and put it under the <Enclave> folder.
+3. Make sure your environment is set:
     $ source ${sgx-sdk-install-path}/environment
-3. Build the project with the prepared Makefile:
+4. Build the project with the prepared Makefile:
     a. Hardware Mode, Debug build:
         1) Enclave with no mitigation:
             $ make
@@ -41,9 +44,9 @@ How to Build/Execute the Sample Code
         $ make SGX_MODE=SIM SGX_PRERELEASE=1 SGX_DEBUG=0
     f. Simulation Mode, Release build:
         $ make SGX_MODE=SIM SGX_DEBUG=0
-4. Execute the binary directly:
+5. Execute the binary directly:
     $ ./app
-5. Remember to "make clean" before switching build mode
+6. Remember to "make clean" before switching build mode
 
 ------------------------------------------
 Explanation about Configuration Parameters

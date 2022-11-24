@@ -159,6 +159,7 @@ Enclave_Seal_Objects := $(Gen_Trusted_Object_Seal) $(Enclave_Seal_Cpp_Files:.cpp
 Enclave_Seal_Name := libenclave_seal.so
 Signed_Enclave_Seal_Name := libenclave_seal.signed.so
 Enclave_Seal_Config_File := Enclave_Seal/Enclave_Seal.config.xml
+Enclave_Seal_Test_Key := Enclave_Seal/Enclave_private_test.pem
 Enclave_Seal_Link_Flags := $(Enclave_Link_Flags) -Wl,--version-script=Enclave_Seal/Enclave_Seal.lds
 
 # Enclave_Unseal
@@ -274,7 +275,12 @@ $(Enclave_Seal_Name): $(Enclave_Seal_Objects)
 	@echo "LINK =>  $@"
 
 $(Signed_Enclave_Seal_Name): $(Enclave_Seal_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave_Seal/Enclave_private_test.pem -enclave $(Enclave_Seal_Name) -out $@ -config $(Enclave_Seal_Config_File)
+ifeq ($(wildcard $(Enclave_Seal_Test_Key)),)
+	@echo "There is no enclave test key<Enclave_private_test.pem>."
+	@echo "The project will generate a key<Enclave_private_test.pem> for test."
+	@openssl genrsa -out $(Enclave_Seal_Test_Key) -3 3072
+endif
+	@$(SGX_ENCLAVE_SIGNER) sign -key $(Enclave_Seal_Test_Key) -enclave $(Enclave_Seal_Name) -out $@ -config $(Enclave_Seal_Config_File)
 	@echo "SIGN =>  $@"
 
 
@@ -298,7 +304,7 @@ $(Enclave_Unseal_Name): $(Enclave_Unseal_Objects)
 	@echo "LINK =>  $@"
 
 $(Signed_Enclave_Unseal_Name): $(Enclave_Unseal_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave_Seal/Enclave_private_test.pem -enclave $(Enclave_Unseal_Name) -out $@ -config $(Enclave_Unseal_Config_File)
+	@$(SGX_ENCLAVE_SIGNER) sign -key $(Enclave_Seal_Test_Key) -enclave $(Enclave_Unseal_Name) -out $@ -config $(Enclave_Unseal_Config_File)
 	@echo "SIGN =>  $@"
 
 

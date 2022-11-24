@@ -81,10 +81,10 @@ sgx_status_t sl_uswitchless_new(const sgx_uswitchless_config_t* config,
     handle->us_config.retries_before_fallback = (handle->us_config.retries_before_fallback == 0) ? 
                                                 SL_DEFAULT_FALLBACK_RETRIES : handle->us_config.retries_before_fallback;
 
-    handle->us_config.retries_before_sleep    = (handle->us_config.retries_before_sleep    == 0) ? 
+    handle->us_config.retries_before_sleep    = (handle->us_config.retries_before_sleep    == 0) ?
                                                 SL_DEFAULT_SLEEP_RETRIES    : handle->us_config.retries_before_sleep;
 
-    uint32_t max_tasks = handle->us_config.switchless_calls_pool_size_qwords == 0 ? 
+    uint64_t max_tasks = handle->us_config.switchless_calls_pool_size_qwords == 0 ?
                          SL_DEFUALT_MAX_TASKS_QWORDS : handle->us_config.switchless_calls_pool_size_qwords;
 
     max_tasks *= BITS_IN_QWORD;
@@ -191,7 +191,7 @@ uint32_t sl_uswitchless_start_workers(struct sl_uswitchless* handle,
     BUG_ON(ocall_table == NULL);
     /* Silently ignore harmless duplication of staring workers */
     
-    if (lock_cmpxchg_ptr((void*)&handle->us_ocall_table, NULL, (void*)ocall_table) != NULL)
+    if (lock_cmpxchg_ptr((void* volatile*)&handle->us_ocall_table, NULL, (void*)ocall_table) != NULL)
         return 0;
 
     /* switchless ocall_table to the sl_fcall_mngr for switchless Calls */

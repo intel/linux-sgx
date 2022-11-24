@@ -1,9 +1,8 @@
 //===-------------------------- regex.cpp ---------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -57,6 +56,8 @@ make_error_type_string(regex_constants::error_type ecode)
         return "An invalid regex grammar has been requested.";
     case regex_constants::__re_err_empty:
         return "An empty regex is not allowed in the POSIX grammar.";
+    case regex_constants::__re_err_parse:
+        return "The parser did not consume the entire regular expression.";
     default:
         break;
     }
@@ -317,4 +318,4 @@ __match_any_but_newline<wchar_t>::__exec(__state& __s) const
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif // !defined(_LIBCPP_SGX_CONFIG)
+#endif

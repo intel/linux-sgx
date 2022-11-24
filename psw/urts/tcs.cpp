@@ -433,7 +433,7 @@ CTrustThread * CTrustThreadPool::acquire_thread(int ecall_cmd)
     }
 
     if(is_special_ecall != true &&
-       need_to_new_thread() == true)
+       need_to_new_thread() == true && NULL != m_utility_thread)
     {     
         m_utility_thread->get_enclave()->fill_tcs_mini_pool_fn();
     }
@@ -473,12 +473,6 @@ bool CTrustThreadPool::need_to_new_thread()
     return true;
 }
 
-
-static int make_tcs(size_t tcs)
-{
-    return g_enclave_creator->mktcs(tcs);
-}
-
 struct ms_str
 {
     void * ms;
@@ -506,16 +500,11 @@ sgx_status_t CTrustThreadPool::new_thread()
         return SGX_SUCCESS;
     }
 
-    size_t octbl_buf[ROUND_TO(sizeof(sgx_ocall_table_t) + sizeof(void*), sizeof(size_t)) / sizeof(size_t)];
-    sgx_ocall_table_t *octbl = reinterpret_cast<sgx_ocall_table_t*>(octbl_buf);
-    octbl->count = 1;
-    void **ocalls = octbl->ocall;
-    *ocalls = reinterpret_cast<void*>(make_tcs);
     CTrustThread *trust_thread = m_unallocated_threads.back();
     tcs_t *tcsp = trust_thread->get_tcs();
     struct ms_str ms1;
     ms1.ms = tcsp;
-    ret = (sgx_status_t)do_ecall(ECMD_MKTCS, octbl, &ms1, m_utility_thread);
+    ret = (sgx_status_t)do_ecall(ECMD_MKTCS, NULL, &ms1, m_utility_thread);
     if (SGX_SUCCESS == ret )
     {    
         //add tcs to debug tcs info list

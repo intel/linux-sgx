@@ -7,6 +7,9 @@ The project demonstrates sealing/unsealing data between two enclaves.
 How to Build/Execute the Sample Code
 ------------------------------------
 1. Install Intel(R) SGX SDK for Linux* OS
+2. Enclave test key(two options):
+    a. Install openssl first, then the project will generate a test key<Enclave_private_test.pem> automatically when you build the project.
+    b. Rename your test key(3072-bit RSA private key) to <Enclave_private_test.pem> and put it under the <Enclave_Seal> folder.
 2. Make sure your environment is set:
     $ source ${sgx-sdk-install-path}/environment
 3. Build the project with the prepared Makefile:

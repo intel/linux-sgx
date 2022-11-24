@@ -44,102 +44,6 @@ int32_t protected_fs_file::remove(const char* filename)
 {
 	sgx_status_t status;
 	int32_t result32 = 0;
-
-/*
-	void* file = NULL;
-	int64_t real_file_size = 0;
-
-	if (filename == NULL)
-		return 1;
-
-	meta_data_node_t* file_meta_data = NULL;
-	meta_data_encrypted_t* encrypted_part_plain = NULL;
-
-	// if we have a problem in any of the stages, we simply jump to the end and try to remove the file...
-	do {
-		status = u_sgxprotectedfs_check_if_file_exists(&result, filename);
-		if (status != SGX_SUCCESS)
-			break;
-
-		if (result == 0)
-		{
-			errno = EINVAL;
-			return 1; // no such file, or file locked so we can't delete it anyways
-		}
-
-		try {
-			file_meta_data = new meta_data_node_t;
-			encrypted_part_plain = new meta_data_encrypted_t;
-		}
-		catch (std::bad_alloc e) {
-			break;
-		}
-
-		status = u_sgxprotectedfs_exclusive_file_open(&file, filename, 1, &real_file_size, &result32);
-		if (status != SGX_SUCCESS || file == NULL)
-			break;
-
-		if (real_file_size == 0 || real_file_size % NODE_SIZE != 0)
-			break; // empty file or not an SGX protected FS file
-		
-		// might be an SGX protected FS file
-		status = u_sgxprotectedfs_fread_node(&result32, file, 0, (uint8_t*)file_meta_data, NODE_SIZE);
-		if (status != SGX_SUCCESS || result32 != 0)
-			break;
-
-		if (file_meta_data->plain_part.major_version != SGX_FILE_MAJOR_VERSION)
-			break;
-	
-		sgx_aes_gcm_128bit_key_t zero_key_id = {0};
-		sgx_aes_gcm_128bit_key_t key = {0};
-		if (consttime_memequal(&file_meta_data->plain_part.key_id, &zero_key_id, sizeof(sgx_aes_gcm_128bit_key_t)) == 1)
-			break; // shared file - no monotonic counter
-		
-		sgx_key_request_t key_request = {0};
-		key_request.key_name = SGX_KEYSELECT_SEAL;
-		key_request.key_policy = SGX_KEYPOLICY_MRENCLAVE;
-		memcpy(&key_request.key_id, &file_meta_data->plain_part.key_id, sizeof(sgx_key_id_t));
-		
-		status = sgx_get_key(&key_request, &key);
-		if (status != SGX_SUCCESS)
-			break;		
-
-		status = sgx_rijndael128GCM_decrypt(&key, 
-											file_meta_data->encrypted_part, sizeof(meta_data_encrypted_blob_t),
-											(uint8_t*)encrypted_part_plain,
-											file_meta_data->plain_part.meta_data_iv, SGX_AESGCM_IV_SIZE,
-											NULL, 0,
-											&file_meta_data->plain_part.meta_data_gmac);
-		if (status != SGX_SUCCESS)
-			break;
-
-		sgx_mc_uuid_t empty_mc_uuid = {0};
-		if (consttime_memequal(&empty_mc_uuid, &encrypted_part_plain->mc_uuid, sizeof(sgx_mc_uuid_t)) == 0)
-		{
-			status = sgx_destroy_monotonic_counter(&encrypted_part_plain->mc_uuid);
-			if (status != SGX_SUCCESS)
-				break;
-
-			// monotonic counter was deleted, mission accomplished!!
-		}
-	}
-	while (0);
-
-	// cleanup
-	if (file_meta_data != NULL)
-		delete file_meta_data;
-
-	if (encrypted_part_plain != NULL)
-	{
-		// scrub the encrypted part
-		memset_s(encrypted_part_plain, sizeof(meta_data_encrypted_t), 0, sizeof(meta_data_encrypted_t));
-		delete encrypted_part_plain;
-	}
-
-	if (file != NULL) 
-		u_sgxprotectedfs_fclose(&result32, file);
-
-*/
 	
 	// do the actual file removal
 	status = u_sgxprotectedfs_remove(&result32, filename);
@@ -196,13 +100,6 @@ int protected_fs_file::seek(int64_t new_offset, int origin)
 		sgx_thread_mutex_unlock(&mutex);
 		return -1;
 	}
-
-	//if (open_mode.binary == 0 && origin != SEEK_SET && new_offset != 0)
-	//{
-	//	last_error = EINVAL;
-	//	sgx_thread_mutex_unlock(&mutex);
-	//	return -1;
-	//}
 
 	int result = -1;
 
@@ -298,33 +195,6 @@ void protected_fs_file::clear_error()
 			file_status = SGX_FILE_STATUS_OK;
 		}
 	}
-
-/*
-	if (file_status == SGX_FILE_STATUS_WRITE_TO_DISK_FAILED_NEED_MC)
-	{
-		if (write_all_changes_to_disk(true) == true)
-		{
-			need_writing = false;
-			file_status = SGX_FILE_STATUS_MC_NOT_INCREMENTED; // fall through...next 'if' should take care of this one
-		}
-	}
-
-	if ((file_status == SGX_FILE_STATUS_MC_NOT_INCREMENTED) && 
-		(encrypted_part_plain.mc_value <= (UINT_MAX-2)))
-	{
-		uint32_t mc_value;
-		sgx_status_t status = sgx_increment_monotonic_counter(&encrypted_part_plain.mc_uuid, &mc_value);
-		if (status == SGX_SUCCESS)
-		{
-			assert(mc_value == encrypted_part_plain.mc_value);
-			file_status = SGX_FILE_STATUS_OK;
-		}
-		else
-		{
-			last_error = status;
-		}
-	}
-*/
 	
 	if (file_status == SGX_FILE_STATUS_OK)
 	{
@@ -392,4 +262,3 @@ int32_t protected_fs_file::clear_cache()
 
 	return 0;
 }
-

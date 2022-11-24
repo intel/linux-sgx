@@ -159,8 +159,11 @@ static inline uint32_t get_ssa_frame_size(pid_t pid, thread_data_t* td)
 #endif
 
     //When debug trts, ssa_frame_size in TD is not initialized, so the value will be 0.
-    //It is a limitation to debug trts. As work around, the default size is 1 page, so
-    //we can debug enclave from the start of enclave_entry.
+    //It is a limitation to debug trts. As a workaround, set the default page to 1, so
+    //we can debug enclave from the start of enclave_entry. It works on most platforms
+    //except the enclave supports AMX. 
+    //AMX makes the ssa_frame_size more than 1 page. If AMX is enabled, the debugger will 
+    //only be workable after TD is initialized.
     if(0 == ssa_frame_size)
         ssa_frame_size = 1;
 

@@ -38,6 +38,7 @@ from ctypes import create_string_buffer
 import load_symbol_cmd
 import sgx_emmt
 import ctypes
+import re
 
 # Calculate the bit mode of current debuggee project
 SIZE = gdb.parse_and_eval("sizeof(long)")
@@ -523,7 +524,7 @@ def is_bp_in_urts():
     try:
         ip = gdb.parse_and_eval("$pc")
         solib_name = gdb.solib_name(int(str(ip).split()[0], 16))
-        if(solib_name.find("libsgx_urts.so") == -1 and solib_name.find("libsgx_urts_sim.so") == -1 and solib_name.find("libsgx_aesm_service.so") == -1):
+        if(re.match('libsgx_urts.so[.0-9]*', os.path.basename(solib_name)) == None and solib_name.find("libsgx_urts_sim.so") == -1 and solib_name.find("libsgx_aesm_service.so") == -1):
             return False
         else:
             return True
@@ -716,7 +717,7 @@ def exit_handler(event):
 
 def newobj_handler(event):
     solib_name = os.path.basename(event.new_objfile.filename)
-    if solib_name == 'libsgx_urts.so' or solib_name == 'libsgx_urts_sim.so' or solib_name == 'libsgx_aesm_service.so':
+    if re.match('libsgx_urts.so[.0-9]*', solib_name) or solib_name == 'libsgx_urts_sim.so' or solib_name == 'libsgx_aesm_service.so':
         sgx_debugger_init()
     return
 

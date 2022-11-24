@@ -69,8 +69,6 @@ void* operator new[](size_t size, const std::nothrow_t& nt) CPP_NOTHROW
 void operator delete(void* p, const std::nothrow_t& nt) CPP_NOTHROW
                                               ALIAS(tc_delete_nothrow);
 void operator delete[](void* p, const std::nothrow_t& nt) CPP_NOTHROW
-                                              ALIAS(tc_deletearray_nothrow);
-#endif
 
 #if defined(ENABLE_SIZED_DELETE)
 
@@ -208,6 +206,8 @@ void operator delete[](void *p, size_t size, std::align_val_t al) CPP_NOTHROW
 #endif /* defined(ENABLE_SIZED_DELETE) */
 
 #endif /* defined(ENABLE_ALIGNED_NEW_DELETE) */
+
+#endif /* TCMALLOC_SGX */
 
 extern "C" {
   void* __attribute__((weak)) malloc(size_t size) __THROW               ALIAS(tc_malloc);

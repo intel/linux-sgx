@@ -48,6 +48,8 @@
 #include "crypto_wrapper.h"
 #include "global_data.h"
 #include "se_version.h"
+#include "ema_imp.h"
+#include "bit_array_imp.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -281,7 +283,7 @@ bool CMetadata::fill_enclave_css(const xml_parameter_t *para)
     m_metadata->enclave_css.body.misc_mask = (uint32_t)para[MISCMASK].value;
     //low 64 bit
     m_metadata->enclave_css.body.attributes.flags = 0;
-    m_metadata->enclave_css.body.attribute_mask.flags = ~SGX_FLAGS_DEBUG;
+    m_metadata->enclave_css.body.attribute_mask.flags = ~(SGX_FLAGS_DEBUG | SGX_FLAGS_NON_CHECK_BITS);
     if(para[DISABLEDEBUG].value == 1)
     {
         m_metadata->enclave_css.body.attributes.flags &=  ~SGX_FLAGS_DEBUG;
@@ -351,6 +353,25 @@ bool CMetadata::fill_enclave_css(const xml_parameter_t *para)
                 m_metadata->enclave_css.body.attribute_mask.xfrm &= ~SGX_XFRM_PKRU;
                 break;
     }
+    switch(para[AMX].value)
+    {
+        case FEATURE_MUST_BE_ENABLED:
+                // AMX must be enabled
+                m_metadata->enclave_css.body.attributes.xfrm |= SGX_XFRM_AMX;
+                m_metadata->enclave_css.body.attribute_mask.xfrm |= SGX_XFRM_AMX;
+                break;
+        case FEATURE_LOADER_SELECTS:
+		// Loader will enable this feature if it is avaiable on HW
+                m_metadata->enclave_css.body.attributes.xfrm &= ~SGX_XFRM_AMX;
+                m_metadata->enclave_css.body.attribute_mask.xfrm &= ~SGX_XFRM_AMX;
+                break;
+        case FEATURE_MUST_BE_DISABLED:
+        default:
+                // AMX must be disabled
+                m_metadata->enclave_css.body.attributes.xfrm &= ~SGX_XFRM_AMX;
+                m_metadata->enclave_css.body.attribute_mask.xfrm |= SGX_XFRM_AMX;
+                break;
+    }
 
     m_metadata->enclave_css.body.isv_prod_id = (uint16_t)para[PRODID].value;
     m_metadata->enclave_css.body.isv_svn = (uint16_t)para[ISVSVN].value;
@@ -378,8 +399,7 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     
     m_metadata->size = offsetof(metadata_t, data);
     m_metadata->tcs_policy = (uint32_t)parameter[TCSPOLICY].value;
-    m_metadata->ssa_frame_size = SSA_FRAME_SIZE;
-    m_metadata->max_save_buffer_size = MAX_SAVE_BUF_SIZE;
+
     m_metadata->magic_num = METADATA_MAGIC;
     m_metadata->desired_misc_select = 0;
     m_metadata->tcs_min_pool = (uint32_t)parameter[TCSMINPOOL].value;
@@ -401,9 +421,18 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     //set bits that have been set '1' and need to be checked
     m_metadata->attributes.xfrm |= (m_metadata->enclave_css.body.attributes.xfrm & m_metadata->enclave_css.body.attribute_mask.xfrm);
 
-    return true;
-}
+    // set m_create_param.xsave_size and ssa_fram_size
+    if(false == get_xsave_size(m_metadata->attributes.xfrm, &m_create_param.xsave_size))
+    {
+        return false;
+    }
+    
+    m_metadata->ssa_frame_size = ROUND_TO_PAGE(m_create_param.xsave_size + (uint32_t)sizeof(ssa_gpr_t)) >> SE_PAGE_SHIFT;
+    m_metadata->max_save_buffer_size = m_create_param.xsave_size;
 
+    bool ret = check_config();
+    return ret;
+}
 bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
 {
 
@@ -489,6 +518,12 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
        }
    }
 
+    if ((parameter[USERREGIONSIZE].value % ALIGN_SIZE))
+    {
+        se_trace(SE_TRACE_ERROR, SET_USER_REGION_SIZE_ALIGN_ERROR);
+        return false;
+    }
+
     // LE setting:  HW != 0, Licensekey = 1
     // Other enclave setting: HW = 0, Licensekey = 0
     if((parameter[HW].value == 0 && parameter[LAUNCHKEY].value != 0) ||
@@ -547,6 +582,7 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     m_create_param.rsrv_min_size = parameter[RSRVMINSIZE].value;
     m_create_param.rsrv_max_size = parameter[RSRVMAXSIZE].value;
     m_create_param.rsrv_executable = parameter[RSRVEXECUTABLE].flag ? parameter[RSRVEXECUTABLE].value : 0;
+    m_create_param.user_region_size = parameter[USERREGIONSIZE].value;
     m_create_param.stack_max_size = parameter[STACKMAXSIZE].value;
     m_create_param.stack_min_size = parameter[STACKMINSIZE].value;
     m_create_param.tcs_num = (uint32_t)parameter[TCSNUM].value;
@@ -558,8 +594,150 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     SE_TRACE_DEBUG("RSRV_MIN_SIZE  = 0x%016llX\n", m_create_param.rsrv_min_size);
     SE_TRACE_DEBUG("RSRV_INIT_SIZE = 0x%016llX\n", m_create_param.rsrv_init_size);
     SE_TRACE_DEBUG("RSRV_MAX_SIZE  = 0x%016llX\n", m_create_param.rsrv_max_size);
+    SE_TRACE_DEBUG("USER_REGION_SIZE  = 0x%016llX\n", m_create_param.user_region_size);
 
     return true;
+}
+
+uint64_t CMetadata::calculate_rts_bk_overhead()
+{
+    uint64_t ema_overhead = sizeof(struct ema_t_);
+    uint64_t bit_array_overhead = sizeof(struct bit_array_);
+
+    // MIN heap
+    uint32_t page_count = (uint32_t)(m_create_param.heap_min_size >> SE_PAGE_SHIFT);
+    uint64_t heap_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+
+    if(m_create_param.heap_init_size > m_create_param.heap_min_size)
+    {
+        // INIT heap
+        page_count = (uint32_t)((m_create_param.heap_init_size - m_create_param.heap_min_size) >> SE_PAGE_SHIFT);
+        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+
+    if(m_create_param.heap_max_size > m_create_param.heap_init_size)
+    {
+        page_count = (uint32_t)((m_create_param.heap_max_size - m_create_param.heap_init_size) >> SE_PAGE_SHIFT);
+        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+
+    page_count = (uint32_t)(m_create_param.rsrv_min_size >> SE_PAGE_SHIFT);
+    uint64_t rsrv_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+
+    if(m_create_param.rsrv_init_size > m_create_param.rsrv_min_size)
+    {
+        // INIT RSRV
+        page_count = (uint32_t)((m_create_param.rsrv_init_size - m_create_param.rsrv_min_size) >> SE_PAGE_SHIFT);
+        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+
+    if(m_create_param.rsrv_max_size > m_create_param.rsrv_init_size)
+    {
+        page_count = (uint32_t)((m_create_param.rsrv_max_size - m_create_param.rsrv_init_size) >> SE_PAGE_SHIFT);
+        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    }
+    // guard page | stack | guard page | TCS | SSA | guard page | TLS
+
+    // guard page
+    uint64_t non_removed_ctx_overhead = ema_overhead;
+    uint64_t removed_ctx_overhead = ema_overhead;
+
+    // stack
+    page_count = (uint32_t)(m_create_param.stack_min_size >> SE_PAGE_SHIFT);
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+
+    if(m_create_param.stack_max_size > m_create_param.stack_min_size)
+    {
+        page_count = (uint32_t)((m_create_param.stack_max_size - m_create_param.stack_min_size) >> SE_PAGE_SHIFT);
+        non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+        removed_ctx_overhead += ema_overhead;
+    }
+
+    // guard page
+    non_removed_ctx_overhead += ema_overhead;
+    removed_ctx_overhead += ema_overhead;
+
+    // tcs
+    page_count = TCS_SIZE >> SE_PAGE_SHIFT;
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+
+    // ssa
+    page_count = m_metadata->ssa_frame_size * SSA_NUM;
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+
+    // guard page
+    non_removed_ctx_overhead += ema_overhead;
+    removed_ctx_overhead += ema_overhead;
+
+    // td
+    page_count = 1;
+    const Section *section = m_parser->get_tls_section();
+    if(section)
+    {
+        page_count += (uint32_t)(ROUND_TO_PAGE(section->virtual_size()) >> SE_PAGE_SHIFT);
+    }
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    removed_ctx_overhead += ema_overhead;
+    
+    uint32_t tcs_min_pool = 0; /* Number of static threads (EADD) */
+    uint32_t tcs_eremove = 0;
+    if(m_create_param.tcs_min_pool > m_create_param.tcs_num - 1)
+    {
+        tcs_min_pool = m_create_param.tcs_num - 1;
+        tcs_eremove = 0;
+    }
+    else
+    {
+        tcs_min_pool = m_create_param.tcs_min_pool;
+        tcs_eremove = m_create_param.tcs_num -1 - m_create_param.tcs_min_pool;
+    }
+
+    // static thread contexts
+    uint64_t total_non_removed_ctx_overhead = non_removed_ctx_overhead;
+    if (tcs_min_pool > 0)
+    {
+        total_non_removed_ctx_overhead += non_removed_ctx_overhead;
+
+        if (tcs_min_pool > 1)
+        {
+            total_non_removed_ctx_overhead += non_removed_ctx_overhead * (tcs_min_pool - 1);
+        }
+    }
+
+    // eremoved thread contexts
+    uint64_t total_removed_ctx_overhead = removed_ctx_overhead;
+    if (tcs_eremove > 0)
+    {
+        total_removed_ctx_overhead += removed_ctx_overhead;
+
+        if (tcs_eremove > 1)
+        {
+            total_removed_ctx_overhead += removed_ctx_overhead * (tcs_eremove - 1);
+        }
+    }
+
+    // dynamic thread contexts
+    if (m_create_param.tcs_max_num > tcs_min_pool + 1)
+    {
+        total_non_removed_ctx_overhead += non_removed_ctx_overhead * (m_create_param.tcs_max_num - tcs_min_pool);
+    }
+
+    // PT_LOAD segments
+    uint64_t total_sections_overhead = 0;
+    std::vector<Section*> sections = m_parser->get_sections();
+    for (auto s : sections) {
+        uint32_t p_count = (uint32_t)(ROUND_TO_PAGE(s->virtual_size()) >> SE_PAGE_SHIFT);
+        total_sections_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(p_count, 8) >> 3);
+    }
+
+    return heap_node_overhead +
+           rsrv_node_overhead +
+           total_non_removed_ctx_overhead +
+           total_removed_ctx_overhead +
+           total_sections_overhead;
 }
 
 void *CMetadata::alloc_buffer_from_metadata(uint32_t size)
@@ -860,7 +1038,7 @@ bool CMetadata::build_layout_table()
 
     // ssa
     layout.entry.id = LAYOUT_ID_SSA;
-    layout.entry.page_count = SSA_FRAME_SIZE * SSA_NUM;
+    layout.entry.page_count = m_metadata->ssa_frame_size * SSA_NUM;
     layout.entry.attributes = PAGE_ATTR_EADD | PAGE_ATTR_EEXTEND;
     layout.entry.si_flags = SI_FLAGS_RW;
     thread_layouts.push_back(layout);
@@ -996,6 +1174,33 @@ bool CMetadata::build_layout_table()
             layout.entry.si_flags = SI_FLAGS_RW;
             m_layouts.push_back(layout);
         }
+    }
+
+    // USER_REGION
+    uint8_t meta_versions = get_meta_versions();
+    // SGX2 metadata required
+    if ((meta_versions & 2u) == 2u)
+    {
+        // 0x20000 comes from initial emalloc reserve size (0x10000 bytes),
+        // plus two guard pages (0x8000 bytes each)
+        uint64_t rts_bk_overhead = calculate_rts_bk_overhead() + 0x20000;
+        uint64_t user_region_size = ROUND_TO_PAGE(rts_bk_overhead);
+        se_trace(SE_TRACE_ERROR, "RTS bookkeeping overhead: 0x%016llX\n", user_region_size);
+
+        if (m_create_param.user_region_size > 0)
+        {
+            user_region_size += m_create_param.user_region_size;
+
+            // one-byte ema bookkeeping struct can roughly cover 2^15 byte data
+            uint64_t extra_overhead = (m_create_param.user_region_size >> 15);
+            user_region_size += ROUND_TO_PAGE(extra_overhead);
+        }
+        memset(&layout, 0, sizeof(layout));
+        layout.entry.id = LAYOUT_ID_USER_REGION;
+        layout.entry.page_count = (uint32_t)(user_region_size >> SE_PAGE_SHIFT);
+        layout.entry.attributes = PAGE_ATTR_POST_ADD;
+        layout.entry.si_flags = SI_FLAGS_RW;
+        m_layouts.push_back(layout);
     }
 
     // update layout entries
@@ -1179,7 +1384,8 @@ bool CMetadata::get_xsave_size(uint64_t xfrm, uint32_t *xsave_size)
         {SGX_XFRM_MPX,    512 + 64 + 256 + 256},        // 256 for MPX
         {SGX_XFRM_AVX512, 512 + 64 + 256 + 256 + 1600}, // 1600 for k0 - k7, ZMM0_H - ZMM15_H, ZMM16 - ZMM31
 	// Ignore PT as PT is a supervisor state.
-        {SGX_XFRM_PKRU,     512 + 64 + 256 + 256 + 1600 + 64}, // 8 for PKRU, 56 for alignment
+        {SGX_XFRM_PKRU,    512 + 64 + 256 + 256 + 1600 + 64}, // 8 for PKRU, 56 for alignment
+        {SGX_XFRM_AMX,     512 + 64 + 256 + 256 + 1600 + 64 + 64 + 8192}, // 64 for XTILECFG, 8196 for XTILEDATA
     };
     bool ret = true;
     *xsave_size = 0;
@@ -1199,11 +1405,6 @@ bool CMetadata::get_xsave_size(uint64_t xfrm, uint32_t *xsave_size)
 
 bool CMetadata::build_gd_template(uint8_t *data, uint32_t *data_size)
 {
-    if(false == get_xsave_size(m_metadata->attributes.xfrm, &m_create_param.xsave_size))
-    {
-        return false;
-    }
-
     m_create_param.stack_base_addr = (size_t)(get_entry_by_id(LAYOUT_ID_STACK_MIN)->rva + m_create_param.stack_min_size - get_entry_by_id(LAYOUT_ID_TCS)->rva);
     m_create_param.stack_limit_addr = (size_t)(m_create_param.stack_base_addr - m_create_param.stack_max_size);
     m_create_param.ssa_base_addr = (size_t)(get_entry_by_id(LAYOUT_ID_SSA)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva);
@@ -1217,6 +1418,16 @@ bool CMetadata::build_gd_template(uint8_t *data, uint32_t *data_size)
     else
     {
         m_create_param.rsrv_offset = (size_t)layout_rsrv->rva;
+    }
+
+    layout_entry_t * layout_user = get_entry_by_id(LAYOUT_ID_USER_REGION, false);
+    if (NULL == layout_user)
+    {
+        m_create_param.user_region_offset = (size_t)0;
+    }
+    else
+    {
+        m_create_param.user_region_offset = (size_t)layout_user->rva;
     }
 
     size_t tmp_tls_addr = (size_t)(get_entry_by_id(LAYOUT_ID_TD)->rva - get_entry_by_id(LAYOUT_ID_TCS)->rva);
@@ -1325,6 +1536,117 @@ uint64_t CMetadata::calculate_enclave_size(uint64_t size)
         return (uint64_t)-1;
 
     return round_size;
+}
+
+bool CMetadata::rts_dynamic()
+{
+    bool no_dynamic_heap =
+        ((m_create_param.heap_init_size == m_create_param.heap_min_size) &&
+        (m_create_param.heap_init_size == m_create_param.heap_max_size));
+
+    bool no_dynamic_stack =
+        (m_create_param.stack_max_size == m_create_param.stack_min_size);
+
+    bool no_dynamic_rsrv =
+        ((m_create_param.rsrv_init_size == m_create_param.rsrv_min_size) &&
+        (m_create_param.rsrv_init_size == m_create_param.rsrv_max_size));
+
+
+    uint32_t tcs_min_pool = 0;
+    if(m_create_param.tcs_min_pool > m_create_param.tcs_num - 1)
+    {
+        tcs_min_pool = m_create_param.tcs_num - 1;
+    }
+    else
+    {
+        tcs_min_pool = m_create_param.tcs_min_pool;
+    }
+
+    bool no_dynamic_thread = (m_create_param.tcs_max_num == tcs_min_pool + 1);
+
+    bool no_rts_dynamic = (no_dynamic_heap && no_dynamic_stack &&
+                          no_dynamic_rsrv && no_dynamic_thread);
+
+    return !no_rts_dynamic;
+}
+
+bool CMetadata::user_dynamic()
+{
+    return (m_create_param.user_region_size > 0);
+}
+
+sgx_misc_select_t CMetadata::get_config_misc_select()
+{
+    return m_metadata->enclave_css.body.misc_select;
+}
+
+sgx_misc_select_t CMetadata::get_config_misc_mask()
+{
+    return m_metadata->enclave_css.body.misc_mask;
+}
+
+bool CMetadata::check_config()
+{
+    uint32_t misc_select_0 = (uint32_t)get_config_misc_select() & 1u;
+    uint32_t misc_mask_0 = (uint32_t)get_config_misc_mask() & 1u;
+
+    bool has_rts_dynamic = rts_dynamic();
+    bool has_user_dynamic = user_dynamic();
+
+    // user region configured, either mask or select, or both are zero
+    if (has_user_dynamic)
+    {
+        if ((misc_mask_0 && misc_select_0) == 0)
+        {
+            m_meta_verions = 0;
+            se_trace(SE_TRACE_ERROR, "\033[0;31mERROR: Enclave configuration 'UserRegionSize' requires MiscSelect[0] and MiscMask[0] set to 1.\n\033[0m");
+            return false;
+        }
+        else
+        {
+            // SGX2 metadata only
+            m_meta_verions = 1u << 1;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'UserRegionSize' requires the enclave to be run on SGX2 platform.\n\033[0m");
+            return true;
+        }
+    }
+
+    if (has_rts_dynamic)
+    {
+        if (misc_select_0 == 0)
+        {
+            // SGX1 metadata only
+            m_meta_verions = 1u;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from using dynamic features. To use the dynamic features on SGX2 platform, suggest to set MiscMask[0]=0 and MiscSelect[0]=1.\n\033[0m");
+            return true;
+        }
+
+        if (misc_mask_0 == 1)
+        {
+            // SGX2 metadata only
+            m_meta_verions = 1u << 1;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform. To make it run on SGX1 platform, suggest to set MiscMask[0]=0 and MiscSelect[0]=1.\n\033[0m");
+            return true;
+        }
+
+        // SGX1 and SGX2 metadata
+        m_meta_verions = (1u << 1) | 1u;
+        se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will work on SGX1 and SGX2 platforms with respective metadata.\n\033[0m");
+        return true;
+    }
+
+    // SGX1 metadata only
+    m_meta_verions = 1u;
+    if (misc_select_0 == 1)
+    {
+        se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform.\n\033[0m");
+        return true;
+    }
+    else
+    {
+        se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: SGX1 only enclave, which will run on all platforms.\n\033[0m");
+        return true;
+    }
 }
 
 bool update_metadata(const char *path, const metadata_t *metadata, uint64_t meta_offset)

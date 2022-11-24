@@ -8,6 +8,10 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/Quot
 aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/linux _srcs)
 add_library(sgx_default_qcnl_wrapper SHARED ${_srcs})
 
+link_directories(
+    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/lib/linux64
+)
+
 target_include_directories(sgx_default_qcnl_wrapper PRIVATE
     ${SGX_HEADER_DIR}
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/inc
@@ -15,6 +19,7 @@ target_include_directories(sgx_default_qcnl_wrapper PRIVATE
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/common/inc
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson
+    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/inc
 )
 
 set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")
@@ -23,6 +28,6 @@ set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_DEPENDS
     )
 
 target_link_libraries(sgx_default_qcnl_wrapper
-    ${CURL_LIBRARIES}
+    ${CURL_LIBRARIES} crypto
 )
 

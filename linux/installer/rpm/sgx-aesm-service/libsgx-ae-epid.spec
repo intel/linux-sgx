@@ -66,7 +66,6 @@ rm -fr %{?buildroot}/%{name}
 
 %files -f %{_specdir}/list-%{name}
 
-
 %changelog
 * Mon Jul 29 2019 SGX Team
 - Initial Release

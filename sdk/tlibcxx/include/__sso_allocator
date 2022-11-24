@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===----------------------------------------------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -12,10 +11,9 @@
 #define _LIBCPP___SSO_ALLOCATOR
 
 #include <__config>
-#include <type_traits>
+#include <memory>
 #include <new>
-
-#include <__undef___deallocate>
+#include <type_traits>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
@@ -50,21 +48,21 @@ public:
 private:
     __sso_allocator& operator=(const __sso_allocator&);
 public:
-    _LIBCPP_INLINE_VISIBILITY pointer allocate(size_type __n, typename __sso_allocator<void, _Np>::const_pointer = 0)
+    _LIBCPP_INLINE_VISIBILITY pointer allocate(size_type __n, typename __sso_allocator<void, _Np>::const_pointer = nullptr)
     {
         if (!__allocated_ && __n <= _Np)
         {
             __allocated_ = true;
             return (pointer)&buf_;
         }
-        return static_cast<pointer>(_VSTD::__allocate(__n * sizeof(_Tp)));
+        return allocator<_Tp>().allocate(__n);
     }
-    _LIBCPP_INLINE_VISIBILITY void deallocate(pointer __p, size_type)
+    _LIBCPP_INLINE_VISIBILITY void deallocate(pointer __p, size_type __n)
     {
         if (__p == (pointer)&buf_)
             __allocated_ = false;
         else
-            _VSTD::__deallocate(__p);
+            allocator<_Tp>().deallocate(__p, __n);
     }
     _LIBCPP_INLINE_VISIBILITY size_type max_size() const throw() {return size_type(~0) / sizeof(_Tp);}
 
