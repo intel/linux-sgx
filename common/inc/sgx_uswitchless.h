@@ -121,17 +121,17 @@ typedef void (*sgx_uswitchless_worker_callback_t)(
 
 typedef struct 
 {
-	uint32_t                            switchless_calls_pool_size_qwords; //number of qwords to use for outstanding calls. (actual number is x 64)
+	uint64_t                            switchless_calls_pool_size_qwords; //number of qwords to use for outstanding calls. (actual number is x 64)
 
-    uint32_t                            num_uworkers;  //number of untrusted (for ocalls) worker threads
+    uint64_t                            num_uworkers;  //number of untrusted (for ocalls) worker threads
 
-    uint32_t                            num_tworkers;  //number of trusted (for ecalls) worker threads
+    uint64_t                            num_tworkers;  //number of trusted (for ecalls) worker threads
 
-	uint32_t                            retries_before_fallback; //how many times to execute assembly pause instruction 
+	uint64_t                            retries_before_fallback; //how many times to execute assembly pause instruction 
                                                                  //while waiting for worker thread to start executing switchless call 
                                                                  //before falling back to direct ECall/OCall. 
 
-	uint32_t                            retries_before_sleep;    //how many times a worker thread executes assembly pause instruction
+	uint64_t                            retries_before_sleep;    //how many times a worker thread executes assembly pause instruction
                                                                  //while waiting for switchless call request 
                                                                  //before going to sleep
 

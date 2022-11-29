@@ -41,18 +41,18 @@
 
 uint32_t sl_siglines_init(struct sl_siglines* sglns,
                           sl_siglines_dir_t direction,
-                          uint32_t num_lines,
+                          uint64_t num_lines,
                           sl_sighandler_t handler)
 {
     BUG_ON(is_direction_sender(direction) && (handler != NULL));
 
     if (num_lines <= 0) return EINVAL;
     num_lines = ALIGN_UP(num_lines, NBITS_PER_LINE);
-    uint32_t nlong = num_lines / NBITS_PER_LINE;
+    uint64_t nlong = num_lines / NBITS_PER_LINE;
 
     sl_sigline_t *event_lines = NULL, *free_lines = NULL;
 
-    uint32_t i = 0;
+    uint64_t i = 0;
 
     event_lines = (sl_sigline_t*)calloc(nlong, sizeof(sl_sigline_t));
 

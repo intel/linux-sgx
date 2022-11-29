@@ -15,6 +15,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linuxCF/libsgx_pthread.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_pthread.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_protobuf.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_protobuf.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_ttls.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_ttls.a	0	main	STP
+<deliverydir>/build/linuxCF/libtdx_tls.a	<installdir>/package/lib64/cve_2020_0551_cf/libtdx_tls.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_utls.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_utls.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_z.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_z.a	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/build/linuxCF/libsgx_dcap_tvl.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_dcap_tvl.a	0	main	STP

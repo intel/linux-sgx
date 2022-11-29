@@ -42,7 +42,7 @@
 #include <sgx_trts.h>
 #include <string.h>
 #include <errno.h>
-
+#include "emm_private.h"
 #define SGX_PAGE_NOACCESS          0x01     // -
 #define SGX_PAGE_READONLY          0x02     // R
 #define SGX_PAGE_READWRITE         0x04     // RW
@@ -184,7 +184,7 @@ void * sgx_alloc_rsrv_mem_ex(void *desired_addr, size_t length)
                 size = rsrv_mem_committed - rsrv_mem_min_size;
             }
             // EACCEPT the new pages
-            int ret = apply_EPC_pages(start_addr, size >> SE_PAGE_SHIFT);
+            int ret = mm_commit(start_addr, size);
             if(ret != 0)
             {
                 rsrv_mem_committed = prev_rsrv_mem_committed;
@@ -282,7 +282,6 @@ int sgx_free_rsrv_mem(void * addr, size_t length)
 
 
 #include "global_data.h"
-#include "trts_emodpr.h"
 
 static sgx_status_t tprotect_internal(size_t start, size_t size, si_flags_t perms)
 {
@@ -300,37 +299,12 @@ static sgx_status_t tprotect_internal(size_t start, size_t size, si_flags_t perm
     {
         return SGX_ERROR_UNEXPECTED;
     }
-    
-    // EMODPE/EACCEPT requires OS level R permission for the page. Therefore,
-    // If target permission is NONE, we should change the OS level permission to NONE after EACCEPT
-    // If original permission is NONE, we should change the OS level permission before EMODPE
     if(pr_needed || pe_needed)
     {
-        // Ocall to EMODPR if target perm is not RWX and mprotect() if target perm is not NONE
-        ret = change_permissions_ocall(start, size, perms, EDMM_MODPR);
-        if (ret != SGX_SUCCESS)
+        int rc = mm_modify_permissions((void*)start, size, (int)perms);
+        if (rc != 0)
             abort();
     }
-    si_flags_t sf = perms|SI_FLAG_PR|SI_FLAG_REG;
-
-    if(pe_needed)
-    {
-        if(emodpe_pages((void *)start, size / SE_PAGE_SIZE, sf))
-            abort();
-    }
-    if(pr_needed && ((perms & (SI_FLAG_W|SI_FLAG_X)) != (SI_FLAG_W|SI_FLAG_X)))
-    {
-    	// If the target permission to set is RWX, no EMODPR, hence no EACCEPT.
-        if(accept_modified_pages((void *)start, size / SE_PAGE_SIZE, sf))
-            abort();
-    }
-    if( pr_needed && perms == SI_FLAG_NONE )
-    {
-        // If the target permission is NONE, ocall to mprotect() to change the OS permission
-        ret = change_permissions_ocall(start, size, perms, EDMM_MPROTECT);
-        if (ret != SGX_SUCCESS)
-            abort();
-    } 
     return ret;
 }
 

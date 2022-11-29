@@ -60,8 +60,19 @@ SL_CFLAGS += -I$(COMMON_DIR)/inc \
              -I$(LINUX_SDK_DIR)/trts \
              -I$(SL_DIR)/inc
 
+SL_CXXFLAGS := $(CXXFLAGS)
+SL_CXXFLAGS += -fPIC $(CET_FLAGS)
+SL_CXXFLAGS += $(ENCLAVE_CXXFLAGS)
+SL_CXXFLAGS += -DSL_INSIDE_ENCLAVE
+SL_CXXFLAGS += -I$(COMMON_DIR)/inc \
+               -I$(COMMON_DIR)/inc/internal \
+               -I$(COMMON_DIR)/inc/tlibc \
+               -I$(LINUX_SDK_DIR)/trts \
+               -I$(SL_DIR)/inc
+
 ifdef DEBUG
 	SL_CFLAGS += -DSL_DEBUG
+	SL_CXXFLAGS += -DSL_DEBUG
 endif
 
 
@@ -82,8 +93,8 @@ $(OUT_LIB): $(ALL_OBJS)
 	@echo "$(GREEN)LINK => $@$(NC)"
 
 $(C_OBJS): %.o: %.c sgx_tswitchless_t.h
-	@$(CC) $(SL_CFLAGS) -c $< -o $@
-	@echo "$(CC) <= $@" 
+	@$(CXX) $(SL_CXXFLAGS) -c $< -o $@
+	@echo "$(CXX) <= $@" 
 
 
 sgx_tswitchless_t.h: $(EDGER8R)

@@ -140,6 +140,7 @@
 #define SET_RSRV_SIZE_INIT_MIN_ERROR        "Reserved memory size setting is not correct: min value should not be larger than init value.\n"
 #define SET_RSRV_SIZE_MAX_MIN_ERROR         "Reserved memory size setting is not correct: max value should not be smaller than min value.\n"
 #define SET_RSRV_EXECUTABLE_ERROR           "Reserved memory executable setting is not correct: the executable value should be set to 1 or 0.\n"
+#define SET_USER_REGION_SIZE_ALIGN_ERROR    "User region size setting is not correct: size is not page aligned.\n"
 #define SET_HW_LE_ERROR                     "Conflicting setting between the 'HW' and 'LaunchKey'.\n"
 #define SET_TCS_MAX_NUM_ERROR               "Maximum number of TCS is not correct.\n"
 #define SET_TCS_MIN_POOL_ERROR              "Minimum number of TCS Pool is not correct.\n"

@@ -64,14 +64,14 @@ RUN make psw_install_pkg
 
 RUN  make deb_local_repo
 
-FROM ubuntu:18.04 as aesm 
+FROM ubuntu:18.04 as aesm
 RUN apt-get update && apt-get install -y \
     libcurl4 \
     libprotobuf10 \
     libssl1.1 \
     make \
     module-init-tools
- 
+
 WORKDIR /installer
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
 RUN ./sgx_linux_x64_psw*.bin --no-start-aesm
@@ -149,4 +149,3 @@ RUN adduser -q --disabled-password --gecos "" --no-create-home sgxuser
 USER sgxuser
 
 CMD ./app
-

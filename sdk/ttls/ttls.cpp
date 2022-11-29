@@ -33,18 +33,38 @@
 #include "sgx_utils.h"
 #include "sgx_tcrypto.h"
 #include "sgx_quote_3.h"
+#include "sgx_quote_4.h"
 #include "cert_header.h"
 #include "sgx_dcap_tvl.h"
 #include <string.h>
 #include <sgx_trts.h>
+
 #include "sgx_ttls_t.h"
+
+#ifdef TDX_ENV
+#include <openssl/sha.h>
+#include "tdx_attest.h"
+#endif
 
 static const char* oid_sgx_quote = X509_OID_FOR_QUOTE_STRING;
 
 //The ISVSVN threshold of Intel signed QvE
-const sgx_isv_svn_t qve_isvsvn_threshold = 6;
+const sgx_isv_svn_t qve_isvsvn_threshold = 7;
 
-extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
+#ifdef TDX_ENV
+quote3_error_t tdx_attest_to_sgx_ql_error(tdx_attest_error_t err) {
+    switch (err) {
+        case TDX_ATTEST_ERROR_INVALID_PARAMETER:
+            return SGX_QL_ERROR_INVALID_PARAMETER;
+        case TDX_ATTEST_ERROR_OUT_OF_MEMORY:
+            return SGX_QL_ERROR_OUT_OF_MEMORY;
+        default:
+            return SGX_QL_ERROR_UNEXPECTED;
+    }
+}
+#endif
+
+extern "C" quote3_error_t tee_get_certificate_with_evidence(
     const unsigned char *p_subject_name,
     const uint8_t *p_prv_key,
     size_t private_key_size,
@@ -53,14 +73,21 @@ extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
     uint8_t **pp_output_cert,
     size_t *p_output_cert_size)
 {
-    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-    quote3_error_t func_ret = SGX_QL_ERROR_UNEXPECTED;
+#ifndef TDX_ENV
     sgx_report_t app_report;
     sgx_target_info_t target_info;
-    uint8_t *p_quote = NULL;
-    uint32_t quote_size = 0;
     sgx_sha_state_handle_t sha_handle = NULL;
     sgx_report_data_t report_data = { 0 };
+#else
+    tdx_attest_error_t tdx_ret = TDX_ATTEST_ERROR_UNEXPECTED;
+    tdx_uuid_t selected_att_key_id = { 0 };
+    SHA256_CTX sha_handle;
+    tdx_report_data_t report_data = { 0 };
+#endif
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    quote3_error_t func_ret = SGX_QL_ERROR_UNEXPECTED;
+    uint8_t *p_quote = NULL;
+    uint32_t quote_size = 0;
 
     if (p_subject_name == NULL ||
         p_prv_key == NULL || private_key_size <= 0 ||
@@ -74,6 +101,7 @@ extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
         return SGX_QL_ERROR_INVALID_PARAMETER;
 
     do {
+#ifndef TDX_ENV
         //OCALL to get target info of QE
         ret = sgx_tls_get_qe_target_info_ocall(&func_ret, &target_info, sizeof(sgx_target_info_t));
         if (ret != SGX_SUCCESS) {
@@ -121,19 +149,41 @@ extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
 
         p_quote = (uint8_t *) malloc (quote_size);
         if (p_quote == NULL) {
-            func_ret = SGX_QL_ERROR_OUT_OF_MEMORY;
+            func_ret = SGX_QL_OUT_OF_EPC;
             break;
         }
         memset (p_quote, 0, quote_size);
 
         //OCALL to get quote
-        ret = sgx_tls_get_quote_ocall(&func_ret, &app_report, sizeof(sgx_report_t), p_quote, quote_size);
+        ret = sgx_tls_get_quote_ocall(&func_ret, &app_report, sizeof(app_report), p_quote, quote_size);
         if (ret != SGX_SUCCESS) {
             func_ret = SGX_QL_ERROR_UNEXPECTED;
             break;
         }
         if (func_ret != SGX_QL_SUCCESS)
             break;
+#else
+        if (!SHA256_Init(&sha_handle)) {
+            func_ret = SGX_QL_ERROR_UNEXPECTED;
+            break;
+        }
+
+        if (!SHA256_Update(&sha_handle, p_pub_key, public_key_size)) {
+            func_ret = SGX_QL_ERROR_UNEXPECTED;
+            break;
+        }
+
+        if (!SHA256_Final(reinterpret_cast<unsigned char *>(&report_data), &sha_handle)) {
+            func_ret = SGX_QL_ERROR_UNEXPECTED;
+            break;
+        }
+
+        tdx_ret = tdx_att_get_quote(&report_data, NULL, 0, &selected_att_key_id, &p_quote, &quote_size, 0);
+        if (tdx_ret != TDX_ATTEST_SUCCESS) {
+            func_ret = tdx_attest_to_sgx_ql_error(tdx_ret);
+            break;
+        }
+#endif
 
         //Generate self-signed X.509 certiciate
         //Make SGX quote as an extension
@@ -160,8 +210,10 @@ extern "C" quote3_error_t SGXAPI tee_get_certificate_with_evidence(
 
     SGX_TLS_SAFE_FREE(p_quote);
 
+#ifndef TDX_ENV
     if (sha_handle)
         sgx_sha256_close(sha_handle);
+#endif
 
     return func_ret;
 }
@@ -172,6 +224,7 @@ extern "C" quote3_error_t tee_free_certificate(uint8_t* p_certificate)
     return SGX_QL_SUCCESS;
 }
 
+#ifndef TDX_ENV
 extern "C" quote3_error_t tee_verify_certificate_with_evidence(
     const uint8_t *p_cert_in_der,
     size_t cert_in_der_len,
@@ -190,13 +243,11 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
     sgx_cert_t cert = {0};
     uint8_t *pub_key_buff = NULL;
     size_t pub_key_buff_size = KEY_BUFF_SIZE;
-    sgx_quote3_t *p_sgx_quote = NULL;
-    sgx_report_data_t *p_report_data = NULL;
-    sgx_report_data_t cert_pub_hash;
+    uint32_t quote_type = 0;
+    uint8_t *p_report_data = NULL;
+    uint8_t *p_cert_pub_hash = NULL;
+    size_t report_data_size = 0;
     sgx_sha_state_handle_t sha_handle = NULL;
-
-
-    memset(&cert_pub_hash, 0, sizeof(sgx_report_data_t));
 
     if (p_cert_in_der == NULL ||
         p_qv_result == NULL ||
@@ -233,7 +284,7 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
             {
                 p_quote = (uint8_t*)malloc(quote_size);
                 if (!p_quote) {
-                    func_ret = SGX_QL_ERROR_OUT_OF_MEMORY;
+                    func_ret = SGX_QL_OUT_OF_EPC;
                     break;
                 }
             }
@@ -315,6 +366,9 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
         if (func_ret != SGX_QL_SUCCESS)
             break;
 
+        // identify quote type from quote header
+        quote_type = *(uint32_t *)(p_quote + 4 * sizeof(uint8_t));
+
         // extract public key from cert
         ret = sgx_get_pubkey_from_cert(&cert, pub_key_buff, &pub_key_buff_size);
         if (ret != SGX_SUCCESS) {
@@ -323,6 +377,13 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
         }
 
         // get hash of cert pub key
+        report_data_size = (quote_type == 0x81) ? SGX_REPORT2_DATA_SIZE : SGX_REPORT_DATA_SIZE;
+        p_cert_pub_hash = (uint8_t*)malloc(report_data_size);
+        if (!p_cert_pub_hash) {
+            func_ret = SGX_QL_OUT_OF_EPC;
+            break;
+        }
+
         ret = sgx_sha256_init(&sha_handle);
         if (ret != SGX_SUCCESS) {
             func_ret = SGX_QL_ERROR_UNEXPECTED;
@@ -336,17 +397,18 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
             break;
         }
 
-        ret = sgx_sha256_get_hash(sha_handle, reinterpret_cast<sgx_sha256_hash_t *>(&cert_pub_hash));
+        ret = sgx_sha256_get_hash(sha_handle, reinterpret_cast<sgx_sha256_hash_t *>(p_cert_pub_hash));
         if (ret != SGX_SUCCESS) {
             func_ret = SGX_QL_ERROR_UNEXPECTED;
             break;
         }
 
-        // get report data from quote
-        p_sgx_quote = (sgx_quote3_t *) p_quote;
-
-        if (p_sgx_quote != NULL) {
-            p_report_data = &(p_sgx_quote->report_body.report_data);
+        // extract report data from quote
+        if (quote_type == 0) {
+            p_report_data = (uint8_t *)(&((sgx_quote3_t *)p_quote)->report_body.report_data);
+        }
+        else if (quote_type == 0x81) {
+            p_report_data = (uint8_t *)(&((sgx_quote4_t *)p_quote)->report_body.report_data);
         }
         else {
             func_ret = SGX_QL_ERROR_UNEXPECTED;
@@ -354,7 +416,7 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
         }
 
         // compare hash, only compare the first 32 bytes
-        if (memcmp(p_report_data, &cert_pub_hash, SGX_HASH_SIZE) != 0) {
+        if (memcmp(p_report_data, p_cert_pub_hash, SGX_HASH_SIZE) != 0) {
             func_ret = SGX_QL_ERROR_PUB_KEY_ID_MISMATCH;
             break;
         }
@@ -363,6 +425,8 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
 
     SGX_TLS_SAFE_FREE(pub_key_buff);
     SGX_TLS_SAFE_FREE(p_quote);
+    SGX_TLS_SAFE_FREE(p_cert_pub_hash);
+
     if (func_ret != SGX_QL_SUCCESS)
         SGX_TLS_SAFE_FREE(*pp_supplemental_data);
 
@@ -372,8 +436,9 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence(
     return func_ret;
 }
 
-quote3_error_t tee_free_supplemental_data(uint8_t* p_supplemental_data)
+extern "C" quote3_error_t tee_free_supplemental_data(uint8_t* p_supplemental_data)
 {
     SGX_TLS_SAFE_FREE(p_supplemental_data);
     return SGX_QL_SUCCESS;
 }
+#endif

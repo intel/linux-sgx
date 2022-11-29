@@ -58,20 +58,20 @@
 // #define __cplusplus 201103L because it might be defined to something higher.
 
 // Set SGX specific endianess below
-#include <sys/endian.h>
-#ifdef _LIBCPP_LITTLE_ENDIAN
-#undef _LIBCPP_LITTLE_ENDIAN
-#endif // _LIBCPP_LITTLE_ENDIAN
-#ifdef _LIBCPP_BIG_ENDIAN
-#undef _LIBCPP_BIG_ENDIAN
-#endif //_LIBCPP_BIG_ENDIAN
-#if _BYTE_ORDER == _LITTLE_ENDIAN
-#    define _LIBCPP_LITTLE_ENDIAN 1
-#    define _LIBCPP_BIG_ENDIAN    0
-#else  // _BYTE_ORDER == _LITTLE_ENDIAN
-#    define _LIBCPP_LITTLE_ENDIAN 0
-#    define _LIBCPP_BIG_ENDIAN    1
-#endif  // _BYTE_ORDER == _LITTLE_ENDIAN
+//#include <sys/endian.h>
+//#ifdef _LIBCPP_LITTLE_ENDIAN
+//#undef _LIBCPP_LITTLE_ENDIAN
+//#endif // _LIBCPP_LITTLE_ENDIAN
+//#ifdef _LIBCPP_BIG_ENDIAN
+//#undef _LIBCPP_BIG_ENDIAN
+//#endif //_LIBCPP_BIG_ENDIAN
+//#if _BYTE_ORDER == _LITTLE_ENDIAN
+//#    define _LIBCPP_LITTLE_ENDIAN 1
+//#    define _LIBCPP_BIG_ENDIAN    0
+//#else  // _BYTE_ORDER == _LITTLE_ENDIAN
+//#    define _LIBCPP_LITTLE_ENDIAN 0
+//#    define _LIBCPP_BIG_ENDIAN    1
+//#endif  // _BYTE_ORDER == _LITTLE_ENDIAN
 
 // Use sgx assert
 #include <assert.h>
@@ -117,11 +117,15 @@
 #define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
 #undef _LIBCPP_SGX_HAS_NO_THREADS
 #undef _LIBCPP_SGX_HAS_NO_ATOMIC
+#define _LIBCPP_HAS_ALIGNED_ALLOC
 
 /////////////
 // SECTION 4: SGX specific defines which replace __has_feature(cxx_something)
 /////////////
 #define _LIBCPP_SGX_HAS_CXX_ATOMIC //__has_feature(cxx_atomic)
+#define _LIBCPP_ATOMIC_FLAG_TYPE bool
+#define _LIBCPP_TYPE_VIS_ONLY
+#define _LIBCPP_BUILDING_LIBRARY
 #endif
 
 #endif  // _LIBCPP_SGX

@@ -1,26 +1,22 @@
 //===----------------------- algorithm.cpp --------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
 #include "algorithm"
 
-// SGX compatible. Partial support. Priority 1.
 #if defined(_LIBCPP_SGX_CONFIG)
 #include "vector"
-#endif // defined(_LIBCPP_SGX_CONFIG)
-#include "random"
-#include "mutex"
+#endif
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 #if defined(_LIBCPP_SGX_CONFIG)
 template class __vector_base_common<true>;
-#endif // defined(_LIBCPP_SGX_CONFIG)
+#endif
 
 template void __sort<__less<char>&, char*>(char*, char*, __less<char>&);
 template void __sort<__less<wchar_t>&, wchar_t*>(wchar_t*, wchar_t*, __less<wchar_t>&);
@@ -55,50 +51,5 @@ template bool __insertion_sort_incomplete<__less<double>&, double*>(double*, dou
 template bool __insertion_sort_incomplete<__less<long double>&, long double*>(long double*, long double*, __less<long double>&);
 
 template unsigned __sort5<__less<long double>&, long double*>(long double*, long double*, long double*, long double*, long double*, __less<long double>&);
-
-#if !defined(_LIBCPP_SGX_CONFIG)
-
-#ifndef _LIBCPP_HAS_NO_THREADS
-static __libcpp_mutex_t __rs_mut = _LIBCPP_MUTEX_INITIALIZER;
-#endif
-unsigned __rs_default::__c_ = 0;
-
-__rs_default::__rs_default()
-{
-#ifndef _LIBCPP_HAS_NO_THREADS
-    __libcpp_mutex_lock(&__rs_mut);
-#endif
-    __c_ = 1;
-}
-
-__rs_default::__rs_default(const __rs_default&)
-{
-    ++__c_;
-}
-
-__rs_default::~__rs_default()
-{
-#ifndef _LIBCPP_HAS_NO_THREADS
-    if (--__c_ == 0)
-       __libcpp_mutex_unlock(&__rs_mut);
-#else
-    --__c_;
-#endif
-}
-
-__rs_default::result_type
-__rs_default::operator()()
-{
-    static mt19937 __rs_g;
-    return __rs_g();
-}
-
-__rs_default
-__rs_get()
-{
-    return __rs_default();
-}
-
-#endif // !defined(_LIBCPP_SGX_CONFIG)
 
 _LIBCPP_END_NAMESPACE_STD

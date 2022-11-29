@@ -272,4 +272,3 @@ void lru_cache::remove_last()
 	map.erase(key);
 	delete map_node;
 }
-

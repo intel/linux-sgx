@@ -62,6 +62,7 @@ static uintptr_t _EREMOVE(const void* epc_lin_addr);
 extern "C" void* get_td_addr(void);
 extern "C" bool get_elrange_start_address(void* base_address, uint64_t &elrange_start_address);
 
+static __thread uintptr_t _dtv_u = 0;
 
 ////////////////////////////////////////////////////////////////////////
 #define __GP__() exit(EXIT_FAILURE)
@@ -127,7 +128,7 @@ void sig_handler_sim(int signum, siginfo_t *siginfo, void *priv)
     GP_ON(signum != SIGFPE && signum != SIGSEGV);
 
     thread_data_t *thread_data = (thread_data_t*)get_td_addr();
-    if (thread_data != NULL && (uintptr_t)thread_data == (uintptr_t)thread_data->self_addr)
+    if (thread_data != NULL && _dtv_u != 0 && (uintptr_t)thread_data != _dtv_u && (uintptr_t)thread_data == (uintptr_t)thread_data->self_addr)
     {
         // first SSA can be used to get tcs, even cssa > 0.
         ssa_gpr_t *p_ssa_gpr = (ssa_gpr_t*)thread_data->first_ssa_gpr;
@@ -453,6 +454,9 @@ void _SE3(uintptr_t xax, uintptr_t xbx,
             tcs_sim->tcs_offset_update_flag = true;
         }
 
+	// init _dtv_u
+	if(_dtv_u == 0)
+	    _dtv_u = (uintptr_t)get_td_addr();
         secs = ce->get_secs();
         enclave_base_addr = secs->base;
 

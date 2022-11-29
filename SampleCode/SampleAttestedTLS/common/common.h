@@ -41,7 +41,7 @@
 
 // put common files here in a definition of Macro to reduce
 // redundancy code
-#ifdef CLIENT_UNTRUSTED
+#ifdef CLIENT_USE_QVL
 #include "sgx_utls.h"
 #define PRINT printf
 #define GETCURRTIME time
@@ -49,9 +49,18 @@
 #define FREE_SUPDATA tee_free_supplemental_data_host
 #else
 #include "sgx_ttls.h"
-extern void t_print(const char* fmt, ...);
-#define PRINT t_print
-#define GETCURRTIME t_time
+#define PRINT T_PRINT
+#define GETCURRTIME T_TIME
 #define VERIFY_CALLBACK tee_verify_certificate_with_evidence
 #define FREE_SUPDATA tee_free_supplemental_data
+#endif
+
+#ifdef TDX_ENV
+#define T_PRINT printf
+#define T_TIME time
+#else
+extern void t_print(const char* fmt, ...);
+extern void t_time(time_t *c_time);
+#define T_PRINT t_print
+#define T_TIME t_time
 #endif

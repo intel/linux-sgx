@@ -37,7 +37,11 @@ PACKAGES=$(notdir $(wildcard $(PACKAGE_ROOT_FOLDER)/*))
 USR_LIB_PATH=/usr/$(notdir $(shell gcc -print-multi-os-directory))/$(shell dpkg-architecture -qDEB_HOST_MULTIARCH 2> /dev/null)
 USR_INC_PATH=/usr/$(INC_DIR)
 
-ifeq ($(shell LD_PRELOAD= stat -c "%G" /dev/sgx_enclave 2>/dev/null),sgx)
+SYSTEMD_VERSION=$(or $(shell rpm -q --info systemd-libs 2> /dev/null | awk '/Version/ {print $$NF}' | awk -F[.-] '{print $$1}'), \
+$(shell rpm -q --info libsystemd0 2> /dev/null | awk '/Version/ {print $$NF}' | awk -F[.-] '{print $$1}'), \
+$(shell dpkg --status libsystemd0 2> /dev/null | awk '/Version/ {print $$NF}' | awk -F[.-] '{print $$1}'),0)
+
+ifeq ($(shell [ $(SYSTEMD_VERSION) -ge 248 ] && echo true),true)
 SGX_UDEV_RULE_DEL=/etc/udev/rules.d/91-sgx-enclave.rules
 else
 SGX_UDEV_RULE_DEL=/etc/udev/rules.d/94-sgx-enclave.rules

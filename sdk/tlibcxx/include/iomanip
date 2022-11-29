@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===--------------------------- iomanip ----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -43,9 +42,11 @@ template <class charT, class traits, class Allocator>
 
 */
 
-// Not supported in SGX.
+// partially supported in SGX
 #include <__config>
+#include <__string>
 #include <istream>
+#include <version>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
@@ -516,8 +517,8 @@ put_time(const tm* __tm, const _CharT* __fmt)
 #endif // !defined(_LIBCPP_SGX_CONFIG)
 
 template <class _CharT, class _Traits, class _ForwardIterator>
-std::basic_ostream<_CharT, _Traits> &
-__quoted_output ( basic_ostream<_CharT, _Traits> &__os, 
+basic_ostream<_CharT, _Traits> &
+__quoted_output ( basic_ostream<_CharT, _Traits> &__os,
         _ForwardIterator __first, _ForwardIterator __last, _CharT __delim, _CharT __escape )
 {
     _VSTD::basic_string<_CharT, _Traits> __str;
@@ -529,7 +530,7 @@ __quoted_output ( basic_ostream<_CharT, _Traits> &__os,
         __str.push_back(*__first);
     }
     __str.push_back(__delim);
-    return __put_character_sequence(__os, __str.data(), __str.size());
+    return _VSTD::__put_character_sequence(__os, __str.data(), __str.size());
 }
 
 template <class _CharT, class _Traits, class _String>
@@ -570,22 +571,9 @@ __quoted_input ( basic_istream<_CharT, _Traits> &__is, _String & __string, _Char
 }
 
 
-template <class _CharT, class _Iter, class _Traits=char_traits<_CharT> >
-struct __quoted_output_proxy
-{
-    _Iter  __first;
-    _Iter  __last;
-    _CharT  __delim;
-    _CharT  __escape;
-
-    __quoted_output_proxy(_Iter __f, _Iter __l, _CharT __d, _CharT __e)
-    : __first(__f), __last(__l), __delim(__d), __escape(__e) {}
-    //  This would be a nice place for a string_ref 
-};
-
 template <class _CharT, class _Traits, class _Iter>
 basic_ostream<_CharT, _Traits>& operator<<(
-         basic_ostream<_CharT, _Traits>& __os, 
+         basic_ostream<_CharT, _Traits>& __os,
          const __quoted_output_proxy<_CharT, _Iter, _Traits> & __proxy)
 {
     return __quoted_output (__os, __proxy.__first, __proxy.__last, __proxy.__delim, __proxy.__escape);
@@ -605,7 +593,7 @@ struct __quoted_proxy
 template <class _CharT, class _Traits, class _Allocator>
 _LIBCPP_INLINE_VISIBILITY
 basic_ostream<_CharT, _Traits>& operator<<(
-        basic_ostream<_CharT, _Traits>& __os, 
+        basic_ostream<_CharT, _Traits>& __os,
         const __quoted_proxy<_CharT, _Traits, _Allocator> & __proxy)
 {
     return __quoted_output (__os, __proxy.__string.cbegin (), __proxy.__string.cend (), __proxy.__delim, __proxy.__escape);
@@ -615,7 +603,7 @@ basic_ostream<_CharT, _Traits>& operator<<(
 template <class _CharT, class _Traits, class _Allocator>
 _LIBCPP_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>& operator>>(
-        basic_istream<_CharT, _Traits>& __is, 
+        basic_istream<_CharT, _Traits>& __is,
         const __quoted_proxy<_CharT, _Traits, _Allocator> & __proxy)
 {
     return __quoted_input ( __is, __proxy.__string, __proxy.__delim, __proxy.__escape );
@@ -669,9 +657,17 @@ quoted ( basic_string <_CharT, _Traits, _Allocator> &__s, _CharT __delim = _Char
 {
     return __quoted(__s, __delim, __escape);
 }
+
+template <class _CharT, class _Traits>
+__quoted_output_proxy<_CharT, const _CharT *, _Traits>
+quoted (basic_string_view <_CharT, _Traits> __sv,
+             _CharT __delim = _CharT('"'), _CharT __escape=_CharT('\\'))
+{
+    return __quoted_output_proxy<_CharT, const _CharT *, _Traits>
+         ( __sv.data(), __sv.data() + __sv.size(), __delim, __escape );
+}
 #endif
 
 _LIBCPP_END_NAMESPACE_STD
-
 
 #endif  // _LIBCPP_IOMANIP

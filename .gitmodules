@@ -20,3 +20,6 @@
 [submodule "external/zlib/zlib_code"]
 	path = external/zlib/zlib_code
 	url = https://github.com/madler/zlib.git
+[submodule "external/sgx-emm/emm_src"]
+	path = external/sgx-emm/emm_src
+	url = https://github.com/intel/sgx-emm.git

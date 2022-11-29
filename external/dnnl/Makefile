@@ -89,7 +89,7 @@ else
 endif
 
 $(LIBDNNL):$(CHECK_SOURCE)
-	mkdir -p $(DNNL_DIR)/build && cd $(DNNL_DIR)/build && cmake -DCMAKE_CXX_ENCLAVE_FLAGS="$(CXX_ENCLAVE_FLAGS)" -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" $(DNNL_CONFIG) .. && make
+	mkdir -p $(DNNL_DIR)/build && cd $(DNNL_DIR)/build && cmake -DCMAKE_CXX_ENCLAVE_FLAGS="$(CXX_ENCLAVE_FLAGS)" -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" $(DNNL_CONFIG) .. && $(MAKE)
 
 .PHONY: clean
 clean:

@@ -33,8 +33,10 @@
 
 include ../../buildenv.mk
 
-ifndef $(VERBOSE)
-	VERBOSE	:= @
+ifndef VERBOSE
+	PCLVERBOSE := @
+else
+	PCLVERBOSE :=
 endif
 
 
@@ -102,81 +104,81 @@ PCL_SIM_LIB_CPP_FLAGS := $(TCXXFLAGS) $(ENCLAVE_CXXFLAGS) -DSE_SIM=1 $(PCL_INCLU
 .PHONY: all
 
 all: | $(BUILD_DIR) 
-	$(VERBOSE)$(MAKE) $(PCL_LIB)
-	$(VERBOSE)$(MAKE) $(PCL_SIM_LIB)
-	$(VERBOSE)$(CP) $(PCL_LIB) $|	
-	$(VERBOSE)$(CP) $(PCL_SIM_LIB) $|	
+	$(PCLVERBOSE)$(MAKE) $(PCL_LIB)
+	$(PCLVERBOSE)$(MAKE) $(PCL_SIM_LIB)
+	$(PCLVERBOSE)$(CP) $(PCL_LIB) $|	
+	$(PCLVERBOSE)$(CP) $(PCL_SIM_LIB) $|	
 
 $(BUILD_DIR):
-	$(VERBOSE)$(MKDIR) $@
+	$(PCLVERBOSE)$(MKDIR) $@
 
 .PHONY: $(PCL_LIB)
 $(PCL_LIB):$(PCL_CPP_OBJECTS) $(PCL_ASM_OBJECTS) $(PCL_C_OBJECTS)
 	@echo "library build with DEBUG =" $(DEBUG)
-	$(VERBOSE)$(AR) -rc $@ $^
+	$(PCLVERBOSE)$(AR) -rc $@ $^
 	@echo "AR   <=  $@"
 
     
 .PHONY: $(PCL_SIM_LIB)
 $(PCL_SIM_LIB):$(PCL_SIM_CPP_OBJECTS) $(PCL_ASM_OBJECTS) $(PCL_SIM_C_OBJECTS)
 	@echo "library build with DEBUG =" $(DEBUG)
-	$(VERBOSE)$(AR) -rc $@ $^
+	$(PCLVERBOSE)$(AR) -rc $@ $^
 	@echo "AR   <=  $@"
 
 
 %.o: %.s
-	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CC) $(PCL_LIB_C_FLAGS) -c $< -o $@ 
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
+	$(PCLVERBOSE)mkdir -p $(@D)
+	$(PCLVERBOSE)$(CC) $(PCL_LIB_C_FLAGS) -c $< -o $@ 
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
 	@echo "CC  <=  $<"
 
 %.o: %.c
-	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CC) $(PCL_LIB_C_FLAGS) -c $< -o $@
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
+	$(PCLVERBOSE)mkdir -p $(@D)
+	$(PCLVERBOSE)$(CC) $(PCL_LIB_C_FLAGS) -c $< -o $@
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
 	@echo "CC  <=  $<"
 
 %.o: %.cpp
-	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CXX) $(PCL_LIB_CPP_FLAGS) -c $< -o $@
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
+	$(PCLVERBOSE)mkdir -p $(@D)
+	$(PCLVERBOSE)$(CXX) $(PCL_LIB_CPP_FLAGS) -c $< -o $@
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
 	@echo "CXX  <=  $<"
 
 # Simulation objects
 $(SIM_OBJ_DIR)%.o: %.s
-	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CC) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@ 
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
+	$(PCLVERBOSE)mkdir -p $(@D)
+	$(PCLVERBOSE)$(CC) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@ 
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
 	@echo "CC  <=  $<"
 
 $(SIM_OBJ_DIR)%.o: %.c
-	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CC) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
+	$(PCLVERBOSE)mkdir -p $(@D)
+	$(PCLVERBOSE)$(CC) $(PCL_SIM_LIB_C_FLAGS) -c $< -o $@
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
 	@echo "CC  <=  $<"
 
 $(SIM_OBJ_DIR)%.o: %.cpp
-	$(VERBOSE)mkdir -p $(@D)
-	$(VERBOSE)$(CXX) $(PCL_SIM_LIB_CPP_FLAGS) -c $< -o $@
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
-	$(VERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
+	$(PCLVERBOSE)mkdir -p $(@D)
+	$(PCLVERBOSE)$(CXX) $(PCL_SIM_LIB_CPP_FLAGS) -c $< -o $@
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .text=$(NIPX)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .data=$(NIPD)
+	$(PCLVERBOSE)$(OBJCOPY) $@ --rename-section .rodata=$(NIPRODT)
 	@echo "CXX  <=  $<"
 
 .PHONY: clean
 clean:
-	$(VERBOSE)$(RM) $(PCL_LIB) $(PCL_SIM_LIB) $(PCL_CPP_OBJECTS) $(PCL_ASM_OBJECTS) $(PCL_C_OBJECTS) $(PCL_SIM_CPP_OBJECTS) $(PCL_SIM_C_OBJECTS)
-	$(VERBOSE)rm -rf $(SIM_DIR) $(BUILD_DIR)/$(PCL_LIB) $(BUILD_DIR)/$(PCL_SIM_LIB)
+	$(PCLVERBOSE)$(RM) $(PCL_LIB) $(PCL_SIM_LIB) $(PCL_CPP_OBJECTS) $(PCL_ASM_OBJECTS) $(PCL_C_OBJECTS) $(PCL_SIM_CPP_OBJECTS) $(PCL_SIM_C_OBJECTS)
+	$(PCLVERBOSE)rm -rf $(SIM_DIR) $(BUILD_DIR)/$(PCL_LIB) $(BUILD_DIR)/$(PCL_SIM_LIB)
 
 .PHONY: rebuild
 rebuild:

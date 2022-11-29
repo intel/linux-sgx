@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===-------------------------- valarray ----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -137,6 +136,7 @@ public:
     void operator>>=(const valarray<value_type>& v) const;
 
     void operator=(const value_type& x) const;
+    void operator=(const valarray<T>& val_arr) const;
 
     slice_array() = delete;
 };
@@ -347,18 +347,19 @@ template <class T> unspecified2 end(const valarray<T>& v);
 #include <functional>
 #include <new>
 
-#include <__undef_min_max>
-#include <__undef___deallocate>
-
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif
 
+_LIBCPP_PUSH_MACROS
+#include <__undef_macros>
+
+
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-template<class _Tp> class _LIBCPP_TYPE_VIS_ONLY valarray;
+template<class _Tp> class _LIBCPP_TEMPLATE_VIS valarray;
 
-class _LIBCPP_TYPE_VIS_ONLY slice
+class _LIBCPP_TEMPLATE_VIS slice
 {
     size_t __start_;
     size_t __size_;
@@ -383,11 +384,11 @@ public:
     _LIBCPP_INLINE_VISIBILITY size_t stride() const {return __stride_;}
 };
 
-template <class _Tp> class _LIBCPP_TYPE_VIS_ONLY slice_array;
+template <class _Tp> class _LIBCPP_TEMPLATE_VIS slice_array;
 class _LIBCPP_TYPE_VIS gslice;
-template <class _Tp> class _LIBCPP_TYPE_VIS_ONLY gslice_array;
-template <class _Tp> class _LIBCPP_TYPE_VIS_ONLY mask_array;
-template <class _Tp> class _LIBCPP_TYPE_VIS_ONLY indirect_array;
+template <class _Tp> class _LIBCPP_TEMPLATE_VIS gslice_array;
+template <class _Tp> class _LIBCPP_TEMPLATE_VIS mask_array;
+template <class _Tp> class _LIBCPP_TEMPLATE_VIS indirect_array;
 
 template <class _Tp>
 _LIBCPP_INLINE_VISIBILITY
@@ -673,7 +674,8 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     size_t size() const {return __size_;}
 
-    template <class> friend class _LIBCPP_TYPE_VIS_ONLY valarray;
+    template <class> friend class __val_expr;
+    template <class> friend class _LIBCPP_TEMPLATE_VIS valarray;
 };
 
 template <class _ValExpr>
@@ -788,7 +790,7 @@ template<class _Tp>
 struct __is_val_expr<valarray<_Tp> > : true_type {};
 
 template<class _Tp>
-class _LIBCPP_TYPE_VIS_ONLY valarray
+class _LIBCPP_TEMPLATE_VIS valarray
 {
 public:
     typedef _Tp value_type;
@@ -801,37 +803,33 @@ private:
 public:
     // construct/destroy:
     _LIBCPP_INLINE_VISIBILITY
-    valarray() : __begin_(0), __end_(0) {}
-    _LIBCPP_INLINE_VISIBILITY
-    inline explicit valarray(size_t __n);
+    valarray() : __begin_(nullptr), __end_(nullptr) {}
+    inline _LIBCPP_HIDE_FROM_ABI_AFTER_V1
+    explicit valarray(size_t __n);
     _LIBCPP_INLINE_VISIBILITY
     valarray(const value_type& __x, size_t __n);
     valarray(const value_type* __p, size_t __n);
     valarray(const valarray& __v);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     valarray(valarray&& __v) _NOEXCEPT;
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
     valarray(initializer_list<value_type> __il);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
     valarray(const slice_array<value_type>& __sa);
     valarray(const gslice_array<value_type>& __ga);
     valarray(const mask_array<value_type>& __ma);
     valarray(const indirect_array<value_type>& __ia);
-    inline _LIBCPP_INLINE_VISIBILITY
+    inline _LIBCPP_HIDE_FROM_ABI_AFTER_V1
     ~valarray();
 
     // assignment:
     valarray& operator=(const valarray& __v);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     valarray& operator=(valarray&& __v) _NOEXCEPT;
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
     _LIBCPP_INLINE_VISIBILITY
     valarray& operator=(initializer_list<value_type>);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     valarray& operator=(const value_type& __x);
     _LIBCPP_INLINE_VISIBILITY
@@ -862,32 +860,32 @@ public:
     __val_expr<__indirect_expr<const valarray&> > operator[](const gslice& __gs) const;
     _LIBCPP_INLINE_VISIBILITY
     gslice_array<value_type>   operator[](const gslice& __gs);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__indirect_expr<const valarray&> > operator[](gslice&& __gs) const;
     _LIBCPP_INLINE_VISIBILITY
     gslice_array<value_type>                      operator[](gslice&& __gs);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__mask_expr<const valarray&> >     operator[](const valarray<bool>& __vb) const;
     _LIBCPP_INLINE_VISIBILITY
     mask_array<value_type>                        operator[](const valarray<bool>& __vb);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__mask_expr<const valarray&> >     operator[](valarray<bool>&& __vb) const;
     _LIBCPP_INLINE_VISIBILITY
     mask_array<value_type>                        operator[](valarray<bool>&& __vb);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__indirect_expr<const valarray&> > operator[](const valarray<size_t>& __vs) const;
     _LIBCPP_INLINE_VISIBILITY
     indirect_array<value_type>                    operator[](const valarray<size_t>& __vs);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__indirect_expr<const valarray&> > operator[](valarray<size_t>&& __vs) const;
     _LIBCPP_INLINE_VISIBILITY
     indirect_array<value_type>                    operator[](valarray<size_t>&& __vs);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
     // unary operators:
     valarray       operator+() const;
@@ -1028,12 +1026,12 @@ public:
     void     resize(size_t __n, value_type __x = value_type());
 
 private:
-    template <class> friend class _LIBCPP_TYPE_VIS_ONLY valarray;
-    template <class> friend class _LIBCPP_TYPE_VIS_ONLY slice_array;
-    template <class> friend class _LIBCPP_TYPE_VIS_ONLY gslice_array;
-    template <class> friend class _LIBCPP_TYPE_VIS_ONLY mask_array;
+    template <class> friend class _LIBCPP_TEMPLATE_VIS valarray;
+    template <class> friend class _LIBCPP_TEMPLATE_VIS slice_array;
+    template <class> friend class _LIBCPP_TEMPLATE_VIS gslice_array;
+    template <class> friend class _LIBCPP_TEMPLATE_VIS mask_array;
     template <class> friend class __mask_expr;
-    template <class> friend class _LIBCPP_TYPE_VIS_ONLY indirect_array;
+    template <class> friend class _LIBCPP_TEMPLATE_VIS indirect_array;
     template <class> friend class __indirect_expr;
     template <class> friend class __val_expr;
 
@@ -1056,10 +1054,12 @@ private:
     friend
     const _Up*
     end(const valarray<_Up>& __v);
+
+    _LIBCPP_INLINE_VISIBILITY
+    void __clear(size_t __capacity);
+    valarray& __assign_range(const value_type* __f, const value_type* __l);
 };
 
-_LIBCPP_EXTERN_TEMPLATE(_LIBCPP_FUNC_VIS valarray<size_t>::valarray(size_t))
-_LIBCPP_EXTERN_TEMPLATE(_LIBCPP_FUNC_VIS valarray<size_t>::~valarray())
 _LIBCPP_EXTERN_TEMPLATE(_LIBCPP_FUNC_VIS void valarray<size_t>::resize(size_t, size_t))
 
 template <class _Op, class _Tp>
@@ -1147,7 +1147,7 @@ struct _BinaryOp<_Op, valarray<_Tp>, valarray<_Tp> >
 // slice_array
 
 template <class _Tp>
-class _LIBCPP_TYPE_VIS_ONLY slice_array
+class _LIBCPP_TEMPLATE_VIS slice_array
 {
 public:
     typedef _Tp value_type;
@@ -1257,11 +1257,16 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     operator>>=(const _Expr& __v) const;
 
+    slice_array(slice_array const&) = default;
+
     _LIBCPP_INLINE_VISIBILITY
     const slice_array& operator=(const slice_array& __sa) const;
 
     _LIBCPP_INLINE_VISIBILITY
     void operator=(const value_type& __x) const;
+
+    _LIBCPP_INLINE_VISIBILITY
+    void operator=(const valarray<value_type>& __va) const;
 
 private:
     _LIBCPP_INLINE_VISIBILITY
@@ -1300,6 +1305,15 @@ slice_array<_Tp>::operator=(const _Expr& __v) const
     value_type* __t = __vp_;
     for (size_t __i = 0; __i < __size_; ++__i, __t += __stride_)
         *__t = __v[__i];
+}
+
+template <class _Tp>
+inline void
+slice_array<_Tp>::operator=(const valarray<value_type>& __va) const
+{
+    value_type* __t = __vp_;
+    for (size_t __i = 0; __i < __va.size(); ++__i, __t += __stride_)
+        *__t = __va[__i];
 }
 
 template <class _Tp>
@@ -1481,7 +1495,7 @@ public:
           __stride_(__stride)
         {__init(__start);}
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     gslice(size_t __start, const valarray<size_t>&  __size,
@@ -1504,12 +1518,7 @@ public:
           __stride_(move(__stride))
         {__init(__start);}
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-
-//  gslice(const gslice&)            = default;
-//  gslice(gslice&&)                 = default;
-//  gslice& operator=(const gslice&) = default;
-//  gslice& operator=(gslice&&)      = default;
+#endif  // _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     size_t           start()  const {return __1d_.size() ? __1d_[0] : 0;}
@@ -1531,7 +1540,7 @@ private:
 // gslice_array
 
 template <class _Tp>
-class _LIBCPP_TYPE_VIS_ONLY gslice_array
+class _LIBCPP_TEMPLATE_VIS gslice_array
 {
 public:
     typedef _Tp value_type;
@@ -1646,10 +1655,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     void operator=(const value_type& __x) const;
 
-//  gslice_array(const gslice_array&)            = default;
-//  gslice_array(gslice_array&&)                 = default;
-//  gslice_array& operator=(const gslice_array&) = default;
-//  gslice_array& operator=(gslice_array&&)      = default;
+    gslice_array(const gslice_array&)            = default;
 
 private:
     gslice_array(const gslice& __gs, const valarray<value_type>& __v)
@@ -1657,12 +1663,12 @@ private:
           __1d_(__gs.__1d_)
         {}
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
     gslice_array(gslice&& __gs, const valarray<value_type>& __v)
         : __vp_(const_cast<value_type*>(__v.__begin_)),
           __1d_(move(__gs.__1d_))
         {}
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
     template <class> friend class valarray;
 };
@@ -1869,7 +1875,7 @@ gslice_array<_Tp>::operator=(const value_type& __x) const
 // mask_array
 
 template <class _Tp>
-class _LIBCPP_TYPE_VIS_ONLY mask_array
+class _LIBCPP_TEMPLATE_VIS mask_array
 {
 public:
     typedef _Tp value_type;
@@ -1978,16 +1984,13 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     operator>>=(const _Expr& __v) const;
 
+    mask_array(const mask_array&) = default;
+
     _LIBCPP_INLINE_VISIBILITY
     const mask_array& operator=(const mask_array& __ma) const;
 
     _LIBCPP_INLINE_VISIBILITY
     void operator=(const value_type& __x) const;
-
-//  mask_array(const mask_array&)            = default;
-//  mask_array(mask_array&&)                 = default;
-//  mask_array& operator=(const mask_array&) = default;
-//  mask_array& operator=(mask_array&&)      = default;
 
 private:
     _LIBCPP_INLINE_VISIBILITY
@@ -2221,13 +2224,14 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     size_t size() const {return __1d_.size();}
 
+    template <class> friend class __val_expr;
     template <class> friend class valarray;
 };
 
 // indirect_array
 
 template <class _Tp>
-class _LIBCPP_TYPE_VIS_ONLY indirect_array
+class _LIBCPP_TEMPLATE_VIS indirect_array
 {
 public:
     typedef _Tp value_type;
@@ -2336,16 +2340,13 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     operator>>=(const _Expr& __v) const;
 
+    indirect_array(const indirect_array&) = default;
+
     _LIBCPP_INLINE_VISIBILITY
     const indirect_array& operator=(const indirect_array& __ia) const;
 
     _LIBCPP_INLINE_VISIBILITY
     void operator=(const value_type& __x) const;
-
-//  indirect_array(const indirect_array&)            = default;
-//  indirect_array(indirect_array&&)                 = default;
-//  indirect_array& operator=(const indirect_array&) = default;
-//  indirect_array& operator=(indirect_array&&)      = default;
 
 private:
      _LIBCPP_INLINE_VISIBILITY
@@ -2354,7 +2355,7 @@ private:
           __1d_(__ia)
         {}
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     indirect_array(valarray<size_t>&& __ia, const valarray<value_type>& __v)
@@ -2362,7 +2363,7 @@ private:
           __1d_(move(__ia))
         {}
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
     template <class> friend class valarray;
 };
@@ -2573,7 +2574,7 @@ private:
           __1d_(__ia)
           {}
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     __indirect_expr(valarray<size_t>&& __ia, const _RmExpr& __e)
@@ -2581,7 +2582,7 @@ private:
           __1d_(move(__ia))
           {}
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 public:
     _LIBCPP_INLINE_VISIBILITY
@@ -2591,7 +2592,8 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     size_t size() const {return __1d_.size();}
 
-    template <class> friend class _LIBCPP_TYPE_VIS_ONLY valarray;
+    template <class> friend class __val_expr;
+    template <class> friend class _LIBCPP_TEMPLATE_VIS valarray;
 };
 
 template<class _ValExpr>
@@ -2613,19 +2615,31 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__slice_expr<_ValExpr> > operator[](slice __s) const
-        {return __val_expr<__slice_expr<_ValExpr> >(__expr_, __s);}
+    {
+        typedef __slice_expr<_ValExpr> _NewExpr;
+        return __val_expr< _NewExpr >(_NewExpr(__s, __expr_));
+    }
 
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__indirect_expr<_ValExpr> > operator[](const gslice& __gs) const
-        {return __val_expr<__indirect_expr<_ValExpr> >(__expr_, __gs.__1d_);}
+    {
+        typedef __indirect_expr<_ValExpr> _NewExpr;
+        return __val_expr<_NewExpr >(_NewExpr(__gs.__1d_, __expr_));
+    }
 
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__mask_expr<_ValExpr> > operator[](const valarray<bool>& __vb) const
-        {return __val_expr<__mask_expr<_ValExpr> >(__expr_, __vb);}
+    {
+        typedef __mask_expr<_ValExpr> _NewExpr;
+        return __val_expr< _NewExpr >( _NewExpr(__vb, __expr_));
+    }
 
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<__indirect_expr<_ValExpr> > operator[](const valarray<size_t>& __vs) const
-        {return __val_expr<__indirect_expr<_ValExpr> >(__expr_, __vs);}
+    {
+        typedef __indirect_expr<_ValExpr> _NewExpr;
+        return __val_expr< _NewExpr >(_NewExpr(__vs, __expr_));
+    }
 
     _LIBCPP_INLINE_VISIBILITY
     __val_expr<_UnaryOp<__unary_plus<value_type>, _ValExpr> >
@@ -2737,10 +2751,9 @@ __val_expr<_ValExpr>::operator valarray<__val_expr::result_type>() const
     if (__n)
     {
         __r.__begin_ =
-            __r.__end_ =
-                static_cast<result_type*>(_VSTD::__allocate(__n * sizeof(result_type)));
+            __r.__end_ = allocator<result_type>().allocate(__n);
         for (size_t __i = 0; __i != __n; ++__r.__end_, ++__i)
-            ::new (__r.__end_) result_type(__expr_[__i]);
+            ::new ((void*)__r.__end_) result_type(__expr_[__i]);
     }
     return __r;
 }
@@ -2750,40 +2763,57 @@ __val_expr<_ValExpr>::operator valarray<__val_expr::result_type>() const
 template <class _Tp>
 inline
 valarray<_Tp>::valarray(size_t __n)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
-    resize(__n);
+    if (__n)
+    {
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
+#ifndef _LIBCPP_NO_EXCEPTIONS
+        try
+        {
+#endif  // _LIBCPP_NO_EXCEPTIONS
+            for (size_t __n_left = __n; __n_left; --__n_left, ++__end_)
+                ::new ((void*)__end_) value_type();
+#ifndef _LIBCPP_NO_EXCEPTIONS
+        }
+        catch (...)
+        {
+            __clear(__n);
+            throw;
+        }
+#endif  // _LIBCPP_NO_EXCEPTIONS
+    }
 }
 
 template <class _Tp>
 inline
 valarray<_Tp>::valarray(const value_type& __x, size_t __n)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
     resize(__n, __x);
 }
 
 template <class _Tp>
 valarray<_Tp>::valarray(const value_type* __p, size_t __n)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
     if (__n)
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
 #endif  // _LIBCPP_NO_EXCEPTIONS
-            for (; __n; ++__end_, ++__p, --__n)
-                ::new (__end_) value_type(*__p);
+            for (size_t __n_left = __n; __n_left; ++__end_, ++__p, --__n_left)
+                ::new ((void*)__end_) value_type(*__p);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__n);
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
@@ -2792,30 +2822,30 @@ valarray<_Tp>::valarray(const value_type* __p, size_t __n)
 
 template <class _Tp>
 valarray<_Tp>::valarray(const valarray& __v)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
     if (__v.size())
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__v.size() * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__v.size());
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
 #endif  // _LIBCPP_NO_EXCEPTIONS
             for (value_type* __p = __v.__begin_; __p != __v.__end_; ++__end_, ++__p)
-                ::new (__end_) value_type(*__p);
+                ::new ((void*)__end_) value_type(*__p);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__v.size());
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
     }
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -2826,58 +2856,56 @@ valarray<_Tp>::valarray(valarray&& __v) _NOEXCEPT
     __v.__begin_ = __v.__end_ = nullptr;
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
-
 template <class _Tp>
 valarray<_Tp>::valarray(initializer_list<value_type> __il)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
-    size_t __n = __il.size();
+    const size_t __n = __il.size();
     if (__n)
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
 #endif  // _LIBCPP_NO_EXCEPTIONS
-            for (const value_type* __p = __il.begin(); __n; ++__end_, ++__p, --__n)
-                ::new (__end_) value_type(*__p);
+            size_t __n_left = __n;
+            for (const value_type* __p = __il.begin(); __n_left; ++__end_, ++__p, --__n_left)
+                ::new ((void*)__end_) value_type(*__p);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__n);
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
     }
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 valarray<_Tp>::valarray(const slice_array<value_type>& __sa)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
-    size_t __n = __sa.__size_;
+    const size_t __n = __sa.__size_;
     if (__n)
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
 #endif  // _LIBCPP_NO_EXCEPTIONS
-            for (const value_type* __p = __sa.__vp_; __n; ++__end_, __p += __sa.__stride_, --__n)
-                ::new (__end_) value_type(*__p);
+            size_t __n_left = __n;
+            for (const value_type* __p = __sa.__vp_; __n_left; ++__end_, __p += __sa.__stride_, --__n_left)
+                ::new ((void*)__end_) value_type(*__p);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__n);
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
@@ -2886,13 +2914,13 @@ valarray<_Tp>::valarray(const slice_array<value_type>& __sa)
 
 template <class _Tp>
 valarray<_Tp>::valarray(const gslice_array<value_type>& __ga)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
-    size_t __n = __ga.__1d_.size();
+    const size_t __n = __ga.__1d_.size();
     if (__n)
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
@@ -2901,12 +2929,12 @@ valarray<_Tp>::valarray(const gslice_array<value_type>& __ga)
             const value_type* __s = __ga.__vp_;
             for (_Ip __i = __ga.__1d_.__begin_, __e = __ga.__1d_.__end_;
                     __i != __e; ++__i, ++__end_)
-                ::new (__end_) value_type(__s[*__i]);
+                ::new ((void*)__end_) value_type(__s[*__i]);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__n);
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
@@ -2915,13 +2943,13 @@ valarray<_Tp>::valarray(const gslice_array<value_type>& __ga)
 
 template <class _Tp>
 valarray<_Tp>::valarray(const mask_array<value_type>& __ma)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
-    size_t __n = __ma.__1d_.size();
+    const size_t __n = __ma.__1d_.size();
     if (__n)
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
@@ -2930,12 +2958,12 @@ valarray<_Tp>::valarray(const mask_array<value_type>& __ma)
             const value_type* __s = __ma.__vp_;
             for (_Ip __i = __ma.__1d_.__begin_, __e = __ma.__1d_.__end_;
                     __i != __e; ++__i, ++__end_)
-                ::new (__end_) value_type(__s[*__i]);
+                ::new ((void*)__end_) value_type(__s[*__i]);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__n);
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
@@ -2944,13 +2972,13 @@ valarray<_Tp>::valarray(const mask_array<value_type>& __ma)
 
 template <class _Tp>
 valarray<_Tp>::valarray(const indirect_array<value_type>& __ia)
-    : __begin_(0),
-      __end_(0)
+    : __begin_(nullptr),
+      __end_(nullptr)
 {
-    size_t __n = __ia.__1d_.size();
+    const size_t __n = __ia.__1d_.size();
     if (__n)
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
@@ -2959,12 +2987,12 @@ valarray<_Tp>::valarray(const indirect_array<value_type>& __ia)
             const value_type* __s = __ia.__vp_;
             for (_Ip __i = __ia.__1d_.__begin_, __e = __ia.__1d_.__end_;
                     __i != __e; ++__i, ++__end_)
-                ::new (__end_) value_type(__s[*__i]);
+                ::new ((void*)__end_) value_type(__s[*__i]);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__n);
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
@@ -2975,7 +3003,24 @@ template <class _Tp>
 inline
 valarray<_Tp>::~valarray()
 {
-    resize(0);
+    __clear(size());
+}
+
+template <class _Tp>
+valarray<_Tp>&
+valarray<_Tp>::__assign_range(const value_type* __f, const value_type* __l)
+{
+    size_t __n = __l - __f;
+    if (size() != __n)
+    {
+        __clear(size());
+        __begin_ = allocator<value_type>().allocate(__n);
+        __end_ = __begin_ + __n;
+        _VSTD::uninitialized_copy(__f, __l, __begin_);
+    } else {
+        _VSTD::copy(__f, __l, __begin_);
+    }
+    return *this;
 }
 
 template <class _Tp>
@@ -2983,22 +3028,18 @@ valarray<_Tp>&
 valarray<_Tp>::operator=(const valarray& __v)
 {
     if (this != &__v)
-    {
-        if (size() != __v.size())
-            resize(__v.size());
-        _VSTD::copy(__v.__begin_, __v.__end_, __begin_);
-    }
+        return __assign_range(__v.__begin_, __v.__end_);
     return *this;
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
 valarray<_Tp>&
 valarray<_Tp>::operator=(valarray&& __v) _NOEXCEPT
 {
-    resize(0);
+    __clear(size());
     __begin_ = __v.__begin_;
     __end_ = __v.__end_;
     __v.__begin_ = nullptr;
@@ -3006,22 +3047,15 @@ valarray<_Tp>::operator=(valarray&& __v) _NOEXCEPT
     return *this;
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
-
 template <class _Tp>
 inline
 valarray<_Tp>&
 valarray<_Tp>::operator=(initializer_list<value_type> __il)
 {
-    if (size() != __il.size())
-        resize(__il.size());
-    _VSTD::copy(__il.begin(), __il.end(), __begin_);
-    return *this;
+    return __assign_range(__il.begin(), __il.end());
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -3133,7 +3167,7 @@ valarray<_Tp>::operator[](const gslice& __gs)
     return gslice_array<value_type>(__gs, *this);
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -3151,7 +3185,7 @@ valarray<_Tp>::operator[](gslice&& __gs)
     return gslice_array<value_type>(move(__gs), *this);
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -3169,7 +3203,7 @@ valarray<_Tp>::operator[](const valarray<bool>& __vb)
     return mask_array<value_type>(__vb, *this);
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -3187,7 +3221,7 @@ valarray<_Tp>::operator[](valarray<bool>&& __vb)
     return mask_array<value_type>(move(__vb), *this);
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -3205,7 +3239,7 @@ valarray<_Tp>::operator[](const valarray<size_t>& __vs)
     return indirect_array<value_type>(__vs, *this);
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -3223,7 +3257,7 @@ valarray<_Tp>::operator[](valarray<size_t>&& __vs)
     return indirect_array<value_type>(move(__vs), *this);
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 valarray<_Tp>
@@ -3233,11 +3267,9 @@ valarray<_Tp>::operator+() const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __r.__begin_ = __r.__end_ = allocator<value_type>().allocate(__n);
         for (const value_type* __p = __begin_; __n; ++__r.__end_, ++__p, --__n)
-            ::new (__r.__end_) value_type(+*__p);
+            ::new ((void*)__r.__end_) value_type(+*__p);
     }
     return __r;
 }
@@ -3250,11 +3282,9 @@ valarray<_Tp>::operator-() const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __r.__begin_ = __r.__end_ = allocator<value_type>().allocate(__n);
         for (const value_type* __p = __begin_; __n; ++__r.__end_, ++__p, --__n)
-            ::new (__r.__end_) value_type(-*__p);
+            ::new ((void*)__r.__end_) value_type(-*__p);
     }
     return __r;
 }
@@ -3267,11 +3297,9 @@ valarray<_Tp>::operator~() const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __r.__begin_ = __r.__end_ = allocator<value_type>().allocate(__n);
         for (const value_type* __p = __begin_; __n; ++__r.__end_, ++__p, --__n)
-            ::new (__r.__end_) value_type(~*__p);
+            ::new ((void*)__r.__end_) value_type(~*__p);
     }
     return __r;
 }
@@ -3284,11 +3312,9 @@ valarray<_Tp>::operator!() const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<bool*>(_VSTD::__allocate(__n * sizeof(bool)));
+        __r.__begin_ = __r.__end_ = allocator<bool>().allocate(__n);
         for (const value_type* __p = __begin_; __n; ++__r.__end_, ++__p, --__n)
-            ::new (__r.__end_) bool(!*__p);
+            ::new ((void*)__r.__end_) bool(!*__p);
     }
     return __r;
 }
@@ -3604,9 +3630,7 @@ valarray<_Tp>::shift(int __i) const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __r.__begin_ = __r.__end_ = allocator<value_type>().allocate(__n);
         const value_type* __sb;
         value_type* __tb;
         value_type* __te;
@@ -3625,11 +3649,11 @@ valarray<_Tp>::shift(int __i) const
             __te = __r.__begin_ + __n;
         }
         for (; __r.__end_ != __tb; ++__r.__end_)
-            ::new (__r.__end_) value_type();
+            ::new ((void*)__r.__end_) value_type();
         for (; __r.__end_ != __te; ++__r.__end_, ++__sb)
-            ::new (__r.__end_) value_type(*__sb);
+            ::new ((void*)__r.__end_) value_type(*__sb);
         for (__te = __r.__begin_ + __n; __r.__end_ != __te; ++__r.__end_)
-            ::new (__r.__end_) value_type();
+            ::new ((void*)__r.__end_) value_type();
     }
     return __r;
 }
@@ -3642,15 +3666,13 @@ valarray<_Tp>::cshift(int __i) const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __r.__begin_ = __r.__end_ = allocator<value_type>().allocate(__n);
         __i %= static_cast<int>(__n);
         const value_type* __m = __i >= 0 ? __begin_ + __i : __end_ + __i;
         for (const value_type* __s = __m; __s != __end_; ++__r.__end_, ++__s)
-            ::new (__r.__end_) value_type(*__s);
+            ::new ((void*)__r.__end_) value_type(*__s);
         for (const value_type* __s = __begin_; __s != __m; ++__r.__end_, ++__s)
-            ::new (__r.__end_) value_type(*__s);
+            ::new ((void*)__r.__end_) value_type(*__s);
     }
     return __r;
 }
@@ -3663,11 +3685,9 @@ valarray<_Tp>::apply(value_type __f(value_type)) const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __r.__begin_ = __r.__end_ = allocator<value_type>().allocate(__n);
         for (const value_type* __p = __begin_; __n; ++__r.__end_, ++__p, --__n)
-            ::new (__r.__end_) value_type(__f(*__p));
+            ::new ((void*)__r.__end_) value_type(__f(*__p));
     }
     return __r;
 }
@@ -3680,40 +3700,45 @@ valarray<_Tp>::apply(value_type __f(const value_type&)) const
     size_t __n = size();
     if (__n)
     {
-        __r.__begin_ =
-            __r.__end_ =
-                static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __r.__begin_ = __r.__end_ = allocator<value_type>().allocate(__n);
         for (const value_type* __p = __begin_; __n; ++__r.__end_, ++__p, --__n)
-            ::new (__r.__end_) value_type(__f(*__p));
+            ::new ((void*)__r.__end_) value_type(__f(*__p));
     }
     return __r;
+}
+
+template <class _Tp>
+inline
+void valarray<_Tp>::__clear(size_t __capacity)
+{
+  if (__begin_ != nullptr)
+  {
+    while (__end_ != __begin_)
+      (--__end_)->~value_type();
+    allocator<value_type>().deallocate(__begin_, __capacity);
+    __begin_ = __end_ = nullptr;
+  }
 }
 
 template <class _Tp>
 void
 valarray<_Tp>::resize(size_t __n, value_type __x)
 {
-    if (__begin_ != nullptr)
-    {
-        while (__end_ != __begin_)
-            (--__end_)->~value_type();
-        _VSTD::__deallocate(__begin_);
-        __begin_ = __end_ = nullptr;
-    }
+    __clear(size());
     if (__n)
     {
-        __begin_ = __end_ = static_cast<value_type*>(_VSTD::__allocate(__n * sizeof(value_type)));
+        __begin_ = __end_ = allocator<value_type>().allocate(__n);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         try
         {
 #endif  // _LIBCPP_NO_EXCEPTIONS
-            for (; __n; --__n, ++__end_)
-                ::new (__end_) value_type(__x);
+            for (size_t __n_left = __n; __n_left; --__n_left, ++__end_)
+                ::new ((void*)__end_) value_type(__x);
 #ifndef _LIBCPP_NO_EXCEPTIONS
         }
         catch (...)
         {
-            resize(0);
+            __clear(__n);
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
@@ -4877,5 +4902,7 @@ end(const valarray<_Tp>& __v)
 }
 
 _LIBCPP_END_NAMESPACE_STD
+
+_LIBCPP_POP_MACROS
 
 #endif  // _LIBCPP_VALARRAY

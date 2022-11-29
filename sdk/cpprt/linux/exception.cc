@@ -1352,11 +1352,30 @@ namespace std
 	 * Returns whether there are any exceptions currently being thrown that
 	 * have not been caught.  This can occur inside a nested catch statement.
 	 */
+#if  __cplusplus <= 201703L
+#if  __cplusplus < 201103L
 	bool uncaught_exception() throw()
+#else
+    bool uncaught_exception() noexcept
+#endif
 	{
 		__cxa_thread_info *info = thread_info();
 		return info->globals.uncaughtExceptions != 0;
 	}
+#endif
+
+	/**
+	 * Detects how many exceptions in the current thread have been thrown or rethrown
+     * and not yet entered their matching catch clauses.
+	 */
+#if  __cplusplus >= 201703L
+	int uncaught_exceptions() noexcept
+	{
+		__cxa_thread_info *info = thread_info();
+		return info->globals.uncaughtExceptions;
+	}
+#endif
+
 	/**
 	 * Returns the current unexpected handler.
 	 */

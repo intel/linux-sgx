@@ -1,0 +1,11 @@
+[Unit]
+Description=Remount /dev as exec to allow AESM service to boot and load enclaves into SGX
+After=udev.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/mount -o remount,exec /dev
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target

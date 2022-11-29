@@ -7,6 +7,9 @@ global:
     enclave_get_information;
     enclave_set_information;
     enclave_create_ex;
+    enclave_alloc;
+    enclave_modify;
+    enclave_get_features;
 local:
     *;
 };

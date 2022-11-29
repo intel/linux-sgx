@@ -67,8 +67,6 @@ rm -fr %{?buildroot}/%{name}
 
 %files -f %{_specdir}/list-%{name}
 
-%debug_package
-
 %post
 trigger_udev() {
     if ! which udevadm &> /dev/null; then

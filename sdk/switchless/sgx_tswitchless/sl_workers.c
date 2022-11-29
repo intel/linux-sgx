@@ -62,7 +62,7 @@ static sl_call_table_t* __attribute__((optimize("O0"))) new_ecall_table(void)
                       + sizeof(sl_call_func_t) * num_ecalls;
     
     // fcall_table never gets freed. no global termination hooks defined
-    sl_call_table_t* fcall_table = malloc(table_size);
+    sl_call_table_t* fcall_table = (sl_call_table_t*)malloc(table_size);
     if (fcall_table == NULL) 
         return NULL;
 
@@ -127,8 +127,8 @@ sgx_status_t sl_run_switchless_tworker()
         return SGX_ERROR_UNEXPECTED;
       
     // g_uswitchels_handle pointer is checked in sl_init_switchless() function 
-    uint32_t max_retries = g_uswitchless_handle->us_config.retries_before_sleep;
-    uint32_t retries = 0;
+    uint64_t max_retries = g_uswitchless_handle->us_config.retries_before_sleep;
+    uint64_t retries = 0;
 
     while (retries < max_retries)
     {

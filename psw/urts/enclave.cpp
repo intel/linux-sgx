@@ -38,8 +38,7 @@
 #include "se_error_internal.h"
 #include "debugger_support.h"
 #include "se_memory.h"
-#include "urts_trim.h"
-#include "urts_emodpr.h"
+#include "urts_emm.h"
 #include "rts_cmd.h"
 #include <assert.h>
 #include "rts.h"
@@ -352,7 +351,7 @@ sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, 
                     se_event_wake(m_new_thread_event);
                     pthread_join(m_pthread_tid, NULL);
                 }
-                ocall_table = m_ocall_table;
+                /*ocall_table = m_ocall_table;
 
                 std::vector<CTrustThread *> threads = m_thread_pool->get_thread_list();
                 for (unsigned idx = 0; idx < threads.size(); ++idx)
@@ -381,7 +380,7 @@ sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, 
                             return (sgx_status_t)ret;
                         }
                     }
-                }
+                }*/
             }
 
             ret = do_ecall(proc, m_ocall_table, ms, trust_thread);
@@ -412,14 +411,10 @@ int CEnclave::ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_tabl
     if (is_builtin_ocall(proc))
     {
         se_rdunlock(&m_rwlock);
-        if ((int)proc == EDMM_TRIM)
-            error = ocall_trim_range(ms);
-        else if ((int)proc == EDMM_TRIM_COMMIT)
-            error = ocall_trim_accept(ms);
-        else if ((int)proc == EDMM_MODPR)
-            error = ocall_emodpr(ms);
-        else if ((int)proc == EDMM_MPROTECT)
-            error = ocall_mprotect(ms);
+        if ((int)proc == EDMM_ALLOC)
+            error = ocall_emm_alloc(ms);
+        else if ((int)proc == EDMM_MODIFY)
+            error = ocall_emm_modify(ms);
     }
     else 
     {

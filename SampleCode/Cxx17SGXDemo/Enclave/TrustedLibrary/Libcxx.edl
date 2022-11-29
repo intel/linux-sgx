@@ -1,0 +1,88 @@
+/*
+ * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in
+ *     the documentation and/or other materials provided with the
+ *     distribution.
+ *   * Neither the name of Intel Corporation nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
+/* Libcxx.edl - EDL sample for trusted C++ library. */
+
+enclave {
+    
+    /* 
+     * A subset of the C++14 standard is supported.
+     */
+
+    trusted {
+        public void ecall_cxx17_static_assert(void);
+        public void ecall_cxx17_template_parameter(void);
+        public void ecall_cxx17_auto_deduction_from_braced_init_list(void);
+        public void ecall_cxx17_nested_namespace(void);
+        public void ecall_cxx17_u8_character_literals(void);
+        public void ecall_cxx17_hexadecimal_floating_point_literals(void);
+        public void ecall_cxx17_fold_expression(void);
+        public void ecall_cxx17_compile_time_if(void);
+        public void ecall_cxx17_structured_binding(void);
+        public void ecall_cxx17_initializer_in_if_switch(void);
+        public void ecall_cxx17_CTAD(void);
+        public void ecall_cxx17_inline_variable(void);
+        public void ecall_cxx17_lambda_capture_this_by_value(void);
+        public void ecall_cxx17_constexpr_lambda(void);
+        public void ecall_cxx17_uncaught_exceptions(void);
+        public void ecall_cxx17_invoke(void);
+        public void ecall_cxx17_uninitialized_memory_algorithms(void);
+        public void ecall_cxx17_aligned_alloc(void);
+        public void ecall_cxx17_owner_less(void);
+        public void ecall_cxx17_shared_ptr_for_array(void);
+        public void ecall_cxx17_std_byte(void);
+        public void ecall_cxx17_std_conjunction_disjunction_negation(void);
+        public void ecall_cxx17_reference(void);
+        public void ecall_cxx17_is_aggregate(void);
+        public void ecall_cxx17_is_swappable(void);
+        public void ecall_cxx17_searchers(void);
+        public void ecall_cxx17_std_as_const(void);
+        public void ecall_cxx17_std_has_unique_object_representations(void);
+        public void ecall_cxx17_clamp(void);
+        public void ecall_cxx17_reduce(void);
+        public void ecall_cxx17_inclusive_exclusive_scan(void);
+        public void ecall_cxx17_gcd_lcm(void);
+        public void ecall_cxx17_map_extract_merge(void);
+        public void ecall_cxx17_map_try_emplace_insert_or_assign(void);
+        public void ecall_cxx17_std_size_empty_data(void);
+        public void ecall_cxx17_string_view(void);
+        public void ecall_cxx17_optional(void);
+        public void ecall_cxx17_any(void);
+        public void ecall_cxx17_make_from_tuple(void);
+        public void ecall_cxx17_tuple_deduction_guides(void);
+        public void ecall_cxx17_variant(void);
+        public void ecall_cxx17_align_new_delete(void);
+        public void ecall_cxx17_has_include(void);
+        public void ecall_cxx17_apply(void);
+        public void ecall_condition_variable_run(void);
+        public void ecall_condition_variable_load(void);
+    };
+};

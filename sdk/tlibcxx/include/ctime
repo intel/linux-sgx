@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===---------------------------- ctime -----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -18,6 +17,7 @@ Macros:
 
     NULL
     CLOCKS_PER_SEC
+    TIME_UTC // C++17
 
 namespace std
 {
@@ -28,6 +28,7 @@ Types:
     size_t
     time_t
     tm
+    timespec // C++17
 
 clock_t clock();
 double difftime(time_t time1, time_t time0);
@@ -39,7 +40,7 @@ tm*    gmtime(const time_t* timer);
 tm* localtime(const time_t* timer);
 size_t strftime(char* restrict s, size_t maxsize, const char* restrict format,
                 const tm* restrict timeptr);
-
+int timespec_get( struct timespec *ts, int base); // C++17
 }  // std
 
 */
@@ -51,35 +52,53 @@ size_t strftime(char* restrict s, size_t maxsize, const char* restrict format,
 #pragma GCC system_header
 #endif
 
+// FIXME:
+// Apple SDKs don't define ::timespec_get unconditionally in C++ mode. This
+// should be fixed in future SDKs, but for the time being we need to avoid
+// trying to use that declaration when the SDK doesn't provide it. Note that
+// we're detecting this here instead of in <__config> because we can't include
+// system headers from <__config>, since it leads to circular module dependencies.
+// This is also meant to be a very temporary workaround until the SDKs are fixed.
+#if defined(__APPLE__)
+#   include <sys/cdefs.h>
+#   if defined(_LIBCPP_HAS_TIMESPEC_GET) && (__DARWIN_C_LEVEL < __DARWIN_C_FULL)
+#       define _LIBCPP_HAS_TIMESPEC_GET_NOT_ACTUALLY_PROVIDED
+#   endif
+#endif
+
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 using ::clock_t;
 using ::size_t;
 using ::time_t;
 using ::tm;
+#if _LIBCPP_STD_VER > 14 && defined(_LIBCPP_HAS_TIMESPEC_GET)
+using ::timespec;
+#endif
 
 #if !defined(_LIBCPP_SGX_CONFIG)
 using ::clock;
-#endif // !defined(_LIBCPP_SGX_CONFIG)
+#endif
 
 using ::difftime;
 
 #if !defined(_LIBCPP_SGX_CONFIG)
 using ::mktime;
 using ::time;
-#endif // !defined(_LIBCPP_SGX_CONFIG)
+#endif
 
 #ifndef _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS
 using ::asctime;
-
 #if !defined(_LIBCPP_SGX_CONFIG)
 using ::ctime;
 using ::gmtime;
 using ::localtime;
-#endif // !defined(_LIBCPP_SGX_CONFIG)
-
+#endif
 #endif
 using ::strftime;
+#if _LIBCPP_STD_VER > 14 && defined(_LIBCPP_HAS_TIMESPEC_GET) && !defined(_LIBCPP_HAS_TIMESPEC_GET_NOT_ACTUALLY_PROVIDED)
+using ::timespec_get;
+#endif
 
 _LIBCPP_END_NAMESPACE_STD
 

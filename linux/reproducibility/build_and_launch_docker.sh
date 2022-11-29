@@ -42,7 +42,7 @@
 #         not specified, will use the same directory as the script location.
 #
 #     -t, --reproduce-type:
-#         Specify the reproducibility type. Provided options: all|sdk|ae|ipp|binutils.
+#         Specify the reproducibility type. Provided options: all|sdk|ae|ipp.
 #         If one type is provided, the corresponding code will be prepared. And the correponding
 #         build steps will also be launched in the container automatically.
 #         If no type is provided, all the code will be prepared. And the build steps will
@@ -68,7 +68,6 @@ set -e
 script_dir="$( cd "$( dirname "$0" )" >> /dev/null 2>&1 && pwd )"
 code_dir="$script_dir/code_dir"
 sgx_repo="$code_dir/sgx"
-binutils_repo="$code_dir/binutils"
 type="all"
 type_flag=0
 mount_dir="/linux-sgx"
@@ -76,8 +75,8 @@ mount_dir="/linux-sgx"
 sdk_installer=""
 sgx_src=""
 
-default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.17.100.1.bin
-default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.17/distro/nix_reproducibility/$default_sdk_installer
+default_sdk_installer=sgx_linux_x64_sdk_reproducible_2.18.100.1.bin
+default_sdk_installer_url=https://download.01.org/intel-sgx/sgx-linux/2.18/distro/nix_reproducibility/$default_sdk_installer
 
 
 usage()
@@ -94,7 +93,7 @@ usage()
             Specify the directory you want to prepare the code and share to the reproducible container.
             If this option is not specified, will use the same directory as the script location.
         -t, --reproduce-type:
-            Specify the reproducibility type. Provided options: all|sdk|ae|ipp|binutils.
+            Specify the reproducibility type. Provided options: all|sdk|ae|ipp.
             If one type is provided, the corresponding code will be prepared. And the correponding
             build steps will also be executed in the container automatically.
             If no type is provided, all the code will be prepared. And the build steps will not
@@ -122,7 +121,7 @@ parse_cmd()
             -t | --reproduce-type ) shift
                 type="$1"
                 type_flag=1
-                if [ "$type" != "all" ] && [ "$type" != "sdk" ] && [ "$type" != "ae" ] && [ "$type" != "ipp" ]  && [ "$type" != "binutils" ]; then
+                if [ "$type" != "all" ] && [ "$type" != "sdk" ] && [ "$type" != "ae" ] && [ "$type" != "ipp" ]; then
                     usage
                     exit 1
                 fi
@@ -163,7 +162,6 @@ parse_cmd()
     mkdir -p "$code_dir" | exit
     code_dir="$(realpath $code_dir)"
     sgx_repo="$code_dir/sgx"
-    binutils_repo="$code_dir/binutils"
 }
 
 prepare_sgx_src()
@@ -179,7 +177,7 @@ prepare_sgx_src()
     if [ "$sgx_src" != "" ]; then
         mkdir -p "$sgx_repo" && cp -a "$sgx_src/." "$sgx_repo"
     else
-        git clone -b sgx_2.17_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
+        git clone -b sgx_2.18_reproducible https://github.com/intel/linux-sgx.git $sgx_repo
     fi
 
     cd "$sgx_repo" && make preparation
@@ -196,17 +194,6 @@ prepare_ipp_src()
     cd $ipp_dir/ipp-crypto
     git apply ../0001-IPP-crypto-for-SGX.patch > /dev/null 2>&1 ||  git apply ../0001-IPP-crypto-for-SGX.patch --check -R
     popd
-}
-
-prepare_binutils_src()
-{
-    if [ -d $binutils_repo ]; then
-        echo "Removing existing repo $binutils_repo"
-        rm -rf $binutils_repo
-    fi
-
-    git clone https://github.com/bminor/binutils-gdb.git --branch binutils-2_36_1 --depth 1 $binutils_repo
-    #git clone https://sourceware.org/git/binutils-gdb.git --branch binutils-2_36_1 --depth 1 $binutils_repo
 }
 
 
@@ -243,11 +230,7 @@ EOF
 parse_cmd $@
 
 case $type in
-    "binutils")
-        prepare_binutils_src
-        ;;
     "all")
-        prepare_binutils_src
         prepare_sgx_src
         prepare_ipp_src
         ;;
@@ -280,6 +263,10 @@ if [ $? != 0 ]; then
     docker build -t sgx.build.env --build-arg https_proxy=$https_proxy \
               --build-arg http_proxy=$http_proxy -f $script_dir/Dockerfile .
 fi
+
+# Allow 'w' permission for other users to the code_dir in case the uid in the container
+# is different from the host uid.
+chmod -R o+w $code_dir
 
 if [ $type_flag = 0 ]; then
     docker run -v $code_dir:$mount_dir -it --network none --rm sgx.build.env

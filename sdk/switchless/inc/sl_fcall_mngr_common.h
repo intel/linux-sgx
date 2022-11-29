@@ -84,7 +84,7 @@ static inline void sl_call_mngr_register_calls(struct sl_call_mngr* mngr,
     mngr->call_table = call_table;
 }
 
-static inline uint32_t sl_call_mngr_process(struct sl_call_mngr* mngr)
+static inline uint64_t sl_call_mngr_process(struct sl_call_mngr* mngr)
 {
     BUG_ON(!can_type_process(mngr->type));
     return sl_siglines_process_signals(&mngr->siglns);
@@ -104,7 +104,7 @@ static inline uint32_t sl_call_mngr_process(struct sl_call_mngr* mngr)
     } while(0)
 #endif
 
-static inline void process_switchless_call(struct sl_siglines* siglns, uint32_t line)
+static inline void process_switchless_call(struct sl_siglines* siglns, uint64_t line)
 {
     /*
 
@@ -140,7 +140,7 @@ static inline void process_switchless_call(struct sl_siglines* siglns, uint32_t 
     BUG_ON(call_task_u->status != SL_SUBMITTED);
     SET_VALUE_HARDEN_FOR_PROCESS_TASK(&call_task_u->status, SL_ACCEPTED, sl_call_status_t);
 
-    uint32_t func_id = call_task_u->func_id;
+    uint64_t func_id = call_task_u->func_id;
 
     /* Get the function pointer */
     sl_call_func_t call_func_ptr = NULL;
@@ -190,7 +190,7 @@ on_done:
     } while(0)
 #endif
 
-static inline int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_task* call_task, uint32_t max_tries)
+static inline int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_task* call_task, uint64_t max_tries)
 {
     /*
         Used to make actual switchless call by both enclave & untrusted code
@@ -208,7 +208,7 @@ static inline int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_ta
 
     /* Allocate a free signal line to send signal */
     struct sl_siglines* siglns = &mngr->siglns;
-    uint32_t line = sl_siglines_alloc_line(siglns);
+    uint64_t line = sl_siglines_alloc_line(siglns);
     if (line == SL_INVALID_SIGLINE)
         return -EAGAIN;
 
@@ -260,7 +260,7 @@ static inline int sl_call_mngr_call(struct sl_call_mngr* mngr, struct sl_call_ta
     call_task->ret_code = mngr->tasks[line].ret_code;
 
 on_exit:
-    SET_VALUE_HARDEN_FOR_SEND_TASK(&mngr->tasks[line].func_id, SL_INVALID_FUNC_ID, uint32_t);
+    SET_VALUE_HARDEN_FOR_SEND_TASK(&mngr->tasks[line].func_id, SL_INVALID_FUNC_ID, uint64_t);
     sl_siglines_free_line(siglns, line);
     return ret;
 }

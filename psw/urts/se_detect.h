@@ -43,6 +43,10 @@
 // ECX[9]
 #define PKRU_SHIFT 9
 
+#define AMX_TILECFG_SHIFT 17
+#define AMX_TILEDATA_SHIFT 18
+
+
 // CPUID function 1 
 // ECX[26] enums general support for XSAVE
 // ECX[27] enums XSAVE is enabled or not

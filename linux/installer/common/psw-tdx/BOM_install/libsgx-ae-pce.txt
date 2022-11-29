@@ -1,0 +1,3 @@
+DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
+<deliverydir>/external/dcap_source/QuoteGeneration/psw/ae/data/prebuilt/libsgx_pce.signed.so	<installdir>/lib/libsgx_pce.signed.so	0	main	STP
+<deliverydir>/linux/installer/common/psw-tdx/92-sgx-provision.rules	<installdir>/etc/udev/rules.d/93-sgx-provision.rules	0	main	STP

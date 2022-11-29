@@ -292,7 +292,6 @@ void* get_vdso_sym(const char* vdso_func_name)
     return ret;
 }
 
-
 static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r8, long r9,
             struct sgx_enclave_run *run)
 {   
@@ -304,15 +303,17 @@ static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r
     {
         //need to handle exception here
         __u64 *user_data = (__u64*)run->user_data;
-        void *ocall_table = reinterpret_cast<void *>(user_data[0]);
         CTrustThread* trust_thread = reinterpret_cast<CTrustThread *>(user_data[1]);
-        if(ocall_table == NULL || trust_thread == NULL)
+        if(trust_thread == NULL)
         {
             run->user_data = SGX_ERROR_UNEXPECTED;
             return 0;
         }
 
+        void *ocall_table = reinterpret_cast<void *>(user_data[0]);
+        //directly use the original tcs
         unsigned int ret = do_ecall(ECMD_EXCEPT, ocall_table, NULL, trust_thread);
+
         if(SGX_SUCCESS == ret)
         {
             return SE_ERESUME;
@@ -337,14 +338,14 @@ static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r
         else
         {
             __u64 *user_data = (__u64*)run->user_data;
-            sgx_ocall_table_t *ocall_table = reinterpret_cast<sgx_ocall_table_t *>(user_data[0]);
             CTrustThread* trust_thread = reinterpret_cast<CTrustThread *>(user_data[1]);
-            if(ocall_table == NULL || trust_thread == NULL)
+            if(trust_thread == NULL)
             {
                 run->user_data = SGX_ERROR_UNEXPECTED;
                 return 0;
             }
 
+            sgx_ocall_table_t *ocall_table = reinterpret_cast<sgx_ocall_table_t *>(user_data[0]);
             auto status = stack_sticker((unsigned int )rdi, ocall_table, (void *)rsi,
                 trust_thread, trust_thread->get_tcs());
             if(status == (int)SE_ERROR_READ_LOCK_FAIL)

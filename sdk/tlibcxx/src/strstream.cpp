@@ -1,20 +1,18 @@
 //===------------------------ strstream.cpp -------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
-
-// Not SGX compatible.
-#include "__config"
 
 #include "strstream"
 #include "algorithm"
 #include "climits"
 #include "cstring"
+#include "cstdlib"
 #include "__debug"
+#include "__undef_macros"
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
@@ -187,7 +185,7 @@ strstreambuf::overflow(int_type __c)
         }
         setg(buf, buf + ninp, buf + einp);
         setp(buf + einp, buf + new_size);
-        pbump(static_cast<int>(nout));
+        __pbump(nout);
         __strmode_ |= __allocated;
     }
     *pptr() = static_cast<char>(__c);
@@ -269,6 +267,8 @@ strstreambuf::seekoff(off_type __off, ios_base::seekdir __way, ios_base::openmod
         case ios::end:
             newoff = seekhigh - eback();
             break;
+        default:
+            _LIBCPP_UNREACHABLE();
         }
         newoff += __off;
         if (0 <= newoff && newoff <= seekhigh - eback())
@@ -281,7 +281,7 @@ strstreambuf::seekoff(off_type __off, ios_base::seekdir __way, ios_base::openmod
                 // min(pbase, newpos), newpos, epptr()
                 __off = epptr() - newpos;
                 setp(min(pbase(), newpos), epptr());
-                pbump(static_cast<int>((epptr() - pbase()) - __off));
+                __pbump((epptr() - pbase()) - __off);
             }
             __p = newoff;
         }
@@ -311,7 +311,7 @@ strstreambuf::seekpos(pos_type __sp, ios_base::openmode __which)
                     // min(pbase, newpos), newpos, epptr()
                     off_type temp = epptr() - newpos;
                     setp(min(pbase(), newpos), epptr());
-                    pbump(static_cast<int>((epptr() - pbase()) - temp));
+                    __pbump((epptr() - pbase()) - temp);
                 }
                 __p = newoff;
             }
@@ -333,4 +333,3 @@ strstream::~strstream()
 }
 
 _LIBCPP_END_NAMESPACE_STD
-

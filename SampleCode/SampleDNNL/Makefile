@@ -93,12 +93,6 @@ endif
 App_Compile_CXXFlags := $(App_Compile_CFlags)
 App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread
 
-ifneq ($(SGX_MODE), HW)
-	App_Link_Flags += -lsgx_uae_service_sim
-else
-	App_Link_Flags += -lsgx_uae_service
-endif
-
 Gen_Untrusted_Source := App/Enclave_u.c
 Gen_Untrusted_Object := App/Enclave_u.o
 
@@ -162,6 +156,7 @@ Enclave_Objects := $(Gen_Trusted_Object) $(Enclave_C_Files:.c=.o) $(Enclave_Cpp_
 Enclave_Name := libenclave.so
 Signed_Enclave_Name := libenclave.signed.so
 Enclave_Config_File := Enclave/Enclave.config.xml
+Enclave_Test_Key := Enclave/Enclave_private_test.pem
 
 ifeq ($(SGX_MODE), HW)
 ifeq ($(SGX_DEBUG), 1)
@@ -262,7 +257,12 @@ $(Enclave_Name): $(Enclave_Objects)
 	@echo "LINK =>  $@"
 
 $(Signed_Enclave_Name): $(Enclave_Name)
-	@$(SGX_ENCLAVE_SIGNER) sign -key Enclave/Enclave_private_test.pem -enclave $(Enclave_Name) -out $@ -config $(Enclave_Config_File)
+ifeq ($(wildcard $(Enclave_Test_Key)),)
+	@echo "There is no enclave test key<Enclave_private_test.pem>."
+	@echo "The project will generate a key<Enclave_private_test.pem> for test."
+	@openssl genrsa -out $(Enclave_Test_Key) -3 3072
+endif
+	@$(SGX_ENCLAVE_SIGNER) sign -key $(Enclave_Test_Key) -enclave $(Enclave_Name) -out $@ -config $(Enclave_Config_File)
 	@echo "SIGN =>  $@"
 
 

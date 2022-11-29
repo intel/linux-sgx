@@ -53,12 +53,12 @@ static inline uint32_t count_leading_zeroes(uint64_t value)
 
 
 
-static inline void set_bit(volatile uint64_t* l, uint32_t i) 
+static inline void set_bit(volatile uint64_t* l, uint64_t i)
 {
     lock_or64(l, 1ULL << i);
 }
 
-static inline int32_t test_and_clear_bit(volatile uint64_t* l, uint32_t i)
+static inline int32_t test_and_clear_bit(volatile uint64_t* l, uint64_t i)
 {
     uint64_t old_l, new_l;
 retry:

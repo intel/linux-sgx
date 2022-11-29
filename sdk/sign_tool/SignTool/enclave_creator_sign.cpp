@@ -305,46 +305,5 @@ int EnclaveCreatorST::get_enclave_info(uint8_t *hash, int size, uint64_t *quota)
     return SGX_SUCCESS;
 }
 
-int EnclaveCreatorST::emodpr(uint64_t addr, uint64_t size, uint64_t flag)
-{
-    UNUSED(addr);
-    UNUSED(size);
-    UNUSED(flag);
-
-    return SGX_SUCCESS;
-}
-
-int EnclaveCreatorST::mktcs(uint64_t tcs_addr)
-{
-    UNUSED(tcs_addr);
-
-    return SGX_SUCCESS;
-}
-
-int EnclaveCreatorST::trim_range(uint64_t fromaddr, uint64_t toaddr)
-{
-    UNUSED(fromaddr);
-    UNUSED(toaddr);
-
-    return SGX_SUCCESS;
-
-}
-
-int EnclaveCreatorST::trim_accept(uint64_t addr)
-{
-    UNUSED(addr);
-
-    return SGX_SUCCESS;
-}
-
-int EnclaveCreatorST::remove_range(uint64_t fromaddr, uint64_t numpages)
-{
-    UNUSED(fromaddr);
-    UNUSED(numpages);
-
-    return SGX_SUCCESS;
-}
-
-
 static EnclaveCreatorST g_enclave_creator_st;
 EnclaveCreator* g_enclave_creator = &g_enclave_creator_st;

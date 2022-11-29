@@ -61,7 +61,7 @@
 #include <sl_siglines.h>
 
 
-typedef enum {
+typedef enum : unsigned long long {
     SL_TYPE_OCALL,
     SL_TYPE_ECALL
 } sl_call_type_t;
@@ -69,12 +69,12 @@ typedef enum {
 typedef sgx_status_t(*sl_call_func_t)(const void* /* ms */);
 
 typedef struct {
-    uint32_t        size;
+    uint64_t        size;
     sl_call_func_t  funcs[];
 } sl_call_table_t; /* compatible with sgx_ocall_table_t */
 
 
-typedef enum {
+typedef enum : unsigned long long {
     SL_INIT,
     SL_SUBMITTED,
     SL_ACCEPTED,
@@ -85,12 +85,12 @@ typedef enum {
 
 struct sl_call_task {
     volatile sl_call_status_t  status;        // status of the current task
-    uint32_t                   func_id;       // function id to be called (index to the call table)
+    uint64_t                   func_id;       // function id to be called (index to the call table)
     void*                      func_data;     // data to be passed to the function 
-    sgx_status_t               ret_code;      // return code of the function 
+    alignas(8) sgx_status_t    ret_code;      // return code of the function
 };
 
-#define SL_INVALID_FUNC_ID ((uint32_t)-1)
+#define SL_INVALID_FUNC_ID ((uint64_t)-1)
 
 struct sl_call_mngr {
     sl_call_type_t          type;           // type of the call manager (ECALL / OCALL)
@@ -181,7 +181,7 @@ __BEGIN_DECLS
 
 uint32_t sl_call_mngr_init(struct sl_call_mngr* mngr, 
                            sl_call_type_t type, 
-                           uint32_t max_pending_ocalls);
+                           uint64_t max_pending_ocalls);
 
 void sl_call_mngr_destroy(struct sl_call_mngr* mngr);
 

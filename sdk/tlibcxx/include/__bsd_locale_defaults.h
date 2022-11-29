@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===---------------------- __bsd_locale_defaults.h -----------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 // The BSDs have lots of *_l functions.  We don't want to define those symbols
@@ -14,6 +13,10 @@
 
 #ifndef _LIBCPP_BSD_LOCALE_DEFAULTS_H
 #define _LIBCPP_BSD_LOCALE_DEFAULTS_H
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#pragma GCC system_header
+#endif
 
 #define __libcpp_mb_cur_max_l(loc)                          MB_CUR_MAX_L(loc)
 #define __libcpp_btowc_l(ch, loc)                           btowc_l(ch, loc)

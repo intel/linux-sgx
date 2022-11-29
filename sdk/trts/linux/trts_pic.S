@@ -551,6 +551,14 @@ DECLARE_GLOBAL_FUNC do_eaccept
     jnz	 abort
     SE_EPILOG
 
+DECLARE_GLOBAL_FUNC do_eacceptcopy
+    SE_PROLOG
+    mov     $SE_EACCEPTCOPY, %eax
+    ENCLU
+    cmp  $SGX_SUCCESS, %eax
+    jnz  abort
+    SE_EPILOG
+
 DECLARE_GLOBAL_FUNC do_emodpe
     SE_PROLOG
     mov     $SE_EMODPE, %eax

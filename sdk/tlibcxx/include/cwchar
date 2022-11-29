@@ -1,10 +1,9 @@
 // -*- C++ -*-
 //===--------------------------- cwchar -----------------------------------===//
 //
-//                     The LLVM Compiler Infrastructure
-//
-// This file is dual licensed under the MIT and the University of Illinois Open
-// Source Licenses. See LICENSE.TXT for details.
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
 //
 //===----------------------------------------------------------------------===//
 
@@ -106,14 +105,9 @@ size_t wcsrtombs(char* restrict dst, const wchar_t** restrict src, size_t len,
 #include <__config>
 #include <cwctype>
 #include <wchar.h>
-#if defined(_LIBCPP_MSVCRT) || defined(__MINGW32__)
-#if !defined(_LIBCPP_SGX_CONFIG)
-#include <support/win32/support.h> // pull in *swprintf defines
-#endif // !defined(_LIBCPP_SGX_CONFIG)
-#endif // _LIBCPP_MSVCRT
 
 #if defined(_LIBCPP_SGX_CONFIG)
-#include <support/sgx/support.h>
+#include <__support/sgx/support.h>
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -127,7 +121,7 @@ using ::size_t;
 
 #ifndef _LIBCPP_SGX_CONFIG
 using ::tm;
-#endif //_LIBCPP_SGX_CONFIG
+#endif
 
 using ::wint_t;
 
@@ -135,13 +129,13 @@ using ::wint_t;
 using ::FILE;
 using ::fwprintf;
 using ::fwscanf;
-#endif //_LIBCPP_SGX_CONFIG
+#endif
 
 using ::swprintf;
 
 #ifndef _LIBCPP_SGX_CONFIG
 using ::vfwprintf;
-#endif //_LIBCPP_SGX_CONFIG
+#endif
 
 using ::vswprintf;
 
@@ -149,9 +143,6 @@ using ::vswprintf;
 using ::swscanf;
 using ::vfwscanf;
 using ::vswscanf;
-#endif // _LIBCPP_SGX_CONFIG
-
-#ifndef _LIBCPP_SGX_CONFIG
 using ::fgetwc;
 using ::fgetws;
 using ::fputwc;
@@ -161,14 +152,8 @@ using ::getwc;
 using ::putwc;
 using ::ungetwc;
 using ::wcstod;
-#endif //_LIBCPP_SGX_CONFIG
-
-#ifndef _LIBCPP_SGX_CONFIG
 using ::wcstof;
 using ::wcstold;
-#endif // _LIBCPP_SGX_CONFIG
-
-#ifndef _LIBCPP_SGX_CONFIG
 using ::wcstol;
 #ifndef _LIBCPP_HAS_NO_LONG_LONG
 using ::wcstoll;
@@ -178,13 +163,13 @@ using ::wcstoul;
 using ::wcstoull;
 #endif // _LIBCPP_HAS_NO_LONG_LONG
 using ::wcscpy;
-#endif //_LIBCPP_SGX_CONFIG
+#endif
 
 using ::wcsncpy;
 
 #ifndef _LIBCPP_SGX_CONFIG
 using ::wcscat;
-#endif //_LIBCPP_SGX_CONFIG
+#endif
 
 using ::wcsncat;
 using ::wcscmp;
@@ -193,15 +178,12 @@ using ::wcsncmp;
 using ::wcsxfrm;
 
 #if defined(_WCHAR_H_CPLUSPLUS_98_CONFORMANCE_)
-
 using ::wcschr;
 using ::wcspbrk;
 using ::wcsrchr;
 using ::wcsstr;
 using ::wmemchr;
-
 #else
-
 inline _LIBCPP_INLINE_VISIBILITY const wchar_t* wcschr(const wchar_t* __s, wchar_t __c) {return ::wcschr(__s, __c);}
 inline _LIBCPP_INLINE_VISIBILITY       wchar_t* wcschr(      wchar_t* __s, wchar_t __c) {return ::wcschr(__s, __c);}
 
@@ -216,7 +198,6 @@ inline _LIBCPP_INLINE_VISIBILITY       wchar_t* wcsstr(      wchar_t* __s1, cons
 
 inline _LIBCPP_INLINE_VISIBILITY const wchar_t* wmemchr(const wchar_t* __s, wchar_t __c, size_t __n) {return ::wmemchr(__s, __c, __n);}
 inline _LIBCPP_INLINE_VISIBILITY       wchar_t* wmemchr(      wchar_t* __s, wchar_t __c, size_t __n) {return ::wmemchr(__s, __c, __n);}
-
 #endif
 
 using ::wcscspn;
@@ -230,7 +211,7 @@ using ::wmemset;
 
 #ifndef _LIBCPP_SGX_CONFIG
 using ::wcsftime;
-#endif _LIBCPP_SGX_CONFIG
+#endif
 
 using ::btowc;
 using ::wctob;
@@ -243,9 +224,7 @@ using ::wcsrtombs;
 
 #ifndef _LIBCPP_HAS_NO_STDIN
 using ::getwchar;
-#ifndef _LIBCPP_MSVCRT
 using ::vwscanf;
-#endif // _LIBCPP_MSVCRT
 using ::wscanf;
 #endif
 

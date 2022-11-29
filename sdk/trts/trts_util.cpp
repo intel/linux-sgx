@@ -216,5 +216,10 @@ bool is_pkru_enabled()
 
 bool is_tcs_binding_mode()
 {
-    return g_global_data.thread_policy == 0 ? true : false;
+    return g_global_data.thread_policy == TCS_POLICY_BIND ? true : false;
+}
+
+size_t get_xsave_size()
+{
+    return (size_t)g_global_data.td_template.xsave_size;
 }

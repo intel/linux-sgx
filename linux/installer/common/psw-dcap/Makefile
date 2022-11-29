@@ -53,6 +53,8 @@ QE3_FULL_VER:= $(call ACQUIRE_DCAP_VERSION,QE3_VERSION)
 QE3_MAJOR_VER:=$(word 1,$(subst ., ,$(QE3_FULL_VER)))
 QVE_FULL_VER:= $(call ACQUIRE_DCAP_VERSION,QVE_VERSION)
 QVE_MAJOR_VER:=$(word 1,$(subst ., ,$(QVE_FULL_VER)))
+PCE_LOGIC_FULL_VER:= $(call ACQUIRE_DCAP_VERSION,PCE_WRAPPER_VERSION)
+PCE_LOGIC_MAJOR_VER:=$(word 1,$(subst ., ,$(PCE_LOGIC_FULL_VER)))
 ECL_FULL_VER:= $(call ACQUIRE_PSW_VERSION,ENCLAVE_COMMON_VERSION)
 ECL_MAJOR_VER:=$(word 1,$(subst ., ,$(ECL_FULL_VER)))
 URTS_FULL_VER:= $(call ACQUIRE_PSW_VERSION,URTS_VERSION)
@@ -281,6 +283,10 @@ install_ae: $(foreach PKG,$(AE_PKGS),post_$(PKG))
 	cd $(shell readlink -m $(DESTDIR)/$(AE_IDE_PACKAGE)/$(USR_LIB_PATH))                                   && \
 	mv libsgx_id_enclave.signed.so libsgx_id_enclave.signed.so.$(IDE_FULL_VER)                             && \
 	ln -fs libsgx_id_enclave.signed.so.$(IDE_FULL_VER) libsgx_id_enclave.signed.so.$(IDE_MAJOR_VER)
+	cd $(shell readlink -m $(DESTDIR)/$(PCE_LOGIC_PACKAGE)/$(USR_LIB_PATH))                                && \
+	mv libsgx_pce_logic.so libsgx_pce_logic.so.$(PCE_LOGIC_FULL_VER)                                       && \
+	ln -fs libsgx_pce_logic.so.$(PCE_LOGIC_FULL_VER) libsgx_pce_logic.so.$(PCE_LOGIC_MAJOR_VER)            && \
+	ln -fs libsgx_pce_logic.so.$(PCE_LOGIC_MAJOR_VER) libsgx_pce_logic.so
 
 PHONY+=install_dev_lib
 install_dev_lib: $(foreach PKG,$(DEV_LIB_PKGS),post_$(PKG))

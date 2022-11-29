@@ -4,7 +4,7 @@
  *
  * GPL LICENSE SUMMARY
  *
- * Copyright(c) 2016 Intel Corporation.
+ * Copyright(c) 2016-2022 Intel Corporation.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -21,7 +21,7 @@
  *
  * BSD LICENSE
  *
- * Copyright(c) 2016 Intel Corporation.
+ * Copyright(c) 2016-2022 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,6 +55,7 @@
  * Suresh Siddha <suresh.b.siddha@intel.com>
  * Serge Ayoun <serge.ayoun@intel.com>
  * Shay Katz-zamir <shay.katz-zamir@intel.com>
+ * Haitao Huang <haitao.huang@linux.intel.com>
  */
 
 #ifndef _UAPI_ASM_X86_SGX_H
@@ -108,16 +109,28 @@ enum sgx_page_flags {
 	_IOW(SGX_MAGIC, 0x02, struct sgx_enclave_init)
 #define SGX_IOC_ENCLAVE_SET_ATTRIBUTE \
 	_IOW(SGX_MAGIC, 0x03, struct sgx_enclave_set_attribute)
+#define SGX_IOC_VEPC_REMOVE_ALL \
+        _IO(SGX_MAGIC, 0x04)
+#define SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS \
+    _IOWR(SGX_MAGIC, 0x05, struct sgx_enclave_restrict_permissions)
+#define SGX_IOC_ENCLAVE_MODIFY_TYPES \
+    _IOWR(SGX_MAGIC, 0x06, struct sgx_enclave_modify_types)
+#define SGX_IOC_ENCLAVE_REMOVE_PAGES \
+    _IOWR(SGX_MAGIC, 0x07, struct sgx_enclave_remove_pages)
+
+
+/* Legacy OOT driver support for EDMM */
 #define SGX_IOC_ENCLAVE_EMODPR \
 	_IOW(SGX_MAGIC, 0x09, struct sgx_modification_param)
 #define SGX_IOC_ENCLAVE_MKTCS \
 	_IOW(SGX_MAGIC, 0x0a, struct sgx_range)
 #define SGX_IOC_ENCLAVE_TRIM \
 	_IOW(SGX_MAGIC, 0x0b, struct sgx_range)
+
+//Legacy implementation to ensure EPC pages removed no later by this ioctl
+
 #define SGX_IOC_ENCLAVE_NOTIFY_ACCEPT \
 	_IOW(SGX_MAGIC, 0x0c, struct sgx_range)
-#define SGX_IOC_ENCLAVE_PAGE_REMOVE \
-	_IOW(SGX_MAGIC, 0x0d, unsigned long)
 
 //Note: SGX_IOC_ENCLAVE_CREATE is the same for in-kernel except that it returns a file handle for in-kernel
 #define SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL \
@@ -267,7 +280,7 @@ struct sgx_enclave_destroy {
 
 
 /*
- *     SGX2.0 definitions
+ *     SGX2.0 definitions for Legacy OOT driver
  */
 
 #define SGX_GROW_UP_FLAG	1
@@ -283,6 +296,61 @@ struct sgx_modification_param {
 	unsigned long flags;
 };
 
+
+/**
+ * struct sgx_enclave_restrict_permissions - parameters for ioctl
+ *                                        %SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS
+ * @offset: starting page offset (page aligned relative to enclave base
+ *      address defined in SECS)
+ * @length: length of memory (multiple of the page size)
+ * @permissions:new permission bits for pages in range described by @offset
+ *              and @length
+ * @result: (output) SGX result code of ENCLS[EMODPR] function
+ * @count:  (output) bytes successfully changed (multiple of page size)
+ */
+struct sgx_enclave_restrict_permissions {
+    __u64 offset;
+    __u64 length;
+    __u64 permissions;
+    __u64 result;
+    __u64 count;
+};
+
+/**
+ * struct sgx_enclave_modify_type - parameters for %SGX_IOC_ENCLAVE_MODIFY_TYPES
+ * @offset: starting page offset (page aligned relative to enclave base
+ *      address defined in SECS)
+ * @length: length of memory (multiple of the page size)
+ * @page_type:  new type for pages in range described by @offset and @length
+ * @result: (output) SGX result code of ENCLS[EMODT] function
+ * @count:  (output) bytes successfully changed (multiple of page size)
+ */
+struct sgx_enclave_modify_types {
+    __u64 offset;
+    __u64 length;
+    __u64 page_type;
+    __u64 result;
+    __u64 count;
+};
+
+/**
+ * struct sgx_enclave_remove_pages - %SGX_IOC_ENCLAVE_REMOVE_PAGES parameters
+ * @offset:     starting page offset (page aligned relative to enclave base
+ *              address defined in SECS)
+ * @length:     length of memory (multiple of the page size)
+ * @count:      (output) bytes successfully changed (multiple of page size)
+ *
+ * Regular (PT_REG) or TCS (PT_TCS) can be removed from an initialized
+ * enclave if the system supports SGX2. First, the %SGX_IOC_ENCLAVE_MODIFY_TYPE
+ * ioctl() should be used to change the page type to PT_TRIM. After that
+ * succeeds ENCLU[EACCEPT] should be run from within the enclave and then
+ * %SGX_IOC_ENCLAVE_REMOVE_PAGES can be used to complete the page removal.
+ */
+struct sgx_enclave_remove_pages {
+        __u64 offset;
+        __u64 length;
+        __u64 count;
+};
 
 
 struct sgx_enclave_run;
@@ -363,7 +431,7 @@ struct sgx_enclave_run {
  * Most exceptions reported on ENCLU, including those that occur within the
  * enclave, are fixed up and reported synchronously instead of being delivered
  * via a standard signal. Debug Exceptions (#DB) and Breakpoints (#BP) are
- * never fixed up and are always delivered via standard signals. On synchrously
+ * never fixed up and are always delivered via standard signals. On synchronously
  * reported exceptions, -EFAULT is returned and details about the exception are
  * recorded in @run.exception, the optional sgx_enclave_exception struct.
  *

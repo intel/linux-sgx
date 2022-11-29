@@ -33,7 +33,6 @@
 #include "sgx_error.h"
 #include "stdint.h"
 
-
 void *rsrv_mem_base __attribute__((section(RELRO_SECTION_NAME))) = NULL;
 size_t rsrv_mem_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
 size_t rsrv_mem_min_size __attribute__((section(RELRO_SECTION_NAME))) = 0;

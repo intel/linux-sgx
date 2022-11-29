@@ -1,0 +1,20 @@
+<EnclaveConfiguration>
+  <ProdID>0</ProdID>
+  <ISVSVN>0</ISVSVN>
+  <TCSNum>1</TCSNum>
+  <TCSMinPool>5</TCSMinPool>
+  <TCSPolicy>1</TCSPolicy>
+  <TCSMaxNum>13</TCSMaxNum>
+  <StackMaxSize>0x4000</StackMaxSize>
+  <StackMinSize>0x2000</StackMinSize>
+  <HeapMaxSize>0x5000</HeapMaxSize>
+  <!-- UserRegionSize is the size of the region where users can operate on
+       using the EDMM APIs defined in sgx_mm.h  -->
+  <UserRegionSize>0x50000</UserRegionSize>
+  <!-- Recommend changing 'DisableDebug' to 1 to make the enclave undebuggable for enclave release -->
+  <DisableDebug>0</DisableDebug>
+  <!-- In order to operate on the User Region using EDMM API,
+       MiscSelect[0] and MiscMask[0] need to be set to 1 -->
+  <MiscSelect>1</MiscSelect>
+  <MiscMask>0xFFFFFFFF</MiscMask>
+</EnclaveConfiguration>

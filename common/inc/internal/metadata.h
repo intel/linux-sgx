@@ -37,10 +37,10 @@
 #pragma pack(1)
 
  /* version of metadata */
-#define MAJOR_VERSION 2                 //MAJOR_VERSION should not larger than 0ffffffff
-#define MINOR_VERSION 4                 //MINOR_VERSION should not larger than 0ffffffff
+#define MAJOR_VERSION 3                 //MAJOR_VERSION should not larger than 0ffffffff
+#define MINOR_VERSION 0                 //MINOR_VERSION should not larger than 0ffffffff
 
-#define SGX_2_ELRANGE_MAJOR_VERSION 12
+#define SGX_2_ELRANGE_MAJOR_VERSION 13
 #define SGX_1_ELRANGE_MAJOR_VERSION 11
 
 #define SGX_MAJOR_VERSION_GAP 10
@@ -72,18 +72,17 @@
 #define TCS_POLICY_BIND     0x00000000  /* If set, the TCS is bound to the application thread */
 #define TCS_POLICY_UNBIND   0x00000001
 
-#define MAX_SAVE_BUF_SIZE   2632
-
 #define TCS_NUM_MIN         1
 #define SSA_NUM_MIN         2
 #define SSA_FRAME_SIZE_MIN  1
-#define SSA_FRAME_SIZE_MAX  2
+#define SSA_FRAME_SIZE_MAX  4
 #define STACK_SIZE_MIN      0x0002000 /*   8 KB */
 #define STACK_SIZE_MAX      0x0040000 /* 256 KB */
 #define HEAP_SIZE_MIN       0x0001000 /*   4 KB */
 #define HEAP_SIZE_MAX       0x1000000 /*  16 MB */
 #define RSRV_SIZE_MIN       0x0000000 /*   0 KB */
 #define RSRV_SIZE_MAX       0x0000000 /*   0 KB */
+#define USER_REGION_SIZE    0x0000000 /*   0 KB */
 #define DEFAULT_MISC_SELECT 0
 #define DEFAULT_MISC_MASK   0xFFFFFFFF
 #define ISVFAMILYID_MAX     0xFFFFFFFFFFFFFFFFULL
@@ -128,6 +127,7 @@ typedef enum
 #define LAYOUT_ID_RSRV_MIN     (20)
 #define LAYOUT_ID_RSRV_INIT    (21)
 #define LAYOUT_ID_RSRV_MAX     (22)
+#define LAYOUT_ID_USER_REGION  (23)
 
 extern const char * layout_id_str[];
 
