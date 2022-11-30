@@ -844,7 +844,6 @@ extern "C" {
   void* __attribute__((weak)) realloc(void* ptr, size_t size)    ALIAS(dlrealloc);
   void* __attribute__((weak)) calloc(size_t n, size_t size)      ALIAS(dlcalloc);
   void* __attribute__((weak)) memalign(size_t align, size_t s)  ALIAS(dlmemalign); 
-  int __attribute__((weak)) posix_memalign(void**pptr, size_t align, size_t size)  ALIAS(dlposix_memalign);
   struct mallinfo __attribute__((weak)) mallinfo(void)         ALIAS(dlmallinfo);
   int __attribute__((weak)) posix_memalign(void** pp, size_t alignment, size_t n) ALIAS(dlposix_memalign);
 #ifdef USE_MALLOC_DEPRECATED

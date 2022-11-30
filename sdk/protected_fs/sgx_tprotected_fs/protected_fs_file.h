@@ -64,8 +64,6 @@ typedef enum
 
 COMPILE_TIME_ASSERT(filename_length, FILENAME_MAX_LEN == FILENAME_MAX);
 
-typedef void FILE;
-
 typedef union
 {
 	struct
@@ -149,7 +147,7 @@ private:
 	
 	file_mht_node_t root_mht; // the root of the mht is always needed (for files bigger than 3KB)
 
-	FILE* file; // OS's FILE pointer
+	void* file; // OS's FILE pointer
 	
 	open_mode_t open_mode;
 	uint8_t read_only;
