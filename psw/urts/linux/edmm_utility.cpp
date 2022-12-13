@@ -102,6 +102,11 @@ bool get_driver_type(int *driver_type)
     int hdev = open("/dev/sgx/enclave", O_RDWR);    //attempt to open the in-kernel driver
     if (-1 == hdev)
     {
+        //if /dev/sgx/enclave is not present, try to open /dev/sgx_enclave
+        hdev = open("/dev/sgx_enclave", O_RDWR);
+    }
+    if (-1 == hdev)
+    {
         hdev = open("/dev/isgx", O_RDWR);    //attempt to open the out-of-tree driver
         if (-1 == hdev)
         {
@@ -150,6 +155,11 @@ extern "C" bool open_se_device(int driver_type, int *hdevice)
     if (driver_type == SGX_DRIVER_IN_KERNEL)
     {
         *hdevice = open("/dev/sgx/enclave", O_RDWR);    //attempt to open the in-kernel driver
+        //if /dev/sgx/enclave is not present, try to open /dev/sgx_enclave
+        if(-1 == *hdevice)
+        {
+            *hdevice = open("/dev/sgx_enclave", O_RDWR);
+        }
     }
     else if (driver_type == SGX_DRIVER_DCAP)
     {
