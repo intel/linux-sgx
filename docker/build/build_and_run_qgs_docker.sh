@@ -35,7 +35,7 @@ docker build --target qgs --build-arg https_proxy=$https_proxy \
 
 docker volume create --driver local --opt type=tmpfs --opt device=tmpfs --opt o=rw qgs-socket
 
-# If you use the Legacy Launch Control driver, replace /dev/sgx/enclave with /dev/isgx, and remove
-# --device=/dev/sgx/provision
+# If you use the Legacy Launch Control driver, replace /dev/sgx_enclave with /dev/isgx, and remove
+# --device=/dev/sgx_provision
 
-docker run --device=/dev/sgx/enclave --device=/dev/sgx/provision -v /dev/log:/dev/log -v qgs-socket:/var/run/tdx-qgs/ -it --add-host=host.docker.internal:host-gateway tdx_qgs /opt/intel/tdx-qgs/qgs --no-daemon
+docker run --device=/dev/sgx_enclave --device=/dev/sgx_provision -v /dev/log:/dev/log -v qgs-socket:/var/run/tdx-qgs/ -it --add-host=host.docker.internal:host-gateway tdx_qgs /opt/intel/tdx-qgs/qgs --no-daemon
