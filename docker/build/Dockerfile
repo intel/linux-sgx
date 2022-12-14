@@ -59,6 +59,7 @@ RUN make sdk_install_pkg_no_mitigation
 WORKDIR /opt/intel
 RUN sh -c 'echo yes | /linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_*.bin'
 
+ENV SGX_SDK=/opt/intel/sgxsdk
 WORKDIR /linux-sgx
 RUN make psw_install_pkg
 
