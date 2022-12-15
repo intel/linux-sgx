@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (C) 2020 Intel Corporation. All rights reserved.
+# Copyright (C) 2022 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,9 +30,12 @@
 #
 
 set -e
-docker build --target sample --build-arg https_proxy=$https_proxy \
-             --build-arg http_proxy=$http_proxy -t sgx_sample -f ./Dockerfile ../../
+docker build --target aesm_deb --build-arg https_proxy=$https_proxy \
+             --build-arg http_proxy=$http_proxy -t sgx_aesm_deb -f ./Dockerfile ../../
 
-# Another container should expose AESM and its socket in aesmd-socket volume.
-# Replace /dev/sgx_enclave with /dev/isgx if you use the Legacy Launch Control driver
-docker run --env http_proxy --env https_proxy --device=/dev/sgx_enclave -v aesmd-socket:/var/run/aesmd -it sgx_sample
+docker volume create --driver local --opt type=tmpfs --opt device=tmpfs --opt o=rw aesmd-socket
+
+# If you use the Legacy Launch Control driver, replace /dev/sgx_enclave with /dev/isgx, and remove
+# --device=/dev/sgx_provision
+
+docker run --env http_proxy --env https_proxy --device=/dev/sgx_enclave --device=/dev/sgx_provision -v /dev/log:/dev/log -v aesmd-socket:/var/run/aesmd -it sgx_aesm_deb
