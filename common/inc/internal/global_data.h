@@ -44,7 +44,7 @@
 #include "metadata.h"
 #include "rts.h"
 
-#define LAYOUT_ENTRY_NUM 42
+#define LAYOUT_ENTRY_NUM 43
 typedef struct _global_data_t
 {
     sys_word_t     sdk_version;
