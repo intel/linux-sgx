@@ -87,6 +87,13 @@ static const se_owner_epoch_t SIMU_OWNER_EPOCH_MSR = {
     }                                           \
 } while(0)
 
+#define check_config_svn(kr, secs) do {    \
+    if (kr->config_svn > secs->config_svn) {  \
+        return EGETKEY_INVALID_ISVSVN;  \
+    }                                   \
+} while(0)
+
+#define KEY_POLICY_KSS (SGX_KEYPOLICY_CONFIGID | SGX_KEYPOLICY_ISVFAMILYID | SGX_KEYPOLICY_ISVEXTPRODID)
 
 // The hardware EGETKEY instruction will set ZF on failure.
 //
@@ -112,7 +119,7 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
     GP_ON(!sgx_is_within_enclave(okey, sizeof(sgx_key_128bit_t)));
 
     // check reserved bits are not set
-    GP_ON((kr->key_policy & ~(SGX_KEYPOLICY_MRENCLAVE | SGX_KEYPOLICY_MRSIGNER)) != 0);
+    GP_ON((kr->key_policy & ~(SGX_KEYPOLICY_MRENCLAVE | SGX_KEYPOLICY_MRSIGNER | KEY_POLICY_KSS | SGX_KEYPOLICY_NOISVPRODID)) != 0);
 
     // check to see if reserved space in KEYREQUEST are valid
     const uint8_t* u8ptr = (uint8_t *)(&(kr->reserved1));
@@ -124,7 +131,13 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
         GP_ON(u8ptr[i] != (uint8_t)0);
 
     secs_t*             cur_secs = g_global_data_sim.secs_ptr;
+    isv_ext_id_t*       isv_ext_id = reinterpret_cast<isv_ext_id_t *>(cur_secs->reserved4);
+
+    GP_ON(!(cur_secs->attributes.flags & SGX_FLAGS_KSS) &&
+        ((kr->key_policy & (KEY_POLICY_KSS | SGX_KEYPOLICY_NOISVPRODID)) ||kr->config_svn > 0));
+
     sgx_attributes_t    tmp_attr;
+    sgx_misc_select_t   tmp_misc;
     derivation_data_t   dd;
 
     memset(&dd, 0, sizeof(dd));
@@ -136,6 +149,8 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
     tmp_attr.flags = kr->attribute_mask.flags | SGX_FLAGS_INITTED | SGX_FLAGS_DEBUG;
     tmp_attr.flags &= cur_secs->attributes.flags;
     tmp_attr.xfrm = kr->attribute_mask.xfrm & cur_secs->attributes.xfrm;
+    // Compute MISCSELECT fields to be included in the key.
+    tmp_misc = kr->misc_mask & cur_secs->misc_select;
     // HW supports CPUSVN to be set as 0. 
     // To be consistent with HW behaviour, we replace the cpusvn as DEFAULT_CPUSVN if the input cpusvn is 0.
     if(!memcmp(&kr->cpu_svn, &dd.ddpk.cpu_svn, sizeof(sgx_cpu_svn_t)))
@@ -146,10 +161,12 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
     switch (kr->key_name) {
     case SGX_KEYSELECT_SEAL:
         check_isv_svn(kr, cur_secs);
+        check_config_svn(kr, cur_secs);
         check_cpu_svn(kr);
 
         // assemble derivation data
         dd.size = sizeof(dd_seal_key_t);
+        dd.ddsk.key_policy = kr->key_policy;
         if (kr->key_policy & SGX_KEYPOLICY_MRENCLAVE) {
             memcpy(&dd.ddsk.mrenclave, &cur_secs->mr_enclave, sizeof(sgx_measurement_t));
         }
@@ -158,12 +175,29 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
             memcpy(&dd.ddsk.mrsigner, &cur_secs->mr_signer, sizeof(sgx_measurement_t));
         }
 
+        if (kr->key_policy & SGX_KEYPOLICY_ISVFAMILYID) {
+            memcpy(&dd.ddsk.isv_family_id, &isv_ext_id->isv_family_id, sizeof(sgx_isvfamily_id_t));
+        }
+
+        if (kr->key_policy & SGX_KEYPOLICY_ISVEXTPRODID) {
+            memcpy(&dd.ddsk.isv_ext_prod_id, &isv_ext_id->isv_ext_prod_id, sizeof(sgx_isvext_prod_id_t));
+        }
+
+        if (kr->key_policy & SGX_KEYPOLICY_CONFIGID) {
+            dd.ddsk.config_svn = kr->config_svn;
+            memcpy(&dd.ddsk.config_id, &cur_secs->config_id, sizeof(sgx_config_id_t));
+        }
+
         memcpy(&dd.ddsk.tmp_attr, &tmp_attr, sizeof(sgx_attributes_t));
         memcpy(&dd.ddsk.attribute_mask, &kr->attribute_mask, sizeof(sgx_attributes_t));
+        dd.ddsk.tmp_misc = tmp_misc;
+        dd.ddsk.misc_mask = ~kr->misc_mask;
         memcpy(dd.ddsk.csr_owner_epoch, SIMU_OWNER_EPOCH_MSR, sizeof(se_owner_epoch_t));
         memcpy(&dd.ddsk.cpu_svn,&kr->cpu_svn,sizeof(sgx_cpu_svn_t));
         dd.ddsk.isv_svn = kr->isv_svn;
-        dd.ddsk.isv_prod_id = cur_secs->isv_prod_id;
+        if (!(kr->key_policy & SGX_KEYPOLICY_NOISVPRODID)) {
+             dd.ddsk.isv_prod_id = cur_secs->isv_prod_id;
+        }
         memcpy(&dd.ddsk.key_id, &kr->key_id, sizeof(sgx_key_id_t));
         break;
 
@@ -171,9 +205,12 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
         // assemble derivation data
         dd.size = sizeof(dd_report_key_t);
         memcpy(&dd.ddrk.attributes, &cur_secs->attributes, sizeof(sgx_attributes_t));
+        dd.ddrk.misc_select = cur_secs->misc_select;
         memcpy(dd.ddrk.csr_owner_epoch, SIMU_OWNER_EPOCH_MSR, sizeof(se_owner_epoch_t));
         memcpy(&dd.ddrk.cpu_svn,&(g_global_data_sim.cpusvn_sim),sizeof(sgx_cpu_svn_t));
         memcpy(&dd.ddrk.mrenclave, &cur_secs->mr_enclave, sizeof(sgx_measurement_t));
+        dd.ddrk.config_svn = cur_secs->config_svn;
+        memcpy(&dd.ddrk.config_id, &cur_secs->config_id, sizeof(sgx_config_id_t));
         memcpy(&dd.ddrk.key_id, &kr->key_id, sizeof(sgx_key_id_t));
         break;
 
@@ -184,16 +221,17 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
 
         // assemble derivation data
         dd.size = sizeof(dd_license_key_t);
-        memcpy(&dd.ddlk.attributes, &cur_secs->attributes, sizeof(sgx_attributes_t));
+        memcpy(&dd.ddlk.tmp_attr, &tmp_attr, sizeof(sgx_attributes_t));
+        dd.ddlk.tmp_misc = tmp_misc;
         memcpy(dd.ddlk.csr_owner_epoch, SIMU_OWNER_EPOCH_MSR, sizeof(se_owner_epoch_t));
         memcpy(&dd.ddlk.cpu_svn,&kr->cpu_svn,sizeof(sgx_cpu_svn_t));
         dd.ddlk.isv_svn = kr->isv_svn;
         dd.ddlk.isv_prod_id = cur_secs->isv_prod_id;
+        memcpy(&dd.ddlk.mrsigner, &cur_secs->mr_signer, sizeof(sgx_measurement_t));
         memcpy(&dd.ddlk.key_id, &kr->key_id, sizeof(sgx_key_id_t));
         break;
 
-    case SGX_KEYSELECT_PROVISION:       // Pass through. Only key_name differs.
-    case SGX_KEYSELECT_PROVISION_SEAL:
+    case SGX_KEYSELECT_PROVISION:
         check_attr_flag(cur_secs, SGX_FLAGS_PROVISION_KEY);
         check_isv_svn(kr, cur_secs);
         check_cpu_svn(kr);
@@ -202,10 +240,45 @@ static int _EGETKEY(sgx_key_request_t* kr, sgx_key_128bit_t okey)
         dd.size = sizeof(dd_provision_key_t);
         memcpy(&dd.ddpk.tmp_attr, &tmp_attr, sizeof(sgx_attributes_t));
         memcpy(&dd.ddpk.attribute_mask, &kr->attribute_mask, sizeof(sgx_attributes_t));
+        dd.ddpk.tmp_misc = tmp_misc;
+        dd.ddpk.misc_mask = ~kr->misc_mask;
         memcpy(&dd.ddpk.cpu_svn,&kr->cpu_svn,sizeof(sgx_cpu_svn_t));
         dd.ddpk.isv_svn = kr->isv_svn;
         dd.ddpk.isv_prod_id = cur_secs->isv_prod_id;
         memcpy(&dd.ddpk.mrsigner, &cur_secs->mr_signer, sizeof(sgx_measurement_t));
+        break;
+    case SGX_KEYSELECT_PROVISION_SEAL:
+        check_attr_flag(cur_secs, SGX_FLAGS_PROVISION_KEY);
+        check_isv_svn(kr, cur_secs);
+        check_config_svn(kr, cur_secs);
+        check_cpu_svn(kr);
+
+        // assemble derivation data
+        dd.size = sizeof(dd_provision_seal_key_t);
+        dd.ddpsk.key_policy = kr->key_policy;
+        if (kr->key_policy & SGX_KEYPOLICY_ISVFAMILYID) {
+            memcpy(&dd.ddpsk.isv_family_id, &isv_ext_id->isv_family_id, sizeof(sgx_isvfamily_id_t));
+        }
+
+        if (kr->key_policy & SGX_KEYPOLICY_ISVEXTPRODID) {
+            memcpy(&dd.ddpsk.isv_ext_prod_id, &isv_ext_id->isv_ext_prod_id, sizeof(sgx_isvext_prod_id_t));
+        }
+
+        if (kr->key_policy & SGX_KEYPOLICY_CONFIGID) {
+            dd.ddpsk.config_svn = kr->config_svn;
+            memcpy(&dd.ddpsk.config_id, &cur_secs->config_id, sizeof(sgx_config_id_t));
+        }
+
+        memcpy(&dd.ddpsk.tmp_attr, &tmp_attr, sizeof(sgx_attributes_t));
+        memcpy(&dd.ddpsk.attribute_mask, &kr->attribute_mask, sizeof(sgx_attributes_t));
+        dd.ddpsk.tmp_misc = tmp_misc;
+        dd.ddpsk.misc_mask = ~kr->misc_mask;
+        memcpy(&dd.ddpsk.cpu_svn,&kr->cpu_svn,sizeof(sgx_cpu_svn_t));
+        dd.ddpsk.isv_svn = kr->isv_svn;
+        if (!(kr->key_policy & SGX_KEYPOLICY_NOISVPRODID)) {
+             dd.ddpsk.isv_prod_id = cur_secs->isv_prod_id;
+        }
+        memcpy(&dd.ddpsk.mrsigner, &cur_secs->mr_signer, sizeof(sgx_measurement_t));
         break;
 
     default:
@@ -241,13 +314,19 @@ static void _EREPORT(const sgx_target_info_t* ti, const sgx_report_data_t* rd, s
     GP_ON(!sgx_is_within_enclave(report, sizeof(sgx_report_t)));
 
     secs_t*     cur_secs = g_global_data_sim.secs_ptr;
+    isv_ext_id_t* isv_ext_id = reinterpret_cast<isv_ext_id_t *>(cur_secs->reserved4);
     SE_DECLSPEC_ALIGN(REPORT_ALIGN_SIZE) sgx_report_t tmp_report;
 
     // assemble REPORT Data
     memset(&tmp_report, 0, sizeof(tmp_report));
     memcpy(&tmp_report.body.cpu_svn,&(g_global_data_sim.cpusvn_sim),sizeof(sgx_cpu_svn_t));
+    tmp_report.body.misc_select = cur_secs->misc_select;
     tmp_report.body.isv_prod_id = cur_secs->isv_prod_id;
     tmp_report.body.isv_svn = cur_secs->isv_svn;
+    tmp_report.body.config_svn = cur_secs->config_svn;
+    memcpy(&tmp_report.body.isv_family_id, &isv_ext_id->isv_family_id, sizeof(sgx_isvfamily_id_t));
+    memcpy(&tmp_report.body.isv_ext_prod_id, &isv_ext_id->isv_ext_prod_id, sizeof(sgx_isvext_prod_id_t));
+    memcpy(&tmp_report.body.config_id, &cur_secs->config_id, sizeof(sgx_config_id_t));
     memcpy(&tmp_report.body.attributes, &cur_secs->attributes, sizeof(sgx_attributes_t));
     memcpy(&tmp_report.body.report_data, rd, sizeof(sgx_report_data_t));
     memcpy(&tmp_report.body.mr_enclave, &cur_secs->mr_enclave, sizeof(sgx_measurement_t));
@@ -265,6 +344,9 @@ static void _EREPORT(const sgx_target_info_t* ti, const sgx_report_data_t* rd, s
     memcpy(dd.ddrk.csr_owner_epoch, SIMU_OWNER_EPOCH_MSR, sizeof(se_owner_epoch_t));
     memcpy(&dd.ddrk.cpu_svn,&(g_global_data_sim.cpusvn_sim),sizeof(sgx_cpu_svn_t));
     memcpy(&dd.ddrk.key_id, &tmp_report.key_id, sizeof(sgx_key_id_t));
+    memcpy(&dd.ddrk.config_id, &ti->config_id, sizeof(sgx_config_id_t));
+    dd.ddrk.config_svn = ti->config_svn;
+    dd.ddrk.misc_select = ti->misc_select;
 
     // calculate the derived key
     sgx_key_128bit_t tmp_report_key;

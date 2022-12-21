@@ -47,36 +47,48 @@ typedef uint8_t se_owner_epoch_t[OWNEREPOCH_SIZE];
 
 /* Derive data for seal key */
 typedef struct {
-    uint16_t          key_name;        /* should always be 'SGX_KEYSELECT_SEAL' */
-    sgx_attributes_t  tmp_attr;
-    sgx_attributes_t  attribute_mask;  /* attribute mask from KEYREQUEST */
-    se_owner_epoch_t  csr_owner_epoch;
-    sgx_cpu_svn_t     cpu_svn;         /* CPUSVN from KEYREQUEST */
-    sgx_isv_svn_t     isv_svn;         /* ISVSVN from KEYREQUEST */
-    sgx_prod_id_t     isv_prod_id;     /* ISV PRODID from SECS   */
-    sgx_measurement_t mrenclave;
-    sgx_measurement_t mrsigner;
-    sgx_key_id_t      key_id;          /* KEYID from KEYREQUEST  */
+    uint16_t             key_name;        /* should always be 'SGX_KEYSELECT_SEAL' */
+    uint16_t             key_policy;      /* Key policy from KEYREQUEST */
+    sgx_attributes_t     tmp_attr;
+    sgx_attributes_t     attribute_mask;  /* attribute mask from KEYREQUEST */
+    sgx_misc_select_t    tmp_misc;
+    sgx_misc_select_t    misc_mask;       /* MiscSelect mask form KEYREQUEST */
+    se_owner_epoch_t     csr_owner_epoch;
+    sgx_cpu_svn_t        cpu_svn;         /* CPUSVN from KEYREQUEST */
+    sgx_isv_svn_t        isv_svn;         /* ISVSVN from KEYREQUEST */
+    sgx_prod_id_t        isv_prod_id;     /* ISV PRODID from SECS   */
+    sgx_config_svn_t     config_svn;      /* CONFIGSVN from KEYREQUEST */
+    sgx_config_id_t      config_id;       /* CONFIGID from SECS      */
+    sgx_isvfamily_id_t   isv_family_id;   /* ISV FAMILYID from SECS  */
+    sgx_isvext_prod_id_t isv_ext_prod_id; /* ISV EXTPRODID from SECS */
+    sgx_measurement_t    mrenclave;
+    sgx_measurement_t    mrsigner;
+    sgx_key_id_t         key_id;          /* KEYID from KEYREQUEST  */
 } dd_seal_key_t;
 
 /* Derive data for report key */
 typedef struct {
     uint16_t          key_name;        /* should always be 'SGX_KEYSELECT_REPORT' */
     sgx_attributes_t  attributes;      /* attributes from SECS */
+    sgx_misc_select_t misc_select;     /* MiscSelect from SECS */
     se_owner_epoch_t  csr_owner_epoch;
     sgx_measurement_t mrenclave;
     sgx_cpu_svn_t     cpu_svn;         /* CPUSVN from CPUSVN register */
+    sgx_config_svn_t  config_svn;      /* CONFIGSVN from SECS */
+    sgx_config_id_t   config_id;       /* CONFIGID from SECS  */
     sgx_key_id_t      key_id;          /* KEYID from KEYREQUEST */
 } dd_report_key_t;
 
 /* Derive data for license key */
 typedef struct {
     uint16_t          key_name;        /* should always be 'SGX_KEYSELECT_EINITTOKEN' */
-    sgx_attributes_t  attributes;      /* attributes from SECS */
+    sgx_attributes_t  tmp_attr;
+    sgx_misc_select_t tmp_misc;
     se_owner_epoch_t  csr_owner_epoch;
     sgx_cpu_svn_t     cpu_svn;         /* CPUSVN from KEYREQUEST */
     sgx_isv_svn_t     isv_svn;         /* ISVSVN from KEYREQUEST */
     sgx_prod_id_t     isv_prod_id;     /* ISV PRODID from SECS   */
+    sgx_measurement_t mrsigner;
     sgx_key_id_t      key_id;          /* KEYID from KEYREQUEST  */
 } dd_license_key_t;
 
@@ -85,11 +97,31 @@ typedef struct {
     uint16_t          key_name;        /* should always be 'SGX_KEYSELECT_PROVISION' */
     sgx_attributes_t  tmp_attr;
     sgx_attributes_t  attribute_mask;  /* attribute mask from KEYREQUEST */
+    sgx_misc_select_t tmp_misc;
+    sgx_misc_select_t misc_mask;       /* MiscSelect mask form KEYREQUEST */
     sgx_cpu_svn_t     cpu_svn;         /* CPUSVN from KEYREQUEST */
     sgx_isv_svn_t     isv_svn;         /* ISVSVN from KEYREQUEST */
     sgx_prod_id_t     isv_prod_id;     /* ISV PRODID from SECS   */
     sgx_measurement_t mrsigner;
 } dd_provision_key_t;
+
+/* Derive data for provision seal key */
+typedef struct {
+    uint16_t             key_name;        /* should always be 'SGX_KEYSELECT_SEAL' */
+    uint16_t             key_policy;      /* Key policy from KEYREQUEST */
+    sgx_attributes_t     tmp_attr;
+    sgx_attributes_t     attribute_mask;  /* attribute mask from KEYREQUEST */
+    sgx_misc_select_t    tmp_misc;
+    sgx_misc_select_t    misc_mask;       /* MiscSelect mask form KEYREQUEST */
+    sgx_cpu_svn_t        cpu_svn;         /* CPUSVN from KEYREQUEST */
+    sgx_isv_svn_t        isv_svn;         /* ISVSVN from KEYREQUEST */
+    sgx_prod_id_t        isv_prod_id;     /* ISV PRODID from SECS   */
+    sgx_config_svn_t     config_svn;      /* CONFIGSVN from KEYREQUEST */
+    sgx_config_id_t      config_id;       /* CONFIGID from SECS      */
+    sgx_isvfamily_id_t   isv_family_id;   /* ISV FAMILYID from SECS  */
+    sgx_isvext_prod_id_t isv_ext_prod_id; /* ISV EXTPRODID from SECS */
+    sgx_measurement_t    mrsigner;
+} dd_provision_seal_key_t;
 
 /* The derivation data. */
 typedef struct {
@@ -97,13 +129,14 @@ typedef struct {
 
     union {
         /* key_name is the first field of all the following derivation data */
-        uint16_t            key_name;
-        uint8_t             ddbuf[1];
+        uint16_t                key_name;
+        uint8_t                 ddbuf[1];
 
-        dd_seal_key_t       ddsk;
-        dd_report_key_t     ddrk;
-        dd_license_key_t    ddlk;
-        dd_provision_key_t  ddpk;
+        dd_seal_key_t           ddsk;
+        dd_report_key_t         ddrk;
+        dd_license_key_t        ddlk;
+        dd_provision_key_t      ddpk;
+        dd_provision_seal_key_t ddpsk;
     };
 } derivation_data_t;
 
