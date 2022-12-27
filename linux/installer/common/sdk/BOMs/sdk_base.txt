@@ -421,6 +421,15 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/ProtobufSGXDemo/Enclave/Enclave.lds	<installdir>/package/SampleCode/ProtobufSGXDemo/Enclave/Enclave.lds	0	N/A	N/A
 <deliverydir>/SampleCode/ProtobufSGXDemo/Enclave/person.proto	<installdir>/package/SampleCode/ProtobufSGXDemo/Enclave/person.proto	0	N/A	N/A
 <deliverydir>/SampleCode/ProtobufSGXDemo/Makefile	<installdir>/package/SampleCode/ProtobufSGXDemo/Makefile	0	N/A	N/A
+<deliverydir>/SampleCode/SampleEnclaveStdcex/App/App.cpp	<installdir>/package/SampleCode/SampleEnclaveStdcex/App/App.cpp	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/App/App.h	<installdir>/package/SampleCode/SampleEnclaveStdcex/App/App.h	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.config.xml	<installdir>/package/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.config.xml	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.cpp	<installdir>/package/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.cpp	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.edl	<installdir>/package/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.edl	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.h	<installdir>/package/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.h	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.lds	<installdir>/package/SampleCode/SampleEnclaveStdcex/Enclave/Enclave.lds	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/Makefile	<installdir>/package/SampleCode/SampleEnclaveStdcex/Makefile	0	main	STP
+<deliverydir>/SampleCode/SampleEnclaveStdcex/README.txt	<installdir>/package/SampleCode/SampleEnclaveStdcex/README.txt	0	main	STP
 <deliverydir>/build/linux/gdb-sgx-plugin/sgx-gdb	<installdir>/package/bin/sgx-gdb	0	main	STP
 <deliverydir>/sdk/sample_libcrypto/sample_libcrypto.h	<installdir>/package/SampleCode/RemoteAttestation/sample_libcrypto/sample_libcrypto.h	0	main	STP
 <deliverydir>/sdk/tlibcxx/include/CMakeLists.txt	<installdir>/package/include/libcxx/CMakeLists.txt	0	main	STP
