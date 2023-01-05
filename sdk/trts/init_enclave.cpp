@@ -62,7 +62,10 @@ uint64_t g_enclave_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0, 0,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0};
+
+// Make sure to access this with atomics or the {get,set}_enclave_state assembly wrappers.
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
+
 uint32_t g_cpu_core_num __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 extern "C" {
@@ -267,7 +270,7 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
     }
 #endif
 
-    g_enclave_state = ENCLAVE_INIT_DONE;
+    set_enclave_state(ENCLAVE_INIT_DONE);
 
 #ifndef SE_SIM
     // EDMM initialization makes ocalls which requires ENCLAVE_INIT_DONE being set
