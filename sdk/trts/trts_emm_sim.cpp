@@ -45,3 +45,11 @@ int mm_uncommit(void* addr, size_t size)
     UNUSED(size);
     return 0;
 }
+
+int mm_modify_permissions(void* addr, size_t size, int prot)
+{
+    UNUSED(addr);
+    UNUSED(size);
+    UNUSED(prot);
+    return 0;
+}
