@@ -1,6 +1,7 @@
 [submodule "external/dcap_source"]
 	path = external/dcap_source
 	url = https://github.com/intel/SGXDataCenterAttestationPrimitives.git
+	branch = quote_appraisal_eng
 [submodule "openmp"]
 	path = external/openmp/openmp_code
 	url = https://github.com/llvm-mirror/openmp.git
