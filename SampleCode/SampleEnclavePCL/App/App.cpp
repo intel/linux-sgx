@@ -45,7 +45,6 @@
 
 #define SEAL_FILENAME             "Seal.signed.so"
 #define SEALED_KEY_FILE_NAME     "sealed_key.bin"
-#define TOKEN_FILENAME            "enclave.token"
 
 /* Global EID shared by multiple threads */
 sgx_enclave_id_t global_eid = 0;

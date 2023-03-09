@@ -67,12 +67,14 @@ QE_VERSION=$(awk '/QE_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_ve
 PVE_VERSION=$(awk '/PVE_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 LE_VERSION=$(awk '/LE_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 PCE_VERSION=$(awk '/PCE_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
+URTS_VERSION=$(awk '/URTS_VERSION/ {print $3}' ${ROOT_DIR}/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 QE3_VERSION=$(awk '/QE3_VERSION/ {print $3}' ${ROOT_DIR}/external/dcap_source/QuoteGeneration/common/inc/internal/se_version.h|sed 's/^\"\(.*\)\"$/\1/')
 pushd ${INSTALL_PATH} &> /dev/null
 sed -i "s/QE_VER=.*/QE_VER=${QE_VERSION}/" Makefile
 sed -i "s/PVE_VER=.*/PVE_VER=${PVE_VERSION}/" Makefile
 sed -i "s/LE_VER=.*/LE_VER=${LE_VERSION}/" Makefile
 sed -i "s/PCE_VER=.*/PCE_VER=${PCE_VERSION}/" Makefile
+sed -i "s/URTS_VER=.*/URTS_VER=${URTS_VERSION}/" Makefile
 sed -i "s/QE3_VER=.*/QE3_VER=${QE3_VERSION}/" Makefile
 tar -zcvf ${TARBALL_NAME} *
 popd &> /dev/null

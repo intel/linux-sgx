@@ -178,6 +178,7 @@ int pcl_cmac(
     unsigned char iv[PCL_COUNTER_SIZE] = { 0 };
     unsigned char aux[PCL_AES_BLOCK_LEN] = { 0 };
     unsigned char k1[PCL_AES_BLOCK_LEN] = { 0 };
+    unsigned char k2[PCL_AES_BLOCK_LEN] = { 0 };
 
     AES_KEY wide_key = {.rd_key={},.rounds=0};
     pcl_vpaes_set_encrypt_key((const unsigned char *)p_key, PCL_AES_BLOCK_LEN_BITS, &wide_key);
@@ -187,7 +188,10 @@ int pcl_cmac(
     
     // Use result to generate K1:
     make_kn(k1, aux, PCL_AES_BLOCK_LEN);
-    
+
+    // Generate k2:
+    make_kn(k2, k1, PCL_AES_BLOCK_LEN);
+
     // Digest message except for last block:
     pcl_memset(iv, 0, PCL_COUNTER_SIZE);
     while(src_len >  PCL_AES_BLOCK_LEN)
@@ -196,11 +200,33 @@ int pcl_cmac(
         src_len -= PCL_AES_BLOCK_LEN;
         p_src += PCL_AES_BLOCK_LEN;
     }
-    
-    
-    // XOR K1 with last block of message: 
-    for (int i = 0; i < PCL_AES_BLOCK_LEN; i++)aux[i] = p_src[i] ^ k1[i];
-        
+
+    if (src_len == PCL_AES_BLOCK_LEN)
+    {
+        // last block is complete
+        // XOR K1 with last block of message:
+        for (int i = 0; i < PCL_AES_BLOCK_LEN; i++)
+            aux[i] = p_src[i] ^ k1[i];
+    }
+    else
+    {
+        // last block is not complete
+        // copy last block
+        uint8_t temp[PCL_AES_BLOCK_LEN] = {0};
+        if (src_len > 0)
+        {
+            for (int i = 0; i < src_len; i++)
+            {
+                temp[i] = p_src[i];
+            }
+        }
+        temp[src_len] = 0x80;
+        for (int i = 0; i < PCL_AES_BLOCK_LEN; i++)
+        {
+            aux[i] = temp[i] ^ k2[i];
+        }
+    }
+
     // Apply AES-CBC encrypt on result and IV
     pcl_vpaes_cbc_encrypt(aux, (uint8_t*)p_mac, PCL_AES_BLOCK_LEN, &wide_key, iv, 1);
     return 0;

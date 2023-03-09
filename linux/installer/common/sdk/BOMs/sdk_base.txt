@@ -41,9 +41,6 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/common/inc/sgx_secure_align.h	<installdir>/package/include/./sgx_secure_align.h	0	main	STP
 <deliverydir>/common/inc/sgx_secure_align_api.h	<installdir>/package/include/./sgx_secure_align_api.h	0	main	STP
 <deliverydir>/common/inc/sgx_rsrv_mem_mngr.h	<installdir>/package/include/sgx_rsrv_mem_mngr.h	0	main	STP
-<deliverydir>/common/inc/sgx_utls.h	<installdir>/package/include/sgx_utls.h	0	main	STP
-<deliverydir>/common/inc/sgx_ttls.h	<installdir>/package/include/sgx_ttls.h	0	main	STP
-<deliverydir>/common/inc/sgx_ttls.edl	<installdir>/package/include/sgx_ttls.edl	0	main	STP
 <deliverydir>/common/inc/stdc++/exception	<installdir>/package/include/stdc++/exception	0	main	STP
 <deliverydir>/common/inc/stdc++/linux/exception	<installdir>/package/include/stdc++/linux/exception	0	main	STP
 <deliverydir>/common/inc/stdc++/linux/typeinfo	<installdir>/package/include/stdc++/linux/typeinfo	0	main	STP
@@ -294,6 +291,9 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/SampleCode/SampleAttestedTLS/server/enc/server_enc.config.xml	<installdir>/package/SampleCode/SampleAttestedTLS/server/enc/server_enc.config.xml	0	main	STP
 <deliverydir>/SampleCode/SampleAttestedTLS/server/host/host.cpp	<installdir>/package/SampleCode/SampleAttestedTLS/server/host/host.cpp	0	main	STP
 <deliverydir>/SampleCode/SampleAttestedTLS/server/host/Makefile	<installdir>/package/SampleCode/SampleAttestedTLS/server/host/Makefile	0	main	STP
+<deliverydir>/SampleCode/SampleAttestedTLS/server_tdx/Makefile	<installdir>/package/SampleCode/SampleAttestedTLS/server_tdx/Makefile	0	main	STP
+<deliverydir>/SampleCode/SampleAttestedTLS/server_tdx/openssl_server.cpp	<installdir>/package/SampleCode/SampleAttestedTLS/server_tdx/openssl_server.cpp	0	main	STP
+<deliverydir>/SampleCode/SampleAttestedTLS/server_tdx/server.cpp	<installdir>/package/SampleCode/SampleAttestedTLS/server_tdx/server.cpp	0	main	STP
 <deliverydir>/SampleCode/SampleAttestedTLS/client/Makefile	<installdir>/package/SampleCode/SampleAttestedTLS/client/Makefile	0	main	STP
 <deliverydir>/SampleCode/SampleAttestedTLS/client/tls_client.edl	<installdir>/package/SampleCode/SampleAttestedTLS/client/tls_client.edl	0	main	STP
 <deliverydir>/SampleCode/SampleAttestedTLS/client/enc/client_enc.config.xml	<installdir>/package/SampleCode/SampleAttestedTLS/client/enc/client_enc.config.xml	0	main	STP

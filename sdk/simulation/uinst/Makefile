@@ -43,7 +43,7 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/         \
             -I$(COMMON_DIR)/inc/internal \
             -I$(SIM_DIR)/assembly/       \
             -I$(SIM_DIR)/assembly/linux  \
-            -I$(SIM_DIR)/tinst/            \
+            -I$(SIM_DIR)/tinst/          \
             -I$(LINUX_PSW_DIR)/urts      \
             -I$(LINUX_PSW_DIR)/urts/linux
 

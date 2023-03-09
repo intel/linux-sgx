@@ -61,17 +61,12 @@ else ifeq ($(MITIGATION-CVE-2020-0551), CF)
 endif
 OUT_DIR = lib/linux/$(ARCH)/$(SUB_DIR)/
 
-PATCH_LOG = $(shell cd ./$(IPP_SOURCE) && git log --oneline --grep='IPP crypto for SGX.' | cut -d' ' -f 5)
-CHECK_PATCHED :=
-
 CHECK_SOURCE :=
-# For reproducibility build in docker, the code should be 
+# For reproducibility build in docker, the code should be
 # prepared before build. So skip the code check to avoid
-# triggering network request 
+# triggering network request
 ifneq ($(origin NIX_STORE), environment)
-ifneq ($(PATCH_LOG), SGX.)
-CHECK_SOURCE:= ipp_source
-endif
+CHECK_SOURCE:= $(IPP_SOURCE)/build
 endif
 
 .PHONY: all build_ipp
@@ -87,16 +82,16 @@ all: build_ipp
 build_ipp: $(CHECK_SOURCE)
 	cd $(IPP_SOURCE) && $(PRE_CONFIG) cmake CMakeLists.txt $(IPP_CONFIG) && cd build && make ippcp_s
 
-.PHONY: ipp_source
-ipp_source:
+$(IPP_SOURCE)/build:
 ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
 else
 	$(RM) -rf $(IPP_SOURCE)
 	git clone -b ippcp_2021.3 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
 endif
-	cd $(IPP_SOURCE) && git am ../0001-IPP-crypto-for-SGX.patch
+	cd $(IPP_SOURCE) && git apply ../0001-IPP-crypto-for-SGX.patch
+	mkdir -p $(IPP_SOURCE)/build
 
 .PHONY: clean
 clean:
-	$(RM) -rf ipp-crypto/build
+	$(RM) -rf ipp-crypto/build/*

@@ -122,6 +122,7 @@ Note:
     running in this sample.
     The project has a pre-preparation script - prepare_sgxssl.sh to prepare the SgxSSL libraries and link to them in
     the Makefile.
+    Note that script "prepare_sgxssl.sh" requires git installed and configured.
   - Limitation: No Simulation mode is supported.
 
 ### Running attested TLS server in loop

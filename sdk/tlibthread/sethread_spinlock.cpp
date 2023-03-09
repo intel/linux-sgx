@@ -38,60 +38,6 @@
 #include "sethread_internal.h"
 #include "sethread_spinlock.h"
 
-//copied from sgx_spinlock
-
-static inline void _mm_pause(void)  /* definition requires -ffreestanding */
-{
-    __asm __volatile(
-        "pause"
-    );
-}
-
-static inline int _InterlockedExchange(int volatile * dst, int val)
-{
-    int res;
-
-    __asm __volatile(
-        "lock xchg %2, %1;"
-        "mov %2, %0"
-        : "=m" (res)
-        : "m" (*dst),
-        "r" (val)
-        : "memory"
-    );
-
-    return (res);
-
-}
-
-#define MIN_BACKOFF 2
-#define MAX_BACKOFF 1024
-static uint32_t spin_lock(sgx_spinlock_t *lock)
-{
-    while(_InterlockedExchange((volatile int *)lock, 1) != 0) {
-        int b = MIN_BACKOFF;
-        do
-        {    /* tell cpu we are spinning */
-            for (int i=0; i < b; i++)
-                _mm_pause();
-            b = b << 1;
-            if (b > MAX_BACKOFF) b = MAX_BACKOFF;
-
-        } while (*lock);
-    }
-
-    return (0);
-}
-
-
-static uint32_t spin_unlock(sgx_spinlock_t *lock)
-{
-    *lock = 0;
-
-    return (0);
-}
-
-
 int sgx_thread_spin_init(sgx_thread_spinlock_t *mutex)
 {
     CHECK_PARAMETER(mutex);
@@ -107,14 +53,14 @@ int sgx_thread_spin_destroy(sgx_thread_spinlock_t *mutex)
 {
     CHECK_PARAMETER(mutex);
 
-    spin_lock(&mutex->m_lock);
+    SPIN_LOCK(&mutex->m_lock);
     if (mutex->m_owner != SGX_THREAD_T_NULL) {
-        spin_unlock(&mutex->m_lock);
+        SPIN_UNLOCK(&mutex->m_lock);
         return EBUSY;
     }
 
     mutex->m_refcount = 0;
-    spin_unlock(&mutex->m_lock);
+    SPIN_UNLOCK(&mutex->m_lock);
 
     return 0;
 }
@@ -125,22 +71,22 @@ int sgx_thread_spin_trylock(sgx_thread_spinlock_t *mutex)
 
     sgx_thread_t self = (sgx_thread_t)get_thread_data();
 
-    spin_lock(&mutex->m_lock);
+    SPIN_LOCK(&mutex->m_lock);
 
     if (mutex->m_owner == self) {
         mutex->m_refcount++;
-        spin_unlock(&mutex->m_lock);
+        SPIN_UNLOCK(&mutex->m_lock);
         return 0;
     }
 
     if (mutex->m_owner == SGX_THREAD_T_NULL) {
         mutex->m_owner = self;
         mutex->m_refcount++;
-        spin_unlock(&mutex->m_lock);
+        SPIN_UNLOCK(&mutex->m_lock);
         return 0;
     }
 
-    spin_unlock(&mutex->m_lock);
+    SPIN_UNLOCK(&mutex->m_lock);
     return EBUSY;
 }
 
@@ -150,16 +96,16 @@ int sgx_thread_spin_unlock(sgx_thread_spinlock_t *mutex)
 
     sgx_thread_t self = (sgx_thread_t)get_thread_data();
 
-    spin_lock(&mutex->m_lock);
+    SPIN_LOCK(&mutex->m_lock);
     /* if the mutux is not locked by anyone */
     if(mutex->m_owner == SGX_THREAD_T_NULL) {
-        spin_unlock(&mutex->m_lock);
+        SPIN_UNLOCK(&mutex->m_lock);
         return EPERM;
     }
 
     /* if the mutex is locked by another thread */
     if (mutex->m_owner != self) {
-        spin_unlock(&mutex->m_lock);
+        SPIN_UNLOCK(&mutex->m_lock);
         return EPERM;
     }
 
@@ -168,6 +114,6 @@ int sgx_thread_spin_unlock(sgx_thread_spinlock_t *mutex)
         mutex->m_owner = SGX_THREAD_T_NULL;
     }
 
-    spin_unlock(&mutex->m_lock);
+    SPIN_UNLOCK(&mutex->m_lock);
     return 0;
 }

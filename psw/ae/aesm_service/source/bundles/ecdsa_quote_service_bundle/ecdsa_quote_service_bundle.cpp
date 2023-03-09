@@ -1,3 +1,34 @@
+/*
+ * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above copyright
+ *     notice, this list of conditions and the following disclaimer in
+ *     the documentation and/or other materials provided with the
+ *     distribution.
+ *   * Neither the name of Intel Corporation nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #include <quote_provider_service.h>
 #include <pce_service.h>
 
@@ -8,6 +39,7 @@
 #include <iostream>
 #include <dlfcn.h>
 #include "aesm_logic.h"
+#include "aesm_config.h"
 #include "sgx_quote_3.h"
 #include "sgx_ql_quote.h"
 #include "sgx_ql_core_wrapper.h"
@@ -21,7 +53,7 @@ static AESMLogicMutex ecdsa_quote_mutex;
 extern const sgx_ql_att_key_id_t g_default_ecdsa_p256_att_key_id;
 extern "C" void* get_qpl_handle();
 
-typedef quote3_error_t(*sgx_ql_set_logging_callback_t)(sgx_ql_logging_callback_t logger);
+typedef quote3_error_t(*sgx_ql_set_logging_callback_t)(sgx_ql_logging_callback_t logger, sgx_ql_log_level_t loglevel);
 
 void sgx_ql_logging_callback(sgx_ql_log_level_t level, const char* message)
 {
@@ -169,6 +201,14 @@ static aesm_error_t quote3_error_to_aesm_error(quote3_error_t input)
         ret = AESM_KEY_CERTIFICATION_ERROR;
         break;
 
+    case SGX_QL_NETWORK_ERROR:
+        ret = AESM_NETWORK_ERROR;
+        break;
+
+    case SGX_QL_MESSAGE_ERROR:
+        ret = AESM_MSG_ERROR;
+        break;
+
     default:
         ret = AESM_UNEXPECTED_ERROR;
 		break;
@@ -277,11 +317,12 @@ public:
         // Set logging callback for default quote provider library
         void* handle = get_qpl_handle();
         if (handle != NULL) {
+            aesm_config_infos_t info = {0};
             char *error;
             sgx_ql_set_logging_callback_t ql_set_logging_callback = (sgx_ql_set_logging_callback_t)dlsym(handle, "sgx_ql_set_logging_callback");
-            if ((error = dlerror()) == NULL && ql_set_logging_callback != NULL)  {
+            if ((error = dlerror()) == NULL && ql_set_logging_callback != NULL && read_aesm_config(info))  {
                 // Set logging function detected
-                ql_set_logging_callback(sgx_ql_logging_callback);
+                ql_set_logging_callback(sgx_ql_logging_callback, (sgx_ql_log_level_t)info.qpl_log_level);
             }
             else {
                 AESM_LOG_ERROR("Failed to set logging callback for the quote provider library.");

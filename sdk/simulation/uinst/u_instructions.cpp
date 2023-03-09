@@ -278,6 +278,7 @@ uintptr_t _EINIT(secs_t* secs, enclave_css_t *css, token_t *launch)
             return SGX_ERROR_INVALID_ATTRIBUTE;
         }
 
+        // From SDM, ISVFAMILYID and ISVEXTPRODID are both included in the secs->reserved4
         isv_ext_id_t* isv_ext_id = reinterpret_cast<isv_ext_id_t *>(this_secs->reserved4);
         if (!(this_secs->attributes.flags & SGX_FLAGS_KSS))
         {

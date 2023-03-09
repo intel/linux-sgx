@@ -112,6 +112,16 @@ egetkey_status_t pcl_check_isv_svn(sgx_key_request_t* kr, secs_t* secs)
     return EGETKEY_SUCCESS;
 }
 
+egetkey_status_t pcl_check_config_svn(sgx_key_request_t* kr, secs_t* secs)
+{
+    if (kr->config_svn > secs->config_svn)
+    {
+        return EGETKEY_INVALID_ISVSVN;
+    }
+    return EGETKEY_SUCCESS;
+}
+
+
 egetkey_status_t pcl_egetkey(sgx_key_request_t* kr, sgx_key_128bit_t okey)
 {
     // check alignment of KEYREQUEST
@@ -140,6 +150,7 @@ egetkey_status_t pcl_egetkey(sgx_key_request_t* kr, sgx_key_128bit_t okey)
 
     secs_t*             cur_secs = g_global_data_sim.secs_ptr;
     sgx_attributes_t    tmp_attr;
+    sgx_misc_select_t   tmp_misc;
     derivation_data_t   dd;
 
     pcl_memset(&dd, 0, sizeof(dd));
@@ -151,6 +162,8 @@ egetkey_status_t pcl_egetkey(sgx_key_request_t* kr, sgx_key_128bit_t okey)
     tmp_attr.flags = kr->attribute_mask.flags | SGX_FLAGS_INITTED | SGX_FLAGS_DEBUG;
     tmp_attr.flags &= cur_secs->attributes.flags;
     tmp_attr.xfrm = kr->attribute_mask.xfrm & cur_secs->attributes.xfrm;
+    // Compute MISCSELECT fields to be included in the key.
+    tmp_misc = kr->misc_mask & cur_secs->misc_select;
     // HW supports CPUSVN to be set as 0. 
     // To be consistent with HW behaviour, we replace the cpusvn as DEFAULT_CPUSVN if the input cpusvn is 0.
     if(pcl_consttime_memequal(&kr->cpu_svn, &dd.ddpk.cpu_svn, sizeof(sgx_cpu_svn_t)))
@@ -167,8 +180,12 @@ egetkey_status_t pcl_egetkey(sgx_key_request_t* kr, sgx_key_128bit_t okey)
         if(EGETKEY_SUCCESS != esa)return esa;
         esa = pcl_check_cpu_svn(kr);
         if(EGETKEY_SUCCESS != esa)return esa;
+        esa = pcl_check_config_svn(kr, cur_secs);
+        if(EGETKEY_SUCCESS != esa)return esa;
+
         // assemble derivation data
         dd.size = sizeof(dd_seal_key_t);
+        dd.ddsk.key_policy = kr->key_policy;
         if (kr->key_policy & SGX_KEYPOLICY_MRENCLAVE) {
             pcl_memcpy(&dd.ddsk.mrenclave, &cur_secs->mr_enclave, sizeof(sgx_measurement_t));
         }
@@ -179,12 +196,15 @@ egetkey_status_t pcl_egetkey(sgx_key_request_t* kr, sgx_key_128bit_t okey)
 
         pcl_memcpy(&dd.ddsk.tmp_attr, &tmp_attr, sizeof(sgx_attributes_t));
         pcl_memcpy(&dd.ddsk.attribute_mask, &kr->attribute_mask, sizeof(sgx_attributes_t));
+        dd.ddsk.tmp_misc = tmp_misc;
+        dd.ddsk.misc_mask = ~kr->misc_mask;
         pcl_memcpy(dd.ddsk.csr_owner_epoch, (void*)SIMU_OWNER_EPOCH_MSR, sizeof(se_owner_epoch_t));
         pcl_memcpy(&dd.ddsk.cpu_svn,&kr->cpu_svn,sizeof(sgx_cpu_svn_t));
         dd.ddsk.isv_svn = kr->isv_svn;
-        dd.ddsk.isv_prod_id = cur_secs->isv_prod_id;
+        if (!(kr->key_policy & SGX_KEYPOLICY_NOISVPRODID)) {
+             dd.ddsk.isv_prod_id = cur_secs->isv_prod_id;
+        }
         pcl_memcpy(&dd.ddsk.key_id, &kr->key_id, sizeof(sgx_key_id_t));
-
 
 /* PCL UNUSED START
     default:
