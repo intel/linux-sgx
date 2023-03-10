@@ -64,19 +64,11 @@ ippcp:
 	$(MAKE) -C external/ippcp_internal/
 
 sdk: ippcp
-	$(MAKE) -C sdk/ MITIGATION-CVE-2020-0551=LOAD
-	$(MAKE) -C sdk/ clean
-	$(MAKE) -C sdk/ MITIGATION-CVE-2020-0551=CF
-	$(MAKE) -C sdk/ clean
 	$(MAKE) -C sdk/
-	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl MITIGATION-CVE-2020-0551=LOAD
-	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl MITIGATION-CVE-2020-0551=CF clean
-	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl MITIGATION-CVE-2020-0551=CF
-	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl clean
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl
 
 install_sdk: sdk
-	./linux/installer/bin/build-installpkg.sh sdk cve-2020-0551
+	./linux/installer/bin/build-installpkg.sh sdk
 ifeq ($(call DIR_EXISTS,$(SGX_SDK)),)
 	./linux/installer/bin/sgx_linux_x64_sdk_*.bin --prefix=$(dir $(SGX_SDK))
 endif

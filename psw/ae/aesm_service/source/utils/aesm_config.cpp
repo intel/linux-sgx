@@ -51,6 +51,7 @@ enum _config_value_t{
     config_aesm_proxy_url,
     config_aesm_proxy_type,
     config_aesm_quoting_type,
+    config_qpl_log_level,
     config_value_nums
 };
 
@@ -63,7 +64,8 @@ struct _config_patterns_t{
     {config_white_list_url, "^[[:blank:]]*whitelist[[:blank:]]*url[[:blank:]]*=" URL_PATTERN OPTION_COMMENT "$"}, //matching line in format: whilelist url = ....
     {config_aesm_proxy_url,"^[[:blank:]]*aesm[[:blank:]]*proxy[[:blank:]]*=" URL_PATTERN OPTION_COMMENT "$"}, //matching line in format: aesm proxy = ...
     {config_aesm_proxy_type, "^[[:blank:]]*proxy[[:blank:]]*type[[:blank:]]*=[[:blank:]]([^[:blank:]]+)[[:blank:]]*" OPTION_COMMENT "$"},//matching line in format: proxy type = [direct|default|manual]
-    {config_aesm_quoting_type, "^[[:blank:]]*default[[:blank:]]*quoting[[:blank:]]*type[[:blank:]]*=[[:blank:]]([^[:blank:]]+)[[:blank:]]*" OPTION_COMMENT "$"}//matching line in format: default quoting type = [ecdsa_256|epid_unlinkable|epid_linkable]
+    {config_aesm_quoting_type, "^[[:blank:]]*default[[:blank:]]*quoting[[:blank:]]*type[[:blank:]]*=[[:blank:]]([^[:blank:]]+)[[:blank:]]*" OPTION_COMMENT "$"},//matching line in format: default quoting type = [ecdsa_256|epid_unlinkable|epid_linkable]
+    {config_qpl_log_level, "^[[:blank:]]*qpl[[:blank:]]*log[[:blank:]]*level[[:blank:]]*=[[:blank:]]([^[:blank:]]+)[[:blank:]]*" OPTION_COMMENT "$"},//matching line in format: qpl log level = [error|info]
 };
 
 #define NUM_CONFIG_PATTERNS (sizeof(config_patterns)/sizeof(config_patterns[0]))
@@ -120,6 +122,12 @@ static const char *quoting_type_name[]={
 };
 #define NUM_QUOTING_TYPE (sizeof(quoting_type_name)/sizeof(quoting_type_name[0]))
 
+static const char *qpl_log_level_name[]={
+    "error",
+    "info",
+};
+#define NUM_QPL_LOG_LEVEL (sizeof(qpl_log_level_name)/sizeof(qpl_log_level_name[0]))
+
 //function to decode proxy type from string to integer value
 static uint32_t read_aesm_proxy_type(const char *string, uint32_t len)
 {
@@ -144,6 +152,19 @@ static uint32_t read_aesm_quoting_type(const char *string, uint32_t len)
      }
      AESM_DBG_TRACE("Invalid default quoting type %.*s",len,string);
      return (uint32_t)NUM_QUOTING_TYPE;
+}
+
+//function to decode qpl log level from string to integer value
+static uint32_t read_qpl_log_level(const char *string, uint32_t len)
+{
+     uint32_t i;
+     for(i=0;i<NUM_QPL_LOG_LEVEL;++i){
+        if(strncasecmp(qpl_log_level_name[i],string,len)==0){
+            return i;
+        }
+     }
+     AESM_DBG_TRACE("Invalid qpl log level %.*s",len,string);
+     return 0;  // error level by default
 }
 
 #define MAX_MATCHED_REG_EXP 4
@@ -182,8 +203,11 @@ static bool config_process_one_line(const char *line, config_entry_t entries[], 
             case config_aesm_proxy_type://It is a proxy type, we need change the string to integer by calling function read_aesm_proxy_type
                  infos.proxy_type = read_aesm_proxy_type(line+matches[1].rm_so, matches[1].rm_eo-matches[1].rm_so);
                  break;
-             case config_aesm_quoting_type://It is a default quoting type, we need change the string to integer by calling function read_aesm_quoting_type
+            case config_aesm_quoting_type://It is a default quoting type, we need change the string to integer by calling function read_aesm_quoting_type
                   infos.quoting_type = read_aesm_quoting_type(line+matches[1].rm_so, matches[1].rm_eo-matches[1].rm_so);
+                  break;
+            case config_qpl_log_level://It is a qpl log level, we need to change the string to integer by calling function read_qpl_log_level
+                  infos.qpl_log_level = read_qpl_log_level(line+matches[1].rm_so, matches[1].rm_eo-matches[1].rm_so);
                   break;
             default:
                  AESM_DBG_ERROR("reg exp type %d not processed", i);

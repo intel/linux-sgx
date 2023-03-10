@@ -8,6 +8,7 @@ AE_IDE_PACKAGE=libsgx-ae-id-enclave
 AE_TDQE_PACKAGE=libsgx-ae-tdqe
 AE_QVE_PACKAGE=libsgx-ae-qve
 TDX_LOGIC_PACKAGE=libsgx-tdx-logic
+TDX_LOGIC_DEV_PACKAGE=libsgx-tdx-logic-devel
 PCE_LOGIC_PACKAGE=libsgx-pce-logic
 DCAP_QPL_PACKAGE=libsgx-dcap-default-qpl
 DCAP_QPL_DEV_PACKAGE=libsgx-dcap-default-qpl-devel

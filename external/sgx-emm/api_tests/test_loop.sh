@@ -1,6 +1,6 @@
 let fail=0
 for ((i=1;i<=$1;i++));do
-    ./test_mm_api
+    time ./test_mm_api
     if [ $? -eq 0 ]
     then
         echo "pass for iteration $i"

@@ -93,12 +93,6 @@ endif
 App_Compile_CXXFlags := $(App_Compile_CFlags)
 App_Link_Flags := -L$(SGX_LIBRARY_PATH) -l$(Urts_Library_Name) -lpthread
 
-ifneq ($(SGX_MODE), HW)
-	App_Link_Flags += -lsgx_uae_service_sim
-else
-	App_Link_Flags += -lsgx_uae_service
-endif
-
 Gen_Untrusted_Source := App/Enclave_u.c
 Gen_Untrusted_Object := App/Enclave_u.o
 

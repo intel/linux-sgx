@@ -58,15 +58,23 @@ static inline int _InterlockedExchange(int volatile * dst, int val)
    
 }
 
+#define MIN_BACKOFF 2
+#define MAX_BACKOFF 1024
 uint32_t sgx_spin_lock(sgx_spinlock_t *lock)
 {
     while(_InterlockedExchange((volatile int *)lock, 1) != 0) {
-        while (*lock) {
-            /* tell cpu we are spinning */
-            _mm_pause();
-        } 
+        int b = MIN_BACKOFF;
+        do
+        {    /* tell cpu we are spinning */
+            for (int i=0; i < b; i++) {
+                _mm_pause();
+            }
+            b <<= 1;
+            if (b > MAX_BACKOFF) {
+                b = MAX_BACKOFF;
+            }
+        } while (*lock);
     }
-
     return (0);
 }
 

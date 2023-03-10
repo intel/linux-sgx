@@ -781,9 +781,13 @@ int test_sgx_mm_alloc_random()
 //
 int ecall_test_sgx_mm(int sid)
 {
-    int failures = test_sgx_mm_alloc_dealloc();
-    failures += test_sgx_mm_alloc_commit_uncommit();
-
+    int failures = 0;
+    failures += test_sgx_mm_alloc_dealloc();
+    // do a few iterations without running deallocation
+    // this catches effect when emalloc add_reserve
+    // caused by sgx_mm_alloc
+    for (int i=0; i<10; i++)
+        failures += test_sgx_mm_alloc_commit_uncommit();
     failures += test_sgx_mm_types();
     failures += test_sgx_mm_permissions();
     failures += test_sgx_mm_permissions_dealloc();

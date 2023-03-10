@@ -49,7 +49,6 @@
 #endif
 
 #if   defined(__GNUC__)
-# define TOKEN_FILENAME   "enclave.token"
 # define ENCLAVE_FILENAME "enclave.signed.so"
 #endif
 

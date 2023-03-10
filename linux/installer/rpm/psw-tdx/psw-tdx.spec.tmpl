@@ -130,11 +130,19 @@ Intel(R) Software Guard Extensions QVE
 
 %package -n libsgx-tdx-logic
 Version:       %{_dcap_version}
-Summary:       Intel(R) Software Guard Extensions TDX logic
-Requires:      libsgx-urts >= %{_psw_version}-%{release} libsgx-ae-tdqe >= %{version}-%{release} libsgx-ae-id-enclave >= %{version}-%{release}
+Summary:       Intel(R) Trust Domain Extensions QE logic library
+Requires:      libsgx-urts >= %{_psw_version}-%{release} libsgx-ae-tdqe >= %{version}-%{release} libsgx-ae-id-enclave >= %{version}-%{release} libsgx-pce-logic >= %{version}-%{release}
 
 %description -n libsgx-tdx-logic
-Intel(R) Software Guard Extensions TDX logic
+Intel(R) Trust Domain Extensions QE logic library
+
+%package -n libsgx-tdx-logic-devel
+Version:       %{_dcap_version}
+Summary:        Intel(R) Trust Domain Extensions QE logic library For Developers
+Requires:       libsgx-tdx-logic = %{version}-%{release} libsgx-headers >= %{_psw_version}-%{release}
+
+%description -n libsgx-tdx-logic-devel
+Intel(R) Trust Domain Extensions QE logic library For Developers
 
 %package -n libsgx-pce-logic
 Version:       %{_dcap_version}
@@ -299,6 +307,7 @@ make clean
 %files -n libsgx-ae-tdqe -f %{_specdir}/list-libsgx-ae-tdqe
 %files -n libsgx-ae-qve -f %{_specdir}/list-libsgx-ae-qve
 %files -n libsgx-tdx-logic -f %{_specdir}/list-libsgx-tdx-logic
+%files -n libsgx-tdx-logic-devel -f %{_specdir}/list-libsgx-tdx-logic-devel
 %files -n libsgx-pce-logic -f %{_specdir}/list-libsgx-pce-logic
 %files -n libsgx-dcap-default-qpl -f %{_specdir}/list-libsgx-dcap-default-qpl
 %files -n libsgx-dcap-default-qpl-devel -f %{_specdir}/list-libsgx-dcap-default-qpl-devel

@@ -41,7 +41,6 @@ CXX_ENCLAVE_FLAGS += -nostdinc++
 
 DNNL_DIR = dnnl
 LIBDNNL = $(DNNL_DIR)/build/src/libdnnl.a
-SGX_DNNL_LOG = $(shell cd ./$(DNNL_DIR) && git log --oneline --grep='SGX mkl-dnn' | cut -d' ' -f 2)
 SGX_DNNL_DIR = sgx_dnnl
 SGX_DNNL_LIB = $(SGX_DNNL_DIR)/lib
 SGX_DNNL_INCLUDE = $(SGX_DNNL_DIR)/include
@@ -52,11 +51,6 @@ ifdef DEBUG
 endif
 
 DNNL_CONFIG += -DSGX_PROGRAM_SEARCH_PATH="$(EXT_BINUTILS_DIR)"
-
-CHECK_SOURCE :=
-ifneq ($(SGX_DNNL_LOG), SGX)
-CHECK_SOURCE := dnnl_src
-endif
 
 .PHONY: all
 all: $(LIBDNNL) $(SGX_DNNL_LIB) $(SGX_DNNL_INCLUDE)
@@ -76,20 +70,21 @@ $(SGX_DNNL_LIB):
 $(SGX_DNNL_INCLUDE):
 	@$(MKDIR) $@
 
-.PHONY: dnnl_src
-dnnl_src:
+$(DNNL_DIR)/build:
+	@echo "Checkout dnnl and apply sgx_dnnl patch"
 ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	@$(RM) -r $(DNNL_DIR)/*
 	git submodule update -f --init dnnl
-	cd $(DNNL_DIR) && git am ../sgx_dnnl.patch
+	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
 else
 	@$(RM) -r $(DNNL_DIR)
 	git clone https://github.com/intel/mkl-dnn.git -b v1.1.1 --depth 1  $(DNNL_DIR)
-	cd $(DNNL_DIR) && git am ../sgx_dnnl.patch
+	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
 endif
+	mkdir -p $(DNNL_DIR)/build
 
-$(LIBDNNL):$(CHECK_SOURCE)
-	mkdir -p $(DNNL_DIR)/build && cd $(DNNL_DIR)/build && cmake -DCMAKE_CXX_ENCLAVE_FLAGS="$(CXX_ENCLAVE_FLAGS)" -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" $(DNNL_CONFIG) .. && $(MAKE)
+$(LIBDNNL): $(DNNL_DIR)/build
+	cd $(DNNL_DIR)/build && cmake -DCMAKE_CXX_ENCLAVE_FLAGS="$(CXX_ENCLAVE_FLAGS)" -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" $(DNNL_CONFIG) .. && $(MAKE)
 
 .PHONY: clean
 clean:

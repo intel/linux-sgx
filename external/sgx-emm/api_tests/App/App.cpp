@@ -233,7 +233,7 @@ typedef struct ms_ecall_check_context_t {
 } ms_ecall_check_context_t;
 
 extern "C" {
-#include "sgx.h"
+#include "isgx_user.h"
 }
 vdso_sgx_enter_enclave_t vdso_sgx_enter_enclave;
 

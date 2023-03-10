@@ -44,7 +44,7 @@
 #include "metadata.h"
 #include "rts.h"
 
-#define LAYOUT_ENTRY_NUM 42
+#define LAYOUT_ENTRY_NUM 43
 typedef struct _global_data_t
 {
     sys_word_t     sdk_version;
@@ -78,7 +78,6 @@ typedef struct _global_data_t
 extern "C" {
 #endif
 extern SE_DECLSPEC_EXPORT global_data_t const volatile g_global_data;
-extern uint32_t g_enclave_state;
 extern sdk_version_t g_sdk_version;
 extern int EDMM_supported;
 extern uint8_t  __ImageBase;

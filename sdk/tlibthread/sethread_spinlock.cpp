@@ -37,6 +37,7 @@
 #include "util.h"
 #include "sethread_internal.h"
 #include "sethread_spinlock.h"
+
 int sgx_thread_spin_init(sgx_thread_spinlock_t *mutex)
 {
     CHECK_PARAMETER(mutex);

@@ -57,6 +57,7 @@ PVE_VER=1.0.0
 LE_VER=1.0.0
 PCE_VER=1.0.0
 QE3_VER=1.0.0
+URTS_VER:=2.0.0
 SPLIT_VERSION=$(word $2,$(subst ., ,$1))
 
 default:
@@ -99,7 +100,7 @@ install: $(PACKAGES)
 	cd $(shell readlink -m $(DESTDIR)/$(AESM_PCE_PACKAGE_NAME)/$(AESM_SERVICE_PACKAGE_PATH)/$(AESM_SERVICE_PACKAGE_NAME)/aesm) && \
 	ln -fs $(USR_LIB_PATH)/libsgx_pce.signed.so.$(call SPLIT_VERSION,$(PCE_VER),1) && \
 	ln -fs $(USR_LIB_PATH)/libsgx_pce.signed.so && \
-	ln -fs liburts_internal.so libsgx_urts.so
+	ln -fs liburts_internal.so libsgx_urts.so.$(call SPLIT_VERSION,$(URTS_VER),1)
 	
 $(PACKAGES):
 	install -d $(shell readlink -m $(DESTDIR)/$@)

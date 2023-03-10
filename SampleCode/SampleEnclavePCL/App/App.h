@@ -49,7 +49,6 @@
 # define FALSE 0
 #endif
 
-#define TOKEN_FILENAME   "enclave.token"
 #define ENCLAVE_FILENAME "enclave.signed.so"
 #define SEAL_TOKEN_FILENAME   "seal.token"
 #define SEAL_FILENAME "Seal.signed.so"

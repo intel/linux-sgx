@@ -77,7 +77,8 @@ const char * layout_id_str[] = {
     "THREAD_GROUP_DYN",
     "RSRV_MIN",
     "RSRV_INIT",
-    "RSRV_MAX"
+    "RSRV_MAX",
+    "USER_REGION"
 };
 
 // enclave creator instance

@@ -143,6 +143,7 @@ DEV_LIB_PKGS:= $(ENCLAVE_COMMON_PACKAGE)     \
                $(URTS_PACKAGE)               \
                $(SGX_HEADERS_PACKAGE)        \
                $(TDX_LOGIC_PACKAGE)          \
+               $(TDX_LOGIC_DEV_PACKAGE)      \
                $(PCE_LOGIC_PACKAGE)          \
                $(DCAP_QPL_PACKAGE)           \
                $(DCAP_QPL_DEV_PACKAGE)       \
@@ -275,7 +276,7 @@ install_dev_lib: $(foreach PKG,$(DEV_LIB_PKGS),post_$(PKG))
 	cd $(shell readlink -m $(DESTDIR)/$(TDX_LOGIC_PACKAGE)/$(USR_LIB_PATH))     && \
 	mv libsgx_tdx_logic.so libsgx_tdx_logic.so.$(TDX_LOGIC_FULL_VER)            && \
 	ln -fs libsgx_tdx_logic.so.$(TDX_LOGIC_FULL_VER) libsgx_tdx_logic.so.$(TDX_LOGIC_MAJOR_VER)
-	cd $(shell readlink -m $(DESTDIR)/$(TDX_LOGIC_PACKAGE)/$(USR_LIB_PATH)) && \
+	cd $(shell readlink -m $(DESTDIR)/$(TDX_LOGIC_DEV_PACKAGE)/$(USR_LIB_PATH)) && \
 	ln -fs libsgx_tdx_logic.so.$(TDX_LOGIC_MAJOR_VER) libsgx_tdx_logic.so
 	cd $(shell readlink -m $(DESTDIR)/$(PCE_LOGIC_PACKAGE)/$(USR_LIB_PATH))     && \
 	mv libsgx_pce_logic.so libsgx_pce_logic.so.$(PCE_LOGIC_FULL_VER)            && \

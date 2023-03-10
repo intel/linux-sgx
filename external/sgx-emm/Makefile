@@ -35,6 +35,8 @@ CPPFLAGS += -I$(EMM_DIR)/include      \
             -Wno-missing-braces       \
             -Wno-unused-parameter
 
+EMMFLAGS := -mno-sse
+
 C_Files := $(EMM_DIR)/bit_array.c   \
            $(EMM_DIR)/ema.c         \
            $(EMM_DIR)/emalloc.c     \
@@ -60,18 +62,18 @@ $(LIB_NAME): $(CHECK_SOURCE) $(OBJS)
 	$(AR) rcs $@ $(OBJS)
 
 $(OBJS): %.o: %.c
-	$(CC) -c $(COMMON_FLAGS) $(ENCLAVE_CFLAGS) $(CPPFLAGS) $< -o $@
+	$(CC) -c $(COMMON_FLAGS) $(ENCLAVE_CFLAGS) $(CPPFLAGS) $(EMMFLAGS) $< -o $@
 
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
 emm_code:
-ifeq ($(shell git rev-parse --is-inside-work-tree 2> /dev/null), true)
-	git submodule update -f --init --recursive -- $(EMM_DIR)
-else
+#ifeq ($(shell git rev-parse --is-inside-work-tree 2> /dev/null), true)
+#	git submodule update -f --init --recursive -- $(EMM_DIR)
+#else
 	$(RM) -rf $(EMM_DIR)
 	git clone -b sgx-emm-1.0.0 https://github.com/intel/sgx-emm.git --depth 1 $(EMM_DIR)
-endif
+#endif
 
 clean:
 	@$(RM) $(LIB_NAME) $(OBJS) $(BUILD_DIR)/$(LIB_NAME) *.bak *~

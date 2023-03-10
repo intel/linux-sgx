@@ -601,40 +601,46 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
 
 uint64_t CMetadata::calculate_rts_bk_overhead()
 {
-    uint64_t ema_overhead = sizeof(struct ema_t_);
-    uint64_t bit_array_overhead = sizeof(struct bit_array_);
+    se_trace(SE_TRACE_DEBUG, "ema_overhead: %lld, bit_array_overhead: %lld\n", sizeof(struct ema_t_), sizeof(struct bit_array_));
+
+    // alignment value according to sgx-emm emalloc.c
+    const uint32_t ema_align = 0x10;
+    const uint32_t page_count_align = 0x80;
+
+    uint64_t ema_overhead = ROUND_TO(sizeof(struct ema_t_), ema_align);
+    uint64_t bit_array_overhead = ROUND_TO(sizeof(struct bit_array_), ema_align);
 
     // MIN heap
     uint32_t page_count = (uint32_t)(m_create_param.heap_min_size >> SE_PAGE_SHIFT);
-    uint64_t heap_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    uint64_t heap_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
 
     if(m_create_param.heap_init_size > m_create_param.heap_min_size)
     {
         // INIT heap
         page_count = (uint32_t)((m_create_param.heap_init_size - m_create_param.heap_min_size) >> SE_PAGE_SHIFT);
-        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     }
 
     if(m_create_param.heap_max_size > m_create_param.heap_init_size)
     {
         page_count = (uint32_t)((m_create_param.heap_max_size - m_create_param.heap_init_size) >> SE_PAGE_SHIFT);
-        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+        heap_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     }
 
     page_count = (uint32_t)(m_create_param.rsrv_min_size >> SE_PAGE_SHIFT);
-    uint64_t rsrv_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    uint64_t rsrv_node_overhead = ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
 
     if(m_create_param.rsrv_init_size > m_create_param.rsrv_min_size)
     {
         // INIT RSRV
         page_count = (uint32_t)((m_create_param.rsrv_init_size - m_create_param.rsrv_min_size) >> SE_PAGE_SHIFT);
-        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     }
 
     if(m_create_param.rsrv_max_size > m_create_param.rsrv_init_size)
     {
         page_count = (uint32_t)((m_create_param.rsrv_max_size - m_create_param.rsrv_init_size) >> SE_PAGE_SHIFT);
-        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+        rsrv_node_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     }
     // guard page | stack | guard page | TCS | SSA | guard page | TLS
 
@@ -644,13 +650,13 @@ uint64_t CMetadata::calculate_rts_bk_overhead()
 
     // stack
     page_count = (uint32_t)(m_create_param.stack_min_size >> SE_PAGE_SHIFT);
-    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     removed_ctx_overhead += ema_overhead;
 
     if(m_create_param.stack_max_size > m_create_param.stack_min_size)
     {
         page_count = (uint32_t)((m_create_param.stack_max_size - m_create_param.stack_min_size) >> SE_PAGE_SHIFT);
-        non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+        non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
         removed_ctx_overhead += ema_overhead;
     }
 
@@ -660,12 +666,12 @@ uint64_t CMetadata::calculate_rts_bk_overhead()
 
     // tcs
     page_count = TCS_SIZE >> SE_PAGE_SHIFT;
-    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     removed_ctx_overhead += ema_overhead;
 
     // ssa
     page_count = m_metadata->ssa_frame_size * SSA_NUM;
-    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     removed_ctx_overhead += ema_overhead;
 
     // guard page
@@ -679,7 +685,7 @@ uint64_t CMetadata::calculate_rts_bk_overhead()
     {
         page_count += (uint32_t)(ROUND_TO_PAGE(section->virtual_size()) >> SE_PAGE_SHIFT);
     }
-    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, 8) >> 3);
+    non_removed_ctx_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(page_count, page_count_align) >> 3);
     removed_ctx_overhead += ema_overhead;
     
     uint32_t tcs_min_pool = 0; /* Number of static threads (EADD) */
@@ -730,7 +736,7 @@ uint64_t CMetadata::calculate_rts_bk_overhead()
     std::vector<Section*> sections = m_parser->get_sections();
     for (auto s : sections) {
         uint32_t p_count = (uint32_t)(ROUND_TO_PAGE(s->virtual_size()) >> SE_PAGE_SHIFT);
-        total_sections_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(p_count, 8) >> 3);
+        total_sections_overhead += ema_overhead + bit_array_overhead + (ROUND_TO(p_count, page_count_align) >> 3);
     }
 
     return heap_node_overhead +
@@ -1181,10 +1187,41 @@ bool CMetadata::build_layout_table()
     // SGX2 metadata required
     if ((meta_versions & 2u) == 2u)
     {
-        // 0x20000 comes from initial emalloc reserve size (0x10000 bytes),
-        // plus two guard pages (0x8000 bytes each)
-        uint64_t rts_bk_overhead = calculate_rts_bk_overhead() + 0x20000;
-        uint64_t user_region_size = ROUND_TO_PAGE(rts_bk_overhead);
+        // 0x10000 due to the requirement from sgx-emm's min_block_size
+        uint64_t aligned_overhead = ROUND_TO(calculate_rts_bk_overhead(), 0x10000);
+        se_trace(SE_TRACE_DEBUG, "raw overhead: 0x%016llX\n", aligned_overhead);
+
+        uint64_t units_of_block_size = aligned_overhead >> 16;
+        uint8_t reserve_cnt = 0;
+        while (units_of_block_size > 0)
+        {
+	        ++reserve_cnt;
+	        units_of_block_size >>= 1;
+        }
+
+        if (reserve_cnt >= 30)
+        {
+            // There's a limit in emalloc.c that max_emalloc_size is 2^28 bytes. So when
+            // reservation count reaches 30, we reach that limit.
+            se_trace(SE_TRACE_ERROR, "Exceed RTS bookkeeping limit\n");
+            return false;
+        }
+
+        se_trace(SE_TRACE_DEBUG, "ema reservation time: %d\n", reserve_cnt);
+
+        // The memory reservation implementation in sgx-emm emalloc.c works like this:
+        // The initial reserve size is 16 pages (0x10000 bytes) and will double the size
+        // each time a new reservation is needed. That is,  we will have these reservation
+        // sizes: 0x100000B for the 1st reserve, 0x200000B for the 2nd, 0x40000B for the 3rd.
+        // Therefore, if our rts ema overhead needs one reservation, we need 0x10000B, if it
+        // needs two reservation, we need 0x10000+0x20000=0x30000B, if it needs three, we
+        // need 0x10000+0x20000+0x40000=0x70000.
+        // Therefore, if we scale down 0x10000, we will have this pattern: 1, 3, 7, 15, ...
+        // which can be described as 2 ^ (number of reservation time) - 1.
+        // The memory reservation in emalloc.c also reserve two guard pages around the target
+        // memory region in each reservation, so we need an extra 0x10000B each time.
+        // Therefore, the total overhead should be (2^reserve_cnt - 1 + reserve_cnt) * 0x10000B.
+        uint64_t user_region_size = ((1 << reserve_cnt) - 1 + reserve_cnt) << 16;
         se_trace(SE_TRACE_ERROR, "RTS bookkeeping overhead: 0x%016llX\n", user_region_size);
 
         if (m_create_param.user_region_size > 0)
@@ -1195,6 +1232,8 @@ bool CMetadata::build_layout_table()
             uint64_t extra_overhead = (m_create_param.user_region_size >> 15);
             user_region_size += ROUND_TO_PAGE(extra_overhead);
         }
+        se_trace(SE_TRACE_ERROR, "Total user region size: 0x%016llX\n", user_region_size);
+
         memset(&layout, 0, sizeof(layout));
         layout.entry.id = LAYOUT_ID_USER_REGION;
         layout.entry.page_count = (uint32_t)(user_region_size >> SE_PAGE_SHIFT);

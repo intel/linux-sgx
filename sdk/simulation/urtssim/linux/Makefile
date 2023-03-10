@@ -31,6 +31,8 @@
 
 include ../../../../buildenv.mk
 
+URTS_VER:= $(shell awk '$$2 ~ /URTS_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+
 SIM_DIR := $(LINUX_SDK_DIR)/simulation
 VTUNE_DIR = $(LINUX_EXTERNAL_DIR)/vtune/linux
 
@@ -180,7 +182,7 @@ ittnotify:
 	CFLAGS= CXXFLAGS= $(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify/
 
 $(LIBURTS_DEPLOY):../urts_deploy.c
-	 $(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -shared -fPIC -Wl,-soname=libsgx_urts.so $< -o $@
+	 $(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -shared -fPIC -Wl,-soname=libsgx_urts.so.$(call SPLIT_VERSION,$(URTS_VER),1) $< -o $@
 
 .PHONY: clean
 clean::

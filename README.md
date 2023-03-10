@@ -87,6 +87,8 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
 - Ensure that you have one of the following required operating systems:
+  * Ubuntu\* 18.04 LTS Desktop 64bits
+  * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
@@ -98,7 +100,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Debian 10 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:
-  * On Debian 10:
+  * On Ubuntu 18.04 and Debian 10:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git cmake perl
   ```
@@ -134,27 +136,27 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   1)  To install the additional required tools:
       * On Debian 10:
       ```
-        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release libsystemd0
       ```
       * On Ubuntu 20.04 and Ubuntu 22.04:
       ```
-        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev libboost-thread-dev protobuf-c-compiler libprotobuf-c-dev lsb-release
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev libboost-thread-dev protobuf-c-compiler libprotobuf-c-dev lsb-release libsystemd0
       ```
       * On Red Hat Enterprise Linux 8.6:
       ```
-        $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel
+        $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel systemd-libs
       ```
       * On CentOS Stream 8 and CentOS 8.3:
       ```
-        $ sudo dnf --enablerepo=powertools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel
+        $ sudo dnf --enablerepo=powertools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel systemd-libs
       ```
       * On Anolis 8.6:
       ```
-        $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel
+        $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel systemd-libs
       ```
       * On SUSE Linux Enterprise Server 15.4:
       ```
-        $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo
+        $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo libsystemd0
       ```
       2) To install latest Intel(R) SGX SDK Installer
   Ensure that you have downloaded latest Intel(R) SGX SDK Installer from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and followed the Installation Guide in the same page to install latest Intel(R) SGX SDK Installer.
@@ -244,7 +246,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make
 ```
 - To build the Intel(R) SGX PSW installer, enter the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
    ```
   $ make deb_psw_pkg
   ```
@@ -277,7 +279,10 @@ You can find the tools and libraries generated in the `build/linux` directory.
     **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. The local package repository is not signed, you need to trust it for the purpose of development.
 
 - To add the local Debian package repository to the system repository configuration, append the following line to /etc/apt/sources.list. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-
+  * On Ubuntu 18.04:
+  ```
+  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO bionic main
+  ```
   * On Ubuntu 20.04:
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO focal main
@@ -326,6 +331,8 @@ Install the Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:
+  * Ubuntu\* 18.04 LTS Desktop 64bits
+  * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
@@ -336,7 +343,7 @@ Install the Intel(R) SGX SDK
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
-  * On Debian 10 and Ubuntu 20.04:
+  * On Ubuntu 18.04, Ubuntu 20.04 and Debian 10:
   ```
     $ sudo apt-get install build-essential python
   ```
@@ -396,12 +403,21 @@ See the later topic, *Install Intel(R) SGX PSW*, for information on how to insta
   $ ./app
 ```
    Use similar commands for other code samples.
+   **Note:** On Ubuntu 22.04 or any distro with systemd v248 or later, /dev/sgx_enclave is only accessible by users in the group "sgx". The enclave app should be run with a uid in the sgx group.
+   ```
+   # check systemd version:
+   $ systemctl --version
+   # add sgx group to user if it's 248 or above:
+   $ sudo usermod -a -G sgx <user name>
+   ```
 
 
 Install the Intel(R) SGX PSW
 ----------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:
+  * Ubuntu\* 18.04 LTS Desktop 64bits
+  * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
@@ -416,7 +432,7 @@ Install the Intel(R) SGX PSW
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
@@ -442,7 +458,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 20.04, Ubuntu 22.04 and Debian 10|Red Hat Enterprise Linux 8.6, CentOS Stream 8 and CentOS 8.3| SUSE Linux Enterprise Server 15|
+|   |Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10|Red Hat Enterprise Linux 8.6, CentOS Stream 8 and CentOS 8.3| SUSE Linux Enterprise Server 15|
 | ------------ | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts|
@@ -463,7 +479,7 @@ apt-get dist-upgrade -o Dpkg::Options::="--force-overwrite"
 ```
 #### Configure the installation
 Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-* On Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+* On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
 ```
   --no-install-recommends
 ```

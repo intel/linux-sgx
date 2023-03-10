@@ -46,6 +46,8 @@ ECL_VER=1.0.0
 LCH_VER=1.0.0
 EPID_VER=1.0.0
 QEX_VER=1.0.0
+URTS_VER:=2.0.0.0
+QE3L_VER:=1.0.0
 
 default:
 
@@ -63,6 +65,9 @@ install:
 	mv $(PSW_LIB_PATH)/libsgx_enclave_common.so $(USR_LIB_PATH)
 	rmdir $(PSW_LIB_PATH)
 	cd $(USR_LIB_PATH) && \
+	mv libsgx_urts.so libsgx_urts.so.$(URTS_VER) && \
+	ln -fs libsgx_urts.so.$(URTS_VER) libsgx_urts.so.$(call SPLIT_VERSION,$(URTS_VER),1) && \
+	ln -fs libsgx_urts.so.$(call SPLIT_VERSION,$(URTS_VER),1) libsgx_urts.so &&\
 	mv libsgx_enclave_common.so libsgx_enclave_common.so.$(ECL_VER) && \
 	ln -fs libsgx_enclave_common.so.$(ECL_VER) libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1) && \
 	ln -fs libsgx_enclave_common.so.$(call SPLIT_VERSION,$(ECL_VER),1) libsgx_enclave_common.so && \
@@ -76,4 +81,5 @@ install:
 	ln -fs libsgx_quote_ex.so.$(QEX_VER) libsgx_quote_ex.so.$(call SPLIT_VERSION,$(QEX_VER),1) && \
 	ln -fs libsgx_quote_ex.so.$(call SPLIT_VERSION,$(QEX_VER),1) libsgx_quote_ex.so
 	cd $(INSTALL_PATH)/aesm && \
-	ln -fs liburts_internal.so libsgx_urts.so
+	ln -fs liburts_internal.so libsgx_urts.so.$(call SPLIT_VERSION,$(URTS_VER),1) && \
+	ln -fs libsgx_qe3_logic.so.$(call SPLIT_VERSION,$(QE3L_VER),1) libsgx_qe3_logic.so
