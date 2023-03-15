@@ -556,8 +556,8 @@ sgx_status_t do_uninit_enclave(void *tcs)
         }
 
         size_t start = (size_t)DEC_TCS_POINTER(tcs_node->tcs);
-        size_t end = start + (1 << SE_PAGE_SHIFT);
-        int rc = mm_dealloc((void*)start, end);
+        size_t size = 1 << SE_PAGE_SHIFT;
+        int rc = mm_dealloc((void*)start, size);
         if(rc != 0)
         {
             set_enclave_state(ENCLAVE_CRASHED);
