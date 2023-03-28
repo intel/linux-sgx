@@ -34,15 +34,22 @@
 #include <CAESMServer.h>
 #include <CSelector.h>
 #include <AESMLogicWrapper.h>
+#include "quote_ex_service.h"
 #include <curl/curl.h>
 #include <oal/error_report.h>
 
 #include <SocketConfig.h>
 
 #include <iostream>
+#include <getopt.h>
 
 static CAESMServer* server = NULL;
 volatile bool reload = false;
+// Each bit indicates a certain type of attestation is supported. 
+// If a attestation type is marked as supported but AESM fails to load the corresponding module,
+// AESM will exit. 
+// Currently only two attestation types can be supported: Bit 0: EPID  Bit 1: ECDSA
+uint16_t supported_attestation_types = 0;
 
 void signal_handler(int sig)
 {
@@ -67,24 +74,59 @@ void signal_handler(int sig)
     }
 }
 
+void print_usage() {
+    printf("Usage: aesm_service [--no-daemon] [--no-syslog] [--supported_attestation_types=[EPID][,ECDSA]]\n");
+}
+
 int main(int argc, char *argv[]) {
     bool noDaemon = false, noSyslog = false;
+    int opt= 0;
 
-    if (argc > 3) {
-        AESM_LOG_INIT();
-        AESM_LOG_FATAL("Invalid command line.");
-        AESM_LOG_FINI();
-        exit(1);
+    //Specifying the expected options
+    static struct option long_options[] = {
+        {"no-daemon", no_argument, 0, 0 },
+        {"no-syslog", no_argument, 0, 1 },
+        {"supported_attestation_types", required_argument, 0, 2 },
+        {0, 0, 0, 0}
+    };
+
+    int long_index =0;
+    while ((opt = getopt_long(argc, argv, "012:", long_options, &long_index )) != -1) {
+        switch (opt) {
+            case 0:
+                noDaemon = true;
+                break;
+            case 1:
+                noSyslog = true;
+                break;
+            case 2:
+                if (optarg) {
+                    char * token = strtok(optarg, ",");
+                    while( token != NULL ) {
+                        if (strcasecmp(token, "epid") == 0) {
+                            supported_attestation_types |= ATTESTATION_TYPE_EPID;
+                        }
+                        else if (strcasecmp(token, "ecdsa") == 0) {
+                            supported_attestation_types |= ATTESTATION_TYPE_ECDSA;
+                        }
+                        else {
+                            print_usage();
+                            exit(EXIT_FAILURE);
+                        }
+                        token = strtok(NULL, ",");
+                    }
+                }
+                break;
+            default:
+                print_usage();
+                exit(EXIT_FAILURE);
+        }
     }
 
-    for (int i = 1; i < argc; ++i) {
-        std::string arg = argv[i];
-        if (arg == "--no-daemon") {
-            noDaemon = true;
-        }
-        else if (arg == "--no-syslog"){
-            noSyslog = true;
-        }
+    if (optind < argc) {
+        fprintf(stderr, "%s: invalid option -- '%s'\n", argv[0], argv[optind]);
+        print_usage();
+        exit(EXIT_FAILURE);
     }
 
     AESM_LOG_INIT_EX(noSyslog);

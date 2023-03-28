@@ -39,6 +39,7 @@ struct IQuoteProviderService : public IQuoteExService, public IGetAttKeyID
     // The value should be the same as the major version in manifest.json
     enum {VERSION = 2};
     virtual ~IQuoteProviderService() = default;
+    virtual uint16_t get_attestation_type() = 0;
 };
 
 #endif /* QUOTE_PROVIDER_SERVICE_EXPORT_H */

@@ -61,7 +61,7 @@
 static cppmicroservices::BundleContext g_fw_ctx;
 using namespace cppmicroservices;
 static Framework g_fw = FrameworkFactory().NewFramework();
-
+extern uint16_t supported_attestation_types;
 
 #ifdef US_PLATFORM_POSIX
 #define PATH_SEPARATOR "/"
@@ -688,6 +688,23 @@ ae_error_t AESMLogicWrapper::service_start()
         // Start the framework itself.
         g_fw.Start();
         auto bundles = g_fw_ctx.GetBundles();
+        // check required attestation bundles
+        bool found_epid = false, found_ecdsa = false;
+        for (Bundle &bundle : bundles) {
+            if (bundle.GetSymbolicName() == "epid_quote_service_bundle_name")
+                found_epid = true;
+            else if (bundle.GetSymbolicName() == "ecdsa_quote_service_bundle_name")
+                found_ecdsa = true;
+        }
+        if (!found_epid && (supported_attestation_types & ATTESTATION_TYPE_EPID)) {
+            AESM_LOG_ERROR("EPID attestation is required but the bundle is not installed.");
+            return AE_FAILURE;
+        }
+        if (!found_ecdsa && (supported_attestation_types & ATTESTATION_TYPE_ECDSA)) {
+            AESM_LOG_ERROR("ECDSA attestation is required but the bundle is not installed.");
+            return AE_FAILURE;
+        }
+
         for (auto &bundle : bundles)
         {
             bundle.Start();
@@ -722,8 +739,14 @@ ae_error_t AESMLogicWrapper::service_start()
     }
     {
         std::shared_ptr<IQuoteProxyService> service;
-        if (get_service_wrapper(service, g_fw_ctx))
-            service->start();
+        if (get_service_wrapper(service, g_fw_ctx)) 
+        {
+            service->set_supported_attestation_types(supported_attestation_types);
+            ae_error_t ret = service->start();
+
+            if (ret != AE_SUCCESS)
+                return ret;
+        }
     }
     AESM_DBG_INFO("aesm service started");
 
