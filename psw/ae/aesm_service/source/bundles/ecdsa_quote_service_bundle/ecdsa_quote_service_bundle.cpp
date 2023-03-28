@@ -427,6 +427,12 @@ public:
         *att_key_id_num = 1;
         return AESM_SUCCESS;
     }
+
+    uint16_t get_attestation_type()
+    {
+        return ATTESTATION_TYPE_ECDSA;
+
+    }
 };
 
 class Activator : public BundleActivator
