@@ -42,7 +42,7 @@ static int build_rts_context_nodes(layout_entry_t *entry, uint64_t offset)
     assert(IS_PAGE_ALIGNED(rva));
 
     size_t addr = (size_t)get_enclave_base() + rva;
-    size_t size = entry->page_count << SE_PAGE_SHIFT;
+    size_t size = ((size_t)entry->page_count) << SE_PAGE_SHIFT;
 
     // entry is guard page or has EREMOVE, build a reserved ema
     if ((entry->si_flags == 0) ||
@@ -83,8 +83,7 @@ static int build_rts_context_nodes(layout_entry_t *entry, uint64_t offset)
             commit_direction = SGX_EMA_GROWSDOWN;
         }
 
-        int ret = mm_alloc((void*)addr,
-                         ((size_t)entry->page_count) << SE_PAGE_SHIFT,
+        int ret = mm_alloc((void*)addr, size,
                          SGX_EMA_COMMIT_ON_DEMAND | commit_direction
                          | SGX_EMA_SYSTEM | SGX_EMA_FIXED | type,
                          NULL, NULL, NULL);

@@ -1221,7 +1221,7 @@ bool CMetadata::build_layout_table()
         // The memory reservation in emalloc.c also reserve two guard pages around the target
         // memory region in each reservation, so we need an extra 0x10000B each time.
         // Therefore, the total overhead should be (2^reserve_cnt - 1 + reserve_cnt) * 0x10000B.
-        uint64_t user_region_size = ((1 << reserve_cnt) - 1 + reserve_cnt) << 16;
+        uint64_t user_region_size = ((uint64_t)((1 << reserve_cnt) - 1 + reserve_cnt)) << 16;
         se_trace(SE_TRACE_ERROR, "RTS bookkeeping overhead: 0x%016llX\n", user_region_size);
 
         if (m_create_param.user_region_size > 0)
