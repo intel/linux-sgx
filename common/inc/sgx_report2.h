@@ -36,6 +36,8 @@
 #ifndef _SGX_REPORT2_H_
 #define _SGX_REPORT2_H_
 
+#include <stdint.h>
+
 #define TEE_HASH_384_SIZE       48 /* SHA384 */
 #define TEE_MAC_SIZE            32 /* Message SHA 256 HASH Code - 32 bytes */
 
@@ -67,6 +69,7 @@ typedef struct _tee_attributes_t
 #define TEE_REPORT2_TYPE        0x81    /* TEE Report Type2 */
 #define TEE_REPORT2_SUBTYPE     0x0     /* SUBTYPE for Report Type2 is 0 */
 #define TEE_REPORT2_VERSION     0x0     /* VERSION for Report Type2 is 0 */
+#define TEE_REPORT2_VERSION_SERVICETD 0x1 /* VERSION for Report Type2 which mr_servicetd is used */
 
 typedef struct _tee_report_type_t {
     uint8_t type;       /* Trusted Execution Environment(TEE) type:

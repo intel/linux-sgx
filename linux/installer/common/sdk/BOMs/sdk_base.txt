@@ -92,6 +92,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/external/dcap_source/QuoteGeneration/pce_wrapper/inc/sgx_pce.h	<installdir>/package/include/./sgx_pce.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h	<installdir>/package/include/./sgx_quote_3.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_quote_4.h	<installdir>/package/include/./sgx_quote_4.h	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_quote_5.h	<installdir>/package/include/./sgx_quote_5.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/quote_wrapper/common/inc/sgx_ql_quote.h	<installdir>/package/include/./sgx_ql_quote.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteVerification/QvE/Include/sgx_qve_header.h	<installdir>/package/include/./sgx_qve_header.h	0	main	STP
 <deliverydir>/external/dcap_source/QuoteVerification/dcap_tvl/sgx_dcap_tvl.h	<installdir>/package/include/./sgx_dcap_tvl.h	0	main	STP
