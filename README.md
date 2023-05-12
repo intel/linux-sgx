@@ -98,6 +98,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
+  * Debian 11 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:
   * On Ubuntu 18.04 and Debian 10:
@@ -105,7 +106,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python3 libssl-dev git cmake perl
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
-  * On Ubuntu 20.04 and Ubuntu 22.04:
+  * On Ubuntu 20.04, Ubuntu 22.04 and Debian 11:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python-is-python3 libssl-dev git cmake perl
   ```
@@ -136,7 +137,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
    **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above.
 - Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:
   1)  To install the additional required tools:
-      * On Debian 10:
+      * On Debian 10 and Debian 11:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release libsystemd0
       ```
@@ -248,7 +249,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make
 ```
 - To build the Intel(R) SGX PSW installer, enter the following command:
-  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04, Debian 10 and Debian 11:
    ```
   $ make deb_psw_pkg
   ```
@@ -256,7 +257,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
 
   **Note**: Besides the Intel(R) SGX PSW installer, the above command generates another debug symbol package named ``package-name-dbgsym_${version}-${revision}_amd64.ddeb`` for debug purpose.
   **Note**: Starting with the 2.10 release, besides the Intel(R) SGX PSW installer, the above command generates [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) installers as well.
-  **Note**: On Debian 10, the default PATH environment may not include /sbin. In this case, before trigger the build, please add /sbin to PATH environment by `export PATH=$PATH:/sbin`.
+  **Note**: On Debian 10 and Debian 11, the default PATH environment may not include /sbin. In this case, before trigger the build, please add /sbin to PATH environment by `export PATH=$PATH:/sbin`.
   **Note**: The above command builds the Intel(R) SGX PSW with default configuration firstly and then generates the target PSW Installer. To build the Intel(R) SGX PSW Installer without optimization and with full debug information kept in the tools and libraries, enter the following command:
   ```
   $ make deb_psw_pkg DEBUG=1
@@ -296,6 +297,10 @@ You can find the tools and libraries generated in the `build/linux` directory.
   * On Debian 10:
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO buster main
+  ```
+  * On Debian 11:
+  ```
+  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO bullseye main
   ```
   After that, you need to update the apt:
   ```
@@ -344,13 +349,14 @@ Install the Intel(R) SGX SDK
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
+  * Debian 11 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
   * On Ubuntu 18.04 and Debian 10:
   ```
     $ sudo apt-get install build-essential python3
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
-   * On Ubuntu 20.04 and Ubuntu 22.04:
+   * On Ubuntu 20.04, Ubuntu 22.04, and Debian 11:
   ```
     $ sudo apt-get install build-essential python-is-python3
   ```
@@ -431,12 +437,13 @@ Install the Intel(R) SGX PSW
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
+  * Debian 11 64bits
 - Ensure that you have a system with the following required hardware:
   * 6th Generation Intel(R) Core(TM) Processor or newer
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:
-  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04, Debian 10, and Debian 11:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
@@ -462,7 +469,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10|Red Hat Enterprise Linux 8.6, CentOS Stream 8 and CentOS 8.3| SUSE Linux Enterprise Server 15|
+|   |Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04, Debian 10, and Debian 11|Red Hat Enterprise Linux 8.6, CentOS Stream 8 and CentOS 8.3| SUSE Linux Enterprise Server 15|
 | ------------ | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts|
@@ -483,7 +490,7 @@ apt-get dist-upgrade -o Dpkg::Options::="--force-overwrite"
 ```
 #### Configure the installation
 Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-* On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+* On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04, Debian 10, and Debian 11:
 ```
   --no-install-recommends
 ```
