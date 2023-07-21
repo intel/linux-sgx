@@ -77,6 +77,7 @@ static int s_driver_type = SGX_DRIVER_UNKNOWN;  //driver which is opened
 static se_file_handle_t s_hdevice = -1;         //used for driver_type of SGX_DRIVER_OUT_OF_TREE or SGX_DRIVER_DCAP
 static std::map<void*, int> s_hfile;            //enclave file handles for driver_type of SGX_DRIVER_IN_KERNEL
 
+static std::vector<uint64_t> s_enclave_base_address;
 static std::map<void*, size_t> s_enclave_size;
 static std::map<void*, bool> s_enclave_init;
 static std::map<void*, sgx_attributes_t> s_secs_attr;
@@ -137,24 +138,17 @@ static void close_device(void)
     s_driver_type = SGX_DRIVER_UNKNOWN;  //this may not be needed - can it change on the platform?
 }
 
-static int get_file_handle_from_address(void* target_address)
+static int get_file_handle_from_base_address(void* base_address)
 {
     int hfile = -1;
     
     //find the enclave file handle from the target address
     LockGuard lock(&s_enclave_mutex);
-    for (auto rec : s_enclave_size) {
-        if ((uint64_t)target_address >= (uint64_t)rec.first && (uint64_t)target_address < (uint64_t)rec.first + (uint64_t)rec.second) 
-        {
-            if (s_hfile.count(rec.first) == 1)
-            {
-                hfile = s_hfile[rec.first];
-            }
-            break;
-        }
+    if(s_hfile.count(base_address) != 0)
+    {
+        hfile = s_hfile[base_address];
     }
-    
-   return hfile;
+    return hfile;
 }
 
 static void* get_enclave_base_address_from_address(void* target_address)
@@ -163,15 +157,35 @@ static void* get_enclave_base_address_from_address(void* target_address)
         
     //find the enclave file handle from the target address
     LockGuard lock(&s_enclave_mutex);
-    for (auto rec : s_enclave_size) {
-        if ((uint64_t)target_address >= (uint64_t)rec.first && (uint64_t)target_address < (uint64_t)rec.first + (uint64_t)rec.second) 
-        {
-            base_addr = rec.first;
-            break;
-        }
+    if(s_enclave_base_address.empty())
+    {
+        return base_addr;
     }
-    
-   return base_addr;
+    auto upper = std::upper_bound(s_enclave_base_address.begin(), s_enclave_base_address.end(), (uint64_t)target_address);
+    if(upper == s_enclave_base_address.begin())
+    {
+        return base_addr;
+    }
+    else if (upper == s_enclave_base_address.end())
+    {
+        base_addr = (void*)s_enclave_base_address.back();
+    }
+    else
+    {
+        auto index = upper - s_enclave_base_address.begin();
+        base_addr = (void*)s_enclave_base_address[index - 1];
+    }
+    if(s_enclave_size.count(base_addr) == 0)
+    {
+        return NULL;
+    }
+    //validate the target_address is within the enclave range
+    if((uint64_t)target_address < (uint64_t)base_addr ||
+        ((uint64_t)target_address >= ((uint64_t)base_addr + s_enclave_size[base_addr])))
+    {
+        return NULL;
+    }
+    return base_addr;
 
 }
 
@@ -772,6 +786,8 @@ extern "C" void* COMM_API enclave_create_ex(
             s_hfile[enclave_base] = hdevice_temp;
         }
         s_enclave_size[enclave_base] = virtual_size;
+        s_enclave_base_address.push_back((uint64_t)enclave_base);
+        std::sort(s_enclave_base_address.begin(), s_enclave_base_address.end());
 
         sgx_attributes_t secs_attr;
         memset(&secs_attr, 0, sizeof(sgx_attributes_t));
@@ -817,9 +833,8 @@ extern "C" void* COMM_API enclave_create(
     return enclave_create_ex(base_address, virtual_size, initial_commit, type, info, info_size, 0 , NULL, enclave_error);
 }
 
-static bool enclave_do_mprotect_region(void* target_address, size_t target_size, int prot, uint32_t* enclave_error)
+static bool enclave_do_mprotect_region(int hfile, void* target_address, size_t target_size, int prot, uint32_t* enclave_error)
 {
-    int hfile = -1;
     // find the enclave base
     void* enclave_base = get_enclave_base_address_from_address(target_address);
     if (enclave_base == NULL) {
@@ -828,11 +843,6 @@ static bool enclave_do_mprotect_region(void* target_address, size_t target_size,
         return false;
     }
     
-    if (s_driver_type == SGX_DRIVER_IN_KERNEL)
-    {
-        hfile = get_file_handle_from_address(target_address);
-    }
-
     auto enclave_mem_region = &s_enclave_mem_region[enclave_base];
     //if target_size =0, means mprotect the last region
     if(target_size != 0)
@@ -936,12 +946,8 @@ extern "C" size_t COMM_API enclave_load_data(
     size_t pages = target_size / SE_PAGE_SIZE;
     if (s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        hfile = get_file_handle_from_address(target_address);
-
-        //todo - may need to check EADD parameters for better error reporting since the driver 
-        //  may not do this (the driver will just take a fault on EADD)
-
-        if (hfile == -1)
+        void* enclave_base_addr = get_enclave_base_address_from_address(target_address);
+        if (enclave_base_addr == NULL)
         {
             SE_TRACE(SE_TRACE_WARNING, "\nAdd Page FAILED - %p is not in a valid enclave \n", target_address);
             if (enclave_error != NULL)
@@ -949,8 +955,11 @@ extern "C" size_t COMM_API enclave_load_data(
             return 0;
         }
 
-        void* enclave_base_addr = get_enclave_base_address_from_address(target_address);
-        if (enclave_base_addr == NULL)
+        hfile = get_file_handle_from_base_address(enclave_base_addr);
+
+        //todo - may need to check EADD parameters for better error reporting since the driver
+        //  may not do this (the driver will just take a fault on EADD)
+        if (hfile == -1)
         {
             SE_TRACE(SE_TRACE_WARNING, "\nAdd Page FAILED - %p is not in a valid enclave \n", target_address);
             if (enclave_error != NULL)
@@ -1060,7 +1069,7 @@ extern "C" size_t COMM_API enclave_load_data(
         prot = (int)(SI_FLAGS_RW & SI_MASK_MEM_ATTRIBUTE);
     }
 
-    if(enclave_do_mprotect_region(target_address, target_size, prot, enclave_error) == false)
+    if(enclave_do_mprotect_region(hfile, target_address, target_size, prot, enclave_error) == false)
     {
         return 0;
     }
@@ -1097,7 +1106,7 @@ extern "C" bool COMM_API enclave_initialize(
     int hfile = -1;
     if (s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        hfile = get_file_handle_from_address(base_address);
+        hfile = get_file_handle_from_base_address(base_address);
         if (hfile == -1)
         {
             SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_INIT failed - %p is not a valid enclave \n", base_address);
@@ -1115,7 +1124,7 @@ extern "C" bool COMM_API enclave_initialize(
     }
 
     //mprotect the last region
-    if(enclave_do_mprotect_region(base_address, 0, 0, enclave_error) == false)
+    if(enclave_do_mprotect_region(hfile, base_address, 0, 0, enclave_error) == false)
     {
         return false;
     }
@@ -1236,6 +1245,9 @@ extern "C" bool COMM_API enclave_delete(
             return false;
         }
         enclave_size = it->second;
+
+        s_enclave_base_address.erase(std::remove(s_enclave_base_address.begin(), s_enclave_base_address.end(), (uint64_t)base_address),
+            s_enclave_base_address.end());
 
         s_enclave_size.erase(base_address);
         s_enclave_init.erase(base_address);
@@ -1388,7 +1400,15 @@ uint32_t COMM_API enclave_alloc(
         }
         return ENCLAVE_ERROR_SUCCESS;
     }
-    int enclave_fd = get_file_handle_from_address(target_addr);
+
+    void* enclave_base = get_enclave_base_address_from_address(target_addr);
+    if (enclave_base == NULL)
+    {
+        if (enclave_error != NULL)
+            *enclave_error = ENCLAVE_INVALID_ADDRESS;
+        return ENCLAVE_INVALID_ADDRESS;
+    }
+    int enclave_fd = get_file_handle_from_base_address(enclave_base);
     if (enclave_fd == -1)
     {
         if (enclave_error != NULL)
@@ -1458,11 +1478,11 @@ static int emodt(int fd, void *addr, size_t length, uint64_t type)
             return err;
         }
         //for recoverable partial errors
-        length -= ioc.count;
+        ioc.length -= ioc.count;
         ioc.offset += ioc.count;
         ioc.result = 0;
         ioc.count = 0;
-    } while (length != 0);
+    } while (ioc.length != 0);
 
     return 0;
 }
@@ -1641,8 +1661,8 @@ uint32_t COMM_API enclave_modify(
     function<int(int, void *, size_t)> _trim = trim;
     function<int(int, void *, size_t)> _trim_accept = trim_accept;
     function<int(int, void *, size_t)> _mktcs = mktcs;
-    function<int(int, void *, size_t, int)> _emodpr = emodpr;
-    int fd = get_file_handle_from_address(target_addr);
+    function<int(int, void *, size_t, uint64_t)> _emodpr = emodpr;
+    int fd = get_file_handle_from_base_address((void*)enclave_base);
     if (s_driver_type == SGX_DRIVER_OUT_OF_TREE)
     {
         _trim = trim_legacy;

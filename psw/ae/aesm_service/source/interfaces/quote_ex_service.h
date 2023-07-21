@@ -36,6 +36,8 @@
 #include <stddef.h>
 #include "aesm_error.h"
 
+#define ATTESTATION_TYPE_EPID 0x0001
+#define ATTESTATION_TYPE_ECDSA 0x0002
 
 struct IQuoteExService : virtual public IService
 {

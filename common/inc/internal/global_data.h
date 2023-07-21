@@ -65,6 +65,7 @@ typedef struct _global_data_t
     uint64_t       enclave_image_address;   /* the base address of the enclave image */
     uint64_t       elrange_start_address;   /* the base address provided in the enclave's SECS (SECS.BASEADDR) */
     uint64_t       elrange_size;            /* the size of the enclave address range provided in the enclave's SECS (SECS.SIZE) */
+    sys_word_t     edmm_bk_overhead;        /* memory overhead used by edmm bookkeeping */
 } global_data_t;
 
 #define ENCLAVE_INIT_NOT_STARTED  0

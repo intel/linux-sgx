@@ -107,7 +107,10 @@ extern "C" int memset_s(void *s, size_t smax, int c, size_t n)
 #define UNUSED(val) (void)(val)
 #endif
 
-
+__attribute__((constructor)) void sample_init_ipp_crypto()
+{
+    ippcpInit();
+}
 
 static uint32_t seed = (uint32_t)(9);
 

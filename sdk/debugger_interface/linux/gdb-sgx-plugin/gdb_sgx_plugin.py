@@ -151,13 +151,14 @@ class enclave_info(object):
         if (self.enclave_type & ET_SIM) != ET_SIM and (self.enclave_type & ET_DEBUG) != ET_DEBUG:
             print ('Warning: {0:s} is a product hardware enclave. It can\'t be debugged and sgx_emmt doesn\'t work'.format(self.enclave_path))
             return -1
-        # set TCS debug flag
+        # set TCS debug flag, clear AEXNOTIFY
         for tcs_addr in self.tcs_addr_list:
             string = read_from_memory(tcs_addr + 8, 4)
             if string == None:
                 return 0
             flag = struct.unpack('I', string)[0]
             flag |= 1
+            flag &= (~2)
             gdb_cmd = "set *(unsigned int *)%#x = %#x" %(tcs_addr + 8, flag)
             gdb.execute(gdb_cmd, False, True)
         #If it is a product enclave, won't reach here.
@@ -322,6 +323,8 @@ class enclave_info(object):
         self.show_emmt()
         try:
             # clear TCS debug flag
+            # TODO - We may also need to recover AEXNOTIFY bit.
+            # It requires us to save the orig AEXNOTIFY bit before init_enclave_debug()
             for tcs_addr in self.tcs_addr_list:
                 string = read_from_memory(tcs_addr + 8, 4)
                 if string == None:
@@ -681,7 +684,9 @@ class GetTCSBreakpoint(gdb.Breakpoint):
             if string == None:
                 return False
             flag = struct.unpack('I', string)[0]
+            # set TCS debug flag, clear AEXNOTIFY
             flag |= 1
+            flag &= (~2)
             gdb_cmd = "set *(unsigned int *)%#x = %#x" %(tcs_addr + 8, flag)
             gdb.execute(gdb_cmd, False, True)
         return False

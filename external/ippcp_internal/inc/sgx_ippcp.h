@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2023 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -84,6 +84,9 @@ extern "C" {
   #define ippsAESDecryptCTR sgx_disp_ippsAESDecryptCTR
   #define ippsAESEncryptXTS_Direct sgx_disp_ippsAESEncryptXTS_Direct
   #define ippsAESDecryptXTS_Direct sgx_disp_ippsAESDecryptXTS_Direct
+  #define ippsAESSetupNoise sgx_disp_ippsAESSetupNoise
+  #define ippsAES_GCMSetupNoise sgx_disp_ippsAES_GCMSetupNoise
+  #define ippsAES_CMACSetupNoise sgx_disp_ippsAES_CMACSetupNoise
   #define ippsAES_EncryptCFB16_MB sgx_disp_ippsAES_EncryptCFB16_MB
   #define ippsSMS4GetSize sgx_disp_ippsSMS4GetSize
   #define ippsSMS4Init sgx_disp_ippsSMS4Init
@@ -239,19 +242,30 @@ extern "C" {
   #define ippsHashMethodGetSize sgx_disp_ippsHashMethodGetSize
   #define ippsHashMethodSet_MD5 sgx_disp_ippsHashMethodSet_MD5
   #define ippsHashMethodSet_SM3 sgx_disp_ippsHashMethodSet_SM3
+  #define ippsHashStateMethodSet_SM3 sgx_disp_ippsHashStateMethodSet_SM3
   #define ippsHashMethodSet_SHA1 sgx_disp_ippsHashMethodSet_SHA1
   #define ippsHashMethodSet_SHA1_NI sgx_disp_ippsHashMethodSet_SHA1_NI
   #define ippsHashMethodSet_SHA1_TT sgx_disp_ippsHashMethodSet_SHA1_TT
   #define ippsHashMethodSet_SHA256 sgx_disp_ippsHashMethodSet_SHA256
   #define ippsHashMethodSet_SHA256_NI sgx_disp_ippsHashMethodSet_SHA256_NI
   #define ippsHashMethodSet_SHA256_TT sgx_disp_ippsHashMethodSet_SHA256_TT
+  #define ippsHashStateMethodSet_SHA256 sgx_disp_ippsHashStateMethodSet_SHA256
+  #define ippsHashStateMethodSet_SHA256_NI sgx_disp_ippsHashStateMethodSet_SHA256_NI
+  #define ippsHashStateMethodSet_SHA256_TT sgx_disp_ippsHashStateMethodSet_SHA256_TT
   #define ippsHashMethodSet_SHA224 sgx_disp_ippsHashMethodSet_SHA224
   #define ippsHashMethodSet_SHA224_NI sgx_disp_ippsHashMethodSet_SHA224_NI
   #define ippsHashMethodSet_SHA224_TT sgx_disp_ippsHashMethodSet_SHA224_TT
+  #define ippsHashStateMethodSet_SHA224 sgx_disp_ippsHashStateMethodSet_SHA224
+  #define ippsHashStateMethodSet_SHA224_NI sgx_disp_ippsHashStateMethodSet_SHA224_NI
+  #define ippsHashStateMethodSet_SHA224_TT sgx_disp_ippsHashStateMethodSet_SHA224_TT
   #define ippsHashMethodSet_SHA512 sgx_disp_ippsHashMethodSet_SHA512
   #define ippsHashMethodSet_SHA384 sgx_disp_ippsHashMethodSet_SHA384
   #define ippsHashMethodSet_SHA512_256 sgx_disp_ippsHashMethodSet_SHA512_256
   #define ippsHashMethodSet_SHA512_224 sgx_disp_ippsHashMethodSet_SHA512_224
+  #define ippsHashStateMethodSet_SHA512 sgx_disp_ippsHashStateMethodSet_SHA512
+  #define ippsHashStateMethodSet_SHA384 sgx_disp_ippsHashStateMethodSet_SHA384
+  #define ippsHashStateMethodSet_SHA512_256 sgx_disp_ippsHashStateMethodSet_SHA512_256
+  #define ippsHashStateMethodSet_SHA512_224 sgx_disp_ippsHashStateMethodSet_SHA512_224
   #define ippsHashGetSize_rmf sgx_disp_ippsHashGetSize_rmf
   #define ippsHashInit_rmf sgx_disp_ippsHashInit_rmf
   #define ippsHashPack_rmf sgx_disp_ippsHashPack_rmf
@@ -546,12 +560,19 @@ extern "C" {
   #define ippsGFpECTstKeyPair sgx_disp_ippsGFpECTstKeyPair
   #define ippsGFpECSharedSecretDH sgx_disp_ippsGFpECSharedSecretDH
   #define ippsGFpECSharedSecretDHC sgx_disp_ippsGFpECSharedSecretDHC
+  #define ippsGFpECMessageRepresentationSM2 sgx_disp_ippsGFpECMessageRepresentationSM2
   #define ippsGFpECSignDSA sgx_disp_ippsGFpECSignDSA
   #define ippsGFpECVerifyDSA sgx_disp_ippsGFpECVerifyDSA
   #define ippsGFpECSignNR sgx_disp_ippsGFpECSignNR
   #define ippsGFpECVerifyNR sgx_disp_ippsGFpECVerifyNR
   #define ippsGFpECSignSM2 sgx_disp_ippsGFpECSignSM2
   #define ippsGFpECVerifySM2 sgx_disp_ippsGFpECVerifySM2
+  #define ippsGFpECUserIDHashSM2 sgx_disp_ippsGFpECUserIDHashSM2
+  #define ippsGFpECKeyExchangeSM2_GetSize sgx_disp_ippsGFpECKeyExchangeSM2_GetSize
+  #define ippsGFpECKeyExchangeSM2_Init sgx_disp_ippsGFpECKeyExchangeSM2_Init
+  #define ippsGFpECKeyExchangeSM2_Setup sgx_disp_ippsGFpECKeyExchangeSM2_Setup
+  #define ippsGFpECKeyExchangeSM2_SharedKey sgx_disp_ippsGFpECKeyExchangeSM2_SharedKey
+  #define ippsGFpECKeyExchangeSM2_Confirm sgx_disp_ippsGFpECKeyExchangeSM2_Confirm
   #define ippsGFpECGetInfo_GF sgx_disp_ippsGFpECGetInfo_GF
   #define ippsGFpECESGetSize_SM2 sgx_disp_ippsGFpECESGetSize_SM2
   #define ippsGFpECESInit_SM2 sgx_disp_ippsGFpECESInit_SM2
@@ -561,6 +582,10 @@ extern "C" {
   #define ippsGFpECESDecrypt_SM2 sgx_disp_ippsGFpECESDecrypt_SM2
   #define ippsGFpECESFinal_SM2 sgx_disp_ippsGFpECESFinal_SM2
   #define ippsGFpECESGetBuffersSize_SM2 sgx_disp_ippsGFpECESGetBuffersSize_SM2
+  #define ippsGFpECEncryptSM2_Ext_EncMsgSize sgx_disp_ippsGFpECEncryptSM2_Ext_EncMsgSize
+  #define ippsGFpECEncryptSM2_Ext sgx_disp_ippsGFpECEncryptSM2_Ext
+  #define ippsGFpECDecryptSM2_Ext_DecMsgSize sgx_disp_ippsGFpECDecryptSM2_Ext_DecMsgSize
+  #define ippsGFpECDecryptSM2_Ext sgx_disp_ippsGFpECDecryptSM2_Ext
 
 
 #ifdef __cplusplus

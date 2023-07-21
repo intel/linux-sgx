@@ -40,6 +40,7 @@ struct IQuoteProxyService : public IQuoteExService, public ISelectAttKeyID, publ
     // The value should be the same as the major version in manifest.json
     enum {VERSION = 2};
     virtual ~IQuoteProxyService() = default;
+    virtual void set_supported_attestation_types(uint16_t att_types) = 0;
 };
 
 #endif /* QUOTE_PROXY_SERVICE_EXPORT_H */

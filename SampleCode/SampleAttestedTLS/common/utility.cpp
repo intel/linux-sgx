@@ -53,20 +53,20 @@ int get_pkey_by_rsa(EVP_PKEY *pk)
     e = BN_new();
     if (!e) {
         PRINT("BN_new failed\n");
-        return res;
+		goto done;
     }
 
     res = BN_set_word(e, (BN_ULONG)RSA_F4);
     if (!res) {
         PRINT("BN_set_word failed (%d)\n", res);
-		return res;
+		goto done;
     }
 
     rsa = RSA_new();
     if (!rsa) {
         PRINT("RSA_new failed\n");
         res = -1;
-		return res;
+		goto done;
     }
 
     res = RSA_generate_key_ex(
@@ -79,12 +79,15 @@ int get_pkey_by_rsa(EVP_PKEY *pk)
     if (!res)
     {
         PRINT("RSA_generate_key failed (%d)\n", res);
-		return res;
+		goto done;
     }
 
     // Assign RSA key to EVP_PKEY structure
     EVP_PKEY_assign_RSA(pk, rsa);
 
+done:
+    if (e)
+	    BN_clear_free(e);
     return res;
 }
 
@@ -100,14 +103,14 @@ int get_pkey_by_ec(EVP_PKEY *pk)
     if (res <= 0)
     {
         PRINT("EC_generate_key failed (%d)\n", res);
-        return res;
+        goto done;
     }
 
     res = EVP_PKEY_CTX_set_ec_paramgen_curve_nid(ctx, NID_secp384r1);
     if (res <= 0)
     {
         PRINT("EC_generate_key failed (%d)\n", res);
-        return res;
+        goto done;
     }
 
     /* Generate key */
@@ -115,8 +118,12 @@ int get_pkey_by_ec(EVP_PKEY *pk)
     if (res <= 0)
     {
         PRINT("EC_generate_key failed (%d)\n", res);
-        return res;
+        goto done;
     }
+
+done:
+	if (ctx)
+		EVP_PKEY_CTX_free(ctx);
 
     return res;
 }

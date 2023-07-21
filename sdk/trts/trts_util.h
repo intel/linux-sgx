@@ -64,6 +64,9 @@ bool is_tcs_binding_mode();
 
 size_t get_xsave_size();
 
+int get_ssa_aexnotify();
+
+
 #ifdef __cplusplus
 }
 #endif

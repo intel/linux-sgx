@@ -40,6 +40,8 @@
 #include "trts_internal.h"
 #include "internal/rts.h"
 #include "trts_util.h"
+#include "sgx_utils.h"
+#include "sgx_report.h"
 
 #ifdef SE_SIM
 #include "t_instructions.h"    /* for `g_global_data_sim' */
@@ -352,3 +354,4 @@ int SGXAPI sgx_wrpkru(uint32_t val)
 	     : "a" (val), "c"(c), "d"(d));
     return 1; 
 }
+

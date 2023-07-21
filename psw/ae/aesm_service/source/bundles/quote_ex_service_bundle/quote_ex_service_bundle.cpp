@@ -67,9 +67,16 @@ private:
     std::vector<quote_provider_t> available_providers;
     ListenerToken listenerToken;
     AESMLogicMutex quote_ex_mutex;
+    uint16_t supported_attestation_types;
 
 public:
-    QuoteExServiceImp():initialized(false), default_quoting_type(AESM_QUOTING_DEFAULT_VALUE) {}
+    QuoteExServiceImp():initialized(false), default_quoting_type(AESM_QUOTING_DEFAULT_VALUE),
+        supported_attestation_types(0) {}
+
+    void set_supported_attestation_types(uint16_t att_types)
+    {
+        supported_attestation_types = att_types;
+    }
 
     ae_error_t start()
     {
@@ -95,27 +102,38 @@ public:
             if (IQuoteProviderService::VERSION != bundle.GetVersion().GetMajor())
                 continue;
 
-            auto service = context.GetService(sr);
-            if (service
-                && (AE_SUCCESS == service->start()))
-            {
-                uint32_t num = 0;
-                sgx_att_key_id_ext_t att_key_id_ext_list[BUNLE_ATT_KEY_NUM_MAX] ={0};
 
-                available_providers.push_back(service);
-                if (AESM_SUCCESS != service->get_att_key_id_num(&num))
-                    continue;
-                if (num > BUNLE_ATT_KEY_NUM_MAX)
-                    continue;
-                if (AESM_SUCCESS != service->get_att_key_id((uint8_t *)att_key_id_ext_list, sizeof(att_key_id_ext_list)))
-                    continue;
-                for (int i = 0; i <num; i++)
-                {
-                    available_key_id_t temp = {0};
-                    memcpy_s(&temp.key_id, sizeof(temp.key_id), &att_key_id_ext_list[i], sizeof(att_key_id_ext_list[i]));
-                    temp.service = service;
-                    available_key_ids.push_back(temp);
-                    AESM_DBG_INFO("quote type %d available", temp.key_id.base.algorithm_id);
+            auto service = context.GetService(sr);
+            if (service) {
+                ae_error_t service_started = service->start();
+                if (AE_SUCCESS == service_started) {
+                    uint32_t num = 0;
+                    sgx_att_key_id_ext_t att_key_id_ext_list[BUNLE_ATT_KEY_NUM_MAX] ={0};
+
+                    available_providers.push_back(service);
+                    if (AESM_SUCCESS != service->get_att_key_id_num(&num))
+                        continue;
+                    if (num > BUNLE_ATT_KEY_NUM_MAX)
+                        continue;
+                    if (AESM_SUCCESS != service->get_att_key_id((uint8_t *)att_key_id_ext_list, sizeof(att_key_id_ext_list)))
+                        continue;
+                    for (int i = 0; i <num; i++)
+                    {
+                        available_key_id_t temp = {0};
+                        memcpy_s(&temp.key_id, sizeof(temp.key_id), &att_key_id_ext_list[i], sizeof(att_key_id_ext_list[i]));
+                        temp.service = service;
+                        available_key_ids.push_back(temp);
+                        AESM_DBG_INFO("quote type %d available", temp.key_id.base.algorithm_id);
+                    }
+                }
+                else {
+                    // If the attestation type was required but the service failed to start, return error.
+                    // Otherwise ignore the failure
+                    uint16_t att_type_of_service = service->get_attestation_type();
+                    if (supported_attestation_types & att_type_of_service) {
+                        AESM_DBG_INFO("Failed to start attestation service : %d ", att_type_of_service);
+                        return service_started;
+                    }
                 }
             }
         }

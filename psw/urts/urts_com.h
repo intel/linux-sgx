@@ -329,6 +329,11 @@ static int __create_enclave(BinParser &parser,
     debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
 
     enclave->set_extra_debug_info(const_cast<secs_t &>(loader.get_secs()), loader);
+    //if enclave enables aex notify
+    if(loader.get_secs().attributes.flags & SGX_FLAGS_AEX_NOTIFY)
+    {
+        enclave->set_aex_notify(true);
+    }
 
     //add enclave to enclave pool before init_enclave because in simualtion
     //mode init_enclave will rely on CEnclavePool to get Enclave instance.
@@ -556,6 +561,12 @@ sgx_status_t _create_enclave_from_buffer_ex(const bool debug, uint8_t *base_addr
             ret = SGX_ERROR_FEATURE_NOT_SUPPORTED;
             goto clean_return;
         }
+    }
+    //AEX Notify doesn't support simulation mode
+    if((sgx_misc_attr.secs_attr.flags & SGX_FLAGS_AEX_NOTIFY) && (get_enclave_creator()->use_se_hw() == false))
+    {
+        ret = SGX_ERROR_FEATURE_NOT_SUPPORTED;
+        goto clean_return;
     }
 
     lc = new SGXLaunchToken(&metadata->enclave_css, &sgx_misc_attr.secs_attr, NULL);

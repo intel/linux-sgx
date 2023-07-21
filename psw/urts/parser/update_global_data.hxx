@@ -97,6 +97,7 @@ namespace {
         thread_data->last_sp = thread_data->stack_base_addr;
         thread_data->xsave_size = create_param->xsave_size;
         thread_data->first_ssa_gpr = (sys_word_t)create_param->ssa_base_addr + metadata->ssa_frame_size * SE_PAGE_SIZE - (uint32_t)sizeof(ssa_gpr_t);
+        thread_data->first_ssa_xsave = (sys_word_t)create_param->ssa_base_addr;
         thread_data->flags = 0;
         // TD address relative to TCS
         thread_data->tls_addr = (sys_word_t)create_param->tls_addr;
@@ -173,6 +174,7 @@ namespace {
             global_data->elrange_start_address= 0;
             global_data->elrange_size = global_data->enclave_size;
         }
+        global_data->edmm_bk_overhead = (sys_word_t)create_param->edmm_bk_overhead;
         return true;
     }
 }

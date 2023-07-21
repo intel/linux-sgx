@@ -46,6 +46,7 @@
 #define AMX_TILECFG_SHIFT 17
 #define AMX_TILEDATA_SHIFT 18
 
+#define EDECCSSA_SHIFT 11
 
 // CPUID function 1 
 // ECX[26] enums general support for XSAVE
@@ -64,6 +65,8 @@
 #define PKE_SHIFT 4
 
 bool is_se_supported();
+
+bool is_edeccssa_supported();
 
 bool try_read_xcr0(uint64_t *value);
 //bool is_se_debug_supported();

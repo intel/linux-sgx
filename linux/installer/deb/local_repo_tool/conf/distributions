@@ -40,8 +40,24 @@ DebIndices: Packages .
 
 Origin: Intel Corporation
 Label: Intel Corporation
+Codename: lunar
+Architectures: amd64
+Components: main
+Description: ubuntu/lunar repository for SGX PSW
+DebIndices: Packages .
+
+Origin: Intel Corporation
+Label: Intel Corporation
 Codename: buster
 Architectures: amd64
 Components: main
 Description: debian/buster repository for SGX PSW
+DebIndices: Packages .
+
+Origin: Intel Corporation
+Label: Intel Corporation
+Codename: bullseye
+Architectures: amd64
+Components: main
+Description: debian/bullseye repository for SGX PSW
 DebIndices: Packages .

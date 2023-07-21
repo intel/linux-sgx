@@ -160,6 +160,7 @@ EENTER_PROLOG
 
 .Lasync_exit_pointer:
     ENCLU
+    ud2
     _CET_ENDBR
 
 .size __morestack, .-__morestack

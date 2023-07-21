@@ -90,6 +90,7 @@
 #define SE_EMODPE     6
 #define SE_EACCEPTCOPY   7
 #define SE_EVERIFYREPORT2 8
+#define SE_EDECCSSA   9
 
 
 #define SE_ECREATE    0

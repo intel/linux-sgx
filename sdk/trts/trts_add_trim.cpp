@@ -261,7 +261,7 @@ sgx_status_t do_add_thread(void *ptcs)
         const volatile layout_t *layout =  get_dynamic_layout_by_id(id);
         if (layout && (layout->entry.attributes & PAGE_ATTR_DYN_THREAD))
         {
-            ret = mm_commit((void *)(enclave_base + layout->entry.rva + offset), layout->entry.page_count << SE_PAGE_SHIFT);
+            ret = mm_commit((void *)(enclave_base + layout->entry.rva + offset), (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT);
             if (ret != 0)
                 return SGX_ERROR_UNEXPECTED;
         }

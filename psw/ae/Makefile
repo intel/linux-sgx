@@ -87,10 +87,10 @@ cmake_check_fail:
 	@echo or
 	@echo yum install cmake
 	@echo with root account
-	@exit 2
+	@exit 3
 
 .PHONY: prebuilt_check_fail
 prebuilt_check_fail:
 	@echo "ERROR: Please run 'download_prebuilt.sh' to download the prebuilt AEs before compiling."
 	@echo "Exiting......"
-	@exit -2
+	@exit 3

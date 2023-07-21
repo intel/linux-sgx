@@ -61,6 +61,7 @@ typedef struct _ecall_param_t
 #define REG_XAX REG_RAX
 #define REG_XBX REG_RBX
 #define REG_XSI REG_RSI
+#define REG_XDI REG_RDI
 #define REG_XBP REG_RBP
 /*
  * refer to enter_enclave.h
@@ -75,6 +76,7 @@ typedef struct _ecall_param_t
 #define REG_XAX REG_EAX
 #define REG_XBX REG_EBX
 #define REG_XSI REG_ESI
+#define REG_XDI REG_EDI
 #define REG_XBP REG_EBP
 /*
  * refer to enter_enclave.h
@@ -129,25 +131,37 @@ void sig_handler(int signum, siginfo_t* siginfo, void *priv)
         //If exception is raised in trts again and again, the SSA will overflow, and finally it is EENTER exception.
         assert(reinterpret_cast<tcs_t *>(xbx) == param->tcs);
         CEnclave *enclave = param->trust_thread->get_enclave();
-        unsigned int ret = enclave->ecall(ECMD_EXCEPT, param->ocall_table, NULL);
-        if(SGX_SUCCESS == ret)
+        if(enclave->get_aex_notify() != true)
         {
-            //ERESUME execute
+            unsigned int ret = enclave->ecall(ECMD_EXCEPT, param->ocall_table, NULL);
+            if(SGX_SUCCESS == ret)
+            {
+                //ERESUME execute
+                return;
+            }
+            //If the exception is caused by enclave lost or internal stack overrun, then return the error code to ecall caller elegantly.
+            else if(SGX_ERROR_ENCLAVE_LOST == ret || SGX_ERROR_STACK_OVERRUN == ret)
+            {
+                //enter_enlcave function will return with ret which is from tRTS;
+                context->uc_mcontext.gregs[REG_XIP] = reinterpret_cast<greg_t>(get_eretp());
+                context->uc_mcontext.gregs[REG_XSI] = ret;
+                return;
+            }
+            //If we can't fix the exception within enclave, then give the handle to other signal hanlder.
+            //Call the previous signal handler. The default signal handler should terminate the application.
+            
+            enclave->rdunlock();
+            CEnclavePool::instance()->unref_enclave(enclave);
+        }
+        else
+        {
+            context->uc_mcontext.gregs[REG_XAX] = SE_EENTER;
+            context->uc_mcontext.gregs[REG_XDI] = ECMD_EXCEPT;
+            // This XSI parameter is not actually used by the exception handler in trts. 
+            //But it is just left here for completeness.
+            context->uc_mcontext.gregs[REG_XSI] = (size_t)(param->ocall_table);
             return;
         }
-        //If the exception is caused by enclave lost or internal stack overrun, then return the error code to ecall caller elegantly.
-        else if(SGX_ERROR_ENCLAVE_LOST == ret || SGX_ERROR_STACK_OVERRUN == ret)
-        {
-            //enter_enlcave function will return with ret which is from tRTS;
-            context->uc_mcontext.gregs[REG_XIP] = reinterpret_cast<greg_t>(get_eretp());
-            context->uc_mcontext.gregs[REG_XSI] = ret;
-            return;
-        }
-        //If we can't fix the exception within enclave, then give the handle to other signal hanlder.
-        //Call the previous signal handler. The default signal handler should terminate the application.
-        
-        enclave->rdunlock();
-        CEnclavePool::instance()->unref_enclave(enclave);
     }
     //the case of exception on EENTER instruction.
     else if(xip == get_eenterp()
@@ -304,26 +318,41 @@ static int sgx_urts_vdso_handler(long rdi, long rsi, long rdx, long ursp, long r
         //need to handle exception here
         __u64 *user_data = (__u64*)run->user_data;
         CTrustThread* trust_thread = reinterpret_cast<CTrustThread *>(user_data[1]);
+        void *ocall_table = reinterpret_cast<void *>(user_data[0]);
         if(trust_thread == NULL)
         {
             run->user_data = SGX_ERROR_UNEXPECTED;
             return 0;
         }
 
-        void *ocall_table = reinterpret_cast<void *>(user_data[0]);
-        //directly use the original tcs
-        unsigned int ret = do_ecall(ECMD_EXCEPT, ocall_table, NULL, trust_thread);
-
-        if(SGX_SUCCESS == ret)
+        CEnclave *enclave = trust_thread->get_enclave();
+        if(enclave == NULL)
         {
-            return SE_ERESUME;
+            run->user_data = SGX_ERROR_UNEXPECTED;
+            return 0;
+        }
+        if(enclave->get_aex_notify() != true)
+        {
+            //directly use the original tcs
+            unsigned int ret = do_ecall(ECMD_EXCEPT, ocall_table, NULL, trust_thread);
+
+            if(SGX_SUCCESS == ret)
+            {
+                return SE_ERESUME;
+            }
+            else
+            {
+                //for vDSO handler, we have to return error code to trts 
+                //instead of calling old signal handler if registered
+                run->user_data = (__u64)ret;
+                return 0;
+            }
         }
         else
         {
-            //for vDSO handler, we have to return error code to trts 
-            //instead of calling old signal handler if registered
-            run->user_data = (__u64)ret;
-            return 0;
+            //if vDSO is enabled, return SE_EENTER directly
+            SE_TRACE(SE_TRACE_DEBUG, "AEX-NOTIFY called, exception_addr=0x%x, exception_error_code=0x%x, exception_vector=0x%x\n", run->exception_addr, run->exception_error_code, run->exception_vector);
+            return SE_EENTER;
         }
     }
     else if(run->function == SE_EEXIT)

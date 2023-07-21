@@ -51,6 +51,7 @@ The [intel-sgx-ssl](https://github.com/intel/intel-sgx-ssl) project provides a f
 
 
 This repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
+**NOTE**: The reference LE is only workable with [linux-sgx-driver](https://github.com/intel/linux-sgx-driver) and is planned to be deprecated starting from Intel(R) SGX release 2.20.
 
 License
 -------
@@ -73,7 +74,7 @@ Quick Start with Docker and Docker Compose
 $ cd docker/build && ./build_compose_run.sh
 ```
 
-- Use prebuilt PSW and SDK downloaded from 01.org. See this [README](linux/installer/docker/README.md) for details.
+- Build and deploy SGX exclave applications using prebuilt PSW and SDK downloaded from 01.org. See this [README](linux/installer/docker/README.md) for details.
 ```
 $ cd linux/installer/docker && ./build_compose_run.sh
 ```
@@ -102,7 +103,8 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:
   * On Ubuntu 18.04 and Debian 10:
   ```
-    $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python libssl-dev git cmake perl
+    $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python3 libssl-dev git cmake perl
+    $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
   * On Ubuntu 20.04 and Ubuntu 22.04:
   ```
@@ -111,25 +113,26 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * On Red Hat Enterprise Linux 8.6:
   ```
     $ sudo yum groupinstall 'Development Tools'
-    $ sudo yum install ocaml ocaml-ocamlbuild wget python2 openssl-devel git cmake perl
-    $ sudo alternatives --set python /usr/bin/python2
+    $ sudo yum install ocaml ocaml-ocamlbuild wget python3 openssl-devel git cmake perl
+    $ sudo alternatives --set python /usr/bin/python3
   ```
   * On CentOS Stream 8 and CentOS 8.3:
   ```
     $ sudo dnf group install 'Development Tools'
-    $ sudo dnf --enablerepo=powertools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python2
-    $ sudo alternatives --set python /usr/bin/python2
+    $ sudo dnf --enablerepo=powertools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python3
+    $ sudo alternatives --set python /usr/bin/python3
   ```
-  * On Anolis 8.6: 
+  * On Anolis 8.6:
   ```
     $ sudo dnf group install 'Development Tools'
-    $ sudo dnf --enablerepo=PowerTools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python2
-    $ sudo alternatives --set python /usr/bin/python2   
+    $ sudo dnf --enablerepo=PowerTools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python3
+    $ sudo alternatives --set python /usr/bin/python3
   ```
   * On SUSE Linux Enterprise Server 15.4:
   ```
     $ sudo zypper install --type pattern devel_basis
-    $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python libopenssl-devel rpm-build git cmake perl
+    $ sudo zypper install ocaml ocaml-ocamlbuild automake autoconf libtool wget python3 libopenssl-devel rpm-build git cmake perl
+    $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
    **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above.
 - Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:
@@ -140,19 +143,19 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
       ```
       * On Ubuntu 20.04 and Ubuntu 22.04:
       ```
-        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev libboost-thread-dev protobuf-c-compiler libprotobuf-c-dev lsb-release libsystemd0
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev libboost-thread-dev lsb-release libsystemd0
       ```
       * On Red Hat Enterprise Linux 8.6:
       ```
-        $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel systemd-libs
+        $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel systemd-libs
       ```
       * On CentOS Stream 8 and CentOS 8.3:
       ```
-        $ sudo dnf --enablerepo=powertools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel systemd-libs
+        $ sudo dnf --enablerepo=powertools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel systemd-libs
       ```
       * On Anolis 8.6:
       ```
-        $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel protobuf-c-compiler protobuf-c-devel systemd-libs
+        $ sudo dnf --enablerepo=PowerTools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel systemd-libs
       ```
       * On SUSE Linux Enterprise Server 15.4:
       ```
@@ -343,24 +346,26 @@ Install the Intel(R) SGX SDK
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
-  * On Ubuntu 18.04, Ubuntu 20.04 and Debian 10:
+  * On Ubuntu 18.04 and Debian 10:
   ```
-    $ sudo apt-get install build-essential python
+    $ sudo apt-get install build-essential python3
+    $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
-   * On Ubuntu 22.04:
+   * On Ubuntu 20.04 and Ubuntu 22.04:
   ```
-    $ sudo apt-get install build-essential python2
-  ``` 
+    $ sudo apt-get install build-essential python-is-python3
+  ```
   * On Red Hat Enterprise Linux 8.6, CentOS Stream 8, CentOS 8.3 and Anolis OS 8.6:
   ```
      $ sudo yum groupinstall 'Development Tools'
-     $ sudo yum install python2
-     $ sudo alternatives --set python /usr/bin/python2
+     $ sudo yum install python3
+     $ sudo alternatives --set python /usr/bin/python3
   ```
   * On SUSE Linux Enterprise Server 15.4:
   ```
      $ sudo zypper install --type pattern devel_basis
-     $ sudo zypper install python 
+     $ sudo zypper install python3
+     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
 
 ### Install the Intel(R) SGX SDK
@@ -448,7 +453,7 @@ Install the Intel(R) SGX PSW
   ```
     $ sudo dnf --enablerepo=PowerTools install libcurl-devel protobuf-devel
   ```
-  * On SUSE Linux Enterprise Server 15.4:  
+  * On SUSE Linux Enterprise Server 15.4:
   ```
     $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel
   ```

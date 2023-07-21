@@ -46,9 +46,10 @@ RUN apt-get update && apt-get install  -y \
     ocaml \
     ocamlbuild \
     protobuf-compiler \
-    python \
+    python3 \
     reprepro \
     wget
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # We assume this docker file is invoked with root at the top of linux-sgx repo, see shell scripts for example.
 WORKDIR /linux-sgx
@@ -63,7 +64,8 @@ ENV SGX_SDK=/opt/intel/sgxsdk
 WORKDIR /linux-sgx
 RUN make psw_install_pkg
 
-RUN  make deb_local_repo
+ENV BUILD_PLATFORM="docker"
+RUN make deb_local_repo
 
 FROM ubuntu:18.04 as aesm
 RUN apt-get update && apt-get install -y \

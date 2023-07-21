@@ -70,6 +70,11 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 fi
 
 pushd $top_dir/Linux/
+patched=$(grep -c x509 build_openssl.sh)
+if [ '0' -eq $patched ]; then
+	sed -i '140a cp ../../../dcap_source/prebuilt/openssl/OpenSSL_1.1.1u_files/pcy_*.* crypto/x509v3/.' build_openssl.sh
+	sed -i '140a cp ../../../dcap_source/prebuilt/openssl/OpenSSL_1.1.1u_files/x509_vfy.c crypto/x509/.' build_openssl.sh
+fi
 if [ "$MITIGATION" != "" ]; then
         make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
 else

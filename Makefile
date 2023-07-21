@@ -49,12 +49,13 @@ tips:
 
 preparation:
 # As SDK build needs to clone and patch openmp, we cannot support the mode that download the source from github as zip.
+# Only enable the download from git
 	git submodule update --init --recursive
 	./external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
 	cd external/openmp/openmp_code && git apply ../0001-Enable-OpenMP-in-SGX.patch >/dev/null 2>&1 ||  git apply ../0001-Enable-OpenMP-in-SGX.patch --check -R
 	cd external/protobuf/protobuf_code && git apply ../sgx_protobuf.patch >/dev/null 2>&1 ||  git apply ../sgx_protobuf.patch --check -R
 	./external/sgx-emm/create_symlink.sh
-
+	cd external/mbedtls/mbedtls_code && git apply ../sgx_mbedtls.patch >/dev/null 2>&1 || git apply ../sgx_mbedtls.patch --check -R
 	@# download prebuilt binaries
 	./download_prebuilt.sh
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh

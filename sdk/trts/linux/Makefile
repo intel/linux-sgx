@@ -46,6 +46,14 @@ CXXFLAGS += -Werror $(ENCLAVE_CXXFLAGS)      \
 TCFLAGS   += -nostdinc \
              -I$(COMMON_DIR)/inc/tlibc/
 
+ifneq ($(MITIGATION-CVE-2020-0551), LOAD)
+ifneq ($(MITIGATION-CVE-2020-0551), CF)
+# Enable below flag to treat warning as error for assembly code
+# It doesn't work for mitigation mode.
+        TCFLAGS += -Wa,--fatal-warnings
+endif
+endif
+
 LDCFLAGS  := -shared -nostdlib -nodefaultlibs -nostartfiles
 
 CPP_SRCS  := $(filter-out ../trts_emm_sim.cpp, $(wildcard ../*.cpp))

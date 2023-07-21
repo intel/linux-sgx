@@ -144,10 +144,12 @@ sgx_status_t sl_init_uswitchless(sgx_enclave_id_t enclave_id, const void* config
             status = SGX_ERROR_UNEXPECTED;
             sl_uswitchless_free(uswitchless_p);
         }
+        else
+        {
+            *switchless_pp = uswitchless_p;
+        }
     }
 
-    *switchless_pp = uswitchless_p;
-    
     return status;
 }
 

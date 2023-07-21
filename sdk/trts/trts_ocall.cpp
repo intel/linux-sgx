@@ -37,6 +37,8 @@
 #include "rts.h"
 #include "util.h"
 #include "trts_internal.h"
+#include "sgx_trts.h"
+#include "sgx_trts_aex.h"
 
 extern "C" sgx_status_t asm_oret(uintptr_t sp, void *ms);
 extern "C" sgx_status_t __morestack(const unsigned int index, void *ms);
@@ -96,6 +98,15 @@ uintptr_t update_ocall_lastsp(ocall_context_t* context)
 sgx_status_t do_oret(void *ms)
 {
     thread_data_t *thread_data = get_thread_data();
+#ifndef SE_SIM
+    // If aexnotify is enabled but we disable it temporarily before EEXIT
+    // we need to enable it again after stack switch in oret
+    if(thread_data->aex_notify_flag == 1)
+    {
+        thread_data->aex_notify_flag = 0;
+        sgx_set_ssa_aexnotify(1);
+    }
+#endif
     uintptr_t last_sp = thread_data->last_sp;
     ocall_context_t *context = reinterpret_cast<ocall_context_t*>(thread_data->last_sp);
     if(0 == last_sp || last_sp <= (uintptr_t)&context)

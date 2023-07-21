@@ -1,5 +1,7 @@
 The Intel(R) Software Guard Extensions (Intel(R) SGX) Deep Neural Network Library (DNNL) is based on Intel(R) DNNL v1.1.1 (https://github.com/intel/mkl-dnn/tree/v1.1.1).
 
+**NOTE**: The SGX DNNL library is validated under GNU Compiler Collection Version <= 9.4. High GCC versions are incompatible with the current version.
+
 Build Intel(R) SGX DNNL
 1.Enter: linux-trunk/external/dnnl
 2.Execute: make

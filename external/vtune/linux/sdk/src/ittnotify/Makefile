@@ -1,4 +1,4 @@
-OBJ := ittnotify_static.o jitprofiling.o
+OBJ := ittnotify_static.o
 
 LIBNAME := libittnotify.a
 

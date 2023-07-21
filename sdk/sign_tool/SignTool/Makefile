@@ -36,7 +36,7 @@ CFLAGS   += -Werror
 
 CFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
 CXXFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
-LDFLAGS := -pie $(COMMON_LDFLAGS)
+LDFLAGS := -pie $(COMMON_LDFLAGS) -Wno-odr
 
 INC += $(ADDED_INC)
 INC +=  -I$(COMMON_DIR)/inc                         \

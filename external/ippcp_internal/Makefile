@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2023 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -75,7 +75,7 @@ all: build_ipp
 	$(MKDIR) $(OUT_DIR)
 	$(CP) ipp-crypto/build/.build/RELEASE/lib/libippcp.a $(OUT_DIR)
 	$(CP) ipp-crypto/include/* ./inc/
-	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp21u3.patch -o ./inc/ippcp.h
+	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp21u7.patch -o ./inc/ippcp.h
 	$(MKDIR) license
 	$(CP) ipp-crypto/LICENSE ./license/
 
@@ -83,13 +83,12 @@ build_ipp: $(CHECK_SOURCE)
 	cd $(IPP_SOURCE) && $(PRE_CONFIG) cmake CMakeLists.txt $(IPP_CONFIG) && cd build && make ippcp_s
 
 $(IPP_SOURCE)/build:
-## Need to enable below code when release
-#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-#	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
-#else
+ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
+else
 	$(RM) -rf $(IPP_SOURCE)
-	git clone -b ippcp_2021.3 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
-#endif
+	git clone -b ippcp_2021.7 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
+endif
 	cd $(IPP_SOURCE) && git apply ../0001-IPP-crypto-for-SGX.patch
 	mkdir -p $(IPP_SOURCE)/build
 

@@ -3,6 +3,8 @@ Purpose of Deep Neural Network Library (DNNL)
 --------------------------
 The project demonstrates Intel(R) Deep Neural Network Library (DNNL) functions inside Intel(R) SGX environment
 
+**NOTE**: The SampleDNNL project is validated under GNU Compiler Collection Version <= 9.4. High GCC versions are incompatible with the current version.
+
 ------------------------------------
 How to Build/Execute the Sample Code
 ------------------------------------

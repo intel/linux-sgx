@@ -67,12 +67,14 @@
 #define xsave_size          (SE_WORDSIZE * 7)
 #define self_addr           0
 #define stack_guard         (SE_WORDSIZE * 5)
+#define aex_notify_flag     (SE_WORDSIZE * 10)
 
 /* SSA GPR */
 #define ssa_sp_t            32
 #define ssa_sp_u            144
 #define ssa_bp_u            152
 #define ssa_exit_info       160
+#define aex_notify          167
 #endif
 
 #define EXIT_INFO_VALID     0x80000000

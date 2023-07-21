@@ -41,6 +41,7 @@ add_library(sgx_default_qcnl_wrapper SHARED ${_srcs})
 
 link_directories(
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/lib/linux64
+    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/static_out
 )
 
 target_include_directories(sgx_default_qcnl_wrapper PRIVATE
@@ -51,7 +52,17 @@ target_include_directories(sgx_default_qcnl_wrapper PRIVATE
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/common/inc/internal
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteVerification/QVL/Src/ThirdParty/rapidjson/include/rapidjson
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/inc
+    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/include
 )
+
+add_custom_target(PCKCertSelectionLib
+    COMMAND make -f ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/PCKCertSelectionLib/Makefile.static_lib
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/PCKCertSelectionLib
+)
+
+add_library(PCKCertSelectionStaticLib STATIC IMPORTED ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/static_out/libPCKCertSelection.a)
+set_target_properties(PCKCertSelectionStaticLib PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/static_out/libPCKCertSelection.a)
+add_dependencies(PCKCertSelectionStaticLib PCKCertSelectionLib)
 
 set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")
 set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_DEPENDS  
@@ -59,6 +70,6 @@ set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_DEPENDS
     )
 
 target_link_libraries(sgx_default_qcnl_wrapper
-    ${CURL_LIBRARIES} crypto
+    ${CURL_LIBRARIES} crypto PCKCertSelectionStaticLib
 )
 

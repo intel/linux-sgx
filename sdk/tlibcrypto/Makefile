@@ -88,7 +88,7 @@ LIB_NAME := libsgx_tcrypto_ipp.a
 
 endif #($(USE_CRYPTO_LIB), 0)
 
-C_Files := $(wildcard ipp/ipp_disp/*.c)
+C_Files := $(wildcard ipp/ipp_disp/intel64/*.c)
 C_OBJS  := $(C_Files:.c=.o)
 C_OBJS  := $(sort $(C_OBJS))
 
@@ -138,7 +138,7 @@ all: $(TARGET) $(DISP_LIB_NAME) | $(BUILD_DIR)
 
 .PHONY: clean
 clean:
-	@$(RM) *.o ipp/*.o ipp/ipp_disp/*.o sgxssl/*.o $(TARGET) $(BUILD_DIR)/$(TARGET) $(LIB_NAME) $(DISP_LIB_NAME) $(BUILD_DIR)/$(DISP_LIB_NAME)
+	@$(RM) *.o ipp/*.o ipp/ipp_disp/intel64/*.o sgxssl/*.o $(TARGET) $(BUILD_DIR)/$(TARGET) $(LIB_NAME) $(DISP_LIB_NAME) $(BUILD_DIR)/$(DISP_LIB_NAME)
 
 .PHONY: rebuild
 rebuild:

@@ -201,6 +201,14 @@ static aesm_error_t quote3_error_to_aesm_error(quote3_error_t input)
         ret = AESM_KEY_CERTIFICATION_ERROR;
         break;
 
+    case SGX_QL_NETWORK_ERROR:
+        ret = AESM_NETWORK_ERROR;
+        break;
+
+    case SGX_QL_MESSAGE_ERROR:
+        ret = AESM_MSG_ERROR;
+        break;
+
     default:
         ret = AESM_UNEXPECTED_ERROR;
 		break;
@@ -418,6 +426,12 @@ public:
         }
         *att_key_id_num = 1;
         return AESM_SUCCESS;
+    }
+
+    uint16_t get_attestation_type()
+    {
+        return ATTESTATION_TYPE_ECDSA;
+
     }
 };
 

@@ -47,7 +47,7 @@ LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script,sample_libcrypto.lds -Wl,--gc-
 
 OBJS := sample_libcrypto.o
 
-IPPDISP_DIR := $(LINUX_SDK_DIR)/tlibcrypto/ipp/ipp_disp
+IPPDISP_DIR := $(LINUX_SDK_DIR)/tlibcrypto/ipp/ipp_disp/intel64
 C_SRC := $(wildcard $(IPPDISP_DIR)/*.c)
 C_OBJS  := $(patsubst $(IPPDISP_DIR)/%.c, %.o, $(C_SRC))
 C_OBJS  := $(sort $(C_OBJS))

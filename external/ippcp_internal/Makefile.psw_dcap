@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2023 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -61,7 +61,7 @@ all: build_ipp
 	$(MKDIR) $(OUT_DIR)
 	$(CP) ipp-crypto/build/.build/RELEASE/lib/libippcp.a $(OUT_DIR)
 	$(CP) ipp-crypto/include/* ./inc/
-	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp21u3.patch -o ./inc/ippcp.h
+	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp21u7.patch -o ./inc/ippcp.h
 	$(MKDIR) license
 	$(CP) ipp-crypto/LICENSE ./license/
 

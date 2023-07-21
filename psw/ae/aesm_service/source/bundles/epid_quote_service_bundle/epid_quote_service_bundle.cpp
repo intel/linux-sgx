@@ -577,6 +577,12 @@ public:
             update_info, update_info_size,
             config, status);
     }
+
+    uint16_t get_attestation_type()
+    {
+        return ATTESTATION_TYPE_EPID;
+
+    }
 };
 
 class Activator : public BundleActivator

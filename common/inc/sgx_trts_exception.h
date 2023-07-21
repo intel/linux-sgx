@@ -112,12 +112,22 @@ typedef struct _exinfo_t
     uint32_t               reserved;
 }sgx_misc_exinfo_t;
 
+ __attribute__((aligned(64)))
 typedef struct _exception_info_t
 {
     sgx_cpu_context_t      cpu_context;
     sgx_exception_vector_t exception_vector;
     sgx_exception_type_t   exception_type;
     sgx_misc_exinfo_t      exinfo;
+    uint32_t               exception_valid;
+    uint32_t               do_aex_mitigation;
+    uint64_t               xsave_size;
+#if defined (_M_X64) || defined (__x86_64__)
+    uint64_t               reserved[1];
+#else
+    uint64_t               reserved[6];
+#endif
+    uint8_t                xsave_area[0];    // 64-byte aligned
 } sgx_exception_info_t;
 
 typedef int (*sgx_exception_handler_t)(sgx_exception_info_t *info);
