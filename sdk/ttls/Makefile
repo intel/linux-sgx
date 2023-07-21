@@ -57,6 +57,7 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
            -I$(SGX_QV_PATH)/dcap_tvl \
            -include./tsgxsslio.h \
            -I$(PREBUILT_OPENSSL_PATH)/inc
+INCLUDE_TDX := $(filter-out -I$(PREBUILT_OPENSSL_PATH)/inc,$(INCLUDE))
 
 CXXFLAGS_TDX := $(CXXFLAGS) $(COMMON_FLAGS) $(COMMON_LDFLAGS) -fPIC -Werror -Wno-unused-parameter -g
 CXXFLAGS += $(COMMON_FLAGS) $(ENCLAVE_CXXFLAGS)
@@ -93,7 +94,7 @@ $(OBJ): $(TLSNAME)_t.h
 $(OBJ): %.o :%.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
 $(OBJ_TDX): tdx_%.o :%.cpp
-	$(CXX) $(CXXFLAGS_TDX) $(INCLUDE) -DTDX_ENV -c $< -o $@
+	$(CXX) $(CXXFLAGS_TDX) $(INCLUDE_TDX) -DTDX_ENV -c $< -o $@
 
 .PHONY: clean
 clean:

@@ -19,7 +19,7 @@
 /linux/installer/bin/*.bin
 
 # files downloaded in preparation phase
-Intel redistributable binary.txt
+BSD-3-Clause.txt
 Master_EULA_for_Intel_Sw_Development_Products.pdf
 external/ippcp_internal/inc/ippcp.h
 external/ippcp_internal/inc/ippcpdefs.h

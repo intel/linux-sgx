@@ -48,6 +48,22 @@ bool is_se_supported()
     return true;
 }
 
+bool is_edeccssa_supported()
+{
+    if(false == is_se_supported())
+    {
+        return false;
+    }
+    
+    int cpu_info[4] = {0, 0, 0, 0};
+    __cpuidex(cpu_info, SE_LEAF, 0);
+    if (!(cpu_info[0] & (1<<EDECCSSA_SHIFT)))
+    {
+        return false;
+    }
+    return true;
+}
+
 #include "read_xcr0.h"
 bool try_read_xcr0(uint64_t *value)
 {

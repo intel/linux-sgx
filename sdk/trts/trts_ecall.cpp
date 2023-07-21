@@ -37,6 +37,7 @@
 #include "util.h"
 #include "xsave.h"
 #include "sgx_trts.h"
+#include "sgx_trts_aex.h"
 #include "sgx_lfence.h"
 #include "sgx_spinlock.h"
 #include "global_init.h"
@@ -337,6 +338,7 @@ sgx_status_t do_init_thread(void *tcs, bool enclave_init)
     thread_data->stack_limit_addr += (size_t)tcs;
     thread_data->stack_commit_addr = thread_data->stack_limit_addr;
     thread_data->first_ssa_gpr += (size_t)tcs;
+    thread_data->first_ssa_xsave += (size_t)tcs;
     thread_data->tls_array += (size_t)tcs;
     thread_data->tls_addr += (size_t)tcs;
     thread_data->last_sp -= (size_t)STATIC_STACK_SIZE;
@@ -401,6 +403,15 @@ sgx_status_t do_ecall(int index, void *ms, void *tcs)
         }
     }
     thread_data = get_thread_data();
+    // If aexnotify is enabled but we disable it temporarily before last EEXIT,
+    // we need to enable it again
+#ifndef SE_SIM
+    if(thread_data->aex_notify_flag == 1)
+    {
+        thread_data->aex_notify_flag = 0;
+        sgx_set_ssa_aexnotify(1);
+    }
+#endif
     if(thread_data->stack_base_addr == thread_data->last_sp)
     {
         //root ecall

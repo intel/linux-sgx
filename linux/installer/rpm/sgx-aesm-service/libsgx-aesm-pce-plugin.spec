@@ -38,7 +38,7 @@ Version:        @version@
 Release:        1%{?dist}
 Summary:        PCE Plugin for Intel(R) Software Guard Extensions AESM Service
 Group:          Development/System
-Requires:       sgx-aesm-service >= %{version}-%{release} libsgx-pce-logic >= 1.16
+Requires:       sgx-aesm-service >= %{version}-%{release} libsgx-pce-logic >= 1.17
 
 License:        BSD License
 URL:            https://github.com/intel/linux-sgx

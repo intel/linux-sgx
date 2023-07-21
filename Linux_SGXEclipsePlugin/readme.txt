@@ -6,7 +6,7 @@ $DELETE_CURRENT_ECLIPSE - Delete current eclipse or not. Generally this variable
 
 The following plugins are pre-requisites to be installed in Eclipse before trying to build the plugin.
 
-1. Eclipse IDE for C/C++ Developers  4.7.3.20180308-1800 (tested_version)
+1. Eclipse IDE for C/C++ Developers  4.21.0.20210910-1417 (tested_version)
 2. Eclipse PDE Plug-in Developer Resources   3.13.3.v20180301-11 (tested_version)
 
 run ./build.sh from command line under current directory.

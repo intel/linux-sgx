@@ -112,7 +112,7 @@ extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
             error = do_uninit_enclave(tcs);
         }
     }
-    else if((cssa == 1) && (index == ECMD_EXCEPT))
+    else if(cssa == 1)
     {
         error = trts_handle_exception(tcs);
         if (check_static_stack_canary(tcs) != 0)

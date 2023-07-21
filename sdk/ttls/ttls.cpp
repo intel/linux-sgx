@@ -81,7 +81,6 @@ extern "C" quote3_error_t tee_get_certificate_with_evidence(
 #else
     tdx_attest_error_t tdx_ret = TDX_ATTEST_ERROR_UNEXPECTED;
     tdx_uuid_t selected_att_key_id = { 0 };
-    SHA256_CTX sha_handle;
     tdx_report_data_t report_data = { 0 };
 #endif
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
@@ -163,17 +162,7 @@ extern "C" quote3_error_t tee_get_certificate_with_evidence(
         if (func_ret != SGX_QL_SUCCESS)
             break;
 #else
-        if (!SHA256_Init(&sha_handle)) {
-            func_ret = SGX_QL_ERROR_UNEXPECTED;
-            break;
-        }
-
-        if (!SHA256_Update(&sha_handle, p_pub_key, public_key_size)) {
-            func_ret = SGX_QL_ERROR_UNEXPECTED;
-            break;
-        }
-
-        if (!SHA256_Final(reinterpret_cast<unsigned char *>(&report_data), &sha_handle)) {
+        if (!SHA256(p_pub_key, public_key_size, reinterpret_cast<unsigned char *>(&report_data))) {
             func_ret = SGX_QL_ERROR_UNEXPECTED;
             break;
         }

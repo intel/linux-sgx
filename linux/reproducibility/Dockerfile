@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 
 RUN apt-get update \
-        && apt-get install -y curl python perl git \
+        && apt-get install -y curl python-is-python3 perl git \
         && mkdir -p /nix /etc/nix \
         && chmod a+rwx /nix \
         && echo 'sandbox = false' > /etc/nix/nix.conf \

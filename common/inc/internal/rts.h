@@ -90,6 +90,14 @@ typedef struct _system_features
 #define SYS_FEATURE_MSb     63
 #define SYS_FEATURE_EXTEND  62
 
+// feature bit in system_feature_set:
+//   bit0 - EDMM
+//   bit1 - AEXNOTIFY
+#define EDMM_BIT        0
+#define AEXNOTIFY_BIT   1
+#define EDMM_ENABLE_BIT 0x1ULL
+
+
 #define OCALL_FLAG        0x4F434944
 
 #define BUILTIN_OCALL_1  -2

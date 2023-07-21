@@ -66,6 +66,7 @@ CEnclave::CEnclave()
     , m_sealed_key(NULL)
     , m_switchless(NULL)
     , m_first_ecall(true)
+    , m_aex_notify(false)
     , m_dynamic_tcs_list_size(0)
 {
     memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
@@ -272,6 +273,18 @@ void CEnclave::set_sealed_key(uint8_t *sealed_key)
 {
     m_sealed_key = sealed_key;
 }
+
+bool CEnclave::set_aex_notify(bool flag)
+{
+    m_aex_notify = flag;
+    return true;
+}
+
+bool CEnclave::get_aex_notify()
+{
+    return m_aex_notify;
+}
+    
 
 sgx_status_t CEnclave::error_trts2urts(unsigned int trts_error)
 {

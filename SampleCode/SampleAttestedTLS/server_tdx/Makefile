@@ -35,7 +35,7 @@ all: server
 
 server:
 	$(CXX) -c -DTDX_ENV -DCLIENT_USE_QVL $(App_Cpp_Flags) server.cpp openssl_server.cpp ../common/verify_callback.cpp ../common/utility.cpp ../common/openssl_utility.cpp ../common/err_msg.cpp
-	$(CXX) -o tls_server server.o openssl_server.o verify_callback.o utility.o openssl_utility.o err_msg.o $(App_Link_Flags) -lssl -ltdx_tls -lsgx_dcap_quoteverify -l:libtdx_attest.so.1
+	$(CXX) -o tls_server server.o openssl_server.o verify_callback.o utility.o openssl_utility.o err_msg.o $(App_Link_Flags) -lssl -ltdx_tls -lsgx_dcap_quoteverify -ltdx_attest
 
 clean:
 	rm -f tls_server *.o

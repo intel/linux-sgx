@@ -51,7 +51,7 @@ typedef struct _create_param_t
     uint64_t          rsrv_init_size;
     uint64_t          rsrv_offset;
     uint64_t          rsrv_executable;
-    uint64_t          user_region_offset;
+    uint64_t          edmm_bk_overhead;
     uint64_t          user_region_size;
     uint64_t          first_ssa_gpr;
     uint64_t          td_addr;

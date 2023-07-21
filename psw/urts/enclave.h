@@ -88,6 +88,9 @@ public:
     void *get_global_data_sim_ptr();
 #endif 
     CTrustThread * get_free_tcs();
+    bool set_aex_notify(bool flag);
+    bool get_aex_notify();
+
 
 private:
     CTrustThread * get_tcs(int ecall_cmd);
@@ -117,6 +120,7 @@ private:
     uint8_t                 *m_sealed_key;
     void*                   m_switchless;
     bool                    m_first_ecall;
+    bool                    m_aex_notify;
     sgx_target_info_t       m_target_info;
     size_t                  m_dynamic_tcs_list_size;
 #ifdef SE_SIM    

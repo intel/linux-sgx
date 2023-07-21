@@ -43,7 +43,7 @@ endif
 opt_check_failed:
 	@echo "ERROR: Please run 'download_prebuilt.sh' to download the prebuilt optimized libraries before compiling."
 	@echo "Exiting......"
-	@exit -2
+	@exit 3
 
 .PHONY: all
 all: $(CHECK_OPT)

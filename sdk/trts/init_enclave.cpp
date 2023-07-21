@@ -58,10 +58,12 @@ int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
 sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
 uint64_t g_enclave_base __attribute__((section(RELRO_SECTION_NAME))) = 0;
 uint64_t g_enclave_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
+int g_aexnotify_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 
 const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0, 0,
-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0};
+   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 
+   {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0, 0};
 // Make sure to access this with atomics or the {get,set}_enclave_state assembly wrappers.
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 
@@ -82,6 +84,7 @@ extern "C" int rsrv_mem_init(void *_rsrv_mem_base, size_t _rsrv_mem_size, size_t
 #ifndef SE_SIM
 extern "C" int init_rts_emas(size_t rts_base, layout_t *start, layout_t *end);
 extern "C" int sgx_mm_init(size_t, size_t);
+extern "C" int emalloc_init_with_reserved_mem(size_t);
 #endif
 // init_enclave()
 //      Initialize enclave.
@@ -174,6 +177,8 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     {
         return -1;
     }
+    
+    g_aexnotify_supported = feature_supported((const uint64_t *)sys_features.system_feature_set, AEXNOTIFY_BIT);
 
     if (heap_init(get_heap_base(), get_heap_size(), get_heap_min_size(), EDMM_supported) != SGX_SUCCESS)
         return -1;
@@ -299,6 +304,9 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
         }
 
         if (sgx_mm_init(user_base, user_end))
+            return SGX_ERROR_UNEXPECTED;
+
+        if (emalloc_init_with_reserved_mem(g_global_data.edmm_bk_overhead))
             return SGX_ERROR_UNEXPECTED;
 
         int ret = init_rts_emas(rts_base, layout_start, layout);

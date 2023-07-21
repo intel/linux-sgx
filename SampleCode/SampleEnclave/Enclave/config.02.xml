@@ -20,6 +20,6 @@
   <TCSPolicy>1</TCSPolicy>
   <!-- Recommend changing 'DisableDebug' to 1 to make the enclave undebuggable for enclave release -->
   <DisableDebug>0</DisableDebug>
-  <MiscSelect>0</MiscSelect>
-  <MiscMask>0xFFFFFFFF</MiscMask>
+  <MiscSelect>1</MiscSelect>
+  <MiscMask>0xFFFFFFFE</MiscMask>
 </EnclaveConfiguration>

@@ -12,7 +12,7 @@
 [submodule "ipp-crypto"]
 	path = external/ippcp_internal/ipp-crypto
 	url = https://github.com/intel/ipp-crypto.git
-	branch = ipp-crypto_2021_3
+	branch = ipp-crypto_2021_7
 [submodule "external/protobuf/protobuf_code"]
 	path = external/protobuf/protobuf_code
 	url = https://github.com/protocolbuffers/protobuf.git
@@ -20,3 +20,6 @@
 [submodule "external/sgx-emm/emm_src"]
 	path = external/sgx-emm/emm_src
 	url = https://github.com/intel/sgx-emm.git
+[submodule "external/mbedtls/mbedtls_code"]
+	path = external/mbedtls/mbedtls_code
+	url = https://github.com/Mbed-TLS/mbedtls.git

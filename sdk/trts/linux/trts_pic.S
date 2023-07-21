@@ -29,7 +29,6 @@
  *
  */
 
-
 /*
  * Description:
  *     The file provides `enclave_entry' function to switch code between
@@ -191,6 +190,27 @@ DECLARE_GLOBAL_FUNC enclave_entry
     call    restore_xregs
     lfence
 
+#ifndef SE_SIM
+    mov     -3*SE_WORDSIZE(%xbp), %xax  /* cssa */
+    cmp      $0, %xax
+    jne     .Lrestore_untrust_stack
+
+    READ_TD_DATA self_addr          /* xax: td */
+    cmp     $0, %xax                /* check if td is initialized */
+    je      .Lrestore_untrust_stack
+    mov     first_ssa_gpr(%xax), %xdx
+    movb    aex_notify(%xdx), %cl
+    cmpb    $0, %cl
+    je     .Lrestore_untrust_stack
+    /*
+     * clear aexnotify bit to disable aexnotify temporarily and
+     * set td.aex_notify_flag to indicate aexnotify is enabled
+     * before EEXIT
+     */
+    movb    $0, aex_notify(%xdx)
+    movl    $0x1, aex_notify_flag(%xax)
+#endif
+.Lrestore_untrust_stack:
 /* set xdi and xsi */
     mov     $OCMD_ERET, %xdi
     mov     %xbx, %xsi
@@ -376,9 +396,22 @@ DECLARE_LOCAL_FUNC do_ocall
     mov     SE_WORDSIZE*12(%xsp), %xdi   /* restore xdi */
     mov     SE_WORDSIZE*13(%xsp), %xsi   /* restore xdi */
 #endif
-
     /* restore outside stack context */
     mov     first_ssa_gpr(%xbx), %xdx
+#ifndef SE_SIM
+    movb    aex_notify(%xdx), %cl
+    cmpb    $0, %cl
+    je     .Lrestore_outside_stack
+
+    /*
+     * clear aexnotify to disable aexnotify temporarily and
+     * set td.aex_notify_flag to indicate aexnotify is enabled
+     * before EEXIT
+     */
+    movb    $0, aex_notify(%xdx)
+    movl    $0x1, aex_notify_flag(%xbx)
+#endif
+.Lrestore_outside_stack:
     mov     ssa_bp_u(%xdx), %xbp
     mov     ssa_sp_u(%xdx), %xsp
     /*
@@ -657,4 +690,18 @@ DECLARE_LOCAL_FUNC continue_execution
     pop     %xcx                       /* restore xcx */
     pop     %xsp                       /* xsp: xax */
     xchg    %xax, %xsp
+
     ret     $(RED_ZONE_SIZE)           /* pop xip and red zone (if any) */
+
+/* 
+ * -------------------------------------------------------------------------
+ * extern "C" __attribute__((regparm(1))) void second_phase(sgx_exception_info_t *info, 
+ *   void *new_sp, void *second_phase_handler_addr);
+ * -------------------------------------------------------------------------
+ */
+DECLARE_LOCAL_FUNC second_phase
+    movq    %xsi, %xsp
+    mov     $SE_EDECCSSA, %xax
+    enclu                               /* DECCSSA */
+    jmp     *%xdx
+    

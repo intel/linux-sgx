@@ -29,10 +29,19 @@
  *
  */
 
+#pragma weak ippcpInit
 #include "ref_wl_gen.h"
+#include "ippcp.h"
+
+
 
 int main(int argc, char* argv[])
 {
+    if (ippcpInit != NULL)
+    {
+        ippcpInit();
+    }
+
     CRefWLGen ref_le_gen;
     if (ref_le_gen.run(argc, argv) == false)
         return -1;

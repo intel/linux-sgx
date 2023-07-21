@@ -41,6 +41,7 @@
 #include "se_memcpy.h"
 #include "se_detect.h"
 #include <unistd.h>
+#include "se_detect.h"
 
 #define EDMM_ENABLE_BIT 0x1ULL
 #define ARCH_REQ_XCOMP_PERM 0x1023
@@ -72,8 +73,9 @@ int EnclaveCreatorHW::initialize(sgx_enclave_id_t enclave_id)
     info.sealed_key = enclave->get_sealed_key();
     info.cpu_core_num = (uint32_t)sysconf(_SC_NPROCESSORS_ONLN);
     if (is_EDMM_supported(enclave_id))
-            info.system_feature_set[0] |= EDMM_ENABLE_BIT;
-
+        info.system_feature_set[0] |= EDMM_ENABLE_BIT;
+    if (enclave->get_aex_notify() == true)
+        info.system_feature_set[0] |= (1ULL << AEXNOTIFY_BIT);
 
     int status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
     //free the tcs used by initialization;
@@ -163,6 +165,13 @@ int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
             return SGX_ERROR_UNEXPECTED;
         }
     }
+    //if the enclave requires aex notify support, need to check the platform supports edeccssa or not
+    if(((secs_attr->flags & SGX_FLAGS_AEX_NOTIFY) != false) && (is_edeccssa_supported() == false))
+    {
+        SE_TRACE(SE_TRACE_WARNING, "the enclave requires AEX Notify support, but the platform doesn't support EDECCSSA.\n");
+        return SGX_ERROR_UNEXPECTED;
+    }
+
     // try to use maximum ablity of cpu
     sgx_misc_attr->misc_select = se_cap.misc_select & enclave_css->body.misc_select;
 

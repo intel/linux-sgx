@@ -223,3 +223,20 @@ size_t get_xsave_size()
 {
     return (size_t)g_global_data.td_template.xsave_size;
 }
+
+int get_ssa_aexnotify()
+{
+    int flag = 0;
+    thread_data_t *thread_data = get_thread_data();
+    ssa_gpr_t *ssa_gpr = NULL;
+
+    if(thread_data == NULL)
+    {
+        return 0;
+    }
+
+    ssa_gpr = reinterpret_cast<ssa_gpr_t *>(thread_data->first_ssa_gpr);
+    flag = ssa_gpr->aex_notify & SSA_AEXNOTIFY_MASK;
+
+    return flag;
+}

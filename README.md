@@ -51,6 +51,7 @@ The [intel-sgx-ssl](https://github.com/intel/intel-sgx-ssl) project provides a f
 
 
 This repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.
+**NOTE**: The reference LE is only workable with [linux-sgx-driver](https://github.com/intel/linux-sgx-driver) and is planned to be deprecated starting from Intel(R) SGX release 2.20.
 
 License
 -------
@@ -73,7 +74,7 @@ Quick Start with Docker and Docker Compose
 $ cd docker/build && ./build_compose_run.sh
 ```
 
-- Use prebuilt PSW and SDK downloaded from 01.org. See this [README](linux/installer/docker/README.md) for details.
+- Build and deploy SGX exclave applications using prebuilt PSW and SDK downloaded from 01.org. See this [README](linux/installer/docker/README.md) for details.
 ```
 $ cd linux/installer/docker && ./build_compose_run.sh
 ```

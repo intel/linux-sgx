@@ -15,4 +15,5 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linuxLOAD/libsgx_ttls.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_ttls.a	0	main	STP
 <deliverydir>/build/linuxLOAD/libtdx_tls.a	<installdir>/package/lib64/cve_2020_0551_load/libtdx_tls.a	0	main	STP
 <deliverydir>/build/linuxLOAD/libsgx_utls.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_utls.a	0	main	STP
+<deliverydir>/build/linuxLOAD/libsgx_mbedcrypto.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_mbedcrypto.a	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/build/linuxLOAD/libsgx_dcap_tvl.a	<installdir>/package/lib64/cve_2020_0551_load/libsgx_dcap_tvl.a	0	main	STP

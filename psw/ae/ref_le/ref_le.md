@@ -1,5 +1,7 @@
 # Intel(R) SGX Reference Launch Enclave
 
+**NOTE**: The reference LE is only workable with [linux-sgx-driver](https://github.com/intel/linux-sgx-driver) and is planned to be deprecated starting from Intel(R) SGX release 2.20.
+
 ## Introduction
 A Launch Enclave (LE) is a special type of enclave, generates a Launch Token for other enclave to be initialized. The generated Launch Token is used by the Platform Software as part of the data passed to the driver on EINIT flow.  
 The Launch Enclave role is divided to two parts:  
