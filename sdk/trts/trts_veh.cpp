@@ -260,18 +260,18 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
         }
         thread_data->aex_notify_entropy_remaining = 31;
     }
-    code_tickle_page |= thread_data->aex_notify_entropy_cache & 1;
+    code_tickle_page |= (thread_data->aex_notify_entropy_cache & 1) << 4;
     thread_data->aex_notify_entropy_cache >>= 1;
 
     // There are three additional "implicit" parameters to this function:
     // 1. The low-order bit of `stack_tickle_pages` is 1 if a second stack
     //    page should be tickled (specifically, the stack page immediately
     //    below the page specified in the upper bits)
-    // 2. The low-order bit of `code_tickle_page` is 1 if the cycle delay
-    //    should be added to the mitigation
-    // 3. The low-order bit of `data_tickle_page` is 1 if `data_tickle_page`
+    // 2. Bit 0 of `code_tickle_page` is 1 if `data_tickle_address`
     //    is writable, and therefore should be tested for write permissions
     //    by the mitigation
+    // 3. Bit 4 of `code_tickle_page` is 1 if the cycle delay
+    //    should be added to the mitigation
     constant_time_apply_sgxstep_mitigation_and_continue_execution(
                     info, thread_data->first_ssa_gpr + offsetof(ssa_gpr_t, aex_notify),
                     stack_tickle_pages, code_tickle_page,

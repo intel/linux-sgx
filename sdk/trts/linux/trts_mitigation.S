@@ -83,11 +83,11 @@ aex_notify_c3_cache:
  *      1. The low-order bit of `stack_tickle_pages` is 1 if a second stack
  *         page should be tickled (specifically, the stack page immediately
  *         below the page specified in the upper bits)
- *      2. The low-order bit of `code_tickle_page` is 1 if the cycle delay
- *         should be added to the mitigation
- *      3. The low-order bit of `data_tickle_page` is 1 if `data_tickle_page`
+ *      2. Bit 0 of `code_tickle_page` is 1 if `data_tickle_address`
  *         is writable, and therefore should be tested for write permissions
  *         by the mitigation
+ *      3. Bit 4 of `code_tickle_page` is 1 if the cycle delay
+ *         should be added to the mitigation
  *
  *  Stack:
  *        bottom of stack ->  ---------------------------
@@ -286,7 +286,13 @@ DECLARE_LOCAL_FUNC constant_time_apply_sgxstep_mitigation_and_continue_execution
     mov     RSVD_DATA_TICKLE_OFFSET(%rsp), %rdx
     mov     RSVD_C3_ADDRESS_OFFSET(%rsp), %rdi
 
-# Restore flags
+# Set up the stack tickles
+    shrb    $1, %bpl # Bit 0 in %rbp indicates whether a second stack page can be tickled
+    mov     %rbp, %rbx
+    jnc     .restore_flags
+    sub     $0x1000, %rbx
+
+.restore_flags:
     lea     RSVD_FLAGS_OFFSET(%rsp), %rax
     xchg    %rax, %rsp
     popf
@@ -308,63 +314,38 @@ DECLARE_LOCAL_FUNC constant_time_apply_sgxstep_mitigation_and_continue_execution
 
     .global __ct_mitigation_begin
 __ct_mitigation_begin:
-# Step 1: Inject random cycle noise
-    movzx %sil, %rcx # The lowest byte in %xsi indicates whether cycles should be added
-    mov   $0, %sil
     lfence
-    jrcxz  .ct_set_up_tickles
-    CYCLE_DELAY 20, %rax
 
-.ct_set_up_tickles:
-    lfence
-    movzx   %bpl, %rcx # The lowest byte in %rbp indicates whether a second stack page can be tickled
-    jrcxz   .ct_set_up_tickles_with_one_stack_page
-    mov     $0x00, %bpl
-    lea     -0x1000(%rbp), %rbx
-    jmp .ct_warm_caches_and_tlbs
-.ct_set_up_tickles_with_one_stack_page:
-    lea     0x08(%rbp), %rbx
+.ct_check_write:
+    movl    $63, %ecx
+    shlx    %rcx, %rsi, %rcx # Bit 0 in %rsi indicates whether data_tickle_address can be written
+    jrcxz   .ct_clear_low_bits_of_rdx
+    lea     -1(%rsi), %rsi   # Clear bit 0 in %rsi
+    movb    (%rdx), %al
+    movb    %al, (%rdx)      # Will fault if the data page is not writable
+
+.ct_clear_low_bits_of_rdx:
+    movl    $12, %ecx
+    shrx    %rcx, %rdx, %rdx
+    shlx    %rcx, %rdx, %rdx
+
+.ct_check_execute:
+    call    *%rdi
 
 # Load all working set cache lines and warm the TLB entries
+    mov     $0x1000, %ecx
+.align 0x10
 .ct_warm_caches_and_tlbs:
-    movzx   %dl, %rcx # The lowest byte in %rdx indicates whether data_tickle_page can be written to
-    mov     $0x10, %dl # avoid sequencing uops, in case rbp and rdx alias
-    jrcxz   .ct_warm_caches_and_tlbs_data_read_pre
-
-.ct_warm_caches_and_tlbs_data_write_pre:
-    mov     $0x1000, %ecx
-.align 0x10
-.ct_warm_caches_and_tlbs_data_write:
     lea     -0x40(%ecx), %ecx
-    call    *%rdi
     mov     (%rsi, %rcx), %eax
     mov     (%rbp, %rcx), %eax
-    mov     %eax, (%rbp, %rcx)
     mov     (%rbx, %rcx), %eax
-    mov     %eax, (%rbx, %rcx)
-    mov     (%rdx, %rcx), %eax
-    mov     %eax, (%rdx, %rcx)
-    jrcxz   .ct_restore_state
-    jmp     .ct_warm_caches_and_tlbs_data_write # loops 64 times
-
-// This block is identical to the previous one, except that it doesn't write
-// to data_tickle_page.
-.ct_warm_caches_and_tlbs_data_read_pre:
-    mov     $0x1000, %ecx
-.align 0x10
-.ct_warm_caches_and_tlbs_data_read:
-    lea     -0x40(%ecx), %ecx
-    call    *%rdi
-    mov     (%rsi, %rcx), %eax
-    mov     (%rbp, %rcx), %eax
-    mov     %eax, (%rbp, %rcx)
-    mov     (%rbx, %rcx), %eax
-    mov     %eax, (%rbx, %rcx)
     mov     (%rdx, %rcx), %eax
     jrcxz   .ct_restore_state
-    jmp     .ct_warm_caches_and_tlbs_data_read # loops 64 times
+    jmp     .ct_warm_caches_and_tlbs # loops 64 times
 
 .ct_restore_state:
+    movzx   %sil, %ecx # Bit 4 of %sil indicates whether cycles should be added
     mov     RSVD_REDZONE_WORD_OFFSET(%rsp), %rdi
     mov     %rdi, -SE_WORDSIZE(%rsp) # restore the first q/dword of the red zone
     mov     RSVD_RDI_OFFSET(%rsp), %rdi
@@ -372,8 +353,14 @@ __ct_mitigation_begin:
     mov     RSVD_RBP_OFFSET(%rsp), %rbp
     mov     RSVD_RBX_OFFSET(%rsp), %rbx
     mov     RSVD_RDX_OFFSET(%rsp), %rdx
-    mov     RSVD_RCX_OFFSET(%rsp), %rcx
     mov     RSVD_RAX_OFFSET(%rsp), %rax
+
+# Inject random cycle noise
+    jrcxz  .ct_restore_rcx
+    CYCLE_DELAY 20, %rsp
+
+.ct_restore_rcx:
+    mov     RSVD_RCX_OFFSET(%rsp), %rcx
 __ct_mitigation_end:
     jmp     *RSVD_RIP_OFFSET(%rsp)
 
