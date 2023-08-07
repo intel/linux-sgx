@@ -55,6 +55,7 @@
 #include "emm_private.h"
 #include "sgx_mm_rt_abstraction.h"
 #include "sgx_trts_aex.h"
+#include "ctd.h"
 
 #include "se_memcpy.h"
 typedef struct _handler_node_t
@@ -199,18 +200,30 @@ extern "C" __attribute__((regparm(1))) void continue_execution(sgx_exception_inf
 extern "C" void restore_xregs(uint8_t *buf);
 
 extern "C" void constant_time_apply_sgxstep_mitigation_and_continue_execution(sgx_exception_info_t *info,
-        uintptr_t ssa_aexnotify_addr, uintptr_t stack_tickle_pages, uintptr_t code_tickle_page, uintptr_t data_tickle_page, uintptr_t c3_byte_address);
+        uintptr_t ssa_aexnotify_addr, uintptr_t stack_tickle_pages, uintptr_t code_tickle_page, uintptr_t data_tickle_address, uintptr_t c3_byte_address);
 
+// constant time select based on given condtion
+static inline uint64_t cselect64(uint64_t pred, const uint64_t expected, uint64_t old_val, uint64_t new_val)
+{
+    __asm__("cmp %3, %1\n\t"
+            "cmove %2, %0"
+            : "+rm"(new_val)
+            : "rm"(pred), "rm"(old_val), "ri"(expected));
+    return new_val;
+}
 
 // apply the constant time mitigation handler
 static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_exception_info_t *info)
 {
     thread_data_t *thread_data = get_thread_data();
-    uintptr_t code_tickle_page, c3_byte_address, stack_tickle_pages, data_tickle_page,
+    int ct_result;
+    uint64_t data_address;
+    uintptr_t code_tickle_page, c3_byte_address, stack_tickle_pages, data_tickle_address,
               stack_base_page = ((thread_data->stack_base_addr & ~0xFFF) == 0) ?
                   (thread_data->stack_base_addr) - 0x1000 :
                   (thread_data->stack_base_addr & ~0xFFF),
               stack_limit_page = thread_data->stack_limit_addr & ~0xFFF;
+    int data_tickle_address_is_within_enclave;
 
     // Determine which stack pages can be tickled
     if (((uintptr_t)info & ~0xFFF) == stack_base_page) {
@@ -231,11 +244,6 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
         stack_tickle_pages = (((uintptr_t)info & ~0xFFF) + 0x1000) | 1;
     }
 
-    // Determine which data page can be tickled.
-    // FIXME: This will eventually call the CTD to obtain the page. For
-    // now, we redundantly tickle a stack page.
-    data_tickle_page = stack_tickle_pages & ~1;
-
     // Look up the code page in the c3 cache
     code_tickle_page = info->cpu_context.REG(ip) & ~0xFFF;
     c3_byte_address = code_tickle_page + *(aex_notify_c3_cache + ((code_tickle_page >> 12) & 0x07FF));
@@ -250,6 +258,29 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
                 (uint16_t)(c3_byte_address & 0xFFF);
         }
     }
+
+    ct_result = ct_decode(&info->cpu_context, &data_address);
+
+    data_tickle_address = stack_tickle_pages & ~0x1;
+    data_tickle_address = cselect64(ct_result, 1, data_address, data_tickle_address);
+    data_tickle_address = cselect64(ct_result, 2, data_address, data_tickle_address);
+    data_tickle_address_is_within_enclave =
+		sgx_is_within_enclave((void*) data_tickle_address, sizeof(uint8_t));
+
+    /*
+     * Ensure the tickle page dereferenced by the mitigation lies _inside_ the enclave.
+     *
+     * NOTE:
+     *  - Unguarded user memory accesses can leak through MMIO stale data.
+     *  - User memory accesses are detectable and single-steppable anyway.
+     *  - Below non-cst time check can only ever be false when the next enclave
+     *    instruction will dereference user memory (trivially known to attacker).
+     */
+    data_tickle_address = data_tickle_address_is_within_enclave ?
+                          data_tickle_address : stack_tickle_pages & ~0x1;
+
+    code_tickle_page = cselect64(ct_result, 2, code_tickle_page | 0x1, code_tickle_page);
+    code_tickle_page = cselect64(data_tickle_address_is_within_enclave, 1, code_tickle_page, code_tickle_page & ~0x1);
 
     // Pop an entropy byte from the entropy cache
     if (--thread_data->aex_notify_entropy_remaining < 0) {
@@ -275,7 +306,7 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
     constant_time_apply_sgxstep_mitigation_and_continue_execution(
                     info, thread_data->first_ssa_gpr + offsetof(ssa_gpr_t, aex_notify),
                     stack_tickle_pages, code_tickle_page,
-                    data_tickle_page, c3_byte_address);
+                    data_tickle_address, c3_byte_address);
 }
 
 //      the 2nd phrase exception handing, which traverse registered exception handlers.
