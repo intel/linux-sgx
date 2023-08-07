@@ -1,0 +1,34 @@
+#!/bin/bash
+export CTD_BIN=../
+python3 -u test_op3_38.py 0 > test_op3_380.txt 2>&1 &
+python3 -u test_op3_38.py 1 > test_op3_381.txt 2>&1 &
+python3 -u test_op3_38.py 2 > test_op3_382.txt 2>&1 &
+python3 -u test_op3_38.py 3 > test_op3_383.txt 2>&1 &
+python3 -u test_op3_38.py 4 > test_op3_384.txt 2>&1 &
+python3 -u test_op3_38.py 5 > test_op3_385.txt 2>&1 &
+python3 -u test_op3_38.py 6 > test_op3_386.txt 2>&1 &
+python3 -u test_op3_38.py 7 > test_op3_387.txt 2>&1 &
+python3 -u test_op3_38.py 8 > test_op3_388.txt 2>&1 &
+python3 -u test_op3_38.py 9 > test_op3_389.txt 2>&1 &
+python3 -u test_op3_38.py 10 > test_op3_38a.txt 2>&1 &
+python3 -u test_op3_38.py 11 > test_op3_38b.txt 2>&1 &
+python3 -u test_op3_38.py 12 > test_op3_38c.txt 2>&1 &
+python3 -u test_op3_38.py 13 > test_op3_38d.txt 2>&1 &
+python3 -u test_op3_38.py 14 > test_op3_38e.txt 2>&1 &
+python3 -u test_op3_38.py 15 > test_op3_38f.txt 2>&1 &
+python3 -u test_op3_3a.py 0 > test_op3_3a0.txt 2>&1 &
+python3 -u test_op3_3a.py 1 > test_op3_3a1.txt 2>&1 &
+python3 -u test_op3_3a.py 2 > test_op3_3a2.txt 2>&1 &
+python3 -u test_op3_3a.py 3 > test_op3_3a3.txt 2>&1 &
+python3 -u test_op3_3a.py 4 > test_op3_3a4.txt 2>&1 &
+python3 -u test_op3_3a.py 5 > test_op3_3a5.txt 2>&1 &
+python3 -u test_op3_3a.py 6 > test_op3_3a6.txt 2>&1 &
+python3 -u test_op3_3a.py 7 > test_op3_3a7.txt 2>&1 &
+python3 -u test_op3_3a.py 8 > test_op3_3a8.txt 2>&1 &
+python3 -u test_op3_3a.py 9 > test_op3_3a9.txt 2>&1 &
+python3 -u test_op3_3a.py 10 > test_op3_3aa.txt 2>&1 &
+python3 -u test_op3_3a.py 11 > test_op3_3ab.txt 2>&1 &
+python3 -u test_op3_3a.py 12 > test_op3_3ac.txt 2>&1 &
+python3 -u test_op3_3a.py 13 > test_op3_3ad.txt 2>&1 &
+python3 -u test_op3_3a.py 14 > test_op3_3ae.txt 2>&1 &
+python3 -u test_op3_3a.py 15 > test_op3_3af.txt 2>&1 &

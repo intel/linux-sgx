@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2023 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,61 +29,46 @@
  *
  */
 
-/**
- * File: ctd.h
- * Description:
- *     Constant-time decoder header
- */
 
-#ifndef _CTD_H_
-#define _CTD_H_
-#ifdef CTD_UNIT_TEST
-#include<stdio.h>
-#include<stdlib.h>
-#include<stdint.h>
-#endif
-#ifndef CTD_UNIT_TEST
-#include "se_types.h"
-#include "sgx_trts_exception.h"
-#include "se_cpu_feature.h"
+#ifndef _APP_H_
+#define _APP_H_
+
+#include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+
+#include "sgx_error.h"       /* sgx_status_t */
+#include "sgx_eid.h"     /* sgx_enclave_id_t */
+
+#ifndef TRUE
+# define TRUE 1
 #endif
 
-#ifndef _SGX_TRTS_EXCEPTION_H_
-typedef struct _cpu_context_t
-{
-    uint64_t rax;
-    uint64_t rcx;
-    uint64_t rdx;
-    uint64_t rbx;
-    uint64_t rsp;
-    uint64_t rbp;
-    uint64_t rsi;
-    uint64_t rdi;
-    uint64_t r8;
-    uint64_t r9;
-    uint64_t r10;
-    uint64_t r11;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
-    uint64_t rflags;
-    uint64_t rip;
-} sgx_cpu_context_t;
+#ifndef FALSE
+# define FALSE 0
 #endif
-#ifdef __cplusplus
+
+# define TOKEN_FILENAME   "enclave.token"
+# define ENCLAVE_FILENAME "enclave.signed.so"
+
+extern sgx_enclave_id_t global_eid;    /* global enclave id */
+
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
-/**
- * @brief our function to disassemble one instruction from the given input
- * One x64 instruction has at most 15 bytes, and our current output takes 12 bytes
- *
- */
-int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr);
+void edger8r_array_attributes(void);
+void edger8r_type_attributes(void);
+void edger8r_pointer_attributes(void);
+void edger8r_function_attributes(void);
 
-#ifdef __cplusplus
+void ecall_libc_functions(void);
+void ecall_libcxx_functions(void);
+void ecall_thread_functions(void);
+
+#if defined(__cplusplus)
 }
 #endif
 
-#endif
+#endif /* !_APP_H_ */

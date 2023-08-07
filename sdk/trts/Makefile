@@ -80,6 +80,9 @@ $(OBJS4): %.o: %.c
 	$(CC) -mavx2 -O3 -masm=intel $(filter-out -O2,$(CFLAGS)) $(TCFLAGS) \
 		-I$(COMMON_DIR)/inc/internal -I$(COMMON_DIR)/inc -c $< -o $@
 
+ctd_test: ctd.c
+	$(CC) -mavx2 -O3 -masm=intel -DCTD_UNIT_TEST=1 $< -o $@
+
 .PHONY: elf_parser
 elf_parser: $(OBJS)
 	$(MAKE) -C linux

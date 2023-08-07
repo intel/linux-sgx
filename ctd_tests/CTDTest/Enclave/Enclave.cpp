@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2023 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,61 +29,37 @@
  *
  */
 
-/**
- * File: ctd.h
- * Description:
- *     Constant-time decoder header
- */
-
-#ifndef _CTD_H_
-#define _CTD_H_
-#ifdef CTD_UNIT_TEST
-#include<stdio.h>
-#include<stdlib.h>
-#include<stdint.h>
-#endif
-#ifndef CTD_UNIT_TEST
-#include "se_types.h"
+#include "Enclave_t.h"
+#include "sgx_trts.h"
 #include "sgx_trts_exception.h"
-#include "se_cpu_feature.h"
-#endif
+#include "sgx_trts_aex.h"
+#include "../TestStructure.h"
+#include <assert.h>
 
-#ifndef _SGX_TRTS_EXCEPTION_H_
-typedef struct _cpu_context_t
-{
-    uint64_t rax;
-    uint64_t rcx;
-    uint64_t rdx;
-    uint64_t rbx;
-    uint64_t rsp;
-    uint64_t rbp;
-    uint64_t rsi;
-    uint64_t rdi;
-    uint64_t r8;
-    uint64_t r9;
-    uint64_t r10;
-    uint64_t r11;
-    uint64_t r12;
-    uint64_t r13;
-    uint64_t r14;
-    uint64_t r15;
-    uint64_t rflags;
-    uint64_t rip;
-} sgx_cpu_context_t;
-#endif
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern uint32_t test_data;
 
-/**
- * @brief our function to disassemble one instruction from the given input
- * One x64 instruction has at most 15 bytes, and our current output takes 12 bytes
- *
- */
-int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr);
+extern "C" uint64_t asm_test(test_cpu_context_t *ctx1, test_cpu_context_t *ctx2, uint32_t *addr);
 
-#ifdef __cplusplus
+int ud_handler(sgx_exception_info_t *info) {
+	if (*((unsigned short *)info->cpu_context.rip) == 0x0B0F) {
+		info->cpu_context.rip += 2;
+		return -1;
+	}
+	return 0;
 }
-#endif
 
-#endif
+void init() {
+	assert(sgx_register_exception_handler(1 /* is_first_handler */, ud_handler));
+}
+
+uint64_t test(test_cpu_context_t *ctx1, test_cpu_context_t *ctx2) {
+	uint64_t ret;
+	sgx_set_ssa_aexnotify(1);
+	ret = asm_test(ctx1, ctx2, &test_data);
+	sgx_set_ssa_aexnotify(0);
+	return ret;
+}
+
+uint64_t get_test_address() {
+	return (uint64_t)&test_data;
+}

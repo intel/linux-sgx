@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2023 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2020 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -68,7 +68,7 @@ typedef struct _cpu_context_t
     uint64_t r14;
     uint64_t r15;
     uint64_t rflags;
-    uint64_t rip;
+    uint8_t* rip;
 } sgx_cpu_context_t;
 #endif
 #ifdef __cplusplus

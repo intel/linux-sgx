@@ -1,45 +1,23 @@
-/*
- * Copyright (C) 2011-2023 Intel Corporation. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in
- *     the documentation and/or other materials provided with the
- *     distribution.
- *   * Neither the name of Intel Corporation nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- */
-
 /**
- * File: ctd.c
- * Description:
- *     Implements the constant-time instruction decoder for AEX-Notify
+ * @file dis_main.c
+ * @author Xiang Cheng (xiang.cheng@intel.com)
+ * @brief
+ * @version 0.1
+ * @date 2022-06-10
+ *
+ * @copyright Copyright (c) 2022
+ *
+ * I think the minimum CPU flag we need is AVX2
+ *
  */
-
+#include <immintrin.h>
 #include "ctd.h"
-
+#include<string.h>
+#define DUDECT_IMPLEMENTATION
+#include "dudect.h"
 #define NUM_MM_REGS 16
 
-#ifdef CTD_UNIT_TEST
+
 
 #ifndef SAMPLES
 #define SAMPLES         100000
@@ -47,23 +25,9 @@
 #endif
 
 
-typedef struct
-{
-    uint32_t base;         // base register, 17 for rip
-    uint32_t index;        // index register, 0xff for none
-    uint32_t scale;        // scale, 2^scale for value, 0xff for none
-    int32_t disp;          // displacement, 0 for default
-    uint32_t opsize;       // unstable, don't use
-    uint8_t memory_access; // 0-no memory access, 1-read, 2-write
-    uint8_t fs;            // fs prefix rewrite
-    uint8_t gs;            // gs prefix rewrite
-    uint8_t addrsize;      // addressing mode rewrite
-    uint8_t string_instruction; // if it's string related instruction
-    uint32_t inst_length;
-    uint8_t stack_instruction; // if it's a stack related instruction
-} addr_info_t;
-static addr_info_t addr_info;
-#endif
+
+
+
 
 typedef long long __m128i __attribute__((__vector_size__(16), __may_alias__));
 typedef long long __m256i __attribute__((__vector_size__(32), __may_alias__));
@@ -104,7 +68,7 @@ typedef int __v8si __attribute__((__vector_size__(32)));
  *                          case "1": word
  *                          case "2": dword/fword
  *                          case "3": qword
- *                  b = 2: string related instructions:
+ *                  b = 2: string related instructions: https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/9
  *                      There are 5 sets of instructions(6c/6d/6e/6f/aa/ab/ac/ad/ae/af), both accessing either [RDI] or [RSI].
  *                      c: means the register to access:
  *                          0 => RSI
@@ -113,7 +77,7 @@ typedef int __v8si __attribute__((__vector_size__(32)));
  *                      d: means accessing mod:
  *                          0 => read
  *                          1 => write
- *                  b = 3: stack instructions: call/push:
+ *                  b = 3: stack instructions: call/push: https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/14
  *                      all these instructions will access [RSP] with WRITE
  *
  *        case "3": extended map for 1 opcode, refer to Section 2 A.4
@@ -704,6 +668,8 @@ static uint8_t extended[256] = {
         0x80, // 0xff
 };
 
+// static uint64_t extension_1op_table = 0xaaa9aaa24055a558;
+
 static uint64_t extension_1op_table = 0x155a55a5aaaa6aaa;
 
 static inline uint32_t opcode1byte_extension_lookup(uint8_t tblp, uint8_t moderm_reg)
@@ -763,10 +729,10 @@ static uint8_t extension_2op_table[16] = {
 
 #define _mm_or_si128(val1, val2) ((__m128i)((__v2du)val1 | (__v2du)val2))
 
-extern __inline __m128i __attribute__((__gnu_inline__, __always_inline__, __artificial__)) _mm_loadu_si128 (__m128i_u const *__P)
-{
-    return *__P;
-}
+// extern __inline __m128i __attribute__((__gnu_inline__, __always_inline__, __artificial__)) _mm_loadu_si128 (__m128i_u const *__P)
+// {
+//     return *__P;
+// }
 
 #define _mm256_set1_epi64x(val1) (__extension__(__m256i)(__v4di){val1, val1, val1, val1})
 
@@ -806,20 +772,23 @@ static inline uint32_t opcode2byte_extension_lookup(uint8_t tblp_t, uint8_t mode
  */
 static inline uint32_t cselect(uint64_t pred, uint32_t old_val, uint32_t new_val)
 {
-    __asm__("cmp %1, 0\n\t"
-            "cmovne %0, %2"
-            : "+rm"(new_val)
-            : "rm"(pred), "rm"(old_val));
-    return new_val;
+    // asm(".intel_syntax noprefix\n" 
+    //         "cmp %1, 0\n"
+    //         "cmovne %0, %2"
+    //         : "+rm"(new_val)
+    //         : "rm"(pred), "rm"(old_val));
+    return pred?old_val:new_val;
 }
+//#endif
 
 static inline int32_t cselect32(uint64_t pred, int32_t old_val, int32_t new_val)
 {
-    __asm__("cmp %1, 0\n\t"
-            "cmovne %0, %2"
-            : "+rm"(new_val)
-            : "rm"(pred), "rm"(old_val));
-    return new_val;
+    // asm(".intel_syntax noprefix\n"
+    //         "cmp %1, 0\n"
+    //         "cmovne %0, %2"
+    //         : "+rm"(new_val)
+    //         : "rm"(pred), "rm"(old_val));
+    return pred?old_val:new_val;
 }
 static inline uint64_t cselect64(uint64_t pred, const uint64_t expected, uint64_t old_val, uint64_t new_val) __attribute__((always_inline));
 /**
@@ -834,20 +803,20 @@ static inline uint64_t cselect64(uint64_t pred, const uint64_t expected, uint64_
  */
 static inline uint64_t cselect64(uint64_t pred, const uint64_t expected, uint64_t old_val, uint64_t new_val)
 {
-    __asm__("cmp %1, %3\n\t"
-            "cmove %0, %2"
-            : "+rm"(new_val)
-            : "rm"(pred), "rm"(old_val), "irm"(expected));
-    return new_val;
+    // __asm__("cmp %1, %3\n\t"
+    //         "cmove %0, %2"
+    //         : "+rm"(new_val)
+    //         : "rm"(pred), "rm"(old_val), "irm"(expected));
+    return pred == expected?old_val:new_val;
 }
 
 static inline int64_t cselect64s(uint64_t pred, int64_t old_val, int64_t new_val)
 {
-    __asm__("cmp %1, 0\n\t"
-            "cmovne %0, %2"
-            : "+rm"(new_val)
-            : "rm"(pred), "rm"(old_val));
-    return new_val;
+    // __asm__("cmp %1, 0\n\t"
+    //         "cmovne %0, %2"
+    //         : "+rm"(new_val)
+    //         : "rm"(pred), "rm"(old_val));
+    return pred?old_val:new_val;
 }
 
 /**
@@ -958,12 +927,12 @@ static inline uint64_t prefix_op1_lookup(uint64_t prs)
     uint64_t ans = 0;
     __m128i mask = _mm_set1_epi8((char)0xf0);
     __m128i op1_h4b = _mm_and_si128(mask, query);
-    __m128i op1_l4b = (__m128i)__builtin_ia32_pandn128((__v2di)mask, (__v2di)query);
+    __m128i op1_l4b = _mm_andnot_si128(mask, query);
     for (char i = 0; i < 16; i++)
     {
         __m128i rmask = _mm_cmpeq_epi8(op1_h4b, _mm_set1_epi8((char)(i << 4)));
         // here another way is to use _mm_andnot_si128, I tried on test server, doesn't have much differences
-        rmask = (__m128i)__builtin_ia32_pandn128((__v2di)rmask, (__v2di)_mm_set1_epi8((char)0x80));
+        rmask = (__m128i)_mm_andnot_si128((__v2di)rmask, (__v2di)_mm_set1_epi8((char)0x80));
         rmask = _mm_or_si128(rmask, op1_l4b);
         __m128i tb = _mm_loadu_si128(table + i);
         __m128i res = (__m128i)__builtin_ia32_pshufb128((__v16qi)tb, (__v16qi)rmask);
@@ -1003,18 +972,18 @@ static inline __m128i prefix_op1_op2_lookup(uint64_t op1)
     __m128i *table2 = (__m128i *)extended;
     __m256i mask = _mm256_set1_epi8((char)0xf0);
     __m256i op1_h4b = _mm256_and_si256(mask, query);
-    __m256i op1_l4b = (__m256i)__builtin_ia32_andnotsi256((__v4di)mask, (__v4di)query);
+    __m256i op1_l4b = (__m256i)_mm256_andnot_si256((__v4di)mask, (__v4di)query);
     uint64_t ans1 = 0;
     uint64_t ans2 = 0;
     for (uint64_t i = 0; i < 16; i++)
     {
         __m256i rmask = _mm256_cmpeq_epi8(op1_h4b, _mm256_set1_epi8((char)(i << 4)));
         // here another way is to use _mm_andnot_si128, I tried on test server, doesn't have much differences
-        rmask = (__m256i)__builtin_ia32_andnotsi256(rmask, _mm256_set1_epi8((char)0x80));
+        rmask = (__m256i)_mm256_andnot_si256(rmask, _mm256_set1_epi8((char)0x80));
         rmask = _mm256_or_si256(rmask, op1_l4b);
         __m128i tb1 = _mm_loadu_si128(table1 + i);
         __m128i tb2 = _mm_loadu_si128(table2 + i);
-        __m256i tb12 = (__m256i)__builtin_ia32_vinsertf128_si256((__v8si)__builtin_ia32_si256_si((__v4si)tb1), (__v4si)tb2, 1);
+        __m256i tb12 = (__m256i)_mm256_insertf128_si256(_mm256_castsi128_si256((__v4si)tb1), (__v4si)tb2, 1);
         __m256i res = (__m256i)__builtin_ia32_pshufb256((__v32qi)tb12, (__v32qi)rmask);
         ans1 |= (uint64_t)res[0];
         ans2 |= (uint64_t)res[2];
@@ -1033,6 +1002,7 @@ static inline __m128i prefix_op1_op2_lookup(uint64_t op1)
 static uint64_t register_value_select(sgx_cpu_context_t *ctx, uint32_t idx)
 {
     uint64_t ans = 0;
+    #ifndef CT_VERIFY
     ans = cselect64(idx, 0x0, ctx->rax, ans);
     ans = cselect64(idx, 0x1, ctx->rcx, ans);
     ans = cselect64(idx, 0x2, ctx->rdx, ans);
@@ -1049,11 +1019,14 @@ static uint64_t register_value_select(sgx_cpu_context_t *ctx, uint32_t idx)
     ans = cselect64(idx, 0xd, ctx->r13, ans);
     ans = cselect64(idx, 0xe, ctx->r14, ans);
     ans = cselect64(idx, 0xf, ctx->r15, ans);
+    #endif
     return ans;
 }
 
 /**
+ *  To fix github issue https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/10
  *  Always load 2 pages data and combine together
+ *  After discussion, we decide not to provide the mitigation for the instruction really across the page
  * @param ptr
  * @return
  */
@@ -1082,56 +1055,12 @@ static inline __m128i load_cross_page(uint8_t* ptr){
  */
 int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
 {
-#ifndef CTD_UNIT_TEST
+
     //save & protect the status of ymm/zmm registers
     __m512i mm_regs[NUM_MM_REGS];
 
-    if (g_cpu_feature_indicator & CPU_FEATURE_AVX512F)
-    {
-        // Restore ZMM0-ZMM15
-        asm ( // save caller state
-            "vmovaps [%0+0*64], zmm0\n\t"
-            "vmovaps [%0+1*64], zmm1\n\t"
-            "vmovaps [%0+2*64], zmm2\n\t"
-            "vmovaps [%0+3*64], zmm3\n\t"
-            "vmovaps [%0+4*64], zmm4\n\t"
-            "vmovaps [%0+5*64], zmm5\n\t"
-            "vmovaps [%0+6*64], zmm6\n\t"
-            "vmovaps [%0+7*64], zmm7\n\t"
-            "vmovaps [%0+8*64], zmm8\n\t"
-            "vmovaps [%0+9*64], zmm9\n\t"
-            "vmovaps [%0+10*64], zmm10\n\t"
-            "vmovaps [%0+11*64], zmm11\n\t"
-            "vmovaps [%0+12*64], zmm12\n\t"
-            "vmovaps [%0+13*64], zmm13\n\t"
-            "vmovaps [%0+14*64], zmm14\n\t"
-            "vmovaps [%0+15*64], zmm15\n\t"
-            : : "r" (mm_regs) : "memory"
-        );
-    } else {
-        // Restore YMM0-YMM15
-        asm ( // save caller state
-            "vmovaps [%0+0*32], ymm0\n\t"
-            "vmovaps [%0+1*32], ymm1\n\t"
-            "vmovaps [%0+2*32], ymm2\n\t"
-            "vmovaps [%0+3*32], ymm3\n\t"
-            "vmovaps [%0+4*32], ymm4\n\t"
-            "vmovaps [%0+5*32], ymm5\n\t"
-            "vmovaps [%0+6*32], ymm6\n\t"
-            "vmovaps [%0+7*32], ymm7\n\t"
-            "vmovaps [%0+8*32], ymm8\n\t"
-            "vmovaps [%0+9*32], ymm9\n\t"
-            "vmovaps [%0+10*32], ymm10\n\t"
-            "vmovaps [%0+11*32], ymm11\n\t"
-            "vmovaps [%0+12*32], ymm12\n\t"
-            "vmovaps [%0+13*32], ymm13\n\t"
-            "vmovaps [%0+14*32], ymm14\n\t"
-            "vmovaps [%0+15*32], ymm15\n\t"
-            : : "r" (mm_regs) : "memory"
-        );
-    }
-#endif
-    // properly handle the cross page read
+    //read input instruction: https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/10
+    //we need to properly handle the cross page read
     uint8_t *input = (uint8_t *)(ctx->rip);
     uint8_t *rip_pfn = (uint8_t *) (((uint64_t) input) & (uint64_t)(~0xFFF));
     uint8_t *rip_idx = (uint8_t *) (((uint64_t)input) & 0xFFF);
@@ -1160,6 +1089,7 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     uint32_t rex = 0;
     uint32_t extended_opcode = 0;
     uint32_t idx = 15;
+    //fix for https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/14
     uint32_t lock_prefix = 0;
     uint32_t string_instruction = 0;
     uint32_t stack_instruction = 0;
@@ -1193,7 +1123,10 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     size = tblp & 0x3;
     // check if it's escape opcode, use this as mask for op2
     extended_opcode = cselect(op1 == 0xf, 1, 0);
+    //add support for string instrucitons
+    //https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/9
     string_instruction = cselect((tblp & 0xf0) == 0xa0, 1, 0);
+    //https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/14
     stack_instruction = cselect((tblp & 0xf0) == 0xb0, 1, 0);
 
     // now we can handle the prefixes with the help of idx
@@ -1305,6 +1238,7 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
 
     // This will be our final output
     uint64_t addr_ans = 0;
+//#ifndef CTD_UNIT_TEST
     int64_t disp = (int64_t)((int8_t)imm1);
     disp = cselect64s(disp == 0, (int64_t)imm4, disp);
 
@@ -1340,6 +1274,8 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     rmmod = cselect(rmmod + lock_prefix > 2, 1, rmmod);
     idx_tail = cselect(stack_instruction | string_instruction, 1, idx_tail);
     idx_tail = cselect(stack_instruction_ext, 2, idx_tail);
+//#endif
+    //fix cross page padding: https://github.com/intel-collab/frameworks.security.sgx.ku-leuven-aex-notify/issues/10
     // idx will always be the length of prefixes + opcodes -1
     // idx_tail starting with 1, then includes the length of the rest: modRM, sib, disp
     // we won't have IMM lengths, luckily they are not affect much about address accessing
@@ -1350,111 +1286,17 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     rmmod = cselect((rmmod & (inst_length + shift_amount < 17)) != 0, rmmod, rmmod);
     *addr = addr_ans;
 
-#ifdef CTD_UNIT_TEST
-    addr_info_t *output = &addr_info;
-    output->memory_access = (uint8_t)rmmod;
-    output->disp = (int8_t)imm1;
-    output->disp = cselect32(output->disp == 0, (int32_t)imm4, output->disp);
-    output->fs = (uint8_t)fs_rewrite;
-    output->gs = (uint8_t)gs_rewrite;
-    output->addrsize = (uint8_t)addr_rewrite;
-    output->scale = sib_scale;
-    output->index = cselect((sib_index) == 0x4, 0xff, sib_index);
-    uint32_t base11 = cselect(mod_rm_mod == 0x04, 0xff, modRM_rm);
-    sib_base = cselect(((uint32_t)(modRM_mod << 4) | (sib_base & 0x7)) == 0x5, 0xff, sib_base);
-    output->base = cselect(modRM_rm == 0x4, sib_base, base11);
-    output->base = cselect(((modRM_mod << 4) | (modRM & (7))) == 0x05, 16, output->base);
-    output->base = cselect(string_instruction, ((tblp & 0xc) >> 2) + 0x6, output->base);
-    output->string_instruction = string_instruction;
-    output->inst_length = inst_length;
-    output->stack_instruction = stack_instruction | stack_instruction_ext;
-#endif
-
-#ifndef CTD_UNIT_TEST
-    if (g_cpu_feature_indicator & CPU_FEATURE_AVX512F)
-    {
-        asm ( // restore caller state
-            "vmovaps zmm0, [%0+0*64]\n\t"
-            "vmovaps zmm1, [%0+1*64]\n\t"
-            "vmovaps zmm2, [%0+2*64]\n\t"
-            "vmovaps zmm3, [%0+3*64]\n\t"
-            "vmovaps zmm4, [%0+4*64]\n\t"
-            "vmovaps zmm5, [%0+5*64]\n\t"
-            "vmovaps zmm6, [%0+6*64]\n\t"
-            "vmovaps zmm7, [%0+7*64]\n\t"
-            "vmovaps zmm8, [%0+8*64]\n\t"
-            "vmovaps zmm9, [%0+9*64]\n\t"
-            "vmovaps zmm10, [%0+10*64]\n\t"
-            "vmovaps zmm11, [%0+11*64]\n\t"
-            "vmovaps zmm12, [%0+12*64]\n\t"
-            "vmovaps zmm13, [%0+13*64]\n\t"
-            "vmovaps zmm14, [%0+14*64]\n\t"
-            "vmovaps zmm15, [%0+15*64]\n\t"
-            : : "r" (mm_regs) : "memory"
-        );
-    } else {
-    //restore the status of ymm registers
-        asm ( // restore caller state
-            "vmovaps ymm0, [%0+0*32]\n\t"
-            "vmovaps ymm1, [%0+1*32]\n\t"
-            "vmovaps ymm2, [%0+2*32]\n\t"
-            "vmovaps ymm3, [%0+3*32]\n\t"
-            "vmovaps ymm4, [%0+4*32]\n\t"
-            "vmovaps ymm5, [%0+5*32]\n\t"
-            "vmovaps ymm6, [%0+6*32]\n\t"
-            "vmovaps ymm7, [%0+7*32]\n\t"
-            "vmovaps ymm8, [%0+8*32]\n\t"
-            "vmovaps ymm9, [%0+9*32]\n\t"
-            "vmovaps ymm10, [%0+10*32]\n\t"
-            "vmovaps ymm11, [%0+11*32]\n\t"
-            "vmovaps ymm12, [%0+12*32]\n\t"
-            "vmovaps ymm13, [%0+13*32]\n\t"
-            "vmovaps ymm14, [%0+14*32]\n\t"
-            "vmovaps ymm15, [%0+15*32]\n\t"
-            : : "r" (mm_regs) : "memory"
-        );
-    }
-#endif
-
     return (int)rmmod;
 }
 
-/**
- * @brief Just a driver for simple test
- *
- * @return int
- */
-#ifdef CTD_UNIT_TEST
-#include <string.h>
+#define DUDECT_IMPLEMENTATION
 
-int main(int argc, char **argv)
-{
-    char registers[17][4] = {"RAX", "RCX", "RDX", "RBX", "RSP", "RBP", "RSI", "RDI", "R8", "R9", "R10",
-                             "R11", "R12", "R13", "R14", "R15", "RIP"};
-    char registers32[17][5] = {"EAX", "ECX", "EDX", "EBX", "ESP", "EBP", "ESI", "EDI", "R8D", "R9D", "R10D",
-                               "R11D", "R12D", "R13D", "R14D", "R15D", "EIP"};
-    unsigned char bytes[] = {/*0x8B, 0x45, 0x08, 0x56, 0x8B, 0x75, 0x0C, 0x53, 0x8D, 0x58, 0xFF, 0x0F, 0xB6, 0x0C, 0x16,*/ 0x64, 0x87, 0x8C, 0xd3, 0x01, 0x83, 0xC2, 0x01, 0x84, 0xC9, 0x75, 0xF1, 0x5B, 0x5E, 0x5D, 0xC3};
 
-    if (argc < 2)
-    {
-        printf("Usage: %s hex bytes\n", argv[0]);
-        return 1;
-    }
+#define SECRET_LEN_BYTES (16)
 
-    size_t len = strlen(argv[1]);
-    size_t final_len = len / 2;
-    unsigned char chrs[16];
-    for (size_t i = 0; i < 16; i++)
-    {
-        chrs[i] = 0;
-    }
-    for (size_t i = 0, j = 0; j < final_len; i += 2, j++)
-    {
-        /* convert 2 ascii hex chars to byte value */
-        chrs[j] = (argv[1][i] % 32 + 9) % 25 * 16 + (argv[1][i + 1] % 32 + 9) % 25;
-    }
-    chrs[final_len] = '\0';
 
+/* this will be called over and over */
+uint8_t do_one_computation(uint8_t *data) {
     uint64_t ans;
     sgx_cpu_context_t sgx;
     for (int i = 0; i < 18; i++)
@@ -1462,89 +1304,57 @@ int main(int argc, char **argv)
         uint64_t *a = (uint64_t*) &sgx;
         a[i] = i + 1;
     }
-    sgx.rip = (uint64_t)chrs;
-
-    printf("RIP -> %#lx\n", *((uint64_t*)sgx.rip));
-
-    unsigned int dummy;
-    unsigned long long total = 0;
-    int rv = -1;
-    for (int i = 0; i < SAMPLES; i++)
-    {
-        asm volatile("mfence\n\t");
-        unsigned long long t1 = __builtin_ia32_rdtscp(&dummy);
-        rv = ct_decode(&sgx, &ans);
-        unsigned long long t2 = __builtin_ia32_rdtscp(&dummy);
-        asm volatile("mfence\n\t");
-        total += t2 - t1;
-    }
-    printf("cycles avg (%d samples): %llu\n", SAMPLES, total/SAMPLES);
-
-    uint8_t rmmod = addr_info.memory_access;
-    printf("memory access: %d %s (rv=%d; ans=%#lx)\n", rmmod, rmmod == 1 ? "READ" : rmmod == 2 ? "WRITE" : "NONE", rv, ans);
-    printf("registers: ");
-    if (addr_info.stack_instruction){
-        printf("[RSP]\n");
-        printf("inst_len: %d\n", addr_info.inst_length);
-        return 0;
-    }
-    if (addr_info.fs && !addr_info.string_instruction)
-    {
-        printf("FS");
-    }
-    if (addr_info.gs  && !addr_info.string_instruction)
-    {
-        printf("GS");
-    }
-    printf("[");
-    if (addr_info.base != 0xff)
-    {
-        if (addr_info.addrsize)
-            printf("%s", registers32[addr_info.base]);
-        else
-            printf("%s", registers[addr_info.base]);
-    }
-    if (addr_info.string_instruction){
-        printf("]\n");
-        printf("inst_len: %d\n", addr_info.inst_length);
-        return 0;
-    }
-
-    if (addr_info.index != 0xff)
-    {
-        if (addr_info.addrsize)
-        {
-            if (addr_info.base != 0xff)
-                printf("+%s*%d", registers32[addr_info.index], 1 << addr_info.scale);
-            else
-                printf("%s*%d", registers32[addr_info.index], 1 << addr_info.scale);
-        }
-        else
-        {
-            if (addr_info.base != 0xff)
-                printf("+%s*%d", registers[addr_info.index], 1 << addr_info.scale);
-            else
-                printf("%s*%d", registers[addr_info.index], 1 << addr_info.scale);
-        }
-    }
-    if (addr_info.disp != 0)
-    {
-        if (addr_info.index == 0xff && addr_info.base == 0xff)
-        {
-            int x = addr_info.disp;
-            if (x > 0)
-                printf("0x%x", x);
-            else
-                printf("0x%x", x);
-        }
-        else
-        {
-            int x = addr_info.disp;
-            printf("%c0x%x", (x < 0) ? '-' : '+', (x < 0) ? -x : x);
-        }
-    }
-    printf("]\n");
-    printf("inst_len: %d\n", addr_info.inst_length);
-    return 0;
+    sgx.rip = (uint64_t)data;
+    return ct_decode(&sgx, &ans);
 }
-#endif
+
+/* called once per number_measurements */
+void prepare_inputs(dudect_config_t *c, uint8_t *input_data, uint8_t *classes) {
+  randombytes(input_data, c->number_measurements * c->chunk_size);
+  for (size_t i = 0; i < c->number_measurements; i++) {
+    /* it is important to randomize the class sequence */
+    classes[i] = randombit();
+    if (classes[i] == 0) {
+      memset(input_data + (size_t)i * c->chunk_size, 0x00, c->chunk_size);
+    } else {
+      // leave random
+    }
+  }
+}
+
+int run_test(void) {
+  dudect_config_t config = {
+      .chunk_size = SECRET_LEN_BYTES,
+      #ifdef MEASUREMENTS_PER_CHUNK
+      .number_measurements = MEASUREMENTS_PER_CHUNK,
+      #else
+      .number_measurements = 5000000,
+      #endif
+  };
+  dudect_ctx_t ctx;
+
+  dudect_init(&ctx, &config);
+
+  /*
+  Call dudect_main() until
+   - returns something different than DUDECT_NO_LEAKAGE_EVIDENCE_YET, or
+   - you spent too much time testing and give up
+  Recommended that you wrap this program with timeout(2) if you don't
+  have infinite time.
+  For example this will run for 20 mins:
+    $ timeout 1200 ./your-executable
+  */
+  dudect_state_t state = DUDECT_NO_LEAKAGE_EVIDENCE_YET;
+  while (state == DUDECT_NO_LEAKAGE_EVIDENCE_YET) {
+    state = dudect_main(&ctx);
+  }
+  dudect_free(&ctx);
+  return (int)state;
+}
+
+int main(int argc, char **argv) {
+  (void)argc;
+  (void)argv;
+
+  run_test();
+}
