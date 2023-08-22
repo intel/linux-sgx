@@ -31,21 +31,21 @@
 #ifndef _SE_VERSION_H_
 #define _SE_VERSION_H_
 
-#define STRFILEVER    "2.20.100.4"
+#define STRFILEVER    "2.21.100.1"
 #define SGX_MAJOR_VERSION       2
-#define SGX_MINOR_VERSION       20
+#define SGX_MINOR_VERSION       21
 #define SGX_REVISION_VERSION    100
 #define MAKE_VERSION_UINT(major,minor,rev)  (((uint64_t)major)<<32 | ((uint64_t)minor) << 16 | rev)
 #define VERSION_UINT        MAKE_VERSION_UINT(SGX_MAJOR_VERSION, SGX_MINOR_VERSION, SGX_REVISION_VERSION)
 
 #define COPYRIGHT      "Copyright (C) 2023 Intel Corporation"
 
-#define UAE_SERVICE_VERSION       "2.3.219.4"
-#define URTS_VERSION              "2.0.103.4"
-#define ENCLAVE_COMMON_VERSION    "1.2.103.4"
-#define LAUNCH_VERSION            "1.0.121.4"
-#define EPID_VERSION              "1.0.121.4"
-#define QUOTE_EX_VERSION          "1.1.121.4"
+#define UAE_SERVICE_VERSION       "2.3.220.1"
+#define URTS_VERSION              "2.0.104.1"
+#define ENCLAVE_COMMON_VERSION    "1.2.104.1"
+#define LAUNCH_VERSION            "1.0.122.1"
+#define EPID_VERSION              "1.0.122.1"
+#define QUOTE_EX_VERSION          "1.1.122.1"
 
 #define PCE_VERSION               "1.19.100.1"
 #define LE_VERSION                "1.19.100.1"

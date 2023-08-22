@@ -86,6 +86,16 @@ tdx:
 	$(MAKE) -C external/dcap_source/QuoteGeneration tdx_logic
 	$(MAKE) -C external/dcap_source/QuoteGeneration tdx_qgs
 	$(MAKE) -C external/dcap_source/QuoteGeneration tdx_attest
+ 
+td_migration:
+	$(MAKE) -C sdk/ td_migration _TD_MIGRATION=1
+	$(MAKE) -C external/dcap_source/QuoteGeneration td_migration
+
+td_migration_preparation:
+# Only enable the download from git
+	git submodule update --init --recursive external/dcap_source external/sgx-emm/emm_src
+	./external/sgx-emm/create_symlink.sh
+	./external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
 
 # Generate SE SDK Install package
 sdk_install_pkg_no_mitigation: sdk_no_mitigation

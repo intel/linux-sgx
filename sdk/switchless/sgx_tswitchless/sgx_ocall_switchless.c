@@ -89,17 +89,6 @@ sgx_status_t sgx_ocall_switchless(const unsigned int index, void* ms)
     if (sgx_is_enclave_crashed())
         return SGX_ERROR_ENCLAVE_CRASHED;
 
-    /* Global object initialization (init_global_object) happens before
-     * g_uswitchless_handle is initialized (via sl_init_switchless).
-     * Some ctors invoke syscalls via switchless ocalls. This causes
-     * init_tswitchless_ocall_mngr to be invoked with sl_call_once prematurely,
-     * returning -1. Subsequent invokations will always return -1, such that
-     * switchless ocalls never happen. A simple solution is to fallback to
-     * traditional ocalls until g_uswitchless_handle has been initialized. */
-    if (g_uswitchless_handle == NULL) {
-      return sgx_ocall(index, ms);
-    }
-
     /* If Switchless SGX is not enabled at enclave creation, then switchless OCalls
      * fallback to the traditional OCalls */
     if (sl_call_once(&g_init_ocall_mngr_done, init_tswitchless_ocall_mngr, NULL)) 
