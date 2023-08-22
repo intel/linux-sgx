@@ -46,7 +46,9 @@ make -C ${root_dir} preparation
 
 # Prepare ipp-crypto source
 pushd ${root_dir}/external/ippcp_internal/
+
 cd ipp-crypto && git apply ../0001-IPP-crypto-for-SGX_psw_dcap.patch >/dev/null 2>&1 ||  git apply ../0001-IPP-crypto-for-SGX_psw_dcap.patch --check -R
+
 popd
 
 python ${common_dir}/gen_source/copy_source.py                          \

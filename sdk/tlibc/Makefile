@@ -108,4 +108,4 @@ $(BUILD_DIR):
 
 .PHONY: clean
 clean:
-	@$(RM) $(LIBC_NAME) $(LIBC_OBJS) math/opt/*.o 
+	@$(RM) $(LIBC_NAME) $(LIBC_OBJS) math/opt/*.o
