@@ -381,20 +381,13 @@ static uint8_t standard[256] = {
  * a is demote whether this is a valid opcode or escape opcode(since we are not going to support 3 opcode instructions)
  * switch (a):
  *      case "0": escape opcode, 0x38 or 0x3A, refer to IA-32 manual A.2.4.3
- *      case "2": a valid opcode. b is used for memory access, and c is the access size
+ *      case "2": a valid opcode. b is used for memory access
  *              b has 3 states: no explicit access, read, write
  *              switch (b) =>
  *                  case "0": no memory access
  *                  case "1": memory read
  *                  case "2": memory write(here we assume write includes read permission)
  *                  case "3": unused
- *              c has 5 states: byte, word(2 bytes), dword/fword(double word, 4 bytes), qword(quadratic word, 8 bytes), xmmword(todo: we will figure it out)
- *              switch (c) =>
- *                  case "0": byte
- *                  case "1": word
- *                  case "2": dword/fword
- *                  case "3": qword
- *                  case "4": xmmword
  *      case "1": a valid normal opcode, but b needs further lookup for the normal table
  *              currently we have 0x7E, 0x1A, 0x1B for this case, because their mod will be changed by prefix, others no matter what prefix is, the mod is the same
  *              b will be a index meaning the b-th table to lookup in the 2 byte opcode normal lookup table
@@ -771,7 +764,6 @@ static inline uint32_t opcode2byte_extension_lookup(uint8_t tblp_t, uint8_t mode
 /**
  * @brief cselect for uint32_t types
  * must be manually inspected to ensure the compiler generates CMOVcc family instructions
- * todo: transfer it to inline asm to 100% ensure
  *
  * @param pred
  * @param old_val
@@ -799,7 +791,6 @@ static inline uint64_t cselect64(uint64_t pred, const uint64_t expected, uint64_
 /**
  * @brief cselect for uint64_t types
  * must be manually inspected to ensure the compiler generates CMOVcc family instructions
- * todo: transfer it to inline asm to 100% ensure
  *
  * @param pred
  * @param old_val
@@ -1140,7 +1131,6 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     uint32_t addr_rewrite = 0;
     uint32_t effective_prefix_extension = 0;
     // We need to know the exact idx of our opcode 1
-    // todo: come up with a way to remove this loop, some SIMD instructions that returns idx of a given value
     for (uint32_t i = 0; i < 6; i++)
     {
         uint64_t shift = (lktb >> (i * 8));
@@ -1167,7 +1157,6 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     uint64_t prefixes = lktb & (uint64_t)(0x000000ffffffffff >> ((5 - idx) * 8));
     // check prefixes, rex is special because if covers 0x40 - 0x4f
     rex = check_prefix(prefixes >> ((idx - 1) * 8), 0x4040404040404040);
-    // todo: check if overflow can be observed, then we can optimize this out
     rex = cselect(rex, (data >> ((idx - 1) * 8)) & 0x4f, 0);
     // operand size rewrite
     operand_rewrite = check_prefix(prefixes, 0x2020202020202020);
@@ -1307,7 +1296,6 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     // still under testing the case: IMM may have affect on memory accessing
     uint32_t inst_length = idx + idx_tail;
     // write the final output to the memory
-    //todo block when rmmod isn't none and inst_length > K
     rmmod = cselect((rmmod & (inst_length + shift_amount < 17)) != 0, rmmod, rmmod);
     *addr = addr_ans;
 
