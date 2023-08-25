@@ -7,7 +7,6 @@ Subject: [PATCH] Enable Protobuf in SGX
  cmake/CMakeLists.txt                          |  31 +++-
  cmake/libsgx_protobuf.cmake                   | 140 ++++++++++++++++++
  configure.ac                                  |   2 +-
- .../google/protobuf/MessageReflection.java    |  26 +++-
  .../protobuf/io/zero_copy_stream_impl.cc      |   6 +
  .../protobuf/io/zero_copy_stream_impl.h       |   4 +-
  src/google/protobuf/map.h                     |  12 ++
@@ -247,77 +246,6 @@ index 7c5c2c799..31c63629f 100644
  
  # Check whether the linker supports version scripts
  AC_MSG_CHECKING([whether the linker supports version scripts])
-diff --git a/java/core/src/main/java/com/google/protobuf/MessageReflection.java b/java/core/src/main/java/com/google/protobuf/MessageReflection.java
-index b7f5d52d4..f032d4926 100644
---- a/java/core/src/main/java/com/google/protobuf/MessageReflection.java
-+++ b/java/core/src/main/java/com/google/protobuf/MessageReflection.java
-@@ -349,6 +349,7 @@ class MessageReflection {
-   static class BuilderAdapter implements MergeTarget {
- 
-     private final Message.Builder builder;
-+    private boolean hasNestedBuilders = true;
- 
-     @Override
-     public Descriptors.Descriptor getDescriptorForType() {
-@@ -363,6 +364,17 @@ class MessageReflection {
-     public Object getField(Descriptors.FieldDescriptor field) {
-       return builder.getField(field);
-     }
-+    
-+    private Message.Builder getFieldBuilder(Descriptors.FieldDescriptor field) {
-+      if (hasNestedBuilders) {
-+        try {
-+          return builder.getFieldBuilder(field);
-+        } catch (UnsupportedOperationException e) {
-+          hasNestedBuilders = false;
-+        }
-+      }
-+      return null;
-+    }
- 
-     @Override
-     public boolean hasField(Descriptors.FieldDescriptor field) {
-@@ -371,6 +383,12 @@ class MessageReflection {
- 
-     @Override
-     public MergeTarget setField(Descriptors.FieldDescriptor field, Object value) {
-+      if (!field.isRepeated() && value instanceof MessageLite.Builder) {
-+        if (value != getFieldBuilder(field)) {
-+          builder.setField(field, ((MessageLite.Builder) value).buildPartial());
-+        }
-+        return this;
-+      }
-       builder.setField(field, value);
-       return this;
-     }
-@@ -384,12 +402,18 @@ class MessageReflection {
-     @Override
-     public MergeTarget setRepeatedField(
-         Descriptors.FieldDescriptor field, int index, Object value) {
-+      if (value instanceof MessageLite.Builder) {
-+        value = ((MessageLite.Builder) value).buildPartial();
-+      }
-       builder.setRepeatedField(field, index, value);
-       return this;
-     }
- 
-     @Override
-     public MergeTarget addRepeatedField(Descriptors.FieldDescriptor field, Object value) {
-+      if (value instanceof MessageLite.Builder) {
-+        value = ((MessageLite.Builder) value).buildPartial();
-+      }
-       builder.addRepeatedField(field, value);
-       return this;
-     }
-@@ -543,7 +567,7 @@ class MessageReflection {
- 
-     @Override
-     public Object finish() {
--      return builder.buildPartial();
-+      return builder;
-     }
-   }
- 
 diff --git a/src/google/protobuf/io/zero_copy_stream_impl.cc b/src/google/protobuf/io/zero_copy_stream_impl.cc
 index c66bc862a..1fee728cd 100644
 --- a/src/google/protobuf/io/zero_copy_stream_impl.cc
