@@ -202,7 +202,7 @@ extern "C" void restore_xregs(uint8_t *buf);
 extern "C" void constant_time_apply_sgxstep_mitigation_and_continue_execution(sgx_exception_info_t *info,
         uintptr_t ssa_aexnotify_addr, uintptr_t stack_tickle_pages, uintptr_t code_tickle_page, uintptr_t data_tickle_address, uintptr_t c3_byte_address);
 
-// constant time select based on given condtion
+// constant time select based on given condition
 static inline uint64_t cselect64(uint64_t pred, const uint64_t expected, uint64_t old_val, uint64_t new_val)
 {
     __asm__("cmp %3, %1\n\t"
