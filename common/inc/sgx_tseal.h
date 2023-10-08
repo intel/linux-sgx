@@ -47,18 +47,18 @@
 
 typedef struct _aes_gcm_data_t
 {
-    uint32_t  payload_size;                   /*  0: Size of the payload which includes both the encrypted data and the optional additional MAC text */
-    uint8_t   reserved[12];                   /*  4: Reserved bits */
+    uint32_t  payload_size;                   /*  0: Size of the payload which includes the encrypted data: payload[] */
+    uint8_t   reserved[SGX_SEAL_IV_SIZE];     /*  4: Reserved bits used as iv */
     uint8_t   payload_tag[SGX_SEAL_TAG_SIZE]; /* 16: AES-GMAC of the plain text, payload, and the sizes */
-    uint8_t   payload[];                      /* 32: The payload data which includes the encrypted data followed by the optional additional MAC text */
+    uint8_t   payload[];                      /* 32: The payload data which includes the encrypted data followed by payload_tag */
 } sgx_aes_gcm_data_t;
 
 typedef struct _sealed_data_t
 {
     sgx_key_request_t  key_request;       /* 00: The key request used to obtain the sealing key */
-    uint32_t           plain_text_offset; /* 64: Offset within aes_data.playload to the start of the optional additional MAC text */
-    uint8_t            reserved[12];      /* 68: Reserved bits */
-    sgx_aes_gcm_data_t aes_data;          /* 80: Data structure holding the AES/GCM related data */
+    uint32_t           plain_text_offset; /* 512: Offset within aes_data.playload to the start of the optional additional MAC text */
+    uint8_t            reserved[12];      /* 516: Reserved bits */
+    sgx_aes_gcm_data_t aes_data;          /* 528: Data structure holding the AES/GCM related data */
 } sgx_sealed_data_t;
 
 #ifdef __cplusplus
