@@ -60,7 +60,9 @@ OBJS2 := trts_nsp.o
 
 OBJS3 := ema_rt.o
 
-OBJS := $(OBJS1) $(OBJS2) $(OBJ3)
+OBJS4 := ctd.o # The CTD requires AVX2
+
+OBJS := $(OBJS1) $(OBJS2) $(OBJ3) $(OBJS4)
 
 all: $(OBJS) elf_parser
 
@@ -73,6 +75,10 @@ $(OBJS2): %.o: %.cpp
 
 $(OBJS3): %.o: %.c
 	$(CC) -c $(TCFLAGS) $(CFLAGS) -fPIC $< -o $@
+
+$(OBJS4): %.o: %.c
+	$(CC) -mavx2 -O3 -masm=intel $(filter-out -O2,$(CFLAGS)) $(TCFLAGS) \
+		-I$(COMMON_DIR)/inc/internal -I$(COMMON_DIR)/inc -c $< -o $@
 
 .PHONY: elf_parser
 elf_parser: $(OBJS)
