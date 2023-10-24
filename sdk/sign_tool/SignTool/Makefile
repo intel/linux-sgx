@@ -34,9 +34,12 @@ include ../../../buildenv.mk
 CXXFLAGS += -Werror
 CFLAGS   += -Werror
 
-CFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
-CXXFLAGS += -fpie -DOPENSSL_API_COMPAT=10101
+CFLAGS += -fpie
+CXXFLAGS += -fpie
 LDFLAGS := -pie $(COMMON_LDFLAGS) -Wno-odr
+
+PREBUILT_OPENSSL_DIR := $(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl
+CRYPTO_LIB := -L$(PREBUILT_OPENSSL_DIR)/lib/linux64 -lcrypto
 
 INC += $(ADDED_INC)
 INC +=  -I$(COMMON_DIR)/inc                         \
@@ -46,7 +49,8 @@ INC +=  -I$(COMMON_DIR)/inc                         \
         -I$(LINUX_PSW_DIR)/urts                     \
         -I$(LINUX_PSW_DIR)/urts/linux               \
         -I$(LINUX_EXTERNAL_DIR)/tinyxml2            \
-        -I$(LINUX_PSW_DIR)/urts/parser
+        -I$(LINUX_PSW_DIR)/urts/parser              \
+        -I$(PREBUILT_OPENSSL_DIR)/inc
 
 DIR1 := $(LINUX_EXTERNAL_DIR)/tinyxml2/
 DIR2 := $(COMMON_DIR)/src/
@@ -81,7 +85,7 @@ all: sgx_sign | $(BUILD_DIR)
 $(BUILD_DIR):
 	@$(MKDIR) $@
 
-sgx_sign: PRIVATE_LDLIBS  := -lpthread -lenclaveparser -lcrypto
+sgx_sign: PRIVATE_LDLIBS  := -lpthread -lenclaveparser $(CRYPTO_LIB)
 sgx_sign: PRIVATE_LDFLAGS := -L$(LINUX_PSW_DIR)/urts/parser $(LDFLAGS)
 
 sgx_sign: $(OBJS) enclaveparser

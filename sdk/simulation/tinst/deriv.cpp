@@ -85,14 +85,14 @@ const uint8_t* get_base_key(uint16_t key_name)
 
 // Compute the CMAC of derivation data with corresponding base key
 // and save it to `okey'.
-void derive_key(const derivation_data_t* dd, sgx_key_128bit_t okey)
+sgx_status_t derive_key(const derivation_data_t* dd, sgx_key_128bit_t okey)
 {
-    sgx_rijndael128_cmac_msg((const sgx_cmac_128bit_key_t*)(get_base_key(dd->key_name)),
+    return sgx_rijndael128_cmac_msg((const sgx_cmac_128bit_key_t*)(get_base_key(dd->key_name)),
                              dd->ddbuf, dd->size, (sgx_cmac_128bit_tag_t*)okey);
 }
 
 // Compute the CMAC of a `buf' with a given `key'.
-void cmac(const sgx_key_128bit_t *key, const uint8_t* buf, int buf_len, sgx_mac_t* cmac)
+sgx_status_t cmac(const sgx_key_128bit_t *key, const uint8_t* buf, int buf_len, sgx_mac_t* cmac)
 {
-    sgx_rijndael128_cmac_msg((const sgx_cmac_128bit_key_t*)key, buf, buf_len, cmac);
+    return sgx_rijndael128_cmac_msg((const sgx_cmac_128bit_key_t*)key, buf, buf_len, cmac);
 }

@@ -88,75 +88,73 @@ int handle_communication_until_done(
     bool keep_server_up)
 {
     int ret = -1;
-	int  test_error = 1;
-waiting_for_connection_request:
-	
-    struct sockaddr_in addr;
-    uint len = sizeof(addr);
+    int  test_error = 1;
 
-    // reset ssl_session and client_socket_fd to prepare for the new TLS
-    // connection
-    if (client_socket_fd > 0) 
-    {
-        ret = close(client_socket_fd);
-        if (ret != 0) {
-            PRINT(TLS_SERVER "error closing client socket before starting a new TLS session.\n");
-            goto exit;
+    do {
+        struct sockaddr_in addr;
+        uint len = sizeof(addr);
+
+        // reset ssl_session and client_socket_fd to prepare for the new TLS
+        // connection
+        if (client_socket_fd > 0)
+        {
+            ret = close(client_socket_fd);
+            if (ret != 0) {
+                PRINT(TLS_SERVER "error closing client socket before starting a new TLS session.\n");
+                break;
+            }
         }
-    }
-    SSL_free(ssl_session);
-    PRINT(TLS_SERVER " waiting for client connection\n");
+        SSL_free(ssl_session);
+        PRINT(TLS_SERVER " waiting for client connection\n");
 
-    client_socket_fd = accept(server_socket_fd, (struct sockaddr*)&addr, &len);
+        client_socket_fd = accept(server_socket_fd, (struct sockaddr*)&addr, &len);
 
-    if (client_socket_fd < 0)
-    {
-        PRINT(TLS_SERVER "Unable to accept the client request\n");
-        goto exit;
-    }
+        if (client_socket_fd < 0)
+        {
+            PRINT(TLS_SERVER "Unable to accept the client request\n");
+            break;
+        }
 
-    // create a new SSL structure for a connection
-    if ((ssl_session = SSL_new(ssl_server_ctx)) == nullptr)
-    {
-        PRINT(TLS_SERVER
-               "Unable to create a new SSL connection state object\n");
-        goto exit;
-    }
+        // create a new SSL structure for a connection
+        if ((ssl_session = SSL_new(ssl_server_ctx)) == nullptr)
+        {
+            PRINT(TLS_SERVER
+                   "Unable to create a new SSL connection state object\n");
+            break;
+        }
 
-    SSL_set_fd(ssl_session, client_socket_fd);
+        SSL_set_fd(ssl_session, client_socket_fd);
 
-    // wait for a TLS/SSL client to initiate a TLS/SSL handshake
+        // wait for a TLS/SSL client to initiate a TLS/SSL handshake
 
-    PRINT(TLS_SERVER "initiating a passive connect SSL_accept\n");
-    test_error = SSL_accept(ssl_session);
-    if (test_error <= 0)
-    {
-        PRINT(TLS_SERVER " SSL handshake failed, error(%d)(%d)\n",
-					test_error, SSL_get_error(ssl_session, test_error));
-        goto exit;
-    }
+        PRINT(TLS_SERVER "initiating a passive connect SSL_accept\n");
+        test_error = SSL_accept(ssl_session);
+        if (test_error <= 0)
+        {
+            PRINT(TLS_SERVER " SSL handshake failed, error(%d)(%d)\n",
+                        test_error, SSL_get_error(ssl_session, test_error));
+            break;
+        }
 
-    PRINT(TLS_SERVER "<---- Read from client:\n");
-    if (read_from_session_peer(
-            ssl_session, CLIENT_PAYLOAD, CLIENT_PAYLOAD_SIZE) != 0)
-    {
-        PRINT(TLS_SERVER " Read from client failed\n");
-        goto exit;
-    }
+        PRINT(TLS_SERVER "<---- Read from client:\n");
+        if (read_from_session_peer(
+                ssl_session, CLIENT_PAYLOAD, CLIENT_PAYLOAD_SIZE) != 0)
+        {
+            PRINT(TLS_SERVER " Read from client failed\n");
+            break;
+        }
 
-    PRINT(TLS_SERVER "<---- Write to client:\n");
-    if (write_to_session_peer(
-            ssl_session, SERVER_PAYLOAD, strlen(SERVER_PAYLOAD)) != 0)
-    {
-        PRINT(TLS_SERVER " Write to client failed\n");
-        goto exit;
-    }
+        PRINT(TLS_SERVER "<---- Write to client:\n");
+        if (write_to_session_peer(
+                ssl_session, SERVER_PAYLOAD, strlen(SERVER_PAYLOAD)) != 0)
+        {
+            PRINT(TLS_SERVER " Write to client failed\n");
+            break;
+        }
 
-    if (keep_server_up)
-        goto waiting_for_connection_request;
+        ret = 0;
+    } while(keep_server_up);
 
-    ret = 0;
-exit:
     return ret;
 }
 

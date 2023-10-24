@@ -258,6 +258,7 @@ int process_close_req(int clientfd, SESSION_CLOSE_REQ * close_req)
         return -1;
 
     // send back response
+    memset(&close_ack, 0, sizeof(FIFO_MSG));
     close_ack.header.type = FIFO_DH_CLOSE_RESP;
     close_ack.header.size = 0;
 

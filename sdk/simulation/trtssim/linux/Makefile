@@ -67,7 +67,6 @@ TRTS1_OBJS  := init_enclave.o \
                trts_xsave.o   \
                init_optimized_lib.o \
                trts_add_trim.o \
-               trts_aex.o  \
                trts_emm_sim.o
 
 TRTS2_OBJS  := trts_nsp.o
@@ -82,7 +81,6 @@ TLS_OBJS     := get_tcs.o \
                 restore_tls.o
 
 TLDR_ASM_OBJS := trts_pic.o \
-                trts_mitigation.o \
                 metadata_sec.o \
                 xsave_gnu.o \
                 thunk.o

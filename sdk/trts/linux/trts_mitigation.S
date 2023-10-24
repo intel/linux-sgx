@@ -65,7 +65,7 @@ aex_notify_c3_cache:
  *      uintptr_t ssa_aexnotify_addr,
  *      uintptr_t stack_tickle_pages,
  *      uintptr_t code_tickle_page,
- *      uintptr_t data_tickle_page,
+ *      uintptr_t data_tickle_address,
  *      uintptr_t c3_byte_address);
  *
  *  Function: constant_time_apply_sgxstep_mitigation_and_continue_execution
@@ -77,7 +77,7 @@ aex_notify_c3_cache:
  *      -  ssa_aexnotify_addr: address of the SSA[0].GPRSGX.AEXNOTIFY byte
  *      -  stack_tickle_pages: Base address of stack page(s) to tickle
  *      -  code_tickle_page: Base address of code page to tickle
- *      -  data_tickle_page: Base address of data page to tickle
+ *      -  data_tickle_address: address of data memory to tickle
  *      -  c3_byte_address: Address of a c3 byte in code_tickle_page
  *      There are three additional "implicit" parameters to this function:
  *      1. The low-order bit of `stack_tickle_pages` is 1 if a second stack

@@ -44,73 +44,19 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
 	sgx_rsa3072_signature_t * p_signature)
 {
 	if ((p_data == NULL) || (data_size < 1) || (p_key == NULL) ||
-		(p_signature == NULL))
-	{
+		(p_signature == NULL)) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
 	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
-	RSA *priv_rsa_key = NULL;
 	EVP_PKEY* priv_pkey = NULL;
-	BIGNUM *n = NULL;
-	BIGNUM *d = NULL;
-	BIGNUM *e = NULL;
 	EVP_MD_CTX* ctx = NULL;
 	const EVP_MD* sha256_md = NULL;
 	size_t siglen = SGX_RSA3072_KEY_SIZE;
-	int ret = 0;
 
 	do {
-		// converts the modulus value of rsa key, represented as positive integer in little-endian into a BIGNUM
-		//
-		n = BN_lebin2bn((const unsigned char *)p_key->mod, sizeof(p_key->mod), 0);
-		if (n == NULL) {
-			break;
-		}
-
-		// converts the private exp value of rsa key, represented as positive integer in little-endian into a BIGNUM
-		//
-		d = BN_lebin2bn((const unsigned char *)p_key->d, sizeof(p_key->d), 0);
-		if (d == NULL) {
-			break;
-		}
-
-		// converts the public exp value of rsa key, represented as positive integer in little-endian into a BIGNUM
-		//
-		e = BN_lebin2bn((const unsigned char *)p_key->e, sizeof(p_key->e), 0);
-		if (e == NULL) {
-			break;
-		}
-
-		// allocates and initializes an RSA key structure
-		//
-		priv_rsa_key = RSA_new();
-		if (priv_rsa_key == NULL) {
-			retval = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// sets the modulus, private exp and public exp values of the RSA key
-		//
-		if (RSA_set0_key(priv_rsa_key, n, e, d) != 1) {
-			BN_clear_free(n);
-			BN_clear_free(d);
-			BN_clear_free(e);
-			break;
-		}
-
-		// allocates an empty EVP_PKEY structure
-		//
-		priv_pkey = EVP_PKEY_new();
-		if (priv_pkey == NULL) {
-			retval = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// set the referenced key to pub_rsa_key, however these use the supplied key internally and so key will be freed when the parent pkey is freed
-		//
-		if (EVP_PKEY_assign_RSA(priv_pkey, priv_rsa_key) != 1) {
-			RSA_free(priv_rsa_key);
+		if (SGX_SUCCESS != sgx_create_rsa_priv1_key(sizeof(p_key->mod), sizeof(p_key->e), sizeof(p_key->d), p_key->mod, p_key->e, p_key->d, (void **)&priv_pkey)
+		 || NULL == priv_pkey) {
 			break;
 		}
 
@@ -143,8 +89,7 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
 
 		// signs the data in ctx places the signature in p_signature.
 		//
-		ret = EVP_DigestSignFinal(ctx, (unsigned char *)p_signature, &siglen);//fails
-		if (ret <= 0) {
+		if (EVP_DigestSignFinal(ctx, (unsigned char *)p_signature, &siglen) <= 0) { //fails
 			break;
 		}
 
@@ -161,23 +106,7 @@ sgx_status_t sgx_rsa3072_sign(const uint8_t * p_data,
 		EVP_MD_CTX_free(ctx);
 	if (priv_pkey) {
 		EVP_PKEY_free(priv_pkey);
-		priv_rsa_key = NULL;
-		n = NULL;
-		d = NULL;
-		e = NULL;
 	}
-	if (priv_rsa_key) {
-		RSA_free(priv_rsa_key);
-		n = NULL;
-		d = NULL;
-		e = NULL;
-	}
-	if (n)
-		BN_clear_free(n);
-	if (d)
-		BN_clear_free(d);
-	if (e)
-		BN_clear_free(e);
 
 	return retval;
 }
@@ -189,64 +118,19 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
 	sgx_rsa_result_t *p_result)
 {
 	if ((p_data == NULL) || (data_size < 1) || (p_public == NULL) ||
-		(p_signature == NULL) || (p_result == NULL))
-	{
+		(p_signature == NULL) || (p_result == NULL)) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	*p_result = SGX_RSA_INVALID_SIGNATURE;
 
 	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
 	int verified = 0;
-	RSA *pub_rsa_key = NULL;
 	EVP_PKEY *pub_pkey = NULL;
-	BIGNUM *n = NULL;
-	BIGNUM *e = NULL;
 	const EVP_MD* sha256_md = NULL;
 	EVP_MD_CTX *ctx = NULL;
 
 	do {
-		// converts the modulus value of rsa key, represented as positive integer in little-endian into a BIGNUM
-		//
-		n = BN_lebin2bn((const unsigned char *)p_public->mod, sizeof(p_public->mod), 0);
-		if (n == NULL) {
-			break;
-		}
-
-		// converts the public exp value of rsa key, represented as positive integer in little-endian into a BIGNUM
-		//
-		e = BN_lebin2bn((const unsigned char *)p_public->exp, sizeof(p_public->exp), 0);
-		if (e == NULL) {
-			break;
-		}
-
-		// allocates and initializes an RSA key structure
-		//
-		pub_rsa_key = RSA_new();
-		if (pub_rsa_key == NULL) {
-			retval = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// sets the modulus and public exp values of the RSA key
-		//
-		if (RSA_set0_key(pub_rsa_key, n, e, NULL) != 1) {
-			BN_clear_free(n);
-			BN_clear_free(e);
-			break;
-		}
-
-		// allocates an empty EVP_PKEY structure
-		//
-		pub_pkey = EVP_PKEY_new();
-		if (pub_pkey == NULL) {
-			retval = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// set the referenced key to pub_rsa_key, however these use the supplied key internally and so key will be freed when the parent pkey is freed
-		//
-		if (EVP_PKEY_assign_RSA(pub_pkey, pub_rsa_key) != 1) {
-			RSA_free(pub_rsa_key);
+		if (SGX_SUCCESS != sgx_create_rsa_pub1_key(sizeof(p_public->mod), sizeof(p_public->exp), p_public->mod, p_public->exp, (void**)&pub_pkey)) {
 			break;
 		}
 
@@ -258,7 +142,7 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
 			break;
 		}
 
-		// return EVP_MD structures for SHA256 digest algorithm */
+		// return EVP_MD structures for SHA256 digest algorithm 
 		//
 		sha256_md = EVP_sha256();
 		if (sha256_md == NULL) {
@@ -295,19 +179,7 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
 		EVP_MD_CTX_free(ctx);
 	if (pub_pkey) {
 		EVP_PKEY_free(pub_pkey);
-		pub_rsa_key = NULL;
-		n = NULL;
-		e = NULL;
 	}
-	if (pub_rsa_key) {
-		RSA_free(pub_rsa_key);
-		n = NULL;
-		e = NULL;
-	}
-	if (n)
-		BN_clear_free(n);
-	if (e)
-		BN_clear_free(e);
 
 	return retval;
 }
@@ -320,7 +192,6 @@ sgx_status_t sgx_rsa3072_sign_ex(const uint8_t * p_data,
 {
 	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
 	sgx_rsa_result_t result = SGX_RSA_INVALID_SIGNATURE;
-
 
 	if (p_public == NULL)
 		return sgx_rsa3072_sign(p_data, data_size, p_key, p_signature);
@@ -336,3 +207,4 @@ sgx_status_t sgx_rsa3072_sign_ex(const uint8_t * p_data,
 	}
 	return retval;
 }
+

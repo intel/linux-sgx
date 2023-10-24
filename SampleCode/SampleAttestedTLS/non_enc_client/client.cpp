@@ -100,7 +100,8 @@ int communicate_with_server(SSL* ssl)
         if (error == SSL_ERROR_WANT_WRITE)
             continue;
         printf(TLS_CLIENT "Failed! SSL_write returned %d\n", error);
-        ret = bytes_written;
+        if (bytes_written == 0) ret = -1;
+        else ret = bytes_written;
         goto done;
     }
 
@@ -120,13 +121,17 @@ int communicate_with_server(SSL* ssl)
                 continue;
 
             printf(TLS_CLIENT "Failed! SSL_read returned error=%d\n", error);
-            ret = bytes_read;
+            if (bytes_read == 0) ret = -1;
+            else ret = bytes_read;
             goto done;
         }
 
         printf(TLS_CLIENT " %d bytes read\n", bytes_read);
         
         // check to to see if received payload is expected
+        // Note that if you want to use client here but server from other 
+        // applications, you need to ignore this check for SERVER_PAYLOAD_SIZE
+        // which need to be adjusted for an actual value
         if ((bytes_read != SERVER_PAYLOAD_SIZE) ||
             (memcmp(SERVER_PAYLOAD, buf, bytes_read) != 0))
         {
@@ -241,7 +246,6 @@ int main(int argc, char** argv)
 
     // initialize openssl library and register algorithms
     OpenSSL_add_all_algorithms();
-    ERR_load_BIO_strings();
     ERR_load_crypto_strings();
     SSL_load_error_strings();
 

@@ -21,6 +21,8 @@
         sgx_get_metadata;
         sgx_set_switchless_itf;
         init_get_launch_token;
+        sgx_trace_logger_callback;
+        sgx_trace_loglevel;
     local:
         *;
 };

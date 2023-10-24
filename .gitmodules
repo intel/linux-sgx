@@ -24,3 +24,6 @@
 [submodule "external/mbedtls/mbedtls_code"]
 	path = external/mbedtls/mbedtls_code
 	url = https://github.com/Mbed-TLS/mbedtls.git
+[submodule "external/cbor/libcbor"]
+	path = external/cbor/libcbor
+	url = https://github.com/PJK/libcbor.git

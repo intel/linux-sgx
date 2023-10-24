@@ -40,6 +40,7 @@
   * Description: Definition for interface of HTTP/HTTPS network communication used in AESM
   */
 
+ae_error_t prepare_curl();
 
 /*Function to send data to a server  and receive the response
  *@server_url:  provide the url of the server 

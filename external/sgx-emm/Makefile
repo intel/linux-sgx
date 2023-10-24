@@ -70,7 +70,7 @@ emm_code:
 #	git submodule update -f --init --recursive -- $(EMM_DIR)
 #else
 	$(RM) -rf $(EMM_DIR)
-	git clone -b sgx-emm-1.0.2 https://github.com/intel/sgx-emm.git --depth 1 $(EMM_DIR)
+	git clone -b sgx-emm-1.0.3 https://github.com/intel/sgx-emm.git --depth 1 $(EMM_DIR)
 #endif
 
 clean:

@@ -142,22 +142,17 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence_host(
     quote3_error_t func_ret = SGX_QL_ERROR_UNEXPECTED;
     uint8_t *p_quote = NULL;
     uint32_t quote_size = 0;
-
+    uint8_t *p_cbor_evidence = NULL;
+    uint32_t cbor_evidence_size = 0;
     sgx_cert_t cert = {0};
     uint8_t *pub_key_buff = NULL;
     size_t pub_key_buff_size = KEY_BUFF_SIZE;
-    uint32_t quote_type = 0;
-    uint8_t *p_report_data = NULL;
-    uint8_t *p_cert_pub_hash = NULL;
-    size_t report_data_size = 0;
-    SHA256_CTX sha_handle;
 
     if (p_cert_in_der == NULL ||
         p_qv_result == NULL ||
         pp_supplemental_data == NULL ||
         p_supplemental_data_size == NULL)
         return SGX_QL_ERROR_INVALID_PARAMETER;
-
 
     do {
         //verify X.509 certificate
@@ -178,36 +173,78 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence_host(
             if (ret != SGX_SUCCESS)
                 break;
 
-            // try to get quote from cert extension
+            ret = sgx_get_pubkey_from_cert(&cert, pub_key_buff, &pub_key_buff_size);
+            if (ret != SGX_SUCCESS) {
+                func_ret = SGX_QL_ERROR_UNEXPECTED;
+                break;
+            }
+
+            p_quote = (uint8_t*)malloc(RAW_QUOTE_MAX_SIZE);
+            if (!p_quote) {
+                func_ret = SGX_QL_ERROR_OUT_OF_MEMORY;
+                break;
+            }
+
+            p_cbor_evidence = (uint8_t*)malloc(CBOR_QUOTE_MAX_SIZE);
+            if (!p_cbor_evidence) {
+                func_ret = SGX_QL_ERROR_OUT_OF_MEMORY;
+                break;
+            }
+            
             if (sgx_cert_find_extension(
                 &cert,
-                oid_sgx_quote,
-                NULL,
-                &quote_size) == SGX_ERROR_INVALID_PARAMETER)
+                g_evidence_oid,
+                p_cbor_evidence,
+                &cbor_evidence_size) == SGX_SUCCESS)
             {
-                p_quote = (uint8_t*)malloc(quote_size);
-                if (!p_quote) {
-                    func_ret = SGX_QL_ERROR_OUT_OF_MEMORY;
+                if (cbor_evidence_size > CBOR_QUOTE_MAX_SIZE)
+                {
+                    // buffer overflow, return error
+                    func_ret = SGX_QL_ERROR_UNEXPECTED;
+                    break;
+                }
+                // if tcg tagged evidence oid found, extract it here
+                ret = extract_cbor_evidence_and_compare_hash(p_cbor_evidence, cbor_evidence_size,
+                            pub_key_buff, pub_key_buff_size,
+                            p_quote, &quote_size);
+                if (ret != SGX_SUCCESS)
+                {
+                    func_ret = SGX_QL_ERROR_UNEXPECTED;
                     break;
                 }
             }
-
-            if (sgx_cert_find_extension(
-                &cert,
-                oid_sgx_quote,
-                p_quote,
-                &quote_size) != SGX_SUCCESS)
+            else if (sgx_cert_find_extension(
+                    &cert,
+                    oid_sgx_quote,
+                    p_quote,
+                    &quote_size) == SGX_SUCCESS)
+           {
+                // if no tcg tagged evidence oid found, try to find the legacy
+                // oid
+                if (quote_size > RAW_QUOTE_MAX_SIZE)
+                {
+                    func_ret = SGX_QL_ERROR_UNEXPECTED;
+                    break;
+                }
+                ret = sgx_tls_compare_quote_hash(p_quote,
+                            pub_key_buff, pub_key_buff_size);
+                if (ret != SGX_SUCCESS){
+                    func_ret = SGX_QL_ERROR_UNEXPECTED;
+                    break;
+                }
+            }
+            else
             {
                 func_ret = SGX_QL_ERROR_UNEXPECTED;
                 break;
             }
         }
-
         catch (...) {
             func_ret = SGX_QL_ERROR_UNEXPECTED;
             break;
         }
 
+        // check supplemental data
         func_ret = sgx_tls_get_supplemental_data_size_ocall(p_supplemental_data_size);
         if (func_ret != SGX_QL_SUCCESS) {
             break;
@@ -230,65 +267,11 @@ extern "C" quote3_error_t tee_verify_certificate_with_evidence_host(
 
         if (func_ret != SGX_QL_SUCCESS)
             break;
-
-        // identify quote type from quote header
-        quote_type = *(uint32_t *)(p_quote + 4 * sizeof(uint8_t));
-
-        // extract public key from cert
-        ret = sgx_get_pubkey_from_cert(&cert, pub_key_buff, &pub_key_buff_size);
-        if (ret != SGX_SUCCESS) {
-            func_ret = SGX_QL_ERROR_UNEXPECTED;
-            break;
-        }
-
-        // get hash of cert pub key
-        report_data_size = (quote_type == 0x81) ? SGX_REPORT2_DATA_SIZE : SGX_REPORT_DATA_SIZE;
-        p_cert_pub_hash = (uint8_t*)malloc(report_data_size);
-        if (!p_cert_pub_hash) {
-            func_ret = SGX_QL_OUT_OF_EPC;
-            break;
-        }
-
-        if (!SHA256_Init(&sha_handle)) {
-            func_ret = SGX_QL_ERROR_UNEXPECTED;
-            break;
-        }
-
-        // public key
-        if (!SHA256_Update(&sha_handle, pub_key_buff, pub_key_buff_size)) {
-            func_ret = SGX_QL_ERROR_UNEXPECTED;
-            break;
-        }
-
-        if (!SHA256_Final(reinterpret_cast<unsigned char *>(p_cert_pub_hash), &sha_handle)) {
-            func_ret = SGX_QL_ERROR_UNEXPECTED;
-            break;
-        }
-
-        // extract report data from quote
-        if (quote_type == 0) {
-            p_report_data = (uint8_t *)(&((sgx_quote3_t *)p_quote)->report_body.report_data);
-        }
-        else if (quote_type == 0x81) {
-            p_report_data = (uint8_t *)(&((sgx_quote4_t *)p_quote)->report_body.report_data);
-        }
-        else {
-            func_ret = SGX_QL_ERROR_UNEXPECTED;
-            break;
-        }
-
-        // compare hash, only compare the first 32 bytes
-        if (memcmp(p_report_data, p_cert_pub_hash, SGX_HASH_SIZE) != 0) {
-            func_ret = SGX_QL_ERROR_PUB_KEY_ID_MISMATCH;
-            break;
-        }
-
-
     } while(0);
 
     SGX_TLS_SAFE_FREE(pub_key_buff);
     SGX_TLS_SAFE_FREE(p_quote);
-    SGX_TLS_SAFE_FREE(p_cert_pub_hash);
+    SGX_TLS_SAFE_FREE(p_cbor_evidence);
 
     if (func_ret != SGX_QL_SUCCESS)
         SGX_TLS_SAFE_FREE(*pp_supplemental_data);

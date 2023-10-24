@@ -130,19 +130,6 @@ typedef struct _data_node
 
 COMPILE_TIME_ASSERT(sizeof_data_node_t, sizeof(data_node_t) == 4096);
 
-typedef struct _encrypted_node
-{
-	uint8_t cipher[NODE_SIZE];
-} encrypted_node_t;
-
-COMPILE_TIME_ASSERT(sizeof_encrypted_node_t, sizeof(encrypted_node_t) == 4096);
-
-typedef struct _recovery_node
-{
-	uint64_t physical_node_number;
-	uint8_t node_data[NODE_SIZE];
-} recovery_node_t;
-
 #pragma pack(pop)
 
 #endif // _PROTECTED_FS_NODES_H_

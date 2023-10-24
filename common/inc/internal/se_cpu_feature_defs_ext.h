@@ -135,10 +135,7 @@ typedef enum {
 #define CPU_ATOM2          0x26
 #define CPU_ATOM3          0x27
 
-
-
-#define CPU_FAMILY(x)     (((x) >> 8) & 0xf)
-#define CPU_MODEL(x)      (((x) >> 4) & 0xf)
+#define CPU_MODEL(x)      ((((x) >> 12) & 0xf0U)  | (((x) >> 4) & 0xfU))
 #define CPU_STEPPING(x)   (((x) >> 0) & 0xf)
 
 #define CPU_HAS_MMX(x)    (((x) & 0x00800000) != 0)

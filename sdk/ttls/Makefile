@@ -45,6 +45,8 @@ endif
 
 SGX_QV_PATH ?= ../../external/dcap_source/QuoteVerification
 PREBUILT_OPENSSL_PATH ?= $(SGX_QV_PATH)/../prebuilt/openssl
+CBOR_PATH ?= $(LINUX_EXTERNAL_DIR)/cbor
+CBOR_RELATIVE_PATH ?= ../../external/cbor
 
 INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
            -I$(COMMON_DIR)/inc/internal \
@@ -56,7 +58,8 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
            -I$(SGX_QV_PATH)/../QuoteGeneration/pce_wrapper/inc \
            -I$(SGX_QV_PATH)/dcap_tvl \
            -include./tsgxsslio.h \
-           -I$(PREBUILT_OPENSSL_PATH)/inc
+           -I$(PREBUILT_OPENSSL_PATH)/inc \
+           -I$(CBOR_PATH)/trusted/include
 INCLUDE_TDX := $(filter-out -I$(PREBUILT_OPENSSL_PATH)/inc,$(INCLUDE))
 
 CXXFLAGS_TDX := $(CXXFLAGS) $(COMMON_FLAGS) $(COMMON_LDFLAGS) -fPIC -Werror -Wno-unused-parameter -g
@@ -70,6 +73,11 @@ SRC := $(wildcard *.cpp)
 OBJ := $(sort $(SRC:.cpp=.o))
 OBJ_TDX := $(addprefix tdx_, $(OBJ))
 
+LIBSGX_CBOR = libsgx_cbor.a
+LIBCBOR = libcbor.a
+LIBSGX_CBOR_PATH = $(CBOR_PATH)/trusted/lib
+LIBCBOR_PATH = $(CBOR_PATH)/untrusted/lib
+
 LIBNAME := libsgx_ttls.a
 LIBNAME_TDX := libtdx_tls.a
 
@@ -77,6 +85,7 @@ LIBNAME_TDX := libtdx_tls.a
 all: $(LIBNAME) $(LIBNAME_TDX) | $(BUILD_DIR)
 	$(CP) $(LIBNAME) $|
 	$(CP) $(LIBNAME_TDX) $|
+
 
 $(TLSNAME)_t.h: $(EDLFILE) $(EDGER8R)
 	$(EDGER8R) --trusted --header-only --search-path $(TOP_DIR)/common/inc $<
@@ -86,15 +95,29 @@ $(EDGER8R):
 
 $(LIBNAME): $(OBJ)
 	$(AR) rs $@ $(OBJ)
+	$(MKDIR) $(BUILD_DIR)/.libsgx_cbor
+	$(RM) $(BUILD_DIR)/.libsgx_cbor/* && cd $(BUILD_DIR)/.libsgx_cbor && $(AR) x $(LIBSGX_CBOR_PATH)/$(LIBSGX_CBOR)
+	$(AR) rs $@ $(BUILD_DIR)/.libsgx_cbor/*.o
+	@$(RM) -r $(BUILD_DIR)/.libsgx_cbor
 
 $(LIBNAME_TDX): $(OBJ_TDX)
-	$(AR) rs $@ $^
+	$(AR) rs $@ $(OBJ_TDX)
+	$(MKDIR) $(BUILD_DIR)/.libcbor
+	$(RM) $(BUILD_DIR)/.libcbor/* && cd $(BUILD_DIR)/.libcbor && $(AR) x $(LIBCBOR_PATH)/$(LIBCBOR)
+	$(AR) rs $@ $(BUILD_DIR)/.libcbor/*.o
+	@$(RM) -r $(BUILD_DIR)/.libcbor
 
-$(OBJ): $(TLSNAME)_t.h
-$(OBJ): %.o :%.cpp
+$(OBJ): $(TLSNAME)_t.h 
+$(OBJ): %.o :%.cpp $(LIBSGX_CBOR)
 	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
-$(OBJ_TDX): tdx_%.o :%.cpp
+$(OBJ_TDX): tdx_%.o :%.cpp $(LIBCBOR)
 	$(CXX) $(CXXFLAGS_TDX) $(INCLUDE_TDX) -DTDX_ENV -c $< -o $@
+
+$(LIBSGX_CBOR):
+	@test -f $(LIBSGX_CBOR_PATH)/$(LIBSGX_CBOR) || $(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_trusted 
+
+$(LIBCBOR):
+	@test -f $(LIBCBOR_PATH)/$(LIBCBOR) || $(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_untrusted
 
 .PHONY: clean
 clean:
@@ -104,6 +127,7 @@ clean:
 	@$(RM) $(LIBNAME) $(BUILD_DIR)/$(LIBNAME)
 	@$(RM) $(LIBNAME_TDX) $(BUILD_DIR)/$(LIBNAME_TDX)
 	$(MAKE) -C $(EDGER8R_DIR) clean
+	$(MAKE) -C $(CBOR_PATH) clean
 
 .PHONY: rebuild
 rebuild:

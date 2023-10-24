@@ -400,7 +400,7 @@ file_data_node_t* protected_fs_file::get_data_node()
 		}
 		else
 		{
-			if (internal_flush(/*false,*/ false) == false) // error, can't flush cache, file status changed to error
+			if (internal_flush() == false) // error, can't flush cache, file status changed to error
 			{
 				assert(file_status != SGX_FILE_STATUS_OK);
 				if (file_status == SGX_FILE_STATUS_OK)
@@ -453,7 +453,6 @@ file_data_node_t* protected_fs_file::read_data_node()
 	uint64_t data_node_number;
 	uint64_t physical_node_number;
 	file_mht_node_t* file_mht_node;
-	int32_t result32;
 	sgx_status_t status;
 
 	get_node_numbers(offset, NULL, &data_node_number, NULL, &physical_node_number);
@@ -482,19 +481,18 @@ file_data_node_t* protected_fs_file::read_data_node()
 	file_data_node->physical_node_number = physical_node_number;
 	file_data_node->parent = file_mht_node;
 		
-	status = u_sgxprotectedfs_fread_node(&result32, file, file_data_node->physical_node_number, file_data_node->encrypted.cipher, NODE_SIZE);
-	if (status != SGX_SUCCESS || result32 != 0)
+	if (file_addr == NULL || real_file_size < 0 || ((uint64_t)real_file_size < NODE_SIZE * (file_data_node->physical_node_number + 1)))
 	{
 		delete file_data_node;
-		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+		last_error = EIO;
 		return NULL;
 	}
+	uint8_t* file_data_node_addr = file_addr + NODE_SIZE * file_data_node->physical_node_number;
 
 	gcm_crypto_data_t* gcm_crypto_data = &file_data_node->parent->plain.data_nodes_crypto[file_data_node->data_node_number % ATTACHED_DATA_NODES_COUNT];
 
 	// this function decrypt the data _and_ checks the integrity of the data against the gmac
-	status = sgx_rijndael128GCM_decrypt(&gcm_crypto_data->key, file_data_node->encrypted.cipher, NODE_SIZE, file_data_node->plain.data, empty_iv, SGX_AESGCM_IV_SIZE, NULL, 0, &gcm_crypto_data->gmac);
+	status = sgx_rijndael128GCM_decrypt(&gcm_crypto_data->key, file_data_node_addr, NODE_SIZE, file_data_node->plain.data, empty_iv, SGX_AESGCM_IV_SIZE, NULL, 0, &gcm_crypto_data->gmac);
 	if (status != SGX_SUCCESS)
 	{
 		delete file_data_node;
@@ -589,7 +587,6 @@ file_mht_node_t* protected_fs_file::append_mht_node(uint64_t mht_node_number)
 
 file_mht_node_t* protected_fs_file::read_mht_node(uint64_t mht_node_number)
 {
-	int32_t result32;
 	sgx_status_t status;
 
 	if (mht_node_number == 0)
@@ -619,20 +616,19 @@ file_mht_node_t* protected_fs_file::read_mht_node(uint64_t mht_node_number)
 	file_mht_node->mht_node_number = mht_node_number;
 	file_mht_node->physical_node_number = physical_node_number;
 	file_mht_node->parent = parent_file_mht_node;
-		
-	status = u_sgxprotectedfs_fread_node(&result32, file, file_mht_node->physical_node_number, file_mht_node->encrypted.cipher, NODE_SIZE);
-	if (status != SGX_SUCCESS || result32 != 0)
+
+	if (file_addr == NULL || real_file_size < 0 || ((uint64_t)real_file_size < NODE_SIZE * (file_mht_node->physical_node_number + 1)))
 	{
 		delete file_mht_node;
-		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+		last_error = EIO;
 		return NULL;
 	}
+	uint8_t* file_mht_node_addr = file_addr + NODE_SIZE * file_mht_node->physical_node_number;
 	
 	gcm_crypto_data_t* gcm_crypto_data = &file_mht_node->parent->plain.mht_nodes_crypto[(file_mht_node->mht_node_number - 1) % CHILD_MHT_NODES_COUNT];
 
 	// this function decrypt the data _and_ checks the integrity of the data against the gmac
-	status = sgx_rijndael128GCM_decrypt(&gcm_crypto_data->key, file_mht_node->encrypted.cipher, NODE_SIZE, (uint8_t*)&file_mht_node->plain, empty_iv, SGX_AESGCM_IV_SIZE, NULL, 0, &gcm_crypto_data->gmac);
+	status = sgx_rijndael128GCM_decrypt(&gcm_crypto_data->key, file_mht_node_addr, NODE_SIZE, (uint8_t*)&file_mht_node->plain, empty_iv, SGX_AESGCM_IV_SIZE, NULL, 0, &gcm_crypto_data->gmac);
 	if (status != SGX_SUCCESS)
 	{
 		delete file_mht_node;

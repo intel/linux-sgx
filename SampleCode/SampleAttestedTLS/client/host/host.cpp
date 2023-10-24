@@ -139,15 +139,15 @@ void print_error_message(sgx_status_t ret)
     }
 
     if (idx == ttl)
-    	printf("Error code is 0x%X. Please refer to the \"Intel SGX SDK Developer Reference\" for more details.\n", ret);
+        printf("Error code is 0x%X. Please refer to the \"Intel SGX SDK Developer Reference\" for more details.\n", ret);
 }
 
 sgx_status_t initialize_enclave(const char *enclave_path)
 {
-	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
-	// the 1st parameter should be CLIENT_ENCLAVE_FILENAME
-	ret = sgx_create_enclave(enclave_path, SGX_DEBUG_FLAG, NULL, NULL, &client_global_eid, NULL);
+    // the 1st parameter should be CLIENT_ENCLAVE_FILENAME
+    ret = sgx_create_enclave(enclave_path, SGX_DEBUG_FLAG, NULL, NULL, &client_global_eid, NULL);
     printf("Client Enc: Enclave library %s\n", enclave_path);
 
     if (ret != SGX_SUCCESS)
@@ -160,7 +160,7 @@ sgx_status_t initialize_enclave(const char *enclave_path)
 
 void terminate_enclave()
 {
-	sgx_destroy_enclave(client_global_eid);
+    sgx_destroy_enclave(client_global_eid);
     printf("Host: Enclave successfully terminated.\n");
 }
 

@@ -500,8 +500,8 @@ static void enclave_set_provision_access(int hdevice, void* enclave_base)
             {
                 SE_TRACE(SE_TRACE_WARNING, "\nSGX_IOC_ENCLAVE_SET_ATTRIBUTE, failed: errno = %d\n", errno);
             }
+            close(hdev_prov);
         }
-        close(hdev_prov);
     }
     else
     {

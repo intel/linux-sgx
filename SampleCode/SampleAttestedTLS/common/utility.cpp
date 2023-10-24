@@ -46,55 +46,45 @@
 int get_pkey_by_rsa(EVP_PKEY *pk)
 {
     int res = -1;
-    RSA* rsa = nullptr;
-    BIGNUM* e = nullptr;
+    EVP_PKEY_CTX *ctx = NULL;
 
-
-    e = BN_new();
-    if (!e) {
-        PRINT("BN_new failed\n");
-		goto done;
-    }
-
-    res = BN_set_word(e, (BN_ULONG)RSA_F4);
-    if (!res) {
-        PRINT("BN_set_word failed (%d)\n", res);
-		goto done;
-    }
-
-    rsa = RSA_new();
-    if (!rsa) {
-        PRINT("RSA_new failed\n");
-        res = -1;
-		goto done;
-    }
-
-    res = RSA_generate_key_ex(
-        rsa,
-        RSA_3072_PRIVATE_KEY_SIZE,   /* number of bits for the key value */
-        e,      /* exponent - RSA_F4 is defined as 0x10001L */
-        nullptr /* callback argument - not needed in this case */
-    );
-
-    if (!res)
+    ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, NULL);
+    if (ctx == NULL)
+        return res;
+    res = EVP_PKEY_keygen_init(ctx);
+    if (res <= 0)
     {
-        PRINT("RSA_generate_key failed (%d)\n", res);
-		goto done;
+        PRINT("keygen_init failed (%d)\n", res);
+        goto done;
     }
 
-    // Assign RSA key to EVP_PKEY structure
-    EVP_PKEY_assign_RSA(pk, rsa);
+    res = EVP_PKEY_CTX_set_rsa_keygen_bits(ctx, RSA_3072_PRIVATE_KEY_SIZE);
+    if (res <= 0)
+    {
+        PRINT("set_rsa_kengen_bits failed (%d)\n", res);
+        goto done;
+    }
+
+    /* Generate key */
+    res = EVP_PKEY_keygen(ctx, &pk);
+    if (res <= 0)
+    {
+        PRINT("keygen failed (%d)\n", res);
+        goto done;
+    }
 
 done:
-    if (e)
-	    BN_clear_free(e);
+    if (ctx)
+        EVP_PKEY_CTX_free(ctx);
+
     return res;
+
 }
 
 int get_pkey_by_ec(EVP_PKEY *pk)
 {
-	int res = -1;
-	EVP_PKEY_CTX *ctx;
+    int res = -1;
+    EVP_PKEY_CTX *ctx;
 
     ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_EC, NULL);
     if (ctx == NULL)
@@ -122,8 +112,8 @@ int get_pkey_by_ec(EVP_PKEY *pk)
     }
 
 done:
-	if (ctx)
-		EVP_PKEY_CTX_free(ctx);
+    if (ctx)
+        EVP_PKEY_CTX_free(ctx);
 
     return res;
 }
@@ -133,7 +123,7 @@ done:
 // hardare independant
 sgx_status_t generate_key_pair(
     int type,
-	uint8_t** public_key,
+    uint8_t** public_key,
     size_t* public_key_size,
     uint8_t** private_key,
     size_t* private_key_size)
@@ -171,8 +161,8 @@ sgx_status_t generate_key_pair(
     if (res <= 0)
     {
         PRINT("get_pkey failed (%d)\n", res);
-		result = SGX_ERROR_UNEXPECTED;
-		goto done;
+        result = SGX_ERROR_UNEXPECTED;
+        goto done;
     }
 
     // Allocate memory
@@ -200,7 +190,7 @@ sgx_status_t generate_key_pair(
     if (!bio)
     {
         PRINT("BIO_new for local_public_key failed\n");
-		goto done;
+        goto done;
     }
 
     res = PEM_write_bio_PUBKEY(bio, pkey);
@@ -259,7 +249,7 @@ done:
     if (pkey)
         EVP_PKEY_free(pkey); // When this is called, rsa is also freed
     if (result != SGX_SUCCESS)
-	{
+    {
         if (local_public_key)
             free(local_public_key);
         if (local_private_key)

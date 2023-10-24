@@ -35,6 +35,8 @@
 #include "se_tcrypto_common.h"
 #include "openssl/hmac.h"
 #include "openssl/err.h"
+#include <openssl/core_names.h>
+#include <openssl/param_build.h>
 
  /* Message Authentication - HMAC 256
  * Parameters:
@@ -49,9 +51,9 @@
 sgx_status_t sgx_hmac_sha256_msg(const unsigned char *p_src, int src_len, const unsigned char *p_key, int key_len,
     unsigned char *p_mac, int mac_len)
 {
-    if ((p_src == NULL) || (p_key == NULL) || (p_mac == NULL) || (src_len <= 0) || (key_len <= 0) || (mac_len <= 0)) {
-        return SGX_ERROR_INVALID_PARAMETER;
-    }
+	if ((p_src == NULL) || (p_key == NULL) || (p_mac == NULL) || (src_len <= 0) || (key_len <= 0) || (mac_len <= 0)) {
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
 
 	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 	unsigned char *ret_mac = NULL;
@@ -79,38 +81,53 @@ sgx_status_t sgx_hmac_sha256_msg(const unsigned char *p_src, int src_len, const 
 *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
 *   Inputs: const unsigned char *p_key - Pointer to the key used in message authentication operation
 *           int key_len - Key length
-*   Output: sgx_hmac_state_handle_t *p_hmac_handle - Pointer to the initialized HMAC state handle
+*   Output: sgx_hmac_state_handle_t *p_hmac_handle - Pointer to the initialized EVP_MAC_CTX state handle
 */
 sgx_status_t sgx_hmac256_init(const unsigned char *p_key, int key_len, sgx_hmac_state_handle_t *p_hmac_handle)
 {
+	OSSL_LIB_CTX *lib_ctx = NULL;
+	EVP_MAC *mac = NULL;
+	EVP_MAC_CTX *mctx = NULL;
+	OSSL_PARAM params[2] = {OSSL_PARAM_END, OSSL_PARAM_END};
+	char digest_name[] = "SHA256";
+	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+
 	if ((p_key == NULL) || (key_len <= 0) || (p_hmac_handle == NULL)) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
-	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-	void* pState = NULL;
-
 	do {
-		// create HMAC ctx
-		//
-		pState = HMAC_CTX_new();
-		if (pState == NULL) {
+		if ((lib_ctx = OSSL_LIB_CTX_new()) == NULL)
+		{
+			ret = SGX_ERROR_OUT_OF_MEMORY;
+			break;
+		}
+		if ((mac = EVP_MAC_fetch(lib_ctx, "HMAC", NULL)) == NULL)
+		{
 			ret = SGX_ERROR_OUT_OF_MEMORY;
 			break;
 		}
 
-		//init HMAC ctx
-		//
-		if (!HMAC_Init_ex((HMAC_CTX*)pState, (const void *)p_key, key_len, EVP_sha256(), NULL)) {
+		if ((mctx = EVP_MAC_CTX_new(mac)) == NULL) {
+			ret = SGX_ERROR_OUT_OF_MEMORY;
 			break;
 		}
 
-		*p_hmac_handle = pState;
+		params[0] = OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST,  digest_name, sizeof(digest_name));
+
+		if ((!EVP_MAC_init(mctx, (const uint8_t *)p_key, sizeof(sgx_key_128bit_t), params))) {
+			break;
+		}
+
+		*p_hmac_handle = mctx;
 		ret = SGX_SUCCESS;
 	} while (0);
 
+
+	EVP_MAC_free(mac);
+	OSSL_LIB_CTX_free(lib_ctx);
 	if (ret != SGX_SUCCESS) {
-		sgx_hmac256_close((sgx_hmac_state_handle_t)pState);
+		EVP_MAC_CTX_free(mctx);
 	}
 
 	return ret;
@@ -121,17 +138,17 @@ sgx_status_t sgx_hmac256_init(const unsigned char *p_key, int key_len, sgx_hmac_
 *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.
 *	Input:  uint8_t *p_src - Pointer to the input stream to be hashed
 *	        int src_len - Length of input stream to be hashed
-*	        sgx_hmac_state_handle_t hmac_handle - Handle to the HMAC state
+*	        sgx_hmac_state_handle_t hmac_handle - Handle to the EVP_MAC_CTX state
 */
 sgx_status_t sgx_hmac256_update(const uint8_t *p_src, int src_len, sgx_hmac_state_handle_t hmac_handle)
 {
-    if ((p_src == NULL) || (src_len <= 0) || (hmac_handle == NULL)) {
-        return SGX_ERROR_INVALID_PARAMETER;
-    }
-    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+	if ((p_src == NULL) || (src_len <= 0) || (hmac_handle == NULL)) {
+        	return SGX_ERROR_INVALID_PARAMETER;
+	}
+	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
 
 	do {
-		if (!HMAC_Update((HMAC_CTX *)hmac_handle, p_src, src_len)) {
+		if (!EVP_MAC_update((EVP_MAC_CTX *)hmac_handle, p_src, src_len)) {
 			break;
 		}
 		
@@ -144,7 +161,7 @@ sgx_status_t sgx_hmac256_update(const uint8_t *p_src, int src_len, sgx_hmac_stat
 /* Returns calculated hash
 * Parameters:
 *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-*	Input:  sgx_hmac_state_handle_t hmac_handle - Handle to the HMAC state
+*	Input:  sgx_hmac_state_handle_t hmac_handle - Handle to the EVP_MAC_CTX state
 *	        int hash_len - Expected MAC length
 *   Output: unsigned char *p_hash - Resultant hash from HMAC operation
 */
@@ -154,10 +171,10 @@ sgx_status_t sgx_hmac256_final(unsigned char *p_hash, int hash_len, sgx_hmac_sta
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-	unsigned int mactlen;
+	size_t mactlen;
 
 	do {
-		if (!HMAC_Final((HMAC_CTX*)hmac_handle, (unsigned char*)p_hash, &mactlen)) {
+	        if (!EVP_MAC_final((EVP_MAC_CTX*)hmac_handle, (unsigned char*)p_hash, &mactlen, hash_len)) {
 			break;
 		}
 		if (mactlen != (size_t)hash_len) {
@@ -178,13 +195,13 @@ sgx_status_t sgx_hmac256_final(unsigned char *p_hash, int hash_len, sgx_hmac_sta
 /* Clean up and free the HMAC state
 * Parameters:
 *   Return: sgx_status_t  - SGX_SUCCESS
-*   Input:  sgx_hmac_state_handle_t hmac_handle  - Handle to the HMAC state
+*   Input:  sgx_hmac_state_handle_t hmac_handle  - Handle to the EVP_MAC_CTX state
 * */
 sgx_status_t sgx_hmac256_close(sgx_hmac_state_handle_t hmac_handle)
 {
 	if (hmac_handle != NULL) {
-		HMAC_CTX* pState = (HMAC_CTX*)hmac_handle;
-		HMAC_CTX_free(pState);
+		EVP_MAC_CTX* pState = (EVP_MAC_CTX*)hmac_handle;
+		EVP_MAC_CTX_free(pState);
 		hmac_handle = NULL;
 	}
 	

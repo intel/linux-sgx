@@ -32,16 +32,16 @@
 
 top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
-openssl_ver=1.1.1u
+openssl_ver=3.0.10
 openssl_ver_name=openssl-$openssl_ver
 sgxssl_github_archive=https://github.com/intel/intel-sgx-ssl/archive
-sgxssl_file_name=lin_2.21_1.1.1u
+sgxssl_file_name=3.0_Rev1
 build_script=$top_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
-full_openssl_url=$server_url_path/old/1.1.1/$openssl_ver_name.tar.gz
+full_openssl_url=$server_url_path/old/3.0/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=b83c6f98041eb77df209cef91b77b68a8cbd861e5617fe1bf087398042e5ace6
-openssl_chksum=e2f8d84b523eecd06c7be7626830370300fbcc15386bf5142d72758f6963ebc6
+sgxssl_chksum=6371dbe25acdc5a3bbb2978a0a559ad2eefd713b9bbf5d3a45236229c9cc53b6
+openssl_chksum=1761d4f5b13a1028b9b6f3d4b8e17feb0cedc9370f6afe61d7193d2cdce83323
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
 	wget $sgxssl_github_archive/$sgxssl_file_name.zip -P $top_dir || exit 1
@@ -71,8 +71,8 @@ fi
 
 pushd $top_dir/Linux/
 if [ "$MITIGATION" != "" ]; then
-        make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+        make clean all NO_THREADS=1 LINUX_SGX_BUILD=1 DEBUG=$DEBUG
 else
-        make clean sgxssl_no_mitigation LINUX_SGX_BUILD=1 DEBUG=$DEBUG
+        make clean sgxssl_no_mitigation NO_THREADS=1 LINUX_SGX_BUILD=1 DEBUG=$DEBUG
 fi
 popd

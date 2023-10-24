@@ -29,12 +29,6 @@
 #
 #
 
-find_package(CURL REQUIRED)
-if(CURL_FOUND)
-    message ("CURL found")
-else()
-    message (FATAL_ERROR "Cannot find CURL")
-endif()
 aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl _srcs)
 aux_source_directory(${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/linux _srcs)
 add_library(sgx_default_qcnl_wrapper SHARED ${_srcs})
@@ -55,21 +49,13 @@ target_include_directories(sgx_default_qcnl_wrapper PRIVATE
     ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/include
 )
 
-add_custom_target(PCKCertSelectionLib
-    COMMAND make -f ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/PCKCertSelectionLib/Makefile.static_lib
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/PCKCertSelectionLib
-)
-
-add_library(PCKCertSelectionStaticLib STATIC IMPORTED ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/static_out/libPCKCertSelection.a)
-set_target_properties(PCKCertSelectionStaticLib PROPERTIES IMPORTED_LOCATION ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/tools/PCKCertSelection/static_out/libPCKCertSelection.a)
-add_dependencies(PCKCertSelectionStaticLib PCKCertSelectionLib)
+add_dependencies(sgx_default_qcnl_wrapper PCKCertSelection)
 
 set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")
 set_property(TARGET sgx_default_qcnl_wrapper APPEND_STRING PROPERTY LINK_DEPENDS  
         ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/linux/sgx_default_qcnl.lds
     )
-
 target_link_libraries(sgx_default_qcnl_wrapper
-    ${CURL_LIBRARIES} crypto PCKCertSelectionStaticLib
+  oal crypto ${CMAKE_CURRENT_BINARY_DIR}/../lib/libPCKCertSelection.a
 )
 

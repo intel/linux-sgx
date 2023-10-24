@@ -80,6 +80,13 @@ sgx_status_t SGXAPI sgx_register_aex_handler(sgx_aex_mitigation_node_t *aex_node
 {
     if (aex_node == NULL || handler == NULL)
        return SGX_ERROR_INVALID_PARAMETER;
+
+    auto aex_enabled = get_ssa_aexnotify();
+    //temporary disabled aex-notify to avoid being interupted during register handler
+    if(aex_enabled)
+    {
+        sgx_set_ssa_aexnotify(0);
+    }
     thread_data_t *thread_data = get_thread_data();
     sgx_aex_mitigation_node_t *head = (sgx_aex_mitigation_node_t *)thread_data->aex_mitigation_list;
 
@@ -90,6 +97,10 @@ sgx_status_t SGXAPI sgx_register_aex_handler(sgx_aex_mitigation_node_t *aex_node
 
     thread_data->aex_mitigation_list = (sys_word_t) head;
 
+    if(aex_enabled)
+    {
+        sgx_set_ssa_aexnotify(1);
+    }
     return SGX_SUCCESS;
 }
 
@@ -97,13 +108,23 @@ sgx_status_t SGXAPI sgx_unregister_aex_handler(sgx_aex_mitigation_fn_t handler)
 {
     if(handler == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
+    sgx_status_t ret = SGX_SUCCESS;
+    auto aex_enabled = get_ssa_aexnotify();
+    //temporary disabled aex-notify to avoid being interupted during unregister handler
+    if(aex_enabled)
+    {
+        sgx_set_ssa_aexnotify(0);
+    }
 
     // Search and find out the aex_node corresponding to the handler
     thread_data_t *thread_data = get_thread_data();
     sgx_aex_mitigation_node_t *node = (sgx_aex_mitigation_node_t *)thread_data->aex_mitigation_list;
     sgx_aex_mitigation_node_t *prev_node = NULL;
     if(node == NULL)
-        return SGX_ERROR_UNEXPECTED;
+    {
+        ret = SGX_ERROR_UNEXPECTED;
+        goto clean_return;
+    }
 
     while(node)
     {
@@ -127,9 +148,15 @@ sgx_status_t SGXAPI sgx_unregister_aex_handler(sgx_aex_mitigation_fn_t handler)
     }
     else // node not found
     {
-        return SGX_ERROR_INVALID_PARAMETER;
+        ret = SGX_ERROR_INVALID_PARAMETER;
+        goto clean_return;
     }
-    return SGX_SUCCESS;
+ clean_return:
+    if(aex_enabled)
+    {
+        sgx_set_ssa_aexnotify(1);
+    }
+    return ret;
 }
 
 

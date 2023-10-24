@@ -51,8 +51,9 @@ build: $(SGXSSL_HEADER_CHECK)
 	$(MAKE) -C client
 	$(MAKE) -C non_enc_client
 
-tdx: $(SGXSSL_HEADER_CHECK)
+tdx:
 	$(MAKE) -C server_tdx
+	$(MAKE) -C non_enc_client
 
 clean:
 	$(MAKE) -C server clean

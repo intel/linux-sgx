@@ -48,10 +48,9 @@ typedef enum _key_type_t
     PUBLIC_KEY 
 } key_type_t;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-void RSA_get0_key(const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d);
-#endif
+bool rsa_get_bn(EVP_PKEY *pkey, BIGNUM **n, BIGNUM **e, BIGNUM **d);
+void rsa_free_bn(BIGNUM *n, BIGNUM *e, BIGNUM *d);
 
-bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type);
+bool parse_key_file(int mode, const char *key_path, EVP_PKEY **pkey, int *pkey_type);
 
 #endif

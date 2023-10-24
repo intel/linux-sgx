@@ -18,6 +18,8 @@
         sgx_create_enclave_from_buffer_ex;
         sgx_set_switchless_itf;
         sgx_get_metadata;
+        sgx_trace_logger_callback;
+        sgx_trace_loglevel;
     local:
         *;
 };

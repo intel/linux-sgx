@@ -55,10 +55,13 @@ preparation:
 	cd external/openmp/openmp_code && git apply ../0001-Enable-OpenMP-in-SGX.patch >/dev/null 2>&1 ||  git apply ../0001-Enable-OpenMP-in-SGX.patch --check -R
 	cd external/protobuf/protobuf_code && git apply ../sgx_protobuf.patch >/dev/null 2>&1 ||  git apply ../sgx_protobuf.patch --check -R
 	./external/sgx-emm/create_symlink.sh
-	cd external/mbedtls/mbedtls_code && git apply ../sgx_mbedtls.patch >/dev/null 2>&1
-	@# download prebuilt binaries
+	cd external/mbedtls/mbedtls_code && git apply ../sgx_mbedtls.patch >/dev/null 2>&1 || git apply ../sgx_mbedtls.patch --check -R
+	cd external/cbor && cp -r libcbor sgx_libcbor
+	cd external/cbor/libcbor && git apply ../raw_cbor.patch >/dev/null 2>&1 || git apply ../raw_cbor.patch --check -R
+	cd external/cbor/sgx_libcbor && git apply ../sgx_cbor.patch >/dev/null 2>&1 || git apply ../sgx_cbor.patch --check -R
 	./download_prebuilt.sh
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
+
 
 psw:
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)

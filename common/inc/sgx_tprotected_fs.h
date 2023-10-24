@@ -173,6 +173,25 @@ int64_t SGXAPI sgx_ftell(SGX_FILE* stream);
 int32_t SGXAPI sgx_fseek(SGX_FILE* stream, int64_t offset, int origin);
 
 
+/* sgx_fset_parallel_level
+ *  Purpose: set number of threads can be used in file flush
+ *           To achieve the best performance, please only use when write large files (>10M),
+ *           and with a customized cache size (i.e. use sgx_fopen_ex to open file)
+ *           For the reference, test result on ICX server
+ *              - cache size 10M ~ 100M , use 16 ~ 32 threads
+ *              - cache size > 100M, use more than 32 threads
+ *
+ *  Parameters:
+ *      stream - [IN] the file handle (opened with sgx_fopen or sgx_fopen_auto_key)
+ *      max_threads_number - [IN] number of threads can be used in file flush
+ *                           It must NOT exceed the TCS number in enclave configuration
+ *
+ *  Return value:
+ *     int32_t  - result, 0 - success, 1 - there was an error, thread number is 0
+*/
+int32_t SGXAPI sgx_fset_parallel_level(SGX_FILE* stream, uint32_t max_threads_number);
+
+
 /* sgx_fflush
  *  Purpose: force actual write of all the cached data to the disk (see c++ fflush documentation for more details).
  *

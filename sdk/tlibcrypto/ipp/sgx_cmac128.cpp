@@ -49,6 +49,7 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
     IppsAES_CMACState* pState = NULL;
     int ippStateSize = 0;
     IppStatus error_code = ippStsNoErr;
+    const int noise_level = 1;
 
     if ((p_key == NULL) || (p_src == NULL) || (p_mac == NULL))
     {
@@ -77,6 +78,13 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
         case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
         default: return SGX_ERROR_UNEXPECTED;
         }
+    }
+    error_code = ippsAES_CMACSetupNoise(noise_level, pState);
+    if(error_code != ippStsNoErr)
+    {
+        memset_s(pState, ippStateSize, 0, ippStateSize);
+        free(pState);
+        return SGX_ERROR_UNEXPECTED;
     }
     error_code = ippsAES_CMACUpdate((const Ipp8u *)p_src, src_len, pState);
     if (error_code != ippStsNoErr)
@@ -142,6 +150,7 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
     IppsAES_CMACState* pState = NULL;
     int ippStateSize = 0;
     IppStatus error_code = ippStsNoErr;
+    const int noise_level = 1;
     error_code = ippsAES_CMACGetSize(&ippStateSize);
     if (error_code != ippStsNoErr)
     {
@@ -158,7 +167,6 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
         // Clear state before free.
         memset_s(pState, ippStateSize, 0, ippStateSize);
         free(pState);
-        *p_cmac_handle = NULL;
         switch (error_code)
         {
         case ippStsMemAllocErr: return SGX_ERROR_OUT_OF_MEMORY;
@@ -166,6 +174,13 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
         case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
         default: return SGX_ERROR_UNEXPECTED;
         }
+    }
+    error_code = ippsAES_CMACSetupNoise(noise_level, pState);
+    if(error_code != ippStsNoErr)
+    {
+        memset_s(pState, ippStateSize, 0, ippStateSize);
+        free(pState);
+        return SGX_ERROR_UNEXPECTED;
     }
     *p_cmac_handle = pState;
     return SGX_SUCCESS;

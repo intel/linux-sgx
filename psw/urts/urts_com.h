@@ -289,8 +289,8 @@ static int __create_enclave(BinParser &parser,
     uint32_t enclave_version = SDK_VERSION_1_5;
     uint64_t urts_version = META_DATA_MAKE_VERSION(MAJOR_VERSION,MINOR_VERSION);
     // metadata->version has already been validated during load_encalve_ex()
-    if (MAJOR_VERSION_OF_METADATA(metadata->version) % SGX_MAJOR_VERSION_GAP == MAJOR_VERSION_OF_METADATA(urts_version)% SGX_MAJOR_VERSION_GAP &&
-        MINOR_VERSION_OF_METADATA(metadata->version) >= MINOR_VERSION_OF_METADATA(urts_version))
+    if (MAJOR_VERSION_OF_METADATA(metadata->version) % SGX_MAJOR_VERSION_GAP ==
+            MAJOR_VERSION_OF_METADATA(urts_version)% SGX_MAJOR_VERSION_GAP)
     {
         enclave_version = SDK_VERSION_3_0;
     }

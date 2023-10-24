@@ -134,6 +134,17 @@ int32_t sgx_fseek(SGX_FILE* stream, int64_t offset, int origin)
 }
 
 
+int32_t sgx_fset_parallel_level(SGX_FILE* stream, uint32_t max_threads_number)
+{
+	if (stream == NULL)
+		return -1;
+
+	protected_fs_file* file = (protected_fs_file*)stream;
+
+	return file->set_parallel_flush_level(max_threads_number);
+}
+
+
 int32_t sgx_fflush(SGX_FILE* stream)
 {
 	if (stream == NULL)

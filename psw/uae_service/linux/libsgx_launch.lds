@@ -4,6 +4,8 @@ global:
     sgx_get_whitelist_size;
     sgx_get_whitelist;
     sgx_register_wl_cert_chain;
+    sgx_trace_logger_callback;
+    sgx_trace_loglevel;
 local:
     *;
 };

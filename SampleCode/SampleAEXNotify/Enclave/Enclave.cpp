@@ -90,12 +90,10 @@ void count_powers_of_two_with_aex(uint64_t low, uint64_t high, uint32_t* count, 
     sgx_aex_mitigation_node_t node;
     
     sgx_register_aex_handler(&node, my_aex_notify_handler, (const void*)args);
-    sgx_set_ssa_aexnotify(1);
 
    const uint32_t local_count = count_powers_of_two(low,high);
    *count = local_count;
 
-   sgx_set_ssa_aexnotify(0);
    sgx_unregister_aex_handler(my_aex_notify_handler);
    
    *aex_count = g_aex_count;

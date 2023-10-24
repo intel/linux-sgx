@@ -1,0 +1,26 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 04122d9..387ebc8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -34,7 +34,7 @@ if(WITH_TESTS)
+     add_definitions(-DWITH_TESTS)
+ endif(WITH_TESTS)
+ 
+-option(WITH_EXAMPLES "Build examples" ON)
++option(WITH_EXAMPLES "Build examples" OFF)
+ 
+ option(HUGE_FUZZ "[TEST] Fuzz through 8GB of data in the test. Do not use with memory instrumentation!" OFF)
+ if(HUGE_FUZZ)
+@@ -163,6 +163,12 @@ else()
+     message(STATUS "LTO is not enabled")
+ endif(use_lto)
+ 
++message("cmake current binary dir:"${CMAKE_CURRENT_BINARY_DIR})
++# make installation dir first
++execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory
++	${CMAKE_CURRENT_BINARY_DIR}/../../untrusted)
++set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/../../untrusted)
++
+ add_subdirectory(src)
+ if(use_lto)
+     set_property(DIRECTORY src PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)

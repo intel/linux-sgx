@@ -7,6 +7,8 @@ global:
     sgx_check_update_status;
     sgx_get_extended_epid_group_id;
     sgx_calc_quote_size;
+    sgx_trace_logger_callback;
+    sgx_trace_loglevel;
 local:
     *;
 };

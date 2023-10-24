@@ -38,21 +38,23 @@ int main(int argc, const char* argv[])
     int keep_server_up = 0; // should be bool type, 0 false, 1 true
 
     /* Check argument count */
-    if (argc != 2)
+    if (argc == 3)
     {
-        if (argc == 3)
+        if (strcmp(argv[2], LOOP_OPTION) != 0)
         {
-            if (strcmp(argv[2], LOOP_OPTION) != 0)
-            {
-                goto print_usage;
-            }
-            else
-            {
-                keep_server_up = 1;
-                goto read_port;
-            }
+            printf(
+                "Usage: %s -port:<port> [%s]\n",
+                argv[0],
+                LOOP_OPTION);
+            return 1;
         }
-    print_usage:
+        else
+        {
+            keep_server_up = 1;
+        }
+    }
+    else if (argc != 2)
+    {
         printf(
             "Usage: %s -port:<port> [%s]\n",
             argv[0],
@@ -60,21 +62,22 @@ int main(int argc, const char* argv[])
         return 1;
     }
 
-read_port:
     // read port parameter
+    char* option = (char*)"-port:";
+    size_t param_len = 0;
+    param_len = strlen(option);
+    if (strncmp(argv[1], option, param_len) == 0)
     {
-        char* option = (char*)"-port:";
-        size_t param_len = 0;
-        param_len = strlen(option);
-        if (strncmp(argv[1], option, param_len) == 0)
-        {
-            server_port = (char*)(argv[1] + param_len);
-        }
-        else
-        {
-            fprintf(stderr, "Unknown option %s\n", argv[1]);
-            goto print_usage;
-        }
+        server_port = (char*)(argv[1] + param_len);
+    }
+    else
+    {
+        fprintf(stderr, "Unknown option %s\n", argv[1]);
+        printf(
+            "Usage: %s -port:<port> [%s]\n",
+            argv[0],
+            LOOP_OPTION);
+        return 1;
     }
     printf("server port = %s\n", server_port);
 

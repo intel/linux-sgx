@@ -52,6 +52,19 @@ void se_trace_internal(int debug_level, const char *fmt, ...)
     va_list args;
 
     va_start(args, fmt);
+    if (sgx_trace_logger_callback && debug_level)
+    {
+        char message[2500]; // to make sure the full URL can be logged.
+        vsnprintf(message, sizeof(message), fmt, args);
+        va_end(args);
+
+        // ensure buf is always null-terminated
+        message[sizeof(message) - 1] = 0;
+
+        sgx_trace_logger_callback(debug_level - 1 , message);
+        return;
+    }
+    
     if (SE_TRACE_NOTICE == debug_level)
         vfprintf(stdout, fmt, args);
     else

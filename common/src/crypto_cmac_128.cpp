@@ -32,6 +32,9 @@
 #include "crypto_wrapper.h"
 #include <openssl/cmac.h>
 #include <openssl/evp.h>
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/core_names.h>
+#endif
 #include <stdint.h>
 #include <assert.h>
 #include <se_memcpy.h>
@@ -42,6 +45,57 @@ sgx_status_t sgx_cmac128_msg(const sgx_key_128bit_t key, const uint8_t *p_src, u
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    OSSL_LIB_CTX *lib_ctx = NULL;
+    EVP_MAC *mac = NULL;
+    EVP_MAC_CTX *mctx = NULL;
+    OSSL_PARAM params[2] = {OSSL_PARAM_END, OSSL_PARAM_END};
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    char cipher_name[] = "AES-128-CBC";
+    size_t mac_len = 0;
+    do
+    {
+        if ((lib_ctx = OSSL_LIB_CTX_new()) == NULL)
+        {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+        if ((mac = EVP_MAC_fetch(lib_ctx, "CMAC", NULL)) == NULL)
+        {
+            break;
+        }
+        if ((mctx = EVP_MAC_CTX_new(mac)) == NULL)
+        {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+        params[0] = OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_CIPHER,  cipher_name, sizeof(cipher_name));
+
+        if ((!EVP_MAC_init(mctx, key, sizeof(sgx_key_128bit_t), params)))
+        {
+            break;
+        }
+        if (!EVP_MAC_update(mctx, p_src, src_len))
+        {
+            break;
+        }
+        if (!EVP_MAC_final(mctx, (uint8_t *)p_mac, &mac_len, sizeof(sgx_mac_t))) 
+        {
+            break;
+        }
+        if(mac_len != sizeof(sgx_mac_t))
+        {
+            break;
+        }
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    EVP_MAC_CTX_free(mctx);
+    EVP_MAC_free(mac);
+    OSSL_LIB_CTX_free(lib_ctx);
+
+    return ret;
+#else
     CMAC_CTX *cmac_ctx = NULL;
     size_t mac_len;
     
@@ -59,13 +113,17 @@ sgx_status_t sgx_cmac128_msg(const sgx_key_128bit_t key, const uint8_t *p_src, u
         CMAC_CTX_free(cmac_ctx);
         return SGX_ERROR_UNEXPECTED;
     }
-       if(!CMAC_Final(cmac_ctx, (uint8_t *)p_mac, &mac_len))
+    if(!CMAC_Final(cmac_ctx, (uint8_t *)p_mac, &mac_len))
     {
         CMAC_CTX_free(cmac_ctx);
         return SGX_ERROR_UNEXPECTED;
     }
     CMAC_CTX_free(cmac_ctx);
-    assert(mac_len == sizeof(sgx_mac_t));
-    return SGX_SUCCESS;    
+    if(mac_len != sizeof(sgx_mac_t))
+    {
+        return SGX_ERROR_UNEXPECTED;
+    }
+    return SGX_SUCCESS;
+#endif
 
 }

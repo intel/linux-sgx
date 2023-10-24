@@ -34,6 +34,7 @@
 #include "aesm_encode.h"
 #include "oal.h"
 #include "se_wrapper.h"
+#include "se_thread.h"
 #include "prof_fun.h"
 #include "aesm_proxy_type.h"
 #include "aesm_network.h"
@@ -41,6 +42,7 @@
 #include "util.h"
 
 #include <curl/curl.h>
+#include <dlfcn.h>
 #ifndef INTERNET_DEFAULT_HTTP_PORT
 #define INTERNET_DEFAULT_HTTP_PORT 80
 #endif
@@ -55,6 +57,122 @@ typedef struct _network_malloc_info_t{
     char *base;
     uint32_t size;
 }network_malloc_info_t;
+
+#define LIBCURL_NAME "libcurl.so"
+#define LIBCURL4_NAME LIBCURL_NAME".4"
+
+static se_mutex_t g_dlopen_mutex;
+static void *g_dlopen_handle = NULL;
+
+static CURLcode (*f_global_init)(long) = NULL;
+static CURL *(*f_easy_init)(void) = NULL;
+static struct curl_slist *(*f_slist_append)(struct curl_slist *, const char *) = NULL;
+static CURLcode (*f_easy_setopt)(CURL *, CURLoption, ...) = NULL;
+static CURLcode (*f_easy_getinfo)(CURL *curl, CURLINFO info, ...) = NULL;
+static CURLcode (*f_easy_perform)(CURL *) = NULL;
+static void (*f_easy_cleanup)(CURL *) = NULL;
+static void (*f_global_cleanup)(void) = NULL;
+static const char* (*f_easy_strerror)(CURLcode) = NULL;
+static void (*f_slist_free_all)(struct curl_slist *) = NULL;
+
+static void __attribute__((constructor)) _sgx__qcnl_ql_init()
+{
+    se_mutex_init(&g_dlopen_mutex);
+}
+
+static void __attribute__((destructor)) _sgx_qcnl_fini(void) {
+    if (g_dlopen_handle != NULL) {
+        dlclose(g_dlopen_handle);
+        g_dlopen_handle = NULL;
+    }
+    se_mutex_destroy(&g_dlopen_mutex);
+}
+
+ae_error_t prepare_curl() {
+    static bool libcurl_ready = false;
+    if (libcurl_ready)
+        return AE_SUCCESS;
+
+    ae_error_t ret = AE_FAILURE;
+    se_mutex_lock(&g_dlopen_mutex);
+    do {
+        if (libcurl_ready) {
+            ret = AE_SUCCESS;
+            break;
+        }
+
+        const char* libcurl_name = LIBCURL_NAME;
+        // With the dlopen (RTLD_DEEPBIND) for libcurl, it forces the libcurl to look up symbols in its dependencies.
+        g_dlopen_handle = dlopen(LIBCURL_NAME, RTLD_LAZY | RTLD_DEEPBIND);
+        if (NULL == g_dlopen_handle) {
+            libcurl_name = LIBCURL4_NAME;
+            g_dlopen_handle = dlopen(LIBCURL4_NAME, RTLD_LAZY | RTLD_DEEPBIND);
+            if (NULL == g_dlopen_handle) {
+                AESM_DBG_ERROR("Cannot open shared library %s or %s.", LIBCURL_NAME, LIBCURL4_NAME);
+                break;
+            }
+        }
+        f_global_init = (CURLcode(*)(long))dlsym(g_dlopen_handle, "curl_global_init");
+        if (dlerror() != NULL || !f_global_init) {
+            AESM_DBG_ERROR("Cannot dlsym curl_global_init in %s.", libcurl_name);
+            break;
+        }
+        f_easy_init = (CURL * (*)(void)) dlsym(g_dlopen_handle, "curl_easy_init");
+        if (dlerror() != NULL || !f_easy_init) {
+            AESM_DBG_ERROR("Cannot dlsym curl_easy_init in %s.", libcurl_name);
+            break;
+        }
+        f_slist_append = (struct curl_slist * (*)(struct curl_slist *, const char *))
+            dlsym(g_dlopen_handle, "curl_slist_append");
+        if (dlerror() != NULL || !f_slist_append) {
+            AESM_DBG_ERROR("Cannot dlsym curl_slist_append in %s.", libcurl_name);
+            break;
+        }
+        f_easy_setopt = (CURLcode(*)(CURL *, CURLoption, ...))dlsym(g_dlopen_handle, "curl_easy_setopt");
+        if (dlerror() != NULL || !f_easy_setopt) {
+            AESM_DBG_ERROR("Cannot dlsym curl_easy_setopt in %s.", libcurl_name);
+            break;
+        }
+        f_easy_getinfo = (CURLcode(*)(CURL *, CURLINFO, ...))dlsym(g_dlopen_handle, "curl_easy_getinfo");
+        if (dlerror() != NULL || !f_easy_getinfo) {
+            AESM_DBG_ERROR("Cannot dlsym curl_easy_getinfo in %s.", libcurl_name);
+            break;
+        }
+        f_easy_perform = (CURLcode(*)(CURL *))dlsym(g_dlopen_handle, "curl_easy_perform");
+        if (dlerror() != NULL || !f_easy_perform) {
+            AESM_DBG_ERROR("Cannot dlsym curl_easy_perform in %s.", libcurl_name);
+            break;
+        }
+        f_easy_cleanup = (void (*)(CURL *))dlsym(g_dlopen_handle, "curl_easy_cleanup");
+        if (dlerror() != NULL || !f_easy_cleanup) {
+            AESM_DBG_ERROR("Cannot dlsym curl_easy_cleanup in %s.", libcurl_name);
+            break;
+        }
+        f_global_cleanup = (void (*)(void))dlsym(g_dlopen_handle, "curl_global_cleanup");
+        if (dlerror() != NULL || !f_global_cleanup) {
+            AESM_DBG_ERROR("Cannot dlsym curl_global_cleanup in %s.", libcurl_name);
+            break;
+        }
+        f_easy_strerror = (const char *(*)(CURLcode))dlsym(g_dlopen_handle, "curl_easy_strerror");
+        if (dlerror() != NULL || !f_easy_strerror) {
+            AESM_DBG_ERROR("Cannot dlsym curl_easy_strerror in %s.", libcurl_name);
+            break;
+        }
+        f_slist_free_all = (void (*)(curl_slist *))dlsym(g_dlopen_handle, "curl_slist_free_all");
+        if (dlerror() != NULL || !f_slist_free_all) {
+            AESM_DBG_ERROR("Cannot dlsym curl_slist_free_all in %s.", libcurl_name);
+            break;
+        }
+
+        f_global_init(CURL_GLOBAL_DEFAULT);
+        libcurl_ready = true;
+        ret = AE_SUCCESS;
+    } while(0);
+
+    se_mutex_unlock(&g_dlopen_mutex);
+    return ret;
+}
+
 
 static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
 {
@@ -110,24 +228,24 @@ static ae_error_t http_network_init(CURL **curl, const char *url, bool is_ocsp)
         return AE_FAILURE;
     }
 
-    *curl = curl_easy_init();
+    *curl = f_easy_init();
     if(!*curl){
          AESM_DBG_ERROR("fail to init curl handle");
          return AE_FAILURE;
     }
-    if((cc=curl_easy_setopt(*curl, CURLOPT_URL, url_path.c_str()))!=CURLE_OK){
+    if((cc=f_easy_setopt(*curl, CURLOPT_URL, url_path.c_str()))!=CURLE_OK){
        AESM_DBG_ERROR("fail error code %d in set url %s",(int)cc, url_path.c_str());
-       curl_easy_cleanup(*curl);
+       f_easy_cleanup(*curl);
        return AE_FAILURE;
     }
-    (void)curl_easy_setopt(*curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+    (void)f_easy_setopt(*curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
     //setting proxy now
     if(urls.proxy_type == AESM_PROXY_TYPE_DIRECT_ACCESS){
         AESM_DBG_TRACE("use no proxy");
-        (void)curl_easy_setopt(*curl, CURLOPT_NOPROXY , "*");
+        (void)f_easy_setopt(*curl, CURLOPT_NOPROXY , "*");
     }else if(urls.proxy_type == AESM_PROXY_TYPE_MANUAL_PROXY){
         AESM_DBG_TRACE("use manual proxy %s",urls.aesm_proxy);
-        (void)curl_easy_setopt(*curl, CURLOPT_PROXY, urls.aesm_proxy);
+        (void)f_easy_setopt(*curl, CURLOPT_PROXY, urls.aesm_proxy);
     }
     return AE_SUCCESS;
 }
@@ -147,14 +265,14 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
     uint32_t start = 0, end = 0;
     char* p_header = NULL;
     if(is_ocsp){
-        tmp = curl_slist_append(headers, "Accept: application/ocsp-response");
+        tmp = f_slist_append(headers, "Accept: application/ocsp-response");
         if(tmp==NULL){
             AESM_DBG_ERROR("fail in add accept ocsp-response header");
             ae_ret = AE_FAILURE;
             goto fini;
         }
         headers = tmp;
-        tmp = curl_slist_append(headers, "Content-Type: application/ocsp-request");
+        tmp = f_slist_append(headers, "Content-Type: application/ocsp-request");
         if(tmp == NULL){
            AESM_DBG_ERROR("fail in add content type ocsp-request");
            ae_ret = AE_FAILURE;
@@ -164,7 +282,7 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
         AESM_DBG_TRACE("ocsp request");
     }
     else{
-        tmp = curl_slist_append(headers, "Content-Type: text/plain");
+        tmp = f_slist_append(headers, "Content-Type: text/plain");
         if(tmp == NULL){
            AESM_DBG_ERROR("fail in add content type text/plain");
            ae_ret = AE_FAILURE;
@@ -179,53 +297,53 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
          ae_ret = AE_FAILURE;
          goto fini;
     }
-    tmp = curl_slist_append(headers, buf);
+    tmp = f_slist_append(headers, buf);
     if(tmp == NULL){
          AESM_DBG_ERROR("fail to add content-length header");
          ae_ret = AE_FAILURE;
          goto fini;
     }
     headers=tmp;
-    if((cc=curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers))!=CURLE_OK){
+    if((cc=f_easy_setopt(curl, CURLOPT_HTTPHEADER, headers))!=CURLE_OK){
         AESM_DBG_ERROR("fail to set http header:%d",(int)cc);
         ae_ret = AE_FAILURE;
         goto fini;
     }
     if(method == POST){
-        if((cc=curl_easy_setopt(curl, CURLOPT_POSTFIELDS, req_msg))!=CURLE_OK){
+        if((cc=f_easy_setopt(curl, CURLOPT_POSTFIELDS, req_msg))!=CURLE_OK){
             AESM_DBG_ERROR("fail to set POST fields:%d",(int)cc);
             ae_ret = AE_FAILURE;
             goto fini;
         }
-        if((cc=curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, msg_size))!=CURLE_OK){
+        if((cc=f_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, msg_size))!=CURLE_OK){
             AESM_DBG_ERROR("fail to set POST fields size:%d",(int)cc);
             ae_ret = AE_FAILURE;
             goto fini;
         }
     }
 
-    if((cc=curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback))!=CURLE_OK){
+    if((cc=f_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback))!=CURLE_OK){
         AESM_DBG_ERROR("Fail to set callback function:%d",(int)cc);
         ae_ret = AE_FAILURE;
         goto fini;
     }
-    if((cc=curl_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void *>(&malloc_info_resp)))!=CURLE_OK){
+    if((cc=f_easy_setopt(curl, CURLOPT_WRITEDATA, reinterpret_cast<void *>(&malloc_info_resp)))!=CURLE_OK){
        AESM_DBG_ERROR("fail to set write back function parameter:%d",(int)cc);
        ae_ret = AE_FAILURE;
        goto fini;
     }
 
-    if((cc=curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_callback))!=CURLE_OK){
+    if((cc=f_easy_setopt(curl, CURLOPT_HEADERFUNCTION, write_callback))!=CURLE_OK){
         AESM_DBG_ERROR("Fail to set callback function:%d",(int)cc);
         ae_ret = AE_FAILURE;
         goto fini;
     }
-    if((cc=curl_easy_setopt(curl, CURLOPT_HEADERDATA, reinterpret_cast<void *>(&malloc_info_header)))!=CURLE_OK){
+    if((cc=f_easy_setopt(curl, CURLOPT_HEADERDATA, reinterpret_cast<void *>(&malloc_info_header)))!=CURLE_OK){
        AESM_DBG_ERROR("fail to set write back function parameter:%d",(int)cc);
        ae_ret = AE_FAILURE;
        goto fini;
     }
-    if((cc=curl_easy_perform(curl))!=CURLE_OK){
+    if((cc=f_easy_perform(curl))!=CURLE_OK){
         AESM_DBG_ERROR("fail in connect:%d",(int)cc);
         ae_ret = OAL_NETWORK_UNAVAILABLE_ERROR;
         goto fini;
@@ -233,7 +351,7 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
     // Check HTTP response code
     // For example, if the remote file does not exist, curl may return CURLE_OK but the http response code 
     // indicates an error has occured
-    if((cc=curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &resp_code))!=CURLE_OK || resp_code>=400){
+    if((cc=f_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &resp_code))!=CURLE_OK || resp_code>=400){
         AESM_DBG_ERROR("Response code error:%d", resp_code);
         ae_ret = AE_FAILURE;
         goto fini;
@@ -279,7 +397,7 @@ static ae_error_t http_network_send_data(CURL *curl, const char *req_msg, uint32
 
 fini:
     if(headers!=NULL){
-        curl_slist_free_all(headers);
+        f_slist_free_all(headers);
     }
     if (ae_ret != AE_SUCCESS) {
         if(malloc_info_resp.base){
@@ -295,7 +413,7 @@ fini:
 static void http_network_fini(CURL *curl)
 {
     if(curl!=NULL)
-        curl_easy_cleanup(curl);
+        f_easy_cleanup(curl);
 }
 
 

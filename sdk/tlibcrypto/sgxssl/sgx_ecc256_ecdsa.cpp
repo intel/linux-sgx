@@ -34,10 +34,13 @@
 #include <openssl/ec.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 #include "ssl_wrapper.h"
 #include "se_memcpy.h"
 #include "sgx_tcrypto.h"
 
+extern EVP_PKEY *get_priv_key_from_bin(const sgx_ec256_private_t *p_private, sgx_ecc_state_handle_t ecc_handle);
+extern EVP_PKEY *get_pub_key_from_coords(const sgx_ec256_public_t *p_public, sgx_ecc_state_handle_t ecc_handle);
 /* Computes signature for data based on private key
 * Parameters:
 *   Return: sgx_status_t - SGX_SUCCESS or failure as defined sgx_error.h
@@ -57,55 +60,51 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
-	EC_KEY *private_key = NULL;
-	BIGNUM *bn_priv = NULL;
+	EVP_PKEY *private_key = NULL;
+	EVP_MD_CTX *mctx = NULL;
 	ECDSA_SIG *ecdsa_sig = NULL;
 	const BIGNUM *r = NULL;
 	const BIGNUM *s = NULL;
-	unsigned char digest[SGX_SHA256_HASH_SIZE] = { 0 };
+	unsigned char *sig_data = NULL;
+	unsigned char *sig_tmp = NULL;
 	int written_bytes = 0;
-	int sig_size = 0;
-	int max_sig_size = 0;
+	size_t sig_size = 0;
 	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
 
 	do {
-		// converts the r value of private key, represented as positive integer in little-endian into a BIGNUM
-		//
-		bn_priv = BN_lebin2bn((unsigned char*)p_private->r, sizeof(p_private->r), 0);
-		if (NULL == bn_priv) {
+		private_key = get_priv_key_from_bin(p_private, ecc_handle);
+		if (!private_key) {
 			break;
 		}
 
-		// create empty ecc key
-		//
-		private_key = EC_KEY_new();
-		if (NULL == private_key) {
+		mctx = EVP_MD_CTX_new();
+		if(!mctx) {
+			break;
+		}
+		if(1 != EVP_DigestSignInit(mctx, NULL, EVP_sha256(), NULL, private_key)) {
+			break;
+		}
+
+		if(1 != EVP_DigestSignUpdate(mctx, p_data, data_size)) {
+			break;
+		}
+		if(1 != EVP_DigestSignFinal(mctx, NULL, &sig_size)) {
+			break;
+		}
+		sig_data = (unsigned char*)OPENSSL_malloc(sig_size);
+		if (sig_data == NULL) {
+			break;
+		}
+		if(1 != EVP_DigestSignFinal(mctx, sig_data, &sig_size)) {
+			break;
+		}
+		ecdsa_sig = ECDSA_SIG_new();
+		if (NULL == ecdsa_sig) {
 			retval = SGX_ERROR_OUT_OF_MEMORY;
 			break;
 		}
-
-		// sets ecc key group (set curve)
-		//
-		if (1 != EC_KEY_set_group(private_key, (EC_GROUP*)ecc_handle)) {
-			break;
-		}
-
-		// uses bn_priv to set the ecc private key
-		//
-		if (1 != EC_KEY_set_private_key(private_key, bn_priv)) {
-			break;
-		}
-
-		/* generates digest of p_data */
-		if (NULL == SHA256((const unsigned char *)p_data, data_size, (unsigned char *)digest)) {
-			break;
-		}
-
-		// computes a digital signature of the SGX_SHA256_HASH_SIZE bytes hash value dgst using the private EC key private_key.
-		// the signature is returned as a newly allocated ECDSA_SIG structure.
-		//
-		ecdsa_sig = ECDSA_do_sign(digest, SGX_SHA256_HASH_SIZE, private_key);
-		if (NULL == ecdsa_sig) {
+		sig_tmp = sig_data;
+		if(NULL == d2i_ECDSA_SIG(&ecdsa_sig, (const unsigned char **)&sig_tmp, sig_size)) {
 			break;
 		}
 
@@ -118,7 +117,6 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
 		if (0 >= written_bytes) {
 			break;
 		}
-		sig_size = written_bytes;
 
 		// converts the s BIGNUM of the signature to little endian buffer, bounded with the len of out buffer
 		//
@@ -126,31 +124,18 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
 		if (0 >= written_bytes) {
 			break;
 		}
-		sig_size += written_bytes;
-
-		// returns the maximum length of a DER encoded ECDSA signature created with the private EC key.
-		//
-		max_sig_size = ECDSA_size(private_key);
-		if (max_sig_size <= 0) {
-			break;
-		}
-
-		// checks if the signature size not larger than the max len of valid signature
-		// this check if done for validity, not for overflow.
-		//
-		if (sig_size > max_sig_size) {
-			break;
-		}
 
 		retval = SGX_SUCCESS;
 	} while(0);
 
-	if (bn_priv)
-		BN_clear_free(bn_priv);
+	if (sig_data)
+		OPENSSL_free(sig_data);
 	if (ecdsa_sig)
 		ECDSA_SIG_free(ecdsa_sig);
 	if (private_key)
-		EC_KEY_free(private_key);
+		EVP_PKEY_free(private_key);
+	if (mctx)
+		EVP_MD_CTX_free(mctx);
 
 	return retval;
 }
@@ -162,16 +147,15 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
     uint8_t *p_result,
     sgx_ecc_state_handle_t ecc_handle)
 {
-    if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||
-        (p_data == NULL) || (data_size < 1) || (p_result == NULL))
-    {
-        return SGX_ERROR_INVALID_PARAMETER;
-    }
-    unsigned char digest[SGX_SHA256_HASH_SIZE] = { 0 };
+	if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||
+		(p_data == NULL) || (data_size < 1) || (p_result == NULL)) {
+		return SGX_ERROR_INVALID_PARAMETER;
+	}
+	unsigned char digest[SGX_SHA256_HASH_SIZE] = { 0 };
 
-    /* generates digest of p_data */
-    SHA256((const unsigned char *)p_data, data_size, (unsigned char *)digest);
-    return (sgx_ecdsa_verify_hash(digest, p_public, p_signature, p_result, ecc_handle));
+	/* generates digest of p_data */
+	SHA256((const unsigned char *)p_data, data_size, (unsigned char *)digest);
+	return (sgx_ecdsa_verify_hash(digest, p_public, p_signature, p_result, ecc_handle));
 }
 
 
@@ -182,40 +166,27 @@ sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *p_data,
                               sgx_ecc_state_handle_t ecc_handle)
 {
 	if ((ecc_handle == NULL) || (p_public == NULL) || (p_signature == NULL) ||
-		(p_data == NULL) || (p_result == NULL))
-	{
+		(p_data == NULL) || (p_result == NULL)) {
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
-	EC_KEY *public_key = NULL;
-	BIGNUM *bn_pub_x = NULL;
-	BIGNUM *bn_pub_y = NULL;
+	EVP_PKEY_CTX *ctx = NULL;
+	EVP_PKEY *public_key = NULL;
 	BIGNUM *bn_r = NULL;
 	BIGNUM *bn_s = NULL;
-	BIGNUM *prev_bn_r = NULL;
-	BIGNUM *prev_bn_s = NULL;
-	EC_POINT *public_point = NULL;
 	ECDSA_SIG *ecdsa_sig = NULL;
+	unsigned char *sig_data = NULL;
+	size_t sig_size = 0;
 	sgx_status_t retval = SGX_ERROR_UNEXPECTED;
-	int valid = 0;
+	int ret = -1;
 
 	*p_result = SGX_EC_INVALID_SIGNATURE;
 
 	do {
-		// converts the x value of public key, represented as positive integer in little-endian into a BIGNUM
-		//
-		bn_pub_x = BN_lebin2bn((unsigned char*)p_public->gx, sizeof(p_public->gx), 0);
-		if (NULL == bn_pub_x) {
+		public_key = get_pub_key_from_coords(p_public, ecc_handle);
+		if(NULL == public_key) {
 			break;
 		}
-
-		// converts the y value of public key, represented as positive integer in little-endian into a BIGNUM
-		//
-		bn_pub_y = BN_lebin2bn((unsigned char*)p_public->gy, sizeof(p_public->gy), 0);
-		if (NULL == bn_pub_y) {
-			break;
-		}
-
 		// converts the x value of the signature, represented as positive integer in little-endian into a BIGNUM
 		//
 		bn_r = BN_lebin2bn((unsigned char*)p_signature->x, sizeof(p_signature->x), 0);
@@ -230,47 +201,6 @@ sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *p_data,
 			break;
 		}
 
-		// creates new point and assigned the group object that the point relates to
-		//
-		public_point = EC_POINT_new((EC_GROUP*)ecc_handle);
-		if (public_point == NULL) {
-			retval = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// sets point based on public key's x,y coordinates
-		//
-		if (1 != EC_POINT_set_affine_coordinates((EC_GROUP*)ecc_handle, public_point, bn_pub_x, bn_pub_y, NULL)) {
-			break;
-		}
-
-		// check point if the point is on curve
-		//
-		if (1 != EC_POINT_is_on_curve((EC_GROUP*)ecc_handle, public_point, NULL)) {
-			break;
-		}
-
-		// create empty ecc key
-		//
-		public_key = EC_KEY_new();
-		if (NULL == public_key) {
-			retval = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// sets ecc key group (set curve)
-		//
-		if (1 != EC_KEY_set_group(public_key, (EC_GROUP*)ecc_handle)) {
-			break;
-		}
-
-		// uses the created point to set the public key value
-		//
-		if (1 != EC_KEY_set_public_key(public_key, public_point)) {
-			break;
-		}
-
-
 
 		// allocates a new ECDSA_SIG structure (note: this function also allocates the BIGNUMs) and initialize it
 		//
@@ -279,13 +209,6 @@ sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *p_data,
 			retval = SGX_ERROR_OUT_OF_MEMORY;
 			break;
 		}
-
-		// free internal allocated BIGBNUMs
-		ECDSA_SIG_get0(ecdsa_sig, (const BIGNUM **)&prev_bn_r, (const BIGNUM **)&prev_bn_s);
-		if (prev_bn_r)
-			BN_clear_free(prev_bn_r);
-		if (prev_bn_s)
-			BN_clear_free(prev_bn_s);
 
 		// setes the r and s values of ecdsa_sig
 		// calling this function transfers the memory management of the values to the ECDSA_SIG object,
@@ -296,36 +219,42 @@ sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *p_data,
 			ecdsa_sig = NULL;
 			break;
 		}
-
-		// verifies that the signature ecdsa_sig is a valid ECDSA signature of the hash value digest of size SGX_SHA256_HASH_SIZE using the public key public_key
-		//
-		valid = ECDSA_do_verify(p_data, SGX_SHA256_HASH_SIZE, ecdsa_sig, public_key);
-		if (-1 == valid) {
+		sig_size = i2d_ECDSA_SIG(ecdsa_sig, &sig_data);
+		if (sig_size <= 0) {
+			break;
+		}
+		ctx = EVP_PKEY_CTX_new(public_key, NULL);
+		if (!ctx) {
+			break;
+		}
+		if (1 != EVP_PKEY_verify_init(ctx)) {
+			break;
+		}
+		if (1 != EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256())) {
+			break;
+		}
+		ret = EVP_PKEY_verify(ctx, sig_data, sig_size, p_data, SGX_SHA256_HASH_SIZE);
+		if (ret < 0) {
 			break;
 		}
 
-		// sets the p_result based on ECDSA_do_verify result
+		// sets the p_result based on verification result
 		//
-		if (valid) {
+		if (ret == 1)
 			*p_result = SGX_EC_VALID;
-		}
 
 		retval = SGX_SUCCESS;
 	} while(0);
 
-	if (bn_pub_x)
-		BN_clear_free(bn_pub_x);
-	if (bn_pub_y)
-		BN_clear_free(bn_pub_y);
-	if (public_point)
-		EC_POINT_clear_free(public_point);
-	if (ecdsa_sig) {
+	if (ecdsa_sig) { 
 		ECDSA_SIG_free(ecdsa_sig);
 		bn_r = NULL;
 		bn_s = NULL;
 	}
+	if (ctx)
+		EVP_PKEY_CTX_free(ctx);
 	if (public_key)
-		EC_KEY_free(public_key);
+		EVP_PKEY_free(public_key);
 	if (bn_r)
 		BN_clear_free(bn_r);
 	if (bn_s)

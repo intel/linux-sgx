@@ -173,6 +173,7 @@ void protected_fs_file::clear_error()
 
 	if (file_status == SGX_FILE_STATUS_NOT_INITIALIZED ||
 		file_status == SGX_FILE_STATUS_CLOSED ||
+		file_status == SGX_FILE_STATUS_WRITE_TO_DISK_FAILED ||
 		file_status == SGX_FILE_STATUS_CRYPTO_ERROR ||
 		file_status == SGX_FILE_STATUS_CORRUPTED ||
 		file_status == SGX_FILE_STATUS_MEMORY_CORRUPTED) // can't fix these...
@@ -183,17 +184,8 @@ void protected_fs_file::clear_error()
 
 	if (file_status == SGX_FILE_STATUS_FLUSH_ERROR)
 	{
-		if (internal_flush(/*false,*/ true) == true)
+		if (internal_flush() == true)
 			file_status = SGX_FILE_STATUS_OK;
-	}
-
-	if (file_status == SGX_FILE_STATUS_WRITE_TO_DISK_FAILED)
-	{
-		if (write_all_changes_to_disk(true) == true)
-		{
-			need_writing = false;
-			file_status = SGX_FILE_STATUS_OK;
-		}
 	}
 	
 	if (file_status == SGX_FILE_STATUS_OK)
@@ -219,7 +211,7 @@ int32_t protected_fs_file::clear_cache()
 	}
 	else // file_status == SGX_FILE_STATUS_OK
 	{
-		internal_flush(/*false,*/ true);
+		internal_flush();
 	}
 
 	if (file_status != SGX_FILE_STATUS_OK) // clearing the cache might lead to losing un-saved data

@@ -675,7 +675,7 @@ let gen_ufunc_proto (uf: Ast.untrusted_func) =
   let cconv_str = "SGX_" ^ Ast.get_call_conv_str uf.Ast.uf_fattr.Ast.fa_convention in
   let func_name = uf.Ast.uf_fdecl.Ast.fname in
   let plist_str = get_plist_str uf.Ast.uf_fdecl in
-  let func_guard = sprintf "%s_DEFINED__" (String.uppercase func_name) in 
+  let func_guard = sprintf "%s_DEFINED__" (String.uppercase_ascii func_name) in
     sprintf "#ifndef %s\n#define %s\n%s%s SGX_UBRIDGE(%s, %s, (%s));\n#endif"
             func_guard func_guard dllimport ret_tystr cconv_str func_name plist_str
 
@@ -704,7 +704,7 @@ let ms_writer out_chan ec =
 (* Generate untrusted header for enclave *)
 let gen_untrusted_header (ec: enclave_content) =
   let header_fname = get_uheader_name ec.file_shortnm in
-  let guard_macro = sprintf "%s_U_H__" (String.uppercase ec.enclave_name) in
+  let guard_macro = sprintf "%s_U_H__" (String.uppercase_ascii ec.enclave_name) in
   let preemble_code =
     let include_list = gen_include_list (ec.include_list @ !untrusted_headers) in
       gen_uheader_preemble guard_macro include_list
@@ -737,7 +737,7 @@ let gen_theader_preemble (guard: string) (inclist: string) =
 (* Generate trusted header for enclave *)
 let gen_trusted_header (ec: enclave_content) =
   let header_fname = get_theader_name ec.file_shortnm in
-  let guard_macro = sprintf "%s_T_H__" (String.uppercase ec.enclave_name) in
+  let guard_macro = sprintf "%s_T_H__" (String.uppercase_ascii ec.enclave_name) in
   let guard_code =
     let include_list = gen_include_list (ec.include_list @ !trusted_headers) in
       gen_theader_preemble guard_macro include_list in

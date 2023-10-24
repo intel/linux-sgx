@@ -31,17 +31,15 @@
 
 enclave {
     from "sgx_tstdc.edl" import *;
+    from "sgx_pthread.edl" import *;
     untrusted {
-		void*   u_sgxprotectedfs_exclusive_file_open([in, string] const char* filename, uint8_t read_only, [out] int64_t* file_size, [out] int32_t* error_code);
-		uint8_t u_sgxprotectedfs_check_if_file_exists([in, string] const char* filename);
-		int32_t u_sgxprotectedfs_fread_node([user_check] void* f, uint64_t node_number, [out, size=node_size] uint8_t* buffer, uint32_t node_size);
-		int32_t u_sgxprotectedfs_fwrite_node([user_check] void* f, uint64_t node_number, [in, size=node_size] uint8_t* buffer, uint32_t node_size);
-		int32_t u_sgxprotectedfs_fclose([user_check] void* f);
-		uint8_t u_sgxprotectedfs_fflush([user_check] void* f);
+		int8_t u_sgxprotectedfs_check_if_file_exists([in, string] const char* filename);
+		uint8_t* u_sgxprotectedfs_exclusive_file_map([in, string] const char* filename, uint8_t read_only, [out] int64_t* file_size, [out] int32_t* error_code);
+		int32_t u_sgxprotectedfs_file_remap([in, string] const char* filename, [in, out] uint8_t** file_addr, int64_t old_size, int64_t new_size);
+		int32_t u_sgxprotectedfs_file_unmap([user_check] uint8_t* file_addr, int64_t file_size);
 		int32_t u_sgxprotectedfs_remove([in, string] const char* filename);
 
-		void*   u_sgxprotectedfs_recovery_file_open([in, string] const char* filename);
-		uint8_t u_sgxprotectedfs_fwrite_recovery_node([user_check] void* f, [in, count=data_length] uint8_t* data, uint32_t data_length);
-		int32_t u_sgxprotectedfs_do_file_recovery([in, string] const char* filename, [in, string] const char* recovery_filename, uint32_t node_size);
+		uint8_t u_sgxprotectedfs_fwrite_recovery_file([user_check] uint8_t* fileaddress, [in, string] const char* filename, [in, count=length] uint64_t* recovery_list, uint64_t length);
+		int32_t u_sgxprotectedfs_do_file_recovery([in, string] const char* filename, [in, string] const char* recovery_filename);
     };
 };

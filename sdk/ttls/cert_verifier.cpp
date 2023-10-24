@@ -34,6 +34,10 @@
 #include <string.h>
 #include <sgx_error.h>
 #include "cert_header.h"
+#include <openssl/sha.h>
+#include "cbor.h"
+#include "sgx_quote_4.h"
+#include "sgx_quote_5.h"
 
 typedef struct _cert
 {
@@ -337,78 +341,264 @@ sgx_status_t sgx_cert_verify(
     return result;
 }
 
-sgx_status_t sgx_cert_find_extension(
-    const sgx_cert_t* cert,
-    const char* oid,
-    uint8_t* data,
-    uint32_t* size)
+static sgx_status_t compare_cert_pubkey_against_cbor_claim_hash(
+    const uint8_t* pem_pub_key,
+    size_t pem_pub_key_len,
+    cbor_item_t* cbor_hash_entry)
 {
-    sgx_status_t result = SGX_ERROR_UNEXPECTED;
-    const cert_t* impl = (const cert_t*)cert;
-    const STACK_OF(X509_EXTENSION) * extensions;
-    int num_extensions;
+    uint8_t pk_der[PUB_KEY_MAX_SIZE] = {0};
+    size_t pk_der_size = 0;
+    unsigned char *p_sha = NULL;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    cbor_item_t* cbor_hash_alg_id = NULL;
+    cbor_item_t* cbor_hash_value  = NULL;
 
-    /* Reject invalid parameters */
-    if (!_cert_is_valid(impl) || !oid || !size) {
-        result = SGX_ERROR_INVALID_PARAMETER;
-        goto done;
+    if (PEM2DER_PublicKey_converter(pem_pub_key, pem_pub_key_len, pk_der, &pk_der_size))
+      goto out;
+
+    if (!cbor_isa_array(cbor_hash_entry) || !cbor_array_is_definite(cbor_hash_entry)
+            || cbor_array_size(cbor_hash_entry) != 2) {
+        return SGX_ERROR_TLS_X509_INVALID_EXTENSION;
     }
 
-    /* Set a pointer to the stack of extensions (possibly NULL) */
-    if (!(extensions = X509_get0_extensions(impl->x509)))
-        goto done;
+    cbor_hash_alg_id = cbor_array_get(cbor_hash_entry, /*index=*/0);
+    if (!cbor_hash_alg_id || !cbor_isa_uint(cbor_hash_alg_id)) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
 
-    /* Get the number of extensions (possibly zero) */
-    num_extensions = sk_X509_EXTENSION_num(extensions);
+    cbor_hash_value = cbor_array_get(cbor_hash_entry, /*index=*/1);
+    if (!cbor_hash_value || !cbor_isa_bytestring(cbor_hash_value)
+            || !cbor_bytestring_is_definite(cbor_hash_value)) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
 
-    /* Find the certificate with this OID */
-    for (int i = 0; i < num_extensions; i++)
+    uint8_t sha[SHA512_DIGEST_LENGTH]; /* enough to hold SHA-256, -384, or -512 */
+    size_t sha_size;
+    size_t temp_size;
+
+    uint64_t hash_alg_id;
+    switch (cbor_int_get_width(cbor_hash_alg_id)) {
+        case CBOR_INT_8:  hash_alg_id = cbor_get_uint8(cbor_hash_alg_id); break;
+        case CBOR_INT_16: hash_alg_id = cbor_get_uint16(cbor_hash_alg_id); break;
+        case CBOR_INT_32: hash_alg_id = cbor_get_uint32(cbor_hash_alg_id); break;
+        case CBOR_INT_64: hash_alg_id = cbor_get_uint64(cbor_hash_alg_id); break;
+        default:          ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION; goto out;
+    }
+
+    switch (hash_alg_id) {
+        case IANA_NAMED_INFO_HASH_ALG_REGISTRY_SHA256:
+            sha_size = SHA256_DIGEST_LENGTH;
+            break;
+        case IANA_NAMED_INFO_HASH_ALG_REGISTRY_SHA384:
+            sha_size = SHA384_DIGEST_LENGTH;
+            break;
+        case IANA_NAMED_INFO_HASH_ALG_REGISTRY_SHA512:
+            sha_size = SHA512_DIGEST_LENGTH;
+            break;
+        default:
+            ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+            goto out;
+    }
+
+    temp_size = cbor_bytestring_length(cbor_hash_value);
+    if (temp_size != sha_size) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    switch (hash_alg_id) {
+        case IANA_NAMED_INFO_HASH_ALG_REGISTRY_RESERVED:
+        case IANA_NAMED_INFO_HASH_ALG_REGISTRY_SHA256:
+            p_sha = SHA256(pk_der, pk_der_size, sha);
+            break;
+        case IANA_NAMED_INFO_HASH_ALG_REGISTRY_SHA384:
+            p_sha = SHA384(pk_der, pk_der_size, sha);
+            break;
+        case IANA_NAMED_INFO_HASH_ALG_REGISTRY_SHA512:
+            p_sha = SHA512(pk_der, pk_der_size, sha);
+            break;
+    }
+
+    if (p_sha == NULL)
     {
-        X509_EXTENSION* ext;
-        ASN1_OBJECT* obj;
-        sgx_oid_string_t ext_oid;
+        ret = SGX_ERROR_UNEXPECTED;
+        goto out;
+    }
 
-        /* Get the i-th extension from the stack */
-        if (!(ext = sk_X509_EXTENSION_value(extensions, i)))
-            goto done;
+    if (memcmp(cbor_bytestring_handle(cbor_hash_value), sha, sha_size)) {
+        ret = SGX_ERROR_INVALID_SIGNATURE;
+        goto out;
+    }
 
-        /* Get the OID */
-        if (!(obj = X509_EXTENSION_get_object(ext)))
-            goto done;
+    ret = SGX_SUCCESS;
+out:
+    if (cbor_hash_alg_id) cbor_decref(&cbor_hash_alg_id);
+    if (cbor_hash_value)  cbor_decref(&cbor_hash_value);
+    return ret;
+}
 
-        /* Get the string name of the OID */
-        if (!OBJ_obj2txt(ext_oid.buf, sizeof(ext_oid.buf), obj, 1))
-            goto done;
 
-        /* If found then get the data */
-        if (strcmp(ext_oid.buf, oid) == 0)
-        {
-            ASN1_OCTET_STRING* str;
+sgx_status_t extract_cbor_evidence_and_compare_hash(
+            const uint8_t* cbor_evidence_buf,
+            size_t evidence_buf_size,
+            uint8_t* pem_pub_key,
+            size_t pem_pub_key_len,
+            uint8_t* out_quote,
+            uint32_t* out_quote_size)
+{
+    /* for description of evidence format, see ttls.c:generate_cbor_evidence() */
+    cbor_item_t* cbor_tagged_evidence = NULL;
+    cbor_item_t* cbor_evidence = NULL;
+    cbor_item_t* cbor_quote = NULL;
+    cbor_item_t* cbor_claims = NULL; /* serialized CBOR map of claims (as bytestring) */
+    cbor_item_t* cbor_claims_map = NULL;
+    cbor_item_t* cbor_hash_entry = NULL;
+    uint8_t* quote = NULL;
+    sgx_status_t ret = SGX_SUCCESS;
 
-            /* Get the data from the extension */
-            if (!(str = X509_EXTENSION_get_data(ext)))
-                goto done;
+    struct cbor_pair* claims_pairs = NULL;
+    uint8_t* claims_buf = NULL;
+    size_t claims_buf_size = 0;
+    size_t quote_size = 0;
 
-            /* If the caller's buffer is too small, raise error */
-            if ((size_t)str->length > *size)
-            {
-                *size = (size_t)str->length;
-                result = SGX_ERROR_INVALID_PARAMETER;
-                goto done;
+    if (evidence_buf_size == 0) return SGX_ERROR_UNEXPECTED;
+
+    struct cbor_load_result cbor_result;
+    cbor_tagged_evidence = cbor_load(cbor_evidence_buf, evidence_buf_size, &cbor_result);
+    if (cbor_result.error.code != CBOR_ERR_NONE) {
+        ret = (cbor_result.error.code == CBOR_ERR_MEMERROR) ? 
+            SGX_ERROR_OUT_OF_MEMORY : SGX_ERROR_UNEXPECTED;
+        goto out;
+    }
+    if (!cbor_isa_tag(cbor_tagged_evidence)
+            || cbor_tag_value(cbor_tagged_evidence) != TCG_DICE_TAGGED_EVIDENCE_TEE_QUOTE_CBOR_TAG)     
+    {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    cbor_evidence = cbor_tag_item(cbor_tagged_evidence);
+    if (!cbor_evidence || !cbor_isa_array(cbor_evidence)
+            || !cbor_array_is_definite(cbor_evidence)) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    if (cbor_array_size(cbor_evidence) != 2) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    cbor_quote = cbor_array_get(cbor_evidence, /*index=*/0);
+    if (!cbor_quote || !cbor_isa_bytestring(cbor_quote) || !cbor_bytestring_is_definite(cbor_quote)
+            || cbor_bytestring_length(cbor_quote) == 0) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    quote_size = cbor_bytestring_length(cbor_quote);
+    if (quote_size < QUOTE_MIN_SIZE) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+    quote = (uint8_t*)malloc(quote_size);
+    if (!quote) {
+        ret = SGX_ERROR_OUT_OF_MEMORY;
+        goto out;
+    }
+    memcpy(quote, cbor_bytestring_handle(cbor_quote), quote_size);
+
+    cbor_claims = cbor_array_get(cbor_evidence, /*index=*/1);
+    if (!cbor_claims || !cbor_isa_bytestring(cbor_claims)
+            || !cbor_bytestring_is_definite(cbor_claims)
+            || cbor_bytestring_length(cbor_claims) == 0) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    /* claims object is borrowed, no need to free separately */
+    claims_buf    = cbor_bytestring_handle(cbor_claims);
+    claims_buf_size = cbor_bytestring_length(cbor_claims);
+    assert(claims_buf && claims_buf_size);
+
+    /* verify that TEE quote corresponds to the attached serialized claims */
+    ret = sgx_tls_compare_quote_hash(quote, claims_buf, claims_buf_size);
+    if (ret != SGX_SUCCESS)
+    {
+        goto out;
+    }
+    /* parse and verify CBOR claims */
+    cbor_claims_map = cbor_load(claims_buf, claims_buf_size, &cbor_result);
+    if (cbor_result.error.code != CBOR_ERR_NONE) {
+        ret = (cbor_result.error.code == CBOR_ERR_MEMERROR) ?
+            SGX_ERROR_OUT_OF_MEMORY : SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    if (!cbor_isa_map(cbor_claims_map) || !cbor_map_is_definite(cbor_claims_map)
+            || cbor_map_size(cbor_claims_map) < 1) {
+        ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+        goto out;
+    }
+
+    claims_pairs = cbor_map_handle(cbor_claims_map);
+    for (size_t i = 0; i < cbor_map_size(cbor_claims_map); i++) {
+        if (!claims_pairs[i].key || !cbor_isa_string(claims_pairs[i].key)
+                || !cbor_string_is_definite(claims_pairs[i].key)
+                || cbor_string_length(claims_pairs[i].key) == 0) {
+            ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+            goto out;
+        }
+
+        if (strncmp((char*)cbor_string_handle(claims_pairs[i].key), "pubkey-hash",
+                    cbor_string_length(claims_pairs[i].key)) == 0) {
+            /* claim { "pubkey-hash" : serialized CBOR array hash-entry (as CBOR bstr) } */
+            if (!claims_pairs[i].value || !cbor_isa_bytestring(claims_pairs[i].value)
+                    || !cbor_bytestring_is_definite(claims_pairs[i].value)
+                    || cbor_bytestring_length(claims_pairs[i].value) == 0) {
+                ret = SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+                goto out;
             }
 
-            if (data)
+            uint8_t* hash_entry_buf = cbor_bytestring_handle(claims_pairs[i].value);
+            size_t hash_entry_buf_size = cbor_bytestring_length(claims_pairs[i].value);
+
+            cbor_hash_entry = cbor_load(hash_entry_buf, hash_entry_buf_size, &cbor_result);
+            if (cbor_result.error.code != CBOR_ERR_NONE) {
+                ret = (cbor_result.error.code == CBOR_ERR_MEMERROR) ? SGX_ERROR_OUT_OF_EPC
+                      : SGX_ERROR_TLS_X509_INVALID_EXTENSION;
+                goto out;
+            }
+
+            ret = compare_cert_pubkey_against_cbor_claim_hash(pem_pub_key, pem_pub_key_len, cbor_hash_entry);
+            if (ret != SGX_SUCCESS)
             {
-                memcpy(data, str->data, (size_t)str->length);
-                *size = (size_t)str->length;
-                result = SGX_SUCCESS;
-                goto done;
+                goto out;
             }
         }
     }
 
-done:
-    return result;
+    memcpy(out_quote, quote, quote_size);
+    *out_quote_size = (uint32_t)quote_size;
+    ret = SGX_SUCCESS;
+
+out:
+    SGX_TLS_SAFE_FREE(quote);
+    if (cbor_hash_entry)
+        cbor_decref(&cbor_hash_entry);
+    if (cbor_claims_map)
+        cbor_decref(&cbor_claims_map);
+    if (cbor_claims)
+        cbor_decref(&cbor_claims);
+    if (cbor_quote)
+        cbor_decref(&cbor_quote);
+    if (cbor_evidence)
+        cbor_decref(&cbor_evidence);
+    if (cbor_tagged_evidence)
+        cbor_decref(&cbor_tagged_evidence);
+    return ret;
 }
 
 sgx_status_t sgx_cert_get_public_key(
@@ -515,6 +705,72 @@ done:
 }
 
 
+sgx_status_t sgx_cert_find_extension(
+    const sgx_cert_t* cert,
+    const char* oid,
+    uint8_t* data,
+    uint32_t* size)
+{
+    sgx_status_t result = SGX_ERROR_UNEXPECTED;
+    const cert_t* impl = (const cert_t*)cert;
+    const STACK_OF(X509_EXTENSION) * extensions;
+    int num_extensions;
+
+    /* Reject invalid parameters */
+    if (!_cert_is_valid(impl) || !oid || !size) {
+        result = SGX_ERROR_INVALID_PARAMETER;
+        goto done;
+    }
+
+    /* Set a pointer to the stack of extensions (possibly NULL) */
+    if (!(extensions = X509_get0_extensions(impl->x509)))
+        goto done;
+
+    /* Get the number of extensions (possibly zero) */
+    num_extensions = sk_X509_EXTENSION_num(extensions);
+
+    /* Find the certificate with this OID */
+    for (int i = 0; i < num_extensions; i++)
+    {
+        X509_EXTENSION* ext;
+        ASN1_OBJECT* obj;
+        sgx_oid_string_t ext_oid;
+
+        /* Get the i-th extension from the stack */
+        if (!(ext = sk_X509_EXTENSION_value(extensions, i)))
+            goto done;
+
+        /* Get the OID */
+        if (!(obj = X509_EXTENSION_get_object(ext)))
+            goto done;
+
+        /* Get the string name of the OID */
+        if (!OBJ_obj2txt(ext_oid.buf, sizeof(ext_oid.buf), obj, 1))
+            goto done;
+
+        /* If found then get the data */
+        if (strcmp(ext_oid.buf, oid) == 0)
+        {
+            ASN1_OCTET_STRING* str;
+
+            /* Get the data from the extension */
+            if (!(str = X509_EXTENSION_get_data(ext)))
+                goto done;
+
+            if (data)
+            {
+                memcpy(data, str->data, (size_t)str->length);
+                *size = (size_t)str->length;
+                result = SGX_SUCCESS;
+                goto done;
+            }
+        }
+    }
+
+done:
+    return result;
+}
+
 sgx_status_t sgx_get_pubkey_from_cert(
     const sgx_cert_t* cert,
     uint8_t* pem_data,
@@ -541,4 +797,230 @@ done:
     }
 
     return result;
+}
+
+/* a common function to compare hash from target_buf with quote */
+/* possible in_buf could be public_key for legacy or claims buf for interoperable ra-tls*/
+sgx_status_t sgx_tls_compare_quote_hash(uint8_t *p_quote,
+            uint8_t* in_buf, size_t in_buf_len)
+{
+    size_t report_data_size = 0;
+    uint32_t quote_type = 0;
+    uint8_t *p_report_data = NULL;
+    uint8_t *hash_in_buf = NULL; // buf to store hash by target_buf
+    unsigned char *p_sha = NULL;
+    sgx_status_t ret = SGX_SUCCESS;
+
+    if (p_quote == NULL) return SGX_ERROR_UNEXPECTED;
+
+    quote_type = *(uint32_t *)(p_quote + 4 * sizeof(uint8_t));
+
+    // get hash of cert pub key
+    report_data_size = (quote_type == 0x81) ? SGX_REPORT2_DATA_SIZE : SGX_REPORT_DATA_SIZE;
+    hash_in_buf = (uint8_t*)malloc(report_data_size);
+    if (!hash_in_buf) {
+        ret = SGX_ERROR_OUT_OF_MEMORY;
+        goto done;
+    }
+    if (quote_type == 0x81) {
+        uint16_t _version = 0;
+        memcpy((void*)&_version, p_quote, sizeof(_version));
+
+        if (_version == 5) 
+        {
+            p_report_data = (uint8_t*)&(((sgx_report2_body_v1_5_t*)&(((sgx_quote5_t*)p_quote)->body))->report_data);
+        } else
+        {
+            p_report_data = (uint8_t*)(&((sgx_quote4_t *)p_quote)->report_body.report_data);
+        }
+
+        p_sha = SHA384(in_buf, in_buf_len,
+                    reinterpret_cast<unsigned char *>(hash_in_buf));
+        if (p_sha == NULL || 
+                    memcmp(p_sha, hash_in_buf, SHA384_DIGEST_LENGTH) != 0) {
+            ret = SGX_ERROR_UNEXPECTED;
+            goto done;
+        }
+        if (memcmp(p_report_data, hash_in_buf, SHA384_DIGEST_LENGTH) != 0) {
+            ret = SGX_ERROR_INVALID_SIGNATURE;
+            goto done;
+        }
+    } else if (quote_type == 0x00)
+    {
+        p_report_data = (uint8_t*)(&((sgx_quote3_t *)p_quote)->report_body.report_data);
+        p_sha = SHA256(in_buf, in_buf_len, reinterpret_cast<unsigned char *>(hash_in_buf));
+        if (p_sha == NULL ||
+                    memcmp(p_sha, hash_in_buf, SHA256_DIGEST_LENGTH) != 0) {
+            ret = SGX_ERROR_UNEXPECTED;
+            goto done;
+        }
+        // compare hash, only compare the first 32 bytes
+        if (memcmp(p_report_data, hash_in_buf, SHA256_DIGEST_LENGTH) != 0) {
+            ret = SGX_ERROR_INVALID_SIGNATURE;
+            goto done;
+        }
+    }
+    else {
+        ret = SGX_ERROR_UNEXPECTED;
+        goto done;
+    }
+
+done:
+    SGX_TLS_SAFE_FREE(hash_in_buf);
+    return ret;
+}
+
+// support functions
+static char b64revtb[256] = {
+  -3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*0-15*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*16-31*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, /*32-47*/
+  52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -2, -1, -1, /*48-63*/
+  -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, /*64-79*/
+  15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1, /*80-95*/
+  -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, /*96-111*/
+  41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1, /*112-127*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*128-143*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*144-159*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*160-175*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*176-191*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*192-207*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*208-223*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, /*224-239*/
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1  /*240-255*/
+};
+
+static unsigned int raw_base64_decode(uint8_t *in,
+                        uint8_t* out, int strict, int *err) {
+    unsigned int  result = 0;
+    int x = 0;
+    unsigned char buf[3] = {0, 0, 0};
+    unsigned char *p = in, pad = 0;
+
+    *err = 0;
+    while (!pad) {
+        switch ((x = b64revtb[*p++])) {
+            case -3: /* NULL TERMINATOR */
+                if (((p - 1) - in) % 4) *err = 1;
+                return result;
+            case -2: /* PADDING CHARACTER. INVALID HERE */
+                if (((p - 1) - in) % 4 < 2) {
+                    *err = 1;
+                    return result;
+                } else if (((p - 1) - in) % 4 == 2) {
+                    /* Make sure there's appropriate padding */
+                    if (*p != '=') {
+                        *err = 1;
+                        return result;
+                    }
+                    buf[2] = 0;
+                    pad = 2;
+                    result++;
+                    break;
+                } else {
+                    pad = 1;
+                    result += 2;
+                    break;
+                }
+                return result;
+            case -1:
+                if (strict) {
+                    *err = 2;
+                    return result;
+                }
+                break;
+            default:
+                switch (((p - 1) - in) % 4) {
+                    case 0:
+                        buf[0] = (unsigned char)(x << 2);
+                        break;
+                    case 1:
+                        buf[0] |= (unsigned char)(x >> 4);
+                        buf[1] = (unsigned char)(x << 4);
+                        break;
+                    case 2:
+                        buf[1] |= (unsigned char)(x >> 2);
+                        buf[2] = (unsigned char)(x << 6);
+                        break;
+                    case 3:
+                        buf[2] |= (unsigned char)x;
+                        result += 3;
+                        for (x = 0;  x < 3 - pad;  x++) *out++ = buf[x];
+                        break;
+                }
+                break;
+        }
+    }
+    for (x = 0;  x < 3 - pad;  x++) *out++ = buf[x];
+    return result;
+}
+
+void PEM_strip_header_and_footer(
+               uint8_t *pem,
+               size_t pem_len,
+               uint8_t *stripped_pem,
+               size_t *real_pem_len
+        )
+{
+    int i = 0;
+    int j = 0;
+    int real_begin = 0;
+    int real_end = 0;
+    for (i = 0; i < (int)pem_len; i++)
+    {
+        if (pem[i] == '\n' || pem[i] == '\r') break;
+    }
+    real_begin = i+1; // the character right after \n
+
+    // do not search \n from the exact end, 
+    // which may contain one '\n' that we don't want
+    // to strip the footer "---- END Public Key -----"
+    for (i = (int)pem_len - 5; i >= 0; i--)
+    {
+        if (pem[i] == '\n' || pem[i] == '\r') break;
+    }
+
+    real_end = i;
+
+    // remove carriage return if any
+    for (i = real_begin, j = 0; i < real_end; i++)
+    {
+        if (pem[i] != '\n' && pem[i] != '\r')
+        {
+            stripped_pem[j] = pem[i];
+            j++;
+        }
+    }
+    *real_pem_len = j;
+}
+
+int PEM2DER_PublicKey_converter(const uint8_t *pem_pub, size_t pem_len, uint8_t *der, size_t *der_len)
+{
+    uint8_t *stripped_pk_pem = NULL;
+    size_t stripped_len = 0;
+
+    int temp_len = 0;
+    int errorcode = 0;
+
+    if (pem_pub == NULL || pem_len == 0)
+        return 1;
+
+    stripped_pk_pem = (uint8_t*)malloc(pem_len);
+    if (stripped_pk_pem == NULL) return 1;
+    memset(stripped_pk_pem, 0x00, pem_len);
+    PEM_strip_header_and_footer((uint8_t*)pem_pub, pem_len, stripped_pk_pem, &stripped_len);
+
+    if (stripped_len <= 0 || stripped_len > pem_len)
+    {
+        free(stripped_pk_pem);
+        return 1;
+    }
+    temp_len = raw_base64_decode(stripped_pk_pem, der, 0, &errorcode);
+    free(stripped_pk_pem);
+    if (!errorcode)
+    {
+        *der_len = temp_len;
+    }
+
+    return errorcode;
 }

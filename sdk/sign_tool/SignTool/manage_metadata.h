@@ -113,6 +113,7 @@ public:
     bool user_dynamic();
     sgx_misc_select_t get_config_misc_select();
     sgx_misc_select_t get_config_misc_mask();
+    sgx_misc_select_t get_config_desired_misc_select();
     uint8_t get_meta_versions() { return m_meta_verions; }
 private:
     bool get_time(uint32_t *date);

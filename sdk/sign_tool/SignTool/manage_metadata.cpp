@@ -186,8 +186,8 @@ bool parse_metadata_file(const char *xmlpath, xml_parameter_t *parameter, int pa
 }
 
 CMetadata::CMetadata(metadata_t *metadata, BinParser *parser)
-    : m_metadata(metadata)
-    , m_parser(parser), m_rva(0), m_gd_size(0), m_gd_template(NULL)
+    :  m_meta_verions(0), m_metadata(metadata), m_parser(parser)
+    , m_rva(0), m_gd_size(0), m_gd_template(NULL)
 {
     memset(m_metadata, 0, sizeof(metadata_t));
     memset(&m_create_param, 0, sizeof(m_create_param));
@@ -408,10 +408,12 @@ bool CMetadata::modify_metadata(const xml_parameter_t *parameter)
     m_metadata->tcs_policy = (uint32_t)parameter[TCSPOLICY].value;
 
     m_metadata->magic_num = METADATA_MAGIC;
-    m_metadata->desired_misc_select = 0;
+    m_metadata->desired_misc_select = (uint32_t)parameter[MISCSELECT].value;
     m_metadata->tcs_min_pool = (uint32_t)parameter[TCSMINPOOL].value;
-    m_metadata->enclave_css.body.misc_select = (uint32_t)parameter[MISCSELECT].value;
-    m_metadata->enclave_css.body.misc_mask =  (uint32_t)parameter[MISCMASK].value;
+    m_metadata->enclave_css.body.misc_select = (uint32_t)parameter[MISCSELECT].value &
+                                                    (uint32_t)parameter[MISCMASK].value;
+    m_metadata->enclave_css.body.misc_mask = (uint32_t)parameter[MISCMASK].value;
+
 
     //store the elrange config for further check
     m_elrange_config_entry.enclave_image_address = parameter[ENCLAVEIMAGEADDRESS].value;
@@ -1606,10 +1608,16 @@ sgx_misc_select_t CMetadata::get_config_misc_mask()
     return m_metadata->enclave_css.body.misc_mask;
 }
 
+sgx_misc_select_t CMetadata::get_config_desired_misc_select()
+{
+    return m_metadata->desired_misc_select;
+}
+
 bool CMetadata::check_config()
 {
     uint32_t misc_select_0 = (uint32_t)get_config_misc_select() & 1u;
     uint32_t misc_mask_0 = (uint32_t)get_config_misc_mask() & 1u;
+    uint32_t desired_misc_select_0 = (uint32_t)get_config_desired_misc_select() & 1u;
 
     bool has_rts_dynamic = rts_dynamic();
     bool has_user_dynamic = user_dynamic();
@@ -1634,7 +1642,7 @@ bool CMetadata::check_config()
 
     if (has_rts_dynamic)
     {
-        if (misc_select_0 == 0)
+        if (desired_misc_select_0 == 0)
         {
             // SGX1 metadata only
             m_meta_verions = 1u;
@@ -1646,13 +1654,14 @@ bool CMetadata::check_config()
         {
             // SGX2 metadata only
             m_meta_verions = 1u << 1;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: SGX2 only enclave, can only run on SGX2 platform.\n\033[0m");
         }
         else
         {
             // SGX1 and SGX2 metadata
             m_meta_verions = (1u << 1) | 1u;
+            se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave can run on both SGX1 and SGX2 platforms. Only on SGX2 platform can it take advantage of dynamic features.\n\033[0m");
         }
-        se_trace(SE_TRACE_ERROR, "\033[0;32mINFO: Enclave configuration 'MiscSelect' and 'MiscSelectMask' will prevent enclave from running on SGX1 platform. To make it run on SGX1 platform, suggest to set MiscSelect[0]=0.\n\033[0m");
         return true;
     }
 

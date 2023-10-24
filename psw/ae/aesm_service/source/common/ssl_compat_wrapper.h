@@ -41,19 +41,6 @@
 extern "C" {
 #endif
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-
-int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
-
-EVP_MD_CTX *EVP_MD_CTX_new(void);
-void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
-
-void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM **ps);
-int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s);
-BIGNUM *BN_lebin2bn(const unsigned char *s, int len, BIGNUM *ret);
-
-#endif
-
 void crypto_initialize();
 void crypto_cleanup();
 

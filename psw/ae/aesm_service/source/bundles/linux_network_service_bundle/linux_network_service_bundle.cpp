@@ -135,7 +135,7 @@ private:
 public:
     ae_error_t start()
     {
-        return AE_SUCCESS;
+        return prepare_curl();
     }
 
     void stop()
@@ -180,7 +180,6 @@ class Activator : public BundleActivator
 {
   void Start(BundleContext ctx)
   {
-    CURLcode curl_code = curl_global_init(CURL_GLOBAL_DEFAULT);
     auto service = std::make_shared<LinuxNetworkServiceImp>();
     ctx.RegisterService<INetworkService>(service);
   }

@@ -53,25 +53,8 @@
 __attribute__((constructor))
 static void init_openssl(void)
 {
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    OpenSSL_add_all_algorithms();
-    ERR_load_crypto_strings();
-#else
     OPENSSL_init_crypto(0, NULL);
-#endif
 }
-
-__attribute__((destructor))
-static void cleanup_openssl(void)
-{
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    EVP_cleanup();
-    CRYPTO_cleanup_all_ex_data();
-    ERR_remove_thread_state(NULL);
-    ERR_free_strings();
-#endif
-}
-
 
 static Mutex s_enclave_info_mutex;
 static std::map<void *, enclave_elrange_t>s_enclave_elrange_map;

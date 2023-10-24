@@ -81,18 +81,16 @@ HeapMaxSize, HeapInitSize, HeapMinSize
 -------------------------------------------------    
 Sample configuration files for the Sample Enclave
 -------------------------------------------------
-Below configurations are applicable on EDMM supported platforms with either EDMM supported
-kernels or EDMM unsupported kernels. If the signed enclave is launched on an EDMM supported
-platform with an EDMM supported kernel, it will be loaded with EDMM enabled. The following
-configuration descriptions are only suitable for the case that the signed enclave is
-launched on an EDMM supported platform with an EDMM supported kernel:
+With below configurations, if the signed enclave is launched on a SGX2 platform
+with SGX2 supported kernel, it will be loaded with EDMM enabled. Otherwise, it
+will behave in way of SGX1.
 
     config.01.xml: There is no dynamic thread, no dynamic heap expansion.
     config.02.xml: There is no dynamic thread. But dynamic heap expansion can happen.
     config.03.xml: There are dynamic threads. For a dynamic thread, there's no stack expansion.
     config.04.xml: There are dynamic threads. For a dynamic thread, stack will expanded as necessary.
 
-Below configuration is only workable on EDMM supported platforms with EDMM supported kernels:
+Below configuration is only workable on a SGX2 platform with SGX2 supported kernel:
 
     config.05.xml: There is a user region where users could operate on.
 
