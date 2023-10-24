@@ -108,7 +108,7 @@ ATTESTATION_STATUS send_request_ocall(uint32_t session_id, secure_message_t* req
 ATTESTATION_STATUS end_session_ocall(uint32_t session_id)
 {
 	sgx_status_t ret;
-	uint32_t retcode;
+        uint32_t retcode = (uint32_t) INVALID_SESSION;
 
 	ret = end_session(responder_enclave_id, &retcode, session_id);
 	if (ret != SGX_SUCCESS || retcode != SGX_SUCCESS)

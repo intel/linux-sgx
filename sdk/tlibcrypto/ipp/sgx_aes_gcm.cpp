@@ -58,6 +58,7 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     IppStatus error_code = ippStsNoErr;
     IppsAES_GCMState* pState = NULL;
     int ippStateSize = 0;
+    const int noise_level = 1;
 
     if ((p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
         || (p_out_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL))
@@ -88,6 +89,13 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
         case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
         default: return SGX_ERROR_UNEXPECTED;
         }
+    }
+    error_code = ippsAES_GCMSetupNoise(noise_level, pState);
+    if(error_code != ippStsNoErr)
+    {
+        memset_s(pState, ippStateSize, 0, ippStateSize);
+        free(pState);
+        return SGX_ERROR_UNEXPECTED;
     }
     error_code = ippsAES_GCMStart(p_iv, SGX_AESGCM_IV_SIZE, p_aad, aad_len, pState);
     if (error_code != ippStsNoErr)
@@ -144,6 +152,7 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     uint8_t l_tag[SGX_AESGCM_MAC_SIZE];
     IppsAES_GCMState* pState = NULL;
     int ippStateSize = 0;
+    const int noise_level = 1;
 
     if ((p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
         || (p_in_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL))
@@ -177,6 +186,13 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
         case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
         default: return SGX_ERROR_UNEXPECTED;
         }
+    }
+    error_code = ippsAES_GCMSetupNoise(noise_level, pState);
+    if(error_code != ippStsNoErr)
+    {
+        memset_s(pState, ippStateSize, 0, ippStateSize);
+        free(pState);
+        return SGX_ERROR_UNEXPECTED;
     }
     error_code = ippsAES_GCMStart(p_iv, SGX_AESGCM_IV_SIZE, p_aad, aad_len, pState);
     if (error_code != ippStsNoErr)
@@ -247,6 +263,7 @@ sgx_status_t sgx_aes_gcm128_enc_init(const uint8_t *key, const uint8_t *iv, uint
     sgx_status_t ret = SGX_ERROR_UNEXPECTED;
     IppStatus status = ippStsNoErr;
     IppsAES_GCMState *p_state = NULL;
+    const int noise_level = 1;
 
     do {
         status = ippsAES_GCMGetSize(&state_size);
@@ -260,7 +277,8 @@ sgx_status_t sgx_aes_gcm128_enc_init(const uint8_t *key, const uint8_t *iv, uint
 
         status = ippsAES_GCMInit(key, 16, p_state, state_size);
         ERROR_BREAK(status);
-
+        status = ippsAES_GCMSetupNoise(noise_level, p_state);
+        ERROR_BREAK(status);
         status = ippsAES_GCMStart(iv, iv_len, aad, aad_len, p_state);
         ERROR_BREAK(status);
 

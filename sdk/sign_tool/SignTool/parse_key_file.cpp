@@ -40,57 +40,81 @@
 #include "parse_key_file.h"
 #include "se_trace.h"
 #include "util_st.h"
+#include "util.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <openssl/pem.h>
+#include <openssl/core_names.h>
+#include <openssl/evp.h>
 
-
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-void RSA_get0_key(const RSA *rsa, const BIGNUM **n, const BIGNUM **e, const BIGNUM **d)
+bool rsa_get_bn(EVP_PKEY *pkey, BIGNUM **n, BIGNUM **e, BIGNUM **d)
 {
-    assert(rsa != NULL);
-
-    if(n != NULL)
-        *n = rsa->n;
-    if(e != NULL)
-        *e = rsa->e;
-    if(d != NULL)
-        *d = rsa->d;
+    if (n)
+    {
+        if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, n) == 0)
+        {
+            return false;
+        }
+    }
+    if (e)
+    {
+        if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, e) == 0)
+        {
+            return false;
+        }
+    }
+    if (d)
+    {
+        if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_D, d) == 0)
+        {
+            return false;
+        }
+    }
+    return true;
 }
-#endif
 
+void rsa_free_bn(BIGNUM *n, BIGNUM *e, BIGNUM *d)
+{
+    if(n)
+        BN_free(n);
+    if(e)
+        BN_free(e);
+    if(d)
+        BN_free(d);
+}
 
 //parse_key_file():
 //       parse the RSA key file
 //Return Value:
 //      true: success
 //      false: fail
-bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type)
+bool parse_key_file(int mode, const char *key_path, EVP_PKEY **pkey, int *pkey_type)
 {
-    assert(prsa != NULL && pkey_type != NULL);
+    assert(pkey != NULL && pkey_type != NULL);
 
     if(key_path == NULL)
     {
         *pkey_type = NO_KEY;
         return false;
     }
-    FILE *fp = fopen(key_path, "rb");
-    if(fp == NULL)
+    BIO* rsa_bio = BIO_new_file(key_path, "r");
+    if(rsa_bio == NULL)
     {
         se_trace(SE_TRACE_ERROR, OPEN_FILE_ERROR, key_path);
-        return false;
+        return false;       
     }
+
+    EVP_PKEY *key = NULL; 
     int key_type = UNIDENTIFIABLE_KEY;
-    RSA *rsa = NULL;
 
     if(mode == SIGN)
     {
-        rsa = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL);
-        fclose(fp);
-        if(!rsa)
+        key = PEM_read_bio_PrivateKey(rsa_bio, NULL, NULL, NULL);
+        BIO_free(rsa_bio);
+        if(!key)
         {
             se_trace(SE_TRACE_ERROR, KEY_FORMAT_ERROR);
             return false;
@@ -99,9 +123,9 @@ bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type)
     }
     else if(mode == CATSIG)
     {
-        rsa = PEM_read_RSA_PUBKEY(fp, NULL, NULL, NULL);
-        fclose(fp);
-        if(!rsa)
+        key = PEM_read_bio_PUBKEY(rsa_bio, NULL, NULL, NULL);
+        BIO_free(rsa_bio);
+        if(!key)
         {
             se_trace(SE_TRACE_ERROR, KEY_FORMAT_ERROR);
             return false;
@@ -111,17 +135,22 @@ bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type)
     else
     {
         se_trace(SE_TRACE_ERROR, "ERROR: Invalid command\n %s", USAGE_STRING);
-        fclose(fp);
+        BIO_free(rsa_bio);
         return false;
     }
 
     // Check the key size and exponent
-    const BIGNUM *n = NULL, *e = NULL;
-    RSA_get0_key(rsa, &n, &e, NULL);
+    BIGNUM *n = NULL, *e = NULL;
+    if(rsa_get_bn(key, &n, &e, NULL) == false)
+    {
+        EVP_PKEY_free(key);
+        return false;        
+    }
     if(BN_num_bytes(n) != N_SIZE_IN_BYTES)
     {
         se_trace(SE_TRACE_ERROR, INVALID_KEYSIZE_ERROR);
-        RSA_free(rsa);
+        EVP_PKEY_free(key);
+        rsa_free_bn(n, e, NULL);
         return false;
     }
     char *p = BN_bn2dec(e);
@@ -129,12 +158,13 @@ bool parse_key_file(int mode, const char *key_path, RSA **prsa, int *pkey_type)
     {
         se_trace(SE_TRACE_ERROR, INVALID_EXPONENT_ERROR);
         OPENSSL_free(p);
-        RSA_free(rsa);
+        EVP_PKEY_free(key);
+        rsa_free_bn(n, e, NULL);
         return false;
     }
-
+    rsa_free_bn(n, e, NULL);
     OPENSSL_free(p);
-    *prsa = rsa;
+    *pkey = key;
     *pkey_type = key_type;
     return true;
 }

@@ -37,6 +37,9 @@ PLATFORM_VERSION:= $(shell awk '$$2 ~ /PLATFORM_VERSION/ { print substr($$3, 2, 
 EPID_VERSION:= $(shell awk '$$2 ~ /EPID_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 QUOTE_EX_VERSION:= $(shell awk '$$2 ~ /QUOTE_EX_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 
+PREBUILT_OPENSSL_DIR := $(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl
+CRYPTO_LIB := -L$(PREBUILT_OPENSSL_DIR)/lib/linux64 -lcrypto
+
 INCLUDES := -I..                                            \
             -I$(COMMON_DIR)/inc                             \
             -I$(COMMON_DIR)/inc/internal                    \
@@ -47,11 +50,12 @@ INCLUDES := -I..                                            \
             -I$(LINUX_EXTERNAL_DIR)/rdrand/                 \
             -I$(LINUX_PSW_DIR)/ae/inc                       \
             -I$(LINUX_PSW_DIR)/ae/inc/internal              \
-            -I$(LINUX_PSW_DIR)/ae/common 
+            -I$(LINUX_PSW_DIR)/ae/common                    \
+            -I$(PREBUILT_OPENSSL_DIR)/inc
 
 
-CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g  -DOPENSSL_API_COMPAT=10101 $(CET_FLAGS)
-CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES) -DOPENSSL_API_COMPAT=10101 $(CET_FLAGS)
+CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g  $(CET_FLAGS)
+CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES) $(CET_FLAGS)
 
 
 RDRAND_LIBDIR := $(LINUX_EXTERNAL_DIR)/rdrand/src
@@ -59,7 +63,7 @@ RDRAND_MAKEFILE := $(RDRAND_LIBDIR)/Makefile
 
 EXTERNAL_LIB += -L$(RDRAND_LIBDIR) -lrdrand
 EXTERNAL_LIB += -L$(RDRAND_LIBDIR) -lrt
-EXTERNAL_LIB += -ldl -lcrypto
+EXTERNAL_LIB += -ldl $(CRYPTO_LIB)
 
 vpath %.cpp $(LINUX_PSW_DIR)/ae/common \
             $(LINUX_SDK_DIR)/simulation/urtssim \

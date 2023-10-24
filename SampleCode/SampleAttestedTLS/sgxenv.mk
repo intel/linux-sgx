@@ -81,7 +81,12 @@ else
         App_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
 endif
 
-SGXSSL_U_Library_Name := sgx_usgxssl
+
+ifeq ($(SGX_DEBUG), 1)
+	SGXSSL_U_Library_Name := sgx_usgxssld
+else
+	SGXSSL_U_Library_Name := sgx_usgxssl
+endif
 
 SGXSSL_U_Link_Libraries := -L$(SGXSSL_PKG_PATH)/lib64 -Wl,--whole-archive -l$(SGXSSL_U_Library_Name) -Wl,--no-whole-archive
 SGXTLS_U_Link_Libraries := -lsgx_utls
@@ -94,10 +99,15 @@ App_Link_Flags := $(SGX_COMMON_CFLAGS) $(SGXSSL_U_Link_Libraries) -L$(SGX_LIBRAR
 Trts_Library_Name := sgx_trts
 Service_Library_Name := sgx_tservice
 
-SGXSSL_Library_Name := sgx_tsgxssl
-OpenSSL_SSL_Library_Name := sgx_tsgxssl_ssl
-OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
-
+ifeq ($(SGX_DEBUG), 1)
+	SGXSSL_Library_Name := sgx_tsgxssld
+	OpenSSL_SSL_Library_Name := sgx_tsgxssl_ssld
+	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
+else
+	SGXSSL_Library_Name := sgx_tsgxssl
+	OpenSSL_SSL_Library_Name := sgx_tsgxssl_ssl
+	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
+endif
 SGX_TLS_Library_Name := sgx_ttls
 SGX_TVL_Library_Name := sgx_dcap_tvl
 
@@ -113,7 +123,7 @@ else
 	Enclave_C_Flags := $(SGX_COMMON_CFLAGS) -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections -fstack-protector-strong
 endif
 
-Enclave_C_Flags += $(Enclave_Include_Paths)
+Enclave_C_Flags += $(Enclave_Include_Paths) 
 Enclave_Cpp_Flags := $(Enclave_C_Flags) -std=c++11 -nostdinc++
 
 SgxSSL_Link_Libraries := -L$(SGXSSL_PKG_PATH)/lib64 -Wl,--whole-archive -l$(SGXSSL_Library_Name) -Wl,--no-whole-archive \

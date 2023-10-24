@@ -38,7 +38,7 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
     size_t public_key_buffer_size = 0;
     const unsigned char* certificate_buffer_ptr = nullptr;
     BIO* mem = nullptr;
-    int key_type = RSA_TYPE;
+    int key_type = EC_TYPE;
 
     if (key_type) {
         PRINT(" generating keys by EC P-384\n");
@@ -60,8 +60,8 @@ sgx_status_t generate_certificate_and_pkey(X509*& certificate, EVP_PKEY*& pkey)
 
     PRINT("public_key_buf_size:[%ld]\n", public_key_buffer_size);
     PRINT("%s\n", public_key_buffer);
-	PRINT("private_key_buf_size:[%ld]\n", private_key_buffer_size);
-	PRINT("%s\n", private_key_buffer);
+    PRINT("private_key_buf_size:[%ld]\n", private_key_buffer_size);
+    PRINT("%s\n", private_key_buffer);
     qresult = tee_get_certificate_with_evidence(
         certificate_subject_name,
         private_key_buffer,

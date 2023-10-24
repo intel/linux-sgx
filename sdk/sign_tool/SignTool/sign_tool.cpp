@@ -110,11 +110,7 @@ static int load_enclave(BinParser *parser, metadata_t *metadata)
 
 static int open_file(const char* dllpath)
 {
-    FILE *fp = fopen(dllpath, "rb");
-    if (fp == NULL)
-    return THE_INVALID_HANDLE;
-
-    return fileno(fp);
+    return open(dllpath, O_RDONLY);  
 }
 
 static void close_handle(int fd)
@@ -259,24 +255,28 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
 //       fill the enclave_css_t structure with enclave_hash
 //       If the 'rsa' is not null, fill the key part
 //       If the path[UNSIGNED] != NULL, update the header.date(CATSIG mode)
-static bool fill_enclave_css(const RSA *rsa, const char **path, 
+static bool fill_enclave_css(const EVP_PKEY *pkey, const char **path, 
                              const uint8_t *enclave_hash, enclave_css_t *css)
 {
     assert(enclave_hash != NULL && path != NULL && css != NULL);
 
-    //if rsa is not NULL, fill the public key part
-    if(rsa)
+    //if pkey is not NULL, fill the public key part
+    if(pkey)
     {
-        const BIGNUM *e = NULL, *n = NULL;
-        RSA_get0_key(rsa, &n, &e, NULL);
+        BIGNUM *e = NULL, *n = NULL;
+        rsa_get_bn((EVP_PKEY*)pkey, &n, &e, NULL);
+        //RSA_get0_key(rsa, &n, &e, NULL);
         int exponent_size = BN_num_bytes(e);
         int modulus_size = BN_num_bytes(n);
 
         if(modulus_size > SE_KEY_SIZE)
+        {
+            rsa_free_bn(n, e, NULL);
             return false;
+        }
         unsigned char *modulus = (unsigned char *)malloc(SE_KEY_SIZE);
         if(modulus == NULL)
-        {
+        {rsa_free_bn(n, e, NULL);
             return false;
         }
         memset(modulus, 0, SE_KEY_SIZE);
@@ -285,19 +285,23 @@ static bool fill_enclave_css(const RSA *rsa, const char **path,
         modulus_size = (uint32_t)(ROUND_TO(modulus_size, sizeof(uint32_t)) / sizeof(uint32_t));
         if(exponent_size != 0x1 || modulus_size != 0x60)
         {
+            rsa_free_bn(n, e, NULL);
             free(modulus);
             return false;
         }
         if(BN_bn2bin(n, modulus) != SE_KEY_SIZE)
         {
+            rsa_free_bn(n, e, NULL);
             free(modulus);
             return false;
         }
         if(BN_bn2bin(e, (unsigned char *)&css->key.exponent) != 1)
         {
+            rsa_free_bn(n, e, NULL);
             free(modulus);
             return false;
         }
+        rsa_free_bn(n, e, NULL);
         for(unsigned int i = 0; i < SE_KEY_SIZE; i++)
         {
             css->key.modulus[i] = modulus[SE_KEY_SIZE -i - 1];
@@ -428,10 +432,10 @@ static bool calc_RSAq1q2(int length_s, const uint8_t *data_s, int length_m, cons
 }
 
 
-static bool create_signature(const RSA *rsa, const char *sigpath, enclave_css_t *enclave_css)
+static bool create_signature(const EVP_PKEY *pkey, const char *sigpath, enclave_css_t *enclave_css)
 {
     assert(enclave_css != NULL);
-    assert(!(rsa == NULL && sigpath == NULL) && !(rsa != NULL && sigpath != NULL));
+    assert(!(pkey == NULL && sigpath == NULL) && !(pkey != NULL && sigpath != NULL));
 
     uint8_t signature[SIGNATURE_SIZE];    // keep the signature in big endian
     memset(signature, 0, SIGNATURE_SIZE);
@@ -469,13 +473,38 @@ static bool create_signature(const RSA *rsa, const char *sigpath, enclave_css_t 
             free(temp_buffer);
             return false;
         }
-
-        size_t siglen;
-        int ret = RSA_sign(NID_sha256, hash, hash_size, signature, (unsigned int *)&siglen, const_cast<RSA *>(rsa));
         free(temp_buffer);
-        if(ret != 1)
+        size_t siglen;
+        EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new((EVP_PKEY *)pkey, NULL);
+        if(!ctx)
+        {
             return false;
+        }
+        if (EVP_PKEY_sign_init(ctx) <= 0 ||
+            EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0 ||
+            EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256()) <= 0)
+        {
+            EVP_PKEY_CTX_free(ctx);
+            return false;
+        }
+        if(EVP_PKEY_sign(ctx, NULL, &siglen, hash, hash_size) <= 0)
+        {
+            EVP_PKEY_CTX_free(ctx);
+            return false;
+        }
+        if(SIGNATURE_SIZE != siglen)
+        {
+            EVP_PKEY_CTX_free(ctx);
+            return false;  
+        }
+        if(EVP_PKEY_sign(ctx, signature, &siglen, hash, hash_size) <= 0)
+        {
+            EVP_PKEY_CTX_free(ctx);
+            return false;  
+        }
+        EVP_PKEY_CTX_free(ctx);
     }
+
     for(int i = 0; i<SIGNATURE_SIZE; i++)
     {
         (enclave_css->key.signature)[i] = signature[SIGNATURE_SIZE-1-i];
@@ -496,9 +525,9 @@ static bool create_signature(const RSA *rsa, const char *sigpath, enclave_css_t 
     return res;
 }
 
-static bool verify_signature(const RSA *rsa, const enclave_css_t *enclave_css)
+static bool verify_signature(const EVP_PKEY *pkey, const enclave_css_t *enclave_css)
 {
-    assert(rsa != NULL && enclave_css != NULL);
+    assert(pkey != NULL && enclave_css != NULL);
     size_t buffer_size = sizeof(enclave_css->header) + sizeof(enclave_css->body);
     uint8_t *temp_buffer = (uint8_t *)malloc(buffer_size * sizeof(char));
     if(NULL == temp_buffer)
@@ -524,11 +553,22 @@ static bool verify_signature(const RSA *rsa, const enclave_css_t *enclave_css)
     {
         signature[i] = enclave_css->key.signature[SIGNATURE_SIZE-1-i];
     }
-    if(1 != RSA_verify(NID_sha256, hash, hash_size, signature, SIGNATURE_SIZE, const_cast<RSA *>(rsa)))
+
+    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new((EVP_PKEY *)pkey, NULL);
+    if(!ctx)
     {
         return false;
     }
-    return true;
+    if(EVP_PKEY_verify_init(ctx) <= 0 ||
+    EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0 ||
+    EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256()) <= 0)
+    {
+        EVP_PKEY_CTX_free(ctx);
+        return false;
+    }
+    int ret = EVP_PKEY_verify(ctx, signature, SIGNATURE_SIZE, hash, hash_size);
+    EVP_PKEY_CTX_free(ctx);
+    return ret == 1 ? true : false;
 }
 
 static bool gen_enclave_signing_file(const enclave_css_t *enclave_css, const char *outpath)
@@ -758,7 +798,7 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
 //             and then write the whole out file with body+header+hash
 //    CATSIG-  need to fill the enclave_css_t(include key), read the signature from the sigpath,
 //             and then update the metadata in the out file
-static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, const RSA *rsa, metadata_t *metadata,
+static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, const EVP_PKEY *pkey, metadata_t *metadata,
                             const char **path)
 {
     assert(enclave_hash != NULL && metadata != NULL && path != NULL);
@@ -767,17 +807,17 @@ static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, co
     {
     case SIGN:
         {
-            if(ktype != PRIVATE_KEY || !rsa)
+            if(ktype != PRIVATE_KEY || !pkey)
             {
                 se_trace(SE_TRACE_ERROR, LACK_PRI_KEY_ERROR);
                 return false;
             }
 
-            if(false == fill_enclave_css(rsa, path, enclave_hash, &(metadata->enclave_css)))
+            if(false == fill_enclave_css(pkey, path, enclave_hash, &(metadata->enclave_css)))
             {
                 return false;
             }
-            if(false == create_signature(rsa, NULL, &(metadata->enclave_css)))
+            if(false == create_signature(pkey, NULL, &(metadata->enclave_css)))
             {
                 return false;
             }
@@ -798,13 +838,13 @@ static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, co
         }
     case CATSIG:
         {
-            if(ktype != PUBLIC_KEY || !rsa)
+            if(ktype != PUBLIC_KEY || !pkey)
             {
                 se_trace(SE_TRACE_ERROR, LACK_PUB_KEY_ERROR);
                 return false;
             }
 
-            if(false == fill_enclave_css(rsa, path, enclave_hash, &(metadata->enclave_css)))
+            if(false == fill_enclave_css(pkey, path, enclave_hash, &(metadata->enclave_css)))
             {
                 return false;
             }
@@ -1346,16 +1386,11 @@ int main(int argc, char* argv[])
     size_t parameter_count = sizeof(parameter)/sizeof(parameter[0]);
     uint64_t meta_offset = 0;
     uint32_t option_flag_bits = 0;
-    RSA *rsa = NULL;
+     EVP_PKEY *pkey = NULL;
     memset(&metadata_raw, 0, sizeof(metadata_raw));
     uint8_t meta_versions = 0;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    OpenSSL_add_all_algorithms();
-    ERR_load_crypto_strings();
-#else
     OPENSSL_init_crypto(0, NULL);
-#endif
 
     //Parse command line
     if(cmdline_parse(argc, argv, &mode, path, &option_flag_bits) == false)
@@ -1389,7 +1424,7 @@ int main(int argc, char* argv[])
         goto clear_return;
     }
     //Parse the key file
-    if(parse_key_file(mode, path[KEY], &rsa, &key_type) == false && key_type != NO_KEY)
+    if(parse_key_file(mode, path[KEY], &pkey, &key_type) == false && key_type != NO_KEY)
     {
         goto clear_return;
     }
@@ -1404,7 +1439,7 @@ int main(int argc, char* argv[])
         se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
         goto clear_return;
     }
-    if((generate_output(mode, key_type, enclave_hash, rsa, metadata, path)) == false)
+    if((generate_output(mode, key_type, enclave_hash, pkey, metadata, path)) == false)
     {
         se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
         goto clear_return;
@@ -1413,7 +1448,7 @@ int main(int argc, char* argv[])
     //to verify
     if(mode == SIGN || mode == CATSIG)
     {
-        if(verify_signature(rsa, &(metadata->enclave_css)) == false)
+        if(verify_signature(pkey, &(metadata->enclave_css)) == false)
         {
             se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
             goto clear_return;
@@ -1449,19 +1484,13 @@ int main(int argc, char* argv[])
     res = 0;
 
 clear_return:
-    if(rsa)
-        RSA_free(rsa);
+    if(pkey)
+        EVP_PKEY_free(pkey);
     if(res == -1 && path[OUTPUT])
         remove(path[OUTPUT]);
     if(res == -1 && path[DUMPFILE])
         remove(path[DUMPFILE]);
     if(res == -1 && path[CSSFILE])
         remove(path[CSSFILE]);
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    EVP_cleanup();
-    CRYPTO_cleanup_all_ex_data();
-    ERR_remove_thread_state(NULL);
-    ERR_free_strings();
-#endif
     return res;
 }

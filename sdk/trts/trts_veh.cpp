@@ -191,13 +191,14 @@ int sgx_unregister_exception_handler(void *handler)
     return status;
 }
 
-extern "C" __attribute__((regparm(1))) void second_phase(sgx_exception_info_t *info, 
-    void *new_sp, void *second_phase_handler_addr);
-
 // continue_execution(sgx_exception_info_t *info):
 // try to restore the thread context saved in info to current execution context.
 extern "C" __attribute__((regparm(1))) void continue_execution(sgx_exception_info_t *info);
 extern "C" void restore_xregs(uint8_t *buf);
+
+#ifndef SE_SIM
+extern "C" __attribute__((regparm(1))) void second_phase(sgx_exception_info_t *info, 
+    void *new_sp, void *second_phase_handler_addr);
 
 extern "C" void constant_time_apply_sgxstep_mitigation_and_continue_execution(sgx_exception_info_t *info,
         uintptr_t ssa_aexnotify_addr, uintptr_t stack_tickle_pages, uintptr_t code_tickle_page, uintptr_t data_tickle_address, uintptr_t c3_byte_address);
@@ -308,10 +309,9 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
                     stack_tickle_pages, code_tickle_page,
                     data_tickle_address, c3_byte_address);
 }
+#endif
 
 //      the 2nd phrase exception handing, which traverse registered exception handlers.
-//      if the exception can be handled, then continue execution
-//      otherwise, throw abortion, go back to 1st phrase, and call the default handler.
 //      if the exception can be handled, then continue execution
 //      otherwise, throw abortion, go back to 1st phrase, and call the default handler.
 extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_exception_info_t *info)
@@ -323,15 +323,19 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
     uintptr_t *nhead = NULL;
     uintptr_t *ntmp = NULL;
     uintptr_t xsp = 0;
+    uint8_t *xsave_in_ssa = (uint8_t*)ROUND_TO_PAGE(thread_data->first_ssa_gpr) - ROUND_TO_PAGE(get_xsave_size() + sizeof(ssa_gpr_t));
 
     // AEX Notify allows this handler to handle interrupts
     if (info == NULL) {
         goto failed_end;
     }
-    else if (info->exception_valid == 0) {
+
+    memcpy_s(info->xsave_area, info->xsave_size, xsave_in_ssa, info->xsave_size);
+
+    if (info->exception_valid == 0) {
         goto exception_handling_end;
     }
-   
+
     if (thread_data->exception_flag < 0)
         goto failed_end;
     thread_data->exception_flag++;
@@ -421,6 +425,7 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
     }
 
 exception_handling_end:
+#ifndef SE_SIM
     //instruction triggering the exception will be executed again.
     if(info->do_aex_mitigation == 1)
     {
@@ -431,6 +436,7 @@ exception_handling_end:
         apply_constant_time_sgxstep_mitigation_and_continue_execution(info);
     }
     else
+#endif
     {
         //instruction triggering the exception will be executed again.
         restore_xregs(info->xsave_area);
@@ -468,7 +474,6 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     sgx_exception_info_t *info = NULL;
     uintptr_t sp_u, sp, *new_sp = NULL;
     size_t size = 0;
-    uint8_t *ssa_xsave = NULL;
     bool is_exception_handled = false;
 
     if ((thread_data == NULL) || (tcs == NULL)) goto default_handler;
@@ -550,33 +555,32 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
         return SGX_ERROR_STACK_OVERRUN;
     }
 
-    if(ssa_gpr->exit_info.valid == 1)
+    /* try to allocate memory dynamically */
+    if((size_t)sp < thread_data->stack_commit_addr)
     {
+        int ret = -1;
+        size_t page_aligned_delta = 0;
         /* try to allocate memory dynamically */
-        if((size_t)sp < thread_data->stack_commit_addr)
-        { 
-            int ret = -1;
-            size_t page_aligned_delta = 0;
-            /* try to allocate memory dynamically */
-            page_aligned_delta = ROUND_TO(thread_data->stack_commit_addr - (size_t)sp, SE_PAGE_SIZE);
-            if ((thread_data->stack_commit_addr > page_aligned_delta)
-                    && ((thread_data->stack_commit_addr - page_aligned_delta) >= thread_data->stack_limit_addr))
-            {
-                ret = expand_stack_by_pages((void *)(thread_data->stack_commit_addr - page_aligned_delta), (page_aligned_delta >> SE_PAGE_SHIFT));
-            }
-            if (ret == 0)
-            {
-                thread_data->stack_commit_addr -= page_aligned_delta;
-                is_exception_handled = true; // The exception has been handled in the 1st phase exception handler
-                goto handler_end;
-            }
-            else
-            {
-                set_enclave_state(ENCLAVE_CRASHED);
-                return SGX_ERROR_STACK_OVERRUN;
-            }
+        page_aligned_delta = ROUND_TO(thread_data->stack_commit_addr - (size_t)sp, SE_PAGE_SIZE);
+        if ((thread_data->stack_commit_addr > page_aligned_delta)
+                && ((thread_data->stack_commit_addr - page_aligned_delta) >= thread_data->stack_limit_addr))
+        {
+            ret = expand_stack_by_pages((void *)(thread_data->stack_commit_addr - page_aligned_delta),
+                                        (page_aligned_delta >> SE_PAGE_SHIFT));
+        }
+        if (ret == 0)
+        {
+            thread_data->stack_commit_addr -= page_aligned_delta;
+            is_exception_handled = true; // The exception has been handled in the 1st phase exception handler
+            goto handler_end;
+        }
+        else
+        {
+            set_enclave_state(ENCLAVE_CRASHED);
+            return SGX_ERROR_STACK_OVERRUN;
         }
     }
+
     if (size_t(&Lereport_inst) == ssa_gpr->REG(ip) && SE_EREPORT == ssa_gpr->REG(ax))
     {
         // Handle the exception raised by EREPORT instruction
@@ -607,8 +611,6 @@ handler_end:
     info->exception_vector = (sgx_exception_vector_t)ssa_gpr->exit_info.vector;
     info->exception_type = (sgx_exception_type_t)ssa_gpr->exit_info.exit_type;
     info->xsave_size = thread_data->xsave_size;
-    ssa_xsave = (uint8_t*)ROUND_TO_PAGE(thread_data->first_ssa_gpr) - ROUND_TO_PAGE(get_xsave_size() + sizeof(ssa_gpr_t));
-    memcpy_s(info->xsave_area, info->xsave_size, ssa_xsave, info->xsave_size);
 
     info->cpu_context.REG(ax) = ssa_gpr->REG(ax);
     info->cpu_context.REG(cx) = ssa_gpr->REG(cx);

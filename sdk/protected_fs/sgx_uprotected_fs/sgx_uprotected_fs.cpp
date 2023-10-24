@@ -36,11 +36,13 @@
 #include <errno.h>
 
 #include <sys/file.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
 
 #include "sgx_tprotected_fs_u.h"
+#include "../sgx_tprotected_fs/protected_fs_nodes.h"
 #include <uprotected_fs.h>
 
 
@@ -51,14 +53,31 @@
 #endif
 
 
-void* u_sgxprotectedfs_exclusive_file_open(const char* filename, uint8_t read_only, int64_t* file_size, int32_t* error_code)
+int8_t u_sgxprotectedfs_check_if_file_exists(const char* filename)
 {
-	FILE* f = NULL;
+	struct stat stat_st;
+	
+	memset(&stat_st, 0, sizeof(struct stat));
+
+	if (filename == NULL || strnlen(filename, 1) == 0)
+	{
+		DEBUG_PRINT("filename is NULL or empty\n");
+		return -EINVAL;
+	}
+	
+	return (stat(filename, &stat_st) == 0); 
+}
+
+
+uint8_t* u_sgxprotectedfs_exclusive_file_map(const char* filename, uint8_t read_only, int64_t* file_size, int32_t* error_code)
+{
+	void* f_addr = NULL;
+	int64_t f_size = 0;
 	int result = 0;
 	int fd = -1;
 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
 	struct stat stat_st;
-	
+
 	memset(&stat_st, 0, sizeof(struct stat));
 
 	if (filename == NULL || strnlen(filename, 1) == 0)
@@ -72,7 +91,7 @@ void* u_sgxprotectedfs_exclusive_file_open(const char* filename, uint8_t read_on
 	fd = open(filename,	O_CREAT | (read_only ? O_RDONLY : O_RDWR) | O_LARGEFILE, mode); // create the file if it doesn't exists, read-only/read-write
 	if (fd == -1)
 	{
-		DEBUG_PRINT("open returned %d, errno %d\n", result, errno);
+		DEBUG_PRINT("open returned -1, errno %d\n", errno);
 		*error_code = errno;
 		return NULL;
 	}
@@ -99,188 +118,112 @@ void* u_sgxprotectedfs_exclusive_file_open(const char* filename, uint8_t read_on
 		assert(result == 0);
 		return NULL;
 	}
-	
-	// convert the file handle to standard 'C' API file pointer
-	f = fdopen(fd, read_only ? "rb" : "r+b");
-	if (f == NULL)
+
+	f_size = stat_st.st_size;
+	if (f_size == 0) // in case of new file, append size of node_size
 	{
-		DEBUG_PRINT("fdopen returned NULL\n");
-		*error_code = errno;
+		result = ftruncate(fd, NODE_SIZE);
+		if (result != 0)
+		{
+			DEBUG_PRINT("ftruncate returned %d, errno %d\n", result, errno);
+			*error_code = errno;
+			flock(fd, LOCK_UN);
+			result = close(fd);
+			assert(result == 0);
+			return NULL;
+		}
+
+		f_size = NODE_SIZE;
+	}
+
+	f_addr = mmap(NULL, f_size, PROT_READ | (read_only ? 0 : PROT_WRITE), MAP_SHARED, fd, 0);
+	if (f_addr == MAP_FAILED)
+	{
+		DEBUG_PRINT("mmap returned MAP_FAILED, errno %d\n", errno);
 		flock(fd, LOCK_UN);
 		result = close(fd);
 		assert(result == 0);
 		return NULL;
 	}
 
-	if (file_size != NULL)
-		*file_size = stat_st.st_size;
+	result = close(fd);
+	if (result != 0)
+	{
+		DEBUG_PRINT("close returned %d, errno: %d\n", result, errno);
+		munmap(f_addr, f_size);
+		flock(fd, LOCK_UN);
+		return NULL;
+	}
 
-	return f;
+	if (file_size != NULL)
+		*file_size = stat_st.st_size; // file_size=0 to indicate new file, althrough actural size is NODE_SIZE
+
+	return (uint8_t*)f_addr;
 }
 
 
-uint8_t u_sgxprotectedfs_check_if_file_exists(const char* filename)
+int32_t u_sgxprotectedfs_file_remap(const char* filename, uint8_t** file_addr, int64_t old_size, int64_t new_size)
 {
-	struct stat stat_st;
-	
-	memset(&stat_st, 0, sizeof(struct stat));
+	void* f_new_addr = NULL;
+	int result = 0;
 
 	if (filename == NULL || strnlen(filename, 1) == 0)
 	{
 		DEBUG_PRINT("filename is NULL or empty\n");
-		return 1;
-	}
-	
-	return (stat(filename, &stat_st) == 0); 
-}
-
-
-int32_t u_sgxprotectedfs_fread_node(void* f, uint64_t node_number, uint8_t* buffer, uint32_t node_size)
-{
-	FILE* file = (FILE*)f;
-	uint64_t offset = node_number * node_size;
-	int result = 0;
-	size_t size = 0;
-
-	if (file == NULL)
-	{
-		DEBUG_PRINT("file is NULL\n");
 		return -1;
 	}
 
-	if ((result = fseeko(file, offset, SEEK_SET)) != 0)
+	if (file_addr == NULL || *file_addr == NULL)
 	{
-		DEBUG_PRINT("fseeko returned %d\n", result);
-		if (errno != 0)
-		{
-			int err = errno;
-			return err;
-		}
-		else
-			return -1;
+		DEBUG_PRINT("file address is NULL\n");
+		return -1;
 	}
 
-	if ((size = fread(buffer, node_size, 1, file)) != 1)
+	if (new_size == old_size)
 	{
-		int err = ferror(file);
-		if (err != 0)
-		{
-			DEBUG_PRINT("fread returned %ld [!= 1], ferror: %d\n", size, err);
-			return err;
-		}
-		else if (errno != 0)
-		{
-			err = errno;
-			DEBUG_PRINT("fread returned %ld [!= 1], errno: %d\n", size, err);
-			return err;
-		}
-		else
-		{
-			DEBUG_PRINT("fread returned %ld [!= 1], no error code\n", size);
-			return -1;
-		}
+		DEBUG_PRINT("file size not changed\n");
+		return -1;
 	}
+
+	result = truncate(filename, new_size);
+	if (result != 0)
+	{
+		int err = errno;
+		DEBUG_PRINT("truncate returned %d, errno %d\n", result, err);
+		return err ? err : -1;
+	}
+
+	f_new_addr = mremap(*file_addr, old_size, new_size, MREMAP_MAYMOVE);
+	if (f_new_addr == MAP_FAILED)
+	{
+		int err = errno;
+		DEBUG_PRINT("mremap returned MAP_FAILED, errno %d\n", err);
+		return err ? err : -1;
+	}
+
+	*file_addr = (uint8_t*)f_new_addr;
 
 	return 0;
 }
 
 
-int32_t u_sgxprotectedfs_fwrite_node(void* f, uint64_t node_number, uint8_t* buffer, uint32_t node_size)
+int32_t u_sgxprotectedfs_file_unmap(uint8_t* file_addr, int64_t file_size)
 {
-	FILE* file = (FILE*)f;
-	uint64_t offset = node_number * node_size;
 	int result = 0;
-	size_t size = 0;
 
-	if (file == NULL)
+	if (file_addr == NULL)
 	{
-		DEBUG_PRINT("file is NULL\n");
+		DEBUG_PRINT("file address is NULL\n");
 		return -1;
 	}
 
-	if ((result = fseeko(file, offset, SEEK_SET)) != 0)
+	if ((result = munmap(file_addr, file_size)) != 0)
 	{
-		DEBUG_PRINT("fseeko returned %d\n", result);
-		if (errno != 0)
-		{
-			int err = errno;
-			return err;
-		}
-		else
-			return -1;
+		int err = errno;
+		DEBUG_PRINT("munmap returned %d, errno: %d\n", result, err);
+		return err ? err : -1;
 	}
 
-	if ((size = fwrite(buffer, node_size, 1, file)) != 1)
-	{
-		DEBUG_PRINT("fwrite returned %ld [!= 1]\n", size);
-		int err = ferror(file);
-		if (err != 0)
-			return err;
-		else if (errno != 0)
-		{
-			err = errno;
-			return err;
-		}
-		else
-			return -1;
-	}
-
-	return 0;
-}
-
-
-int32_t u_sgxprotectedfs_fclose(void* f)
-{
-	FILE* file = (FILE*)f;
-	int result = 0;
-	int fd = 0;
-
-	if (file == NULL)
-	{
-		DEBUG_PRINT("file is NULL\n");
-		return -1;
-	}
-
-	// closing the file handle should also remove the lock, but we try to remove it explicitly
-	fd = fileno(file);
-	if (fd == -1)
-		DEBUG_PRINT("fileno returned -1\n");
-	else
-		flock(fd, LOCK_UN);
-	
-	if ((result = fclose(file)) != 0)
-	{
-		if (errno != 0)
-		{
-			int err = errno;
-			DEBUG_PRINT("fclose returned %d, errno: %d\n", result, err);
-			return err;
-		}
-		DEBUG_PRINT("fclose returned %d\n", result);
-		return -1;
-	}
-
-	return 0;
-}
-
-
-uint8_t u_sgxprotectedfs_fflush(void* f)
-{
-	FILE* file = (FILE*)f;
-	int result;
-
-	if (file == NULL)
-	{
-		DEBUG_PRINT("file is NULL\n");
-		return 1;
-	}
-	
-	if ((result = fflush(file)) != 0)
-	{
-		DEBUG_PRINT("fflush returned %d\n", result);
-		return 1;
-	}
-	
 	return 0;
 }
 
@@ -308,16 +251,18 @@ int32_t u_sgxprotectedfs_remove(const char* filename)
 
 #define MILISECONDS_SLEEP_FOPEN 10
 #define MAX_FOPEN_RETRIES       10
-void* u_sgxprotectedfs_recovery_file_open(const char* filename)
+uint8_t u_sgxprotectedfs_fwrite_recovery_file(uint8_t* fileaddress, const char* filename, uint64_t* recovery_list, uint64_t length)
 {
 	FILE* f = NULL;
+	size_t count = 0;
+	int result = 0;
 
 	if (filename == NULL || strnlen(filename, 1) == 0)
 	{
 		DEBUG_PRINT("recovery filename is NULL or empty\n");
-		return NULL;
+		return 1;
 	}
-	
+
 	for (int i = 0; i < MAX_FOPEN_RETRIES; i++)
 	{
 		f = fopen(filename, "wb");
@@ -325,31 +270,40 @@ void* u_sgxprotectedfs_recovery_file_open(const char* filename)
 			break;
 		usleep(MILISECONDS_SLEEP_FOPEN);
 	}
+
 	if (f == NULL)
 	{
 		DEBUG_PRINT("fopen (%s) returned NULL\n", filename);
-		return NULL;
-	}
-	
-	return f;
-}
-
-
-uint8_t u_sgxprotectedfs_fwrite_recovery_node(void* f, uint8_t* data, uint32_t data_length)
-{
-	FILE* file = (FILE*)f;
-
-	if (file == NULL)
-	{
-		DEBUG_PRINT("file is NULL\n");
 		return 1;
 	}
-		
-	// recovery nodes are written sequentially
-	size_t count = fwrite(data, 1, data_length, file);
-	if (count != data_length)
+
+	for (uint64_t i = 0; i < length; i++)
 	{
-		DEBUG_PRINT("fwrite returned %ld instead of %d\n", count, data_length);
+		// write physical_node_number of recovery_node
+		if ((count = fwrite(recovery_list + i, 1, sizeof(uint64_t), f)) != sizeof(uint64_t))
+		{
+			DEBUG_PRINT("fwrite returned %ld instead of %ld\n", count, sizeof(uint64_t));
+			result = fclose(f);
+			assert(result == 0);
+			result = remove(filename);
+			assert(result == 0);
+			return 1;
+		}
+		// write node_data of the recovery_node
+		if ((count = fwrite(fileaddress + recovery_list[i] * NODE_SIZE, 1, NODE_SIZE, f)) != NODE_SIZE)
+		{
+			DEBUG_PRINT("fwrite returned %ld instead of %d\n", count, NODE_SIZE);
+			result = fclose(f);
+			assert(result == 0);
+			result = remove(filename);
+			assert(result == 0);
+			return 1;
+		}
+	}
+
+	if ((result = fclose(f)) != 0)
+	{
+		DEBUG_PRINT("fclose returned %d\n", result);
 		return 1;
 	}
 
@@ -357,13 +311,13 @@ uint8_t u_sgxprotectedfs_fwrite_recovery_node(void* f, uint8_t* data, uint32_t d
 }
 
 
-int32_t u_sgxprotectedfs_do_file_recovery(const char* filename, const char* recovery_filename, uint32_t node_size)
+int32_t u_sgxprotectedfs_do_file_recovery(const char* filename, const char* recovery_filename)
 {
 	FILE* recovery_file = NULL;
 	FILE* source_file = NULL;
 	int32_t ret = -1;
 	uint32_t nodes_count = 0;
-	uint32_t recovery_node_size = (uint32_t)(sizeof(uint64_t)) + node_size; // node offset + data
+	uint32_t recovery_node_size = (uint32_t)(sizeof(uint64_t)) + NODE_SIZE; // node offset + data
 	uint64_t file_size = 0;
 	int err = 0;
 	int result = 0;
@@ -451,7 +405,7 @@ int32_t u_sgxprotectedfs_do_file_recovery(const char* filename, const char* reco
 			}
 
 			// seek the regular file to the required offset
-			if ((result = fseeko(source_file, (*((uint64_t*)recovery_node)) * node_size, SEEK_SET)) != 0)
+			if ((result = fseeko(source_file, (*((uint64_t*)recovery_node)) * NODE_SIZE, SEEK_SET)) != 0)
 			{
 				DEBUG_PRINT("fseeko returned %d\n", result);
 				if (errno != 0)
@@ -460,7 +414,7 @@ int32_t u_sgxprotectedfs_do_file_recovery(const char* filename, const char* reco
 			}
 
 			// write down the original data from the recovery file
-			if ((count = fwrite(&recovery_node[sizeof(uint64_t)], node_size, 1, source_file)) != 1)
+			if ((count = fwrite(&recovery_node[sizeof(uint64_t)], NODE_SIZE, 1, source_file)) != 1)
 			{
 				DEBUG_PRINT("fwrite returned %ld [!= 1]\n", count);
 				err = ferror(source_file);
@@ -502,7 +456,10 @@ int32_t u_sgxprotectedfs_do_file_recovery(const char* filename, const char* reco
 	}
 
 	if (ret == 0)
-		remove(recovery_filename);
+	{
+		result = remove(recovery_filename);
+		assert(result == 0);
+	}
 	
 	return ret;
 }

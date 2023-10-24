@@ -534,9 +534,7 @@ bool build_regular_sections(const uint8_t* start_addr,
     const ElfW(Ehdr) *elf_hdr = (const ElfW(Ehdr) *)start_addr;
     const ElfW(Phdr) *prg_hdr = GET_PTR(ElfW(Phdr), start_addr, elf_hdr->e_phoff);
     uint64_t virtual_size = 0, alignment = 0, aligned_virtual_size = 0;
-#ifndef DISABLE_TRACE
     unsigned section_count = 1; /* Definition only used with se_trace(SE_TRACE_DEBUG) below */
-#endif
 
     if (get_meta_property(start_addr, elf_hdr, metadata_offset, metadata_block_size) == false)
         return false;

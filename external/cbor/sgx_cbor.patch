@@ -1,0 +1,85 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5c0a784..0a4c4fc 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -25,7 +25,7 @@ if(CBOR_CUSTOM_ALLOC)
+         "Please remove CBOR_CUSTOM_ALLOC from your build configuation.")
+ endif(CBOR_CUSTOM_ALLOC)
+ 
+-option(CBOR_PRETTY_PRINTER "Include a pretty-printing routine" ON)
++option(CBOR_PRETTY_PRINTER "Include a pretty-printing routine" OFF)
+ set(CBOR_BUFFER_GROWTH "2" CACHE STRING "Factor for buffer growth & shrinking")
+ set(CBOR_MAX_STACK_SIZE "2048" CACHE STRING "maximum size for decoding context stack")
+ 
+@@ -34,7 +34,7 @@ if(WITH_TESTS)
+     add_definitions(-DWITH_TESTS)
+ endif(WITH_TESTS)
+ 
+-option(WITH_EXAMPLES "Build examples" ON)
++option(WITH_EXAMPLES "Build examples" OFF)
+ 
+ option(HUGE_FUZZ "[TEST] Fuzz through 8GB of data in the test. Do not use with memory instrumentation!" OFF)
+ if(HUGE_FUZZ)
+@@ -163,6 +163,12 @@ else()
+     message(STATUS "LTO is not enabled")
+ endif(use_lto)
+ 
++message("cmake current binary dir:"${CMAKE_CURRENT_BINARY_DIR})
++# need to build installation path
++execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory
++	${CMAKE_CURRENT_BINARY_DIR}/../../trusted)
++set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}/../../trusted)
++
+ add_subdirectory(src)
+ if(use_lto)
+     set_property(DIRECTORY src PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 72a0c90..69e82ac 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -8,9 +8,13 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
+ if (NOT DEFINED CMAKE_MACOSX_RPATH)
+ 	set(CMAKE_MACOSX_RPATH 0)
+ endif()
++set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_ENCLAVE_FLAGS}")
+ 
+ add_library(cbor ${SOURCES})
+ target_include_directories(cbor PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
++target_include_directories(cbor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../../common/inc/tlibc)
++target_include_directories(cbor PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../../common/inc)
++target_compile_options(cbor PRIVATE -nostdinc -fPIC)
+ 
+ # Explicitly link math.h if necessary
+ check_function_exists(ldexp LDEXP_AVAILABLE)
+diff --git a/src/cbor.h b/src/cbor.h
+index 46ef8f2..2260c26 100644
+--- a/src/cbor.h
++++ b/src/cbor.h
+@@ -61,12 +61,12 @@ _CBOR_NODISCARD CBOR_EXPORT cbor_item_t* cbor_load(
+  */
+ _CBOR_NODISCARD CBOR_EXPORT cbor_item_t* cbor_copy(cbor_item_t* item);
+ 
+-#if CBOR_PRETTY_PRINTER
++/*#if CBOR_PRETTY_PRINTER
+ #include <stdio.h>
+ 
+ CBOR_EXPORT void cbor_describe(cbor_item_t* item, FILE* out);
+ #endif
+-
++*/
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/src/cbor/configuration.h.in b/src/cbor/configuration.h.in
+index 0052a15..0732ec6 100644
+--- a/src/cbor/configuration.h.in
++++ b/src/cbor/configuration.h.in
+@@ -7,7 +7,7 @@
+ 
+ #define CBOR_BUFFER_GROWTH ${CBOR_BUFFER_GROWTH}
+ #define CBOR_MAX_STACK_SIZE ${CBOR_MAX_STACK_SIZE}
+-#cmakedefine01 CBOR_PRETTY_PRINTER
++//#cmakedefine01 CBOR_PRETTY_PRINTER
+ 
+ #define CBOR_RESTRICT_SPECIFIER ${CBOR_RESTRICT_SPECIFIER}
+ #define CBOR_INLINE_SPECIFIER ${CBOR_INLINE_SPECIFIER}

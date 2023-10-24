@@ -352,12 +352,12 @@ static void _EREPORT(const sgx_target_info_t* ti, const sgx_report_data_t* rd, s
     sgx_key_128bit_t tmp_report_key;
     memset(tmp_report_key, 0, sizeof(tmp_report_key));
 
-    derive_key(&dd, tmp_report_key);
+    GP_ON(SGX_SUCCESS != derive_key(&dd, tmp_report_key));
 
     // call cryptographic CMAC function
     // CMAC data are *NOT* including MAC and KEYID
-    cmac(&tmp_report_key, reinterpret_cast<uint8_t*>(&tmp_report.body),
-        sizeof(tmp_report.body), &tmp_report.mac);
+    GP_ON(SGX_SUCCESS != cmac(&tmp_report_key, reinterpret_cast<uint8_t*>(&tmp_report.body),
+        sizeof(tmp_report.body), &tmp_report.mac));
 
     memcpy(report, &tmp_report, sizeof(sgx_report_t));
 }

@@ -166,15 +166,31 @@ int EnclaveCreatorHW::get_misc_attr(sgx_misc_attribute_t *sgx_misc_attr, metadat
         }
     }
     //if the enclave requires aex notify support, need to check the platform supports edeccssa or not
-    if(((secs_attr->flags & SGX_FLAGS_AEX_NOTIFY) != false) && (is_edeccssa_supported() == false))
+    if(((secs_attr->flags & SGX_FLAGS_AEX_NOTIFY) == SGX_FLAGS_AEX_NOTIFY) && (is_edeccssa_supported() == false))
     {
         SE_TRACE(SE_TRACE_WARNING, "the enclave requires AEX Notify support, but the platform doesn't support EDECCSSA.\n");
         return SGX_ERROR_UNEXPECTED;
     }
 
-    // try to use maximum ablity of cpu
-    sgx_misc_attr->misc_select = se_cap.misc_select & enclave_css->body.misc_select;
+    //if the enclave requires aex notify support, need to check the platform supports avx or not
+    if(((secs_attr->flags & SGX_FLAGS_AEX_NOTIFY) == SGX_FLAGS_AEX_NOTIFY) && ((secs_attr->xfrm & SGX_XFRM_AVX) != SGX_XFRM_AVX))
+    {
+        SE_TRACE(SE_TRACE_WARNING, "the enclave requires AEX Notify support, but the platform doesn't support AVX.\n");
+        return SGX_ERROR_UNEXPECTED;
+    }
 
+    // try to use maximum ablity of cpu
+    SE_TRACE(SE_TRACE_DEBUG, "se_cap.misc_select: 0x%x\n", se_cap.misc_select);
+    SE_TRACE(SE_TRACE_DEBUG, "enclave_css->body.misc_select: 0x%x\n", enclave_css->body.misc_select);
+    SE_TRACE(SE_TRACE_DEBUG, "enclave_css->body.misc_mask: 0x%x\n", enclave_css->body.misc_mask);
+    SE_TRACE(SE_TRACE_DEBUG, "metadata->desired_misc_select: 0x%x\n", metadata->desired_misc_select);
+    sgx_misc_attr->misc_select = se_cap.misc_select & (enclave_css->body.misc_select | metadata->desired_misc_select);
+
+    if ((sgx_misc_attr->misc_select & enclave_css->body.misc_mask) !=
+        (enclave_css->body.misc_select & enclave_css->body.misc_mask))
+    {
+        return SGX_ERROR_INVALID_MISC;
+    }
     return SGX_SUCCESS;
 }
 

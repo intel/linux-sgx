@@ -69,6 +69,8 @@ select_install_path()
 }
 
 
+umask 022
+
 prev=
 for option
 do
@@ -115,7 +117,6 @@ fi
 USER_INPUT_PATH=$(cd "$USER_INPUT_PATH"; pwd -P)
 
 PATH=/usr/bin:/bin:$PATH
-umask 022
 
 SDKPKG=`mktemp -t sgx-sdk-pkg.XXXXXX`
 SDK_TEMP_FOLDER=`mktemp -d sgx-sdk-XXXXXX -p /tmp`

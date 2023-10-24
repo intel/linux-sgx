@@ -39,7 +39,7 @@
 
 static uint64_t get_bit_from_feature_id(FeatureId feature_id)
 {
-    assert(feature_id >= c_feature_none);
+    assert(feature_id > c_feature_none);
     
     if (feature_id < c_feature_end)
     {

@@ -33,6 +33,8 @@
 #include "ssl_compat_wrapper.h"
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
+#include <openssl/core_names.h>
+#include <openssl/param_build.h>
 #include <stdint.h>
 #include <assert.h>
 #include <se_memcpy.h>
@@ -43,54 +45,51 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
-
     EVP_PKEY *rsa_key = NULL;
-    RSA *rsa_ctx = NULL;
     sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
-    BIGNUM* n = NULL;
-    BIGNUM* e = NULL;
-
-    do 
+    BIGNUM *n = NULL;
+    BIGNUM *e = NULL;
+    OSSL_PARAM_BLD *bld = NULL;
+    OSSL_PARAM *params = NULL;
+    EVP_PKEY_CTX *pctx = NULL;
+    do
     {
-        //convert input buffers to BNs
+        pctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+        NULL_BREAK(pctx);
+
+        bld = OSSL_PARAM_BLD_new();
+        NULL_BREAK(bld);
+
+        // convert input buffers to BNs
         //
         n = BN_lebin2bn(le_n, mod_size, n);
         BN_CHECK_BREAK(n);
         e = BN_lebin2bn(le_e, exp_size, e);
         BN_CHECK_BREAK(e);
-
-        // allocates and initializes an RSA key structure
-        //
-        rsa_ctx = RSA_new();
-        rsa_key = EVP_PKEY_new();
-
-        if (rsa_ctx == NULL || rsa_key == NULL || !EVP_PKEY_assign_RSA(rsa_key, rsa_ctx))
-        {
-            RSA_free(rsa_ctx);
-            rsa_ctx = NULL;
+        if (!OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_RSA_N, n))
             break;
-        }
-
-        //set n, e values of RSA key
-        //Calling set functions transfers the memory management of input BNs to the RSA object,
-        //and therefore the values that have been passed in should not be freed by the caller after these functions has been called.
-        //
-        if (!RSA_set0_key(rsa_ctx, n, e, NULL))
-        {
-                break;
-        }
-        *new_pub_key = rsa_key;
+        if (!OSSL_PARAM_BLD_push_BN(bld, OSSL_PKEY_PARAM_RSA_E, e))
+            break;
+        params = OSSL_PARAM_BLD_to_param(bld);
+        NULL_BREAK(params);
+        if (EVP_PKEY_fromdata_init(pctx) < 1)
+            break;
+        // rsa_key will be created in this function
+        if (EVP_PKEY_fromdata(pctx, &rsa_key, EVP_PKEY_PUBLIC_KEY, params) < 1)
+            break;
         ret_code = SGX_SUCCESS;
+        *new_pub_key = rsa_key;
     } while (0);
-
     if (ret_code != SGX_SUCCESS)
-    {
         EVP_PKEY_free(rsa_key);
-        BN_clear_free(n);
-        BN_clear_free(e);
-    }
 
+    EVP_PKEY_CTX_free(pctx);
+    OSSL_PARAM_free(params);
+    OSSL_PARAM_BLD_free(bld);
+    BN_free(n);
+    BN_free(e);
     return ret_code;
+
 }
 
 

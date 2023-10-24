@@ -17,6 +17,8 @@ global:
     sgx_get_quote_ex;
     sgx_get_supported_att_key_id_num;
     sgx_get_supported_att_key_ids;
+    sgx_trace_logger_callback;
+    sgx_trace_loglevel;
 local:
     *;
 };

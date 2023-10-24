@@ -217,7 +217,7 @@ static bool get_metadata_internal(BinParser *parser, metadata_t **metadata)
     //assume AE only contains one metadata
     *metadata = GET_PTR(metadata_t, base_addr, meta_rva);
 
-    if(metadata == NULL)
+    if(*metadata == NULL)
     {
         return false;
     }

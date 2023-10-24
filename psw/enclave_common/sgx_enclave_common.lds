@@ -10,6 +10,8 @@ global:
     enclave_alloc;
     enclave_modify;
     enclave_get_features;
+    sgx_trace_logger_callback;
+    sgx_trace_loglevel;
 local:
     *;
 };

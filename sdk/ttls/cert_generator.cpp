@@ -152,10 +152,11 @@ static sgx_status_t sgx_gen_custom_x509_cert(
     X509_EXTENSION* ext = NULL;
     ASN1_OBJECT* obj = NULL;
     ASN1_OCTET_STRING* data = NULL;
+    ASN1_OBJECT* cbor_obj = NULL;
+    ASN1_OCTET_STRING* cbor_data = NULL;
     BASIC_CONSTRAINTS* bc = NULL;
     unsigned char* buf = NULL;
     unsigned char* p = NULL;
-    char* oid = NULL;
     char date_str[16];
     int len = 0;
     int ret = 0;
@@ -305,6 +306,27 @@ static sgx_status_t sgx_gen_custom_x509_cert(
 
         ret = X509_add_ext(x509cert, ext, -1);
         SSL_ERR_BREAK(ret, SGX_ERROR_UNEXPECTED);
+        X509_EXTENSION_free(ext);
+        ext = NULL;
+        
+        cbor_data = ASN1_OCTET_STRING_new();
+        SSL_ERR_BREAK(cbor_data, SGX_ERROR_UNEXPECTED);
+
+        // add the tcg tagged evidence extension 
+        ret = ASN1_OCTET_STRING_set(
+            cbor_data,
+            (const unsigned char*)config->evidence_buf,
+            (int)config->evidence_size);
+        SSL_ERR_BREAK(ret, SGX_ERROR_UNEXPECTED);
+    
+        cbor_obj = OBJ_txt2obj(config->ext_tcg_tagged_oid, 1);
+        SSL_ERR_BREAK(cbor_obj, SGX_ERROR_UNEXPECTED);
+
+        if (!X509_EXTENSION_create_by_OBJ(&ext, cbor_obj, 0, cbor_data))
+            break;
+
+        ret = X509_add_ext(x509cert, ext, -1);
+        SSL_ERR_BREAK(ret, SGX_ERROR_UNEXPECTED);
 
         /* Sign the certificate */
         if (!X509_sign(x509cert, subject_issuer_key_pair, EVP_sha256()))
@@ -343,6 +365,12 @@ static sgx_status_t sgx_gen_custom_x509_cert(
         ASN1_OBJECT_free(obj);
     if (data)
         ASN1_OCTET_STRING_free(data);
+    if (cbor_obj)
+        ASN1_OBJECT_free(cbor_obj);
+    if (cbor_data)
+    {
+        ASN1_OCTET_STRING_free(cbor_data);
+    }
     if (bc)
         BASIC_CONSTRAINTS_free(bc);
     if (subject_issuer_key_pair)
@@ -352,11 +380,6 @@ static sgx_status_t sgx_gen_custom_x509_cert(
         free(buf);
         buf = NULL;
     }
-    if (oid)
-    {
-        free(oid);
-        oid = NULL;
-    }
     p = NULL;
 
     return result;
@@ -365,6 +388,8 @@ static sgx_status_t sgx_gen_custom_x509_cert(
 sgx_status_t generate_x509_self_signed_certificate(
     const unsigned char* oid,
     size_t oid_size,
+    const unsigned char* tcg_tagged_oid,
+    size_t tcg_tagged_oid_size,
     const unsigned char *subject_name,
     const uint8_t *p_prv_key,
     size_t prv_key_size,
@@ -372,6 +397,8 @@ sgx_status_t generate_x509_self_signed_certificate(
     size_t pub_key_size,
     const uint8_t* p_quote_buf,
     size_t quote_size,
+    const uint8_t* p_evidence,
+    size_t evidence_size,
     uint8_t **output_cert,
     size_t *output_cert_size)
 {
@@ -395,10 +422,14 @@ sgx_status_t generate_x509_self_signed_certificate(
     config.quote_buf_size = quote_size;
     config.ext_oid = (char*)oid;
     config.ext_oid_size = oid_size;
+    config.ext_tcg_tagged_oid = (char*)tcg_tagged_oid;
+    config.ext_tcg_tagged_oid_size = tcg_tagged_oid_size;
+    config.evidence_buf = (uint8_t*)p_evidence;
+    config.evidence_size = evidence_size;
 
     do {
         // allocate memory for cert output buffer and leave room for paddings
-        sgx_cert_size = quote_size + pub_key_size + SGX_MIN_CERT_SIZE;
+        sgx_cert_size = evidence_size + quote_size + pub_key_size + SGX_MIN_CERT_SIZE;
         cert_buf = (uint8_t*)malloc(sgx_cert_size);
         if (cert_buf == NULL)
             break;

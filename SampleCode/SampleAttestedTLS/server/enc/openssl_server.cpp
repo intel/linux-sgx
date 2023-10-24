@@ -36,7 +36,7 @@
 extern "C"
 {
     int set_up_tls_server(char* server_port, bool keep_server_up);
-	sgx_status_t ocall_close(int *ret, int fd);
+    sgx_status_t ocall_close(int *ret, int fd);
 };
 
 int verify_callback(int preverify_ok, X509_STORE_CTX* ctx);
@@ -92,75 +92,72 @@ int handle_communication_until_done(
     bool keep_server_up)
 {
     int ret = -1;
-	int  test_error = 1;
-waiting_for_connection_request:
-	
-    struct sockaddr_in addr;
-    uint len = sizeof(addr);
+    int  test_error = 1;
 
-    // reset ssl_session and client_socket_fd to prepare for the new TLS
-    // connection
-    if (client_socket_fd > 0) 
-    {
-        ocall_close(&ret, client_socket_fd);
-        if (ret != 0) {
-            t_print(TLS_SERVER "OCALL: error closing client socket before starting a new TLS session.\n");
-            goto exit;
+    do {
+        struct sockaddr_in addr;
+        uint len = sizeof(addr);
+
+        // reset ssl_session and client_socket_fd to prepare for the new TLS
+        // connection
+        if (client_socket_fd > 0)
+        {
+            ocall_close(&ret, client_socket_fd);
+            if (ret != 0) {
+                t_print(TLS_SERVER "OCALL: error closing client socket before starting a new TLS session.\n");
+                break;
+            }
         }
-    }
-    SSL_free(ssl_session);
-    t_print(TLS_SERVER " waiting for client connection\n");
+        SSL_free(ssl_session);
+        t_print(TLS_SERVER " waiting for client connection\n");
 
-    client_socket_fd = accept(server_socket_fd, (struct sockaddr*)&addr, &len);
+        client_socket_fd = accept(server_socket_fd, (struct sockaddr*)&addr, &len);
 
-    if (client_socket_fd < 0)
-    {
-        t_print(TLS_SERVER "Unable to accept the client request\n");
-        goto exit;
-    }
+        if (client_socket_fd < 0)
+        {
+            t_print(TLS_SERVER "Unable to accept the client request\n");
+            break;
+        }
 
-    // create a new SSL structure for a connection
-    if ((ssl_session = SSL_new(ssl_server_ctx)) == nullptr)
-    {
-        t_print(TLS_SERVER
-               "Unable to create a new SSL connection state object\n");
-        goto exit;
-    }
+        // create a new SSL structure for a connection
+        if ((ssl_session = SSL_new(ssl_server_ctx)) == nullptr)
+        {
+            t_print(TLS_SERVER
+                   "Unable to create a new SSL connection state object\n");
+            break;
+        }
 
-    SSL_set_fd(ssl_session, client_socket_fd);
+        SSL_set_fd(ssl_session, client_socket_fd);
 
-    // wait for a TLS/SSL client to initiate a TLS/SSL handshake
+        // wait for a TLS/SSL client to initiate a TLS/SSL handshake
 
-    t_print(TLS_SERVER "initiating a passive connect SSL_accept\n");
-    test_error = SSL_accept(ssl_session);
-    if (test_error <= 0)
-    {
-        t_print(TLS_SERVER " SSL handshake failed, error(%d)(%d)\n",
-					test_error, SSL_get_error(ssl_session, test_error));
-        goto exit;
-    }
+        t_print(TLS_SERVER "initiating a passive connect SSL_accept\n");
+        test_error = SSL_accept(ssl_session);
+        if (test_error <= 0)
+        {
+            t_print(TLS_SERVER " SSL handshake failed, error(%d)(%d)\n",
+                        test_error, SSL_get_error(ssl_session, test_error));
+            break;
+        }
 
-    t_print(TLS_SERVER "<---- Read from client:\n");
-    if (read_from_session_peer(
-            ssl_session, CLIENT_PAYLOAD, CLIENT_PAYLOAD_SIZE) != 0)
-    {
-        t_print(TLS_SERVER " Read from client failed\n");
-        goto exit;
-    }
+        t_print(TLS_SERVER "<---- Read from client:\n");
+        if (read_from_session_peer(
+                ssl_session, CLIENT_PAYLOAD, CLIENT_PAYLOAD_SIZE) != 0)
+        {
+            t_print(TLS_SERVER " Read from client failed\n");
+            break;
+        }
 
-    t_print(TLS_SERVER "<---- Write to client:\n");
-    if (write_to_session_peer(
-            ssl_session, SERVER_PAYLOAD, strlen(SERVER_PAYLOAD)) != 0)
-    {
-        t_print(TLS_SERVER " Write to client failed\n");
-        goto exit;
-    }
+        t_print(TLS_SERVER "<---- Write to client:\n");
+        if (write_to_session_peer(
+                ssl_session, SERVER_PAYLOAD, strlen(SERVER_PAYLOAD)) != 0)
+        {
+            t_print(TLS_SERVER " Write to client failed\n");
+            break;
+        }
+        ret = 0;
+    } while (keep_server_up);
 
-    if (keep_server_up)
-        goto waiting_for_connection_request;
-
-    ret = 0;
-exit:
     return ret;
 }
 
@@ -196,7 +193,7 @@ int set_up_tls_server(char* server_port, bool keep_server_up)
                " unable to load certificate and private key on the server\n ");
         goto exit;
     }
-	
+    
     server_port_number = (unsigned int)atoi(server_port); // convert to char* to int
     if (create_listener_socket(server_port_number, server_socket_fd) != 0)
     {

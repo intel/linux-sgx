@@ -154,7 +154,7 @@ const uint8_t* get_base_key(uint16_t key_name);
  * @param dd   - the pointer to derive data
  * @param okey - the output derived key
  */
-void derive_key(const derivation_data_t* dd, sgx_key_128bit_t okey);
+sgx_status_t derive_key(const derivation_data_t* dd, sgx_key_128bit_t okey);
 
 /** Compute the CMAC of a buffer.
  * @param key     - the key used to compute the CMAC
@@ -162,7 +162,7 @@ void derive_key(const derivation_data_t* dd, sgx_key_128bit_t okey);
  * @param buf_len - length of the buffer in Bytes
  * @param cmac    - the pointer to the output buffer to store CMAC
  */
-void cmac(const sgx_key_128bit_t *key, const uint8_t* buf, int buf_len, sgx_mac_t* cmac);
+sgx_status_t cmac(const sgx_key_128bit_t *key, const uint8_t* buf, int buf_len, sgx_mac_t* cmac);
 
 #ifdef __cplusplus
 }

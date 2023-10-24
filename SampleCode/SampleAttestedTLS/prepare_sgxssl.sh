@@ -35,17 +35,23 @@ project_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo "project_dir is $project_dir"
 sgxssl_dir=$project_dir/sgxssl
 openssl_out_dir=$sgxssl_dir/openssl_source
-openssl_ver_name=openssl-1.1.1t
+openssl_ver_name=openssl-3.0.10
 intel_sgx_ssl_url=https://github.com/intel/intel-sgx-ssl
-support_tls_branch=support_tls
+support_tls_branch=support_tls_openssl3
 build_script=$sgxssl_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
 full_openssl_url=$server_url_path/$openssl_ver_name.tar.gz
-full_openssl_url_old=$server_url_path/old/1.1.1/$openssl_ver_name.tar.gz
+full_openssl_url_old=$server_url_path/old/3.0.10/$openssl_ver_name.tar.gz
 
 FileExists() {
 	pushd $sgxssl_dir/Linux/
-	make clean sgxssl_no_mitigation 
+	if [ $SGX_DEBUG == 0 ] ; then
+		echo "build release mode openssl"
+		make clean sgxssl_no_mitigation
+	else
+		echo "build debug mode openssl"
+		make clean sgxssl_no_mitigation DEBUG=1
+	fi
 	echo "build sgxssl completed"
 	popd
 }
@@ -56,7 +62,7 @@ if [ $debug == true ] ; then
 	read -n 1 -p "download souce code only, because we need to build ourselves"
 fi
 
-openssl_chksum=8dee9b24bdb1dcbf0c3d1e9b02fb8f6bf22165e807f45adeb7c9677536859d3b
+openssl_chksum=1761d4f5b13a1028b9b6f3d4b8e17feb0cedc9370f6afe61d7193d2cdce83323
 rm -f check_sum_openssl.txt
 if [ ! -f $build_script ]; then
     git clone $intel_sgx_ssl_url -b $support_tls_branch $sgxssl_dir || exit 1  

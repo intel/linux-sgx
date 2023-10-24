@@ -185,6 +185,9 @@ void* lru_cache::get_next()
 	if (list.size() == 0)
 		return NULL;
 
+	if (m_it == list.end())
+		return NULL;
+
 	++m_it;
 
 	if (m_it == list.end())

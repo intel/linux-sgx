@@ -142,9 +142,7 @@ namespace {
                     layout->rva + 4096 * layout->page_count);
             }
             else {
-#ifndef DISABLE_TRACE
                 layout_group_t *layout_grp = reinterpret_cast<layout_group_t*>(layout);
-#endif
                 se_trace(SE_TRACE_DEBUG, "\tEntry Id(%2u) = %4u, %-16s,  ", entry_cnt, entry_id, layout_id_str[entry_id & ~(GROUP_FLAG)]);
                 se_trace(SE_TRACE_DEBUG, "Entry Count = %4u,  ", layout_grp->entry_count);
                 se_trace(SE_TRACE_DEBUG, "Load Times = %u,     ", layout_grp->load_times);

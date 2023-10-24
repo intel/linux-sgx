@@ -32,7 +32,7 @@
 #include "sgx_tprotected_fs.h"
 #include "sgx_tprotected_fs_t.h"
 #include "protected_fs_file.h"
-
+#include <tprotected_fs.h>
 #include <sgx_utils.h>
 
 // remove the file path if it's there, leave only the filename, null terminated
@@ -70,7 +70,7 @@ bool protected_fs_file::cleanup_filename(const char* src, char* dest)
 protected_fs_file::protected_fs_file(const char* filename, const char* mode, const sgx_aes_gcm_128bit_key_t* import_key, const sgx_aes_gcm_128bit_key_t* kdk_key, const uint32_t cache_page)
 {
 	sgx_status_t status = SGX_SUCCESS;
-	uint8_t result = 0;
+	int8_t result = 0;
 	int32_t result32 = 0;
 	
 	init_fields(cache_page);
@@ -143,9 +143,9 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 	}
 
 	status = u_sgxprotectedfs_check_if_file_exists(&result, filename); // if result == 1 --> file exists
-	if (status != SGX_SUCCESS)
+	if (status != SGX_SUCCESS || result < 0)
 	{
-		last_error = status;
+		last_error = (status != SGX_SUCCESS) ? status : -result;
 		return;
 	}
 
@@ -163,9 +163,10 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 
 		// re-check
 		status = u_sgxprotectedfs_check_if_file_exists(&result, filename);
-		if (status != SGX_SUCCESS || result == 1)
+		if (status != SGX_SUCCESS || result < 0 || result == 1)
 		{
 			last_error = (status != SGX_SUCCESS) ? status :
+						 (result < 0) ? -result :
 						 (saved_errno != 0) ? saved_errno : EACCES;
 			return;
 		}
@@ -187,8 +188,9 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 	read_only = (open_mode.read == 1 && open_mode.update == 0); // read only files can be opened simultaneously by many enclaves
 
 	do {
-		status = u_sgxprotectedfs_exclusive_file_open(&file, filename, read_only, &real_file_size, &result32);
-		if (status != SGX_SUCCESS || file == NULL)
+		// here real_file_size=0 is used as a flag to indicate a new file is created, althrough the actural size of a new file is NODE_SIZE
+		status = u_sgxprotectedfs_exclusive_file_map(&file_addr, filename, read_only, &real_file_size, &result32);
+		if (status != SGX_SUCCESS || file_addr == NULL)
 		{
 			last_error = (status != SGX_SUCCESS) ? status :
 					     (result32 != 0) ? result32 : EACCES;
@@ -207,6 +209,8 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 			break;
 		}
 		
+		strncpy(file_name, filename, FULLNAME_MAX_LEN - 1);
+		file_name[FULLNAME_MAX_LEN - 1] = '\0';
 		strncpy(recovery_filename, filename, FULLNAME_MAX_LEN - 1); // copy full file name
 		recovery_filename[FULLNAME_MAX_LEN - 1] = '\0'; // just to be safe
 		size_t full_name_len = strnlen(recovery_filename, RECOVERY_FILE_MAX_LEN);
@@ -227,7 +231,8 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 				offset = encrypted_part_plain.size;
 		}
 		else
-		{// new file
+		{// new file, real_file_size==0
+			real_file_size = NODE_SIZE; // now match with the actural file size
 			if (init_new_file(clean_filename) == false)
 				break;
 		}
@@ -238,10 +243,10 @@ protected_fs_file::protected_fs_file(const char* filename, const char* mode, con
 
 	if (file_status != SGX_FILE_STATUS_OK)
 	{
-		if (file != NULL)
+		if (file_addr != NULL)
 		{
-			u_sgxprotectedfs_fclose(&result32, file); // we don't care about the result
-			file = NULL;
+			u_sgxprotectedfs_file_unmap(&result32, file_addr, real_file_size); // we don't care about the result
+			file_addr = NULL;
 		}
 	}
 }
@@ -263,17 +268,19 @@ void protected_fs_file::init_fields(const uint32_t cache_page)
 	root_mht.need_writing = false;
 	
 	offset = 0;
-	file = NULL;
+	file_addr = NULL;
 	end_of_file = false;
 	need_writing = false;
 	read_only = 0;
 	file_status = SGX_FILE_STATUS_NOT_INITIALIZED;
 	last_error = SGX_SUCCESS;
-	real_file_size = 0;	
+	real_file_size = -1;	
 	open_mode.raw = 0;
 	use_user_kdk_key = 0;
 	master_key_count = 0;
+	parallel_flush_level = 1;
 
+	file_name[0] = '\0';
 	recovery_filename[0] = '\0';
 
 	max_cache_page = cache_page;
@@ -343,7 +350,7 @@ bool protected_fs_file::file_recovery(const char* filename)
 	int32_t result32 = 0;
 	int64_t new_file_size = 0;
 
-	status = u_sgxprotectedfs_fclose(&result32, file);
+	status = u_sgxprotectedfs_file_unmap(&result32, file_addr, real_file_size);
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
@@ -351,9 +358,9 @@ bool protected_fs_file::file_recovery(const char* filename)
 		return false;
 	}
 
-	file = NULL;
+	file_addr = NULL;
 
-	status = u_sgxprotectedfs_do_file_recovery(&result32, filename, recovery_filename, NODE_SIZE);
+	status = u_sgxprotectedfs_do_file_recovery(&result32, filename, recovery_filename);
 	if (status != SGX_SUCCESS || result32 != 0)
 	{
 		last_error = (status != SGX_SUCCESS) ? status :
@@ -361,8 +368,8 @@ bool protected_fs_file::file_recovery(const char* filename)
 		return false;
 	}
 
-	status = u_sgxprotectedfs_exclusive_file_open(&file, filename, read_only, &new_file_size, &result32);
-	if (status != SGX_SUCCESS || file == NULL)
+	status = u_sgxprotectedfs_exclusive_file_map(&file_addr, filename, read_only, &new_file_size, &result32);
+	if (status != SGX_SUCCESS || file_addr == NULL)
 	{
 		last_error = (status != SGX_SUCCESS) ? status : 
 					 (result32 != 0) ? result32 : EACCES;
@@ -376,13 +383,12 @@ bool protected_fs_file::file_recovery(const char* filename)
 		return false;
 	}
 
-	status = u_sgxprotectedfs_fread_node(&result32, file, 0, (uint8_t*)&file_meta_data, NODE_SIZE);
-	if (status != SGX_SUCCESS || result32 != 0)
+	if (real_file_size < NODE_SIZE)
 	{
-		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+		last_error = EIO;
 		return false;
 	}
+	memcpy(&file_meta_data, file_addr, NODE_SIZE);
 
 	return true;
 }
@@ -391,16 +397,13 @@ bool protected_fs_file::file_recovery(const char* filename)
 bool protected_fs_file::init_existing_file(const char* filename, const char* clean_filename, const sgx_aes_gcm_128bit_key_t* import_key)
 {
 	sgx_status_t status;
-	int32_t result32;
 
-	// read meta-data node
-	status = u_sgxprotectedfs_fread_node(&result32, file, 0, (uint8_t*)&file_meta_data, NODE_SIZE);
-	if (status != SGX_SUCCESS || result32 != 0)
+	if (file_addr == NULL || real_file_size < NODE_SIZE)
 	{
-		last_error = (status != SGX_SUCCESS) ? status : 
-					 (result32 != -1) ? result32 : EIO;
+		last_error = EIO;
 		return false;
 	}
+	memcpy(&file_meta_data, file_addr, NODE_SIZE);
 
 	if (file_meta_data.plain_part.file_id != SGX_FILE_ID)
 	{// such a file exists, but it is not an SGX file
@@ -465,18 +468,15 @@ bool protected_fs_file::init_existing_file(const char* filename, const char* cle
 
 	if (encrypted_part_plain.size > MD_USER_DATA_SIZE)
 	{
-		// read the root node of the mht
-		status = u_sgxprotectedfs_fread_node(&result32, file, 1, root_mht.encrypted.cipher, NODE_SIZE);
-		if (status != SGX_SUCCESS || result32 != 0)
+		if (file_addr == NULL || (real_file_size < NODE_SIZE * 2))
 		{
-			last_error = (status != SGX_SUCCESS) ? status : 
-						 (result32 != -1) ? result32 : EIO;
+			last_error = EIO;
 			return false;
 		}
 
 		// this also verifies the root mht gmac against the gmac in the meta-data encrypted part
 		status = sgx_rijndael128GCM_decrypt(&encrypted_part_plain.mht_key, 
-											root_mht.encrypted.cipher, NODE_SIZE, (uint8_t*)&root_mht.plain, 
+											file_addr + NODE_SIZE, NODE_SIZE, (uint8_t*)&root_mht.plain, 
 											empty_iv, SGX_AESGCM_IV_SIZE, NULL, 0, &encrypted_part_plain.mht_gmac);
 		if (status != SGX_SUCCESS)
 		{
@@ -500,8 +500,12 @@ bool protected_fs_file::init_new_file(const char* clean_filename)
 	file_meta_data.plain_part.use_user_kdk_key = use_user_kdk_key;
 
 	strncpy(encrypted_part_plain.clean_filename, clean_filename, FILENAME_MAX_LEN);
-	
-	need_writing = true;
+
+	if (_RECOVERY_HOOK_(4) || update_meta_data_node() != true)
+	{
+		file_status = SGX_FILE_STATUS_WRITE_TO_DISK_FAILED;
+		return false;
+	}
 
 	return true;
 }
@@ -563,15 +567,15 @@ bool protected_fs_file::pre_close(sgx_key_128bit_t* key, bool import)
 	}
 	else // file_status == SGX_FILE_STATUS_OK
 	{
-		internal_flush(/*false,*/ true);
+		internal_flush();
 	}
 
 	if (file_status != SGX_FILE_STATUS_OK)
 		retval = false;
 
-	if (file != NULL)
+	if (file_addr != NULL)
 	{
-		status = u_sgxprotectedfs_fclose(&result32, file);
+		status = u_sgxprotectedfs_file_unmap(&result32, file_addr, real_file_size);
 		if (status != SGX_SUCCESS || result32 != 0)
 		{
 			last_error = (status != SGX_SUCCESS) ? status : 
@@ -579,7 +583,7 @@ bool protected_fs_file::pre_close(sgx_key_128bit_t* key, bool import)
 			retval = false;
 		}
 
-		file = NULL;
+		file_addr = NULL;
 	}
 
 	if (file_status == SGX_FILE_STATUS_OK && 

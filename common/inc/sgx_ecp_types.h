@@ -35,10 +35,9 @@
 #define _SGX_ECP_TYPES_H_
 
 #include <stdint.h>
+#include "sgx_tcrypto.h"
 
 #pragma pack(push, 1)
-
-#include "sgx_tcrypto.h"
 
 #ifndef SGX_FEBITSIZE
 #define SGX_FEBITSIZE                   256

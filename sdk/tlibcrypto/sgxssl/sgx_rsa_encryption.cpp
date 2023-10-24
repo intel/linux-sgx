@@ -47,6 +47,8 @@
 #include <openssl/rsa.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/core_names.h>
+#include <openssl/param_build.h>
 #include "ssl_wrapper.h"
 
 sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned char *p_n, unsigned char *p_d, unsigned char *p_e,
@@ -59,7 +61,8 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
 	}
 
 	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
-	RSA* rsa_ctx = NULL;
+	EVP_PKEY* pkey = NULL;
+	EVP_PKEY_CTX* pkey_ctx = NULL;
 	BIGNUM* bn_n = NULL;
 	BIGNUM* bn_e = NULL;
 	BIGNUM* tmp_bn_e = NULL;
@@ -73,9 +76,12 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
 	do {
 		//create new rsa ctx
 		//
-		rsa_ctx = RSA_new();
-		if (rsa_ctx == NULL) {
+		pkey_ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+		if (pkey_ctx == NULL) {
 			ret_code = SGX_ERROR_OUT_OF_MEMORY;
+			break;
+		}
+		if (EVP_PKEY_keygen_init(pkey_ctx) <= 0) {
 			break;
 		}
 
@@ -83,22 +89,42 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
 		//
 		tmp_bn_e = BN_lebin2bn(p_e, e_byte_size, tmp_bn_e);
 		BN_CHECK_BREAK(tmp_bn_e);
-		if (RSA_generate_key_ex(rsa_ctx, n_byte_size * 8, tmp_bn_e, NULL) != 1) {
-			break;
+		if (EVP_PKEY_CTX_set_rsa_keygen_bits(pkey_ctx, n_byte_size * 8) <= 0) {
+		        break;
 		}
-
-		//validate RSA key size match input parameter n size
-		//
-		int gen_rsa_size = RSA_size(rsa_ctx);
-		if (gen_rsa_size != n_byte_size) {
+		if (EVP_PKEY_CTX_set1_rsa_keygen_pubexp(pkey_ctx, tmp_bn_e) <= 0) {
+		        break;
+		}
+		if (EVP_PKEY_generate(pkey_ctx, &pkey) <= 0) {
 			break;
 		}
 
 		//get RSA key internal values
 		//
-		RSA_get0_key(rsa_ctx, (const BIGNUM**)(&bn_n), (const BIGNUM**)(&bn_e), (const BIGNUM**)(&bn_d));
-		RSA_get0_factors(rsa_ctx, (const BIGNUM**)(&bn_p), (const BIGNUM**)(&bn_q));
-		RSA_get0_crt_params(rsa_ctx, (const BIGNUM**)(&bn_dmp1), (const BIGNUM**)(&bn_dmq1), (const BIGNUM**)(&bn_iqmp));
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_N, &bn_n) == 0) {
+                    break;
+		}
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_E, &bn_e) == 0) {
+                    break;
+		}
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_D, &bn_d) == 0) {
+                    break;
+		}
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_FACTOR1, &bn_p) == 0) {
+                    break;
+		}
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_FACTOR2, &bn_q) == 0) {
+                    break;
+		}
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_EXPONENT1, &bn_dmp1) == 0) {
+                    break;
+		}
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_EXPONENT2, &bn_dmq1) == 0) {
+                    break;
+		}
+		if (EVP_PKEY_get_bn_param(pkey, OSSL_PKEY_PARAM_RSA_COEFFICIENT1, &bn_iqmp) == 0) {
+                    break;
+		}
 
 		//copy the generated key to input pointers
 		//
@@ -118,8 +144,17 @@ sgx_status_t sgx_create_rsa_key_pair(int n_byte_size, int e_byte_size, unsigned 
 
 	//free rsa ctx (RSA_free also free related BNs obtained in RSA_get functions)
 	//
-	RSA_free(rsa_ctx);
+	EVP_PKEY_CTX_free(pkey_ctx);
+	EVP_PKEY_free(pkey);
 	BN_clear_free(tmp_bn_e);
+	BN_clear_free(bn_n);
+	BN_clear_free(bn_d);
+	BN_clear_free(bn_e);
+	BN_clear_free(bn_p);
+	BN_clear_free(bn_q);
+	BN_clear_free(bn_dmp1);
+	BN_clear_free(bn_dmq1);
+	BN_clear_free(bn_iqmp);
 
 	return ret_code;
 }
@@ -134,9 +169,8 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
 		return SGX_ERROR_INVALID_PARAMETER;
 	}
 
-	bool rsa_memory_manager = 0;
+	EVP_PKEY_CTX* rsa_ctx = NULL;
 	EVP_PKEY *rsa_key = NULL;
-	RSA *rsa_ctx = NULL;
 	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
 	BIGNUM* n = NULL;
 	BIGNUM* e = NULL;
@@ -147,6 +181,8 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
 	BIGNUM* q = NULL;
 	BIGNUM* p = NULL;
 	BN_CTX* tmp_ctx = NULL;
+	OSSL_PARAM_BLD *param_build = NULL;
+	OSSL_PARAM *params = NULL;
 
 	do {
 		tmp_ctx = BN_CTX_new();
@@ -193,39 +229,31 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
 
 		// allocates and initializes an RSA key structure
 		//
-		rsa_ctx = RSA_new();
-		rsa_key = EVP_PKEY_new();
-
-                //EVP_PKEY_assign_RSA() use the supplied key internally and so if this call succeed, key will be freed when the parent pkey is freed.
-                //
-		if (rsa_ctx == NULL || rsa_key == NULL || !EVP_PKEY_assign_RSA(rsa_key, rsa_ctx)) {
-			RSA_free(rsa_ctx);
-			rsa_key = NULL;
+		rsa_ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+		if (rsa_ctx == NULL) {
+			ret_code = SGX_ERROR_OUT_OF_MEMORY;
 			break;
 		}
-
-		//setup RSA key with input values
-		//Calling set functions transfers the memory management of the values to the RSA object,
-		//and therefore the values that have been passed in should not be freed by the caller after these functions has been called.
-		//
-		if (!RSA_set0_factors(rsa_ctx, p, q)) {
+		param_build = OSSL_PARAM_BLD_new();
+		if (param_build == NULL) {
 			break;
 		}
-		rsa_memory_manager = 1;
-		if (!RSA_set0_crt_params(rsa_ctx, dmp1, dmq1, iqmp)) {
-			BN_clear_free(n);
-			BN_clear_free(e);
-			BN_clear_free(d);
-			BN_clear_free(dmp1);
-			BN_clear_free(dmq1);
-			BN_clear_free(iqmp);
+		if( !OSSL_PARAM_BLD_push_BN(param_build, "n", n) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "e", e) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "d", d) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "rsa-factor1", p) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "rsa-factor2", q) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "rsa-exponent1", dmp1) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "rsa-exponent2", dmq1) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "rsa-coefficient1", iqmp) 
+		 || (params = OSSL_PARAM_BLD_to_param(param_build)) == NULL) { 
 			break;
 		}
-
-		if (!RSA_set0_key(rsa_ctx, n, e, d)) {
-			BN_clear_free(n);
-			BN_clear_free(e);
-			BN_clear_free(d);
+		if( EVP_PKEY_fromdata_init(rsa_ctx) <= 0) {
+			break;
+		}
+		if( EVP_PKEY_fromdata(rsa_ctx, &rsa_key, EVP_PKEY_KEYPAIR, params) <= 0) {
+			EVP_PKEY_free(rsa_key);
 			break;
 		}
 
@@ -233,25 +261,18 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
 		ret_code = SGX_SUCCESS;
 	} while (0);
 
+	OSSL_PARAM_BLD_free(param_build);
+	OSSL_PARAM_free(params);
+	EVP_PKEY_CTX_free(rsa_ctx);
+	BN_clear_free(n);
+	BN_clear_free(e);
+	BN_clear_free(d);
+	BN_clear_free(dmp1);
+	BN_clear_free(dmq1);
+	BN_clear_free(iqmp);
+	BN_clear_free(q);
+	BN_clear_free(p);
 	BN_CTX_free(tmp_ctx);
-
-	//in case of failure, free allocated BNs and RSA struct
-	//
-	if (ret_code != SGX_SUCCESS) {
-		//BNs were not assigned to rsa ctx yet, user code must free allocated BNs
-		//
-		if (!rsa_memory_manager) {
-			BN_clear_free(n);
-			BN_clear_free(e);
-			BN_clear_free(d);
-			BN_clear_free(dmp1);
-			BN_clear_free(dmq1);
-			BN_clear_free(iqmp);
-			BN_clear_free(q);
-			BN_clear_free(p);
-		}
-		EVP_PKEY_free(rsa_key);
-	}
 
 	return ret_code;
 }
@@ -263,10 +284,12 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
 	}
 
 	EVP_PKEY *rsa_key = NULL;
-	RSA *rsa_ctx = NULL;
+	EVP_PKEY_CTX *rsa_ctx = NULL;
 	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
 	BIGNUM* n = NULL;
 	BIGNUM* e = NULL;
+	OSSL_PARAM_BLD *param_build = NULL;
+	OSSL_PARAM *params = NULL;
 
 	do {
 		//convert input buffers to BNs
@@ -276,33 +299,37 @@ sgx_status_t sgx_create_rsa_pub1_key(int mod_size, int exp_size, const unsigned 
 		e = BN_lebin2bn(le_e, exp_size, e);
 		BN_CHECK_BREAK(e);
 
-		// allocates and initializes an RSA key structure
-		//
-		rsa_ctx = RSA_new();
-		rsa_key = EVP_PKEY_new();
-
-		if (rsa_ctx == NULL || rsa_key == NULL || !EVP_PKEY_assign_RSA(rsa_key, rsa_ctx)) {
-			RSA_free(rsa_ctx);
-			rsa_ctx = NULL;
+		rsa_ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+		if (rsa_ctx == NULL) {
+			ret_code = SGX_ERROR_OUT_OF_MEMORY;
+			break;
+		}
+		param_build = OSSL_PARAM_BLD_new();
+		if (param_build == NULL) {
+			break;
+		}
+		if( !OSSL_PARAM_BLD_push_BN(param_build, "n", n) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "e", e) 
+		 || (params = OSSL_PARAM_BLD_to_param(param_build)) == NULL) { 
+			break;
+		}
+		if( EVP_PKEY_fromdata_init(rsa_ctx) <= 0) {
+			break;
+		}
+		if( EVP_PKEY_fromdata(rsa_ctx, &rsa_key, EVP_PKEY_PUBLIC_KEY, params) <= 0) {
+			EVP_PKEY_free(rsa_key);
 			break;
 		}
 
-		//set n, e values of RSA key
-		//Calling set functions transfers the memory management of input BNs to the RSA object,
-		//and therefore the values that have been passed in should not be freed by the caller after these functions has been called.
-		//
-		if (!RSA_set0_key(rsa_ctx, n, e, NULL)) {
-			break;
-		}
 		*new_pub_key1 = rsa_key;
 		ret_code = SGX_SUCCESS;
 	} while (0);
 
-	if (ret_code != SGX_SUCCESS) {
-		EVP_PKEY_free(rsa_key);
-		BN_clear_free(n);
-		BN_clear_free(e);
-	}
+	EVP_PKEY_CTX_free(rsa_ctx);
+	OSSL_PARAM_BLD_free(param_build);
+	OSSL_PARAM_free(params);
+	BN_clear_free(n);
+	BN_clear_free(e);
 
 	return ret_code;
 }
@@ -434,11 +461,13 @@ sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_by
 	}
 
 	EVP_PKEY *rsa_key = NULL;
-	RSA *rsa_ctx = NULL;
+	EVP_PKEY_CTX *rsa_ctx = NULL;
 	sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
 	BIGNUM* n = NULL;
 	BIGNUM* e = NULL;
 	BIGNUM* d = NULL;
+	OSSL_PARAM_BLD *param_build = NULL;
+	OSSL_PARAM *params = NULL;
 
 	do {
 		//convert input buffers to BNs
@@ -450,24 +479,26 @@ sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_by
 		d = BN_lebin2bn(le_d, d_byte_size, d);
 		BN_CHECK_BREAK(d);
 
-		// allocates and initializes an RSA key structure
-		//
-		rsa_ctx = RSA_new();
-		rsa_key = EVP_PKEY_new();
-
-                //EVP_PKEY_assign_RSA() use the supplied key internally and so if this call succeed, key will be freed when the parent pkey is freed.
-                //
-		if (rsa_ctx == NULL || rsa_key == NULL || !EVP_PKEY_assign_RSA(rsa_key, rsa_ctx)) {
-			RSA_free(rsa_ctx);
-			rsa_ctx = NULL;
+		rsa_ctx = EVP_PKEY_CTX_new_from_name(NULL, "RSA", NULL);
+		if (rsa_ctx == NULL) {
+			ret_code = SGX_ERROR_OUT_OF_MEMORY;
 			break;
 		}
-
-		//set n, e, d values of RSA key
-		//Calling set functions transfers the memory management of input BNs to the RSA object,
-		//and therefore the values that have been passed in should not be freed by the caller after these functions has been called.
-		//
-		if (!RSA_set0_key(rsa_ctx, n, e, d)) {
+		param_build = OSSL_PARAM_BLD_new();
+		if (param_build == NULL) {
+			break;
+		}
+		if( !OSSL_PARAM_BLD_push_BN(param_build, "n", n) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "e", e) 
+		 || !OSSL_PARAM_BLD_push_BN(param_build, "d", d) 
+		 || (params = OSSL_PARAM_BLD_to_param(param_build)) == NULL) { 
+			break;
+		}
+		if( EVP_PKEY_fromdata_init(rsa_ctx) <= 0) {
+			break;
+		}
+		if( EVP_PKEY_fromdata(rsa_ctx, &rsa_key, EVP_PKEY_KEYPAIR, params) <= 0) {
+			EVP_PKEY_free(rsa_key);
 			break;
 		}
 
@@ -475,12 +506,12 @@ sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_by
 		ret_code = SGX_SUCCESS;
 	} while (0);
 
-	if (ret_code != SGX_SUCCESS) {
-		EVP_PKEY_free(rsa_key);
-		BN_clear_free(n);
-		BN_clear_free(e);
-		BN_clear_free(d);
-	}
+	EVP_PKEY_CTX_free(rsa_ctx);
+	OSSL_PARAM_BLD_free(param_build);
+	OSSL_PARAM_free(params);
+	BN_clear_free(n);
+	BN_clear_free(e);
+	BN_clear_free(d);
 
 	return ret_code;
 }

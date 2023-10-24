@@ -638,8 +638,6 @@ aesm_error_t AESMLogicWrapper::sgxRegister(uint8_t *buf, uint32_t buf_size, uint
     }
 }
 
-#include "ssl_compat_wrapper.h"
-
 ae_error_t AESMLogicWrapper::service_start()
 {
     try
@@ -717,8 +715,6 @@ ae_error_t AESMLogicWrapper::service_start()
         return AE_FAILURE;
     }
 
-    crypto_initialize();
-
     AESM_DBG_INFO("aesm service is starting");
 
     {
@@ -770,7 +766,6 @@ void AESMLogicWrapper::service_stop()
         network_service->stop();
     g_fw.Stop();
     g_fw.WaitForStop(std::chrono::seconds(5));
-    crypto_cleanup();
     AESM_DBG_INFO("aesm service down");
 }
 

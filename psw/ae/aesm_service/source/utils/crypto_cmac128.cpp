@@ -33,6 +33,8 @@
 #include "string.h"
 #include "ssl_crypto.h"
 #include <openssl/cmac.h>
+#include "crypto_wrapper.h"
+
 
 /* Message Authentication - Rijndael 128 CMAC
 * Parameters:
@@ -44,63 +46,7 @@
 sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const uint8_t *p_src,
                                       uint32_t src_len, sgx_cmac_128bit_tag_t *p_mac)
 {
-    void* pState = NULL;
-
-    if ((p_key == NULL) || (p_src == NULL) || (p_mac == NULL))
-    {
-        return SGX_ERROR_INVALID_PARAMETER;
-    }
-
-    size_t mactlen;
-    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-
-    do {
-        //create a new ctx of CMAC
-        //
-        pState = CMAC_CTX_new();
-        if (pState == NULL)
-        {
-            ret = SGX_ERROR_OUT_OF_MEMORY;
-            break;
-        }
-
-        // init CMAC ctx with the corresponding size, key and AES alg.
-        //
-        if (!CMAC_Init((CMAC_CTX*)pState, (const void *)p_key, SGX_CMAC_KEY_SIZE, EVP_aes_128_cbc(), NULL))
-        {
-            break;
-        }
-
-        // perform CMAC hash on p_src
-        //
-        if (!CMAC_Update((CMAC_CTX *)pState, p_src, src_len))
-        {
-            break;
-        }
-
-        // finalize CMAC hashing
-        //
-        if (!CMAC_Final((CMAC_CTX*)pState, (unsigned char*)p_mac, &mactlen))
-        {
-            break;
-        }
-
-        //validate mac size
-        //
-        if (mactlen != SGX_CMAC_MAC_SIZE)
-        {
-            break;
-        }
-
-        ret = SGX_SUCCESS;
-    } while (0);
-
-    // we're done, clear and free CMAC ctx
-    //
-    if (pState)
-    {
-        CMAC_CTX_free((CMAC_CTX*)pState);
-    }
-    return ret;
+    static_assert(SGX_MAC_SIZE == SGX_CMAC_MAC_SIZE);
+    return sgx_cmac128_msg((const uint8_t *)p_key, p_src, src_len, (sgx_mac_t *)p_mac);
 }
 

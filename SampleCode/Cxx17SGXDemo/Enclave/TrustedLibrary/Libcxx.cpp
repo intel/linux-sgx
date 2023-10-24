@@ -846,7 +846,7 @@ void ecall_cxx17_gcd_lcm() {
 
 void print_map(std::string_view comment, const auto& data)
 {
-    printf("%s", comment);
+    printf("%s", comment.data());
     for (auto [k, v] : data)
         printf("  %d(%c)", k, v);
     printf("\n");
@@ -967,7 +967,7 @@ void ecall_cxx17_string_view() {
 
     for (int y{}, p{}; y != 3; ++y, p = ((p + 1) % 4)) {
         for (int x{}; x != 16; ++x)
-            printf("%s", unicode[p]);
+            printf("%s", unicode[p].data());
         printf("\n");
     }
 }

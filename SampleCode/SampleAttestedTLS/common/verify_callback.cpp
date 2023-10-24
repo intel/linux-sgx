@@ -110,11 +110,11 @@ int verify_callback(int preverify_ok, X509_STORE_CTX* ctx)
         der_len);
 
     PRINT(" verifying certificate start \n");
-	//inside enclave, the current_time is acquired by ocall, this is just an example
-	// current_time by ocall is untrusted, user please be aware of it.
-	GETCURRTIME(&current_time);
+    //inside enclave, the current_time is acquired by ocall, this is just an example
+    // current_time by ocall is untrusted, user please be aware of it.
+    GETCURRTIME(&current_time);
 
-	// verify tls certificate
+    // verify tls certificate
     result = VERIFY_CALLBACK(
             der, der_len, current_time, &qv_result, &sup_data, (uint32_t *)&sup_data_len);
 

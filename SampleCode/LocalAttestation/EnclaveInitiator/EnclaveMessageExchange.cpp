@@ -317,7 +317,7 @@ ATTESTATION_STATUS send_request_receive_response(dh_session_t *session_info,
 ATTESTATION_STATUS close_session(dh_session_t *session_info)
 {
     sgx_status_t status;
-    uint32_t retstatus;
+    uint32_t retstatus = (uint32_t) ATTESTATION_SE_ERROR;
 
     if(!session_info)
     {

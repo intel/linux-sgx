@@ -35,13 +35,15 @@ include $(TOP_DIR)/buildenv.mk
 CERT_UTIL_DIR   := ../ttls
 SGX_QV_PATH ?= ../../external/dcap_source/QuoteVerification
 PREBUILD_OPENSSL_PATH ?= $(SGX_QV_PATH)/../prebuilt/openssl
-
+CBOR_PATH ?= $(LINUX_EXTERNAL_DIR)/cbor
+LIBCBOR_PATH ?= $(CBOR_PATH)/untrusted/lib
 
 INCLUDE += -I.
 INCLUDE += -I$(COMMON_DIR)              \
            -I$(COMMON_DIR)/inc          \
            -I$(COMMON_DIR)/inc/internal \
            -I$(PREBUILD_OPENSSL_PATH)/inc \
+           -I$(CBOR_PATH)/untrusted/include \
            -I$(CERT_UTIL_DIR) \
            -I$(SGX_QV_PATH)/QvE/Include \
            -I$(SGX_QV_PATH)/dcap_quoteverify/inc \
@@ -57,6 +59,8 @@ vpath %.cpp .. $(COMMON_DIR)/src $(CERT_UTIL_DIR)
 
 SRC :=  utls.cpp
 
+LIBCBOR := libcbor.a
+
 HOST_CERT_SRC := cert_verifier.cpp
 
 OBJ := $(SRC:.cpp=.o)
@@ -69,19 +73,27 @@ LIBNAME  = libsgx_utls.a
 all: $(LIBNAME) | $(BUILD_DIR)
 	$(CP) $(LIBNAME) $|
 
-$(OBJ): $(SRC)
-	$(CXX) $(CXXFLAGS) -Wno-deprecated-declarations $(INCLUDE) -c $< -o $@
+$(LIBNAME): $(OBJ) $(CERT_OBJ)
+	$(AR) rs $@ $(OBJ) $(CERT_OBJ)
+	$(MKDIR) $(BUILD_DIR)/.libcbor
+	$(RM) $(BUILD_DIR)/.libcbor/* && cd $(BUILD_DIR)/.libcbor && $(AR) x $(LIBCBOR_PATH)/$(LIBCBOR)
+	$(AR) rs $@ $(BUILD_DIR)/.libcbor/*.o
+	@$(RM) -r $(BUILD_DIR)/.libcbor
+
+$(OBJ): $(LIBCBOR) $(SRC)
+	$(CXX) $(CXXFLAGS) -Wno-deprecated-declarations $(INCLUDE) -c $(SRC) -o $@
 
 $(CERT_OBJ): $(HOST_CERT_SRC)
 	$(CXX) $(CXXFLAGS) -Wno-deprecated-declarations $(INCLUDE) -c $< -o $@
 
-$(LIBNAME): $(OBJ) $(CERT_OBJ)
-	$(AR) rs $@ $(OBJ) $(CERT_OBJ)
+$(LIBCBOR):
+	@test -f $(LIBCBOR_PATH)/$(LIBCBOR) || $(MAKE) -C $(CBOR_PATH) cbor_untrusted
 
 .PHONY: clean
 clean:
 	@$(RM) $(OBJ) $(CERT_OBJ)
 	@$(RM) $(LIBNAME) $(BUILD_DIR)/$(LIBNAME)
+	$(MAKE) -C $(CBOR_PATH) clean
 
 .PHONY: rebuild
 rebuild:

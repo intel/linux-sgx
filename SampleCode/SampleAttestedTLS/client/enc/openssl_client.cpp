@@ -83,7 +83,8 @@ int communicate_with_server(SSL* ssl)
         if (error == SSL_ERROR_WANT_WRITE)
             continue;
         t_print(TLS_CLIENT "Failed! SSL_write returned %d\n", error);
-        ret = bytes_written;
+        if (bytes_written == 0) ret = -1;
+        else ret = bytes_written;
         goto done;
     }
 
@@ -103,12 +104,16 @@ int communicate_with_server(SSL* ssl)
                 continue;
 
             t_print(TLS_CLIENT "Failed! SSL_read returned error=%d\n", error);
-            ret = bytes_read;
+            if (bytes_read == 0) ret = -1;
+            else ret = bytes_read;
             break;
         }
 
         t_print(TLS_CLIENT " %d bytes read\n", bytes_read);
         // check to to see if received payload is expected
+        // Note that if you just want to use client here but server from other 
+        // applications, you need to ignore this check, SERVER_PAYLOAD_SIZE 
+        // need to be adjusted. 
         if ((bytes_read != SERVER_PAYLOAD_SIZE) ||
             (memcmp(SERVER_PAYLOAD, buf, bytes_read) != 0))
         {
@@ -136,7 +141,7 @@ done:
 int create_socket(char* server_name, char* server_port)
 {
     int sockfd = -1;
-	struct sockaddr_in dest_sock;
+    struct sockaddr_in dest_sock;
     int res = -1;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -204,14 +209,14 @@ int launch_tls_client(char* server_name, char* server_port)
 
     // specify the verify_callback for custom verification
     SSL_CTX_set_verify(ssl_client_ctx, SSL_VERIFY_PEER, &verify_callback);
-	t_print(TLS_CLIENT "load cert and key\n");
+    t_print(TLS_CLIENT "load cert and key\n");
     if (load_tls_certificates_and_keys(ssl_client_ctx, cert, pkey) != 0)
     {
         t_print(TLS_CLIENT
                " unable to load certificate and private key on the client\n");
         goto done;
     }
-	
+
     if ((ssl_session = SSL_new(ssl_client_ctx)) == nullptr)
     {
         t_print(TLS_CLIENT

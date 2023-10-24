@@ -114,7 +114,7 @@ let rec parse_cmdline (progname: string) (cmdargs: string list) =
     match args with
         [] -> ()
       | op :: ops ->
-          match String.lowercase op with
+          match String.lowercase_ascii op with
               "--use-prefix" -> use_pref := true; local_parser ops
             | "--header-only"-> hd_only := true; local_parser ops
             | "--untrusted"  -> untrusted := true; local_parser ops

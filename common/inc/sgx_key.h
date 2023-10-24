@@ -51,7 +51,7 @@
 
 /* Key Policy */
 #define SGX_KEYPOLICY_MRENCLAVE        0x0001      /* Derive key using the enclave's ENCLAVE measurement register */
-#define SGX_KEYPOLICY_MRSIGNER         0x0002      /* Derive key using the enclave's SINGER measurement register */
+#define SGX_KEYPOLICY_MRSIGNER         0x0002      /* Derive key using the enclave's SIGNER measurement register */
 #define SGX_KEYPOLICY_NOISVPRODID      0x0004      /* Derive key without the enclave's ISVPRODID */
 #define SGX_KEYPOLICY_CONFIGID         0x0008      /* Derive key with the enclave's CONFIGID */
 #define SGX_KEYPOLICY_ISVFAMILYID      0x0010      /* Derive key with the enclave's ISVFAMILYID */

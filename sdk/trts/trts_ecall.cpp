@@ -70,6 +70,7 @@ __attribute__((weak)) void _pthread_tls_destructors(void) {}
 extern "C"
 __attribute__((weak)) void tc_set_idle() {}
 
+extern int g_aexnotify_supported;
 
 // is_ecall_allowed()
 // check the index in the dynamic entry table
@@ -352,6 +353,11 @@ sgx_status_t do_init_thread(void *tcs, bool enclave_init)
         thread_data->flags = SGX_UTILITY_THREAD;
     }
 #ifndef SE_SIM
+    if(g_aexnotify_supported == 1)
+    {
+        thread_data->aex_notify_flag = 1;
+    }
+
     if (thread_first_init)
     {
         if (EDMM_supported && (enclave_init || is_dynamic_thread(tcs)))

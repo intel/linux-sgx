@@ -67,11 +67,10 @@ TRTS1_OBJS  := init_enclave.o \
                trts_xsave.o   \
                init_optimized_lib.o \
                trts_add_trim.o \
-               trts_aex.o  \
                trts_emm_sim.o
 
 TRTS2_OBJS  := trts_nsp.o
-TRTS_OBJS := $(TRTS1_OBJS) $(TRTS2_OBJS) ctd.o
+TRTS_OBJS := $(TRTS1_OBJS) $(TRTS2_OBJS)
 
 TINST_OBJS   := t_instructions.o \
                 deriv.o
@@ -82,7 +81,6 @@ TLS_OBJS     := get_tcs.o \
                 restore_tls.o
 
 TLDR_ASM_OBJS := trts_pic.o \
-                trts_mitigation.o \
                 metadata_sec.o \
                 xsave_gnu.o \
                 thunk.o
@@ -92,15 +90,6 @@ TLDR_C_OBJS  := elf_parser.o  \
                 tls_support.o
 
 TLDR_OBJS := $(TLDR_ASM_OBJS) $(TLDR_C_OBJS)
-
-ctd.o: $(TRTS_DIR)/ctd.c
-	$(CC) -mavx2 -O3 -masm=intel $(filter-out -O2,$(CFLAGS)) $(TCFLAGS) -c $< -o $@ \
-        -I$(COMMON_DIR)/inc/         \
-        -I$(COMMON_DIR)/inc/tlibc/   \
-        -I$(COMMON_DIR)/inc/internal \
-        -I$(LINUX_SDK_DIR)/trts/     \
-        -I$(LINUX_SDK_DIR)/pthread/  \
-        -I$(LINUX_SDK_DIR)/tlibcxx/include
 
 LIBTRTS := libsgx_trts_sim.a
 

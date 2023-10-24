@@ -61,6 +61,7 @@ CEnclave::CEnclave()
     , m_destroyed(false)
     , m_version(0)
     , m_ocall_table(NULL)
+    , m_pthread_tid(0)
     , m_pthread_is_valid(false)
     , m_new_thread_event(NULL)
     , m_sealed_key(NULL)
@@ -142,7 +143,7 @@ sgx_status_t CEnclave::initialize(const se_file_t& file,  CLoader &ldr, const ui
             return SGX_ERROR_OUT_OF_MEMORY;
 
         memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
-        m_enclave_info.unicode = file.unicode?0:1;
+        m_enclave_info.unicode = file.unicode?1:0;
         m_enclave_info.file_name_size = name_len;
     }
 

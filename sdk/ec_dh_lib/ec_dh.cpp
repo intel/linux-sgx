@@ -1014,7 +1014,8 @@ static sgx_status_t LAv2_generate_message3(const sgx_dh_msg2_t *msg2,
     bufcat(*A, ps).sha256(&rpt_data);
 
     sgx_report_t rpt;
-    sgx_create_report(&ti, &rpt_data, &rpt);
+    if (SGX_SUCCESS != (se_ret = sgx_create_report(&ti, &rpt_data, &rpt)))
+    return se_ret;
     msg3->msg3_body.report = rpt;
 
     sgx_cmac_state_handle_t cmac;
