@@ -131,3 +131,4 @@ target_include_directories(PCKCertSelection PRIVATE
   ${pck_cert_selection_dir}/../include
 )
  
+set_target_properties(PCKCertSelection PROPERTIES COMPILE_OPTIONS "-Wno-overloaded-virtual")
