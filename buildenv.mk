@@ -342,16 +342,23 @@ LD_IPP          := -lippcp
 
 ######## SGX SDK Settings ########
 SGX_SDK ?= /opt/intel/sgxsdk
-SGX_HEADER_DIR ?= $(SGX_SDK)/include
 
-ifeq ($(ARCH), x86)
-	SGX_COMMON_CFLAGS := -m32
-	SGX_LIB_DIR := $(SGX_SDK)/lib
-	SGX_BIN_DIR := $(SGX_SDK)/bin/x86
+ifneq ($(wildcard $(SGX_SDK)),)
+    SGX_HEADER_DIR := $(SGX_SDK)/include
+    ifeq ($(ARCH), x86)
+        SGX_COMMON_CFLAGS := -m32
+        SGX_LIB_DIR := $(SGX_SDK)/lib
+        SGX_BIN_DIR := $(SGX_SDK)/bin/x86
+    else
+        SGX_COMMON_CFLAGS := -m64
+        SGX_LIB_DIR := $(SGX_SDK)/lib64/$(MITIGATION_LIB_PATH)
+        SGX_BIN_DIR := $(SGX_SDK)/bin/x64
+    endif
 else
-	SGX_COMMON_CFLAGS := -m64
-	SGX_LIB_DIR := $(SGX_SDK)/lib64/$(MITIGATION_LIB_PATH)
-	SGX_BIN_DIR := $(SGX_SDK)/bin/x64
+    SGX_HEADER_DIR := /usr/include/sgxsdk
+    SGX_COMMON_CFLAGS := -m64
+    SGX_LIB_DIR := /usr/lib/sgxsdk
+    SGX_BIN_DIR := /usr/bin
 endif
 
 SPLIT_VERSION=$(word $2,$(subst ., ,$1))
