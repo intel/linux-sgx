@@ -31,7 +31,13 @@
 
 # Mitigation options
 
-SGX_TRUSTED_LIBRARY_PATH ?= $(SGX_SDK)/lib64
+ifneq ($(wildcard $(SGX_SDK)),)
+    SGX_TRUSTED_LIBRARY_PATH := $(SGX_SDK)/lib64
+    SGX_TRUSTED_INCLUDE_PATH := $(SGX_SDK)/include
+else
+    SGX_TRUSTED_LIBRARY_PATH := /usr/lib/sgxsdk
+    SGX_TRUSTED_INCLUDE_PATH := /usr/include/sgxsdk
+endif
 
 CC ?= gcc
 CC_VERSION := $(shell $(CC) -dumpversion)
