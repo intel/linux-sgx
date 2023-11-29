@@ -43,7 +43,7 @@ The script is to verify Intel(R) prebuilt AEs are:
 Arguments:
     intel_signed_ae         : Required. Intel(R) prebuilt AE (*.signed.so) to be verified.
     user_build_unsigned_ae  : Required. Your self-build AE (*.so) in an SGX docker container.
-    user_private_key        : Required. Your private key for signing user_build_unsigned_ae.
+    user_private_key        : Required. Your private key (PEM format) for signing user_build_unsigned_ae.
     intel_ae_config_xml     : Required. The opensource enclave config.xml of Intel(R) prebuilt AE.
     output_dir              : Optional. The folder the results generated in. Use ./output as default.
 
