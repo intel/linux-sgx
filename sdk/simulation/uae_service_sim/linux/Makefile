@@ -29,9 +29,10 @@
 #
 #
 
-TOP_DIR  = ../../../..
+TOP_DIR = ../../../..
 include $(TOP_DIR)/buildenv.mk
 
+get_version_name = $(addsuffix _VERSION,$(shell echo $(word 2,$(subst _, ,$1)) | tr a-z A-Z))
 LAUNCH_VERSION:= $(shell awk '$$2 ~ /LAUNCH_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 PLATFORM_VERSION:= $(shell awk '$$2 ~ /PLATFORM_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 EPID_VERSION:= $(shell awk '$$2 ~ /EPID_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
@@ -54,7 +55,7 @@ INCLUDES := -I..                                            \
             -I$(PREBUILT_OPENSSL_DIR)/inc
 
 
-CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g  $(CET_FLAGS)
+CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g $(CET_FLAGS)
 CFLAGS := $(filter-out -fPIC -Werror, $(CFLAGS)) -Wall $(INCLUDES) $(CET_FLAGS)
 
 
@@ -71,37 +72,23 @@ vpath %.cpp $(LINUX_PSW_DIR)/ae/common \
 
 vpath %.c   $(COMMON_DIR)/src
 
-CPP_SRC := $(wildcard *.cpp ../*.cpp) se_sig_rl.cpp cpusvn_util.cpp sgx_read_rand.cpp 
+CPP_SRC := $(wildcard *.cpp ../*.cpp) se_sig_rl.cpp cpusvn_util.cpp sgx_read_rand.cpp
 CPP_SRC += crypto_evp_digest.cpp crypto_cmac_128.cpp
 C_SRC   := se_trace.c se_thread.c
 
 OBJ := $(sort $(CPP_SRC:.cpp=.o)) \
        $(C_SRC:.c=.o)
 
-LIBNAME  = libsgx_epid_sim.so libsgx_launch_sim.so libsgx_quote_ex_sim.so libsgx_uae_service_sim.so
-ifndef DEBUG
-LIBNAME_DEBUG  =  $(LIBNAME:.so=.so.debug)
-endif
+LIBNAME = libsgx_epid_sim.so libsgx_launch_sim.so libsgx_quote_ex_sim.so libsgx_uae_service_sim.so
 LIBUAE_SERVICE_DEPLOY := $(LIBNAME:_sim.so=_deploy.so)
 
 .PHONY: all
-all: $(LIBNAME) $(LIBNAME_DEBUG) $(LIBUAE_SERVICE_DEPLOY) $(LEGACY_LIBNAME) $(LEGACY_LIBNAME_DEBUG) $(LEGACY_LIBUAE_SERVICE_DEPLOY) | $(BUILD_DIR)
+all: $(LIBNAME) $(LIBUAE_SERVICE_DEPLOY) $(LEGACY_LIBUAE_SERVICE_DEPLOY) | $(BUILD_DIR)
 	@$(foreach lib,$(LIBNAME),$(CP) $(lib) $|;)
 	@$(foreach lib,$(LIBUAE_SERVICE_DEPLOY),$(CP) $(lib) $|;)
-ifndef DEBUG
-	@$(foreach lib,$(LIBNAME_DEBUG),$(CP) $(lib) $|;)
-endif
 
 libsgx_%_sim.so: $(OBJ) -lrdrand
 	$(CXX) $(CXXFLAGS) $^ -shared $(LDUFLAGS) -Wl,--version-script=$(@:_sim.so=.lds) -Wl,--gc-sections $(EXTERNAL_LIB) -o $@
-%.so.debug: %.so
-ifndef DEBUG
-	((test -f $@) ||( \
-	$(CP) $< $<.orig &&\
-	$(OBJCOPY) --only-keep-debug $< $@ &&\
-	$(STRIP) -g $< &&\
-	$(OBJCOPY) --add-gnu-debuglink=$@ $< ))
-endif
 
 %.o: %.c
 	$(CC) $(CFLAGS) -Werror -fPIC -c $< -o $@
@@ -121,7 +108,7 @@ else
 endif
 
 libsgx_%_deploy.so: ../libsgx_%_deploy.c
-	$(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so.$(call SPLIT_VERSION,$($(shell echo $(@:libsgx_%_deploy.so=%_version)|tr a-z A-Z)),1)) $< -o $@
+	$(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so.$(call get_major_version,$(call get_version_name,$@))) $< -o $@
 
 libsgx_uae_service_deploy.so: $(wildcard ../*_deploy.c)
 	$(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -fPIC -shared -Wl,-soname=$(@:_deploy.so=.so) $^ -o $@
@@ -134,8 +121,7 @@ clean:
 	@$(RM) *.o
 	@$(RM) ../*.o *.orig
 	@$(RM) $(LIBNAME) $(addprefix $(BUILD_DIR)/,$(LIBNAME))
-	@$(RM) $(LIBNAME_DEBUG) $(addprefix $(BUILD_DIR)/,$(LIBNAME_DEBUG))
-	@$(RM) $(LIBUAE_SERVICE_DEPLOY)  $(addprefix $(BUILD_DIR)/,$(LIBUAE_SERVICE_DEPLOY))
+	@$(RM) $(LIBUAE_SERVICE_DEPLOY) $(addprefix $(BUILD_DIR)/,$(LIBUAE_SERVICE_DEPLOY))
 ifeq ($(RDRAND_MAKEFILE), $(wildcard $(RDRAND_MAKEFILE)))
 	@$(MAKE) distclean -C $(RDRAND_LIBDIR)
 endif
