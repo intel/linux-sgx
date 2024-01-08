@@ -33,7 +33,6 @@ TOP_DIR := ../../..
 include ../buildenv.mk
 
 AENAME = launch_enclave
-LE_VER:= $(shell awk '$$2 ~ /LE_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 
 CFLAGS   += -Werror
 CXXFLAGS += -Werror
@@ -53,7 +52,7 @@ CONFIG := config_linux.xml
 all: $(AENAME_OUT) 
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call SPLIT_VERSION,$(LE_VER),1) $(LDTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS) -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call get_major_version,LE_VERSION) $(LDTFLAGS)
 	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 $(OBJ):$(AENAME)_t.c  

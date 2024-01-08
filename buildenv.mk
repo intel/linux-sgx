@@ -61,6 +61,20 @@ get_distr_info = $(patsubst "%",%,$(shell grep $(1) /etc/os-release 2> /dev/null
 DISTR_ID := $(call get_distr_info, '^ID=')
 DISTR_VER := $(call get_distr_info, '^VERSION_ID=')
 
+#--------------------------------------------------------------------------------------
+# Function: get_full_version
+# Arguments: 1: the version name of library
+# Returns: Return the full version.
+#---------------------------------------------------------------------------------------
+get_full_version = $(shell awk '$$2 ~ /$1/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+
+#--------------------------------------------------------------------------------------
+# Function: get_major_version
+# Arguments: 1: the version name of library
+# Returns: Return the major version.
+#---------------------------------------------------------------------------------------
+get_major_version = $(word 1,$(subst ., ,$(call get_full_version,$1)))
+
 
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
@@ -71,6 +85,7 @@ DCAP_DIR              := $(LINUX_EXTERNAL_DIR)/dcap_source
 LIBUNWIND_DIR         := $(ROOT_DIR)/sdk/cpprt/linux/libunwind
 
 CP    := cp -f
+LN    := ln -sf
 MKDIR := mkdir -p
 STRIP := strip
 OBJCOPY := objcopy
@@ -360,5 +375,3 @@ else
     SGX_LIB_DIR := /usr/lib/sgxsdk
     SGX_BIN_DIR := /usr/bin
 endif
-
-SPLIT_VERSION=$(word $2,$(subst ., ,$1))

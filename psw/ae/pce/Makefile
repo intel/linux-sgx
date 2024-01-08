@@ -38,8 +38,6 @@ CFLAGS    += -Werror
 
 AENAME = pce
 
-PCE_VER:= $(shell awk '$$2 ~ /PCE/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux 
 
 INCLUDE += -I$(SGX_HEADER_DIR)/libcxx                      \
@@ -61,7 +59,7 @@ all: pce_sim_private_key.pem
 endif
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call SPLIT_VERSION,$(PCE_VER),1) $(LDTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call get_major_version,PCE_VERSION) $(LDTFLAGS)
 	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 pce.o: $(AENAME)_t.c
