@@ -31,8 +31,6 @@
 
 include ../../../../buildenv.mk
 
-URTS_VER:= $(shell awk '$$2 ~ /URTS_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-
 SIM_DIR := $(LINUX_SDK_DIR)/simulation
 VTUNE_DIR = $(LINUX_EXTERNAL_DIR)/vtune/linux
 
@@ -127,30 +125,18 @@ vpath %.c .:$(DIR6)
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,--version-script=$(LINUX_PSW_DIR)/urts/linux/urts.lds
 
 LIBURTSSIM_SHARED := libsgx_urts_sim.so
-LIBURTSSIM_DEBUG := libsgx_urts_sim.so.debug
 LIBURTS_DEPLOY := libsgx_urts_deploy.so
 
-LDLIBS  += -lwrapper $(CRYPTO_LIB) -Wl,-Bdynamic -Wl,-Bsymbolic -lsgx_uae_service_sim
+LDLIBS += -lwrapper $(CRYPTO_LIB) -Wl,-Bdynamic -Wl,-Bsymbolic -lsgx_uae_service_sim
 SONAME = $(LIBURTSSIM_SHARED)
 
 .PHONY: all
-all: $(LIBURTSSIM_SHARED) $(LIBURTSSIM_DEBUG) $(LIBURTS_DEPLOY)| $(BUILD_DIR)
+all: $(LIBURTSSIM_SHARED) $(LIBURTS_DEPLOY)| $(BUILD_DIR)
 	$(CP) $(LIBURTSSIM_SHARED) $|
 	$(CP) $(LIBURTS_DEPLOY) $|
-ifndef DEBUG
-	$(CP) $(LIBURTSSIM_DEBUG) $|
-endif
 
 $(LIBURTSSIM_SHARED): simasm uinst driver_api wrapper uae_service_sim $(OBJ) $(OBJ6) ittnotify
 	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$(SONAME) $(OBJ) $(OBJ6) $(LDFLAGS) $(LDLIBS) -o $@
-
-$(LIBURTSSIM_DEBUG): $(LIBURTSSIM_SHARED)
-ifndef DEBUG
-	$(CP) $(LIBURTSSIM_SHARED) $(LIBURTSSIM_SHARED).orig
-	$(OBJCOPY) --only-keep-debug $(LIBURTSSIM_SHARED) $(LIBURTSSIM_DEBUG)
-	$(STRIP) -g $(LIBURTSSIM_SHARED)
-	$(OBJCOPY)  --add-gnu-debuglink=$(LIBURTSSIM_DEBUG) $(LIBURTSSIM_SHARED)
-endif
 
 $(BUILD_DIR):
 	@$(MKDIR) $@
@@ -188,12 +174,12 @@ ittnotify:
 	CFLAGS= CXXFLAGS= $(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify/
 
 $(LIBURTS_DEPLOY):../urts_deploy.c
-	 $(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -shared -fPIC -Wl,-soname=libsgx_urts.so.$(call SPLIT_VERSION,$(URTS_VER),1) $< -o $@
+	 $(CC) -I$(COMMON_DIR)/inc $(CET_FLAGS) -shared -fPIC -Wl,-soname=libsgx_urts.so.$(call get_major_version,URTS_VERSION) $< -o $@
 
 .PHONY: clean
 clean::
-	@$(RM) *.o $(LIBURTSSIM_SHARED) $(LIBURTS_DEPLOY) $(LIBURTSSIM_DEBUG) $(LIBURTSSIM_SHARED).orig 
-	@$(RM) $(BUILD_DIR)/$(LIBURTSSIM_SHARED) $(BUILD_DIR)/$(LIBURTS_DEPLOY) $(BUILD_DIR)/$(LIBURTSSIM_DEBUG)
+	@$(RM) *.o $(LIBURTSSIM_SHARED) $(LIBURTS_DEPLOY)
+	@$(RM) $(BUILD_DIR)/$(LIBURTSSIM_SHARED) $(BUILD_DIR)/$(LIBURTS_DEPLOY)
 	$(MAKE) -C $(COMMON_DIR)/se_wrapper                                    clean
 	$(MAKE) -C $(SIM_DIR)/driver_api/                                      clean
 	$(MAKE) -C $(SIM_DIR)/assembly/                                        clean
