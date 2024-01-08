@@ -59,7 +59,7 @@ all: pce_sim_private_key.pem
 endif
 
 $(SONAME): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call get_major_version,PVE_VERSION) $(LDTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call get_major_version,PCE_VERSION) $(LDTFLAGS)
 	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 pce.o: $(AENAME)_t.c
