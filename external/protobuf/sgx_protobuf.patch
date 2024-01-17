@@ -1,11 +1,12 @@
-From 693787f29e638e6f65dfdd5ee3dd9c2a45b7d3df Mon Sep 17 00:00:00 2001
+From e68261ed6a9abbaa98a5bd183d5fe985485c1379 Mon Sep 17 00:00:00 2001
 From: yanxue <yan.xue@intel.com>
-Date: Tue, 1 Aug 2023 07:12:57 +0000
+Date: Thu, 7 Dec 2023 00:46:13 -0500
 Subject: [PATCH] Enable Protobuf in SGX
 
 ---
  cmake/CMakeLists.txt                          |  31 +++-
  cmake/libsgx_protobuf.cmake                   | 140 ++++++++++++++++++
+ cmake/protoc.cmake                            |   2 +
  configure.ac                                  |   2 +-
  .../google/protobuf/MessageReflection.java    |  26 +++-
  .../protobuf/io/zero_copy_stream_impl.cc      |   6 +
@@ -29,7 +30,7 @@ Subject: [PATCH] Enable Protobuf in SGX
  .../protobuf/util/delimited_message_util.cc   |   2 +
  .../protobuf/util/delimited_message_util.h    |   7 +-
  src/google/protobuf/util/time_util.h          |   4 +
- 25 files changed, 317 insertions(+), 15 deletions(-)
+ 26 files changed, 319 insertions(+), 15 deletions(-)
  create mode 100644 cmake/libsgx_protobuf.cmake
 
 diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
@@ -234,6 +235,19 @@ index 000000000..2d5b33da5
 +    OUTPUT_NAME ${LIB_PREFIX}protobuf
 +    DEBUG_POSTFIX "${protobuf_DEBUG_POSTFIX}")
 +add_library(protobuf::libprotobuf ALIAS libprotobuf)
+diff --git a/cmake/protoc.cmake b/cmake/protoc.cmake
+index c86d6628f..7089948ed 100644
+--- a/cmake/protoc.cmake
++++ b/cmake/protoc.cmake
+@@ -2,6 +2,8 @@ set(protoc_files
+   ${protobuf_source_dir}/src/google/protobuf/compiler/main.cc
+ )
+ 
++string(APPEND CMAKE_CXX_FLAGS " -D_FORTIFY_SOURCE=2")
++
+ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+ set(protoc_rc_files
+   ${CMAKE_CURRENT_BINARY_DIR}/version.rc
 diff --git a/configure.ac b/configure.ac
 index 7c5c2c799..31c63629f 100644
 --- a/configure.ac

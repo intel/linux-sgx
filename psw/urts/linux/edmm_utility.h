@@ -82,12 +82,13 @@ bool is_cpu_support_edmm();
 
 /* is_driver_support_edmm()
  * Parameters:
+ *      driver_type [in] - The driver type (kernel/out-of-tree/dcap).
  *      hdevice [in] - The device handle used to communicate with driver.
  * Return Value:
  *      true - Driver supports EDMM.
  *      false - Driver does not support EDMM.
 */
-bool is_driver_support_edmm(int hdevice);
+bool is_driver_support_edmm(int driver_type, int hdevice);
 
 /* is_support_edmm()
  * Parameters:

@@ -268,14 +268,23 @@ int sp_ra_proc_msg0_req(const sample_ra_msg0_t *p_msg0,
 
         if (g_return_ecdsa_att_key_id)
         {
-            memcpy_s(p_msg0_resp_full->body, msg0_resp_size,
-                g_ecdsa_p256_att_key_id_list, msg0_resp_size);
+            if (memcpy_s(p_msg0_resp_full->body, msg0_resp_size,
+                g_ecdsa_p256_att_key_id_list, msg0_resp_size)) {
+                fprintf(stderr, "\nError, cannot do memcpy in [%s].", __FUNCTION__);
+                g_return_ecdsa_att_key_id = false;
+                ret = SP_INTERNAL_ERROR;
+                goto CLEANUP;
+            }
             g_return_ecdsa_att_key_id = false;
         }
         else // Return EPID attestation key id
         {
-            memcpy_s(p_msg0_resp_full->body, msg0_resp_size,
-                g_epid_unlinkable_att_key_id_list, msg0_resp_size);
+            if(memcpy_s(p_msg0_resp_full->body, msg0_resp_size,
+                g_epid_unlinkable_att_key_id_list, msg0_resp_size)) {
+                fprintf(stderr, "\nError, cannot do memcpy in [%s].", __FUNCTION__);
+                ret = SP_INTERNAL_ERROR;
+                 goto CLEANUP;
+            }
         }
         p_msg0_resp_full->type = TYPE_RA_MSG0;
         p_msg0_resp_full->size = msg0_resp_size;
@@ -872,7 +881,3 @@ int sp_ra_proc_msg3_req(const sample_ra_msg3_t *p_msg3,
     }
     return ret;
 }
-
-
-
-

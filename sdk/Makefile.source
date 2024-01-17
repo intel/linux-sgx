@@ -76,7 +76,7 @@ components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotec
 .PHONY: tstdc
 tstdc: $(LIBTLIBC)
 
-ifndef _TD_MIGRATION
+ifndef SERVTD_ATTEST
 $(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp tmm_rsrv
 	$(MAKE) -C tlibc/ -j$(shell nproc) 2> /dev/null
 	@$(MKDIR) $(BUILD_DIR)/.compiler-rt $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
@@ -96,7 +96,7 @@ $(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp tmm_rsrv
 	@$(RM) -rf $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 else
 $(LIBTLIBC): tlibthread tsafecrt tsetjmp tmm_rsrv
-	$(MAKE) -C tlibc/ _TD_MIGRATION=1 -j$(shell nproc) 2> /dev/null
+	$(MAKE) -C tlibc/ SERVTD_ATTEST=1 -j$(shell nproc) 2> /dev/null
 	@$(MKDIR) $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp  $(BUILD_DIR)/.tmm_rsrv
 	@$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
 	@$(RM) -f $(BUILD_DIR)/.tsafecrt/*      && cd $(BUILD_DIR)/.tsafecrt   && $(AR) x $(LINUX_SDK_DIR)/tsafecrt/libsgx_tsafecrt.a
@@ -150,7 +150,7 @@ $(LIBTCXX): cpprt tlibcxx
 	@cd $(BUILD_DIR)/.tlibcxx    && $(AR) x $(LINUX_SDK_DIR)/tlibcxx/libcxx.a
 	$(CP) $(LINUX_SDK_DIR)/cpprt/libcpprt.a $@
 	$(AR) qD $@ $(BUILD_DIR)/.tlibcxx/*.o
-ifdef _TD_MIGRATION
+ifdef SERVTD_ATTEST
 	@$(MKDIR) $(BUILD_DIR)/.cpprt
 	@$(RM) -f $(BUILD_DIR)/.cpprt/*   && cd $(BUILD_DIR)/.cpprt && $(AR) x $(LINUX_SDK_DIR)/cpprt/libcpprt.a
 else
@@ -307,8 +307,8 @@ sgx_encrypt: tservice
 $(BUILD_DIR):
 	$(MKDIR) $@
 
-.PHONY: td_migration
-td_migration: tstdc tcxx edger8r
+.PHONY: servtd_attest
+servtd_attest: tstdc tcxx edger8r
 
 .PHONY: clean
 clean:

@@ -47,6 +47,7 @@ RUN sh -c 'echo yes | /linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_*.bin'
 
 WORKDIR /linux-sgx
 ENV BUILD_PLATFORM="docker"
+ENV SGX_SDK=/opt/intel/sgxsdk
 RUN make rpm_local_repo
 
 

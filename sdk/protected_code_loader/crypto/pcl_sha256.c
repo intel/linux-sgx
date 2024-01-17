@@ -134,7 +134,10 @@ static const SHA_LONG pcl_K256[64] = {
     0x748f82eeUL, 0x78a5636fUL, 0x84c87814UL, 0x8cc70208UL,
     0x90befffaUL, 0xa4506cebUL, 0xbef9a3f7UL, 0xc67178f2UL
 };
-                        
+#ifdef TURN_OFF_O2_GCC13
+#pragma GCC push_option
+#pragma GCC optimize("O0")
+#endif                        
 /*
  * FIPS specification refers to right rotations, while our ROTATE macro
  * is left one. This is why you might notice that rotation coefficients
@@ -212,4 +215,6 @@ static void pcl_sha256_block_data_order(SHA256_CTX *ctx, const void *in,
 
     }
 }
-
+#ifdef TURN_OFF_O2_GCC13
+#pragma GCC pop_option
+#endif

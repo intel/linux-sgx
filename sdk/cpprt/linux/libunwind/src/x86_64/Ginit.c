@@ -38,6 +38,10 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 
 #include "unwind_i.h"
 
+#if defined(HAVE_SGX)
+#include "sgx_trts.h"
+#endif
+
 #ifdef UNW_REMOTE_ONLY
 
 /* unw_local_addr_space is a NULL pointer in this case.  */

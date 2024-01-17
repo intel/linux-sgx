@@ -231,7 +231,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
         res = false;
         break;
     case SGX_SUCCESS:
-        ret = dynamic_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(hash, SGX_HASH_SIZE, &quota);
+        ret = static_cast<EnclaveCreatorST*>(get_enclave_creator())->get_enclave_info(hash, SGX_HASH_SIZE, &quota);
         if(ret != SGX_SUCCESS)
         {
             res = false;

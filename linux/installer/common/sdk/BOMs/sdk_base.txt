@@ -712,4 +712,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/external/mbedtls/mbedtls_code/include/mbedtls/cmac.h	<installdir>/package/include/mbedtls/cmac.h	0	main	STP
 <deliverydir>/external/mbedtls/mbedtls_code/include/mbedtls/rsa.h	<installdir>/package/include/mbedtls/rsa.h	0	main	STP
 <deliverydir>/external/mbedtls/mbedtls_code/include/mbedtls/gcm.h	<installdir>/package/include/mbedtls/gcm.h	0	main	STP
+<deliverydir>/external/mbedtls/mbedtls_code/include/mbedtls/config_adjust_legacy_crypto.h	<installdir>/package/include/mbedtls/config_adjust_legacy_crypto.h	0	main	STP
+<deliverydir>/external/mbedtls/mbedtls_code/include/mbedtls/config_adjust_x509.h	<installdir>/package/include/mbedtls/config_adjust_x509.h	0	main	STP
+<deliverydir>/external/mbedtls/mbedtls_code/include/mbedtls/config_adjust_ssl.h	<installdir>/package/include/mbedtls/config_adjust_ssl.h	0	main	STP
 <deliverydir>/common/buildenv.mk	<installdir>/package/buildenv.mk	0	main	STP

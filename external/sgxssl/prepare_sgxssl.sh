@@ -32,16 +32,15 @@
 
 top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
-openssl_ver=3.0.10
+openssl_ver=3.0.12
 openssl_ver_name=openssl-$openssl_ver
 sgxssl_github_archive=https://github.com/intel/intel-sgx-ssl/archive
-sgxssl_file_name=3.0_Rev1
+sgxssl_file_name=3.0_Rev2
 build_script=$top_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
 full_openssl_url=$server_url_path/old/3.0/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=6371dbe25acdc5a3bbb2978a0a559ad2eefd713b9bbf5d3a45236229c9cc53b6
-openssl_chksum=1761d4f5b13a1028b9b6f3d4b8e17feb0cedc9370f6afe61d7193d2cdce83323
+sgxssl_chksum=269e1171f566ac6630d83c3b6cf9669e254b08a7f208cc8cf59f471f3d8a579b
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
 	wget $sgxssl_github_archive/$sgxssl_file_name.zip -P $top_dir || exit 1
@@ -60,8 +59,9 @@ fi
 
 if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 	wget $server_url_path/$openssl_ver_name.tar.gz -P $openssl_out_dir || wget $full_openssl_url -P $openssl_out_dir || exit 1
-	sha256sum $openssl_out_dir/$openssl_ver_name.tar.gz > check_sum_openssl.txt
-	grep $openssl_chksum check_sum_openssl.txt
+	wget $server_url_path/$openssl_ver_name.tar.gz.sha256 -O expected_chksum_openssl.txt || wget $full_openssl_url.sha256 -O expected_chksum_openssl.txt || exit 1
+	openssl_chksum=`sha256sum $openssl_out_dir/$openssl_ver_name.tar.gz | awk '{print $1}'`
+	grep $openssl_chksum expected_chksum_openssl.txt
 	if [ $? -ne 0 ]; then 
     	echo "File $openssl_out_dir/$openssl_ver_name.tar.gz checksum failure"
         rm -f $openssl_out_dir/$openssl_ver_name.tar.gz
@@ -70,6 +70,10 @@ if [ ! -f $openssl_out_dir/$openssl_ver_name.tar.gz ]; then
 fi
 
 pushd $top_dir/Linux/
+patched=$(grep -c 2023-5678 build_openssl.sh)
+if [ '0' -eq $patched ]; then
+	sed -i '141a patch --merge -p1 < ../../../../dcap-trunk/dcap_source/prebuilt/openssl/openssl.CVE-2023-5678.patch || exit 1 ' build_openssl.sh
+fi
 if [ "$MITIGATION" != "" ]; then
         make clean all LINUX_SGX_BUILD=1 DEBUG=$DEBUG
 else

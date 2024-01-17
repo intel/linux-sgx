@@ -71,6 +71,7 @@ private:
     bool                m_sig_registered;
     se_mutex_t          m_sig_mutex;
     enclave_elrange_t   m_enclave_elrange;
+    int                 m_driver_type;
 };
 
 #endif

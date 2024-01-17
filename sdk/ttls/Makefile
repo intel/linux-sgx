@@ -77,11 +77,14 @@ LIBSGX_CBOR = libsgx_cbor.a
 LIBCBOR = libcbor.a
 LIBSGX_CBOR_PATH = $(CBOR_PATH)/trusted/lib
 LIBCBOR_PATH = $(CBOR_PATH)/untrusted/lib
+CBOR_HEADER = cbor.h
+SGXCBOR_INCLUDE = $(CBOR_PATH)/trusted/include
+CBOR_INCLUDE = $(CBOR_PATH)/untrusted/include
 
 LIBNAME := libsgx_ttls.a
 LIBNAME_TDX := libtdx_tls.a
 
-.PHONY: all PREPARE_SGX_SSL
+.PHONY: all cbor_trusted cbor_untrusted PREPARE_SGX_SSL
 all: $(LIBNAME) $(LIBNAME_TDX) | $(BUILD_DIR)
 	$(CP) $(LIBNAME) $|
 	$(CP) $(LIBNAME_TDX) $|
@@ -108,16 +111,22 @@ $(LIBNAME_TDX): $(OBJ_TDX)
 	@$(RM) -r $(BUILD_DIR)/.libcbor
 
 $(OBJ): $(TLSNAME)_t.h 
-$(OBJ): %.o :%.cpp $(LIBSGX_CBOR)
+$(OBJ): %.o : %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
-$(OBJ_TDX): tdx_%.o :%.cpp $(LIBCBOR)
+$(OBJ_TDX): tdx_%.o : %.cpp
 	$(CXX) $(CXXFLAGS_TDX) $(INCLUDE_TDX) -DTDX_ENV -c $< -o $@
 
-$(LIBSGX_CBOR):
-	@test -f $(LIBSGX_CBOR_PATH)/$(LIBSGX_CBOR) || $(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_trusted 
+$(SRC): cbor_trusted cbor_untrusted
 
-$(LIBCBOR):
-	@test -f $(LIBCBOR_PATH)/$(LIBCBOR) || $(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_untrusted
+cbor_trusted:
+	@if [ ! -f $(SGXCBOR_INCLUDE)/$(CBOR_HEADER) ] || [ ! -f $(LIBSGX_CBOR_PATH)/$(LIBSGX_CBOR) ]; then \
+		$(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_trusted; \
+	fi
+
+cbor_untrusted:
+	@if [ ! -f $(CBOR_INCLUDE)/$(CBOR_HEADER) ] || [ ! -f $(LIBCBOR_PATH)/$(LIBCBOR) ]; then \
+		$(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_untrusted; \
+	fi
 
 .PHONY: clean
 clean:

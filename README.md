@@ -91,6 +91,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
+  * Ubuntu\* 23.10 Server 64bits
   * Red Hat Enterprise Linux Server release 9.2 64bits
   * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
@@ -104,7 +105,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python3 libssl-dev git cmake perl
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
-  * On Ubuntu 20.04 and Ubuntu 22.04:
+  * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python-is-python3 libssl-dev git cmake perl
   ```
@@ -143,7 +144,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release libsystemd0
       ```
-      * On Ubuntu 20.04 and Ubuntu 22.04:
+      * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev libboost-thread-dev lsb-release libsystemd0
       ```
@@ -177,12 +178,12 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 ```
   The above ``make preparation`` would trigger the script ``download_prebuilt.sh`` to download the prebuilt binaries. You may need to set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)
 
-- Copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
+- (*Optional*) If the binutils on your current operating system distribution doesn't support mitigation options, copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
   ```
     $ sudo cp external/toolset/{current_distr}/* /usr/local/bin
     $ which ar as ld objcopy objdump ranlib
   ```
-    **Note**: The above action is a must even if you copied the previous mitigation tools to /usr/local/bin before. It ensures the updated mitigation tools are used in the later build.
+    **Note**: Mitigation tools are only provided for the operating systems whose binutils lack mitigation options support. If your operating system is not listed in the external/toolset/{current_distr} directory, you can skip this step. Otherwise, even if you previously copied the mitigation tools to /usr/local/bin, performing the above action is still necessary. This ensures that the latest mitigation tools are used during the subsequent build process.
 
 
 ### Build the Intel(R) SGX SDK and Intel(R) SGX SDK Installer
@@ -255,7 +256,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make
 ```
 - To build the Intel(R) SGX PSW installer, enter the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
    ```
   $ make deb_psw_pkg
   ```
@@ -295,6 +296,10 @@ You can find the tools and libraries generated in the `build/linux` directory.
   * On Ubuntu 22.04:
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO jammy main
+  ```
+  * On Ubuntu 23.10:
+  ```
+  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO mantic main
   ```
   * On Debian 10:
   ```
@@ -339,6 +344,7 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
+  * Ubuntu\* 23.10 Server 64bits
   * Red Hat Enterprise Linux Server release 9.2 64bits
   * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
@@ -351,7 +357,7 @@ Install the Intel(R) SGX SDK
     $ sudo apt-get install build-essential python3
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3
   ```
-   * On Ubuntu 20.04 and Ubuntu 22.04:
+   * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
   ```
     $ sudo apt-get install build-essential python-is-python3
   ```
@@ -429,6 +435,7 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
+  * Ubuntu\* 23.10 Server 64bits
   * Red Hat Enterprise Linux Server release 9.2 64bits
   * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
@@ -440,7 +447,7 @@ Install the Intel(R) SGX PSW
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
@@ -470,7 +477,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 20.04, Ubuntu 22.04 and Debian 10|Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6| SUSE Linux Enterprise Server 15|
+|   |Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10|Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6| SUSE Linux Enterprise Server 15|
 | ------------ | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts|
@@ -491,7 +498,7 @@ apt-get dist-upgrade -o Dpkg::Options::="--force-overwrite"
 ```
 #### Configure the installation
 Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-* On Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+* On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
 ```
   --no-install-recommends
 ```

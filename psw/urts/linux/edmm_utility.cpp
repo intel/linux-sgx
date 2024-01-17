@@ -229,22 +229,20 @@ extern "C" bool is_cpu_support_edmm()
 
 /* is_driver_support_edmm()
  * Parameters:
+ *      driver_type [in] - The driver type (kernel/out-of-tree/dcap)
  *      hdevice [in] - The device handle used to communicate with driver.
  * Return Value:
  *      true - Driver supports EDMM.
  *      false - Driver does not support EDMM.
 */
-extern "C" bool is_driver_support_edmm(int hdevice)
+extern "C" bool is_driver_support_edmm(int driver_type, int hdevice)
 {
-    if (-1 == hdevice){
-        if(!open_se_device(SGX_DRIVER_IN_KERNEL, &hdevice))
-            return false;
+    if (driver_type == SGX_DRIVER_IN_KERNEL) {
         struct sgx_enclave_restrict_permissions  ioc;
         memset(&ioc, 0, sizeof(ioc));
 
         int ret = ioctl(hdevice, SGX_IOC_ENCLAVE_RESTRICT_PERMISSIONS, &ioc);
         bool supported = ret != -1 || (errno != ENOTTY);
-        close_se_device(&hdevice);
         return supported;
     }
 
@@ -282,7 +280,7 @@ extern "C" bool is_support_edmm()
         return false;
     }
 
-    if (false == is_driver_support_edmm(hdevice))
+    if (false == is_driver_support_edmm(driver_type, hdevice))
     {
         close_se_device(&hdevice);
         return false;

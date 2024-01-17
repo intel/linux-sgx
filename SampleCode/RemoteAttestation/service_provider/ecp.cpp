@@ -100,7 +100,7 @@ bool derive_key(
     hash_buffer_t hash_buffer;
     sample_sha_state_handle_t sha_context;
     sample_sha256_hash_t key_material;
-    
+
     memset(&hash_buffer, 0, sizeof(hash_buffer_t));
 
     /* counter in big endian  */
@@ -175,7 +175,7 @@ bool derive_key(
     sample_status_t sample_ret = SAMPLE_SUCCESS;
     uint8_t cmac_key[MAC_KEY_SIZE];
     sample_ec_key_128bit_t key_derive_key;
-    
+
     memset(&cmac_key, 0, MAC_KEY_SIZE);
 
     sample_ret = sample_rijndael128_cmac_msg(
@@ -233,7 +233,11 @@ bool derive_key(
     /*counter = 0x01 */
     p_derivation_buffer[0] = 0x01;
     /*label*/
-    memcpy_s(&p_derivation_buffer[1], derivation_buffer_length - 1, label, label_length);
+    if(memcpy_s(&p_derivation_buffer[1], derivation_buffer_length - 1, label, label_length)) {
+        memset(&key_derive_key, 0, sizeof(key_derive_key));
+        free(p_derivation_buffer);
+        return false;
+    }
     /*output_key_len=0x0080*/
     uint16_t *key_len = (uint16_t *)(&(p_derivation_buffer[derivation_buffer_length - 2]));
     *key_len = 0x0080;
