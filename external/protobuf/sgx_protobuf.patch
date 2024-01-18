@@ -1,12 +1,14 @@
-From b309912dc33756a51d49af062ba883790d206f14 Mon Sep 17 00:00:00 2001
+From e68261ed6a9abbaa98a5bd183d5fe985485c1379 Mon Sep 17 00:00:00 2001
 From: yanxue <yan.xue@intel.com>
-Date: Fri, 6 May 2022 16:04:12 +0800
+Date: Thu, 7 Dec 2023 00:46:13 -0500
 Subject: [PATCH] Enable Protobuf in SGX
 
 ---
  cmake/CMakeLists.txt                          |  31 +++-
  cmake/libsgx_protobuf.cmake                   | 140 ++++++++++++++++++
+ cmake/protoc.cmake                            |   2 +
  configure.ac                                  |   2 +-
+ .../google/protobuf/MessageReflection.java    |  26 +++-
  .../protobuf/io/zero_copy_stream_impl.cc      |   6 +
  .../protobuf/io/zero_copy_stream_impl.h       |   4 +-
  src/google/protobuf/map.h                     |  12 ++
@@ -28,7 +30,7 @@ Subject: [PATCH] Enable Protobuf in SGX
  .../protobuf/util/delimited_message_util.cc   |   2 +
  .../protobuf/util/delimited_message_util.h    |   7 +-
  src/google/protobuf/util/time_util.h          |   4 +
- 24 files changed, 292 insertions(+), 14 deletions(-)
+ 26 files changed, 319 insertions(+), 15 deletions(-)
  create mode 100644 cmake/libsgx_protobuf.cmake
 
 diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
@@ -233,8 +235,21 @@ index 000000000..2d5b33da5
 +    OUTPUT_NAME ${LIB_PREFIX}protobuf
 +    DEBUG_POSTFIX "${protobuf_DEBUG_POSTFIX}")
 +add_library(protobuf::libprotobuf ALIAS libprotobuf)
+diff --git a/cmake/protoc.cmake b/cmake/protoc.cmake
+index c86d6628f..7089948ed 100644
+--- a/cmake/protoc.cmake
++++ b/cmake/protoc.cmake
+@@ -2,6 +2,8 @@ set(protoc_files
+   ${protobuf_source_dir}/src/google/protobuf/compiler/main.cc
+ )
+ 
++string(APPEND CMAKE_CXX_FLAGS " -D_FORTIFY_SOURCE=2")
++
+ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+ set(protoc_rc_files
+   ${CMAKE_CURRENT_BINARY_DIR}/version.rc
 diff --git a/configure.ac b/configure.ac
-index 5de1ce20a..712fa41d5 100644
+index 7c5c2c799..31c63629f 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -106,7 +106,7 @@ ACX_CHECK_SUNCC
@@ -246,6 +261,77 @@ index 5de1ce20a..712fa41d5 100644
  
  # Check whether the linker supports version scripts
  AC_MSG_CHECKING([whether the linker supports version scripts])
+diff --git a/java/core/src/main/java/com/google/protobuf/MessageReflection.java b/java/core/src/main/java/com/google/protobuf/MessageReflection.java
+index b7f5d52d4..f032d4926 100644
+--- a/java/core/src/main/java/com/google/protobuf/MessageReflection.java
++++ b/java/core/src/main/java/com/google/protobuf/MessageReflection.java
+@@ -349,6 +349,7 @@ class MessageReflection {
+   static class BuilderAdapter implements MergeTarget {
+ 
+     private final Message.Builder builder;
++    private boolean hasNestedBuilders = true;
+ 
+     @Override
+     public Descriptors.Descriptor getDescriptorForType() {
+@@ -363,6 +364,17 @@ class MessageReflection {
+     public Object getField(Descriptors.FieldDescriptor field) {
+       return builder.getField(field);
+     }
++    
++    private Message.Builder getFieldBuilder(Descriptors.FieldDescriptor field) {
++      if (hasNestedBuilders) {
++        try {
++          return builder.getFieldBuilder(field);
++        } catch (UnsupportedOperationException e) {
++          hasNestedBuilders = false;
++        }
++      }
++      return null;
++    }
+ 
+     @Override
+     public boolean hasField(Descriptors.FieldDescriptor field) {
+@@ -371,6 +383,12 @@ class MessageReflection {
+ 
+     @Override
+     public MergeTarget setField(Descriptors.FieldDescriptor field, Object value) {
++      if (!field.isRepeated() && value instanceof MessageLite.Builder) {
++        if (value != getFieldBuilder(field)) {
++          builder.setField(field, ((MessageLite.Builder) value).buildPartial());
++        }
++        return this;
++      }
+       builder.setField(field, value);
+       return this;
+     }
+@@ -384,12 +402,18 @@ class MessageReflection {
+     @Override
+     public MergeTarget setRepeatedField(
+         Descriptors.FieldDescriptor field, int index, Object value) {
++      if (value instanceof MessageLite.Builder) {
++        value = ((MessageLite.Builder) value).buildPartial();
++      }
+       builder.setRepeatedField(field, index, value);
+       return this;
+     }
+ 
+     @Override
+     public MergeTarget addRepeatedField(Descriptors.FieldDescriptor field, Object value) {
++      if (value instanceof MessageLite.Builder) {
++        value = ((MessageLite.Builder) value).buildPartial();
++      }
+       builder.addRepeatedField(field, value);
+       return this;
+     }
+@@ -543,7 +567,7 @@ class MessageReflection {
+ 
+     @Override
+     public Object finish() {
+-      return builder.buildPartial();
++      return builder;
+     }
+   }
+ 
 diff --git a/src/google/protobuf/io/zero_copy_stream_impl.cc b/src/google/protobuf/io/zero_copy_stream_impl.cc
 index c66bc862a..1fee728cd 100644
 --- a/src/google/protobuf/io/zero_copy_stream_impl.cc
@@ -408,7 +494,7 @@ index 1c22f894e..69006e686 100644
    // Like SerializeToString(), but appends to the data to the string's
    // existing contents.  All required fields must be set.
 diff --git a/src/google/protobuf/port_def.inc b/src/google/protobuf/port_def.inc
-index 31ab3b159..cadbf1645 100644
+index 1e360ccce..0765998b8 100644
 --- a/src/google/protobuf/port_def.inc
 +++ b/src/google/protobuf/port_def.inc
 @@ -608,7 +608,7 @@
@@ -848,5 +934,5 @@ index 95cc64520..6d7c44775 100644
  
  #include <google/protobuf/duration.pb.h>
 -- 
-2.17.1
+2.34.1
 

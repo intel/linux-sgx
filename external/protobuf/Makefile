@@ -65,13 +65,13 @@ $(BUILD_DIR):
 
 .PHONY: protobuf_code
 protobuf_code:
-ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-	$(RM) -r $(PB_DIR)/
-	git submodule update -f --init $(PB_DIR)
-else
+#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+#	$(RM) -r $(PB_DIR)/
+#	git submodule update -f --init $(PB_DIR)
+#else
 	$(RM) -r $(PB_DIR)/
 	git clone https://github.com/protocolbuffers/protobuf.git -b v3.20.1 --depth 1 $(PB_DIR)
-endif
+#endif
 
 
 $(LIBPB): $(CHECK_SOURCE)

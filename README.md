@@ -36,13 +36,13 @@ Introduction
 ------------
 Intel(R) Software Guard Extensions (Intel(R) SGX) is an Intel technology for application developers seeking to protect select code and data from disclosure or modification.
 
-The Linux\* Intel(R) SGX software stack is comprised of the Intel(R) SGX driver, the Intel(R) SGX SDK, and the Intel(R) SGX Platform Software (PSW). The Intel(R) SGX SDK and Intel(R) SGX PSW are hosted in the [linux-sgx](https://github.com/01org/linux-sgx) project.
+The Linux\* Intel(R) SGX software stack is comprised of the Intel(R) SGX driver, the Intel(R) SGX SDK, and the Intel(R) SGX Platform Software (PSW). The Intel(R) SGX SDK and Intel(R) SGX PSW are hosted in the [linux-sgx](https://github.com/intel/linux-sgx) project.
 
 The [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project maintains an out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used on the platforms with *Flexible Launch Control* and *Intel(R) AES New Instructions* support and could support both Elliptic Curve Digital Signature algorithm (ECDSA) based attestation and Enhanced Privacy Identification (EPID) based attestation.
 
 **Note**: Ice Lake Xeon-SP (and the future Xeon-SP platforms) doesn't support EPID attestation.
 
-The [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project hosts the other out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used to support Enhanced Privacy Identification (EPID) based attestation on the platforms without *Flexible Launch Control*.
+The [linux-sgx-driver](https://github.com/intel/linux-sgx-driver) project hosts the other out-of-tree driver for the Linux\* Intel(R) SGX software stack, which will be used until the driver upstreaming process is complete. It is used to support Enhanced Privacy Identification (EPID) based attestation on the platforms without *Flexible Launch Control*.
 
 The [intel-device-plugins-for-kubernetes](https://github.com/intel/intel-device-plugins-for-kubernetes) project enables users to run container applications running Intel(R) SGX enclaves in Kubernetes clusters. It also gives instructions how to set up ECDSA based attestation in a cluster.
 
@@ -63,8 +63,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 Documentation
 -------------
-- [Intel(R) SGX for Linux\* OS](https://01.org/intel-softwareguard-extensions) project home page on [01.org](https://01.org)
-- [Intel(R) SGX Programming Reference](https://software.intel.com/sites/default/files/managed/7c/f1/332831-sdm-vol-3d.pdf)
+- [Intel(R) SGX for Linux\* OS](https://www.intel.com/content/www/us/en/developer/tools/software-guard-extensions/linux-overview.html) project home page on [Intel Developer Zone](https://www.intel.com/content/www/us/en/developer/overview.html)
+- [Intel(R) SGX Programming Reference](https://www.intel.com/content/dam/develop/external/us/en/documents/329298-002-629101.pdf)
 
 Quick Start with Docker and Docker Compose
 -----------------------------------------
@@ -82,41 +82,44 @@ $ cd linux/installer/docker && ./build_compose_run.sh
 Build and Install the Intel(R) SGX Driver
 -----------------------------------------
 Follow the [README.md](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/master/driver/linux/README.md) in the [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/) project to build and install the Intel(R) SGX driver.
-**NOTE**: The above Intel(R) SGX driver requires *Flexible Launch Control* and *Intel(R) AES New Instructions* support. If your platform doesn't meet the requirement, please follow  the instructions in the [linux-sgx-driver](https://github.com/01org/linux-sgx-driver) project to build and install this version of Intel(R) SGX driver.
+**NOTE**: The above Intel(R) SGX driver requires *Flexible Launch Control* and *Intel(R) AES New Instructions* support. If your platform doesn't meet the requirement, please follow  the instructions in the [linux-sgx-driver](https://github.com/intel/linux-sgx-driver) project to build and install this version of Intel(R) SGX driver.
 
 Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 -------------------------------------------------------
 ### Prerequisites:
 - Ensure that you have one of the following required operating systems:
-  * Ubuntu\* 18.04 LTS Desktop 64bits
-  * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 8.6 64bits
-  * CentOS Stream 8 64bits
+  * Ubuntu\* 23.10 Server 64bits
+  * Red Hat Enterprise Linux Server release 9.2 64bits
+  * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:
-  * On Ubuntu 18.04 and Debian 10:
+  * On Debian 10:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python3 libssl-dev git cmake perl
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
-  * On Ubuntu 20.04 and Ubuntu 22.04:
+  * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python-is-python3 libssl-dev git cmake perl
   ```
-  * On Red Hat Enterprise Linux 8.6:
+  * On Red Hat Enterprise Linux 9.2:
   ```
     $ sudo yum groupinstall 'Development Tools'
     $ sudo yum install ocaml ocaml-ocamlbuild wget python3 openssl-devel git cmake perl
-    $ sudo alternatives --set python /usr/bin/python3
   ```
-  * On CentOS Stream 8 and CentOS 8.3:
+  * On CentOS Stream 9:
+  ```
+    $ sudo dnf group install 'Development Tools'
+    $ sudo dnf install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python3
+  ```  
+  * On CentOS 8.3:
   ```
     $ sudo dnf group install 'Development Tools'
     $ sudo dnf --enablerepo=powertools install ocaml ocaml-ocamlbuild redhat-rpm-config openssl-devel wget rpm-build git cmake perl python3
@@ -141,15 +144,19 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release libsystemd0
       ```
-      * On Ubuntu 20.04 and Ubuntu 22.04:
+      * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev libboost-thread-dev lsb-release libsystemd0
       ```
-      * On Red Hat Enterprise Linux 8.6:
+      * On Red Hat Enterprise Linux 9.2:
       ```
         $ sudo yum install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel systemd-libs
       ```
-      * On CentOS Stream 8 and CentOS 8.3:
+      * On CentOS Stream 9:
+      ```
+        $ sudo dnf install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel systemd-libs
+      ```      
+      * On CentOS 8.3:
       ```
         $ sudo dnf --enablerepo=powertools install openssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo yum-utils pkgconf boost-devel protobuf-lite-devel systemd-libs
       ```
@@ -171,12 +178,12 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
 ```
   The above ``make preparation`` would trigger the script ``download_prebuilt.sh`` to download the prebuilt binaries. You may need to set an https proxy for the `wget` tool used by the script (such as ``export https_proxy=http://test-proxy:test-port``)
 
-- Copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
+- (*Optional*) If the binutils on your current operating system distribution doesn't support mitigation options, copy the mitigation tools corresponding to current OS distribution from external/toolset/{current_distr} to /usr/local/bin and make sure they have execute permission:
   ```
     $ sudo cp external/toolset/{current_distr}/* /usr/local/bin
     $ which ar as ld objcopy objdump ranlib
   ```
-    **Note**: The above action is a must even if you copied the previous mitigation tools to /usr/local/bin before. It ensures the updated mitigation tools are used in the later build.
+    **Note**: Mitigation tools are only provided for the operating systems whose binutils lack mitigation options support. If your operating system is not listed in the external/toolset/{current_distr} directory, you can skip this step. Otherwise, even if you previously copied the mitigation tools to /usr/local/bin, performing the above action is still necessary. This ensures that the latest mitigation tools are used during the subsequent build process.
 
 
 ### Build the Intel(R) SGX SDK and Intel(R) SGX SDK Installer
@@ -249,7 +256,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make
 ```
 - To build the Intel(R) SGX PSW installer, enter the following command:
-  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
    ```
   $ make deb_psw_pkg
   ```
@@ -262,7 +269,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   ```
   $ make deb_psw_pkg DEBUG=1
   ```
-  * On Red Hat Enterprise Linux 8.6, CentOS Stream 8, CentOS 8.3, Anolis OS 8.6 and SUSE Linux Enterprise Server 15.4:
+  * On Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3, Anolis OS 8.6 and SUSE Linux Enterprise Server 15.4:
   ```
   $ make rpm_psw_pkg
   ```
@@ -282,10 +289,6 @@ You can find the tools and libraries generated in the `build/linux` directory.
     **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. The local package repository is not signed, you need to trust it for the purpose of development.
 
 - To add the local Debian package repository to the system repository configuration, append the following line to /etc/apt/sources.list. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-  * On Ubuntu 18.04:
-  ```
-  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO bionic main
-  ```
   * On Ubuntu 20.04:
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO focal main
@@ -293,6 +296,10 @@ You can find the tools and libraries generated in the `build/linux` directory.
   * On Ubuntu 22.04:
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO jammy main
+  ```
+  * On Ubuntu 23.10:
+  ```
+  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO mantic main
   ```
   * On Debian 10:
   ```
@@ -312,7 +319,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   **Note**: The above command builds the local package repository. If you want to use it, you need to add it to the system repository configuration. Since the local package repository is not signed with GPG, you should ignore the gpgcheck when installing the packages.
 
 - To add the local RPM package repository to the system repository configuration, you can use the following command. You need to replace PATH_TO_LOCAL_REPO with the proper path on your system:
-  * On Red Hat Enterprise Linux 8.6, CentOS Stream 8, CentOS 8.3, Anolis OS 8.6:
+  * On Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3, Anolis OS 8.6:
   ```
   $ sudo yum-config-manager --add-repo file://PATH_TO_LOCAL_REPO
   ```
@@ -321,11 +328,11 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ sudo zypper addrepo PATH_TO_LOCAL_REPO LOCAL_REPO_ALIAS
   ```
 - To ignore the gpgcheck when you install the package, enter the following command:
-  * On Red Hat Enterprise Linux 8.6, CentOS Stream 8, CentOS 8.3, Anolis OS 8.6:
+  * On Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3, Anolis OS 8.6:
   ```
   $ sudo yum --nogpgcheck install <package>
   ```
-  * On SUSE Linux Enterprise Server 15.5:
+  * On SUSE Linux Enterprise Server 15.4:
   ```
   $ sudo zypper --no-gpg-checks install <package>
   ```
@@ -334,28 +341,32 @@ Install the Intel(R) SGX SDK
 ------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:
-  * Ubuntu\* 18.04 LTS Desktop 64bits
-  * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 8.6 64bits
-  * CentOS Stream 8 64bits
+  * Ubuntu\* 23.10 Server 64bits
+  * Red Hat Enterprise Linux Server release 9.2 64bits
+  * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
-  * On Ubuntu 18.04 and Debian 10:
+  * On Debian 10:
   ```
     $ sudo apt-get install build-essential python3
-    $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
+    $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3
   ```
-   * On Ubuntu 20.04 and Ubuntu 22.04:
+   * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
   ```
     $ sudo apt-get install build-essential python-is-python3
   ```
-  * On Red Hat Enterprise Linux 8.6, CentOS Stream 8, CentOS 8.3 and Anolis OS 8.6:
+  * On Red Hat Enterprise Linux 9.2 and CentOS Stream 9:
+  ```
+     $ sudo yum groupinstall 'Development Tools'
+     $ sudo yum install python3
+  ```
+  * On CentOS 8.3 and Anolis OS 8.6:
   ```
      $ sudo yum groupinstall 'Development Tools'
      $ sudo yum install python3
@@ -421,13 +432,12 @@ Install the Intel(R) SGX PSW
 ----------------------------
 ### Prerequisites
 - Ensure that you have one of the following operating systems:
-  * Ubuntu\* 18.04 LTS Desktop 64bits
-  * Ubuntu\* 18.04 LTS Server 64bits
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
-  * Red Hat Enterprise Linux Server release 8.6 64bits
-  * CentOS Stream 8 64bits
+  * Ubuntu\* 23.10 Server 64bits
+  * Red Hat Enterprise Linux Server release 9.2 64bits
+  * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
@@ -437,15 +447,19 @@ Install the Intel(R) SGX PSW
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:
-  * On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
-  * On Red Hat Enterprise Linux 8.6:
+  * On Red Hat Enterprise Linux 9.2:
   ```
     $ sudo yum install openssl-devel libcurl-devel protobuf-devel
   ```
-  * On CentOS Stream 8 and CentOS 8.3:
+  * On CentOS Stream 9:
+  ```
+    $ sudo dnf install libcurl-devel protobuf-devel
+  ```
+  * On CentOS 8.3:
   ```
     $ sudo dnf --enablerepo=powertools install libcurl-devel protobuf-devel
   ```
@@ -463,7 +477,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10|Red Hat Enterprise Linux 8.6, CentOS Stream 8 and CentOS 8.3| SUSE Linux Enterprise Server 15|
+|   |Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10|Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6| SUSE Linux Enterprise Server 15|
 | ------------ | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts|
@@ -484,11 +498,11 @@ apt-get dist-upgrade -o Dpkg::Options::="--force-overwrite"
 ```
 #### Configure the installation
 Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-* On Ubuntu 18.04, Ubuntu 20.04, Ubuntu 22.04 and Debian 10:
+* On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
 ```
   --no-install-recommends
 ```
-* On Red Hat Enterprise Linux 8.6, CentOS Stream 8, CentOS 8.3 and Anolis OS 8.6:
+* On Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6:
 ```
   --setopt=install_weak_deps=False
 ```

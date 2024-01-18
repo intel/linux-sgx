@@ -62,7 +62,6 @@ preparation:
 	./download_prebuilt.sh
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
 
-
 psw:
 	$(MAKE) -C psw/ USE_OPT_LIBS=$(USE_OPT_LIBS)
 
@@ -91,11 +90,11 @@ tdx:
 	$(MAKE) -C external/dcap_source/QuoteGeneration tdx_qgs
 	$(MAKE) -C external/dcap_source/QuoteGeneration tdx_attest
  
-td_migration:
-	$(MAKE) -C sdk/ td_migration _TD_MIGRATION=1
-	$(MAKE) -C external/dcap_source/QuoteGeneration td_migration
+servtd_attest:
+	$(MAKE) -C sdk/ servtd_attest SERVTD_ATTEST=1
+	$(MAKE) -C external/dcap_source/QuoteGeneration servtd_attest
 
-td_migration_preparation:
+servtd_attest_preparation:
 # Only enable the download from git
 	git submodule update --init --recursive external/dcap_source external/sgx-emm/emm_src
 	./external/sgx-emm/create_symlink.sh
@@ -210,7 +209,21 @@ deb_libsgx_headers_pkg:
 
 ifeq ($(CC_BELOW_5_2), 1)
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3  deb_libsgx_ae_tdqe deb_libsgx_ae_id_enclave deb_libsgx_tdx_logic deb_tdx_qgs deb_tdx_attest
+deb_psw_pkg: deb_libsgx_headers_pkg \
+             deb_libsgx_qe3_logic \
+             deb_libsgx_pce_logic \
+             deb_sgx_aesm_service \
+             deb_libsgx_epid \
+             deb_libsgx_launch \
+             deb_libsgx_quote_ex \
+             deb_libsgx_uae_service \
+             deb_libsgx_enclave_common \
+             deb_libsgx_urts \
+             deb_libsgx_ae_qe3 \
+             deb_libsgx_ae_tdqe \
+             deb_libsgx_ae_id_enclave \
+             deb_libsgx_tdx_logic \
+             deb_tdx_qgs deb_tdx_attest
 else
 .PHONY: deb_libsgx_dcap_default_qpl
 deb_libsgx_dcap_default_qpl:
@@ -251,8 +264,36 @@ deb_sgx_ra_service_pkg:
 	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/sgx-ra-service*deb ./linux/installer/deb/sgx-aesm-service/
 	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/libsgx-ra-*deb ./linux/installer/deb/sgx-aesm-service/
 
+.PHONY: deb_tee_appraisal_tool
+deb_tee_appraisal_tool:
+	$(MAKE) -C external/dcap_source/QuoteGeneration deb_tee_appraisal_tool_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/tee-appraisal-tool/tee-appraisal-tool*deb ./linux/installer/deb/sgx-aesm-service/
+
 .PHONY: deb_psw_pkg
-deb_psw_pkg: deb_libsgx_headers_pkg deb_libsgx_qe3_logic deb_libsgx_pce_logic deb_sgx_aesm_service deb_libsgx_epid deb_libsgx_launch deb_libsgx_quote_ex deb_libsgx_uae_service deb_libsgx_enclave_common deb_libsgx_urts deb_libsgx_ae_qe3 deb_libsgx_ae_id_enclave deb_libsgx_dcap_default_qpl deb_libsgx_dcap_pccs deb_libsgx_dcap_ql deb_libsgx_ae_qve deb_sgx_dcap_quote_verify deb_sgx_pck_id_retrieval_tool_pkg deb_sgx_ra_service_pkg deb_libsgx_ae_tdqe deb_libsgx_tdx_logic deb_tdx_qgs deb_tdx_attest
+deb_psw_pkg: deb_libsgx_headers_pkg \
+             deb_libsgx_qe3_logic \
+             deb_libsgx_pce_logic \
+             deb_sgx_aesm_service \
+             deb_libsgx_epid \
+             deb_libsgx_launch \
+             deb_libsgx_quote_ex \
+             deb_libsgx_uae_service \
+             deb_libsgx_enclave_common \
+             deb_libsgx_urts \
+             deb_libsgx_ae_qe3 \
+             deb_libsgx_ae_id_enclave \
+             deb_libsgx_dcap_default_qpl \
+             deb_libsgx_dcap_pccs \
+             deb_libsgx_dcap_ql \
+             deb_libsgx_ae_qve \
+             deb_sgx_dcap_quote_verify \
+             deb_sgx_pck_id_retrieval_tool_pkg \
+             deb_sgx_ra_service_pkg \
+             deb_libsgx_ae_tdqe \
+             deb_libsgx_tdx_logic \
+             deb_tdx_qgs \
+             deb_tdx_attest \
+             deb_tee_appraisal_tool
 endif
 
 .PHONY: deb_local_repo
@@ -346,7 +387,22 @@ rpm_libsgx_headers_pkg:
 
 ifeq ($(CC_BELOW_5_2), 1)
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_ae_tdqe rpm_libsgx_ae_id_enclave rpm_libsgx_tdx_logic rpm_tdx_qgs rpm_tdx_attest
+rpm_psw_pkg: rpm_libsgx_headers_pkg \
+             rpm_libsgx_pce_logic \
+             rpm_libsgx_qe3_logic \
+             rpm_sgx_aesm_service \
+             rpm_libsgx_epid \
+             rpm_libsgx_launch \
+             rpm_libsgx_quote_ex \
+             rpm_libsgx_uae_service \
+             rpm_libsgx_enclave_common \
+             rpm_libsgx_urts \
+             rpm_libsgx_ae_qe3 \
+             rpm_libsgx_ae_tdqe \
+             rpm_libsgx_ae_id_enclave \
+             rpm_libsgx_tdx_logic \
+             rpm_tdx_qgs \
+             rpm_tdx_attest
 else
 .PHONY: rpm_libsgx_dcap_default_qpl
 rpm_libsgx_dcap_default_qpl:
@@ -387,8 +443,36 @@ rpm_sgx_ra_service_pkg:
 	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/sgx-ra-service*rpm ./linux/installer/rpm/sgx-aesm-service/
 	$(CP) external/dcap_source/tools/SGXPlatformRegistration/build/installer/libsgx-ra-*rpm ./linux/installer/rpm/sgx-aesm-service/
 
+.PHONY: rpm_tee_appraisal_tool
+rpm_tee_appraisal_tool:
+	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_tee_appraisal_tool_pkg
+	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/tee-appraisal-tool/tee-appraisal-tool*rpm ./linux/installer/rpm/sgx-aesm-service/
+
 .PHONY: rpm_psw_pkg
-rpm_psw_pkg: rpm_libsgx_headers_pkg rpm_libsgx_pce_logic rpm_libsgx_qe3_logic rpm_sgx_aesm_service rpm_libsgx_epid rpm_libsgx_launch rpm_libsgx_quote_ex rpm_libsgx_uae_service rpm_libsgx_enclave_common rpm_libsgx_urts rpm_libsgx_ae_qe3 rpm_libsgx_ae_id_enclave rpm_libsgx_dcap_default_qpl rpm_libsgx_dcap_pccs rpm_libsgx_dcap_ql rpm_libsgx_ae_qve rpm_sgx_dcap_quote_verify rpm_sgx_pck_id_retrieval_tool_pkg rpm_sgx_ra_service_pkg rpm_libsgx_ae_tdqe rpm_libsgx_tdx_logic rpm_tdx_qgs rpm_tdx_attest
+rpm_psw_pkg: rpm_libsgx_headers_pkg \
+             rpm_libsgx_pce_logic \
+             rpm_libsgx_qe3_logic \
+             rpm_sgx_aesm_service \
+             rpm_libsgx_epid \
+             rpm_libsgx_launch \
+             rpm_libsgx_quote_ex \
+             rpm_libsgx_uae_service \
+             rpm_libsgx_enclave_common \
+             rpm_libsgx_urts \
+             rpm_libsgx_ae_qe3 \
+             rpm_libsgx_ae_id_enclave \
+             rpm_libsgx_dcap_default_qpl \
+             rpm_libsgx_dcap_pccs \
+             rpm_libsgx_dcap_ql \
+             rpm_libsgx_ae_qve \
+             rpm_sgx_dcap_quote_verify \
+             rpm_sgx_pck_id_retrieval_tool_pkg \
+             rpm_sgx_ra_service_pkg \
+             rpm_libsgx_ae_tdqe \
+             rpm_libsgx_tdx_logic \
+             rpm_tdx_qgs \
+             rpm_tdx_attest \
+             rpm_tee_appraisal_tool
 endif
 
 .PHONY: rpm_local_repo
@@ -443,6 +527,7 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-qe3-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-quote-verify/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/sgx-dcap-pccs/clean.sh
+	./external/dcap_source/QuoteGeneration/installer/linux/deb/tee-appraisal-tool/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qve/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qe3/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-id-enclave/clean.sh
@@ -456,6 +541,7 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-qe3-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-quote-verify/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/sgx-dcap-pccs/clean.sh
+	./external/dcap_source/QuoteGeneration/installer/linux/rpm/tee-appraisal-tool/clean.sh
 endif
 
 rebuild:

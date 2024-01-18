@@ -57,12 +57,13 @@ $(BUILD_DIR):
 
 .PHONY: omp_code
 omp_code:
-ifeq ($(shell git rev-parse --is-inside-work-tree 2> /dev/null), true)
-	git submodule update -f --init --recursive --remote -- $(OMP_DIR)
-else
+## Need to enable below code when release
+#ifeq ($(shell git rev-parse --is-inside-work-tree 2> /dev/null), true)
+#	git submodule update -f --init --recursive --remote -- $(OMP_DIR)
+#else
 	$(RM) -rf openmp_code
 	git clone -b svn-tags/RELEASE_801  https://github.com/llvm-mirror/openmp.git --depth 1 $(OMP_DIR)
-endif
+#endif
 
 
 $(LIBOMP): $(CHECK_SOURCE)

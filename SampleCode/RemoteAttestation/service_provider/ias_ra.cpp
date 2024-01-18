@@ -243,8 +243,9 @@ int ias_enroll(
     UNUSED(p_authentication_token);
 
     if (NULL != p_spid) {
-        memcpy_s(p_spid, sizeof(sample_spid_t), &g_sim_spid,
-                 sizeof(sample_spid_t));
+        if(memcpy_s(p_spid, sizeof(sample_spid_t), &g_sim_spid, sizeof(sample_spid_t))) {
+            return(1);
+        }
     } else {
         return(1);
     }

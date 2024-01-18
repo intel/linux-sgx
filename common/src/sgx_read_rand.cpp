@@ -33,7 +33,7 @@
 /* Please add external/rdrand into INCLUDE path and correpondent library to project */
 
 #include <stdint.h>
-#ifndef _TD_MIGRATION
+#ifndef SERVTD_ATTEST
 #include <memory.h>
 #else
 #include <string.h>
@@ -41,7 +41,7 @@
 #include <stdlib.h>
 #include "sgx.h"
 #include "sgx_defs.h"
-#ifndef _TD_MIGRATION
+#ifndef SERVTD_ATTEST
 #include "se_wrapper.h"
 #endif
 #include "rdrand.h"
@@ -90,7 +90,7 @@ extern "C" sgx_status_t SGXAPI sgx_read_rand(uint8_t *buf, size_t size)
         g_is_rdrand_supported = rdrand_cpuid();
     }
     if(!g_is_rdrand_supported){
-#ifndef _TD_MIGRATION
+#ifndef SERVTD_ATTEST
         uint32_t i;
         for(i=0;i<(uint32_t)size;++i){
             buf[i]=(uint8_t)rand();

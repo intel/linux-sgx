@@ -28,18 +28,18 @@
 #
 
 
-FROM quay.io/centos/centos:stream8 as qgs-builder
+FROM quay.io/centos/centos:stream9 as qgs-builder
 
+RUN dnf -y install 'dnf-command(config-manager)'
+RUN dnf config-manager --set-enabled crb
 RUN dnf -y groupinstall 'Development Tools'
-RUN dnf -y install --enablerepo=powertools ocaml ocaml-ocamlbuild wget python3 \
-        openssl-devel libcurl-devel protobuf-devel cmake createrepo yum-utils \
-        dos2unix pkgconf boost-devel protobuf-c-compiler protobuf-c-devel \
-        protobuf-lite-devel
+RUN dnf -y install epel-release epel-next-release ocaml ocaml-ocamlbuild wget python openssl-devel libcurl-devel \
+        protobuf-devel cmake createrepo yum-utils dos2unix pkgconf boost-devel \
+        protobuf-lite-devel perl
 
 # We assume this docker file is invoked with root at the top of linux-sgx repo, see shell scripts for example.
 WORKDIR /linux-sgx
 COPY . .
-RUN alternatives --set python /usr/bin/python3
 RUN make sdk_install_pkg_no_mitigation
 
 WORKDIR /opt/intel
@@ -47,10 +47,11 @@ RUN sh -c 'echo yes | /linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_*.bin'
 
 WORKDIR /linux-sgx
 ENV BUILD_PLATFORM="docker"
+ENV SGX_SDK=/opt/intel/sgxsdk
 RUN make rpm_local_repo
 
 
-FROM quay.io/centos/centos:stream8 as qgs
+FROM quay.io/centos/centos:stream9 as qgs
 
 WORKDIR /installer
 

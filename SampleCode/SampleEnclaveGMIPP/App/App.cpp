@@ -187,11 +187,27 @@ void ocall_print_string(const char *str)
 }
 
 /* ECall functions */
-/* GM SM2 functions */
-int ecall_sm2_functions()
+/* GM SM2 sign and verify functions */
+int ecall_sm2_sign_verify_functions()
 {
 	int rev = -1;
-	ecall_sm2(global_eid, &rev);
+	ecall_sm2_sign_verify(global_eid, &rev);
+	return rev;
+}
+
+/* GM SM2 encrypt and decrypt functions(GM version) */
+int ecall_sm2_encrypt_decrypt_gm_functions()
+{
+	int rev = -1;
+	ecall_sm2_encrypt_decrypt_gm(global_eid, &rev);
+	return rev;
+}
+
+/* GM SM2 encrypt and decrypt functions(IEEE version) */
+int ecall_sm2_encrypt_decrypt_ieee_functions()
+{
+	int rev = -1;
+	ecall_sm2_encrypt_decrypt_ieee(global_eid, &rev);
 	return rev;
 }
 
@@ -235,24 +251,34 @@ int SGX_CDECL main(int argc, char *argv[])
 
 	/* GM SMx functions test */
 	/* SM2 */
-	if (ecall_sm2_functions() == SGX_SUCCESS)
+	if (ecall_sm2_sign_verify_functions() == 0)
 		printf("GM SM2 - sign and verify: PASS\n");
 	else
 		printf("GM SM2 - sign and verify: FAIL\n");
 
+	if (ecall_sm2_encrypt_decrypt_gm_functions() == 0)
+		printf("GM SM2 - encrypt and decrypt(GM version): PASS\n");
+	else
+		printf("GM SM2 - encrypt and decrypt(GM version): FAIL\n");
+
+	if (ecall_sm2_encrypt_decrypt_ieee_functions() == 0)
+		printf("GM SM2 - encrypt and decrypt(IEEE version): PASS\n");
+	else
+		printf("GM SM2 - encrypt and decrypt(IEEE version): FAIL\n");
+
 	/* SM3 */
-	if (ecall_sm3_functions() == SGX_SUCCESS)
+	if (ecall_sm3_functions() == 0)
 		printf("GM SM3 - compute digest of message: PASS\n");
 	else
 		printf("GM SM3 - compute digest of message: FAIL\n");
 
 	/* SM4 */
-	if (ecall_sm4_cbc_functions() == SGX_SUCCESS)
+	if (ecall_sm4_cbc_functions() == 0)
 		printf("GM SM4 - cbc encrypt and decrypt: PASS\n");
 	else
 		printf("GM SM4 - cbc encrypt and decrypt: FAIL\n");
 
-	if (ecall_sm4_ctr_functions () == SGX_SUCCESS)
+	if (ecall_sm4_ctr_functions () == 0)
 		printf("GM SM4 - ctr encrypt and decrypt: PASS\n");
 	else
 		printf("GM SM4 - ctr encrypt and decrypt: FAIL\n");

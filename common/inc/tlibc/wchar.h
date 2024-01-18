@@ -127,6 +127,9 @@ int         _TLIBC_CDECL_ wmemcmp(const wchar_t *, const wchar_t *, size_t);
 wchar_t *   _TLIBC_CDECL_ wmemcpy(wchar_t *, const wchar_t *, size_t);
 wchar_t *   _TLIBC_CDECL_ wmemmove(wchar_t *, const wchar_t *, size_t);
 wchar_t *   _TLIBC_CDECL_ wmemset(wchar_t *, wchar_t, size_t);
+int         _TLIBC_CDECL_ wcsncasecmp(const wchar_t *, const wchar_t *, size_t);
+size_t      _TLIBC_CDECL_ wcsnrtombs(char *__restrict, const wchar_t **__restrict, size_t, size_t, mbstate_t *__restrict);
+size_t      _TLIBC_CDECL_ mbsnrtowcs(wchar_t *__restrict, const char **__restrict, size_t, size_t, mbstate_t *__restrict);
 
 int         _TLIBC_CDECL_ swprintf(wchar_t *, size_t, const wchar_t *, ...);
 int         _TLIBC_CDECL_ vswprintf(wchar_t *, size_t, const wchar_t *, __va_list);

@@ -1,5 +1,5 @@
 diff --git a/include/mbedtls/mbedtls_config.h b/include/mbedtls/mbedtls_config.h
-index 4292b493b..a0fd173f4 100644
+index af0761395..9e37ba855 100644
 --- a/include/mbedtls/mbedtls_config.h
 +++ b/include/mbedtls/mbedtls_config.h
 @@ -89,7 +89,7 @@
@@ -38,7 +38,7 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_PLATFORM_MEMORY
-@@ -264,7 +264,7 @@
+@@ -339,7 +339,7 @@
   *
   * Uncomment to get errors on using deprecated functions and features.
   */
@@ -47,7 +47,7 @@ index 4292b493b..a0fd173f4 100644
  
  /** \} name SECTION: System support */
  
-@@ -477,7 +477,7 @@
+@@ -552,7 +552,7 @@
   *
   * Uncomment to use your own hardware entropy collector.
   */
@@ -56,7 +56,7 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_AES_ROM_TABLES
-@@ -1045,7 +1045,7 @@
+@@ -1192,7 +1192,7 @@
   *
   * Enable functions that use the filesystem.
   */
@@ -65,7 +65,7 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_NO_DEFAULT_ENTROPY_SOURCES
-@@ -1068,7 +1068,7 @@
+@@ -1215,7 +1215,7 @@
   *
   * Uncomment this macro to disable the built-in platform entropy functions.
   */
@@ -74,7 +74,7 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_ENTROPY_FORCE_SHA256
-@@ -1917,7 +1917,7 @@
+@@ -2085,7 +2085,7 @@
   *
   * Uncomment this to enable pthread mutexes.
   */
@@ -83,7 +83,16 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_USE_PSA_CRYPTO
-@@ -2778,7 +2778,7 @@
+@@ -2813,7 +2813,7 @@
+  *
+  * Uncomment to enable the LMS verification algorithm and public key operations.
+  */
+-#define MBEDTLS_LMS_C
++//#define MBEDTLS_LMS_C
+ 
+ /**
+  * \def MBEDTLS_LMS_PRIVATE
+@@ -2964,7 +2964,7 @@
   *
   * This modules adds support for the VIA PadLock on x86.
   */
@@ -92,7 +101,16 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_PEM_PARSE_C
-@@ -2994,7 +2994,7 @@
+@@ -3146,7 +3146,7 @@
+  *           or MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG.
+  *
+  */
+-#define MBEDTLS_PSA_CRYPTO_C
++//#define MBEDTLS_PSA_CRYPTO_C
+ 
+ /**
+  * \def MBEDTLS_PSA_CRYPTO_SE_C
+@@ -3175,7 +3175,7 @@
   *           either MBEDTLS_PSA_ITS_FILE_C or a native implementation of
   *           the PSA ITS interface
   */
@@ -101,7 +119,7 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_PSA_ITS_FILE_C
-@@ -3006,7 +3006,7 @@
+@@ -3187,7 +3187,7 @@
   *
   * Requires: MBEDTLS_FS_IO
   */
@@ -110,16 +128,16 @@ index 4292b493b..a0fd173f4 100644
  
  /**
   * \def MBEDTLS_RIPEMD160_C
-@@ -3312,7 +3312,7 @@
+@@ -3522,7 +3522,7 @@
   *
-  * Enable this layer to allow use of mutexes within mbed TLS
+  * Enable this layer to allow use of mutexes within Mbed TLS
   */
 -//#define MBEDTLS_THREADING_C
 +#define MBEDTLS_THREADING_C
  
  /**
   * \def MBEDTLS_TIMING_C
-@@ -3336,7 +3336,7 @@
+@@ -3546,7 +3546,7 @@
   *
   * Module:  library/timing.c
   */
@@ -129,7 +147,7 @@ index 4292b493b..a0fd173f4 100644
  /**
   * \def MBEDTLS_VERSION_C
 diff --git a/library/aesni.c b/library/aesni.c
-index a23c5b595..db1cf1ccd 100644
+index 5f25a8249..18fbd22bf 100644
 --- a/library/aesni.c
 +++ b/library/aesni.c
 @@ -23,6 +23,7 @@
@@ -140,7 +158,7 @@ index a23c5b595..db1cf1ccd 100644
  
  #if defined(MBEDTLS_AESNI_C)
  
-@@ -48,21 +49,11 @@ int mbedtls_aesni_has_support(unsigned int what)
+@@ -51,21 +52,11 @@ int mbedtls_aesni_has_support(unsigned int what)
      static unsigned int c = 0;
  
      if (!done) {
@@ -168,7 +186,7 @@ index a23c5b595..db1cf1ccd 100644
      }
  
 diff --git a/library/entropy.c b/library/entropy.c
-index e55410c76..0853577ae 100644
+index 00079176a..a04b64836 100644
 --- a/library/entropy.c
 +++ b/library/entropy.c
 @@ -16,6 +16,7 @@
@@ -179,7 +197,7 @@ index e55410c76..0853577ae 100644
  
  #include "common.h"
  
-@@ -548,6 +549,19 @@ static int entropy_dummy_source(void *data, unsigned char *output,
+@@ -504,6 +505,19 @@ static int entropy_dummy_source(void *data, unsigned char *output,
  
  #if defined(MBEDTLS_ENTROPY_HARDWARE_ALT)
  
@@ -200,7 +218,7 @@ index e55410c76..0853577ae 100644
  {
      int ret = 0;
 diff --git a/library/rsa.c b/library/rsa.c
-index 01159dfa2..a1978d106 100644
+index 3c538bf43..4ddf06ba3 100644
 --- a/library/rsa.c
 +++ b/library/rsa.c
 @@ -34,6 +34,7 @@
@@ -211,7 +229,7 @@ index 01159dfa2..a1978d106 100644
  
  #include "common.h"
  
-@@ -2404,15 +2405,12 @@ void mbedtls_rsa_free(mbedtls_rsa_context *ctx)
+@@ -2476,15 +2477,12 @@ void mbedtls_rsa_free(mbedtls_rsa_context *ctx)
  static int myrand(void *rng_state, unsigned char *output, size_t len)
  {
  #if !defined(__OpenBSD__) && !defined(__NetBSD__)

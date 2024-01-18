@@ -100,4 +100,6 @@ elf_map_image (struct elf_image *ei, const char *path)
 
   return 0;
 }
+#else
+int elf_w (valid_object) (struct elf_image *);
 #endif

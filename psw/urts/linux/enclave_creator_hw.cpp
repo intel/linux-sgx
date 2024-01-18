@@ -60,7 +60,8 @@ static uint64_t g_eid = 0x1;
 
 EnclaveCreatorHW::EnclaveCreatorHW():
     m_hdevice(-1),
-    m_sig_registered(false)
+    m_sig_registered(false),
+    m_driver_type(SGX_DRIVER_UNKNOWN)
 {
     se_mutex_init(&m_sig_mutex);
     memset(&m_enclave_elrange, 0, sizeof(m_enclave_elrange));
@@ -289,13 +290,8 @@ bool EnclaveCreatorHW::open_device()
         return false;
     }
 
-    if(driver_type == SGX_DRIVER_OUT_OF_TREE)
-    {
-        return ::open_se_device(driver_type, &m_hdevice);
-    }
-    
-    return true;
-    
+    m_driver_type = driver_type;
+    return ::open_se_device(driver_type, &m_hdevice);
 }
 
 void EnclaveCreatorHW::close_device()
@@ -304,6 +300,7 @@ void EnclaveCreatorHW::close_device()
 
     ::close_se_device(&m_hdevice);
     m_hdevice = -1;
+    m_driver_type = SGX_DRIVER_UNKNOWN;
 }
 
 //EDMM is supported if and only if all of the following requirements are met:
@@ -330,8 +327,9 @@ bool EnclaveCreatorHW::is_EDMM_supported(sgx_enclave_id_t enclave_id)
 
 bool EnclaveCreatorHW::is_driver_compatible()
 {
-    open_device();
-    return is_driver_support_edmm(m_hdevice);
+    if (false == open_device())
+        return false;
+    return is_driver_support_edmm(m_driver_type, m_hdevice);
 }
 
 

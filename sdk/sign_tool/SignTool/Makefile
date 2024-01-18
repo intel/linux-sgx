@@ -31,11 +31,15 @@
 
 include ../../../buildenv.mk
 
-CXXFLAGS += -Werror
-CFLAGS   += -Werror
+FLAGS = -fpie -Werror
 
-CFLAGS += -fpie
-CXXFLAGS += -fpie
+ifdef DEBUG
+FLAGS += -DSE_DEBUG_LEVEL=SE_TRACE_DEBUG
+else
+FLAGS += -DSE_DEBUG_LEVEL=SE_TRACE_ERROR
+endif
+CFLAGS += $(FLAGS)
+CXXFLAGS += $(FLAGS)
 LDFLAGS := -pie $(COMMON_LDFLAGS) -Wno-odr
 
 PREBUILT_OPENSSL_DIR := $(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl

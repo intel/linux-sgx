@@ -82,7 +82,7 @@ all: $(CHECK_SOURCE) $(NEED_PATCH) cbor_trusted cbor_untrusted
 
 prepare_code:
 ifeq ($(shell git rev-parse --is-inside-work-tree 2> /dev/null), true)
-	git submodule update -f --init --recursive -- $(CBOR_SRC)
+	git submodule update -f --init --recursive -- $(CBOR_SRC) && cd $(CBOR_SRC) && git checkout v0.10.2 && cd ..
 else
 	rm -rf $(CBOR_SRC) && git clone -b v0.10.2 https://github.com/PJK/libcbor.git --depth 1 $(CBOR_SRC)
 endif
@@ -95,17 +95,23 @@ apply_patch: $(CHECK_SOURCE)
 	cd $(CBOR_SRC) && git apply ../raw_cbor.patch && cd ..
 	cd $(SGX_CBOR_SRC) && git apply ../sgx_cbor.patch && cd ..
 
-cbor_untrusted: $(NEED_PATCH)
+$(CBOR_SRC)/build: $(NEED_PATCH)
+	@test -d $@ || mkdir -p $@
+
+$(SGX_CBOR_SRC)/build: $(NEED_PATCH)
+	@test -d $@ || mkdir -p $@
+
+cbor_untrusted: $(CBOR_SRC)/build
 	@echo "make and make install"
-	@cd $(CBOR_SRC) && mkdir build && cd build && cmake ../ $(CBOR_CONFIG) && $(MAKE) && make install
+	@cd $(CBOR_SRC)/build && cmake ../ $(CBOR_CONFIG) && $(MAKE) && make install
 	# in case of cbor lib name is installed as lib64 on CentOS
 	if [ -d $(CBOR_LIB64) ]; then \
 		mv $(CBOR_LIB64) $(CBOR_LIB); \
 	fi
 
-cbor_trusted: $(NEED_PATCH)
+cbor_trusted: $(SGX_CBOR_SRC)/build
 	@echo "make and make install"
-	@cd $(SGX_CBOR_SRC) && mkdir build && cd build && cmake ../ $(SGX_CBOR_CONFIG) -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" && $(MAKE) && make install && cd ../..
+	@cd $(SGX_CBOR_SRC)/build && cmake ../ $(SGX_CBOR_CONFIG) -DCMAKE_C_ENCLAVE_FLAGS="$(C_ENCLAVE_FLAGS)" && $(MAKE) && make install && cd ../..
 	#in case of cbor lib is installed as lib64 on CentOS
 	if [ -d $(SGX_CBOR_LIB64) ]; then \
 		mv $(SGX_CBOR_LIB64) $(SGX_CBOR_LIB); \

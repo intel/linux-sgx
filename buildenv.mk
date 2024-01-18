@@ -120,8 +120,8 @@ ifeq ($(BUILD_REF_LE), 1)
     COMMON_FLAGS += -DREF_LE
 endif
 
-ifdef _TD_MIGRATION
-    COMMON_FLAGS += -D_TD_MIGRATION
+ifdef SERVTD_ATTEST
+    COMMON_FLAGS += -DSERVTD_ATTEST
 endif
 
 COMMON_FLAGS += -ffunction-sections -fdata-sections

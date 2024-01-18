@@ -41,7 +41,9 @@ extern "C" {
 
 int printf(const char* fmt, ...);
 
-int ecall_sm2(void);
+int ecall_sm2_sign_verify(void);
+int ecall_sm2_encrypt_decrypt_gm(void);
+int ecall_sm2_encrypt_decrypt_ieee(void);
 int ecall_sm3(void);
 int ecall_sm4_cbc(void);
 int ecall_sm4_ctr(void);

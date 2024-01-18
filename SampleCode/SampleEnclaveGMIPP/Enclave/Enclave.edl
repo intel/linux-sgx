@@ -39,7 +39,9 @@ enclave {
 	 *  [*]: implies to import all functions.
 	 */
 	trusted {
-		public int ecall_sm2(void);
+		public int ecall_sm2_sign_verify(void);
+		public int ecall_sm2_encrypt_decrypt_gm(void);
+		public int ecall_sm2_encrypt_decrypt_ieee(void);
 		public int ecall_sm3(void);
 		public int ecall_sm4_cbc(void);
 		public int ecall_sm4_ctr(void);

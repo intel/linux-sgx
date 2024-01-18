@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #ifdef US_PLATFORM_POSIX
 #  include <dirent.h>
