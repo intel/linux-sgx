@@ -129,6 +129,7 @@ typedef struct _exit_info_t
 #define SE_VECTOR_MF    16
 #define SE_VECTOR_AC    17
 #define SE_VECTOR_XM    19
+#define SE_VECTOR_CP    21
 
 #define SSA_AEXNOTIFY_MASK 0x1U     /* Only set the first bit */
 
