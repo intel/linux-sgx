@@ -45,11 +45,15 @@
 DECLARE_LOCAL_FUNC get_enclave_base
     lea_pic __ImageBase, %xax
     ret
+    .cfi_endproc
+
 DECLARE_LOCAL_FUNC get_enclave_state
     lea_pic g_enclave_state, %xcx
     xor     %xax, %xax
     movl    (%xcx), %eax
     ret
+    .cfi_endproc
+
 DECLARE_LOCAL_FUNC set_enclave_state
     lea_pic g_enclave_state, %xax
 #ifdef LINUX32
@@ -57,6 +61,7 @@ DECLARE_LOCAL_FUNC set_enclave_state
 #endif
     movl    %edi, (%xax)
     ret
+    .cfi_endproc
 
 DECLARE_LOCAL_FUNC lock_enclave
     lea_pic g_enclave_state, %xdx
@@ -66,6 +71,7 @@ DECLARE_LOCAL_FUNC lock_enclave
     mov     $ENCLAVE_INIT_IN_PROGRESS, %ecx     /* if (g_global_data.enclave_state == ENCLAVE_INIT_NOT_STARTED) */
     lock cmpxchgl %ecx, (%xdx)                  /*   g_global_data.enclave_state == ENCLAVE_INIT_IN_PROGRESS */
     ret                                         /* xax: the initial value of enclave state */
+    .cfi_endproc
 
 /*
  * ---------------------------------------------------------------------
@@ -77,6 +83,7 @@ DECLARE_LOCAL_FUNC lock_enclave
 DECLARE_LOCAL_FUNC get_thread_data
     READ_TD_DATA self_addr
     ret
+    .cfi_endproc
 
 /*
  * ---------------------------------------------------------------------
@@ -88,6 +95,7 @@ DECLARE_LOCAL_FUNC get_thread_data
 DECLARE_LOCAL_FUNC get_stack_guard
     READ_TD_DATA stack_guard
     ret
+    .cfi_endproc
 
 /*
  * ---------------------------------------------------------------------
@@ -113,7 +121,6 @@ DECLARE_GLOBAL_FUNC enclave_entry
  *      No need to use any register during the dispatch
  * ----------------------------------------------------------------------
  */
-    .cfi_startproc
 
     /* Clear unused general registers */
     xor     %xdx, %xdx
@@ -446,6 +453,7 @@ DECLARE_LOCAL_FUNC do_ocall
     cld                         /* DF = 0 */
 
     ENCLU
+    .cfi_endproc
 
 /*
  * ------------------------------------------------------------------
@@ -454,7 +462,6 @@ DECLARE_LOCAL_FUNC do_ocall
  * ------------------------------------------------------------------
  */
 DECLARE_LOCAL_FUNC __morestack
-    .cfi_startproc
     push %xbp
     .cfi_def_cfa_offset     2*SE_WORDSIZE
     .cfi_offset             xbp,-2*SE_WORDSIZE
@@ -518,6 +525,7 @@ DECLARE_GLOBAL_FUNC asm_oret
     ret
     /* should not come here */
     ud2
+    .cfi_endproc
 
 /*
  * ------------------------------------------------------------------------
@@ -625,6 +633,7 @@ DECLARE_LOCAL_FUNC do_rdrand
     movl    %eax, (%xcx)
     mov     $1, %xax
     ret
+    .cfi_endproc
 
 /*
  * -------------------------------------------------------------------------
@@ -635,6 +644,7 @@ DECLARE_LOCAL_FUNC abort
     lea_pic g_enclave_state, %xax
     movl    $ENCLAVE_CRASHED, (%xax)
     ud2
+    .cfi_endproc
 
 /*
  * -------------------------------------------------------------------------
@@ -692,6 +702,7 @@ DECLARE_LOCAL_FUNC continue_execution
     xchg    %xax, %xsp
 
     ret     $(RED_ZONE_SIZE)           /* pop xip and red zone (if any) */
+    .cfi_endproc
 
 /* 
  * -------------------------------------------------------------------------
@@ -704,4 +715,5 @@ DECLARE_LOCAL_FUNC second_phase
     mov     $SE_EDECCSSA, %xax
     enclu                               /* DECCSSA */
     jmp     *%xdx
+    .cfi_endproc
     
