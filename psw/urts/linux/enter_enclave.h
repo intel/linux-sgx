@@ -53,7 +53,6 @@ lea     \symbol, \reg
 /* macro for enter_enclave
 */
 .macro EENTER_PROLOG
-.cfi_startproc
 push    %xbp
 .cfi_def_cfa_offset   2 * SE_WORDSIZE
 .cfi_offset           xbp, -2 * SE_WORDSIZE
