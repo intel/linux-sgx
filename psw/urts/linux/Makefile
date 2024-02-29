@@ -142,7 +142,7 @@ $(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) ittn
 	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@ $(LIB) -o $@ $(INTERNAL_OBJ) $(BUILD_DIR)/.sgx_enclave_common/*.o $(INTERNAL_LDFLAGS)
 	@$(RM) -r $(BUILD_DIR)/.sgx_enclave_common
 
-$(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) ittnotify
+$(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) ittnotify
 	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$(LIBURTS_MAJOR) $(LIB) -o $@ $(URTS_OBJ) $(LDFLAGS)
 
 $(CPP_OBJ): %.o: %.cpp
