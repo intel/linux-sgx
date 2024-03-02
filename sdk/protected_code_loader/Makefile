@@ -34,16 +34,16 @@
 include ../../buildenv.mk
 
 ifndef VERBOSE
-	PCLVERBOSE := @
+    PCLVERBOSE := @
 else
-	PCLVERBOSE :=
+    PCLVERBOSE :=
 endif
 
 # optimize bug on GCC 13.3.2, we need to disable optimize when build with GCC 13.3.2
 CC_NO_LESS_THAN_13 := $(shell expr $(CC_VERSION) \>\= "13")
 
 ifeq ($(ARCH), x86)
-	$(error x86 build is not supported, only x64!!)
+    $(error x86 build is not supported, only x64!!)
 endif
 
 # output dir for simulation build objects
