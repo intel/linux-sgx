@@ -39,9 +39,9 @@ CPPFLAGS += -I$(COMMON_DIR)/inc/           \
 
 CFLAGS += -W -Wall -Werror -D_GNU_SOURCE -fpic
 ifeq ($(CC_BELOW_4_9), 1)
-	CFLAGS += -fstack-protector
+    CFLAGS += -fstack-protector
 else
-	CFLAGS += -fstack-protector-strong
+    CFLAGS += -fstack-protector-strong
 endif
 LDLIBS += -ldl
 
