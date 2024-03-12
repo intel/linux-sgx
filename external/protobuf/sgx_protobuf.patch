@@ -855,6 +855,7 @@ index 000000000..ffebb52dc
 +set(stubs_test_files
 +  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/common_unittest.cc
 +)
+
 diff --git a/src/google/protobuf/compiler/parser.cc b/src/google/protobuf/compiler/parser.cc
 index 867a34f4a..c041f45ae 100644
 --- a/src/google/protobuf/compiler/parser.cc

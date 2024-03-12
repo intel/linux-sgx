@@ -75,6 +75,9 @@ get_full_version = $(shell awk '$$2 ~ /$1/ { print substr($$3, 2, length($$3) - 
 #---------------------------------------------------------------------------------------
 get_major_version = $(word 1,$(subst ., ,$(call get_full_version,$1)))
 
+# If the value of _FORTIFY_SOURCE is greater than 2, use the value, else use 2.
+FORTIFY_SOURCE_VAL := $(lastword $(sort $(word 2,$(subst =, ,$(filter -D_FORTIFY_SOURCE=%,$(CFLAGS)))) 2))
+
 
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
@@ -120,7 +123,7 @@ ifdef DEBUG
     COMMON_FLAGS += -O0 -ggdb -DDEBUG -UNDEBUG
     COMMON_FLAGS += -DSE_DEBUG_LEVEL=SE_TRACE_DEBUG
 else
-    COMMON_FLAGS += -O2 -D_FORTIFY_SOURCE=2 -UDEBUG -DNDEBUG
+    COMMON_FLAGS += -O2 -D_FORTIFY_SOURCE=$(FORTIFY_SOURCE_VAL) -UDEBUG -DNDEBUG
 endif
 
 ifdef SE_SIM
