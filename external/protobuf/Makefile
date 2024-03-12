@@ -78,11 +78,11 @@ $(LIBPB): $(CHECK_SOURCE)
 ifeq ("$(wildcard $(PB_DIR)/cmake/libsgx_protobuf.cmake)", "")
 	cd $(PB_DIR) && git apply ../sgx_protobuf.patch&& cd ..
 endif
-	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_TESTS=FALSE -DSGX=TRUE ../../cmake && make libprotobuf
+	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_TESTS=FALSE -DSGX=TRUE -DFORTIFY_SOURCE_VAL=$(FORTIFY_SOURCE_VAL) ../../cmake && make libprotobuf
 
 ifeq ($(BUILD_PROTOC), 1)
 $(PROTOCPB): $(CHECK_SOURCE)
-	$(MKDIR) protobuf_code/final_protocPB/build && cd protobuf_code/final_protocPB/build && cmake -Dprotobuf_BUILD_TESTS=FALSE -DSGX=FALSE -DCMAKE_SKIP_RPATH=TRUE ../../cmake && make protoc
+	$(MKDIR) protobuf_code/final_protocPB/build && cd protobuf_code/final_protocPB/build && cmake -Dprotobuf_BUILD_TESTS=FALSE -DSGX=FALSE -DCMAKE_SKIP_RPATH=TRUE -DFORTIFY_SOURCE_VAL=$(FORTIFY_SOURCE_VAL) ../../cmake && make protoc
 endif
 
 .PHONY: clean
