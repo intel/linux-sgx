@@ -243,7 +243,7 @@ index c86d6628f..7089948ed 100644
    ${protobuf_source_dir}/src/google/protobuf/compiler/main.cc
  )
  
-+string(APPEND CMAKE_CXX_FLAGS " -D_FORTIFY_SOURCE=2")
++string(APPEND CMAKE_CXX_FLAGS " -D_FORTIFY_SOURCE=${FORTIFY_SOURCE_VAL}")
 +
  if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
  set(protoc_rc_files

@@ -48,7 +48,7 @@ LDLIBS += -ldl
 ifdef DEBUG
     CFLAGS += -g -DSE_DEBUG=1 -ffunction-sections -fdata-sections
 else
-    CFLAGS += -O2 -D_FORTIFY_SOURCE=2 -ffunction-sections -fdata-sections
+    CFLAGS += -O2 -D_FORTIFY_SOURCE=$(FORTIFY_SOURCE_VAL) -ffunction-sections -fdata-sections
 endif
 
 OBJ1 := se_memory.o se_trace.o
