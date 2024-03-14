@@ -32,11 +32,7 @@
 TOP_DIR = ../../../..
 include $(TOP_DIR)/buildenv.mk
 
-get_version_name = $(addsuffix _VERSION,$(shell echo $(word 2,$(subst _, ,$1)) | tr a-z A-Z))
-LAUNCH_VERSION:= $(shell awk '$$2 ~ /LAUNCH_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-PLATFORM_VERSION:= $(shell awk '$$2 ~ /PLATFORM_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-EPID_VERSION:= $(shell awk '$$2 ~ /EPID_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-QUOTE_EX_VERSION:= $(shell awk '$$2 ~ /QUOTE_EX_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+get_version_name = $(addsuffix _VERSION,$(shell echo $(subst _deploy,,$(subst libsgx_,,$(basename $1))) | tr a-z A-Z))
 
 PREBUILT_OPENSSL_DIR := $(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl
 CRYPTO_LIB := -L$(PREBUILT_OPENSSL_DIR)/lib/linux64 -lcrypto
