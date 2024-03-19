@@ -52,6 +52,7 @@ DECLARE_GLOBAL_FUNC set_xsave_info
     lea_symbol g_clean_ymm, %xax
     movl    %edx, (%xax)
     ret
+    .cfi_endproc
 
 DECLARE_GLOBAL_FUNC vdso_sgx_enter_enclave_wrapper
 EENTER_PROLOG
@@ -169,14 +170,17 @@ EENTER_PROLOG
 DECLARE_GLOBAL_FUNC get_aep
     lea_pic     .Lasync_exit_pointer, %xax
     ret
+    .cfi_endproc
 
 DECLARE_GLOBAL_FUNC get_eenterp
     lea_pic .Leenter_inst, %xax
     ret
+    .cfi_endproc
 
 DECLARE_GLOBAL_FUNC get_eretp
     lea_pic .Leret, %xax
     ret
+    .cfi_endproc
 
 /*
  * function stack_sticker is the wrapper of ocall,
@@ -208,7 +212,6 @@ DECLARE_GLOBAL_FUNC stack_sticker
 .hidden push_ocall_frame
 .type pop_ocall_frame,@function
 .hidden pop_ocall_frame
-.cfi_startproc
     push %xbp
 .cfi_def_cfa_offset     2*SE_WORDSIZE
 .cfi_offset             xbp,-2*SE_WORDSIZE
@@ -317,6 +320,7 @@ DECLARE_GLOBAL_FUNC sgx_debug_load_state_add_element
     movq %rdi, (%rsi)
 #endif
     ret
+    .cfi_endproc
 
 /*
  * void sgx_debug_unload_state_remove_element(debug_enclave_info_t* enclave_info, debug_enclave_info_t** pre_enclave_info, debug_enclave_info_t* next_enclave_info)
@@ -332,6 +336,7 @@ DECLARE_GLOBAL_FUNC sgx_debug_unload_state_remove_element
     movq %rdx, (%rsi)
 #endif
     ret
+    .cfi_endproc
 
 /* We do not need executable stack.*/   
 .section        .note.GNU-stack,"",@progbits

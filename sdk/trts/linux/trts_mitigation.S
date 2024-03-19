@@ -367,6 +367,7 @@ __ct_mitigation_end:
 .global __ct_mitigation_ret
 __ct_mitigation_ret:
     ret
+    .cfi_endproc
 
 .ct_aexnotify_end:
 
