@@ -34,9 +34,6 @@ include $(TOP_DIR)/buildenv.mk
 
 get_version_name = $(addsuffix _VERSION,$(shell echo $(subst _deploy,,$(subst libsgx_,,$(basename $1))) | tr a-z A-Z))
 
-PREBUILT_OPENSSL_DIR := $(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl
-CRYPTO_LIB := -L$(PREBUILT_OPENSSL_DIR)/lib/linux64 -lcrypto
-
 INCLUDES := -I..                                            \
             -I$(COMMON_DIR)/inc                             \
             -I$(COMMON_DIR)/inc/internal                    \
@@ -48,7 +45,7 @@ INCLUDES := -I..                                            \
             -I$(LINUX_PSW_DIR)/ae/inc                       \
             -I$(LINUX_PSW_DIR)/ae/inc/internal              \
             -I$(LINUX_PSW_DIR)/ae/common                    \
-            -I$(PREBUILT_OPENSSL_DIR)/inc
+            $(CRYPTO_INC)
 
 
 CXXFLAGS += -Wall -fPIC $(INCLUDES) -Werror -g $(CET_FLAGS)
