@@ -107,7 +107,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   ```
   * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 24.04:
   ```
-    $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python-is-python3 libssl-dev git cmake perl
+    $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf pkgconf libtool wget python-is-python3 libssl-dev git cmake perl
   ```
   * On Red Hat Enterprise Linux 9.2:
   ```

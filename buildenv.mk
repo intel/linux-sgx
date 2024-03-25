@@ -78,6 +78,16 @@ get_major_version = $(word 1,$(subst ., ,$(call get_full_version,$1)))
 # If the value of _FORTIFY_SOURCE is greater than 2, use the value, else use 2.
 FORTIFY_SOURCE_VAL := $(lastword $(sort $(word 2,$(subst =, ,$(filter -D_FORTIFY_SOURCE=%,$(CFLAGS)))) 2))
 
+# If USE_PREBUILT_OPENSSL not equal 0, link prebuilt openssl, else link system openssl
+USE_PREBUILT_OPENSSL ?= 0
+ifeq ($(USE_PREBUILT_OPENSSL), 0)
+    CRYPTO_LIB = $(shell pkg-config --libs libcrypto 2>/dev/null)
+    CRYPTO_INC = $(shell pkg-config --cflags libcrypto 2>/dev/null)
+else
+    CRYPTO_LIB = -L$(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl/lib/linux64 -lcrypto
+    CRYPTO_INC = -I$(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl/inc
+endif
+
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
 LINUX_PSW_DIR         := $(ROOT_DIR)/psw
