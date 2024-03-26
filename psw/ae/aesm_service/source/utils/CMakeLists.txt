@@ -35,7 +35,7 @@ add_library(utils SHARED ${_srcs}
     "../../../../../common/src/sgx_memset_s.cpp"
     "../../../../../common/src/crypto_cmac_128.cpp")
 
-if(NOT "${USE_PREBUILT_OPENSSL}" STREQUAL "1")
+if(NOT "${USE_PREBUILT_OPENSSL}" STREQUAL "0")
     set(CRYPTO_INC ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/inc)
     set(CRYPTO_LIB ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/lib/linux64/libcrypto.a)
 else()
