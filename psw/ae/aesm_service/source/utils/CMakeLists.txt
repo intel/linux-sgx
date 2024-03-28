@@ -35,6 +35,13 @@ add_library(utils SHARED ${_srcs}
     "../../../../../common/src/sgx_memset_s.cpp"
     "../../../../../common/src/crypto_cmac_128.cpp")
 
+if(NOT "${USE_PREBUILT_OPENSSL}" STREQUAL "0")
+    set(CRYPTO_INC ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/inc)
+    set(CRYPTO_LIB ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/lib/linux64/libcrypto.a)
+else()
+    set(CRYPTO_LIB crypto)
+endif()
+
 target_include_directories(utils PRIVATE
     ${PROJECT_SOURCE_DIR}/common
     ${PROJECT_SOURCE_DIR}/common/oal
@@ -45,7 +52,7 @@ target_include_directories(utils PRIVATE
     ${PROJECT_SOURCE_DIR}/../../../../external/epid-sdk
     ${PROJECT_SOURCE_DIR}/../../../../external/rdrand
     ${PROJECT_SOURCE_DIR}/../../data/constants/linux
-    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/inc
+    ${CRYPTO_INC}
 )
 
 target_compile_definitions(utils PRIVATE
@@ -55,7 +62,7 @@ target_compile_definitions(utils PRIVATE
 set_property(TARGET utils APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")
 
 target_link_libraries(utils
-    ${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/prebuilt/openssl/lib/linux64/libcrypto.a
+    ${CRYPTO_LIB}
     oal
     ${CMAKE_SOURCE_DIR}/../../../../external/rdrand/src/librdrand.a
 )

@@ -42,9 +42,6 @@ CFLAGS += $(FLAGS)
 CXXFLAGS += $(FLAGS)
 LDFLAGS := -pie $(COMMON_LDFLAGS) -Wno-odr
 
-PREBUILT_OPENSSL_DIR := $(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl
-CRYPTO_LIB := -L$(PREBUILT_OPENSSL_DIR)/lib/linux64 -lcrypto
-
 INC += $(ADDED_INC)
 INC +=  -I$(COMMON_DIR)/inc                         \
         -I$(COMMON_DIR)/inc/internal                \
@@ -54,7 +51,7 @@ INC +=  -I$(COMMON_DIR)/inc                         \
         -I$(LINUX_PSW_DIR)/urts/linux               \
         -I$(LINUX_EXTERNAL_DIR)/tinyxml2            \
         -I$(LINUX_PSW_DIR)/urts/parser              \
-        -I$(PREBUILT_OPENSSL_DIR)/inc
+        $(CRYPTO_INC)
 
 DIR1 := $(LINUX_EXTERNAL_DIR)/tinyxml2/
 DIR2 := $(COMMON_DIR)/src/

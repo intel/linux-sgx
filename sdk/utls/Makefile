@@ -34,7 +34,6 @@ include $(TOP_DIR)/buildenv.mk
 
 CERT_UTIL_DIR   := ../ttls
 SGX_QV_PATH ?= ../../external/dcap_source/QuoteVerification
-PREBUILD_OPENSSL_PATH ?= $(SGX_QV_PATH)/../prebuilt/openssl
 CBOR_PATH ?= $(LINUX_EXTERNAL_DIR)/cbor
 LIBCBOR_PATH := $(CBOR_PATH)/untrusted/lib
 CBOR_INCLUDE := $(CBOR_PATH)/untrusted/include
@@ -43,7 +42,7 @@ INCLUDE += -I.
 INCLUDE += -I$(COMMON_DIR)              \
            -I$(COMMON_DIR)/inc          \
            -I$(COMMON_DIR)/inc/internal \
-           -I$(PREBUILD_OPENSSL_PATH)/inc \
+           $(CRYPTO_INC) \
            -I$(CBOR_PATH)/untrusted/include \
            -I$(CERT_UTIL_DIR) \
            -I$(SGX_QV_PATH)/QvE/Include \
