@@ -79,7 +79,7 @@ get_major_version = $(word 1,$(subst ., ,$(call get_full_version,$1)))
 FORTIFY_SOURCE_VAL := $(lastword $(sort $(word 2,$(subst =, ,$(filter -D_FORTIFY_SOURCE=%,$(CFLAGS)))) 2))
 
 # If USE_PREBUILT_OPENSSL not equal 0, link prebuilt openssl, else link system openssl
-USE_PREBUILT_OPENSSL := 0
+USE_PREBUILT_OPENSSL ?= 0
 ifeq ($(USE_PREBUILT_OPENSSL), 0)
     CRYPTO_LIB = $(shell pkg-config --libs libcrypto 2>/dev/null)
     CRYPTO_INC = $(shell pkg-config --cflags libcrypto 2>/dev/null)
