@@ -89,7 +89,7 @@ else
 	$(RM) -rf $(IPP_SOURCE)
 	git clone -b ippcp_2021.7 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
 endif
-	cd $(IPP_SOURCE) && git apply ../0001-IPP-crypto-for-SGX.patch
+	cd $(IPP_SOURCE) && git apply ../0001-Add-Wno-stringop-overflow.patch
 	mkdir -p $(IPP_SOURCE)/build
 
 .PHONY: clean
