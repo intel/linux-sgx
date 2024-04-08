@@ -63,6 +63,7 @@ preparation:
 	cd external/cbor/libcbor && git apply ../raw_cbor.patch >/dev/null 2>&1 || git apply ../raw_cbor.patch --check -R
 	cd external/cbor/sgx_libcbor && git apply ../sgx_cbor.patch >/dev/null 2>&1 || git apply ../sgx_cbor.patch --check -R
 	cd external/ippcp_internal/ipp-crypto && git apply ../0001-IPP-crypto-for-SGX.patch > /dev/null 2>&1 || git apply ../0001-IPP-crypto-for-SGX.patch --check -R
+	cd external/ippcp_internal/ipp-crypto && git apply ../0001-Add-Wno-stringop-overflow.patch > /dev/null 2>&1 || git apply ../0001-Add-Wno-stringop-overflow.patch --check -R
 	cd external/ippcp_internal/ipp-crypto && mkdir -p build
 	./download_prebuilt.sh
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
