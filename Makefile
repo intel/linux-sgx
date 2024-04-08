@@ -30,7 +30,7 @@
 #
 
 include buildenv.mk
-.PHONY: all preparation psw sdk clean rebuild sdk_install_pkg psw_install_pkg tdx
+.PHONY: all tips preparation psw sdk sdk_no_mitigation clean rebuild tdx servtd_attest servtd_attest_preparation ipp sdk_install_pkg_no_mitigation sdk_install_pkg sdk_install_pkg_from_source psw_install_pkg 
 
 all: tips
 
@@ -60,6 +60,8 @@ preparation:
 	cd external/cbor && cp -r libcbor sgx_libcbor
 	cd external/cbor/libcbor && git apply ../raw_cbor.patch >/dev/null 2>&1 || git apply ../raw_cbor.patch --check -R
 	cd external/cbor/sgx_libcbor && git apply ../sgx_cbor.patch >/dev/null 2>&1 || git apply ../sgx_cbor.patch --check -R
+	cd external/ippcp_internal/ipp-crypto && git apply ../0001-Add-Wno-stringop-overflow.patch > /dev/null 2>&1 || git apply ../0001-Add-Wno-stringop-overflow.patch --check -R
+	cd external/ippcp_internal/ipp-crypto && mkdir -p build
 	./download_prebuilt.sh
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
 
@@ -101,11 +103,24 @@ servtd_attest_preparation:
 	./external/sgx-emm/create_symlink.sh
 	./external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
 
+ipp:
+	$(MAKE) -C external/ippcp_internal/ clean
+	$(MAKE) -C external/ippcp_internal/ MITIGATION-CVE-2020-0551=LOAD
+	$(MAKE) -C external/ippcp_internal/ clean
+	$(MAKE) -C external/ippcp_internal/ MITIGATION-CVE-2020-0551=CF
+	$(MAKE) -C external/ippcp_internal/ clean
+	$(MAKE) -C external/ippcp_internal/
+
 # Generate SE SDK Install package
 sdk_install_pkg_no_mitigation: sdk_no_mitigation
 	./linux/installer/bin/build-installpkg.sh sdk
 
 sdk_install_pkg: sdk
+	./linux/installer/bin/build-installpkg.sh sdk cve-2020-0551
+
+sdk_install_pkg_from_source:
+	$(MAKE) ipp
+	$(MAKE) sdk
 	./linux/installer/bin/build-installpkg.sh sdk cve-2020-0551
 
 psw_install_pkg: psw
@@ -507,6 +522,7 @@ clean:
 	./linux/installer/rpm/libsgx-headers/clean.sh
 	./linux/installer/rpm/sdk/clean.sh
 	./linux/installer/common/local_repo_builder/local_repo_builder.sh rpm clean
+	$(MAKE) -C external/ippcp_internal/ clean
 ifeq ("$(shell test -f external/dcap_source/QuoteVerification/dcap_tvl/Makefile && echo TVL Makefile exists)", "TVL Makefile exists")
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl MITIGATION-CVE-2020-0551=LOAD clean
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl MITIGATION-CVE-2020-0551=CF clean

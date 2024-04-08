@@ -1,0 +1,26 @@
+From 5f2cfce987f2893dddc3caf3f0f021c61c87f430 Mon Sep 17 00:00:00 2001
+From: "Zhang, Lili Z" <lili.z.zhang@intel.com>
+Date: Tue, 9 Apr 2024 23:27:26 +0800
+Subject: [PATCH] Add -Wno-stringop-overflow
+
+Signed-off-by: Zhang, Lili Z <lili.z.zhang@intel.com>
+---
+ sources/cmake/linux/GNU8.2.0.cmake | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sources/cmake/linux/GNU8.2.0.cmake b/sources/cmake/linux/GNU8.2.0.cmake
+index 69cec786..fea92bc1 100644
+--- a/sources/cmake/linux/GNU8.2.0.cmake
++++ b/sources/cmake/linux/GNU8.2.0.cmake
+@@ -97,7 +97,7 @@ if(${ARCH} MATCHES "ia32")
+ endif(${ARCH} MATCHES "ia32")
+ 
+ # Optimization level = 3, no-debug definition (turns off asserts), warnings=errors
+-set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Werror")
++set (CMAKE_C_FLAGS_RELEASE " -O3 -DNDEBUG -Werror -Wno-stringop-overflow")
+ 
+ set(w7_opt "${w7_opt} -march=pentium4 -msse2")
+ set(s8_opt "${s8_opt} -march=core2 -mssse3")
+-- 
+2.25.1
+
