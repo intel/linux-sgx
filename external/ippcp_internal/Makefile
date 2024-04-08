@@ -92,6 +92,7 @@ else
 	git clone -b ipp-crypto_2021_12_1 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
 endif
 	cd $(IPP_SOURCE) && git apply ../0001-IPP-crypto-for-SGX.patch
+	cd $(IPP_SOURCE) && git apply ../0001-Add-Wno-stringop-overflow.patch
 	mkdir -p $(IPP_SOURCE)/build
 
 .PHONY: clean
