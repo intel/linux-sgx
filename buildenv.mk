@@ -222,6 +222,7 @@ endif
 ifneq ($(origin NIX_STORE), environment)
 BINUTILS_DIR ?= /usr/local/bin
 EXT_BINUTILS_DIR = $(ROOT_DIR)/external/toolset/$(DISTR_ID)$(DISTR_VER)
+ENC_LDFLAGS = -B$(BINUTILS_DIR)
 # enable -B option for all the build
 MITIGATION_CFLAGS += -B$(BINUTILS_DIR)
 endif
@@ -269,7 +270,7 @@ endif
 # as `global' in the LD version script.
 ENCLAVE_CFLAGS   = -ffreestanding -nostdinc -fvisibility=hidden -fpie -fno-strict-overflow -fno-delete-null-pointer-checks
 ENCLAVE_CXXFLAGS = $(ENCLAVE_CFLAGS) -nostdinc++
-ENCLAVE_LDFLAGS  = -B$(BINUTILS_DIR) $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
+ENCLAVE_LDFLAGS  = $(ENC_LDFLAGS) $(COMMON_LDFLAGS) -Wl,-Bstatic -Wl,-Bsymbolic -Wl,--no-undefined \
                    -Wl,-pie,-eenclave_entry -Wl,--export-dynamic  \
                    -Wl,--defsym,__ImageBase=0
 

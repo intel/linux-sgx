@@ -54,26 +54,23 @@
 extern "C" {
 #endif
 
-IPPAPI(IppStatus, k1_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, l9_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, y8_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, k1_ippsXMSSSetPublicKeyState, (IppsXMSSAlgo OIDAlgo, const Ipp8u* pRoot, const Ipp8u* pSeed, IppsXMSSPublicKeyState* pState))
+IPPAPI(IppStatus, l9_ippsXMSSSetPublicKeyState, (IppsXMSSAlgo OIDAlgo, const Ipp8u* pRoot, const Ipp8u* pSeed, IppsXMSSPublicKeyState* pState))
+IPPAPI(IppStatus, y8_ippsXMSSSetPublicKeyState, (IppsXMSSAlgo OIDAlgo, const Ipp8u* pRoot, const Ipp8u* pSeed, IppsXMSSPublicKeyState* pState))
 
-IPPFUN(IppStatus, sgx_disp_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus, sgx_disp_ippsXMSSSetPublicKeyState, (IppsXMSSAlgo OIDAlgo, const Ipp8u* pRoot, const Ipp8u* pSeed, IppsXMSSPublicKeyState* pState))
 {
     Ipp64u _features;
     _features = ippcpGetEnabledCpuFeatures();
 
-#if 0
-    // Temporarily disable K1 arch for ECDSA signing bug
     if( AVX3I_FEATURES  == ( _features & AVX3I_FEATURES  )) {
-        return k1_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return k1_ippsXMSSSetPublicKeyState( OIDAlgo, pRoot, pSeed, pState );
     } else 
-#endif
     if( ippCPUID_AVX2  == ( _features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return l9_ippsXMSSSetPublicKeyState( OIDAlgo, pRoot, pSeed, pState );
     } else 
     if( ippCPUID_SSE42  == ( _features & ippCPUID_SSE42  )) {
-        return y8_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return y8_ippsXMSSSetPublicKeyState( OIDAlgo, pRoot, pSeed, pState );
     } else 
         return ippStsCpuNotSupportedErr;
 }

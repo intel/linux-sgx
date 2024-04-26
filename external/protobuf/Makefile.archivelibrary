@@ -1,0 +1,12 @@
+PB_DIR = protobuf_code
+SOURCE_EXTENSION = .o
+DEST_LIBRARY_NAME = libsgx_protobuf.a
+
+# Find all ".o" files and create a list
+OBJECT_FILES := $(shell find $(PB_DIR)/final_tlibPB/build/ -type f -name "*$(SOURCE_EXTENSION)")
+OBJECTS := $(sort $(OBJECT_FILES))
+
+$(DEST_LIBRARY_NAME): $(OBJECTS)
+	ar -rc $(PB_DIR)/final_tlibPB/build/$(DEST_LIBRARY_NAME) $^
+
+

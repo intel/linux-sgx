@@ -54,26 +54,23 @@
 extern "C" {
 #endif
 
-IPPAPI(IppStatus, k1_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, l9_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, y8_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, k1_ippsXMSSVerify, (const Ipp8u* pMsg, const Ipp32s msgLen, const IppsXMSSSignatureState* pSign, int* pIsSignValid, const IppsXMSSPublicKeyState* pKey, Ipp8u* pBuffer))
+IPPAPI(IppStatus, l9_ippsXMSSVerify, (const Ipp8u* pMsg, const Ipp32s msgLen, const IppsXMSSSignatureState* pSign, int* pIsSignValid, const IppsXMSSPublicKeyState* pKey, Ipp8u* pBuffer))
+IPPAPI(IppStatus, y8_ippsXMSSVerify, (const Ipp8u* pMsg, const Ipp32s msgLen, const IppsXMSSSignatureState* pSign, int* pIsSignValid, const IppsXMSSPublicKeyState* pKey, Ipp8u* pBuffer))
 
-IPPFUN(IppStatus, sgx_disp_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus, sgx_disp_ippsXMSSVerify, (const Ipp8u* pMsg, const Ipp32s msgLen, const IppsXMSSSignatureState* pSign, int* pIsSignValid, const IppsXMSSPublicKeyState* pKey, Ipp8u* pBuffer))
 {
     Ipp64u _features;
     _features = ippcpGetEnabledCpuFeatures();
 
-#if 0
-    // Temporarily disable K1 arch for ECDSA signing bug
     if( AVX3I_FEATURES  == ( _features & AVX3I_FEATURES  )) {
-        return k1_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return k1_ippsXMSSVerify( pMsg, msgLen, pSign, pIsSignValid, pKey, pBuffer );
     } else 
-#endif
     if( ippCPUID_AVX2  == ( _features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return l9_ippsXMSSVerify( pMsg, msgLen, pSign, pIsSignValid, pKey, pBuffer );
     } else 
     if( ippCPUID_SSE42  == ( _features & ippCPUID_SSE42  )) {
-        return y8_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return y8_ippsXMSSVerify( pMsg, msgLen, pSign, pIsSignValid, pKey, pBuffer );
     } else 
         return ippStsCpuNotSupportedErr;
 }

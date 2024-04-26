@@ -315,7 +315,6 @@ sgx_status_t do_init_enclave(void *ms, void *tcs)
         }
     }
 #endif
-
     return SGX_SUCCESS;
 }
 

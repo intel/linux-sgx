@@ -457,14 +457,12 @@ int CLoader::set_elrange_config()
     {
         return SGX_SUCCESS;
     }
-    //elrange is placed at the beginning of data
-    data_directory_t* dir = GET_PTR(data_directory_t, m_metadata, offsetof(metadata_t, data));
-    if(dir == NULL)
+   
+    if(m_metadata->dirs[DIR_ELRANGE].offset == 0 || m_metadata->dirs[DIR_ELRANGE].size != sizeof(elrange_config_entry_t))
     {
-        return SGX_ERROR_UNEXPECTED;
-    }
-    
-    elrange_config_entry_t* elrange_config_entry = GET_PTR(elrange_config_entry_t, m_metadata, dir->offset);
+        return SGX_ERROR_INVALID_METADATA;
+    } 
+    elrange_config_entry_t* elrange_config_entry = GET_PTR(elrange_config_entry_t, m_metadata, m_metadata->dirs[DIR_ELRANGE].offset);
     if(elrange_config_entry == NULL)
     {
         return SGX_ERROR_INVALID_METADATA;
@@ -636,7 +634,11 @@ fail:
 }
 bool CLoader::is_metadata_buffer(uint32_t offset, uint32_t size)
 {
-    if((offsetof(metadata_t, data) > offset) || (offset >= m_metadata->size))
+    if((offset == 0) && (size == 0))
+    {
+        return true;
+    }
+    if(offset >= m_metadata->size)
     {
         return false;
     }

@@ -54,26 +54,23 @@
 extern "C" {
 #endif
 
-IPPAPI(IppStatus, k1_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, l9_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
-IPPAPI(IppStatus, y8_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPAPI(IppStatus, k1_ippsXMSSBufferGetSize, (Ipp32s* pSize, Ipp32s maxMessageLength, IppsXMSSAlgo OIDAlgo))
+IPPAPI(IppStatus, l9_ippsXMSSBufferGetSize, (Ipp32s* pSize, Ipp32s maxMessageLength, IppsXMSSAlgo OIDAlgo))
+IPPAPI(IppStatus, y8_ippsXMSSBufferGetSize, (Ipp32s* pSize, Ipp32s maxMessageLength, IppsXMSSAlgo OIDAlgo))
 
-IPPFUN(IppStatus, sgx_disp_ippsGFpECSignDSA, (const IppsBigNumState* pMsgDigest, const IppsBigNumState* pRegPrivate, IppsBigNumState* pEphPrivate, IppsBigNumState* pSignR, IppsBigNumState* pSignS, IppsGFpECState* pEC, Ipp8u* pScratchBuffer))
+IPPFUN(IppStatus, sgx_disp_ippsXMSSBufferGetSize, (Ipp32s* pSize, Ipp32s maxMessageLength, IppsXMSSAlgo OIDAlgo))
 {
     Ipp64u _features;
     _features = ippcpGetEnabledCpuFeatures();
 
-#if 0
-    // Temporarily disable K1 arch for ECDSA signing bug
     if( AVX3I_FEATURES  == ( _features & AVX3I_FEATURES  )) {
-        return k1_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return k1_ippsXMSSBufferGetSize( pSize, maxMessageLength, OIDAlgo );
     } else 
-#endif
     if( ippCPUID_AVX2  == ( _features & ippCPUID_AVX2  )) {
-        return l9_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return l9_ippsXMSSBufferGetSize( pSize, maxMessageLength, OIDAlgo );
     } else 
     if( ippCPUID_SSE42  == ( _features & ippCPUID_SSE42  )) {
-        return y8_ippsGFpECSignDSA( pMsgDigest, pRegPrivate, pEphPrivate, pSignR, pSignS, pEC, pScratchBuffer );
+        return y8_ippsXMSSBufferGetSize( pSize, maxMessageLength, OIDAlgo );
     } else 
         return ippStsCpuNotSupportedErr;
 }

@@ -42,17 +42,8 @@ CFLAGS := -I$(COMMON_DIR)/inc/internal \
 
 CFLAGS += $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -Werror -fno-exceptions -fPIC
 
-.PHONY: all clean library/libmbedcrypto.a
-all: library/libmbedcrypto.a sgx_mbedtls_utils.o | $(BUILD_DIR)
-	@$(RM) -rf .libs && mkdir .libs
-	@cd .libs && $(AR) x ../$(SRC_DIR)/build/library/libmbedcrypto.a
-	@$(AR) rsD $(LIB_NAME) .libs/*.o sgx_mbedtls_utils.o
-	@$(CP) $(LIB_NAME) $(BUILD_DIR)/
-
-$(BUILD_DIR):
-	@$(MKDIR) $@
-
-library/libmbedcrypto.a:
+.PHONY: all clean
+all: sgx_mbedtls_utils.o | $(BUILD_DIR)
 ifeq ($(shell grep -c sgx mbedtls_code/library/rsa.c), 0)
 	@echo "Apply patch for SGX..."
 	@cd $(SRC_DIR) && git apply ../sgx_mbedtls.patch
@@ -60,6 +51,13 @@ ifeq ($(shell grep -c sgx mbedtls_code/library/rsa.c), 0)
 endif
 	@rm -rf $(SRC_DIR)/build && mkdir $(SRC_DIR)/build
 	@cd $(SRC_DIR)/build && cmake  -DCMAKE_C_FLAGS="${CMAKE_C_FLAGS} $(CFLAGS) -include$(current_dir)/bypass_to_sgxmbed.h " -DGEN_FILES=OFF -DCMAKE_C_COMPILER_WORKS=TRUE .. && make mbedcrypto
+	@$(RM) -rf .libs && mkdir .libs
+	@cd .libs && $(AR) x ../$(SRC_DIR)/build/library/libmbedcrypto.a
+	@$(AR) rsD $(LIB_NAME) .libs/*.o sgx_mbedtls_utils.o
+	@$(CP) $(LIB_NAME) $(BUILD_DIR)/
+
+$(BUILD_DIR):
+	@$(MKDIR) $@
 
 sgx_mbedtls_utils.o: sgx_mbedtls_utils.c
 	@$(CC) $(CFLAGS) -c $< -o $@

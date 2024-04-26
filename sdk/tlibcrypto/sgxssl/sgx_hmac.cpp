@@ -115,7 +115,11 @@ sgx_status_t sgx_hmac256_init(const unsigned char *p_key, int key_len, sgx_hmac_
 
 		params[0] = OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_DIGEST,  digest_name, sizeof(digest_name));
 
-		if ((!EVP_MAC_init(mctx, (const uint8_t *)p_key, sizeof(sgx_key_128bit_t), params))) {
+		if(!EVP_MAC_CTX_set_params(mctx, params)) {
+			break;
+		}
+
+		if ((!EVP_MAC_init(mctx, (const uint8_t *)p_key, key_len, params))) {
 			break;
 		}
 

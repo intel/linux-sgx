@@ -50,6 +50,8 @@ IPP_CONFIG += -DCMAKE_C_FLAGS="$(ENC_CFLAGS)"
 IPP_CONFIG += -DCMAKE_CXX_FLAGS="$(ENC_CXXFLAGS)"
 
 IPP_CONFIG += -DSGX_PROGRAM_SEARCH_PATH="$(EXT_BINUTILS_DIR)"
+# enables all FIPS-compliance changes in ipp-crypto
+IPP_CONFIG += -DIPPCP_FIPS_MODE=on
 
 SUB_DIR = no_mitigation
 ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
@@ -74,8 +76,8 @@ all: build_ipp
 	# copy the built out lib, header files and license to the target folder
 	$(MKDIR) $(OUT_DIR)
 	$(CP) ipp-crypto/build/.build/RELEASE/lib/libippcp.a $(OUT_DIR)
-	$(CP) ipp-crypto/include/* ./inc/
-	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp21u7.patch -o ./inc/ippcp.h
+	$(CP) -r ipp-crypto/include/* ./inc/
+	patch ipp-crypto/include/ippcp.h -i ./inc/ippcp21u11.patch -o ./inc/ippcp.h
 	$(MKDIR) license
 	$(CP) ipp-crypto/LICENSE ./license/
 
@@ -87,9 +89,8 @@ ifeq ($(shell git rev-parse --is-inside-work-tree), true)
 	git submodule update -f --init --recursive --remote -- $(IPP_SOURCE)
 else
 	$(RM) -rf $(IPP_SOURCE)
-	git clone -b ippcp_2021.7 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
+	git clone -b ipp-crypto_2021_11_0 https://github.com/intel/ipp-crypto.git --depth 1 $(IPP_SOURCE)
 endif
-	cd $(IPP_SOURCE) && git apply ../0001-IPP-crypto-for-SGX.patch
 	mkdir -p $(IPP_SOURCE)/build
 
 .PHONY: clean

@@ -1,43 +1,38 @@
-From e68261ed6a9abbaa98a5bd183d5fe985485c1379 Mon Sep 17 00:00:00 2001
+From 8bb2a085dbd663af4cdfe17352b17f6c6b020db6 Mon Sep 17 00:00:00 2001
 From: yanxue <yan.xue@intel.com>
-Date: Thu, 7 Dec 2023 00:46:13 -0500
+Date: Fri, 2 Feb 2024 10:25:46 -0500
 Subject: [PATCH] Enable Protobuf in SGX
 
 ---
- cmake/CMakeLists.txt                          |  31 +++-
- cmake/libsgx_protobuf.cmake                   | 140 ++++++++++++++++++
- cmake/protoc.cmake                            |   2 +
- configure.ac                                  |   2 +-
- .../google/protobuf/MessageReflection.java    |  26 +++-
+ CMakeLists.txt                                |  30 +-
+ cmake/libprotobuf.cmake                       |   6 +-
+ src/file_lists_for_sgx.cmake                  | 757 ++++++++++++++++++
+ src/google/protobuf/compiler/parser.cc        |   2 +
+ src/google/protobuf/descriptor.cc             |  16 +
+ src/google/protobuf/io/printer.cc             |   4 +
  .../protobuf/io/zero_copy_stream_impl.cc      |   6 +
  .../protobuf/io/zero_copy_stream_impl.h       |   4 +-
- src/google/protobuf/map.h                     |  12 ++
+ src/google/protobuf/map.h                     |  12 +
  src/google/protobuf/message_lite.cc           |   4 +
  src/google/protobuf/message_lite.h            |   4 +
- src/google/protobuf/port_def.inc              |   2 +-
- src/google/protobuf/repeated_ptr_field.h      |   2 +-
- src/google/protobuf/stubs/common.cc           |  16 ++
- src/google/protobuf/stubs/int128.cc           |   4 +
- src/google/protobuf/stubs/int128.h            |   4 +
+ src/google/protobuf/port.cc                   |   2 +
+ src/google/protobuf/port.h                    |   4 +
+ src/google/protobuf/stubs/common.cc           |   5 +
  src/google/protobuf/stubs/port.h              |   6 +-
- src/google/protobuf/stubs/status.cc           |   4 +
- src/google/protobuf/stubs/status.h            |   2 +
- src/google/protobuf/stubs/stringpiece.cc      |   5 +-
- src/google/protobuf/stubs/stringpiece.h       |   2 +
- src/google/protobuf/stubs/strutil.cc          |  35 +++++
- src/google/protobuf/stubs/time.cc             |   4 +
  src/google/protobuf/text_format.cc            |   4 +
  .../protobuf/util/delimited_message_util.cc   |   2 +
- .../protobuf/util/delimited_message_util.h    |   7 +-
+ .../protobuf/util/delimited_message_util.h    |   6 +
+ src/google/protobuf/util/field_mask_util.cc   |  12 +
  src/google/protobuf/util/time_util.h          |   4 +
- 26 files changed, 319 insertions(+), 15 deletions(-)
- create mode 100644 cmake/libsgx_protobuf.cmake
+ third_party/utf8_range/utf8_validity.cc       |   4 +
+ 21 files changed, 885 insertions(+), 9 deletions(-)
+ create mode 100644 src/file_lists_for_sgx.cmake
 
-diff --git a/cmake/CMakeLists.txt b/cmake/CMakeLists.txt
-index ac92442a1..98e459eb3 100644
---- a/cmake/CMakeLists.txt
-+++ b/cmake/CMakeLists.txt
-@@ -23,6 +23,13 @@ endif()
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 1fb018b61..ce40bc19a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -20,6 +20,13 @@ endif (POLICY CMP0077)
  # Project
  project(protobuf C CXX)
  
@@ -48,292 +43,897 @@ index ac92442a1..98e459eb3 100644
 +  LIST(APPEND CMAKE_PROGRAM_PATH  "/usr/local/bin/"  ${SGX_PROGRAM_SEARCH_PATH} ...)
 +endif()
 +
- # Add c++11 flags
- if (CYGWIN)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
-@@ -277,10 +284,20 @@ endif (MSVC)
- 
- get_filename_component(protobuf_source_dir ${protobuf_SOURCE_DIR} PATH)
+ if(protobuf_DEPRECATED_CMAKE_SUBDIRECTORY_USAGE)
+   if(CMAKE_PROJECT_NAME STREQUAL "protobuf")
+     get_filename_component(CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR} DIRECTORY)
+@@ -320,10 +327,25 @@ else (MSVC)
+   set(LIB_PREFIX)
+ endif (MSVC)
  
 -include_directories(
 -  ${ZLIB_INCLUDE_DIRECTORIES}
 -  ${protobuf_BINARY_DIR}
--  ${protobuf_source_dir}/src)
+-  ${protobuf_SOURCE_DIR}/src)
 +if(SGX)
 +  include_directories(
 +    ${protobuf_BINARY_DIR}
-+    ${protobuf_source_dir}/src
-+    ${protobuf_source_dir}/../../../common/inc/internal
-+    ${protobuf_source_dir}/../../../common/inc/tlibc
-+    ${protobuf_source_dir}/../../../common/inc
-+    ${protobuf_source_dir}/../../../sdk/tlibcxx/include)
++    ${protobuf_SOURCE_DIR}/src
++    ${protobuf_SOURCE_DIR}/../../../common/inc/internal
++    ${protobuf_SOURCE_DIR}/../../../common/inc/tlibc
++    ${protobuf_SOURCE_DIR}/../../../common/inc/absl
++    ${protobuf_SOURCE_DIR}/../../../common/inc
++    ${protobuf_SOURCE_DIR}/../../../sdk/tlibcxx/include
++    ${protobuf_SOURCE_DIR}/../../../common/inc/stdc++
++    ${protobuf_SOURCE_DIR}/../../../common/inc/internal
++    ${protobuf_SOURCE_DIR}/../../../sdk/trts
++    ${protobuf_SOURCE_DIR}/../../../sdk/trts/linux)
 +else()
 +  include_directories(
 +    ${ZLIB_INCLUDE_DIRECTORIES}
 +    ${protobuf_BINARY_DIR}
-+    ${protobuf_source_dir}/src)
++    ${protobuf_SOURCE_DIR}/src)
 +endif()
  
- if (MSVC)
-   # Add the "lib" prefix for generated .lib outputs.
-@@ -296,7 +313,11 @@ if (protobuf_UNICODE)
- endif (protobuf_UNICODE)
+ if (protobuf_UNICODE)
+   add_definitions(-DUNICODE -D_UNICODE)
+diff --git a/cmake/libprotobuf.cmake b/cmake/libprotobuf.cmake
+index 715ffb51c..facf5dc36 100644
+--- a/cmake/libprotobuf.cmake
++++ b/cmake/libprotobuf.cmake
+@@ -1,6 +1,10 @@
+ # CMake definitions for libprotobuf (the "full" C++ protobuf runtime).
  
- include(libprotobuf-lite.cmake)
--include(libprotobuf.cmake)
-+if (SGX)
-+  include(libsgx_protobuf.cmake)
+-include(${protobuf_SOURCE_DIR}/src/file_lists.cmake)
++if(SGX)
++  include(${protobuf_SOURCE_DIR}/src/file_lists_for_sgx.cmake)
 +else()
-+  include(libprotobuf.cmake)
++  include(${protobuf_SOURCE_DIR}/src/file_lists.cmake)
 +endif()
- if (protobuf_BUILD_LIBPROTOC)
-   include(libprotoc.cmake)
- endif (protobuf_BUILD_LIBPROTOC)
-diff --git a/cmake/libsgx_protobuf.cmake b/cmake/libsgx_protobuf.cmake
+ 
+ add_library(libprotobuf ${protobuf_SHARED_OR_STATIC}
+   ${libprotobuf_srcs}
+diff --git a/src/file_lists_for_sgx.cmake b/src/file_lists_for_sgx.cmake
 new file mode 100644
-index 000000000..2d5b33da5
+index 000000000..ffebb52dc
 --- /dev/null
-+++ b/cmake/libsgx_protobuf.cmake
-@@ -0,0 +1,140 @@
-+set(libprotobuf_files
-+  ${protobuf_source_dir}/src/google/protobuf/any.cc
-+  ${protobuf_source_dir}/src/google/protobuf/any.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/api.pb.cc
-+  #${protobuf_source_dir}/src/google/protobuf/compiler/importer.cc
-+  ${protobuf_source_dir}/src/google/protobuf/compiler/parser.cc
-+  ${protobuf_source_dir}/src/google/protobuf/descriptor.cc
-+  ${protobuf_source_dir}/src/google/protobuf/descriptor.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/descriptor_database.cc
-+  ${protobuf_source_dir}/src/google/protobuf/duration.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/dynamic_message.cc
-+  ${protobuf_source_dir}/src/google/protobuf/empty.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/extension_set_heavy.cc
-+  ${protobuf_source_dir}/src/google/protobuf/field_mask.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/generated_message_bases.cc
-+  ${protobuf_source_dir}/src/google/protobuf/generated_message_reflection.cc
-+  ${protobuf_source_dir}/src/google/protobuf/generated_message_tctable_full.cc
-+  #${protobuf_source_dir}/src/google/protobuf/io/gzip_stream.cc
-+  ${protobuf_source_dir}/src/google/protobuf/io/printer.cc
-+  ${protobuf_source_dir}/src/google/protobuf/io/tokenizer.cc
-+  ${protobuf_source_dir}/src/google/protobuf/map_field.cc
-+  ${protobuf_source_dir}/src/google/protobuf/message.cc
-+  ${protobuf_source_dir}/src/google/protobuf/reflection_internal.h
-+  ${protobuf_source_dir}/src/google/protobuf/reflection_ops.cc
-+  ${protobuf_source_dir}/src/google/protobuf/service.cc
-+  ${protobuf_source_dir}/src/google/protobuf/source_context.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/struct.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/stubs/substitute.cc
-+  ${protobuf_source_dir}/src/google/protobuf/text_format.cc
-+  ${protobuf_source_dir}/src/google/protobuf/timestamp.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/type.pb.cc
-+  ${protobuf_source_dir}/src/google/protobuf/unknown_field_set.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/delimited_message_util.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/field_comparator.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/field_mask_util.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/datapiece.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/default_value_objectwriter.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/error_listener.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/field_mask_utility.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/json_escaping.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/json_objectwriter.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/json_stream_parser.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/object_writer.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/proto_writer.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/protostream_objectsource.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/protostream_objectwriter.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/type_info.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/internal/utility.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/json_util.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/message_differencer.cc
-+  #${protobuf_source_dir}/src/google/protobuf/util/time_util.cc
-+  ${protobuf_source_dir}/src/google/protobuf/util/type_resolver_util.cc
-+  ${protobuf_source_dir}/src/google/protobuf/wire_format.cc
-+  ${protobuf_source_dir}/src/google/protobuf/wrappers.pb.cc
++++ b/src/file_lists_for_sgx.cmake
+@@ -0,0 +1,757 @@
++# Auto-generated by @//pkg:gen_src_file_lists_cmake
++#
++# This file contains lists of sources based on Bazel rules. It should
++# be included from a hand-written CMake file that defines targets.
++#
++# Changes to this file will be overwritten based on Bazel definitions.
++
++if(${CMAKE_VERSION} VERSION_GREATER 3.10 OR ${CMAKE_VERSION} VERSION_EQUAL 3.10)
++  include_guard()
++endif()
++
++# @//pkg:protobuf
++set(libprotobuf_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/api.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/duration.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/empty.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/field_mask.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/source_context.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/struct.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/timestamp.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/type.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wrappers.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_align.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_config.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenastring.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenaz_sampler.cc
++  #${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/importer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/parser.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor_database.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/dynamic_message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set_heavy.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_enum_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_bases.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_reflection.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_full.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_gen.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/implicit_weak_message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/inlined_string_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/coded_stream.cc
++  #${protobuf_SOURCE_DIR}/src/google/protobuf/io/gzip_stream.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/io_win32.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/printer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/strtod.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/tokenizer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_sink.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/lexer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/message_path.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/parser.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/unparser.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/untyped_message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/writer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/zero_copy_buffered_stream.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/json.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/parse_context.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_mode.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_ops.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_ptr_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/service.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/common.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/text_format.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unknown_field_set.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/delimited_message_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/field_comparator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/field_mask_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/message_differencer.cc
++  #${protobuf_SOURCE_DIR}/src/google/protobuf/util/time_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/type_resolver_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format_lite.cc
 +)
 +
-+set(libprotobuf_includes
-+  ${protobuf_source_dir}/src/google/protobuf/any.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/api.pb.h
-+  #${protobuf_source_dir}/src/google/protobuf/compiler/importer.h
-+  ${protobuf_source_dir}/src/google/protobuf/compiler/parser.h
-+  ${protobuf_source_dir}/src/google/protobuf/descriptor.h
-+  ${protobuf_source_dir}/src/google/protobuf/descriptor.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/descriptor_database.h
-+  ${protobuf_source_dir}/src/google/protobuf/duration.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/dynamic_message.h
-+  ${protobuf_source_dir}/src/google/protobuf/empty.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/field_access_listener.h
-+  ${protobuf_source_dir}/src/google/protobuf/field_mask.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/generated_enum_reflection.h
-+  ${protobuf_source_dir}/src/google/protobuf/generated_message_bases.h
-+  ${protobuf_source_dir}/src/google/protobuf/generated_message_reflection.h
-+  #${protobuf_source_dir}/src/google/protobuf/io/gzip_stream.h
-+  ${protobuf_source_dir}/src/google/protobuf/io/printer.h
-+  ${protobuf_source_dir}/src/google/protobuf/io/tokenizer.h
-+  ${protobuf_source_dir}/src/google/protobuf/map_entry.h
-+  ${protobuf_source_dir}/src/google/protobuf/map_field.h
-+  ${protobuf_source_dir}/src/google/protobuf/map_field_inl.h
-+  ${protobuf_source_dir}/src/google/protobuf/message.h
-+  ${protobuf_source_dir}/src/google/protobuf/metadata.h
-+  ${protobuf_source_dir}/src/google/protobuf/reflection.h
-+  ${protobuf_source_dir}/src/google/protobuf/reflection_ops.h
-+  ${protobuf_source_dir}/src/google/protobuf/service.h
-+  ${protobuf_source_dir}/src/google/protobuf/source_context.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/struct.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/text_format.h
-+  ${protobuf_source_dir}/src/google/protobuf/timestamp.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/type.pb.h
-+  ${protobuf_source_dir}/src/google/protobuf/unknown_field_set.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/delimited_message_util.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/field_comparator.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/field_mask_util.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/json_util.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/message_differencer.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/time_util.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/type_resolver.h
-+  ${protobuf_source_dir}/src/google/protobuf/util/type_resolver_util.h
-+  ${protobuf_source_dir}/src/google/protobuf/wire_format.h
-+  ${protobuf_source_dir}/src/google/protobuf/wrappers.pb.h
++# @//pkg:protobuf
++set(libprotobuf_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/api.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/duration.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/empty.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/field_mask.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/source_context.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/struct.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/timestamp.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/type.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wrappers.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_align.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_allocation_policy.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_cleanup.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_config.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenastring.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenaz_sampler.h
++  #${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/importer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/parser.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor_database.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor_legacy.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/dynamic_message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/endian.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/explicitly_constructed.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set_inl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/field_access_listener.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_enum_reflection.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_enum_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_bases.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_reflection.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_decl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_gen.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_impl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/has_bits.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/implicit_weak_message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/inlined_string_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/coded_stream.h
++  #${protobuf_SOURCE_DIR}/src/google/protobuf/io/gzip_stream.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/io_win32.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/printer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/strtod.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/tokenizer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_sink.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/descriptor_traits.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/lexer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/message_path.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/parser.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/parser_traits.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/unparser.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/unparser_traits.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/untyped_message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/writer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/internal/zero_copy_buffered_stream.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/json/json.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_entry.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_entry_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_field_inl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_field_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_type_handler.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/metadata.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/metadata_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/parse_context.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port_def.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port_undef.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_internal.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_mode.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_ops.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_ptr_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/serial_arena.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/service.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/string_block.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/callback.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/common.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/platform_macros.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/port.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/status_macros.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/text_format.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/thread_safe_arena.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unknown_field_set.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/delimited_message_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/field_comparator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/field_mask_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/json_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/message_differencer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/time_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/type_resolver.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/type_resolver_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/varint_shuffle.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format_lite.h
 +)
 +
-+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-+set(libprotobuf_rc_files
-+  ${CMAKE_CURRENT_BINARY_DIR}/version.rc
++# @//pkg:protobuf_lite
++set(libprotobuf_lite_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_align.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_config.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenastring.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenaz_sampler.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_enum_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/implicit_weak_message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/inlined_string_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/coded_stream.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/io_win32.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/parse_context.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_ptr_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/common.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format_lite.cc
 +)
-+endif()
 +
-+add_library(libprotobuf ${protobuf_SHARED_OR_STATIC}
-+  ${libprotobuf_lite_files} ${libprotobuf_files} ${libprotobuf_includes} ${libprotobuf_rc_files})
-+if(protobuf_HAVE_LD_VERSION_SCRIPT)
-+  if(${CMAKE_VERSION} VERSION_GREATER 3.13 OR ${CMAKE_VERSION} VERSION_EQUAL 3.13)
-+    target_link_options(libprotobuf PRIVATE -Wl,--version-script=${protobuf_source_dir}/src/libprotobuf.map)
-+  elseif(protobuf_BUILD_SHARED_LIBS)
-+    target_link_libraries(libprotobuf PRIVATE -Wl,--version-script=${protobuf_source_dir}/src/libprotobuf.map)
-+  endif()
-+  set_target_properties(libprotobuf PROPERTIES
-+    LINK_DEPENDS ${protobuf_source_dir}/src/libprotobuf.map)
-+endif()
-+target_link_libraries(libprotobuf PRIVATE ${CMAKE_THREAD_LIBS_INIT})
-+if(protobuf_WITH_ZLIB)
-+  target_link_libraries(libprotobuf PRIVATE ${ZLIB_LIBRARIES})
-+endif()
-+if(protobuf_LINK_LIBATOMIC)
-+  target_link_libraries(libprotobuf PRIVATE atomic)
-+endif()
-+if(${CMAKE_SYSTEM_NAME} STREQUAL "Android")
-+  target_link_libraries(libprotobuf PRIVATE log)
-+endif()
-+target_include_directories(libprotobuf PUBLIC ${protobuf_source_dir}/src)
-+if(protobuf_BUILD_SHARED_LIBS)
-+  target_compile_definitions(libprotobuf
-+    PUBLIC  PROTOBUF_USE_DLLS
-+    PRIVATE LIBPROTOBUF_EXPORTS)
-+endif()
-+set_target_properties(libprotobuf PROPERTIES
-+    VERSION ${protobuf_VERSION}
-+    SOVERSION 31
-+    OUTPUT_NAME ${LIB_PREFIX}protobuf
-+    DEBUG_POSTFIX "${protobuf_DEBUG_POSTFIX}")
-+add_library(protobuf::libprotobuf ALIAS libprotobuf)
-diff --git a/cmake/protoc.cmake b/cmake/protoc.cmake
-index c86d6628f..7089948ed 100644
---- a/cmake/protoc.cmake
-+++ b/cmake/protoc.cmake
-@@ -2,6 +2,8 @@ set(protoc_files
-   ${protobuf_source_dir}/src/google/protobuf/compiler/main.cc
- )
- 
-+string(APPEND CMAKE_CXX_FLAGS " -D_FORTIFY_SOURCE=2")
++# @//pkg:protobuf_lite
++set(libprotobuf_lite_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_align.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_allocation_policy.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_cleanup.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_config.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenastring.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenaz_sampler.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/endian.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/explicitly_constructed.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set_inl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_enum_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_decl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_impl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/has_bits.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/implicit_weak_message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/inlined_string_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/coded_stream.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/io_win32.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_impl_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_entry_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_field_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_type_handler.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/metadata_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/parse_context.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port_def.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port_undef.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_ptr_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/serial_arena.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/string_block.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/callback.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/common.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/platform_macros.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/port.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/status_macros.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/thread_safe_arena.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/varint_shuffle.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format_lite.h
++)
 +
- if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
- set(protoc_rc_files
-   ${CMAKE_CURRENT_BINARY_DIR}/version.rc
-diff --git a/configure.ac b/configure.ac
-index 7c5c2c799..31c63629f 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -106,7 +106,7 @@ ACX_CHECK_SUNCC
- 
- # Have to do libtool after SUNCC, other wise it "helpfully" adds Crun Cstd
- # to the link
--AC_PROG_LIBTOOL
-+LT_INIT
- 
- # Check whether the linker supports version scripts
- AC_MSG_CHECKING([whether the linker supports version scripts])
-diff --git a/java/core/src/main/java/com/google/protobuf/MessageReflection.java b/java/core/src/main/java/com/google/protobuf/MessageReflection.java
-index b7f5d52d4..f032d4926 100644
---- a/java/core/src/main/java/com/google/protobuf/MessageReflection.java
-+++ b/java/core/src/main/java/com/google/protobuf/MessageReflection.java
-@@ -349,6 +349,7 @@ class MessageReflection {
-   static class BuilderAdapter implements MergeTarget {
- 
-     private final Message.Builder builder;
-+    private boolean hasNestedBuilders = true;
- 
-     @Override
-     public Descriptors.Descriptor getDescriptorForType() {
-@@ -363,6 +364,17 @@ class MessageReflection {
-     public Object getField(Descriptors.FieldDescriptor field) {
-       return builder.getField(field);
++# @//pkg:protoc
++set(libprotoc_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/allowlists/empty_package.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/allowlists/weak_imports.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/code_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/command_line_interface.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/enum.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/extension.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field_generators/cord_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field_generators/enum_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field_generators/map_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field_generators/message_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field_generators/primitive_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field_generators/string_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/file.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/helpers.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/padding_optimizer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/parse_function_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/service.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/tracker.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_doc_comment.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_enum.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_enum_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_field_base.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_helpers.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_map_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_message_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_primitive_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_reflection_class.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_enum_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_message_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_primitive_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_source_generator_base.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_wrapper_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/names.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/context.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/doc_comment.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum_field_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/extension.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/extension_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/file.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/generator_factory.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/helpers.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/kotlin_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/map_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/map_field_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_builder.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_builder_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_field_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_serialization.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/name_resolver.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/names.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/primitive_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/primitive_field_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/service.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/shared_code_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/string_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/string_field_lite.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/enum.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/enum_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/extension.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/file.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/helpers.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/import_writer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/line_consumer.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/map_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/message_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/names.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/oneof.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/primitive_field.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/text_format_decode_data.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/php/names.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/php/php_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.pb.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/helpers.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/pyi_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/retention.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/ruby/ruby_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/accessors.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/singular_bytes.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/singular_scalar.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/context.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/message.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/naming.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/subprocess.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/zip_writer.cc
++)
++
++# @//pkg:protoc
++set(libprotoc_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/allowlists/allowlist.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/allowlists/allowlists.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/code_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/command_line_interface.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/enum.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/extension.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/field_generators/generators.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/file.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/helpers.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/message_layout_helper.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/names.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/options.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/padding_optimizer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/parse_function_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/service.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/tracker.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_doc_comment.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_enum.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_enum_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_field_base.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_helpers.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_map_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_message_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_options.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_primitive_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_reflection_class.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_enum_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_message_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_repeated_primitive_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_source_generator_base.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_wrapper_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/names.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/context.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/doc_comment.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum_field_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/enum_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/extension.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/extension_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/file.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/generator_factory.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/helpers.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/kotlin_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/map_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/map_field_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_builder.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_builder_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_field_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_serialization.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/name_resolver.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/names.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/options.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/primitive_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/primitive_field_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/service.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/shared_code_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/string_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/string_field_lite.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/enum.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/enum_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/extension.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/file.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/helpers.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/import_writer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/line_consumer.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/map_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/message_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/names.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/nsobject_methods.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/oneof.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/options.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/primitive_field.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/text_format_decode_data.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/php/names.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/php/php_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.pb.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/helpers.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/pyi_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/retention.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/ruby/ruby_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/accessors/accessors.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/context.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/message.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/rust/naming.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/scc.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/subprocess.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/zip_writer.h
++)
++
++# @//src/google/protobuf:well_known_type_protos
++set(wkt_protos_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/api.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/duration.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/empty.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/field_mask.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/source_context.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/struct.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/timestamp.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/type.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wrappers.proto
++)
++
++# @//src/google/protobuf:descriptor_proto
++set(descriptor_proto_proto_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor.proto
++)
++
++# @//src/google/protobuf:descriptor_proto
++set(descriptor_proto_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor.proto.pb.cc
++)
++
++# @//src/google/protobuf:descriptor_proto
++set(descriptor_proto_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor.proto.pb.h
++)
++
++# @//src/google/protobuf:descriptor_proto
++set(descriptor_proto_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor_proto-descriptor-set.proto.bin
++)
++
++# @//src/google/protobuf/compiler:plugin_proto
++set(plugin_proto_proto_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.proto
++)
++
++# @//src/google/protobuf/compiler:plugin_proto
++set(plugin_proto_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.proto.pb.cc
++)
++
++# @//src/google/protobuf/compiler:plugin_proto
++set(plugin_proto_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin.proto.pb.h
++)
++
++# @//src/google/protobuf/compiler:plugin_proto
++set(plugin_proto_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/plugin_proto-descriptor-set.proto.bin
++)
++
++# @//pkg:common_test
++set(common_test_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/mock_code_generator.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/testing/file.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/testing/googletest.cc
++)
++
++# @//pkg:common_test
++set(common_test_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/mock_code_generator.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/testing/file.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/testing/googletest.h
++)
++
++# @//pkg:lite_test_util
++set(lite_test_util_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_test_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_lite_test_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/test_util_lite.cc
++)
++
++# @//pkg:lite_test_util
++set(lite_test_util_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_test_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_lite_test_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_test_util_impl.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/proto3_lite_unittest.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/test_util.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/test_util2.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/test_util_lite.h
++)
++
++# @//pkg:test_util
++set(test_util_srcs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/annotation_test_util.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_tester.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/test_util.cc
++)
++
++# @//pkg:test_util
++set(test_util_hdrs
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/annotation_test_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/unittest.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/unittest.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/test_zero_copy_stream.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_test.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_test_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_test_util.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message_unittest.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_tester.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/test_util.h
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/test_util.inc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format_unittest.inc
++)
++
++# @//src/google/protobuf:full_test_srcs
++set(protobuf_test_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_align_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arena_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenastring_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/arenaz_sampler_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor_database_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/descriptor_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/drop_unknown_fields_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/dynamic_message_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/extension_set_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_reflection_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/generated_message_tctable_lite_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/inlined_string_field_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_field_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/message_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/no_field_presence_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/port_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/preserve_unknown_enum_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/proto3_arena_lite_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/proto3_arena_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/proto3_lite_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/redaction_metric_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_mode_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/reflection_ops_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_field_reflection_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/repeated_field_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/retention_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/string_block_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/text_format_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unknown_field_set_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/varint_shuffle_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/well_known_types_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/wire_format_unittest.cc
++)
++
++# @//src/google/protobuf:test_proto_srcs
++set(protobuf_test_protos_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/any_test.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_proto2_unittest.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_proto3_unittest.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_unittest.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_arena.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_custom_options.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_drop_unknown_fields.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_embed_optimize_for.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_empty.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_enormous_descriptor.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_import.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_import_public.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_lazy_dependencies.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_lazy_dependencies_custom_option.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_lazy_dependencies_enum.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_lite_imports_nonlite.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_mset.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_mset_wire_format.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_no_field_presence.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_no_generic_services.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_optimize_for.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_preserve_unknown_enum.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_preserve_unknown_enum2.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_proto3.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_proto3_arena.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_proto3_arena_lite.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_proto3_bad_macros.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_proto3_lite.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_proto3_optional.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_retention.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_well_known_types.proto
++)
++
++# @//src/google/protobuf:lite_test_srcs
++set(protobuf_lite_test_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/lite_arena_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/lite_unittest.cc
++)
++
++# @//src/google/protobuf:lite_test_proto_srcs
++set(protobuf_lite_test_protos_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/map_lite_unittest.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_import_lite.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_import_public_lite.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/unittest_lite.proto
++)
++
++# @//src/google/protobuf/compiler:test_srcs
++set(compiler_test_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/command_line_interface_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/bootstrap_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/message_size_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/metadata_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/move_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/plugin_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_bootstrap_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/csharp/csharp_generator_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/importer_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/doc_comment_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/message_serialization_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/java/plugin_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/line_consumer_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/names_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/objectivec/text_format_decode_data_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/parser_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/python/plugin_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/retention_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/ruby/ruby_generator_unittest.cc
++)
++
++# @//src/google/protobuf/compiler:test_proto_srcs
++set(compiler_test_protos_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/test_bad_identifiers.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/cpp/test_large_enum_value.proto
++)
++
++# @//src/google/protobuf/compiler:test_plugin_srcs
++set(test_plugin_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/compiler/test_plugin.cc
++)
++
++# @//src/google/protobuf/io:test_srcs
++set(io_test_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/coded_stream_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/io_win32_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/printer_death_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/printer_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/test_zero_copy_stream_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/tokenizer_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_sink_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/io/zero_copy_stream_unittest.cc
++)
++
++# @//src/google/protobuf/util:test_srcs
++set(util_test_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/delimited_message_util_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/field_comparator_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/field_mask_util_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/message_differencer_unittest.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/time_util_test.cc
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/type_resolver_util_test.cc
++)
++
++# @//src/google/protobuf/util:test_proto_srcs
++set(util_test_protos_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/json_format.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/json_format_proto3.proto
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/util/message_differencer_unittest.proto
++)
++
++# @//src/google/protobuf/stubs:test_srcs
++set(stubs_test_files
++  ${protobuf_SOURCE_DIR}/src/google/protobuf/stubs/common_unittest.cc
++)
+diff --git a/src/google/protobuf/compiler/parser.cc b/src/google/protobuf/compiler/parser.cc
+index 867a34f4a..c041f45ae 100644
+--- a/src/google/protobuf/compiler/parser.cc
++++ b/src/google/protobuf/compiler/parser.cc
+@@ -673,11 +673,13 @@ bool Parser::Parse(io::Tokenizer* input, FileDescriptorProto* file) {
+         file->set_syntax(syntax_identifier_);
+       }
+     } else if (!stop_after_syntax_identifier_) {
++//#ifndef PB_ENABLE_SGX
+       ABSL_LOG(WARNING) << "No syntax specified for the proto file: "
+                         << file->name()
+                         << ". Please use 'syntax = \"proto2\";' "
+                         << "or 'syntax = \"proto3\";' to specify a syntax "
+                         << "version. (Defaulted to proto2 syntax.)";
++//#endif //PB_ENABLE_SGX
+       syntax_identifier_ = "proto2";
      }
-+    
-+    private Message.Builder getFieldBuilder(Descriptors.FieldDescriptor field) {
-+      if (hasNestedBuilders) {
-+        try {
-+          return builder.getFieldBuilder(field);
-+        } catch (UnsupportedOperationException e) {
-+          hasNestedBuilders = false;
-+        }
-+      }
-+      return null;
-+    }
  
-     @Override
-     public boolean hasField(Descriptors.FieldDescriptor field) {
-@@ -371,6 +383,12 @@ class MessageReflection {
- 
-     @Override
-     public MergeTarget setField(Descriptors.FieldDescriptor field, Object value) {
-+      if (!field.isRepeated() && value instanceof MessageLite.Builder) {
-+        if (value != getFieldBuilder(field)) {
-+          builder.setField(field, ((MessageLite.Builder) value).buildPartial());
-+        }
-+        return this;
-+      }
-       builder.setField(field, value);
-       return this;
-     }
-@@ -384,12 +402,18 @@ class MessageReflection {
-     @Override
-     public MergeTarget setRepeatedField(
-         Descriptors.FieldDescriptor field, int index, Object value) {
-+      if (value instanceof MessageLite.Builder) {
-+        value = ((MessageLite.Builder) value).buildPartial();
-+      }
-       builder.setRepeatedField(field, index, value);
-       return this;
-     }
- 
-     @Override
-     public MergeTarget addRepeatedField(Descriptors.FieldDescriptor field, Object value) {
-+      if (value instanceof MessageLite.Builder) {
-+        value = ((MessageLite.Builder) value).buildPartial();
-+      }
-       builder.addRepeatedField(field, value);
-       return this;
-     }
-@@ -543,7 +567,7 @@ class MessageReflection {
- 
-     @Override
-     public Object finish() {
--      return builder.buildPartial();
-+      return builder;
-     }
+diff --git a/src/google/protobuf/descriptor.cc b/src/google/protobuf/descriptor.cc
+index 0d77da558..5972e47f8 100644
+--- a/src/google/protobuf/descriptor.cc
++++ b/src/google/protobuf/descriptor.cc
+@@ -7087,21 +7087,37 @@ void DescriptorBuilder::SuggestFieldNumbers(FileDescriptor* file,
+     int current_ordinal = 1;
+     if (hints->first_reason) {
+       auto make_error = [&] {
++#ifndef PB_ENABLE_SGX
+         std::stringstream id_list;
+         id_list << "Suggested field numbers for " << message->full_name()
+                 << ": ";
++#else
++        std::string id_list;
++        id_list += "Suggested field numbers for ";
++	id_list += message->full_name();
++        id_list += ": ";
++#endif //PB_ENABLE_SGX
+         const char* separator = "";
+         for (auto& current_range : used_ordinals) {
+           while (current_ordinal < current_range.from &&
+                  fields_to_suggest > 0) {
++#ifndef PB_ENABLE_SGX
+             id_list << separator << current_ordinal++;
++#else
++            id_list += std::string(separator);
++	    id_list += std::to_string(current_ordinal++);
++#endif //PB_ENABLE_SGX
+             separator = ", ";
+             fields_to_suggest--;
+           }
+           if (fields_to_suggest == 0) break;
+           current_ordinal = std::max(current_ordinal, current_range.to);
+         }
++#ifndef PB_ENABLE_SGX
+         return id_list.str();
++#else
++        return id_list;
++#endif //PB_ENABLE_SGX
+       };
+       AddError(message->full_name(), *hints->first_reason,
+                hints->first_reason_location, make_error);
+diff --git a/src/google/protobuf/io/printer.cc b/src/google/protobuf/io/printer.cc
+index a13053207..9745a250e 100644
+--- a/src/google/protobuf/io/printer.cc
++++ b/src/google/protobuf/io/printer.cc
+@@ -278,8 +278,12 @@ Printer::Printer(ZeroCopyOutputStream* output, Options options)
+     // Trace-by-default is threaded through via an env var, rather than a
+     // global, so that child processes can pick it up as well. The flag
+     // --enable_codegen_trace setenv()'s this in protoc's startup code.
++#ifndef PB_ENABLE_SGX
+     static const bool kEnableCodegenTrace =
+         ::getenv(kProtocCodegenTrace.data()) != nullptr;
++#else
++    static const bool kEnableCodegenTrace = true;
++#endif //PB_ENABLE_SGX
+     options_.enable_codegen_trace = kEnableCodegenTrace;
    }
- 
+ }
 diff --git a/src/google/protobuf/io/zero_copy_stream_impl.cc b/src/google/protobuf/io/zero_copy_stream_impl.cc
-index c66bc862a..1fee728cd 100644
+index da0d83739..7986f7d56 100644
 --- a/src/google/protobuf/io/zero_copy_stream_impl.cc
 +++ b/src/google/protobuf/io/zero_copy_stream_impl.cc
 @@ -33,15 +33,19 @@
@@ -354,8 +954,8 @@ index c66bc862a..1fee728cd 100644
  #include <iostream>
 +#endif //PB_ENABLE_SGX
  
- #include <google/protobuf/stubs/common.h>
- #include <google/protobuf/stubs/logging.h>
+ #include "google/protobuf/stubs/common.h"
+ #include "absl/log/absl_check.h"
 @@ -67,6 +71,7 @@ using google::protobuf::io::win32::read;
  using google::protobuf::io::win32::write;
  #endif
@@ -373,10 +973,10 @@ index c66bc862a..1fee728cd 100644
  // ===================================================================
  
 diff --git a/src/google/protobuf/io/zero_copy_stream_impl.h b/src/google/protobuf/io/zero_copy_stream_impl.h
-index a385992f2..57e261954 100644
+index f82a45f5e..d9755c922 100644
 --- a/src/google/protobuf/io/zero_copy_stream_impl.h
 +++ b/src/google/protobuf/io/zero_copy_stream_impl.h
-@@ -54,7 +54,7 @@
+@@ -53,7 +53,7 @@
  namespace google {
  namespace protobuf {
  namespace io {
@@ -385,9 +985,9 @@ index a385992f2..57e261954 100644
  // ===================================================================
  
  // A ZeroCopyInputStream which reads from a file descriptor.
-@@ -290,7 +290,7 @@ class PROTOBUF_EXPORT OstreamOutputStream PROTOBUF_FUTURE_FINAL
- 
-   GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(OstreamOutputStream);
+@@ -288,7 +288,7 @@ class PROTOBUF_EXPORT OstreamOutputStream final : public ZeroCopyOutputStream {
+   CopyingOstreamOutputStream copying_output_;
+   CopyingOutputStreamAdaptor impl_;
  };
 -
 +#endif //PB_ENABLE_SGX
@@ -395,12 +995,12 @@ index a385992f2..57e261954 100644
  
  // A ZeroCopyInputStream which reads from several other streams in sequence.
 diff --git a/src/google/protobuf/map.h b/src/google/protobuf/map.h
-index 09d03b812..4e78bdc59 100644
+index 869ebf100..b0bb95949 100644
 --- a/src/google/protobuf/map.h
 +++ b/src/google/protobuf/map.h
-@@ -69,6 +69,11 @@
+@@ -68,6 +68,11 @@
  // Must be included last.
- #include <google/protobuf/port_def.inc>
+ #include "google/protobuf/port_def.inc"
  
 +#ifdef PB_ENABLE_SGX
 +#include "sgx_trts.h"
@@ -410,28 +1010,28 @@ index 09d03b812..4e78bdc59 100644
  namespace google {
  namespace protobuf {
  
-@@ -1093,9 +1098,16 @@ class Map {
-       // iOS, tvOS, watchOS, etc).
-       s += mach_absolute_time();
+@@ -602,9 +607,16 @@ class PROTOBUF_EXPORT UntypedMapBase {
+     // iOS, tvOS, watchOS, etc).
+     s += mach_absolute_time();
  #elif defined(__x86_64__) && defined(__GNUC__)
 +#ifndef PB_ENABLE_SGX
-       uint32_t hi, lo;
-       asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
-       s += ((static_cast<uint64_t>(hi) << 32) | lo);
+     uint32_t hi, lo;
+     asm volatile("rdtsc" : "=a"(lo), "=d"(hi));
+     s += ((static_cast<uint64_t>(hi) << 32) | lo);
 +#else
-+      uint64_t random_num;
-+      if (SGX_SUCCESS != sgx_read_rand((unsigned char *)&random_num, sizeof(uint64_t)))
-+          abort();
-+      s += random_num;
++     uint64_t random_num;
++     if (SGX_SUCCESS != sgx_read_rand((unsigned char *)&random_num, sizeof(uint64_t)))
++         abort();
++     s += random_num;
 +#endif //PB_ENABLE_SGX
  #elif defined(__aarch64__) && defined(__GNUC__)
-       // There is no rdtsc on ARMv8. CNTVCT_EL0 is the virtual counter of the
-       // system timer. It runs at a different frequency than the CPU's, but is
+     // There is no rdtsc on ARMv8. CNTVCT_EL0 is the virtual counter of the
+     // system timer. It runs at a different frequency than the CPU's, but is
 diff --git a/src/google/protobuf/message_lite.cc b/src/google/protobuf/message_lite.cc
-index 3a1b67bf6..5d540ed68 100644
+index ce5b4efe3..2b7146498 100644
 --- a/src/google/protobuf/message_lite.cc
 +++ b/src/google/protobuf/message_lite.cc
-@@ -265,6 +265,7 @@ bool MessageLite::ParsePartialFromZeroCopyStream(
+@@ -269,6 +269,7 @@ bool MessageLite::ParsePartialFromZeroCopyStream(
    return ParseFrom<kParsePartial>(input);
  }
  
@@ -439,7 +1039,7 @@ index 3a1b67bf6..5d540ed68 100644
  bool MessageLite::ParseFromFileDescriptor(int file_descriptor) {
    io::FileInputStream input(file_descriptor);
    return ParseFromZeroCopyStream(&input) && input.GetErrno() == 0;
-@@ -284,6 +285,7 @@ bool MessageLite::ParsePartialFromIstream(std::istream* input) {
+@@ -288,6 +289,7 @@ bool MessageLite::ParsePartialFromIstream(std::istream* input) {
    io::IstreamInputStream zero_copy_input(input);
    return ParsePartialFromZeroCopyStream(&zero_copy_input) && input->eof();
  }
@@ -447,7 +1047,7 @@ index 3a1b67bf6..5d540ed68 100644
  
  bool MessageLite::MergePartialFromBoundedZeroCopyStream(
      io::ZeroCopyInputStream* input, int size) {
-@@ -414,6 +416,7 @@ bool MessageLite::SerializePartialToZeroCopyStream(
+@@ -457,6 +459,7 @@ bool MessageLite::SerializePartialToZeroCopyStream(
    return true;
  }
  
@@ -455,19 +1055,19 @@ index 3a1b67bf6..5d540ed68 100644
  bool MessageLite::SerializeToFileDescriptor(int file_descriptor) const {
    io::FileOutputStream output(file_descriptor);
    return SerializeToZeroCopyStream(&output) && output.Flush();
-@@ -436,6 +439,7 @@ bool MessageLite::SerializePartialToOstream(std::ostream* output) const {
+@@ -479,6 +482,7 @@ bool MessageLite::SerializePartialToOstream(std::ostream* output) const {
    io::OstreamOutputStream zero_copy_output(output);
    return SerializePartialToZeroCopyStream(&zero_copy_output);
  }
 +#endif //PB_ENABLE_SGX
  
  bool MessageLite::AppendToString(std::string* output) const {
-   GOOGLE_DCHECK(IsInitialized()) << InitializationErrorMessage("serialize", *this);
+   ABSL_DCHECK(IsInitialized())
 diff --git a/src/google/protobuf/message_lite.h b/src/google/protobuf/message_lite.h
-index 1c22f894e..69006e686 100644
+index 519aa10ae..37f8dd13d 100644
 --- a/src/google/protobuf/message_lite.h
 +++ b/src/google/protobuf/message_lite.h
-@@ -254,11 +254,13 @@ class PROTOBUF_EXPORT MessageLite {
+@@ -263,11 +263,13 @@ class PROTOBUF_EXPORT MessageLite {
        int file_descriptor);
    // Parse a protocol buffer from a C++ istream.  If successful, the entire
    // input will be consumed.
@@ -481,7 +1081,7 @@ index 1c22f894e..69006e686 100644
    // Read a protocol buffer from the given zero-copy input stream, expecting
    // the message to be exactly "size" bytes long.  If successful, exactly
    // this many bytes will have been consumed from the input.
-@@ -359,9 +361,11 @@ class PROTOBUF_EXPORT MessageLite {
+@@ -368,9 +370,11 @@ class PROTOBUF_EXPORT MessageLite {
    bool SerializePartialToFileDescriptor(int file_descriptor) const;
    // Serialize the message and write it to the given C++ ostream.  All
    // required fields must be set.
@@ -493,150 +1093,58 @@ index 1c22f894e..69006e686 100644
  
    // Like SerializeToString(), but appends to the data to the string's
    // existing contents.  All required fields must be set.
-diff --git a/src/google/protobuf/port_def.inc b/src/google/protobuf/port_def.inc
-index 1e360ccce..0765998b8 100644
---- a/src/google/protobuf/port_def.inc
-+++ b/src/google/protobuf/port_def.inc
-@@ -608,7 +608,7 @@
-      (!defined(__APPLE__) && __clang_major__ >= 12))
- #define PROTOBUF_CONSTINIT [[clang::require_constant_initialization]]
- #define PROTOBUF_CONSTEXPR constexpr
--#elif PROTOBUF_GNUC_MIN(12, 0)
-+#elif PROTOBUF_GNUC_MIN(13, 0)
- #define PROTOBUF_CONSTINIT __constinit
- #define PROTOBUF_CONSTEXPR constexpr
+diff --git a/src/google/protobuf/port.cc b/src/google/protobuf/port.cc
+index eb167ddcd..adc18e148 100644
+--- a/src/google/protobuf/port.cc
++++ b/src/google/protobuf/port.cc
+@@ -43,7 +43,9 @@ namespace internal {
+ // port_def.inc depend on assert.h or other headers, minimizing the compilation
+ // footprint.
+ void protobuf_assumption_failed(const char* pred, const char* file, int line) {
++#ifndef PB_ENABLE_SGX
+   fprintf(stderr, "%s: %d: Assumption failed: '%s'\n", file, line, pred);
++#endif //PB_ENABLE_SGX
+   abort();
+ }
+ 
+diff --git a/src/google/protobuf/port.h b/src/google/protobuf/port.h
+index 166105cd9..eae316f94 100644
+--- a/src/google/protobuf/port.h
++++ b/src/google/protobuf/port.h
+@@ -209,7 +209,11 @@ struct is_supported_message_type
+ #ifdef __cpp_aligned_new
+ enum { kCacheAlignment = 64 };
  #else
-diff --git a/src/google/protobuf/repeated_ptr_field.h b/src/google/protobuf/repeated_ptr_field.h
-index e81b2c7e4..205d3b287 100644
---- a/src/google/protobuf/repeated_ptr_field.h
-+++ b/src/google/protobuf/repeated_ptr_field.h
-@@ -749,7 +749,7 @@ class GenericTypeHandler {
-   static inline GenericType* New(Arena* arena, GenericType&& value) {
-     return Arena::Create<GenericType>(arena, std::move(value));
-   }
--  static inline GenericType* NewFromPrototype(const GenericType* prototype,
-+  static inline GenericType* NewFromPrototype(const GenericType* /*prototype*/,
-                                               Arena* arena = nullptr) {
-     return New(arena);
-   }
++#ifndef PB_ENABLE_SGX
+ enum { kCacheAlignment = alignof(max_align_t) };  // do the best we can
++#else
++enum { kCacheAlignment = alignof(std::max_align_t) };  // do the best we can
++#endif //PB_ENABLE_SGX
+ #endif
+ 
+ // The maximum byte alignment we support.
 diff --git a/src/google/protobuf/stubs/common.cc b/src/google/protobuf/stubs/common.cc
-index 82d46531f..203a0cffe 100644
+index 56803959a..a5c5accbd 100644
 --- a/src/google/protobuf/stubs/common.cc
 +++ b/src/google/protobuf/stubs/common.cc
-@@ -35,7 +35,11 @@
- #include <atomic>
+@@ -33,7 +33,12 @@
+ #include "google/protobuf/stubs/common.h"
+ 
  #include <errno.h>
- #include <sstream>
++
 +#ifndef PB_ENABLE_SGX
  #include <stdio.h>
 +#else
 +#include <cstdio>
 +#endif //PB_ENABLE_SGX
- #include <vector>
  
- #ifdef _WIN32
-@@ -157,6 +161,9 @@ inline void DefaultLogHandler(LogLevel level, const char* filename, int line,
- }
- 
- #else
-+#ifdef PB_ENABLE_SGX
-+extern "C" int printf(const char* fmt, ...);
-+#endif //PB_ENABLE_SGX
- void DefaultLogHandler(LogLevel level, const char* filename, int line,
-                        const std::string& message) {
-   if (level < GOOGLE_PROTOBUF_MIN_LOG_LEVEL) {
-@@ -166,9 +173,14 @@ void DefaultLogHandler(LogLevel level, const char* filename, int line,
- 
-   // We use fprintf() instead of cerr because we want this to work at static
-   // initialization time.
-+#ifndef PB_ENABLE_SGX
-   fprintf(stderr, "[libprotobuf %s %s:%d] %s\n",
-           level_names[level], filename, line, message.c_str());
-   fflush(stderr);  // Needed on MSVC.
-+#else
-+  printf("[libprotobuf %s %s:%d] %s\n", level_names[level], filename, line,
-+         message.c_str());
-+#endif //PB_ENABLE_SGX
- }
- #endif
- 
-@@ -201,9 +213,13 @@ LogMessage& LogMessage::operator<<(const util::Status& status) {
- }
- 
- LogMessage& LogMessage::operator<<(const uint128& value) {
-+#ifndef PB_ENABLE_SGX
-   std::ostringstream str;
-   str << value;
-   message_ += str.str();
-+#else
-+  message_ += std::to_string((const long long &)value);
-+#endif //PB_ENABLE_SGX
-   return *this;
- }
- 
-diff --git a/src/google/protobuf/stubs/int128.cc b/src/google/protobuf/stubs/int128.cc
-index b60722def..0a4c96c3a 100644
---- a/src/google/protobuf/stubs/int128.cc
-+++ b/src/google/protobuf/stubs/int128.cc
-@@ -31,7 +31,9 @@
- #include <google/protobuf/stubs/int128.h>
- 
- #include <iomanip>
-+#ifndef PB_ENABLE_SGX
- #include <ostream>  // NOLINT(readability/streams)
-+#endif //PB_ENABLE_SGX
+ #include <atomic>
  #include <sstream>
- 
- #include <google/protobuf/stubs/logging.h>
-@@ -123,6 +125,7 @@ uint128& uint128::operator%=(const uint128& divisor) {
-   return *this;
- }
- 
-+#ifndef PB_ENABLE_SGX
- std::ostream& operator<<(std::ostream& o, const uint128& b) {
-   std::ios_base::fmtflags flags = o.flags();
- 
-@@ -186,6 +189,7 @@ std::ostream& operator<<(std::ostream& o, const uint128& b) {
-   // Stream the final representation in a single "<<" call.
-   return o << rep;
- }
-+#endif //PB_ENABLE_SGX
- 
- }  // namespace protobuf
- }  // namespace google
-diff --git a/src/google/protobuf/stubs/int128.h b/src/google/protobuf/stubs/int128.h
-index dc70d96eb..bfca3bfc6 100644
---- a/src/google/protobuf/stubs/int128.h
-+++ b/src/google/protobuf/stubs/int128.h
-@@ -85,9 +85,11 @@ class PROTOBUF_EXPORT uint128 {
-   friend uint64 Uint128Low64(const uint128& v);
-   friend uint64 Uint128High64(const uint128& v);
- 
-+#ifndef PB_ENABLE_SGX
-   // We add "std::" to avoid including all of port.h.
-   PROTOBUF_EXPORT friend std::ostream& operator<<(std::ostream& o,
-                                                   const uint128& b);
-+#endif //PB_ENABLE_SGX
- 
-  private:
-   static void DivModImpl(uint128 dividend, uint128 divisor,
-@@ -120,9 +122,11 @@ struct uint128_pod {
- 
- PROTOBUF_EXPORT extern const uint128_pod kuint128max;
- 
-+#ifndef PB_ENABLE_SGX
- // allow uint128 to be logged
- PROTOBUF_EXPORT extern std::ostream& operator<<(std::ostream& o,
-                                                 const uint128& b);
-+#endif //PB_ENABLE_SGX
- 
- // Methods to access low and high pieces of 128-bit value.
- // Defined externally from uint128 to facilitate conversion
 diff --git a/src/google/protobuf/stubs/port.h b/src/google/protobuf/stubs/port.h
-index 045e25d89..8eb363834 100644
+index e1c920185..544fd3c70 100644
 --- a/src/google/protobuf/stubs/port.h
 +++ b/src/google/protobuf/stubs/port.h
-@@ -84,7 +84,8 @@
+@@ -86,7 +86,8 @@
  #include <intrin.h>
  #elif defined(__APPLE__)
  #include <libkern/OSByteOrder.h>
@@ -646,7 +1154,7 @@ index 045e25d89..8eb363834 100644
  #include <byteswap.h>  // IWYU pragma: export
  #endif
  
-@@ -248,7 +249,8 @@ inline void GOOGLE_UNALIGNED_STORE64(void *p, uint64 v) {
+@@ -195,7 +196,8 @@ inline void GOOGLE_UNALIGNED_STORE64(void *p, uint64_t v) {
  #define bswap_32(x) OSSwapInt32(x)
  #define bswap_64(x) OSSwapInt64(x)
  
@@ -655,197 +1163,14 @@ index 045e25d89..8eb363834 100644
 +#elif !defined(__GLIBC__) && !defined(__BIONIC__) && !defined(__CYGWIN__) //for SGX
  
  #ifndef bswap_16
- static inline uint16 bswap_16(uint16 x) {
-diff --git a/src/google/protobuf/stubs/status.cc b/src/google/protobuf/stubs/status.cc
-index f5c0fa48f..3c134fde6 100644
---- a/src/google/protobuf/stubs/status.cc
-+++ b/src/google/protobuf/stubs/status.cc
-@@ -29,7 +29,9 @@
- // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- #include <google/protobuf/stubs/status.h>
- 
-+#ifndef PB_ENABLE_SGX
- #include <ostream>
-+#endif //PB_ENABLE_SGX
- #include <stdio.h>
- #include <string>
- #include <utility>
-@@ -123,10 +125,12 @@ std::string Status::ToString() const {
- 
- Status OkStatus() { return Status(); }
- 
-+#ifndef PB_ENABLE_SGX
- std::ostream& operator<<(std::ostream& os, const Status& x) {
-   os << x.ToString();
-   return os;
- }
-+#endif //PB_ENABLE_SGX
- 
- bool IsAborted(const Status& status) {
-   return status.code() == StatusCode::kAborted;
-diff --git a/src/google/protobuf/stubs/status.h b/src/google/protobuf/stubs/status.h
-index c858cf623..ee72b6c6a 100644
---- a/src/google/protobuf/stubs/status.h
-+++ b/src/google/protobuf/stubs/status.h
-@@ -101,8 +101,10 @@ class PROTOBUF_EXPORT Status {
- // usage of `OkStatus()` when constructing such an OK status.
- PROTOBUF_EXPORT Status OkStatus();
- 
-+#ifndef PB_ENABLE_SGX
- // Prints a human-readable representation of 'x' to 'os'.
- PROTOBUF_EXPORT std::ostream& operator<<(std::ostream& os, const Status& x);
-+#endif //PB_ENABLE_SGX
- 
- // These convenience functions return `true` if a given status matches the
- // `StatusCode` error code of its associated function.
-diff --git a/src/google/protobuf/stubs/stringpiece.cc b/src/google/protobuf/stubs/stringpiece.cc
-index 71880464c..f6801cf4d 100644
---- a/src/google/protobuf/stubs/stringpiece.cc
-+++ b/src/google/protobuf/stubs/stringpiece.cc
-@@ -33,18 +33,21 @@
- #include <algorithm>
- #include <climits>
- #include <string>
-+#ifndef PB_ENABLE_SGX
- #include <ostream>
-+#endif //PB_ENABLE_SGX
- 
- #include <google/protobuf/stubs/logging.h>
- 
- namespace google {
- namespace protobuf {
- namespace stringpiece_internal {
--
-+#ifndef PB_ENABLE_SGX
- std::ostream& operator<<(std::ostream& o, StringPiece piece) {
-   o.write(piece.data(), piece.size());
-   return o;
- }
-+#endif //PB_ENABLE_SGX
- 
- void StringPiece::LogFatalSizeTooBig(size_t size, const char* details) {
-   GOOGLE_LOG(FATAL) << "size too big: " << size << " details: " << details;
-diff --git a/src/google/protobuf/stubs/stringpiece.h b/src/google/protobuf/stubs/stringpiece.h
-index c63e25b25..0122672a9 100644
---- a/src/google/protobuf/stubs/stringpiece.h
-+++ b/src/google/protobuf/stubs/stringpiece.h
-@@ -375,8 +375,10 @@ inline bool operator>=(StringPiece x, StringPiece y) {
-   return !(x < y);
- }
- 
-+#ifndef PB_ENABLE_SGX
- // allow StringPiece to be logged
- extern std::ostream& operator<<(std::ostream& o, StringPiece piece);
-+#endif //PB_ENABLE_SGX
- 
- }  // namespace stringpiece_internal
- 
-diff --git a/src/google/protobuf/stubs/strutil.cc b/src/google/protobuf/stubs/strutil.cc
-index 7c84cac2e..776001f8a 100644
---- a/src/google/protobuf/stubs/strutil.cc
-+++ b/src/google/protobuf/stubs/strutil.cc
-@@ -39,6 +39,9 @@
- #include <cmath>
- #include <iterator>
- #include <limits>
-+#ifdef PB_ENABLE_SGX
-+#include <cstring>
-+#endif //PB_ENABLE_SGX
- 
- #include <google/protobuf/stubs/logging.h>
- #include <google/protobuf/stubs/stl_util.h>
-@@ -503,8 +506,14 @@ int CEscapeInternal(const char* src, int src_len, char* dest,
-              (last_hex_escape && isxdigit(*src)))) {
-           if (dest_len - used < 4) // need space for 4 letter escape
-             return -1;
-+#ifndef PB_ENABLE_SGX
-           sprintf(dest + used, (use_hex ? "\\x%02x" : "\\%03o"),
-                   static_cast<uint8>(*src));
-+#else
-+          snprintf(dest + used, dest_len - used,
-+                   (use_hex ? "\\x%02x" : "\\%03o"),
-+                   static_cast<uint8>(*src));
-+#endif //PB_ENABLE_SGX
-           is_hex_escape = use_hex;
-           used += 4;
-         } else {
-@@ -1246,6 +1255,7 @@ char* DoubleToBuffer(double value, char* buffer) {
-   // this assert.
-   static_assert(DBL_DIG < 20, "DBL_DIG_is_too_big");
- 
-+#ifndef PB_ENABLE_SGX
-   if (value == std::numeric_limits<double>::infinity()) {
-     strcpy(buffer, "inf");
-     return buffer;
-@@ -1256,6 +1266,18 @@ char* DoubleToBuffer(double value, char* buffer) {
-     strcpy(buffer, "nan");
-     return buffer;
-   }
-+#else
-+  if (value == std::numeric_limits<double>::infinity()) {
-+    strncpy(buffer, "inf", strlen("inf"));
-+    return buffer;
-+  } else if (value == -std::numeric_limits<double>::infinity()) {
-+    strncpy(buffer, "-inf", strlen("-inf"));
-+    return buffer;
-+  } else if (std::isnan(value)) {
-+    strncpy(buffer, "nan", strlen("nan"));
-+    return buffer;
-+  }
-+#endif //PB_ENABLE_SGX
- 
-   int snprintf_result =
-     snprintf(buffer, kDoubleToBufferSize, "%.*g", DBL_DIG, value);
-@@ -1364,6 +1386,7 @@ char* FloatToBuffer(float value, char* buffer) {
-   // this assert.
-   static_assert(FLT_DIG < 10, "FLT_DIG_is_too_big");
- 
-+#ifndef PB_ENABLE_SGX
-   if (value == std::numeric_limits<double>::infinity()) {
-     strcpy(buffer, "inf");
-     return buffer;
-@@ -1374,6 +1397,18 @@ char* FloatToBuffer(float value, char* buffer) {
-     strcpy(buffer, "nan");
-     return buffer;
-   }
-+#else
-+  if (value == std::numeric_limits<double>::infinity()) {
-+    strncpy(buffer, "inf", strlen("inf"));
-+    return buffer;
-+  } else if (value == -std::numeric_limits<double>::infinity()) {
-+    strncpy(buffer, "-inf", strlen("-inf"));
-+    return buffer;
-+  } else if (std::isnan(value)) {
-+    strncpy(buffer, "nan", strlen("nan"));
-+    return buffer;
-+  }
-+#endif //PB_ENABLE_SGX
- 
-   int snprintf_result =
-     snprintf(buffer, kFloatToBufferSize, "%.*g", FLT_DIG, value);
-diff --git a/src/google/protobuf/stubs/time.cc b/src/google/protobuf/stubs/time.cc
-index 922be76d1..4efb2e85e 100644
---- a/src/google/protobuf/stubs/time.cc
-+++ b/src/google/protobuf/stubs/time.cc
-@@ -264,7 +264,11 @@ bool DateTimeToSeconds(const DateTime& time, int64* seconds) {
- void GetCurrentTime(int64* seconds, int32* nanos) {
-   // TODO(xiaofeng): Improve the accuracy of this implementation (or just
-   // remove this method from protobuf).
-+#ifndef PB_ENABLE_SGX
-   *seconds = time(nullptr);
-+#else
-+  *seconds = 0;
-+#endif //PB_ENABLE_SGX
-   *nanos = 0;
- }
- 
+ static inline uint16_t bswap_16(uint16_t x) {
 diff --git a/src/google/protobuf/text_format.cc b/src/google/protobuf/text_format.cc
-index 880b16dde..8cd82000b 100644
+index 879ede705..88fa3bdcb 100644
 --- a/src/google/protobuf/text_format.cc
 +++ b/src/google/protobuf/text_format.cc
-@@ -67,6 +67,10 @@
- 
- #define DEBUG_STRING_SILENT_MARKER "\t "
+@@ -74,6 +74,10 @@
+ // Must be included last.
+ #include "google/protobuf/port_def.inc"
  
 +#ifdef PB_ENABLE_SGX
 +extern "C" int printf(const char* fmt, ...);
@@ -855,10 +1180,10 @@ index 880b16dde..8cd82000b 100644
  namespace protobuf {
  
 diff --git a/src/google/protobuf/util/delimited_message_util.cc b/src/google/protobuf/util/delimited_message_util.cc
-index 80cab309b..c97790c68 100644
+index 1dcd943e6..aa248aa99 100644
 --- a/src/google/protobuf/util/delimited_message_util.cc
 +++ b/src/google/protobuf/util/delimited_message_util.cc
-@@ -38,6 +38,7 @@ namespace google {
+@@ -39,6 +39,7 @@ namespace google {
  namespace protobuf {
  namespace util {
  
@@ -866,7 +1191,7 @@ index 80cab309b..c97790c68 100644
  bool SerializeDelimitedToFileDescriptor(const MessageLite& message,
                                          int file_descriptor) {
    io::FileOutputStream output(file_descriptor);
-@@ -60,6 +61,7 @@ bool ParseDelimitedFromZeroCopyStream(MessageLite* message,
+@@ -61,6 +62,7 @@ bool ParseDelimitedFromZeroCopyStream(MessageLite* message,
    io::CodedInputStream coded_input(input);
    return ParseDelimitedFromCodedStream(message, &coded_input, clean_eof);
  }
@@ -875,21 +1200,20 @@ index 80cab309b..c97790c68 100644
  bool ParseDelimitedFromCodedStream(MessageLite* message,
                                     io::CodedInputStream* input,
 diff --git a/src/google/protobuf/util/delimited_message_util.h b/src/google/protobuf/util/delimited_message_util.h
-index 78625cf2f..c3c11cb1b 100644
+index 2f19261bc..aa1d31b69 100644
 --- a/src/google/protobuf/util/delimited_message_util.h
 +++ b/src/google/protobuf/util/delimited_message_util.h
-@@ -34,8 +34,9 @@
+@@ -34,7 +34,9 @@
  #ifndef GOOGLE_PROTOBUF_UTIL_DELIMITED_MESSAGE_UTIL_H__
  #define GOOGLE_PROTOBUF_UTIL_DELIMITED_MESSAGE_UTIL_H__
  
--
 +#ifndef PB_ENABLE_SGX
  #include <ostream>
 +#endif //PB_ENABLE_SGX
  
- #include <google/protobuf/message_lite.h>
- #include <google/protobuf/io/coded_stream.h>
-@@ -64,11 +65,13 @@ namespace util {
+ #include "google/protobuf/message_lite.h"
+ #include "google/protobuf/io/coded_stream.h"
+@@ -63,11 +65,13 @@ namespace util {
  // then parse it. As a result, they may read past the end of the delimited
  // message. There is no way for them to push the extra data back into the
  // underlying source, so instead you must keep using the same stream object.
@@ -903,7 +1227,7 @@ index 78625cf2f..c3c11cb1b 100644
  
  // Read a single size-delimited message from the given stream. Delimited
  // format allows a single file or stream to contain multiple messages,
-@@ -82,8 +85,10 @@ bool PROTOBUF_EXPORT SerializeDelimitedToOstream(const MessageLite& message,
+@@ -81,8 +85,10 @@ bool PROTOBUF_EXPORT SerializeDelimitedToOstream(const MessageLite& message,
  // otherwise it will be set false. Note that these methods return false
  // on EOF, but they also return false on other errors, so |clean_eof| is
  // needed to distinguish a clean end from errors.
@@ -914,12 +1238,46 @@ index 78625cf2f..c3c11cb1b 100644
  
  bool PROTOBUF_EXPORT ParseDelimitedFromCodedStream(MessageLite* message,
                                                     io::CodedInputStream* input,
+diff --git a/src/google/protobuf/util/field_mask_util.cc b/src/google/protobuf/util/field_mask_util.cc
+index eee14b1e9..64957d2bd 100644
+--- a/src/google/protobuf/util/field_mask_util.cc
++++ b/src/google/protobuf/util/field_mask_util.cc
+@@ -696,7 +696,11 @@ bool FieldMaskUtil::TrimMessage(const FieldMask& mask, Message* message) {
+   // fields.
+   FieldMaskTree tree;
+   tree.MergeFromFieldMask(mask);
++#ifndef PB_ENABLE_SGX
+   return tree.TrimMessage(ABSL_DIE_IF_NULL(message));
++#else
++  return tree.TrimMessage(message);
++#endif //PB_ENABLE_SGX
+ }
+ 
+ bool FieldMaskUtil::TrimMessage(const FieldMask& mask, Message* message,
+@@ -708,9 +712,17 @@ bool FieldMaskUtil::TrimMessage(const FieldMask& mask, Message* message,
+   // If keep_required_fields is true, implicitly add required fields of
+   // a message present in the tree to prevent from trimming.
+   if (options.keep_required_fields()) {
++#ifndef PB_ENABLE_SGX
+     tree.AddRequiredFieldPath(ABSL_DIE_IF_NULL(message->GetDescriptor()));
++#else
++    tree.AddRequiredFieldPath(message->GetDescriptor());
++#endif //PB_ENABLE_SGX
+   }
++#ifndef PB_ENABLE_SGX
+   return tree.TrimMessage(ABSL_DIE_IF_NULL(message));
++#else
++  return tree.TrimMessage(message);
++#endif //PB_ENABLE_SGX
+ }
+ 
+ }  // namespace util
 diff --git a/src/google/protobuf/util/time_util.h b/src/google/protobuf/util/time_util.h
-index 95cc64520..6d7c44775 100644
+index 7009d12c5..1745e06e9 100644
 --- a/src/google/protobuf/util/time_util.h
 +++ b/src/google/protobuf/util/time_util.h
 @@ -44,10 +44,14 @@ struct timeval {
-   int64 tv_usec; /* and microseconds */
+   int64_t tv_usec; /* and microseconds */
  };
  #else
 +#ifndef PB_ENABLE_SGX
@@ -932,7 +1290,22 @@ index 95cc64520..6d7c44775 100644
 +#endif //PB_ENABLE_SGX
  #endif
  
- #include <google/protobuf/duration.pb.h>
+ #include "google/protobuf/duration.pb.h"
+diff --git a/third_party/utf8_range/utf8_validity.cc b/third_party/utf8_range/utf8_validity.cc
+index db811993f..e8f744b98 100644
+--- a/third_party/utf8_range/utf8_validity.cc
++++ b/third_party/utf8_range/utf8_validity.cc
+@@ -23,6 +23,10 @@
+ #include "absl/strings/ascii.h"
+ #include "absl/strings/string_view.h"
+ 
++#ifdef PB_ENABLE_SGX
++#undef __SSE4_1__
++#endif //PB_ENABLE_SGX
++
+ #ifdef __SSE4_1__
+ #include <emmintrin.h>
+ #include <smmintrin.h>
 -- 
 2.34.1
 

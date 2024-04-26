@@ -77,6 +77,12 @@
 #define MAX_IPP_BN_LENGTH 2048
 #endif //MAX_IPP_BN_LENGTH
 
+typedef struct _ipp_ec_state_handles_t
+{
+    IppsGFpState *p_gfp_state;
+    IppsGFpECState *p_ec_state;
+} ipp_ec_state_handles_t;
+
 #define sgx_create_rsa_pub_key sgx_create_rsa_pub1_key
 
 IppStatus sgx_ipp_newBN(const Ipp32u *p_data, int size_in_bytes, IppsBigNumState **p_new_BN);

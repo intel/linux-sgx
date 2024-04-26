@@ -47,8 +47,6 @@ OBJ := $(SRC:.cpp=.o)
 OBJS := $(sort $(OBJ) version.o)
 AENAME_OUT :=  $(SONAME) #generate $(SONAME) only but do not sign it
 
-CONFIG := config_linux.xml
-
 .PHONY: all
 all: $(AENAME_OUT) 
 

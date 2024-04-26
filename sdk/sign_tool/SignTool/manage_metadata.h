@@ -103,10 +103,12 @@ bool parse_metadata_file(const char *xmlpath, xml_parameter_t *parameter, int pa
 bool update_metadata(const char *path, const metadata_t *metadata, uint64_t meta_offset);
 bool print_metadata(const char *path, const metadata_t *metadata);
 
+void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id);
+
 class CMetadata: private Uncopyable
 {
 public:
-    CMetadata(metadata_t *metadata, BinParser *parser);
+    CMetadata(metadata_t *metadata, BinParser *parser, bool fips_on);
     ~CMetadata();
     bool build_metadata(const xml_parameter_t *parameter);
     bool rts_dynamic();
@@ -122,6 +124,8 @@ private:
     bool fill_enclave_css(const xml_parameter_t *parameter);
     void *alloc_buffer_from_metadata(uint32_t size);
     bool get_xsave_size(uint64_t xfrm, uint32_t *xsave_size);
+    bool build_extend_entry_fips_sig(extend_entry_t *entry);
+    bool build_extend_table();
     bool build_layout_table();
     bool build_patch_table();
     bool update_layout_entries();

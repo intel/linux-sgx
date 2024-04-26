@@ -40,15 +40,6 @@
 *     Defines the entry point for the application.
 *
 */
-
-#include <openssl/bio.h>
-#include <openssl/bn.h>
-#include <openssl/sha.h>
-#include <openssl/rsa.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/crypto.h>
-
 #include "metadata.h"
 #include "manage_metadata.h"
 #include "parse_key_file.h"
@@ -75,14 +66,15 @@
 #include <memory>
 #include <sstream>
 
-#define SIGNATURE_SIZE 384
 #define REL_ERROR_BIT         0x1
 #define INIT_SEC_ERROR_BIT    0x2
 #define RESIGN_BIT            0x4
+#define FIPS_BIT              0x8
 
 #define IGNORE_REL_ERROR(x)        (((x) & REL_ERROR_BIT) != 0)
 #define IGNORE_INIT_SEC_ERROR(x)   (((x) & INIT_SEC_ERROR_BIT) != 0)
 #define ENABLE_RESIGN(x)           (((x) & RESIGN_BIT) != 0)
+#define ENABLE_FIPS(x)             (((x) & FIPS_BIT) != 0)
 
 typedef enum _file_path_t
 {
@@ -180,7 +172,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     }
 
     // generate metadata
-    CMetadata meta(metadata, parser.get());
+    CMetadata meta(metadata, parser.get(), ENABLE_FIPS(option_flag_bits));
     if(meta.build_metadata(parameter) == false)
     {
         close_handle(fh);
@@ -431,8 +423,45 @@ static bool calc_RSAq1q2(int length_s, const uint8_t *data_s, int length_m, cons
     return ret;
 }
 
+static bool create_fips_signature(metadata_t *metadata)
+{
+    assert(metadata != NULL);
 
-static bool create_signature(const EVP_PKEY *pkey, const char *sigpath, enclave_css_t *enclave_css)
+    extend_entry_fips_sig_t *sig = (extend_entry_fips_sig_t *)get_extend_entry_by_ID(metadata, EXTEND_ENTRY_ID_FIPS_SIG);
+    if(NULL == sig) // FIPS signature is not needed
+    {
+        return true;
+    }
+
+    // create key
+    const uint32_t e = 65537;
+    void *pkey = create_rsa_key_pair(SE_KEY_SIZE, e);
+    if(pkey == NULL)
+    {
+        return false;
+    }
+    // sign enclave css data
+    uint8_t signature[SIGNATURE_SIZE];
+    memset(signature, 0, SIGNATURE_SIZE);
+
+    if(false == create_rsa3072_signature(pkey, (const uint8_t *)&metadata->enclave_css, sizeof(metadata->enclave_css), signature, SIGNATURE_SIZE))
+    {
+        free_rsa_key(pkey);
+        return false;
+    }
+    memcpy_s(sig->signature, sizeof(sig->signature), signature, SIGNATURE_SIZE);
+
+    // fill in public key
+    if(false == get_rsa_pub_key(pkey, sig->modulus, sig->exponent))
+    {
+        free_rsa_key(pkey);
+        return false;
+    }
+    free_rsa_key(pkey);
+    return true;
+}
+
+static bool create_css_signature(const EVP_PKEY *pkey, const char *sigpath, enclave_css_t *enclave_css)
 {
     assert(enclave_css != NULL);
     assert(!(pkey == NULL && sigpath == NULL) && !(pkey != NULL && sigpath != NULL));
@@ -466,43 +495,12 @@ static bool create_signature(const EVP_PKEY *pkey, const char *sigpath, enclave_
         memcpy_s(temp_buffer + sizeof(enclave_css->header), buffer_size - sizeof(enclave_css->header),
             &enclave_css->body, sizeof(enclave_css->body));
 
-        uint8_t hash[SGX_HASH_SIZE] = {0};
-        unsigned int hash_size = SGX_HASH_SIZE;
-        if(SGX_SUCCESS != sgx_EVP_Digest(EVP_sha256(), temp_buffer, (unsigned int)buffer_size, hash, &hash_size))
+        if(false == create_rsa3072_signature((void *)pkey, temp_buffer, (uint32_t)buffer_size, signature, SIGNATURE_SIZE))
         {
             free(temp_buffer);
             return false;
         }
         free(temp_buffer);
-        size_t siglen;
-        EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new((EVP_PKEY *)pkey, NULL);
-        if(!ctx)
-        {
-            return false;
-        }
-        if (EVP_PKEY_sign_init(ctx) <= 0 ||
-            EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0 ||
-            EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256()) <= 0)
-        {
-            EVP_PKEY_CTX_free(ctx);
-            return false;
-        }
-        if(EVP_PKEY_sign(ctx, NULL, &siglen, hash, hash_size) <= 0)
-        {
-            EVP_PKEY_CTX_free(ctx);
-            return false;
-        }
-        if(SIGNATURE_SIZE != siglen)
-        {
-            EVP_PKEY_CTX_free(ctx);
-            return false;  
-        }
-        if(EVP_PKEY_sign(ctx, signature, &siglen, hash, hash_size) <= 0)
-        {
-            EVP_PKEY_CTX_free(ctx);
-            return false;  
-        }
-        EVP_PKEY_CTX_free(ctx);
     }
 
     for(int i = 0; i<SIGNATURE_SIZE; i++)
@@ -525,7 +523,7 @@ static bool create_signature(const EVP_PKEY *pkey, const char *sigpath, enclave_
     return res;
 }
 
-static bool verify_signature(const EVP_PKEY *pkey, const enclave_css_t *enclave_css)
+static bool verify_css_signature(const EVP_PKEY *pkey, const enclave_css_t *enclave_css)
 {
     assert(pkey != NULL && enclave_css != NULL);
     size_t buffer_size = sizeof(enclave_css->header) + sizeof(enclave_css->body);
@@ -539,36 +537,20 @@ static bool verify_signature(const EVP_PKEY *pkey, const enclave_css_t *enclave_
     memcpy_s(temp_buffer + sizeof(enclave_css->header), buffer_size-sizeof(enclave_css->header),
         &enclave_css->body, sizeof(enclave_css->body));
 
-    uint8_t hash[SGX_HASH_SIZE] = {0};
-    unsigned int hash_size = SGX_HASH_SIZE;
-    if(SGX_SUCCESS != sgx_EVP_Digest(EVP_sha256(), temp_buffer, (unsigned int)buffer_size, hash, &hash_size))
-    {
-        free(temp_buffer);
-        return false;
-    }
-    free(temp_buffer);
-
     uint8_t signature[SIGNATURE_SIZE];
     for(int i=0; i<SIGNATURE_SIZE; i++)
     {
         signature[i] = enclave_css->key.signature[SIGNATURE_SIZE-1-i];
     }
 
-    EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new((EVP_PKEY *)pkey, NULL);
-    if(!ctx)
+    if(false == verify_rsa3072_signature((void *)pkey, (const uint8_t *)temp_buffer, (uint32_t) buffer_size, signature, SIGNATURE_SIZE))
     {
+        free(temp_buffer);
         return false;
     }
-    if(EVP_PKEY_verify_init(ctx) <= 0 ||
-    EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_PADDING) <= 0 ||
-    EVP_PKEY_CTX_set_signature_md(ctx, EVP_sha256()) <= 0)
-    {
-        EVP_PKEY_CTX_free(ctx);
-        return false;
-    }
-    int ret = EVP_PKEY_verify(ctx, signature, SIGNATURE_SIZE, hash, hash_size);
-    EVP_PKEY_CTX_free(ctx);
-    return ret == 1 ? true : false;
+
+    free(temp_buffer);
+    return true;
 }
 
 static bool gen_enclave_signing_file(const enclave_css_t *enclave_css, const char *outpath)
@@ -687,7 +669,8 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
     {
         {"-ignore-rel-error", REL_ERROR_BIT},
         {"-ignore-init-sec-error", INIT_SEC_ERROR_BIT},
-        {"-resign", RESIGN_BIT}
+        {"-resign", RESIGN_BIT},
+        {"-enable-fips", FIPS_BIT}
     };
     unsigned int params_count = (unsigned)(sizeof(params_sign)/sizeof(params_sign[0]));
 
@@ -817,7 +800,7 @@ static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, co
             {
                 return false;
             }
-            if(false == create_signature(pkey, NULL, &(metadata->enclave_css)))
+            if(false == create_css_signature(pkey, NULL, &(metadata->enclave_css)))
             {
                 return false;
             }
@@ -849,7 +832,7 @@ static bool generate_output(int mode, int ktype, const uint8_t *enclave_hash, co
                 return false;
             }
 
-            if(false == create_signature(NULL, path[SIG], &(metadata->enclave_css)))
+            if(false == create_css_signature(NULL, path[SIG], &(metadata->enclave_css)))
             {
                 return false;
             }
@@ -1448,7 +1431,12 @@ int main(int argc, char* argv[])
     //to verify
     if(mode == SIGN || mode == CATSIG)
     {
-        if(verify_signature(pkey, &(metadata->enclave_css)) == false)
+        if(verify_css_signature(pkey, &(metadata->enclave_css)) == false)
+        {
+            se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
+            goto clear_return;
+        }
+        if(false == create_fips_signature(metadata))
         {
             se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
             goto clear_return;

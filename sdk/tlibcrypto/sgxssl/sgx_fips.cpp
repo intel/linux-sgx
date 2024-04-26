@@ -28,28 +28,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef _SE_VERSION_H_
-#define _SE_VERSION_H_
 
-#define STRFILEVER    "2.24.100.3"
-#define SGX_MAJOR_VERSION       2
-#define SGX_MINOR_VERSION       24
-#define SGX_REVISION_VERSION    100
-#define MAKE_VERSION_UINT(major,minor,rev)  (((uint64_t)major)<<32 | ((uint64_t)minor) << 16 | rev)
-#define VERSION_UINT        MAKE_VERSION_UINT(SGX_MAJOR_VERSION, SGX_MINOR_VERSION, SGX_REVISION_VERSION)
+#include "sgx_tcrypto.h"
+#include "se_tcrypto_common.h"
+#include "global_data.h"
+#include "util.h"
 
-#define COPYRIGHT      "Copyright (C) 2024 Intel Corporation"
+extern "C" sgx_status_t sgx_crypto_fips_selftest()
+{
+    return SGX_ERROR_UNSUPPORTED_FUNCTION;
+}
 
-#define UAE_SERVICE_VERSION       "2.3.223.3"
-#define URTS_VERSION              "2.0.107.3"
-#define ENCLAVE_COMMON_VERSION    "1.2.107.3"
-#define LAUNCH_VERSION            "1.0.125.3"
-#define EPID_VERSION              "1.0.125.3"
-#define QUOTE_EX_VERSION          "1.1.125.3"
+sgx_status_t sgx_is_fips_approved_func(sgx_fips_func_t func, func_fips_approved_t *is_approved)
+{
+    UNUSED(func);
+    UNUSED(is_approved);
+    return SGX_ERROR_UNSUPPORTED_FUNCTION;
+}
 
-#define PCE_VERSION               "1.22.100.1"
-#define LE_VERSION                "1.22.100.1"
-#define QE_VERSION                "1.22.100.1"
-#define PVE_VERSION               "1.22.100.1"
-
-#endif

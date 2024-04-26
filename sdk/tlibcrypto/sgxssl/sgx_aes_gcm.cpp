@@ -40,6 +40,167 @@
 #include "ssl_wrapper.h"
 #define OPENSSL_DEFAULT_IV_LEN 12
 
+static sgx_status_t aes_gcm_encrypt_internal(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                             uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, sgx_aes_gcm_128bit_tag_t *p_out_mac)
+{
+    if ((src_len >= INT_MAX) || (aad_len >= INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL)) || (p_out_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL)) || (p_iv == NULL) || ((p_src == NULL) && (p_aad == NULL)))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    if (key_len != SGX_AESGCM_KEY_SIZE && key_len != SGX_AESGCM_KEY256_SIZE)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    int len = 0;
+    EVP_CIPHER_CTX *pState = NULL;
+    const EVP_CIPHER *chpher = (key_len == SGX_AESGCM_KEY_SIZE ? EVP_aes_128_gcm() : EVP_aes_256_gcm());
+    do
+    {
+        // Create and init ctx
+        //
+        if (!(pState = EVP_CIPHER_CTX_new()))
+        {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+
+        // Initialise encrypt, key and IV
+        //
+        if (1 != EVP_EncryptInit_ex(pState, chpher, NULL, (unsigned char *)p_key, p_iv))
+        {
+            break;
+        }
+
+        // Provide AAD data if exist
+        //
+        if (NULL != p_aad)
+        {
+            if (1 != EVP_EncryptUpdate(pState, NULL, &len, p_aad, aad_len))
+            {
+                break;
+            }
+        }
+        if (src_len > 0)
+        {
+            // Provide the message to be encrypted, and obtain the encrypted output.
+            //
+            if (1 != EVP_EncryptUpdate(pState, p_dst, &len, p_src, src_len))
+            {
+                break;
+            }
+        }
+        // Finalise the encryption
+        //
+        if (1 != EVP_EncryptFinal_ex(pState, p_dst + len, &len))
+        {
+            break;
+        }
+
+        // Get tag
+        //
+        if (1 != EVP_CIPHER_CTX_ctrl(pState, EVP_CTRL_GCM_GET_TAG, SGX_AESGCM_MAC_SIZE, p_out_mac))
+        {
+            break;
+        }
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    // Clean up and return
+    //
+    if (pState)
+    {
+        EVP_CIPHER_CTX_free(pState);
+    }
+    return ret;
+}
+
+static sgx_status_t aes_gcm_decrypt_internal(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                             uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, const sgx_aes_gcm_128bit_tag_t *p_in_mac)
+{
+    uint8_t l_tag[SGX_AESGCM_MAC_SIZE];
+
+    if ((src_len >= INT_MAX) || (aad_len >= INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL)) || (p_in_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL)) || (p_iv == NULL) || ((p_src == NULL) && (p_aad == NULL)))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    if (key_len != SGX_AESGCM_KEY_SIZE && key_len != SGX_AESGCM_KEY256_SIZE)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
+    int len = 0;
+    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+    EVP_CIPHER_CTX *pState = NULL;
+    const EVP_CIPHER *chpher = (key_len == SGX_AESGCM_KEY_SIZE ? EVP_aes_128_gcm() : EVP_aes_256_gcm());
+    // Autenthication Tag returned by Decrypt to be compared with Tag created during seal
+    //
+    memset_s(&l_tag, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
+    memcpy(l_tag, p_in_mac, SGX_AESGCM_MAC_SIZE);
+
+    do
+    {
+        // Create and initialise the context
+        //
+        if (!(pState = EVP_CIPHER_CTX_new()))
+        {
+            ret = SGX_ERROR_OUT_OF_MEMORY;
+            break;
+        }
+
+        // Initialise decrypt, key and IV
+        //
+        if (!EVP_DecryptInit_ex(pState, chpher, NULL, (unsigned char *)p_key, p_iv))
+        {
+            break;
+        }
+
+        // Provide AAD data if exist
+        //
+        if (NULL != p_aad)
+        {
+            if (!EVP_DecryptUpdate(pState, NULL, &len, p_aad, aad_len))
+            {
+                break;
+            }
+        }
+
+        // Decrypt message, obtain the plaintext output
+        //
+        if (!EVP_DecryptUpdate(pState, p_dst, &len, p_src, src_len))
+        {
+            break;
+        }
+
+        // Update expected tag value
+        //
+        if (!EVP_CIPHER_CTX_ctrl(pState, EVP_CTRL_GCM_SET_TAG, SGX_AESGCM_MAC_SIZE, l_tag))
+        {
+            break;
+        }
+
+        // Finalise the decryption. A positive return value indicates success,
+        // anything else is a failure - the plaintext is not trustworthy.
+        //
+        if (EVP_DecryptFinal_ex(pState, p_dst + len, &len) <= 0)
+        {
+            ret = SGX_ERROR_MAC_MISMATCH;
+            break;
+        }
+        ret = SGX_SUCCESS;
+    } while (0);
+
+    // Clean up and return
+    //
+    if (pState != NULL)
+    {
+        EVP_CIPHER_CTX_free(pState);
+    }
+    memset_s(&l_tag, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
+    return ret;
+}
+
 /* Rijndael AES-GCM
 * Parameters:
 *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
@@ -58,140 +219,39 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
                                         uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len,
                                         sgx_aes_gcm_128bit_tag_t *p_out_mac)
 {
-	if ((src_len >= INT_MAX) || (aad_len >= INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
-		|| (p_out_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL))
-		|| (p_iv == NULL) || ((p_src == NULL) && (p_aad == NULL)))
-	{
-		return SGX_ERROR_INVALID_PARAMETER;
-	}
-	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-	int len = 0;
-	EVP_CIPHER_CTX * pState = NULL;
-
-	do {
-		// Create and init ctx
-		//
-		if (!(pState = EVP_CIPHER_CTX_new())) {
-			ret = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// Initialise encrypt, key and IV
-		//
-		if (1 != EVP_EncryptInit_ex(pState, EVP_aes_128_gcm(), NULL, (unsigned char*)p_key, p_iv)) {
-			break;
-		}
-
-		// Provide AAD data if exist
-		//
-		if (NULL != p_aad) {
-			if (1 != EVP_EncryptUpdate(pState, NULL, &len, p_aad, aad_len)) {
-				break;
-			}
-		}
-        if (src_len > 0) {
-            // Provide the message to be encrypted, and obtain the encrypted output.
-            //
-            if (1 != EVP_EncryptUpdate(pState, p_dst, &len, p_src, src_len)) {
-                break;
-            }
-        }
-		// Finalise the encryption
-		//
-		if (1 != EVP_EncryptFinal_ex(pState, p_dst + len, &len)) {
-			break;
-		}
-
-		// Get tag
-		//
-		if (1 != EVP_CIPHER_CTX_ctrl(pState, EVP_CTRL_GCM_GET_TAG, SGX_AESGCM_MAC_SIZE, p_out_mac)) {
-			break;
-		}
-		ret = SGX_SUCCESS;
-	} while (0);
-
-	// Clean up and return
-	//
-	if (pState) {
-			EVP_CIPHER_CTX_free(pState);
-	}
-	return ret;
+    return aes_gcm_encrypt_internal((const uint8_t *)p_key, sizeof(sgx_aes_ctr_128bit_key_t), p_src, src_len, p_dst, p_iv, iv_len, p_aad, aad_len, p_out_mac);
 }
 
 sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, const uint8_t *p_src,
                                         uint32_t src_len, uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len,
                                         const uint8_t *p_aad, uint32_t aad_len, const sgx_aes_gcm_128bit_tag_t *p_in_mac)
 {
-	uint8_t l_tag[SGX_AESGCM_MAC_SIZE];
-
-	if ((src_len >= INT_MAX) || (aad_len >= INT_MAX) || (p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
-		|| (p_in_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL))
-		|| (p_iv == NULL) || ((p_src == NULL) && (p_aad == NULL)))
-	{
-		return SGX_ERROR_INVALID_PARAMETER;
-	}
-	int len = 0;
-	sgx_status_t ret = SGX_ERROR_UNEXPECTED;
-	EVP_CIPHER_CTX * pState = NULL;
-
-	// Autenthication Tag returned by Decrypt to be compared with Tag created during seal
-	//
-	memset_s(&l_tag, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
-	memcpy(l_tag, p_in_mac, SGX_AESGCM_MAC_SIZE);
-
-	do {
-		// Create and initialise the context
-		//
-		if (!(pState = EVP_CIPHER_CTX_new())) {
-			ret = SGX_ERROR_OUT_OF_MEMORY;
-			break;
-		}
-
-		// Initialise decrypt, key and IV
-		//
-		if (!EVP_DecryptInit_ex(pState, EVP_aes_128_gcm(), NULL, (unsigned char*)p_key, p_iv)) {
-			break;
-		}
-
-		// Provide AAD data if exist
-		//
-		if (NULL != p_aad) {
-			if (!EVP_DecryptUpdate(pState, NULL, &len, p_aad, aad_len)) {
-				break;
-			}
-		}
-
-		// Decrypt message, obtain the plaintext output
-		//
-		if (!EVP_DecryptUpdate(pState, p_dst, &len, p_src, src_len)) {
-			break;
-		}
-
-		// Update expected tag value
-		//
-		if (!EVP_CIPHER_CTX_ctrl(pState, EVP_CTRL_GCM_SET_TAG, SGX_AESGCM_MAC_SIZE, l_tag)) {
-			break;
-		}
-
-		// Finalise the decryption. A positive return value indicates success,
-		// anything else is a failure - the plaintext is not trustworthy.
-		//
-		if (EVP_DecryptFinal_ex(pState, p_dst + len, &len) <= 0) {
-			ret = SGX_ERROR_MAC_MISMATCH;
-			break;
-		}
-		ret = SGX_SUCCESS;
-	} while (0);
-
-	// Clean up and return
-	//
-	if (pState != NULL) {
-		EVP_CIPHER_CTX_free(pState);
-	}
-	memset_s(&l_tag, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
-	return ret;
+    return aes_gcm_decrypt_internal((const uint8_t *)p_key, sizeof(sgx_aes_ctr_128bit_key_t), p_src, src_len, p_dst, p_iv, iv_len, p_aad, aad_len, p_in_mac);
 }
 
+sgx_status_t sgx_aes_gcm_encrypt(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                 uint8_t *p_dst, uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, sgx_aes_gcm_128bit_tag_t *p_out_mac)
+{
+    if(p_iv == NULL || iv_len != SGX_AESGCM_IV_SIZE)
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    uint8_t iv[SGX_AESGCM_IV_SIZE];
+    sgx_status_t ret = sgx_read_rand(iv, SGX_AESGCM_IV_SIZE);
+    if(ret != SGX_SUCCESS)
+        return ret;
+    ret = aes_gcm_encrypt_internal(p_key, key_len, p_src, src_len, p_dst, iv, SGX_AESGCM_IV_SIZE, p_aad, aad_len, p_out_mac);
+    if(ret == SGX_SUCCESS)
+        memcpy(p_iv, iv, SGX_AESGCM_IV_SIZE);
+
+    memset_s(iv, SGX_AESGCM_IV_SIZE, 0, SGX_AESGCM_IV_SIZE);
+    return ret;
+}
+
+sgx_status_t sgx_aes_gcm_decrypt(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                 uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, const sgx_aes_gcm_128bit_tag_t *p_in_mac)
+{
+    return aes_gcm_decrypt_internal(p_key, key_len, p_src, src_len, p_dst, p_iv, iv_len, p_aad, aad_len, p_in_mac);
+}
 
 sgx_status_t sgx_aes_gcm128_enc_init(const uint8_t *key, const uint8_t *iv, uint32_t iv_len, const uint8_t *aad,
     uint32_t aad_len, sgx_aes_state_handle_t* aes_gcm_state)

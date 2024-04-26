@@ -29,31 +29,54 @@
  *
  */
 
-#ifndef _CRYPTO_WRAPPER_H
-#define _CRYPTO_WRAPPER_H
+#include "ippcp.h"
 
-#include <openssl/evp.h>
-#include "sgx_report.h"
-#include "sgx_error.h"
+#ifndef IPP_CALL
+#define IPP_CALL IPP_STDCALL
+#endif
+#define IPPFUN(type,name,arg) extern type IPP_CALL name arg
 
-#define SIGNATURE_SIZE 384
-
+#ifndef NULL
 #ifdef  __cplusplus
+#define NULL    0
+#else
+#define NULL    ((void *)0)
+#endif
+#endif
+
+#if defined (_M_AMD64) || defined (__x86_64__)
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
+#define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
+#define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
+
+#ifdef __cplusplus
 extern "C" {
 #endif
 
-sgx_status_t sgx_EVP_Digest(const EVP_MD *type, const uint8_t *p_src, unsigned int src_len, uint8_t *digest, unsigned int *digest_len);
-sgx_status_t sgx_cmac128_msg(const sgx_key_128bit_t key, const uint8_t *p_src, unsigned int src_len, sgx_mac_t *p_mac);
-void *create_rsa_key_pair(int n_byte_size, uint32_t e);
-void *create_rsa_pub_key(const unsigned char *p_n, int len_n, const unsigned char *p_e, int len_e);
-bool get_rsa_pub_key(void *pkey, uint8_t *p_n, uint8_t *p_e);
-void free_rsa_key(void *pkey);
-bool create_rsa3072_signature(void *pkey, const uint8_t *p_data, uint32_t data_size, uint8_t *p_signature, size_t siglen);
-bool verify_rsa3072_signature(void *pkey, const uint8_t *p_data, uint32_t data_size, uint8_t *p_signature, size_t siglen);
+IPPAPI(IppStatus, k1_ippsXMSSSignatureStateGetSize, (Ipp32s* pSize, IppsXMSSAlgo OIDAlgo))
+IPPAPI(IppStatus, l9_ippsXMSSSignatureStateGetSize, (Ipp32s* pSize, IppsXMSSAlgo OIDAlgo))
+IPPAPI(IppStatus, y8_ippsXMSSSignatureStateGetSize, (Ipp32s* pSize, IppsXMSSAlgo OIDAlgo))
 
-#ifdef  __cplusplus
+IPPFUN(IppStatus, sgx_disp_ippsXMSSSignatureStateGetSize, (Ipp32s* pSize, IppsXMSSAlgo OIDAlgo))
+{
+    Ipp64u _features;
+    _features = ippcpGetEnabledCpuFeatures();
+
+    if( AVX3I_FEATURES  == ( _features & AVX3I_FEATURES  )) {
+        return k1_ippsXMSSSignatureStateGetSize( pSize, OIDAlgo );
+    } else 
+    if( ippCPUID_AVX2  == ( _features & ippCPUID_AVX2  )) {
+        return l9_ippsXMSSSignatureStateGetSize( pSize, OIDAlgo );
+    } else 
+    if( ippCPUID_SSE42  == ( _features & ippCPUID_SSE42  )) {
+        return y8_ippsXMSSSignatureStateGetSize( pSize, OIDAlgo );
+    } else 
+        return ippStsCpuNotSupportedErr;
+}
+
+#ifdef __cplusplus
 }
 #endif
 
 #endif
-

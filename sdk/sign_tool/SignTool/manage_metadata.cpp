@@ -185,12 +185,13 @@ bool parse_metadata_file(const char *xmlpath, xml_parameter_t *parameter, int pa
     return true;
 }
 
-CMetadata::CMetadata(metadata_t *metadata, BinParser *parser)
+CMetadata::CMetadata(metadata_t *metadata, BinParser *parser, bool fips_on)
     :  m_meta_verions(0), m_metadata(metadata), m_parser(parser)
     , m_rva(0), m_gd_size(0), m_gd_template(NULL)
 {
     memset(m_metadata, 0, sizeof(metadata_t));
     memset(&m_create_param, 0, sizeof(m_create_param));
+    m_create_param.fips_on = fips_on ? 1 : 0;
     memset(&m_elrange_config_entry, 0, sizeof(m_elrange_config_entry));
 }
 CMetadata::~CMetadata()
@@ -207,6 +208,12 @@ bool CMetadata::build_metadata(const xml_parameter_t *parameter)
     {
         return false;
     }
+    // extend table
+    if(!build_extend_table())
+    {
+        return false;
+    }
+
     // layout table
     if(!build_layout_table())
     {
@@ -772,6 +779,59 @@ void *CMetadata::alloc_buffer_from_metadata(uint32_t size)
     return addr;
 }
 
+bool CMetadata::build_extend_entry_fips_sig(extend_entry_t *entry)
+{
+    uint32_t size = (uint32_t)sizeof(extend_entry_fips_sig_t);
+    void *buf =  alloc_buffer_from_metadata(size);
+    if (buf == NULL)
+    {
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "FIPS signature extend_entry could not be allocated\n");
+        return false;
+    }
+    entry->entry_id = EXTEND_ENTRY_ID_FIPS_SIG;
+    entry->offset = (uint32_t)PTR_DIFF(buf, m_metadata);
+    entry->size = size;
+    return true;
+}
+
+bool CMetadata::build_extend_table()
+{
+    uint32_t size = 0;
+    uint32_t offset = 0;
+    uint32_t count = 0;
+
+    if((m_create_param.fips_on == 1))
+    {
+        count++;
+    }
+
+    if(count > 0)
+    {
+        size = (uint32_t)sizeof(extend_entry_t) * count;
+        extend_entry_t *extend_table = (extend_entry_t *) alloc_buffer_from_metadata(size);
+        if(extend_table == NULL)
+        {
+            se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+            se_trace(SE_TRACE_ERROR, "Extend table could not be allocated\n");
+            return false;
+        }
+
+        int index = 0;
+        if((m_create_param.fips_on == 1))
+        {
+            build_extend_entry_fips_sig(&extend_table[index]);
+            index++;
+        }
+
+        offset = (uint32_t)PTR_DIFF(extend_table, m_metadata);
+    }
+    m_metadata->dirs[DIR_EXTEND].offset = offset;
+    m_metadata->dirs[DIR_EXTEND].size = size;
+
+    return true;
+}
+
 /*
 * Called within build_layout_table(), used to assign the rva to entry layout  
 * and load_step to group layout.
@@ -897,17 +957,8 @@ bool CMetadata::build_elrange_config_entry()
     {
         return true;
     }
-    //place the elrange config entry at the beginning of data
-    uint32_t size = (uint32_t)(sizeof(data_directory_t));
-    data_directory_t* dir = (data_directory_t*)alloc_buffer_from_metadata(size);
-    if(dir == NULL)
-    {
-        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
-        se_trace(SE_TRACE_ERROR, "Elrange config table could not be allocated\n");
-        return false;
-    }
 
-    size = (uint32_t)(sizeof(elrange_config_entry_t));
+    uint32_t size = (uint32_t)(sizeof(elrange_config_entry_t));
     elrange_config_entry_t *config_table = (elrange_config_entry_t *) alloc_buffer_from_metadata(size);
     if(config_table == NULL)
     {
@@ -920,9 +971,9 @@ bool CMetadata::build_elrange_config_entry()
     config_table->elrange_start_address = m_elrange_config_entry.elrange_start_address;
     config_table->enclave_image_address = m_elrange_config_entry.enclave_image_address;
     
-    dir->offset = (uint32_t)PTR_DIFF(config_table, m_metadata);
-    dir->size = size;
-    
+    m_metadata->dirs[DIR_ELRANGE].offset = (uint32_t)PTR_DIFF(config_table, m_metadata);
+    m_metadata->dirs[DIR_ELRANGE].size = size;
+
     return true;
 }
 
@@ -1818,4 +1869,22 @@ bool print_metadata(const char *path, const metadata_t *metadata)
 
     meta_ofs.close();
     return true;
+}
+void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id)
+{
+    if(metadata->dirs[DIR_EXTEND].offset == 0 || metadata->dirs[DIR_EXTEND].size == 0)
+    {
+        return NULL;
+    }
+    extend_entry_t *entry = GET_PTR(extend_entry_t, metadata, metadata->dirs[DIR_EXTEND].offset);
+    for(size_t i = 0; i < metadata->dirs[DIR_EXTEND].size / sizeof(extend_entry_t); i++)
+    {
+        if (entry[i].entry_id == entry_id
+         && entry[i].offset != 0
+         && entry[i].size != 0)
+        {
+            return GET_PTR(void, metadata, entry[i].offset);
+        }
+    }
+    return NULL;
 }

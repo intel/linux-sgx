@@ -287,7 +287,7 @@ extern "C" sgx_status_t sgx_get_metadata(const char* enclave_file, metadata_t *m
         return SGX_ERROR_INVALID_METADATA;
     }
     
-    if(memcpy_s(metadata, sizeof(metadata_t), p_metadata, sizeof(metadata_t)))
+    if(memcpy_s(metadata, METADATA_LEGACY_SIZE, p_metadata, METADATA_LEGACY_SIZE))
     {
         unmap_file(mh);
         close(fd);

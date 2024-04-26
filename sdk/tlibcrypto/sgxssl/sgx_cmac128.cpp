@@ -79,6 +79,9 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
 		}
 
 		params[0] = OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_CIPHER,  cipher_name, sizeof(cipher_name));
+		if(!EVP_MAC_CTX_set_params(mctx, params)) {
+			break;
+		}
 
 		if ((!EVP_MAC_init(mctx, (const uint8_t *)p_key, sizeof(sgx_key_128bit_t), params))) {
 			break;
@@ -145,6 +148,9 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
 
 		params[0] = OSSL_PARAM_construct_utf8_string(OSSL_MAC_PARAM_CIPHER,  cipher_name, sizeof(cipher_name));
 
+		if(!EVP_MAC_CTX_set_params(mctx, params)) {
+			break;
+		}
 		if ((!EVP_MAC_init(mctx, (const uint8_t *)p_key, sizeof(sgx_key_128bit_t), params))) {
 			break;
 		}
