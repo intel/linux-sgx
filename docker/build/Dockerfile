@@ -28,14 +28,13 @@
 #
 
 
-FROM ubuntu:18.04 as builder
+FROM ubuntu:22.04 as builder
 
 RUN apt-get update && apt-get install  -y \
     autoconf \
     automake \
     build-essential \
     cmake \
-    curl \
     debhelper \
     git \
     libcurl4-openssl-dev \
@@ -46,9 +45,17 @@ RUN apt-get update && apt-get install  -y \
     ocaml \
     ocamlbuild \
     protobuf-compiler \
-    python3 \
+    python-is-python3 \
     reprepro \
-    wget
+    wget \
+    perl \
+    unzip \
+    pkgconf \
+    libboost-dev \
+    libboost-system-dev \
+    libboost-thread-dev \
+    lsb-release \
+    libsystemd0
 RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1
 
 # We assume this docker file is invoked with root at the top of linux-sgx repo, see shell scripts for example.
@@ -67,13 +74,12 @@ RUN make psw_install_pkg
 ENV BUILD_PLATFORM="docker"
 RUN make deb_local_repo
 
-FROM ubuntu:18.04 as aesm
+FROM ubuntu:22.04 as aesm
 RUN apt-get update && apt-get install -y \
-    libcurl4 \
-    libprotobuf10 \
-    libssl1.1 \
-    make \
-    module-init-tools
+    libcurl4-openssl-dev \
+    libprotobuf-dev \
+    libssl-dev \
+    make
 
 WORKDIR /installer
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
@@ -82,18 +88,17 @@ WORKDIR /opt/intel/sgxpsw/aesm/
 ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon
 
-FROM ubuntu:18.04 as aesm_deb
+FROM ubuntu:22.04 as aesm_deb
 RUN apt-get update && apt-get install -y \
-    libcurl4 \
-    libprotobuf10 \
-    libssl1.1 \
-    make \
-    module-init-tools
+    libcurl4-openssl-dev \
+    libprotobuf-dev \
+    libssl-dev \
+    make
 
 WORKDIR /deb_local_repo
 
 COPY --from=builder /linux-sgx/linux/installer/deb/sgx_debian_local_repo/ ./
-RUN echo "deb [trusted=yes arch=amd64] file:///deb_local_repo bionic main">>/etc/apt/sources.list
+RUN echo "deb [trusted=yes arch=amd64] file:///deb_local_repo jammy main">>/etc/apt/sources.list
 RUN apt-get update
 RUN apt-get install -y libsgx-aesm-launch-plugin libsgx-aesm-quote-ex-plugin
 
@@ -102,14 +107,13 @@ ENV LD_LIBRARY_PATH=.
 CMD ./aesm_service --no-daemon
 
 
-FROM ubuntu:18.04 as sample
+FROM ubuntu:22.04 as sample
 RUN apt-get update && apt-get install -y \
     g++ \
     libcurl4-openssl-dev \
     libprotobuf-dev \
     libssl-dev \
-    make \
-    module-init-tools
+    make
 
 WORKDIR /opt/intel
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
@@ -125,19 +129,18 @@ USER sgxuser
 CMD ./app
 
 
-FROM ubuntu:18.04 as sample_deb
+FROM ubuntu:22.04 as sample_deb
 RUN apt-get update && apt-get install -y \
     g++ \
     libcurl4-openssl-dev \
     libprotobuf-dev \
     libssl-dev \
-    make \
-    module-init-tools
+    make
 
 WORKDIR /deb_local_repo
 
 COPY --from=builder /linux-sgx/linux/installer/deb/sgx_debian_local_repo/ ./
-RUN echo "deb [trusted=yes arch=amd64] file:///deb_local_repo bionic main">>/etc/apt/sources.list
+RUN echo "deb [trusted=yes arch=amd64] file:///deb_local_repo jammy main">>/etc/apt/sources.list
 RUN apt-get update
 RUN apt-get install -y libsgx-urts
 

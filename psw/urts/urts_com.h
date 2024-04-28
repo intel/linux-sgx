@@ -57,6 +57,7 @@
 #define PARSER ElfParser
 #endif
 #include "xsave.h"
+#include "crypto_wrapper.h"
 
 #include "ittnotify.h"
 #include "ittnotify_config.h"
@@ -64,7 +65,6 @@
 
 extern "C" int __itt_init_ittlib(const char*, __itt_group_id);
 extern "C" __itt_global* __itt_get_ittapi_global();
-
 
 
 #define GET_FEATURE_POINTER(feature_name, ex_features_p)    ex_features_p[feature_name##_BIT_IDX]
@@ -147,6 +147,43 @@ static int validate_platform()
 }
 #endif
 
+static void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id)
+{
+    if(metadata->dirs[DIR_EXTEND].offset == 0 || metadata->dirs[DIR_EXTEND].size == 0)
+    {
+        return NULL;
+    }
+    extend_entry_t *entry = GET_PTR(extend_entry_t, metadata, metadata->dirs[DIR_EXTEND].offset);
+    for(size_t i = 0; i < metadata->dirs[DIR_EXTEND].size / sizeof(extend_entry_t); i++)
+    {
+        if (entry[i].entry_id == entry_id
+         && entry[i].offset != 0
+         && entry[i].size != 0)
+        {
+            return GET_PTR(void, metadata, entry[i].offset);
+        }
+    }
+    return NULL;
+}
+
+static bool is_extend_entry_supported(uint64_t version)
+{
+    if(MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == 2)
+    {
+        return false;
+    }
+    if( MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == SGX_1_9_MAJOR_VERSION
+     && MINOR_VERSION_OF_METADATA(version) < SGX_1_9_MINOR_VERSION_EXTEND)
+    {
+        return false;
+    }
+    if( MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == MAJOR_VERSION
+     && MINOR_VERSION_OF_METADATA(version) < SGX_3_0_MINOR_VERSION_EXTEND)
+    {
+        return false;
+    }
+    return true;
+}
 static bool check_metadata_version(uint64_t urts_version, uint64_t metadata_version)
 {
     //for metadata change, we have updated the metadata major version
@@ -157,7 +194,6 @@ static bool check_metadata_version(uint64_t urts_version, uint64_t metadata_vers
     
     return true;
 }
-
 
 static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t **metadata, sgx_misc_attribute_t *sgx_misc_attr)
 {
@@ -223,6 +259,22 @@ static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t 
     else
     {
         *metadata = target_metadata;
+    }
+
+    // verify FIPS signature
+    if(is_extend_entry_supported(target_metadata->version))
+    {
+        extend_entry_fips_sig_t *sig = (extend_entry_fips_sig_t *)get_extend_entry_by_ID(target_metadata, EXTEND_ENTRY_ID_FIPS_SIG);
+        if(NULL != sig)
+        {
+            void *pkey = create_rsa_pub_key(sig->modulus, sizeof(sig->modulus), sig->exponent, sizeof(sig->exponent));
+            if(pkey == NULL) {
+                return SGX_ERROR_INVALID_METADATA;
+            }
+            if (false == verify_rsa3072_signature(pkey, (const uint8_t *)&target_metadata->enclave_css, sizeof(target_metadata->enclave_css), sig->signature, sizeof(sig->signature))) {
+                return SGX_ERROR_INVALID_METADATA;
+            }
+        }
     }
 
     return (sgx_status_t)get_enclave_creator()->get_misc_attr(sgx_misc_attr, *metadata, NULL, debug);

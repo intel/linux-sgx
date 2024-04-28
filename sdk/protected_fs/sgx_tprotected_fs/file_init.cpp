@@ -397,6 +397,7 @@ bool protected_fs_file::file_recovery(const char* filename)
 bool protected_fs_file::init_existing_file(const char* filename, const char* clean_filename, const sgx_aes_gcm_128bit_key_t* import_key)
 {
 	sgx_status_t status;
+	uint8_t temp_node[NODE_SIZE] = { 0 };
 
 	if (file_addr == NULL || real_file_size < NODE_SIZE)
 	{
@@ -474,9 +475,11 @@ bool protected_fs_file::init_existing_file(const char* filename, const char* cle
 			return false;
 		}
 
+		memcpy(temp_node, file_addr + NODE_SIZE, NODE_SIZE); // temp buffer for TOCTOU
+
 		// this also verifies the root mht gmac against the gmac in the meta-data encrypted part
 		status = sgx_rijndael128GCM_decrypt(&encrypted_part_plain.mht_key, 
-											file_addr + NODE_SIZE, NODE_SIZE, (uint8_t*)&root_mht.plain, 
+											temp_node, NODE_SIZE, (uint8_t*)&root_mht.plain, 
 											empty_iv, SGX_AESGCM_IV_SIZE, NULL, 0, &encrypted_part_plain.mht_gmac);
 		if (status != SGX_SUCCESS)
 		{

@@ -55,116 +55,114 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    IppsBigNumState*    BN_dh_privB = NULL;
-    IppsBigNumState*    BN_dh_shared_x = NULL;
-    IppsBigNumState*    BN_dh_shared_y = NULL;
-    IppsBigNumState*    pubA_gx = NULL;
-    IppsBigNumState*    pubA_gy = NULL;
-    IppsECCPPointState* point_pubA = NULL;
-    IppsECCPPointState* point_R = NULL;
-    IppStatus           ipp_ret = ippStsNoErr;
-    int                 ecPointSize = 0;
-    IppECResult         ipp_result = ippECValid;
-    IppsECCPState* p_ecc_state = (IppsECCPState*)ecc_handle;
-
+    IppsBigNumState* bn_dh_privb = NULL;
+    IppsBigNumState* bn_dh_shared_x = NULL;
+    IppsBigNumState* bn_dh_shared_y = NULL;
+    IppsBigNumState* puba_gx = NULL;
+    IppsBigNumState* puba_gy = NULL;
+    IppsGFpECPoint*  point_pub_a = NULL;
+    IppsGFpECPoint*  point_r = NULL;
+    IppStatus        ipp_ret = ippStsErr;
+    int              ec_point_size = 0;
+    IppECResult      ipp_result = ippECValid;
+    int scratch_size = 0;
+    Ipp8u* scratch_buf = NULL;
+    ipp_ec_state_handles_t *p_ec_handle = (ipp_ec_state_handles_t *)ecc_handle;
     do
     {
-        ipp_ret = sgx_ipp_newBN((Ipp32u*)p_private_b->r, sizeof(sgx_ec256_private_t), &BN_dh_privB);
+        ipp_ret = sgx_ipp_newBN((Ipp32u*)p_private_b->r, sizeof(sgx_ec256_private_t), &bn_dh_privb);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = sgx_ipp_newBN((uint32_t*)p_public_ga->gx, sizeof(p_public_ga->gx), &pubA_gx);
+        ipp_ret = sgx_ipp_newBN((uint32_t*)p_public_ga->gx, sizeof(p_public_ga->gx), &puba_gx);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = sgx_ipp_newBN((uint32_t*)p_public_ga->gy, sizeof(p_public_ga->gy), &pubA_gy);
+        ipp_ret = sgx_ipp_newBN((uint32_t*)p_public_ga->gy, sizeof(p_public_ga->gy), &puba_gy);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = ippsECCPPointGetSize(256, &ecPointSize);
+
+        ipp_ret = ippsGFpECPointGetSize(p_ec_handle->p_ec_state, &ec_point_size);
         ERROR_BREAK(ipp_ret);
-        point_pubA = (IppsECCPPointState*)( malloc(ecPointSize) );
-        if(!point_pubA)
+        point_pub_a = (IppsGFpECPoint *)malloc(ec_point_size);
+        if(!point_pub_a)
         {
             ipp_ret = ippStsNoMemErr;
             break;
         }
-        ipp_ret = ippsECCPPointInit(256, point_pubA);
+        ipp_ret = ippsGFpECPointInit(NULL, NULL, point_pub_a, p_ec_handle->p_ec_state);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = ippsECCPSetPoint(pubA_gx, pubA_gy, point_pubA, p_ecc_state);
+        ipp_ret = ippsGFpECSetPointRegular(puba_gx, puba_gy, point_pub_a, p_ec_handle->p_ec_state);
         ERROR_BREAK(ipp_ret);
-
-        //defense in depth to verify that input public key in ECC group
-        //a return value of ippECValid indicates the point is on the elliptic curve
-        //and is not the point at infinity
-        ipp_ret = ippsECCPCheckPoint(point_pubA, &ipp_result, p_ecc_state);
-        ERROR_BREAK(ipp_ret);
-
-        if (ipp_result != ippECValid )
-        {
-            ipp_ret = ippStsPointAtInfinity;
-            break;
-        }
-
-        point_R = (IppsECCPPointState*)( malloc(ecPointSize) );
-        if(!point_R)
-        {
-            ipp_ret = ippStsNoMemErr;
-            break;
-        }
-        ipp_ret = ippsECCPPointInit(256, point_R);
-        ERROR_BREAK(ipp_ret);
-
-        ipp_ret = sgx_ipp_newBN(NULL, sizeof(sgx_ec256_dh_shared_t), &BN_dh_shared_x);
-        ERROR_BREAK(ipp_ret);
-        ipp_ret = sgx_ipp_newBN(NULL, sizeof(sgx_ec256_dh_shared_t), &BN_dh_shared_y);
-        ERROR_BREAK(ipp_ret);
-
-        ipp_ret = ippsECCPMulPointScalar(point_pubA, BN_dh_privB, point_R, p_ecc_state);
-        ERROR_BREAK(ipp_ret);
-
-        //defense in depth to verify that point_R in ECC group
-        //a return value of ippECValid indicates the point is on the elliptic curve
-        //and is not the point at infinity
-        ipp_ret = ippsECCPCheckPoint(point_R, &ipp_result, p_ecc_state);
-        ERROR_BREAK(ipp_ret);
-
+        ipp_ret = ippsGFpECTstPoint(point_pub_a, &ipp_result, p_ec_handle->p_ec_state);
+        ERROR_BREAK(ipp_ret);  
         if (ipp_result != ippECValid)
         {
-            ipp_ret = ippStsPointAtInfinity;
             break;
         }
 
-        ipp_ret = ippsECCPGetPoint(BN_dh_shared_x, BN_dh_shared_y, point_R, p_ecc_state);
+        point_r = (IppsGFpECPoint *)malloc(ec_point_size);
+        if(!point_r)
+        {
+            ipp_ret = ippStsNoMemErr;
+            break;
+        }
+        ipp_ret = ippsGFpECPointInit(NULL, NULL, point_r, p_ec_handle->p_ec_state);
+        ERROR_BREAK(ipp_ret);
+
+        ipp_ret = ippsGFpECScratchBufferSize(1, p_ec_handle->p_ec_state, &scratch_size);
+        ERROR_BREAK(ipp_ret);
+        scratch_buf = (Ipp8u *)malloc(scratch_size);
+        if(!scratch_buf)
+        {
+            ipp_ret = ippStsNoMemErr;
+            break;
+        }
+        ipp_ret = ippsGFpECMulPoint(point_pub_a, bn_dh_privb, point_r, p_ec_handle->p_ec_state, scratch_buf);
+        ERROR_BREAK(ipp_ret);
+
+        //defense in depth to verify that point_r in ECC group
+        //a return value of ippECValid indicates the point is on the elliptic curve
+        //and is not the point at infinity
+        ipp_ret = ippsGFpECTstPoint(point_r, &ipp_result, p_ec_handle->p_ec_state);
+        ERROR_BREAK(ipp_ret);  
+        if (ipp_result != ippECValid)
+        {
+            break;
+        }
+
+        ipp_ret = sgx_ipp_newBN(NULL, sizeof(sgx_ec256_dh_shared_t), &bn_dh_shared_x);
+        ERROR_BREAK(ipp_ret);
+        ipp_ret = sgx_ipp_newBN(NULL, sizeof(sgx_ec256_dh_shared_t), &bn_dh_shared_y);
+        ERROR_BREAK(ipp_ret);
+        ipp_ret = ippsGFpECGetPointRegular(point_r, bn_dh_shared_x, bn_dh_shared_y, p_ec_handle->p_ec_state);
         ERROR_BREAK(ipp_ret);
 
         IppsBigNumSGN sgn = IppsBigNumPOS;
         int length = 0;
         Ipp32u *pdata = NULL;
-        ipp_ret = ippsRef_BN(&sgn, &length, &pdata, BN_dh_shared_x);
+        ipp_ret = ippsRef_BN(&sgn, &length, &pdata, bn_dh_shared_x);
         ERROR_BREAK(ipp_ret);
         memset(p_shared_key->x, 0, sizeof(p_shared_key->x));
         memcpy(p_shared_key->x, pdata, ROUND_TO(length, 8)/8);
         // Clear memory securely
         memset_s(pdata, sizeof(p_shared_key->x), 0, ROUND_TO(length, 8)/8);
 
-        ipp_ret = ippsRef_BN(&sgn, &length, &pdata, BN_dh_shared_y);
+        ipp_ret = ippsRef_BN(&sgn, &length, &pdata, bn_dh_shared_y);
         ERROR_BREAK(ipp_ret);
         memset(p_shared_key->y, 0, sizeof(p_shared_key->y));
         memcpy(p_shared_key->y, pdata, ROUND_TO(length, 8)/8);
         // Clear memory securely
         memset_s(pdata, sizeof(p_shared_key->x), 0, ROUND_TO(length, 8)/8);
     }while(0);
-
-    SAFE_FREE(point_pubA);
-    if (point_R) memset_s(point_R, ecPointSize, 0, ecPointSize);
-    SAFE_FREE(point_R);
-    sgx_ipp_secure_free_BN(pubA_gx, sizeof(p_public_ga->gx));
-    sgx_ipp_secure_free_BN(pubA_gy, sizeof(p_public_ga->gy));
-    sgx_ipp_secure_free_BN(BN_dh_privB, sizeof(sgx_ec256_private_t));
-    sgx_ipp_secure_free_BN(BN_dh_shared_x, sizeof(sgx_ec256_dh_shared_t));
-    sgx_ipp_secure_free_BN(BN_dh_shared_y, sizeof(sgx_ec256_dh_shared_t));
+    CLEAR_FREE_MEM(point_pub_a, ec_point_size);
+    CLEAR_FREE_MEM(point_r, ec_point_size);
+    sgx_ipp_secure_free_BN(puba_gx, sizeof(p_public_ga->gx));
+    sgx_ipp_secure_free_BN(puba_gy, sizeof(p_public_ga->gy));
+    sgx_ipp_secure_free_BN(bn_dh_privb, sizeof(sgx_ec256_private_t));
+    sgx_ipp_secure_free_BN(bn_dh_shared_x, sizeof(sgx_ec256_dh_shared_t));
+    sgx_ipp_secure_free_BN(bn_dh_shared_y, sizeof(sgx_ec256_dh_shared_t));
 
     if (ipp_ret == ippStsNoMemErr || ipp_ret == ippStsMemAllocErr)
     {
         return SGX_ERROR_OUT_OF_MEMORY;
     }
-
-    if (ipp_ret != ippStsNoErr)
+    else if (ipp_ret != ippStsNoErr)
     {
         return SGX_ERROR_UNEXPECTED;
     }

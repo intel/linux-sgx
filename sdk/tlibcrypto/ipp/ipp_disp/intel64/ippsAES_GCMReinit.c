@@ -28,28 +28,55 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-#ifndef _SE_VERSION_H_
-#define _SE_VERSION_H_
 
-#define STRFILEVER    "2.24.100.1"
-#define SGX_MAJOR_VERSION       2
-#define SGX_MINOR_VERSION       24
-#define SGX_REVISION_VERSION    100
-#define MAKE_VERSION_UINT(major,minor,rev)  (((uint64_t)major)<<32 | ((uint64_t)minor) << 16 | rev)
-#define VERSION_UINT        MAKE_VERSION_UINT(SGX_MAJOR_VERSION, SGX_MINOR_VERSION, SGX_REVISION_VERSION)
+#include "ippcp.h"
 
-#define COPYRIGHT      "Copyright (C) 2024 Intel Corporation"
+#ifndef IPP_CALL
+#define IPP_CALL IPP_STDCALL
+#endif
+#define IPPFUN(type,name,arg) extern type IPP_CALL name arg
 
-#define UAE_SERVICE_VERSION       "2.3.223.1"
-#define URTS_VERSION              "2.0.107.1"
-#define ENCLAVE_COMMON_VERSION    "1.2.107.1"
-#define LAUNCH_VERSION            "1.0.125.1"
-#define EPID_VERSION              "1.0.125.1"
-#define QUOTE_EX_VERSION          "1.1.125.1"
+#ifndef NULL
+#ifdef  __cplusplus
+#define NULL    0
+#else
+#define NULL    ((void *)0)
+#endif
+#endif
 
-#define PCE_VERSION               "1.22.100.1"
-#define LE_VERSION                "1.22.100.1"
-#define QE_VERSION                "1.22.100.1"
-#define PVE_VERSION               "1.22.100.1"
+#if defined (_M_AMD64) || defined (__x86_64__)
+
+#define AVX3I_FEATURES ( ippCPUID_SHA|ippCPUID_AVX512VBMI|ippCPUID_AVX512VBMI2|ippCPUID_AVX512IFMA|ippCPUID_AVX512GFNI|ippCPUID_AVX512VAES|ippCPUID_AVX512VCLMUL )
+#define AVX3X_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512VL|ippCPUID_AVX512BW|ippCPUID_AVX512DQ )
+#define AVX3M_FEATURES ( ippCPUID_AVX512F|ippCPUID_AVX512CD|ippCPUID_AVX512PF|ippCPUID_AVX512ER )
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+IPPAPI(IppStatus, k1_ippsAES_GCMReinit,(IppsAES_GCMState* pState))
+IPPAPI(IppStatus, l9_ippsAES_GCMReinit,(IppsAES_GCMState* pState))
+IPPAPI(IppStatus, y8_ippsAES_GCMReinit,(IppsAES_GCMState* pState))
+
+IPPFUN(IppStatus, sgx_disp_ippsAES_GCMReinit,(IppsAES_GCMState* pState))
+{
+    Ipp64u _features;
+    _features = ippcpGetEnabledCpuFeatures();
+
+    if( AVX3I_FEATURES  == ( _features & AVX3I_FEATURES  )) {
+        return k1_ippsAES_GCMReinit( pState );
+    } else 
+    if( ippCPUID_AVX2  == ( _features & ippCPUID_AVX2  )) {
+        return l9_ippsAES_GCMReinit( pState );
+    } else 
+    if( ippCPUID_SSE42  == ( _features & ippCPUID_SSE42  )) {
+        return y8_ippsAES_GCMReinit( pState );
+    } else 
+        return ippStsCpuNotSupportedErr;
+}
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

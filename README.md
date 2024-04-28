@@ -355,7 +355,7 @@ Install the Intel(R) SGX SDK
   * On Debian 10:
   ```
     $ sudo apt-get install build-essential python3
-    $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3
+    $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
    * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
   ```

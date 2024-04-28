@@ -35,6 +35,8 @@ PB_DIR = protobuf_code
 LIBPB = $(PB_DIR)/final_tlibPB/build/libprotobuf.a
 PROTOCPB = $(PB_DIR)/final_protocPB/build/protoc
 INCLUDEPB = $(PB_DIR)/src/google/protobuf
+ABSEIL_DIR = third_party/abseil-cpp
+DEST_LIBRARY_NAME = libsgx_protobuf.a
 
 PB_CONFIG = -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_WORKS=TRUE -DCMAKE_CXX_COMPILER_WORKS=TRUE
 ifdef DEBUG
@@ -53,11 +55,14 @@ endif
 .PHONY: all
 ifeq ($(BUILD_PROTOC), 1)
 all: $(LIBPB) $(PROTOCPB) $(BUILD_DIR)
-	$(CP) $(LIBPB) $(BUILD_DIR)/libsgx_protobuf.a
+	make -f Makefile.archivelibrary
+	$(CP) $(PB_DIR)/final_tlibPB/build/$(DEST_LIBRARY_NAME) $(BUILD_DIR)
 	$(CP) $(PROTOCPB) $(BUILD_DIR)/sgx_protoc
 else
 all: $(LIBPB) $(BUILD_DIR)
-	$(CP) $(LIBPB) $(BUILD_DIR)/libsgx_protobuf.a
+	make -f Makefile.archivelibrary
+	$(CP) $(PB_DIR)/final_tlibPB/build/$(DEST_LIBRARY_NAME) $(BUILD_DIR)
+
 endif
 
 $(BUILD_DIR):
@@ -70,19 +75,19 @@ protobuf_code:
 #	git submodule update -f --init $(PB_DIR)
 #else
 	$(RM) -r $(PB_DIR)/
-	git clone https://github.com/protocolbuffers/protobuf.git -b v3.20.1 --depth 1 $(PB_DIR)
+	git clone https://github.com/protocolbuffers/protobuf.git -b v23.2 --depth 1 $(PB_DIR)
 #endif
 
 
 $(LIBPB): $(CHECK_SOURCE)
-ifeq ("$(wildcard $(PB_DIR)/cmake/libsgx_protobuf.cmake)", "")
-	cd $(PB_DIR) && git apply ../sgx_protobuf.patch&& cd ..
+ifeq ("$(wildcard $(PB_DIR)/src/file_lists_for_sgx.cmake)", "")
+	cd $(PB_DIR) && git apply ../sgx_protobuf.patch && git submodule update --init --recursive && cd $(ABSEIL_DIR) && git apply ../../../sgx_abseil.patch && cd ../../..
 endif
-	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_TESTS=FALSE -DSGX=TRUE ../../cmake && make libprotobuf
+	$(MKDIR) protobuf_code/final_tlibPB/build && cd protobuf_code/final_tlibPB/build && cmake $(PB_CONFIG) -Dprotobuf_BUILD_TESTS=FALSE -DSGX=TRUE ../../ -B . && make libprotobuf
 
 ifeq ($(BUILD_PROTOC), 1)
 $(PROTOCPB): $(CHECK_SOURCE)
-	$(MKDIR) protobuf_code/final_protocPB/build && cd protobuf_code/final_protocPB/build && cmake -Dprotobuf_BUILD_TESTS=FALSE -DSGX=FALSE -DCMAKE_SKIP_RPATH=TRUE ../../cmake && make protoc
+	$(MKDIR) protobuf_code/final_protocPB/build && cd protobuf_code/final_protocPB/build && cmake -Dprotobuf_BUILD_TESTS=FALSE -DSGX=FALSE -DCMAKE_SKIP_RPATH=TRUE ../../ -B . && make protoc
 endif
 
 .PHONY: clean

@@ -51,6 +51,7 @@
 #define SGX_NISTP_ECP256_KEY_SIZE       (SGX_ECP256_KEY_SIZE/sizeof(uint32_t))
 #define SGX_AESGCM_IV_SIZE              12
 #define SGX_AESGCM_KEY_SIZE             16
+#define SGX_AESGCM_KEY256_SIZE          32
 #define SGX_AESGCM_MAC_SIZE             16
 #define SGX_HMAC256_KEY_SIZE            32
 #define SGX_HMAC256_MAC_SIZE            32
@@ -109,6 +110,7 @@ typedef uint8_t sgx_sha256_hash_t[SGX_SHA256_HASH_SIZE];
 typedef uint8_t sgx_sha384_hash_t[SGX_SHA384_HASH_SIZE];
 
 typedef uint8_t sgx_aes_gcm_128bit_key_t[SGX_AESGCM_KEY_SIZE];
+typedef uint8_t sgx_aes_gcm_256bit_key_t[SGX_AESGCM_KEY256_SIZE];
 typedef uint8_t sgx_aes_gcm_128bit_tag_t[SGX_AESGCM_MAC_SIZE];
 typedef uint8_t sgx_hmac_256bit_key_t[SGX_HMAC256_KEY_SIZE];
 typedef uint8_t sgx_hmac_256bit_tag_t[SGX_HMAC256_MAC_SIZE];
@@ -184,6 +186,52 @@ typedef struct _rsa_params_t {
 	unsigned int iqmp[IQMP_SIZE_IN_UINT];
 }rsa_params_t;
 
+typedef enum _sgx_fips_func_t {
+    // FIPS approved SGX crypto wrapper, > 0
+    SGX_SHA384_MSG = 0x1,
+    SGX_SHA256_MSG,
+    SGX_SHA384_UPDATE,
+    SGX_SHA384_GET_HASH,
+    SGX_SHA256_UPDATE,
+    SGX_SHA256_GET_HASH,
+    SGX_RIJNDAEL128_CMAC_MSG,
+    SGX_CMAC128_UPDATE,
+    SGX_CMAC128_FINAL,
+    SGX_HMAC_SHA256_MSG,
+    SGX_HMAC256_UPDATE,
+    SGX_HMAC256_FINAL,
+    SGX_AES_CTR_ENCRYPT,
+    SGX_AES_CTR_DECRYPT,
+    SGX_ECC256_CHECK_POINT,
+    SGX_ECDSA_VERIFY,
+    SGX_ECDSA_VERIFY_HASH,
+    SGX_RSA3072_SIGN,
+    SGX_RSA3072_SIGN_EX,
+    SGX_RSA3072_VERIFY,
+    SGX_RSA_PRIV_DECRYPT_SHA256,
+    SGX_RSA_PUB_ENCRYPT_SHA256,
+    SGX_CREATE_RSA_PRIV2_KEY,
+    SGX_CREATE_RSA_PRIV1_KEY,
+    SGX_CREATE_RSA_PUB1_KEY,
+    SGX_ECC256_COMPUTE_SHARED_DHKEY,
+    SGX_CREATE_RSA_KEY_PAIR,
+
+    // FIPS mode not supported functions, < 0
+    SGX_RIJNDAEL128GCM_ENCRYPT = -0xFF,
+    SGX_RIJNDAEL128GCM_DECRYPT,
+    SGX_SHA1_MSG,
+    SGX_SHA1_UPDATE,
+    SGX_SHA1_GET_HASH,
+    SGX_ECC256_CREATE_KEY_PAIR,      // FIPS mode is not enabled because GFpECPrivateKey is not implemented as FIPS approved
+    SGX_ECDSA_SIGN                   // FIPS mode is not enabled because GFpECPrivateKey is not implemented as FIPS approved
+}sgx_fips_func_t;
+
+typedef unsigned int func_fips_approved_t;
+
+#define _TCRYPTO_DEPRECATED(message) __attribute__(( deprecated( message )))
+#define SHA1_DEPRECATED_MSG "The SHA-1 hash algorithm is considered weak due to known vulnerabilities and has been deprecated \
+in sgx_tcrypto. Please switch to some other hash algorithm."
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -221,6 +269,7 @@ extern "C" {
    */
     sgx_status_t SGXAPI sgx_sha384_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha384_hash_t *p_hash);
     sgx_status_t SGXAPI sgx_sha256_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha256_hash_t *p_hash);
+    _TCRYPTO_DEPRECATED(SHA1_DEPRECATED_MSG)
     sgx_status_t SGXAPI sgx_sha1_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha1_hash_t *p_hash);
 
    /** Allocates and initializes sha state
@@ -231,6 +280,7 @@ extern "C" {
    */
     sgx_status_t SGXAPI sgx_sha384_init(sgx_sha_state_handle_t* p_sha_handle);
     sgx_status_t SGXAPI sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle);
+    _TCRYPTO_DEPRECATED(SHA1_DEPRECATED_MSG)
     sgx_status_t SGXAPI sgx_sha1_init(sgx_sha_state_handle_t* p_sha_handle);
 
    /** Updates sha calculation based on the input message
@@ -243,6 +293,7 @@ extern "C" {
     */
     sgx_status_t SGXAPI sgx_sha384_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_state_handle_t sha_handle);
     sgx_status_t SGXAPI sgx_sha256_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_state_handle_t sha_handle);
+    _TCRYPTO_DEPRECATED(SHA1_DEPRECATED_MSG)
     sgx_status_t SGXAPI sgx_sha1_update(const uint8_t *p_src, size_t src_len, sgx_sha_state_handle_t sha_handle);
 
    /** Returns Hash calculation
@@ -254,6 +305,7 @@ extern "C" {
     */
     sgx_status_t SGXAPI sgx_sha384_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha384_hash_t *p_hash);
     sgx_status_t SGXAPI sgx_sha256_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha256_hash_t *p_hash);
+    _TCRYPTO_DEPRECATED(SHA1_DEPRECATED_MSG)
     sgx_status_t SGXAPI sgx_sha1_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha1_hash_t *p_hash);
 
    /** Cleans up SHA state
@@ -264,6 +316,7 @@ extern "C" {
     */
     sgx_status_t SGXAPI sgx_sha384_close(sgx_sha_state_handle_t sha_handle);
     sgx_status_t SGXAPI sgx_sha256_close(sgx_sha_state_handle_t sha_handle);
+    _TCRYPTO_DEPRECATED(SHA1_DEPRECATED_MSG)
     sgx_status_t SGXAPI sgx_sha1_close(sgx_sha_state_handle_t sha_handle);
 
    /**Rijndael AES-GCM - Only 128-bit key AES-GCM Encryption/Decryption is supported
@@ -329,6 +382,77 @@ extern "C" {
                                                 const uint8_t *p_aad,
                                                 uint32_t aad_len,
                                                 const sgx_aes_gcm_128bit_tag_t *p_in_mac);
+
+   /** FIPS compatible version AES-GCM Encryption function, which will generate a random initialization vector
+    *
+    * sgx_aes_gcm_encrypt:
+    * Return: If key, source, destination, MAC, or IV pointer is NULL, SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If AAD size is > 0 and the AAD pointer is NULL, SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If the Source Length is < 1, SGX_ERROR_INVALID_PARAMETER is returned.
+    *         IV Length must = 12 (bytes) or SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If out of enclave memory, then SGX_ERROR_OUT_OF_MEMORY is returned.
+    *         If the encryption process fails then SGX_ERROR_UNEXPECTED is returned.
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: uint8_t *p_key - Pointer to the key used in encryption operation
+    *                            Size must be 16 bytes (128-bits) or 32 bytes (256-bits)
+    *           uint32_t key_len – Key size, must be 16 (bytes) or 32 (bytes)
+    *           uint8_t *p_src - Pointer to the input stream to be encrypted
+    *           uint32_t src_len - Length of the input stream to be encrypted
+    *           uint32_t iv_len - Length of the initialization vector - MUST BE 12 (bytes)
+    *                             NIST AES-GCM recommended IV size = 96 bits
+    *           uint8_t *p_aad - Pointer to the input stream of additional authentication data
+    *           uint32_t aad_len - Length of the additional authentication data stream
+    *   Output: uint8_t *p_dst - Pointer to the cipher text. Size of buffer should be >= src_len
+    *           sgx_aes_gcm_128bit_tag_t *p_out_mac - Pointer to the MAC generated from encryption process
+    *           uint8_t *p_iv - Pointer to the generated initialization vector. Size of buffer should be >= iv_len
+    */
+    sgx_status_t sgx_aes_gcm_encrypt(const uint8_t *p_key,
+                                    uint32_t key_len,
+                                    const uint8_t *p_src,
+                                    uint32_t src_len,
+                                    uint8_t *p_dst,
+                                    uint8_t *p_iv,
+                                    uint32_t iv_len,
+                                    const uint8_t *p_aad,
+                                    uint32_t aad_len,
+                                    sgx_aes_gcm_128bit_tag_t *p_out_mac);
+
+    /** AES-GCM Decryption
+    *
+    * sgx_aes_gcm_decrypt:
+    * Return: If key, source, destination, MAC, or IV pointer is NULL, SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If AAD size is > 0 and the AAD pointer is NULL, SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If the Source Length is < 1, SGX_ERROR_INVALID_PARAMETER is returned.
+    *         IV Length must = 12 (bytes) or SGX_ERROR_INVALID_PARAMETER is returned.
+    *         If out of enclave memory, then SGX_ERROR_OUT_OF_MEMORY is returned.
+    *         If the decryption process fails then SGX_ERROR_UNEXPECTED is returned.
+    * Parameters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: uint8_t *p_key - Pointer to the key used in decryption operation
+    *                            Size must be 16 bytes (128-bits) or 32 bytes (256-bits)
+    *           uint32_t key_len – Key size, must be 16 (bytes) or 32 (bytes)
+    *           uint8_t *p_src - Pointer to the input stream to be decrypted
+    *           uint32_t src_len - Length of the input stream to be decrypted
+    *           uint8_t *p_iv - Pointer to the initialization vector
+    *           uint32_t iv_len - Length of the initialization vector - MUST BE 12 (bytes)
+    *                             NIST AES-GCM recommended IV size = 96 bits
+    *           uint8_t *p_aad - Pointer to the input stream of additional authentication data
+    *           uint32_t aad_len - Length of the additional authentication data stream
+    *           sgx_aes_gcm_128bit_tag_t *p_in_mac - Pointer to the expected MAC in decryption process
+    *   Output: uint8_t *p_dst - Pointer to the clear text for decryption. Size of buffer should be >= src_len
+    * NOTE: Wrapper is responsible for confirming decryption tag matches encryption tag
+    */
+    sgx_status_t sgx_aes_gcm_decrypt(const uint8_t *p_key,
+                                    uint32_t key_len,
+                                    const uint8_t *p_src,
+                                    uint32_t src_len,
+                                    uint8_t *p_dst,
+                                    const uint8_t *p_iv,
+                                    uint32_t iv_len,
+                                    const uint8_t *p_aad,
+                                    uint32_t aad_len,
+                                    const sgx_aes_gcm_128bit_tag_t *p_in_mac);
 
    /** Message Authentication Rijndael 128 CMAC - Only 128-bit key size is supported.
     * NOTE: Use sgx_rijndael128_cmac_msg if the src ptr contains the complete msg to perform hash (Option 1)
@@ -1001,6 +1125,16 @@ extern "C" {
         uint32_t src_len,
         uint8_t *p_dst,
         sgx_aes_state_handle_t aes_gcm_state);
+
+    /** Check if a function is FIPS-approved or not
+    *
+    * Paramters:
+    *   Return: sgx_status_t - SGX_SUCCESS or failure as defined in sgx_error.h
+    *   Inputs: func - function name that is member of sgx_fips_func_t enumerator.
+    *   Output: is_approved - equal to 1 if FIPS-approved function is used.
+    *
+    */
+    sgx_status_t sgx_is_fips_approved_func(sgx_fips_func_t func, func_fips_approved_t *is_approved);
 
 #ifdef __cplusplus
 }

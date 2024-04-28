@@ -37,23 +37,9 @@
 #include "string.h"
 #include <limits.h>
 
-/* Rijndael AES-GCM
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
-*   Inputs: sgx_aes_gcm_128bit_key_t *p_key - Pointer to key used in encryption/decryption operation
-*           uint8_t *p_src - Pointer to input stream to be encrypted/decrypted
-*           uint32_t src_len - Length of input stream to be encrypted/decrypted
-*           uint8_t *p_iv - Pointer to initialization vector to use
-*           uint32_t iv_len - Length of initialization vector
-*           uint8_t *p_aad - Pointer to input stream of additional authentication data
-*           uint32_t aad_len - Length of additional authentication data stream
-*           sgx_aes_gcm_128bit_tag_t *p_in_mac - Pointer to expected MAC in decryption process
-*   Output: uint8_t *p_dst - Pointer to cipher text. Size of buffer should be >= src_len.
-*           sgx_aes_gcm_128bit_tag_t *p_out_mac - Pointer to MAC generated from encryption process
-* NOTE: Wrapper is responsible for confirming decryption tag matches encryption tag */
-sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, const uint8_t *p_src, uint32_t src_len,
-                                        uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len,
-                                        sgx_aes_gcm_128bit_tag_t *p_out_mac)
+
+static sgx_status_t aes_gcm_encrypt_internal(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                 uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, sgx_aes_gcm_128bit_tag_t *p_out_mac)
 {
     IppStatus error_code = ippStsNoErr;
     IppsAES_GCMState* pState = NULL;
@@ -66,6 +52,11 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+    if(key_len != SGX_AESGCM_KEY_SIZE && key_len != SGX_AESGCM_KEY256_SIZE)
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+
     error_code = ippsAES_GCMGetSize(&ippStateSize);
     if (error_code != ippStsNoErr)
     {
@@ -76,7 +67,7 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     {
         return SGX_ERROR_OUT_OF_MEMORY;
     }
-    error_code = ippsAES_GCMInit((const Ipp8u *)p_key, SGX_AESGCM_KEY_SIZE, pState, ippStateSize);
+    error_code = ippsAES_GCMInit((const Ipp8u *)p_key, key_len, pState, ippStateSize);
     if (error_code != ippStsNoErr)
     {
         // Clear temp State before free.
@@ -144,9 +135,8 @@ sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     return SGX_SUCCESS;
 }
 
-sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, const uint8_t *p_src,
-                                        uint32_t src_len, uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len,
-                                        const uint8_t *p_aad, uint32_t aad_len, const sgx_aes_gcm_128bit_tag_t *p_in_mac)
+static sgx_status_t aes_gcm_decrypt_internal(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                 uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, const sgx_aes_gcm_128bit_tag_t *p_in_mac)
 {
     IppStatus error_code = ippStsNoErr;
     uint8_t l_tag[SGX_AESGCM_MAC_SIZE];
@@ -157,6 +147,11 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     if ((p_key == NULL) || ((src_len > 0) && (p_dst == NULL)) || ((src_len > 0) && (p_src == NULL))
         || (p_in_mac == NULL) || (iv_len != SGX_AESGCM_IV_SIZE) || ((aad_len > 0) && (p_aad == NULL))
         || (p_iv == NULL) || ((p_src == NULL) && (p_aad == NULL)))
+    {
+        return SGX_ERROR_INVALID_PARAMETER;
+    }
+    // Currently only accept 128-bits key and 256-bits key
+    if(key_len != SGX_AESGCM_KEY_SIZE && key_len != SGX_AESGCM_KEY256_SIZE)
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
@@ -173,7 +168,7 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
     {
         return SGX_ERROR_OUT_OF_MEMORY;
     }
-    error_code = ippsAES_GCMInit((const Ipp8u *)p_key, SGX_AESGCM_KEY_SIZE, pState, ippStateSize);
+    error_code = ippsAES_GCMInit((const Ipp8u *)p_key, key_len, pState, ippStateSize);
     if (error_code != ippStsNoErr)
     {
         // Clear temp State before free.
@@ -249,6 +244,59 @@ sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, c
 
     memset_s(&l_tag, SGX_AESGCM_MAC_SIZE, 0, SGX_AESGCM_MAC_SIZE);
     return SGX_SUCCESS;
+}
+
+/* Rijndael AES-GCM
+* Parameters:
+*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
+*   Inputs: sgx_aes_gcm_128bit_key_t *p_key - Pointer to key used in encryption/decryption operation
+*           uint8_t *p_src - Pointer to input stream to be encrypted/decrypted
+*           uint32_t src_len - Length of input stream to be encrypted/decrypted
+*           uint8_t *p_iv - Pointer to initialization vector to use
+*           uint32_t iv_len - Length of initialization vector
+*           uint8_t *p_aad - Pointer to input stream of additional authentication data
+*           uint32_t aad_len - Length of additional authentication data stream
+*           sgx_aes_gcm_128bit_tag_t *p_in_mac - Pointer to expected MAC in decryption process
+*   Output: uint8_t *p_dst - Pointer to cipher text. Size of buffer should be >= src_len.
+*           sgx_aes_gcm_128bit_tag_t *p_out_mac - Pointer to MAC generated from encryption process
+* NOTE: Wrapper is responsible for confirming decryption tag matches encryption tag */
+sgx_status_t sgx_rijndael128GCM_encrypt(const sgx_aes_gcm_128bit_key_t *p_key, const uint8_t *p_src, uint32_t src_len,
+                                        uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len,
+                                        sgx_aes_gcm_128bit_tag_t *p_out_mac)
+{
+    return aes_gcm_encrypt_internal((const uint8_t *)p_key, sizeof(sgx_aes_ctr_128bit_key_t), p_src, src_len, p_dst, p_iv, iv_len, p_aad, aad_len, p_out_mac);
+
+}
+
+sgx_status_t sgx_rijndael128GCM_decrypt(const sgx_aes_gcm_128bit_key_t *p_key, const uint8_t *p_src,
+                                        uint32_t src_len, uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len,
+                                        const uint8_t *p_aad, uint32_t aad_len, const sgx_aes_gcm_128bit_tag_t *p_in_mac)
+{
+    return aes_gcm_decrypt_internal((const uint8_t *)p_key, sizeof(sgx_aes_ctr_128bit_key_t), p_src, src_len, p_dst, p_iv, iv_len, p_aad, aad_len, p_in_mac);
+}
+
+sgx_status_t sgx_aes_gcm_encrypt(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                 uint8_t *p_dst, uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, sgx_aes_gcm_128bit_tag_t *p_out_mac)
+{
+    if(p_iv == NULL || iv_len != SGX_AESGCM_IV_SIZE)
+        return SGX_ERROR_INVALID_PARAMETER;
+
+    uint8_t iv[SGX_AESGCM_IV_SIZE];
+    sgx_status_t ret = sgx_read_rand(iv, SGX_AESGCM_IV_SIZE);
+    if(ret != SGX_SUCCESS)
+        return ret;
+    ret = aes_gcm_encrypt_internal(p_key, key_len, p_src, src_len, p_dst, iv, SGX_AESGCM_IV_SIZE, p_aad, aad_len, p_out_mac);
+    if(ret == SGX_SUCCESS)
+        memcpy(p_iv, iv, SGX_AESGCM_IV_SIZE);
+
+    memset_s(iv, SGX_AESGCM_IV_SIZE, 0, SGX_AESGCM_IV_SIZE);
+    return ret;
+}
+
+sgx_status_t sgx_aes_gcm_decrypt(const uint8_t *p_key, uint32_t key_len, const uint8_t *p_src, uint32_t src_len,
+                                 uint8_t *p_dst, const uint8_t *p_iv, uint32_t iv_len, const uint8_t *p_aad, uint32_t aad_len, const sgx_aes_gcm_128bit_tag_t *p_in_mac)
+{
+    return aes_gcm_decrypt_internal(p_key, key_len, p_src, src_len, p_dst, p_iv, iv_len, p_aad, aad_len, p_in_mac);
 }
 
 sgx_status_t sgx_aes_gcm128_enc_init(const uint8_t *key, const uint8_t *iv, uint32_t iv_len, const uint8_t *aad,

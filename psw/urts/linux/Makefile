@@ -45,6 +45,8 @@ CFLAGS += -fPIC -Werror -g
 CFLAGS += $(ADDED_INC)
 
 VTUNE_DIR = $(LINUX_EXTERNAL_DIR)/vtune/linux
+PREBUILT_OPENSSL_DIR := $(LINUX_EXTERNAL_DIR)/dcap_source/prebuilt/openssl
+CRYPTO_LIB := -L$(PREBUILT_OPENSSL_DIR)/lib/linux64 -lcrypto
 
 INC += -I$(SGX_HEADER_DIR)                \
        -I$(COMMON_DIR)/inc/internal       \
@@ -54,14 +56,15 @@ INC += -I$(SGX_HEADER_DIR)                \
        -I$(LINUX_PSW_DIR)/urts/linux      \
        -I$(LINUX_PSW_DIR)/urts/parser     \
        -I$(VTUNE_DIR)/include \
-       -I$(VTUNE_DIR)/sdk/src/ittnotify 
+       -I$(VTUNE_DIR)/sdk/src/ittnotify   \
+       -I$(PREBUILT_OPENSSL_DIR)/inc
 
 LDFLAGS := -lwrapper
 INTERNAL_LDFLAGS := -lwrapper
 LDFLAGS += $(COMMON_LDFLAGS) -Wl,-Bdynamic -L$(BUILD_DIR) -lsgx_enclave_common -lpthread
 INTERNAL_LDFLAGS += $(COMMON_LDFLAGS) -lpthread
-LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
-INTERNAL_LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl
+LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl $(CRYPTO_LIB)
+INTERNAL_LDFLAGS += -L$(VTUNE_DIR)/sdk/src/ittnotify -littnotify -ldl $(CRYPTO_LIB)
 LDFLAGS += -Wl,--version-script=urts.lds -Wl,--gc-sections
 INTERNAL_LDFLAGS += -Wl,--version-script=urts_internal.lds -Wl,--gc-sections
 
@@ -70,6 +73,7 @@ DIR2 := $(LINUX_PSW_DIR)/urts
 DIR3 := $(LINUX_PSW_DIR)/urts/parser
 DIR4 := $(LINUX_PSW_DIR)/urts/parser/linux
 DIR5 := $(LINUX_PSW_DIR)/../common/src/linux
+DIR6 := $(LINUX_PSW_DIR)/../common/src
 
 LIB += -L$(COMMON_DIR)/se_wrapper_psw \
        -L$(SGX_LIB_DIR)
@@ -108,12 +112,14 @@ OBJ4 := section.o \
 
 OBJ5 := urts_internal.o
 
-CPP_OBJ := $(OBJ1) $(OBJ2) $(OBJ4) $(OBJ5)
-URTS_OBJ     := $(OBJ3) $(OBJ1) $(OBJ2) $(OBJ4)
+OBJ6 := crypto_evp_digest.o crypto_rsa_key.o crypto_rsa3072.o
+
+CPP_OBJ := $(OBJ1) $(OBJ2) $(OBJ4) $(OBJ5) $(OBJ6)
+URTS_OBJ     := $(OBJ3) $(OBJ1) $(OBJ2) $(OBJ4) $(OBJ6)
 INTERNAL_OBJ := $(OBJ3) $(CPP_OBJ)
 
 
-vpath %.cpp $(DIR1):$(DIR2):$(DIR3):$(DIR4)
+vpath %.cpp $(DIR1):$(DIR2):$(DIR3):$(DIR4):$(DIR6)
 vpath %.S   $(DIR1):$(DIR5)
 
 LIBWRAPPER            := libwrapper.a

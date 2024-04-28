@@ -29,12 +29,12 @@
 #
 
 
-FROM ubuntu:18.04 as sgxbase
+FROM ubuntu:22.04 as sgxbase
 RUN apt-get update && apt-get install -y \
     gnupg \
     wget
 
-RUN echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu bionic main' > /etc/apt/sources.list.d/intel-sgx.list
+RUN echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main' > /etc/apt/sources.list.d/intel-sgx.list
 RUN wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add -
 RUN apt-get update 
 
@@ -43,17 +43,17 @@ FROM sgxbase as sgx_sample_builder
 RUN apt-get install -y build-essential
 
 WORKDIR /opt/intel
-RUN wget https://download.01.org/intel-sgx/sgx-linux/2.8/distro/ubuntu18.04-server/sgx_linux_x64_sdk_2.8.100.3.bin
-RUN chmod +x sgx_linux_x64_sdk_2.8.100.3.bin
-RUN echo 'yes' | ./sgx_linux_x64_sdk_2.8.100.3.bin
+RUN wget https://download.01.org/intel-sgx/sgx-linux/2.22/distro/ubuntu22.04-server/sgx_linux_x64_sdk_2.22.100.3.bin
+RUN chmod +x sgx_linux_x64_sdk_2.22.100.3.bin
+RUN echo 'yes' | ./sgx_linux_x64_sdk_2.22.100.3.bin
 WORKDIR /opt/intel/sgxsdk/SampleCode/SampleEnclave
 RUN SGX_DEBUG=0 SGX_MODE=HW SGX_PRERELEASE=1 make
 
 FROM sgxbase as sample
 RUN apt-get install -y \
-    libcurl4 \
-    libprotobuf10 \
-    libssl1.1
+    libcurl4-openssl-dev \
+    libprotobuf-dev \
+    libssl-dev
 
 # No AESM daemon, only AESM client side API support for launch.
 # For applications requiring attestation, add libsgx-quote-ex
@@ -68,11 +68,10 @@ CMD ./app
 
 FROM sgxbase as aesm 
 RUN apt-get install -y \
-    libcurl4 \
-    libprotobuf10 \
-    libssl1.1 \
-    make \
-    module-init-tools
+    libcurl4-openssl-dev \
+    libprotobuf-dev \
+    libssl-dev \
+    make
 
 # More aesm plugins, e.g libsgx-aesm-quote-ex-plugin, are needed if application requires attestation. See installation guide.
 RUN apt-get install -y libsgx-aesm-launch-plugin

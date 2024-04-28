@@ -103,7 +103,9 @@ OBJ4 := enter_enclave.o \
 
 OBJ5 := enclave_creator_sim.o \
         cpusvn_util.o         \
-        crypto_evp_digest.o
+        crypto_evp_digest.o   \
+        crypto_rsa_key.o      \
+	crypto_rsa3072.o
 
 OBJ6 := $(SIM_DIR)/driver_api/driver_api.o \
         $(SIM_DIR)/assembly/linux/lowlib.o \

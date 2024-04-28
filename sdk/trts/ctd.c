@@ -774,7 +774,7 @@ static inline uint32_t cselect(uint64_t pred, uint32_t old_val, uint32_t new_val
 {
     __asm__("cmp %1, 0\n\t"
             "cmovne %0, %2"
-            : "+rm"(new_val)
+            : "+r"(new_val)
             : "rm"(pred), "rm"(old_val));
     return new_val;
 }
@@ -783,7 +783,7 @@ static inline int32_t cselect32(uint64_t pred, int32_t old_val, int32_t new_val)
 {
     __asm__("cmp %1, 0\n\t"
             "cmovne %0, %2"
-            : "+rm"(new_val)
+            : "+r"(new_val)
             : "rm"(pred), "rm"(old_val));
     return new_val;
 }
@@ -801,7 +801,7 @@ static inline uint64_t cselect64(uint64_t pred, const uint64_t expected, uint64_
 {
     __asm__("cmp %1, %3\n\t"
             "cmove %0, %2"
-            : "+rm"(new_val)
+            : "+r"(new_val)
             : "rm"(pred), "rm"(old_val), "irm"(expected));
     return new_val;
 }
@@ -810,7 +810,7 @@ static inline int64_t cselect64s(uint64_t pred, int64_t old_val, int64_t new_val
 {
     __asm__("cmp %1, 0\n\t"
             "cmovne %0, %2"
-            : "+rm"(new_val)
+            : "+r"(new_val)
             : "rm"(pred), "rm"(old_val));
     return new_val;
 }
@@ -1018,29 +1018,6 @@ static uint64_t register_value_select(sgx_cpu_context_t *ctx, uint32_t idx)
 }
 
 /**
- *  Always load 2 pages data and combine together
- * @param ptr
- * @return
- */
-static inline __m128i load_cross_page(uint8_t* ptr){
-    uint8_t *rip_pfn = (uint8_t *) (((uint64_t) ptr) & (uint64_t)(~0xFFF));
-    uint8_t *rip_idx = (uint8_t *) (((uint64_t)ptr) & 0xFFF);
-
-    // the data is the original data 8 bytes from the target memory
-    // first ensure it doesn't cross a page boundary
-    int64_t rip_idx_masked = cselect64s((uint64_t) rip_idx <= (4096 - 16), (int64_t) rip_idx, 4096 - 16);
-    __m128i_u *  loc = (__m128i_u *) ((uint64_t) rip_pfn | (uint64_t)rip_idx_masked);
-    __m128i data = _mm_loadu_si128(loc);
-
-    // finally combine both as needed
-    uint32_t shift_amount = cselect((uint64_t) rip_idx > (4096 - 16), 16 - (uint32_t)(4096 - (uint64_t)rip_idx), 0);
-    //we need to make a _m256i first then do the shift
-    //suppose if it across the page, we just pad with 0x00
-    data = data << shift_amount;
-    return data;
-}
-
-/**
  * @brief our function to disassemble one instruction from the given input
  * One x64 instruction has at most 15 bytes, and our current output takes 12 bytes
  *
@@ -1105,13 +1082,11 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     __m128i_u* loc = (__m128i_u *) ((uint64_t) rip_pfn | (uint64_t)rip_idx_masked);
     __m128i instr_data = _mm_loadu_si128(loc);
 
-    // finally combine both as needed
-    // this is also the K bytes that we failed to protect
-    uint32_t shift_amount = cselect((uint64_t) rip_idx > (4096 - 16), 16 - (uint32_t)(4096 - (uint64_t)rip_idx), 0);
-    //we need to make a _m256i first then do the shift
-    //suppose if it across the page, we just pad with 0x00
-    instr_data = instr_data << shift_amount;
-
+    // Fixes for issue: CTD reports incorrect data addresses for
+    // instructions located at the end of a code page
+    int64_t end_of_page_mask64 = cselect64s((uint64_t) rip_idx > (4096 - 16), (int64_t)0xFFFFFFFFFFFFFFFF, 0);
+    __m128i end_of_page_mask128 = _mm_set1_epi64x(end_of_page_mask64);
+    instr_data = _mm_or_si128(instr_data, end_of_page_mask128);
 
     // the data is the original data 8 bytes from the target memory
     uint64_t data = load_u64(instr_data);
@@ -1294,9 +1269,10 @@ int ct_decode(sgx_cpu_context_t *ctx, uint64_t *addr)
     // idx_tail starting with 1, then includes the length of the rest: modRM, sib, disp
     // we won't have IMM lengths, luckily they are not affect much about address accessing
     // still under testing the case: IMM may have affect on memory accessing
-    uint32_t inst_length = idx + idx_tail;
-    // write the final output to the memory
-    rmmod = cselect((rmmod & (inst_length + shift_amount < 17)) != 0, rmmod, rmmod);
+
+    // FIX for Issue: CTD incorrectly decodes RIP-relative addressing
+    rmmod = cselect(base == 16, 0, rmmod);
+
     *addr = addr_ans;
 
     if (g_cpu_feature_indicator & CPU_FEATURE_AVX512F)

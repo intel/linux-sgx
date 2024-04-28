@@ -58,9 +58,13 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
            -I$(SGX_QV_PATH)/../QuoteGeneration/pce_wrapper/inc \
            -I$(SGX_QV_PATH)/dcap_tvl \
            -include./tsgxsslio.h \
-           -I$(PREBUILT_OPENSSL_PATH)/inc \
-           -I$(CBOR_PATH)/trusted/include
+           -I$(PREBUILT_OPENSSL_PATH)/inc
+
 INCLUDE_TDX := $(filter-out -I$(PREBUILT_OPENSSL_PATH)/inc,$(INCLUDE))
+
+INCLUDE += -I$(CBOR_PATH)/trusted/include
+
+INCLUDE_TDX += -I$(CBOR_PATH)/untrusted/include
 
 CXXFLAGS_TDX := $(CXXFLAGS) $(COMMON_FLAGS) $(COMMON_LDFLAGS) -fPIC -Werror -Wno-unused-parameter -g
 CXXFLAGS += $(COMMON_FLAGS) $(ENCLAVE_CXXFLAGS)
@@ -89,12 +93,21 @@ all: $(LIBNAME) $(LIBNAME_TDX) | $(BUILD_DIR)
 	$(CP) $(LIBNAME) $|
 	$(CP) $(LIBNAME_TDX) $|
 
-
 $(TLSNAME)_t.h: $(EDLFILE) $(EDGER8R)
 	$(EDGER8R) --trusted --header-only --search-path $(TOP_DIR)/common/inc $<
 
 $(EDGER8R):
 	$(MAKE) -C $(EDGER8R_DIR)
+
+cbor_trusted:
+	@if [ ! -f $(SGXCBOR_INCLUDE)/$(CBOR_HEADER) ] || [ ! -f $(LIBSGX_CBOR_PATH)/$(LIBSGX_CBOR) ]; then \
+		$(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_trusted; \
+	fi
+
+cbor_untrusted:
+	@if [ ! -f $(CBOR_INCLUDE)/$(CBOR_HEADER) ] || [ ! -f $(LIBCBOR_PATH)/$(LIBCBOR) ]; then \
+		$(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_untrusted; \
+	fi
 
 $(LIBNAME): $(OBJ)
 	$(AR) rs $@ $(OBJ)
@@ -110,23 +123,13 @@ $(LIBNAME_TDX): $(OBJ_TDX)
 	$(AR) rs $@ $(BUILD_DIR)/.libcbor/*.o
 	@$(RM) -r $(BUILD_DIR)/.libcbor
 
-$(OBJ): $(TLSNAME)_t.h 
+$(OBJ): $(TLSNAME)_t.h cbor_trusted
 $(OBJ): %.o : %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE)  -c $< -o $@
+
+$(OBJ_TDX): cbor_untrusted
 $(OBJ_TDX): tdx_%.o : %.cpp
 	$(CXX) $(CXXFLAGS_TDX) $(INCLUDE_TDX) -DTDX_ENV -c $< -o $@
-
-$(SRC): cbor_trusted cbor_untrusted
-
-cbor_trusted:
-	@if [ ! -f $(SGXCBOR_INCLUDE)/$(CBOR_HEADER) ] || [ ! -f $(LIBSGX_CBOR_PATH)/$(LIBSGX_CBOR) ]; then \
-		$(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_trusted; \
-	fi
-
-cbor_untrusted:
-	@if [ ! -f $(CBOR_INCLUDE)/$(CBOR_HEADER) ] || [ ! -f $(LIBCBOR_PATH)/$(LIBCBOR) ]; then \
-		$(MAKE) -C $(CBOR_RELATIVE_PATH) cbor_untrusted; \
-	fi
 
 .PHONY: clean
 clean:

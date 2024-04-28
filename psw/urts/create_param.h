@@ -61,6 +61,7 @@ typedef struct _create_param_t
     uint32_t          tcs_min_pool;
     uint32_t          tcs_policy;
     uint32_t          xsave_size;
+    uint32_t          fips_on;
 } create_param_t;
 
 #endif

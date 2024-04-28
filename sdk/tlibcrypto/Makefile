@@ -34,11 +34,12 @@ include ../../buildenv.mk
 CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
             -I$(COMMON_DIR)/inc          \
             -I$(COMMON_DIR)/inc/tlibc    \
-	    -I$(SGX_IPP_INC)
+            -I$(SGX_IPP_INC)
 
-CXXFLAGS += $(ENCLAVE_CXXFLAGS) -fno-exceptions -fno-rtti #-Werror
+CXXFLAGS += $(ENCLAVE_CXXFLAGS) -fno-exceptions -fno-rtti -Werror
 
-OBJ = init_tcrypto_lib.o sgx_aes_ctr.o sgx_rsa_encryption.o sgx_aes_gcm.o sgx_cmac128.o sgx_hmac.o sgx_ecc256.o sgx_ecc256_ecdsa.o sgx_sha384.o sgx_sha384_msg.o sgx_sha256.o sgx_sha1.o sgx_sha256_msg.o sgx_ecc256_internal.o sgx_rsa3072.o sgx_internal.o
+SGX_COMMON_CFLAGS += -DIPPCP_PREVIEW_XMSS
+
 SHARED_OBJ = tcrypto_version.o sgx_common_init_ipp.o
 
 ifeq ($(USE_CRYPTO_LIB), 0)
@@ -71,6 +72,7 @@ PREPARE_SGX_SSL:
 	chmod 755 $(PREPARE_SGXSSL)
 	test -f $(OPENSSL_LIBRARY_PATH)/lib$(SGXSSL_Library_Name).a || MITIGATION=$(MITIGATION-CVE-2020-0551) $(PREPARE_SGXSSL)
 
+CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -fno-exceptions -fPIC -Werror
 CPPFLAGS += -I$(OPENSSL_PACKAGE)/include -fPIC
 CXXFLAGS += -DUSE_SGXSSL
 SRCDIR := sgxssl
@@ -79,9 +81,7 @@ LIB_NAME := libsgx_tcrypto_sgxssl.a
 
 else
 # Build IPP crypto based sgx_tcrypto library
-CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -fno-exceptions -fPIC #-Werror
-
-OBJ += sgx_tcrypto_common.o sgx_rsa_internal.o
+CFLAGS += $(CPPFLAGS) $(ENCLAVE_CFLAGS) $(SGX_COMMON_CFLAGS) -fno-exceptions -fPIC -Werror
 SRCDIR := ipp
 
 LIB_NAME := libsgx_tcrypto_ipp.a
@@ -92,9 +92,12 @@ C_Files := $(wildcard ipp/ipp_disp/intel64/*.c)
 C_OBJS  := $(C_Files:.c=.o)
 C_OBJS  := $(sort $(C_OBJS))
 
+Cpp_Files := $(wildcard $(SRCDIR)/*.cpp)
+OBJ := $(Cpp_Files:.cpp=.o)
+OBJ := $(sort $(OBJ))
+
 DISP_LIB_NAME := libsgx_disp.a
 
-OBJ := $(addprefix $(SRCDIR)/, $(OBJ))
 LIB_NAME := $(addprefix $(SRCDIR)/, $(LIB_NAME))
 TARGET := libsgx_tcrypto.a
 
@@ -118,6 +121,9 @@ $(TARGET): $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 	$(AR) rsD $(LIB_NAME) $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 	$(CP) $(LIB_NAME) $@
 
+# SHA1 is already deprecated, remove -Werror
+ipp/sgx_sha1.o: ipp/sgx_sha1.cpp
+	$(CXX) -c $(filter-out -Werror,$(CXXFLAGS))  $(CPPFLAGS) $< -o $@
 endif #($(USE_CRYPTO_LIB), 0)
 
 $(DISP_LIB_NAME): $(C_OBJS)

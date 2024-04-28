@@ -38,7 +38,7 @@
 
  /* version of metadata */
 #define MAJOR_VERSION 3                 //MAJOR_VERSION should not larger than 0ffffffff
-#define MINOR_VERSION 1                 //MINOR_VERSION should not larger than 0ffffffff
+#define MINOR_VERSION 2                 //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_2_ELRANGE_MAJOR_VERSION 13
 #define SGX_1_ELRANGE_MAJOR_VERSION 11
@@ -53,11 +53,13 @@
 #define SGX_2_0_MINOR_VERSION 1         //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_1_9_MAJOR_VERSION 1         //MAJOR_VERSION should not larger than 0ffffffff
-#define SGX_1_9_MINOR_VERSION 4         //MINOR_VERSION should not larger than 0ffffffff
+#define SGX_1_9_MINOR_VERSION 5         //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_1_5_MAJOR_VERSION 1         //MAJOR_VERSION should not larger than 0ffffffff
 #define SGX_1_5_MINOR_VERSION 3         //MINOR_VERSION should not larger than 0ffffffff
 
+#define SGX_3_0_MINOR_VERSION_EXTEND 2
+#define SGX_1_9_MINOR_VERSION_EXTEND 5
 
 #define META_DATA_MAKE_VERSION(major, minor) (((uint64_t)major)<<32 | minor)
 #define MAJOR_VERSION_OF_METADATA(version) (((uint64_t)version) >> 32)
@@ -65,7 +67,8 @@
 
 
 #define METADATA_MAGIC      0x86A80294635D0E4CULL
-#define METADATA_SIZE       0x5000 /* 20 KB */
+#define METADATA_SIZE       0x6000 /* 24 KB */
+#define METADATA_LEGACY_SIZE 0x750 /* exclude entry table and data */
 #define TCS_TEMPLATE_SIZE   72
 
 /* TCS Policy bit masks */
@@ -99,6 +102,8 @@ typedef enum
 {
     DIR_PATCH,
     DIR_LAYOUT,
+    DIR_ELRANGE,
+    DIR_EXTEND,
     DIR_NUM,
 } dir_index_t;
 
@@ -174,6 +179,17 @@ typedef struct _patch_entry_t
     uint32_t reserved[4];
 } patch_entry_t;
 
+typedef struct _extend_entry_t
+{
+    uint32_t entry_id;
+    uint32_t size;
+    uint32_t offset;
+    uint32_t reserved;
+} extend_entry_t;
+
+#define EXTEND_ENTRY_ID_FIPS_SIG 0x1001
+typedef struct _css_key_t extend_entry_fips_sig_t;
+
 typedef struct _elrange_config_entry_t
 {
     uint64_t enclave_image_address;
@@ -195,7 +211,7 @@ typedef struct _metadata_t
     sgx_attributes_t    attributes;            /* XFeatureMask to be set in SECS. */
     enclave_css_t       enclave_css;           /* The enclave signature */
     data_directory_t    dirs[DIR_NUM];
-    uint8_t             data[18592];
+    uint8_t             data[22672];
 }metadata_t;
 
 se_static_assert(sizeof(metadata_t) == METADATA_SIZE);

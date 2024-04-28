@@ -13,11 +13,11 @@
 [submodule "ipp-crypto"]
 	path = external/ippcp_internal/ipp-crypto
 	url = https://github.com/intel/ipp-crypto.git
-	branch = ipp-crypto_2021_7
+	branch = ipp-crypto_2021_11_0
 [submodule "external/protobuf/protobuf_code"]
 	path = external/protobuf/protobuf_code
 	url = https://github.com/protocolbuffers/protobuf.git
-	branch = 3.20.x
+	branch = 23.x
 [submodule "external/sgx-emm/emm_src"]
 	path = external/sgx-emm/emm_src
 	url = https://github.com/intel/sgx-emm.git

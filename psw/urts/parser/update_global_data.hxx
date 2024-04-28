@@ -50,13 +50,11 @@ namespace {
         {
             return NULL;
         }
-        //elrange config entry is placed at the beginning of data
-        data_directory_t* dir = GET_PTR(data_directory_t, metadata, offsetof(metadata_t, data));
-        if(dir == NULL)
+        if(metadata->dirs[DIR_ELRANGE].offset == 0 || metadata->dirs[DIR_ELRANGE].size != sizeof(elrange_config_entry_t))
         {
             return NULL;
         }
-        elrange_config_entry_t* elrange_config_entry = GET_PTR(elrange_config_entry_t, metadata, dir->offset);
+        elrange_config_entry_t* elrange_config_entry = GET_PTR(elrange_config_entry_t, metadata, metadata->dirs[DIR_ELRANGE].offset);
         return elrange_config_entry;
     }
     
