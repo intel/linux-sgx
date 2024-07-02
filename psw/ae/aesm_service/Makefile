@@ -47,14 +47,14 @@ ifeq ($(BUILD_REF_LE), 1)
 endif
 
 ifeq ($(ARCH), x86)
-	SQLITECFLAGS += -m32
+    SQLITECFLAGS += -m32
 else
-	SQLITECFLAGS += -m64
+    SQLITECFLAGS += -m64
 endif
 
 ifdef PROFILE
-	CXXFLAGS += -D_PROFILE_
-	CFLAGS += -D_PROFILE_
+    CXXFLAGS += -D_PROFILE_
+    CFLAGS += -D_PROFILE_
 endif
 
 CXXFLAGS += -fpie
