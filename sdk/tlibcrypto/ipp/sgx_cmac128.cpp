@@ -29,24 +29,47 @@
  *
  */
 
-
-#include "sgx_tcrypto.h"
-#include "ippcp.h"
+#include "ipp_wrapper.h"
 #include "stdlib.h"
 #include "string.h"
+#include "sgx_fips_internal.h"
 
+static void fips_self_test_cmac128()
+{
+    static bool fips_selftest_cmac128_flag = false;
+
+    if (g_global_data.fips_on != 0 && fips_selftest_cmac128_flag == false)
+    {
+        sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+        fips_test_status test_result = IPPCP_ALGO_SELFTEST_OK;
+        int buf_size = 0;
+        uint8_t *p_buf = NULL;
+        do
+        {
+            FIPS_SELFTEST_FUNC_1(test_result, fips_selftest_ippsAES_CMAC_get_size, &buf_size);
+            p_buf = (uint8_t *)malloc(buf_size);
+            ALLOC_ERROR_BREAK(p_buf, ret);
+            FIPS_SELFTEST_FUNC_1(test_result, fips_selftest_ippsAES_CMACUpdate, p_buf);
+            ret = SGX_SUCCESS;
+            fips_selftest_cmac128_flag = true;
+        } while (0);
+        SAFE_FREE(p_buf);
+        ERROR_ABORT(ret);
+    }
+    return;
+}
 
 /* Message Authentication - Rijndael 128 CMAC
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
-*   Inputs: sgx_cmac_128bit_key_t *p_key - Pointer to key used in encryption/decryption operation
-*           uint8_t *p_src - Pointer to input stream to be MACed
-*           uint32_t src_len - Length of input stream to be MACed
-*   Output: sgx_cmac_gcm_128bit_tag_t *p_mac - Pointer to resultant MAC */
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined sgx_error.h
+ *   Inputs: sgx_cmac_128bit_key_t *p_key - Pointer to key used in encryption/decryption operation
+ *           uint8_t *p_src - Pointer to input stream to be MACed
+ *           uint32_t src_len - Length of input stream to be MACed
+ *   Output: sgx_cmac_gcm_128bit_tag_t *p_mac - Pointer to resultant MAC */
 sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const uint8_t *p_src,
                                       uint32_t src_len, sgx_cmac_128bit_tag_t *p_mac)
 {
-    IppsAES_CMACState* pState = NULL;
+    IppsAES_CMACState *pState = NULL;
     int ippStateSize = 0;
     IppStatus error_code = ippStsNoErr;
     const int noise_level = 1;
@@ -55,12 +78,15 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_cmac128();
+
     error_code = ippsAES_CMACGetSize(&ippStateSize);
     if (error_code != ippStsNoErr)
     {
         return SGX_ERROR_UNEXPECTED;
     }
-    pState = (IppsAES_CMACState*)malloc(ippStateSize);
+    pState = (IppsAES_CMACState *)malloc(ippStateSize);
     if (pState == NULL)
     {
         return SGX_ERROR_OUT_OF_MEMORY;
@@ -73,14 +99,17 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
         free(pState);
         switch (error_code)
         {
-        case ippStsMemAllocErr: return SGX_ERROR_OUT_OF_MEMORY;
+        case ippStsMemAllocErr:
+            return SGX_ERROR_OUT_OF_MEMORY;
         case ippStsNullPtrErr:
-        case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-        default: return SGX_ERROR_UNEXPECTED;
+        case ippStsLengthErr:
+            return SGX_ERROR_INVALID_PARAMETER;
+        default:
+            return SGX_ERROR_UNEXPECTED;
         }
     }
     error_code = ippsAES_CMACSetupNoise(noise_level, pState);
-    if(error_code != ippStsNoErr)
+    if (error_code != ippStsNoErr)
     {
         memset_s(pState, ippStateSize, 0, ippStateSize);
         free(pState);
@@ -95,8 +124,10 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
         switch (error_code)
         {
         case ippStsNullPtrErr:
-        case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-        default: return SGX_ERROR_UNEXPECTED;
+        case ippStsLengthErr:
+            return SGX_ERROR_INVALID_PARAMETER;
+        default:
+            return SGX_ERROR_UNEXPECTED;
         }
     }
     error_code = ippsAES_CMACFinal((Ipp8u *)p_mac, SGX_CMAC_MAC_SIZE, pState);
@@ -108,8 +139,10 @@ sgx_status_t sgx_rijndael128_cmac_msg(const sgx_cmac_128bit_key_t *p_key, const 
         switch (error_code)
         {
         case ippStsNullPtrErr:
-        case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-        default: return SGX_ERROR_UNEXPECTED;
+        case ippStsLengthErr:
+            return SGX_ERROR_INVALID_PARAMETER;
+        default:
+            return SGX_ERROR_UNEXPECTED;
         }
     }
     // Clear temp State before free.
@@ -136,18 +169,20 @@ static void sgx_secure_free_cmac128_state(IppsAES_CMACState *pState)
 }
 
 /* Allocates and initializes CMAC state
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-*   Inputs: sgx_cmac_128bit_key_t *p_key - Pointer to the key used in encryption/decryption operation
-*   Output: sgx_cmac_state_handle_t *p_cmac_handle - Pointer to the handle of the CMAC state  */
-sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state_handle_t* p_cmac_handle)
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+ *   Inputs: sgx_cmac_128bit_key_t *p_key - Pointer to the key used in encryption/decryption operation
+ *   Output: sgx_cmac_state_handle_t *p_cmac_handle - Pointer to the handle of the CMAC state  */
+sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state_handle_t *p_cmac_handle)
 {
     if ((p_key == NULL) || (p_cmac_handle == NULL))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
-    IppsAES_CMACState* pState = NULL;
+    fips_self_test_cmac128();
+
+    IppsAES_CMACState *pState = NULL;
     int ippStateSize = 0;
     IppStatus error_code = ippStsNoErr;
     const int noise_level = 1;
@@ -156,7 +191,7 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
     {
         return SGX_ERROR_UNEXPECTED;
     }
-    pState = (IppsAES_CMACState*)malloc(ippStateSize);
+    pState = (IppsAES_CMACState *)malloc(ippStateSize);
     if (pState == NULL)
     {
         return SGX_ERROR_OUT_OF_MEMORY;
@@ -169,14 +204,17 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
         free(pState);
         switch (error_code)
         {
-        case ippStsMemAllocErr: return SGX_ERROR_OUT_OF_MEMORY;
+        case ippStsMemAllocErr:
+            return SGX_ERROR_OUT_OF_MEMORY;
         case ippStsNullPtrErr:
-        case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-        default: return SGX_ERROR_UNEXPECTED;
+        case ippStsLengthErr:
+            return SGX_ERROR_INVALID_PARAMETER;
+        default:
+            return SGX_ERROR_UNEXPECTED;
         }
     }
     error_code = ippsAES_CMACSetupNoise(noise_level, pState);
-    if(error_code != ippStsNoErr)
+    if (error_code != ippStsNoErr)
     {
         memset_s(pState, ippStateSize, 0, ippStateSize);
         free(pState);
@@ -187,59 +225,70 @@ sgx_status_t sgx_cmac128_init(const sgx_cmac_128bit_key_t *p_key, sgx_cmac_state
 }
 
 /* Updates CMAC hash calculation based on the input message
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.
-*   Input:  sgx_cmac_state_handle_t cmac_handle - Handle to the CMAC state
-*           uint8_t *p_src - Pointer to the input stream to be hashed
-*           uint32_t src_len - Length of the input stream to be hashed  */
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.
+ *   Input:  sgx_cmac_state_handle_t cmac_handle - Handle to the CMAC state
+ *           uint8_t *p_src - Pointer to the input stream to be hashed
+ *           uint32_t src_len - Length of the input stream to be hashed  */
 sgx_status_t sgx_cmac128_update(const uint8_t *p_src, uint32_t src_len, sgx_cmac_state_handle_t cmac_handle)
 {
     if ((p_src == NULL) || (cmac_handle == NULL))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_cmac128();
+
     IppStatus error_code = ippStsNoErr;
-    error_code = ippsAES_CMACUpdate(p_src, src_len, (IppsAES_CMACState*)cmac_handle);
+    error_code = ippsAES_CMACUpdate(p_src, src_len, (IppsAES_CMACState *)cmac_handle);
     switch (error_code)
     {
-    case ippStsNoErr: return SGX_SUCCESS;
+    case ippStsNoErr:
+        return SGX_SUCCESS;
     case ippStsNullPtrErr:
-    case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-    default: return SGX_ERROR_UNEXPECTED;
+    case ippStsLengthErr:
+        return SGX_ERROR_INVALID_PARAMETER;
+    default:
+        return SGX_ERROR_UNEXPECTED;
     }
 }
 
 /* Returns Hash calculation
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-*   Input:  sgx_cmac_state_handle_t cmac_handle - Handle to the CMAC state
-*   Output: sgx_cmac_128bit_tag_t *p_hash - Resultant hash from operation  */
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+ *   Input:  sgx_cmac_state_handle_t cmac_handle - Handle to the CMAC state
+ *   Output: sgx_cmac_128bit_tag_t *p_hash - Resultant hash from operation  */
 sgx_status_t sgx_cmac128_final(sgx_cmac_state_handle_t cmac_handle, sgx_cmac_128bit_tag_t *p_hash)
 {
     if ((cmac_handle == NULL) || (p_hash == NULL))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_cmac128();
+
     IppStatus error_code = ippStsNoErr;
-    error_code = ippsAES_CMACFinal((Ipp8u *)p_hash, SGX_CMAC_MAC_SIZE, (IppsAES_CMACState*)cmac_handle);
+    error_code = ippsAES_CMACFinal((Ipp8u *)p_hash, SGX_CMAC_MAC_SIZE, (IppsAES_CMACState *)cmac_handle);
     switch (error_code)
     {
-    case ippStsNoErr: return SGX_SUCCESS;
+    case ippStsNoErr:
+        return SGX_SUCCESS;
     case ippStsNullPtrErr:
-    case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-    default: return SGX_ERROR_UNEXPECTED;
+    case ippStsLengthErr:
+        return SGX_ERROR_INVALID_PARAMETER;
+    default:
+        return SGX_ERROR_UNEXPECTED;
     }
 }
 
-
 /* Clean up the CMAC state
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-*   Input:  sgx_cmac_state_handle_t cmac_handle  - Handle to the CMAC state  */
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+ *   Input:  sgx_cmac_state_handle_t cmac_handle  - Handle to the CMAC state  */
 sgx_status_t sgx_cmac128_close(sgx_cmac_state_handle_t cmac_handle)
 {
     if (cmac_handle == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
-    sgx_secure_free_cmac128_state((IppsAES_CMACState*)cmac_handle);
+    sgx_secure_free_cmac128_state((IppsAES_CMACState *)cmac_handle);
     return SGX_SUCCESS;
 }

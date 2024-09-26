@@ -91,7 +91,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
-  * Ubuntu\* 23.10 Server 64bits
+  * Ubuntu\* 24.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 9.2 64bits
   * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
@@ -105,7 +105,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python3 libssl-dev git cmake perl
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
-  * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
+  * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 24.04:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python-is-python3 libssl-dev git cmake perl
   ```
@@ -142,9 +142,9 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   1)  To install the additional required tools:
       * On Debian 10:
       ```
-        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release libsystemd0
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip  pkgconf libboost-dev libboost-system-dev libboost-thread-dev lsb-release libsystemd0
       ```
-      * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
+      * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 24.04:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip pkgconf libboost-dev libboost-system-dev libboost-thread-dev lsb-release libsystemd0
       ```
@@ -166,7 +166,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
       ```
       * On SUSE Linux Enterprise Server 15.4:
       ```
-        $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo libsystemd0
+        $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo_c libsystemd0 libboost_system1_66_0-devel libboost_thread1_66_0-devel
       ```
       2) To install latest Intel(R) SGX SDK Installer
   Ensure that you have downloaded latest Intel(R) SGX SDK Installer from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and followed the Installation Guide in the same page to install latest Intel(R) SGX SDK Installer.
@@ -256,7 +256,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make
 ```
 - To build the Intel(R) SGX PSW installer, enter the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10:
    ```
   $ make deb_psw_pkg
   ```
@@ -297,9 +297,9 @@ You can find the tools and libraries generated in the `build/linux` directory.
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO jammy main
   ```
-  * On Ubuntu 23.10:
+  * On Ubuntu 24.04:
   ```
-  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO mantic main
+  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO noble main
   ```
   * On Debian 10:
   ```
@@ -344,7 +344,7 @@ Install the Intel(R) SGX SDK
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
-  * Ubuntu\* 23.10 Server 64bits
+  * Ubuntu\* 24.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 9.2 64bits
   * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
@@ -357,7 +357,7 @@ Install the Intel(R) SGX SDK
     $ sudo apt-get install build-essential python3
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
   ```
-   * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
+   * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 24.04:
   ```
     $ sudo apt-get install build-essential python-is-python3
   ```
@@ -435,7 +435,7 @@ Install the Intel(R) SGX PSW
   * Ubuntu\* 20.04 LTS Desktop 64bits
   * Ubuntu\* 20.04 LTS Server 64bits
   * Ubuntu\* 22.04 LTS Server 64bits
-  * Ubuntu\* 23.10 Server 64bits
+  * Ubuntu\* 24.04 LTS Server 64bits
   * Red Hat Enterprise Linux Server release 9.2 64bits
   * CentOS Stream 9 64bits
   * CentOS 8.3 64bits
@@ -447,7 +447,7 @@ Install the Intel(R) SGX PSW
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
@@ -477,7 +477,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10|Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6| SUSE Linux Enterprise Server 15|
+|   |Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10|Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6| SUSE Linux Enterprise Server 15|
 | ------------ | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts|
@@ -498,7 +498,7 @@ apt-get dist-upgrade -o Dpkg::Options::="--force-overwrite"
 ```
 #### Configure the installation
 Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-* On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 23.10 and Debian 10:
+* On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10:
 ```
   --no-install-recommends
 ```

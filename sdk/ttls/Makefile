@@ -53,6 +53,7 @@ INCLUDE += -I$(COMMON_DIR)/inc/tlibc    \
            -I$(COMMON_DIR)/inc          \
            -I$(LINUX_SDK_DIR)/tlibcxx/include \
            -I$(SGX_QV_PATH)/QvE/Include \
+           -I$(SGX_QV_PATH)/appraisal/qal \
            -I$(SGX_QV_PATH)/../QuoteGeneration/quote_wrapper/common/inc \
            -I$(SGX_QV_PATH)/../QuoteGeneration/quote_wrapper/tdx_attest \
            -I$(SGX_QV_PATH)/../QuoteGeneration/pce_wrapper/inc \

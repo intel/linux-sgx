@@ -73,6 +73,10 @@ sgx_mm_pfhandler_t g_mm_pfhandler = NULL;
 #define DEC_VEH_POINTER(x)  (sgx_exception_handler_t)((x) ^ g_veh_cookie)
 extern int g_aexnotify_supported;
 extern "C" sgx_status_t sgx_apply_mitigations(const sgx_exception_info_t *);
+extern "C" uintptr_t cselect_mitigation_rip(const sgx_exception_info_t *);
+extern "C" uintptr_t cselect_mitigation_regs(const sgx_exception_info_t *,
+		                             uintptr_t saved_rip,
+					     uintptr_t c3_byte_address);
 
 extern uint16_t aex_notify_c3_cache[2048];
 extern uint8_t *__ct_mitigation_ret;
@@ -219,12 +223,18 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
     thread_data_t *thread_data = get_thread_data();
     int ct_result;
     uint64_t data_address;
+    uintptr_t saved_rip;
     uintptr_t code_tickle_page, c3_byte_address, stack_tickle_pages, data_tickle_address,
               stack_base_page = ((thread_data->stack_base_addr & ~0xFFF) == 0) ?
                   (thread_data->stack_base_addr) - 0x1000 :
                   (thread_data->stack_base_addr & ~0xFFF),
               stack_limit_page = thread_data->stack_limit_addr & ~0xFFF;
     int data_tickle_address_is_within_enclave;
+
+    // NOTE: use cselect_mitigation_rip to ensure we only ever dereference
+    // the interrupted application code page, even if previous interrupt
+    // was in the atomic mitigation stub (i.e., zero-step)
+    saved_rip = cselect_mitigation_rip(info);
 
     // Determine which stack pages can be tickled
     if (((uintptr_t)info & ~0xFFF) == stack_base_page) {
@@ -234,7 +244,7 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
         } else {
             // The current stack page is the base page, but there are more
             // pages so we tickle the next one as well.
-            stack_tickle_pages = stack_base_page | 1;
+            stack_tickle_pages = (stack_base_page - 0x1000) | 1;
         }
     } else {
         // If the current stack page is not the base page, then it's generally
@@ -242,11 +252,11 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
         // code and the interrupted code may have separate but adjacent stack
         // pages (in this case, the interrupted code's stack frame must be on
         // the page with a higher address).
-        stack_tickle_pages = (((uintptr_t)info & ~0xFFF) + 0x1000) | 1;
+        stack_tickle_pages = ((uintptr_t)info & ~0xFFF) | 1;
     }
 
     // Look up the code page in the c3 cache
-    code_tickle_page = info->cpu_context.REG(ip) & ~0xFFF;
+    code_tickle_page = saved_rip & ~0xFFF;
     c3_byte_address = code_tickle_page + *(aex_notify_c3_cache + ((code_tickle_page >> 12) & 0x07FF));
     if (*(uint8_t *)c3_byte_address != 0xc3) {
         uint8_t *i = (uint8_t *)code_tickle_page, *e = i + 4096;
@@ -259,6 +269,11 @@ static void apply_constant_time_sgxstep_mitigation_and_continue_execution(sgx_ex
                 (uint16_t)(c3_byte_address & 0xFFF);
         }
     }
+
+    // NOTE: in case the previous interrupt was in the atomic mitigation
+    // stub, first restore clobbered application registers in the info
+    // struct before determining tickle addresses
+    cselect_mitigation_regs(info, saved_rip, c3_byte_address);
 
     ct_result = ct_decode(&info->cpu_context, &data_address);
 
@@ -527,9 +542,8 @@ extern "C" sgx_status_t trts_handle_exception(void *tcs)
     size += RED_ZONE_SIZE;
 
     // Add space for reserved slot for GPRs that will be used by mitigation
-    // assembly code RIP, RAX, RBX, RCX, RDX, RBP, RSI, RDI Saved flags, 1st
-    // D/QWORD of red zone, &SSA[0].GPRSGX.AEXNOTIFY, stack_tickle_pages,
-    // code_tickle_page, data_tickle_page, c3_byte_address
+    // assembly code RIP, RAX, RBX, RCX, RDX, RBP, RSI, RDI, 1st
+    // QWORD of red zone
     size += RSVD_SIZE_OF_MITIGATION_STACK_AREA;
 
     // decrease the stack to give space for info

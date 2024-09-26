@@ -130,7 +130,6 @@ mov     -SE_WORDSIZE*2(%rbp),   %r15
 mov     %xbp, %xsp
 pop     %xbp
 ret
-.cfi_endproc
 .endm
 
 #if defined(__i386__)

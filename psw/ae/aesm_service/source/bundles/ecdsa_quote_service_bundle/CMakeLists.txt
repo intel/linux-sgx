@@ -30,6 +30,8 @@
 #
 
 set(qe3_logic "${CMAKE_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/build/linux/libsgx_qe3_logic.so")
+set(qpl "${CMAKE_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/build/linux/libdcap_quoteprov.so")
+set(qcnl "${CMAKE_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/build/linux/libsgx_default_qcnl_wrapper.so")
 get_filename_component(bundle ${CMAKE_CURRENT_SOURCE_DIR} NAME)
 aux_source_directory(. _src)
 link_directories(${CMAKE_SOURCE_DIR}/../../../../build/linux
@@ -56,7 +58,19 @@ add_custom_command(OUTPUT ${qe3_logic}
     COMMAND make all
     WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/quote_wrapper/quote/linux"
 )
-add_custom_target(qe3_logic_lib DEPENDS ${qe3_logic})
+
+add_custom_command(OUTPUT ${qpl}
+    COMMAND make all
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qpl/linux"
+    DEPENDS ${qcnl}
+)
+
+add_custom_command(OUTPUT ${qcnl}
+    COMMAND make all
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/../../../../external/dcap_source/QuoteGeneration/qcnl/linux"
+)
+
+add_custom_target(dcap_libs DEPENDS ${qe3_logic} ${qpl} ${qcnl})
 target_link_libraries(${bundle} oal utils ${qe3_logic})
-add_dependencies(${bundle} qe3_logic_lib)
+add_dependencies(${bundle} dcap_libs)
 set_property(TARGET ${bundle} APPEND_STRING PROPERTY LINK_FLAGS " -Wl,-z,defs")

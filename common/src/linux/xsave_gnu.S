@@ -101,7 +101,7 @@ DECLARE_LOCAL_FUNC restore_xregs
     DO_FXRSTOR
 2:
     ret
-    .cfi_endproc
+END_FUNC
 
 DECLARE_LOCAL_FUNC save_xregs
 #if defined(LINUX32)
@@ -122,5 +122,5 @@ DECLARE_LOCAL_FUNC save_xregs
     DO_FXSAVE
 2:
     ret
-    .cfi_endproc
+END_FUNC
 

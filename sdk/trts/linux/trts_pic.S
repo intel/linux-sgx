@@ -45,14 +45,14 @@
 DECLARE_LOCAL_FUNC get_enclave_base
     lea_pic __ImageBase, %xax
     ret
-    .cfi_endproc
+END_FUNC
 
 DECLARE_LOCAL_FUNC get_enclave_state
     lea_pic g_enclave_state, %xcx
     xor     %xax, %xax
     movl    (%xcx), %eax
     ret
-    .cfi_endproc
+END_FUNC
 
 DECLARE_LOCAL_FUNC set_enclave_state
     lea_pic g_enclave_state, %xax
@@ -61,7 +61,7 @@ DECLARE_LOCAL_FUNC set_enclave_state
 #endif
     movl    %edi, (%xax)
     ret
-    .cfi_endproc
+END_FUNC
 
 DECLARE_LOCAL_FUNC lock_enclave
     lea_pic g_enclave_state, %xdx
@@ -71,7 +71,7 @@ DECLARE_LOCAL_FUNC lock_enclave
     mov     $ENCLAVE_INIT_IN_PROGRESS, %ecx     /* if (g_global_data.enclave_state == ENCLAVE_INIT_NOT_STARTED) */
     lock cmpxchgl %ecx, (%xdx)                  /*   g_global_data.enclave_state == ENCLAVE_INIT_IN_PROGRESS */
     ret                                         /* xax: the initial value of enclave state */
-    .cfi_endproc
+END_FUNC
 
 /*
  * ---------------------------------------------------------------------
@@ -83,7 +83,7 @@ DECLARE_LOCAL_FUNC lock_enclave
 DECLARE_LOCAL_FUNC get_thread_data
     READ_TD_DATA self_addr
     ret
-    .cfi_endproc
+END_FUNC
 
 /*
  * ---------------------------------------------------------------------
@@ -95,7 +95,7 @@ DECLARE_LOCAL_FUNC get_thread_data
 DECLARE_LOCAL_FUNC get_stack_guard
     READ_TD_DATA stack_guard
     ret
-    .cfi_endproc
+END_FUNC
 
 /*
  * ---------------------------------------------------------------------
@@ -263,7 +263,7 @@ DECLARE_GLOBAL_FUNC enclave_entry
     /* Should not come here */
     ud2
 
-    .cfi_endproc
+END_FUNC
 
 /*
  * -------------------------------------------------------------------------
@@ -453,7 +453,7 @@ DECLARE_LOCAL_FUNC do_ocall
     cld                         /* DF = 0 */
 
     ENCLU
-    .cfi_endproc
+END_FUNC
 
 /*
  * ------------------------------------------------------------------
@@ -478,7 +478,7 @@ DECLARE_LOCAL_FUNC __morestack
     call        do_ocall
     leave
     ret
-    .cfi_endproc
+END_FUNC
 
 DECLARE_GLOBAL_FUNC asm_oret
     mov     %xsp, %xbx
@@ -525,7 +525,7 @@ DECLARE_GLOBAL_FUNC asm_oret
     ret
     /* should not come here */
     ud2
-    .cfi_endproc
+END_FUNC
 
 /*
  * ------------------------------------------------------------------------
@@ -550,6 +550,7 @@ DECLARE_LOCAL_FUNC do_egetkey
     xor  %xax, %xax
 .Legetkey_done:
     SE_EPILOG
+END_FUNC
 
 
 /*
@@ -572,6 +573,7 @@ Lereport_inst:
     ENCLU
     setc      %al
     SE_EPILOG
+END_FUNC
 
 .global Leverifyreport2_inst
 DECLARE_LOCAL_FUNC do_everifyreport2
@@ -583,6 +585,7 @@ Leverifyreport2_inst:
     xor  %xax, %xax
 .Leverifyreport2_done:
     SE_EPILOG
+END_FUNC
 
 DECLARE_GLOBAL_FUNC do_eaccept
     SE_PROLOG
@@ -591,6 +594,7 @@ DECLARE_GLOBAL_FUNC do_eaccept
     cmp  $SGX_SUCCESS, %eax
     jnz	 abort
     SE_EPILOG
+END_FUNC
 
 DECLARE_GLOBAL_FUNC do_eacceptcopy
     SE_PROLOG
@@ -599,12 +603,14 @@ DECLARE_GLOBAL_FUNC do_eacceptcopy
     cmp  $SGX_SUCCESS, %eax
     jnz  abort
     SE_EPILOG
+END_FUNC
 
 DECLARE_GLOBAL_FUNC do_emodpe
     SE_PROLOG
     mov     $SE_EMODPE, %eax
     ENCLU
     SE_EPILOG
+END_FUNC
 
 #define _RDRAND_RETRY_TIMES 10
 /*
@@ -633,7 +639,7 @@ DECLARE_LOCAL_FUNC do_rdrand
     movl    %eax, (%xcx)
     mov     $1, %xax
     ret
-    .cfi_endproc
+END_FUNC
 
 /*
  * -------------------------------------------------------------------------
@@ -644,7 +650,7 @@ DECLARE_LOCAL_FUNC abort
     lea_pic g_enclave_state, %xax
     movl    $ENCLAVE_CRASHED, (%xax)
     ud2
-    .cfi_endproc
+END_FUNC
 
 /*
  * -------------------------------------------------------------------------
@@ -702,7 +708,7 @@ DECLARE_LOCAL_FUNC continue_execution
     xchg    %xax, %xsp
 
     ret     $(RED_ZONE_SIZE)           /* pop xip and red zone (if any) */
-    .cfi_endproc
+END_FUNC
 
 /* 
  * -------------------------------------------------------------------------
@@ -715,5 +721,5 @@ DECLARE_LOCAL_FUNC second_phase
     mov     $SE_EDECCSSA, %xax
     enclu                               /* DECCSSA */
     jmp     *%xdx
-    .cfi_endproc
+END_FUNC
     

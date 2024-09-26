@@ -32,29 +32,66 @@
 #include "ippcp.h"
 #include "sgx_tcrypto.h"
 #include "stdlib.h"
+#include "sgx_fips_internal.h"
 
 #ifndef SAFE_FREE
-#define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
+#define SAFE_FREE(ptr)     \
+    {                      \
+        if (NULL != (ptr)) \
+        {                  \
+            free(ptr);     \
+            (ptr) = NULL;  \
+        }                  \
+    }
 #endif
 
+void fips_self_test_hash256()
+{
+    static bool fips_selftest_hash256_flag = false;
+
+    if (g_global_data.fips_on != 0 && fips_selftest_hash256_flag == false)
+    {
+        sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+        fips_test_status test_result = IPPCP_ALGO_SELFTEST_OK;
+        int buf_size = 0;
+        uint8_t *p_buf = NULL;
+
+        do
+        {
+            FIPS_SELFTEST_FUNC_1(test_result, fips_selftest_ippsHash_rmf_get_size, &buf_size);
+            p_buf = (uint8_t *)malloc(buf_size);
+            FIPS_SELFTEST_FUNC_2(test_result, fips_selftest_ippsHashUpdate_rmf, (IppHashAlgId)ippHashAlg_SHA256, p_buf);
+            FIPS_SELFTEST_FUNC_1(test_result, fips_selftest_ippsHashMessage_rmf, (IppHashAlgId)ippHashAlg_SHA256);
+
+            ret = SGX_SUCCESS;
+            fips_selftest_hash256_flag = true;
+
+        } while (0);
+        SAFE_FREE(p_buf);
+        ERROR_ABORT(ret);
+    }
+    return;
+}
 
 /* Allocates and initializes sha256 state
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-*   Output: sgx_sha_state_handle_t *p_sha_handle - Pointer to the handle of the SHA256 state  */
-sgx_status_t sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle)
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+ *   Output: sgx_sha_state_handle_t *p_sha_handle - Pointer to the handle of the SHA256 state  */
+sgx_status_t sgx_sha256_init(sgx_sha_state_handle_t *p_sha_handle)
 {
     IppStatus ipp_ret = ippStsNoErr;
-    IppsHashState_rmf* p_temp_state = NULL;
+    IppsHashState_rmf *p_temp_state = NULL;
 
     if (p_sha_handle == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
+
+    fips_self_test_hash256();
 
     int ctx_size = 0;
     ipp_ret = ippsHashGetSize_rmf(&ctx_size);
     if (ipp_ret != ippStsNoErr)
         return SGX_ERROR_UNEXPECTED;
-    p_temp_state = (IppsHashState_rmf*)(malloc(ctx_size));
+    p_temp_state = (IppsHashState_rmf *)(malloc(ctx_size));
     if (p_temp_state == NULL)
         return SGX_ERROR_OUT_OF_MEMORY;
     ipp_ret = ippsHashInit_rmf(p_temp_state, ippsHashMethod_SHA256_TT());
@@ -65,8 +102,10 @@ sgx_status_t sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle)
         switch (ipp_ret)
         {
         case ippStsNullPtrErr:
-        case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-        default: return SGX_ERROR_UNEXPECTED;
+        case ippStsLengthErr:
+            return SGX_ERROR_INVALID_PARAMETER;
+        default:
+            return SGX_ERROR_UNEXPECTED;
         }
     }
 
@@ -75,54 +114,66 @@ sgx_status_t sgx_sha256_init(sgx_sha_state_handle_t* p_sha_handle)
 }
 
 /* Updates sha256 has calculation based on the input message
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.
-*   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state
-*           uint8_t *p_src - Pointer to the input stream to be hashed
-*           uint32_t src_len - Length of the input stream to be hashed  */
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.
+ *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state
+ *           uint8_t *p_src - Pointer to the input stream to be hashed
+ *           uint32_t src_len - Length of the input stream to be hashed  */
 sgx_status_t sgx_sha256_update(const uint8_t *p_src, uint32_t src_len, sgx_sha_state_handle_t sha_handle)
 {
     if ((p_src == NULL) || (sha_handle == NULL))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_hash256();
+
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashUpdate_rmf(p_src, src_len, (IppsHashState_rmf*)sha_handle);
+    ipp_ret = ippsHashUpdate_rmf(p_src, src_len, (IppsHashState_rmf *)sha_handle);
     switch (ipp_ret)
     {
-    case ippStsNoErr: return SGX_SUCCESS;
+    case ippStsNoErr:
+        return SGX_SUCCESS;
     case ippStsNullPtrErr:
-    case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-    default: return SGX_ERROR_UNEXPECTED;
+    case ippStsLengthErr:
+        return SGX_ERROR_INVALID_PARAMETER;
+    default:
+        return SGX_ERROR_UNEXPECTED;
     }
 }
 
 /* Returns Hash calculation
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-*   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state
-*   Output: sgx_sha256_hash_t *p_hash - Resultant hash from operation  */
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+ *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state
+ *   Output: sgx_sha256_hash_t *p_hash - Resultant hash from operation  */
 sgx_status_t sgx_sha256_get_hash(sgx_sha_state_handle_t sha_handle, sgx_sha256_hash_t *p_hash)
 {
     if ((sha_handle == NULL) || (p_hash == NULL))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_hash256();
+
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashGetTag_rmf((Ipp8u*)p_hash, SGX_SHA256_HASH_SIZE, (IppsHashState_rmf*)sha_handle);
+    ipp_ret = ippsHashGetTag_rmf((Ipp8u *)p_hash, SGX_SHA256_HASH_SIZE, (IppsHashState_rmf *)sha_handle);
     switch (ipp_ret)
     {
-    case ippStsNoErr: return SGX_SUCCESS;
+    case ippStsNoErr:
+        return SGX_SUCCESS;
     case ippStsNullPtrErr:
-    case ippStsLengthErr: return SGX_ERROR_INVALID_PARAMETER;
-    default: return SGX_ERROR_UNEXPECTED;
+    case ippStsLengthErr:
+        return SGX_ERROR_INVALID_PARAMETER;
+    default:
+        return SGX_ERROR_UNEXPECTED;
     }
 }
 
 /* Cleans up sha state
-* Parameters:
-*   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
-*   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state  */
+ * Parameters:
+ *   Return: sgx_status_t  - SGX_SUCCESS or failure as defined in sgx_error.h
+ *   Input:  sgx_sha_state_handle_t sha_handle - Handle to the SHA256 state  */
 sgx_status_t sgx_sha256_close(sgx_sha_state_handle_t sha_handle)
 {
     if (sha_handle == NULL)

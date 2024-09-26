@@ -33,21 +33,21 @@ include buildenv.mk
 
 ifeq ($(SGX_MODE), HW)
 ifeq ($(SGX_DEBUG), 1)
-		Build_Mode = HW_DEBUG
+    Build_Mode = HW_DEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-		Build_Mode = HW_PRERELEASE
+    Build_Mode = HW_PRERELEASE
 else
-		Build_Mode = HW_RELEASE
+    Build_Mode = HW_RELEASE
 endif
 endif
 
 ifeq ($(SGX_MODE), SIM)
 ifeq ($(SGX_DEBUG), 1)
-		Build_Mode = SIM_DEBUG
+    Build_Mode = SIM_DEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-		Build_Mode = SIM_PRERELEASE
+    Build_Mode = SIM_PRERELEASE
 else
-		Build_Mode = SIM_RELEASE
+    Build_Mode = SIM_RELEASE
 endif
 endif
 

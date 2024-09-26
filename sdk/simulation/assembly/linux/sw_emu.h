@@ -116,6 +116,7 @@ DECLARE_LOCAL_FUNC Do\()\inst\()_SW
     SE_PROLOG
     \inst\()_SW
     SE_EPILOG
+END_FUNC
 .endm
 
 #endif

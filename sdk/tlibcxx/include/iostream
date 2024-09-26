@@ -33,14 +33,14 @@ extern wostream wclog;
 
 */
 
-// Not supported in SGX.
 #include <__config>
-#if !defined(_LIBCPP_SGX_CONFIG)
 #include <ios>
 #include <streambuf>
 #include <istream>
 #include <ostream>
 
+// Not supported in SGX.
+#if !defined(_LIBCPP_SGX_CONFIG)
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif

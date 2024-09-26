@@ -58,8 +58,8 @@ extern "C" {
 #endif
 
 int ecall_sm2_sign_verify_functions(void);
+int ecall_sm2_key_exchange_functions(void);
 int ecall_sm2_encrypt_decrypt_gm_functions(void);
-int ecall_sm2_encrypt_decrypt_ieee_functions(void);
 int ecall_sm3_functions(void);
 int ecall_sm4_cbc_functions(void);
 int ecall_sm4_ctr_functions(void);

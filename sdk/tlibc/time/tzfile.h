@@ -17,6 +17,38 @@
 ** Thank you!
 */
 
+/*
+** In the current implementation, "tzset()" refuses to deal with files that
+** exceed any of the limits below.
+*/
+
+#ifndef TZ_MAX_TIMES
+#define TZ_MAX_TIMES	1200
+#endif /* !defined TZ_MAX_TIMES */
+
+#ifndef TZ_MAX_TYPES
+#ifndef NOSOLAR
+#define TZ_MAX_TYPES	256 /* Limited by what (unsigned char)'s can hold */
+#endif /* !defined NOSOLAR */
+#ifdef NOSOLAR
+/*
+** Must be at least 14 for Europe/Riga as of Jan 12 1995,
+** as noted by Earl Chew.
+*/
+#define TZ_MAX_TYPES	20	/* Maximum number of local time types */
+#endif /* !defined NOSOLAR */
+#endif /* !defined TZ_MAX_TYPES */
+
+#ifndef TZ_MAX_CHARS
+#define TZ_MAX_CHARS	50	/* Maximum number of abbreviation characters */
+				/* (limited by what unsigned chars can hold) */
+#endif /* !defined TZ_MAX_CHARS */
+
+#ifndef TZ_MAX_LEAPS
+#define TZ_MAX_LEAPS	50	/* Maximum number of leap second corrections */
+#endif /* !defined TZ_MAX_LEAPS */
+
+
 #define SECSPERMIN	60
 #define MINSPERHOUR	60
 #define HOURSPERDAY	24

@@ -36,7 +36,6 @@ include ../buildenv.mk
 CXXFLAGS  += -Werror
 CFLAGS	  += -Werror 
 AENAME = provision_enclave
-PVE_VER:= $(shell awk '$$2 ~ /PVE_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
 
 INCLUDE += -I$(LINUX_PSW_DIR)/ae/data/constants/linux 
 
@@ -71,7 +70,7 @@ EPID:
 	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
 
 $(SONAME): $(OBJS) EPID
-	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call SPLIT_VERSION,$(PVE_VER),1) $(LDTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call get_major_version,PVE_VERSION) $(LDTFLAGS)
 	$(STRIP) --strip-unneeded --remove-section=.comment --remove-section=.note $(SONAME)
 
 provision_enclave.o: $(AENAME)_t.c

@@ -195,19 +195,19 @@ int ecall_sm2_sign_verify_functions()
 	return rev;
 }
 
+/* GM SM2 key exchange functions */
+int ecall_sm2_key_exchange_functions()
+{
+	int rev = -1;
+	ecall_sm2_key_exchange(global_eid, &rev);
+	return rev;
+}
+
 /* GM SM2 encrypt and decrypt functions(GM version) */
 int ecall_sm2_encrypt_decrypt_gm_functions()
 {
 	int rev = -1;
 	ecall_sm2_encrypt_decrypt_gm(global_eid, &rev);
-	return rev;
-}
-
-/* GM SM2 encrypt and decrypt functions(IEEE version) */
-int ecall_sm2_encrypt_decrypt_ieee_functions()
-{
-	int rev = -1;
-	ecall_sm2_encrypt_decrypt_ieee(global_eid, &rev);
 	return rev;
 }
 
@@ -256,15 +256,15 @@ int SGX_CDECL main(int argc, char *argv[])
 	else
 		printf("GM SM2 - sign and verify: FAIL\n");
 
+	if (ecall_sm2_key_exchange_functions() == 0)
+		printf("GM SM2 - key exchange: PASS\n");
+	else
+		printf("GM SM2 - key exchange: FAIL\n");
+
 	if (ecall_sm2_encrypt_decrypt_gm_functions() == 0)
 		printf("GM SM2 - encrypt and decrypt(GM version): PASS\n");
 	else
 		printf("GM SM2 - encrypt and decrypt(GM version): FAIL\n");
-
-	if (ecall_sm2_encrypt_decrypt_ieee_functions() == 0)
-		printf("GM SM2 - encrypt and decrypt(IEEE version): PASS\n");
-	else
-		printf("GM SM2 - encrypt and decrypt(IEEE version): FAIL\n");
 
 	/* SM3 */
 	if (ecall_sm3_functions() == 0)

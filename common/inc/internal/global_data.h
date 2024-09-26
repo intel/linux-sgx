@@ -66,6 +66,8 @@ typedef struct _global_data_t
     uint64_t       elrange_start_address;   /* the base address provided in the enclave's SECS (SECS.BASEADDR) */
     uint64_t       elrange_size;            /* the size of the enclave address range provided in the enclave's SECS (SECS.SIZE) */
     sys_word_t     edmm_bk_overhead;        /* memory overhead used by edmm bookkeeping */
+    uint32_t       fips_on;
+    uint32_t       reserved2;
 } global_data_t;
 
 #define ENCLAVE_INIT_NOT_STARTED  0
@@ -78,7 +80,7 @@ typedef struct _global_data_t
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern SE_DECLSPEC_EXPORT global_data_t const volatile g_global_data;
+extern SE_DECLSPEC_EXPORT global_data_t volatile g_global_data;
 extern sdk_version_t g_sdk_version;
 extern int EDMM_supported;
 extern uint8_t  __ImageBase;

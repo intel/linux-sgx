@@ -33,7 +33,7 @@ include ../buildenv.mk
 
 include Makefile.source
 
-# SDK requires prebuilt IPP libraries.
+# IPP libraries must be ready for SDK build
 CHECK_OPT :=
 ifeq ("$(wildcard $(LINUX_EXTERNAL_DIR)/ippcp_internal/lib/linux/intel64)", "")
 CHECK_OPT := opt_check_failed
@@ -41,7 +41,7 @@ endif
 
 .PHONY: opt_check_failed
 opt_check_failed:
-	@echo "ERROR: Please run 'download_prebuilt.sh' to download the prebuilt optimized libraries before compiling."
+	@echo "ERROR: Please go to top directory and run 'make preparation' to prepare the optimized libraries before compiling."
 	@echo "Exiting......"
 	@exit 3
 

@@ -29,13 +29,9 @@
  *
  */
 
-
-
-
 #include "ipp_wrapper.h"
 #include "sgx_ecc256_internal.h"
-
-
+#include "sgx_fips_internal.h"
 
 /* Computes a point with scalar multiplication based on private B key (local) and remote public Ga Key
  * Parameters:
@@ -46,41 +42,42 @@
  *    Output: sgx_ec256_shared_point_t *p_shared_key - Pointer to the target shared point - LITTLE ENDIAN
                                                     x-coordinate of (privKeyB - pubKeyA) */
 sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
-                                           sgx_ec256_public_t *p_public_ga,
-                                           sgx_ec256_shared_point_t *p_shared_key,
-                                           sgx_ecc_state_handle_t ecc_handle)
+                                             sgx_ec256_public_t *p_public_ga,
+                                             sgx_ec256_shared_point_t *p_shared_key,
+                                             sgx_ecc_state_handle_t ecc_handle)
 {
     if ((ecc_handle == NULL) || (p_private_b == NULL) || (p_public_ga == NULL) || (p_shared_key == NULL))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+    fips_self_test_ecc();
 
-    IppsBigNumState* bn_dh_privb = NULL;
-    IppsBigNumState* bn_dh_shared_x = NULL;
-    IppsBigNumState* bn_dh_shared_y = NULL;
-    IppsBigNumState* puba_gx = NULL;
-    IppsBigNumState* puba_gy = NULL;
-    IppsGFpECPoint*  point_pub_a = NULL;
-    IppsGFpECPoint*  point_r = NULL;
-    IppStatus        ipp_ret = ippStsErr;
-    int              ec_point_size = 0;
-    IppECResult      ipp_result = ippECValid;
+    IppsBigNumState *bn_dh_privb = NULL;
+    IppsBigNumState *bn_dh_shared_x = NULL;
+    IppsBigNumState *bn_dh_shared_y = NULL;
+    IppsBigNumState *puba_gx = NULL;
+    IppsBigNumState *puba_gy = NULL;
+    IppsGFpECPoint *point_pub_a = NULL;
+    IppsGFpECPoint *point_r = NULL;
+    IppStatus ipp_ret = ippStsErr;
+    int ec_point_size = 0;
+    IppECResult ipp_result = ippECValid;
     int scratch_size = 0;
-    Ipp8u* scratch_buf = NULL;
+    Ipp8u *scratch_buf = NULL;
     ipp_ec_state_handles_t *p_ec_handle = (ipp_ec_state_handles_t *)ecc_handle;
     do
     {
-        ipp_ret = sgx_ipp_newBN((Ipp32u*)p_private_b->r, sizeof(sgx_ec256_private_t), &bn_dh_privb);
+        ipp_ret = sgx_ipp_newBN((Ipp32u *)p_private_b->r, sizeof(sgx_ec256_private_t), &bn_dh_privb);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = sgx_ipp_newBN((uint32_t*)p_public_ga->gx, sizeof(p_public_ga->gx), &puba_gx);
+        ipp_ret = sgx_ipp_newBN((uint32_t *)p_public_ga->gx, sizeof(p_public_ga->gx), &puba_gx);
         ERROR_BREAK(ipp_ret);
-        ipp_ret = sgx_ipp_newBN((uint32_t*)p_public_ga->gy, sizeof(p_public_ga->gy), &puba_gy);
+        ipp_ret = sgx_ipp_newBN((uint32_t *)p_public_ga->gy, sizeof(p_public_ga->gy), &puba_gy);
         ERROR_BREAK(ipp_ret);
 
         ipp_ret = ippsGFpECPointGetSize(p_ec_handle->p_ec_state, &ec_point_size);
         ERROR_BREAK(ipp_ret);
         point_pub_a = (IppsGFpECPoint *)malloc(ec_point_size);
-        if(!point_pub_a)
+        if (!point_pub_a)
         {
             ipp_ret = ippStsNoMemErr;
             break;
@@ -90,14 +87,14 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
         ipp_ret = ippsGFpECSetPointRegular(puba_gx, puba_gy, point_pub_a, p_ec_handle->p_ec_state);
         ERROR_BREAK(ipp_ret);
         ipp_ret = ippsGFpECTstPoint(point_pub_a, &ipp_result, p_ec_handle->p_ec_state);
-        ERROR_BREAK(ipp_ret);  
+        ERROR_BREAK(ipp_ret);
         if (ipp_result != ippECValid)
         {
             break;
         }
 
         point_r = (IppsGFpECPoint *)malloc(ec_point_size);
-        if(!point_r)
+        if (!point_r)
         {
             ipp_ret = ippStsNoMemErr;
             break;
@@ -108,7 +105,7 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
         ipp_ret = ippsGFpECScratchBufferSize(1, p_ec_handle->p_ec_state, &scratch_size);
         ERROR_BREAK(ipp_ret);
         scratch_buf = (Ipp8u *)malloc(scratch_size);
-        if(!scratch_buf)
+        if (!scratch_buf)
         {
             ipp_ret = ippStsNoMemErr;
             break;
@@ -116,11 +113,11 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
         ipp_ret = ippsGFpECMulPoint(point_pub_a, bn_dh_privb, point_r, p_ec_handle->p_ec_state, scratch_buf);
         ERROR_BREAK(ipp_ret);
 
-        //defense in depth to verify that point_r in ECC group
-        //a return value of ippECValid indicates the point is on the elliptic curve
-        //and is not the point at infinity
+        // defense in depth to verify that point_r in ECC group
+        // a return value of ippECValid indicates the point is on the elliptic curve
+        // and is not the point at infinity
         ipp_ret = ippsGFpECTstPoint(point_r, &ipp_result, p_ec_handle->p_ec_state);
-        ERROR_BREAK(ipp_ret);  
+        ERROR_BREAK(ipp_ret);
         if (ipp_result != ippECValid)
         {
             break;
@@ -139,17 +136,17 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
         ipp_ret = ippsRef_BN(&sgn, &length, &pdata, bn_dh_shared_x);
         ERROR_BREAK(ipp_ret);
         memset(p_shared_key->x, 0, sizeof(p_shared_key->x));
-        memcpy(p_shared_key->x, pdata, ROUND_TO(length, 8)/8);
+        memcpy(p_shared_key->x, pdata, ROUND_TO(length, 8) / 8);
         // Clear memory securely
-        memset_s(pdata, sizeof(p_shared_key->x), 0, ROUND_TO(length, 8)/8);
+        memset_s(pdata, sizeof(p_shared_key->x), 0, ROUND_TO(length, 8) / 8);
 
         ipp_ret = ippsRef_BN(&sgn, &length, &pdata, bn_dh_shared_y);
         ERROR_BREAK(ipp_ret);
         memset(p_shared_key->y, 0, sizeof(p_shared_key->y));
-        memcpy(p_shared_key->y, pdata, ROUND_TO(length, 8)/8);
+        memcpy(p_shared_key->y, pdata, ROUND_TO(length, 8) / 8);
         // Clear memory securely
-        memset_s(pdata, sizeof(p_shared_key->x), 0, ROUND_TO(length, 8)/8);
-    }while(0);
+        memset_s(pdata, sizeof(p_shared_key->x), 0, ROUND_TO(length, 8) / 8);
+    } while (0);
     CLEAR_FREE_MEM(point_pub_a, ec_point_size);
     CLEAR_FREE_MEM(point_r, ec_point_size);
     sgx_ipp_secure_free_BN(puba_gx, sizeof(p_public_ga->gx));
@@ -168,4 +165,3 @@ sgx_status_t sgx_ecc256_compute_shared_point(sgx_ec256_private_t *p_private_b,
     }
     return SGX_SUCCESS;
 }
-

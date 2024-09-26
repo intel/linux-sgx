@@ -8,6 +8,8 @@
 ** 1996-06-05 by Arthur David Olson.
 */
 
+#define GRANDPARENTED	"Local time zone must be set--see zic manual page"
+
 /*
 ** Nested includes
 */
@@ -59,6 +61,27 @@
 	((TYPE_BIT(type) - TYPE_SIGNED(type)) * 302 / 1000 + \
 	1 + TYPE_SIGNED(type))
 #endif /* !defined INT_STRLEN_MAXIMUM */
+
+#ifndef YEARSPERREPEAT
+#define YEARSPERREPEAT		400	/* years before a Gregorian repeat */
+#endif /* !defined YEARSPERREPEAT */
+
+/*
+** The Gregorian year averages 365.2425 days, which is 31556952 seconds.
+*/
+
+#ifndef AVGSECSPERYEAR
+#define AVGSECSPERYEAR		31556952L
+#endif /* !defined AVGSECSPERYEAR */
+
+#ifndef SECSPERREPEAT
+#define SECSPERREPEAT		((int_fast64_t) YEARSPERREPEAT * (int_fast64_t) AVGSECSPERYEAR)
+#endif /* !defined SECSPERREPEAT */
+
+#ifndef SECSPERREPEAT_BITS
+#define SECSPERREPEAT_BITS	34	/* ceil(log2(SECSPERREPEAT)) */
+#endif /* !defined SECSPERREPEAT_BITS */
+
 
 /* Disable warnings */
 

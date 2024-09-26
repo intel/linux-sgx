@@ -95,6 +95,13 @@ char * _TLIBC_CDECL_ asctime(const struct tm *);
 size_t _TLIBC_CDECL_ strftime(char *, size_t, const char *, const struct tm *);
 
 /*
+ * NOTE: The functions listed below only supports limited scenarios.
+ * Full functionality support requires locale, which is not avaiable inside enclave
+ */
+char *_TLIBC_CDECL_ strptime(const char *buf, const char *fmt, struct tm *tm);
+time_t _TLIBC_CDECL_ mktime(struct tm *tmp);
+
+/*
  * Non-C99
  */
 char * _TLIBC_CDECL_ asctime_r(const struct tm *, char *);

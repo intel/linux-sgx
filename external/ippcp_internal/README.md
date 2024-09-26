@@ -1,6 +1,6 @@
 The ippcp library is built based on the IPP Cryptography open source project:
    * https://github.com/intel/ipp-crypto/
-   * tag: [ippcp_2021.11.0](https://github.com/intel/ipp-crypto/tree/ippcp_2021.11.0)
+   * tag: [ippcp_2021.12.1](https://github.com/intel/ipp-crypto/tree/ippcp_2021.12.1)
 
 In order to build your own IPP crypto, please follow below steps:
 1. Download the prebuilt mitigation tools package `as.ld.objdump.{ver}.tar.gz` from [01.org](https://download.01.org/intel-sgx/latest/linux-latest/), extract the package and copy the tools to `/usr/local/bin`.

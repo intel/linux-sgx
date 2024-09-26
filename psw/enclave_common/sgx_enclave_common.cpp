@@ -1007,18 +1007,24 @@ extern "C" size_t COMM_API enclave_load_data(
         if (!(data_properties & ENCLAVE_PAGE_UNVALIDATED))
             addp.flags = SGX_PAGE_MEASURE;
         addp.count = 0;
-        int ret = ioctl(hfile, SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL, &addp);
-        if (ret) {
-            SE_TRACE(SE_TRACE_WARNING, "\nAdd Page - %p to %p... FAIL\n", source, target_address);
-            if (enclave_error != NULL)
-                *enclave_error = error_driver2api(ret, errno);
-            if(source_buffer == NULL)
-            {
-                free(source);
-                source = NULL;
-            }    
-            return 0;
-        }
+        do {
+            int ret = ioctl(hfile, SGX_IOC_ENCLAVE_ADD_PAGES_IN_KERNEL, &addp);
+            if(ret && addp.count == 0 && errno != EBUSY && errno != EAGAIN )
+            { //total failure
+                SE_TRACE(SE_TRACE_WARNING, "\nAdd Page - %p to %p... FAIL\n", source, target_address);
+                if (enclave_error != NULL)
+                    *enclave_error = error_driver2api(ret, errno);
+                if(source_buffer == NULL)
+                {
+                    free(source);
+                    source = NULL;
+                }
+                return 0;
+            }
+            addp.length -= addp.count;
+            addp.offset += addp.count;
+            addp.count = 0;
+        } while (addp.length != 0);
         if(source_buffer == NULL)
         {
             free(source);

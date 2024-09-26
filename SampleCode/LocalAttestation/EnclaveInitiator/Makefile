@@ -87,15 +87,15 @@ Enclave_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX
 Enclave_C_Flags := $(Enclave_Include_Paths) -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections
 CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
 ifeq ($(CC_BELOW_4_9), 1)
-        Enclave_C_Flags += -fstack-protector
+    Enclave_C_Flags += -fstack-protector
 else
-        Enclave_C_Flags += -fstack-protector-strong
+    Enclave_C_Flags += -fstack-protector-strong
 endif
 Enclave_Cpp_Flags := $(Enclave_C_Flags) -nostdinc++
 
 ifeq ($(LAv2), 1)
-	Enclave_C_Flags += -DSGX_USE_LAv2_INITIATOR
-	Enclave_Cpp_Flags += -DSGX_USE_LAv2_INITIATOR
+    Enclave_C_Flags += -DSGX_USE_LAv2_INITIATOR
+    Enclave_Cpp_Flags += -DSGX_USE_LAv2_INITIATOR
 endif
 
 Enclave_Cpp_Files := $(wildcard *.cpp)

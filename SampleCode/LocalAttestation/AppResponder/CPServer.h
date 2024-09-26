@@ -37,9 +37,10 @@
 class CPServer
 {
 	public:
-		CPServer(CPTask* task) : m_cptask(task)
-					, m_server_sock_fd(-1)
+		CPServer(CPTask* task) :
+					m_server_sock_fd(-1)
 					, m_shutdown(0)
+					, m_cptask(task)
                 {}
 		~CPServer(){};
 

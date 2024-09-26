@@ -30,8 +30,49 @@
  */
 
 #include "ipp_wrapper.h"
+#include "sgx_fips_internal.h"
 
 #define ECC_FIELD_SIZE 256
+
+void fips_self_test_ecc()
+{
+    static bool fips_selftest_ecc_flag = false;
+    if (g_global_data.fips_on != 0 && fips_selftest_ecc_flag == false)
+    {
+        sgx_status_t ret = SGX_ERROR_UNEXPECTED;
+        fips_test_status test_result = IPPCP_ALGO_SELFTEST_OK;
+        int gfp_buf_size = 0;
+        uint8_t *p_gfp_buf = NULL;
+        int ec_buf_size = 0;
+        uint8_t *p_ec_buf = NULL;
+        int data_buf_size = 0;
+        uint8_t *p_data_buf = NULL;
+        do
+        {
+            FIPS_SELFTEST_FUNC_1(test_result, fips_selftest_ippsGFpECSignVerifyDSA_get_size_GFp_buff, &gfp_buf_size);
+            p_gfp_buf = (uint8_t *)malloc(gfp_buf_size);
+            ALLOC_ERROR_BREAK(p_gfp_buf, ret);
+            FIPS_SELFTEST_FUNC_2(test_result, fips_selftest_ippsGFpECSignVerifyDSA_get_size_GFpEC_buff, &ec_buf_size, p_gfp_buf);
+            p_ec_buf = (uint8_t *)malloc(ec_buf_size);
+            ALLOC_ERROR_BREAK(p_ec_buf, ret);
+            FIPS_SELFTEST_FUNC_3(test_result, fips_selftest_ippsGFpECSignVerifyDSA_get_size_data_buff, &data_buf_size, p_gfp_buf, p_ec_buf);
+            p_data_buf = (uint8_t *)malloc(data_buf_size);
+            ALLOC_ERROR_BREAK(p_data_buf, ret);
+            FIPS_SELFTEST_FUNC_3(test_result, fips_selftest_ippsGFpECSignDSA, p_gfp_buf, p_ec_buf, p_data_buf);
+            FIPS_SELFTEST_FUNC_3(test_result, fips_selftest_ippsGFpECVerifyDSA, p_gfp_buf, p_ec_buf, p_data_buf);
+            FIPS_SELFTEST_FUNC_3(test_result, fips_selftest_ippsGFpECPrivateKey, p_gfp_buf, p_ec_buf, p_data_buf);
+            FIPS_SELFTEST_FUNC_3(test_result, fips_selftest_ippsGFpECPublicKey, p_gfp_buf, p_ec_buf, p_data_buf);
+            FIPS_SELFTEST_FUNC_3(test_result, fips_selftest_ippsGFpECSharedSecretDH, p_gfp_buf, p_ec_buf, p_data_buf);
+            ret = SGX_SUCCESS;
+            fips_selftest_ecc_flag = true;
+        } while (0);
+        SAFE_FREE(p_gfp_buf);
+        SAFE_FREE(p_ec_buf);
+        SAFE_FREE(p_data_buf);
+        ERROR_ABORT(ret);
+    }
+    return;
+}
 
 /*
  * Elliptic Curve Crytpography - Based on GF(p), 256 bits
@@ -44,6 +85,9 @@ sgx_status_t sgx_ecc256_open_context(sgx_ecc_state_handle_t *p_ecc_handle)
 {
     if (p_ecc_handle == NULL)
         return SGX_ERROR_INVALID_PARAMETER;
+
+    fips_self_test_ecc();
+
     IppStatus ipp_ret = ippStsErr;
     ipp_ec_state_handles_t *ipp_state_handle = NULL;
     IppsGFpState *gfp_ctx = NULL;
@@ -159,6 +203,9 @@ sgx_status_t sgx_ecc256_create_key_pair(sgx_ec256_private_t *p_private,
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_ecc();
+
     IppsBigNumState *dh_priv_bn = NULL;
     IppStatus ipp_ret = ippStsErr;
     IppsBigNumState *pub_gx = NULL;
@@ -273,6 +320,9 @@ sgx_status_t sgx_ecc256_check_point(const sgx_ec256_public_t *p_point,
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_ecc();
+
     ipp_ec_state_handles_t *p_ec_handle = (ipp_ec_state_handles_t *)ecc_handle;
     IppsGFpECPoint *point2check = NULL;
     IppStatus ipp_ret = ippStsErr;
@@ -348,6 +398,9 @@ sgx_status_t sgx_ecc256_compute_shared_dhkey(const sgx_ec256_private_t *p_privat
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_ecc();
+
     IppsBigNumState *bn_dh_priv_b = NULL;
     IppsBigNumState *bn_dh_share = NULL;
     IppsBigNumState *pub_a_gx = NULL;
@@ -454,6 +507,9 @@ sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_ecc();
+
     IppStatus ipp_ret = ippStsErr;
     IppsGFpState *gfp_ctx = NULL;
     IppsGFpECState *ec_state = NULL;
@@ -501,7 +557,7 @@ sgx_status_t sgx_ecc256_calculate_pub_from_priv(const sgx_ec256_private_t *p_att
         {
             ipp_ret = ippStsNoMemErr;
             break;
-        }    
+        }
         ipp_ret = ippsGFpECPointInit(NULL, NULL, public_key, ec_state);
         ERROR_BREAK(ipp_ret);
 
