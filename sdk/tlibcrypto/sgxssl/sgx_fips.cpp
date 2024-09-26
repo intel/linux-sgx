@@ -34,11 +34,6 @@
 #include "global_data.h"
 #include "util.h"
 
-extern "C" sgx_status_t sgx_crypto_fips_selftest()
-{
-    return SGX_ERROR_UNSUPPORTED_FUNCTION;
-}
-
 sgx_status_t sgx_is_fips_approved_func(sgx_fips_func_t func, func_fips_approved_t *is_approved)
 {
     UNUSED(func);

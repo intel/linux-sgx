@@ -39,21 +39,21 @@ SGX_DEBUG ?= 1
 include $(SGX_SDK)/buildenv.mk
 
 ifeq ($(shell getconf LONG_BIT), 32)
-	SGX_ARCH := x86
+    SGX_ARCH := x86
 else ifeq ($(findstring -m32, $(CXXFLAGS)), -m32)
-	SGX_ARCH := x86
+    SGX_ARCH := x86
 endif
 
 ifeq ($(SGX_ARCH), x86)
-	SGX_COMMON_FLAGS := -m32
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
+    SGX_COMMON_FLAGS := -m32
+    SGX_LIBRARY_PATH := $(SGX_SDK)/lib
+    SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
+    SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
 else
-	SGX_COMMON_FLAGS := -m64
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
+    SGX_COMMON_FLAGS := -m64
+    SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
+    SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
+    SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
 endif
 
 ifeq ($(SGX_DEBUG), 1)
@@ -67,9 +67,9 @@ $(error Only support HW mode for AEX Notify!!)
 endif
 
 ifeq ($(SGX_DEBUG), 1)
-        SGX_COMMON_FLAGS += -O0 -g
+    SGX_COMMON_FLAGS += -O0 -g
 else
-        SGX_COMMON_FLAGS += -O2
+    SGX_COMMON_FLAGS += -O2
 endif
 
 SGX_COMMON_FLAGS += -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
@@ -93,11 +93,11 @@ App_C_Flags := -fPIC -Wno-attributes $(App_Include_Paths)
 #   Prerelease - Macro NDEBUG and EDEBUG enabled.
 #   Release - Macro NDEBUG enabled.
 ifeq ($(SGX_DEBUG), 1)
-        App_C_Flags += -DDEBUG -UNDEBUG -UEDEBUG
+    App_C_Flags += -DDEBUG -UNDEBUG -UEDEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-        App_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
+    App_C_Flags += -DNDEBUG -DEDEBUG -UDEBUG
 else
-        App_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
+    App_C_Flags += -DNDEBUG -UEDEBUG -UDEBUG
 endif
 
 App_Cpp_Flags := $(App_C_Flags)
@@ -120,9 +120,9 @@ Enclave_Include_Paths := -IInclude -IEnclave -I$(SGX_SDK)/include -I$(SGX_SDK)/i
 Enclave_C_Flags := $(Enclave_Include_Paths) -nostdinc -fvisibility=hidden -fpie -ffunction-sections -fdata-sections $(MITIGATION_CFLAGS)
 CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
 ifeq ($(CC_BELOW_4_9), 1)
-	Enclave_C_Flags += -fstack-protector
+    Enclave_C_Flags += -fstack-protector
 else
-	Enclave_C_Flags += -fstack-protector-strong
+    Enclave_C_Flags += -fstack-protector-strong
 endif
 
 Enclave_Cpp_Flags := $(Enclave_C_Flags) -nostdinc++
@@ -155,11 +155,11 @@ Enclave_Test_Key := Enclave/Enclave_private_test.pem
 
 ifeq ($(SGX_MODE), HW)
 ifeq ($(SGX_DEBUG), 1)
-	Build_Mode = HW_DEBUG
+    Build_Mode = HW_DEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-	Build_Mode = HW_PRERELEASE
+    Build_Mode = HW_PRERELEASE
 else
-	Build_Mode = HW_RELEASE
+    Build_Mode = HW_RELEASE
 endif
 endif
 

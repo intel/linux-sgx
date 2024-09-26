@@ -5,8 +5,8 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linux/libipc.so	<installdir>/package/aesm/libipc.so	0	main	STP
 <deliverydir>/build/linux/liboal.so	<installdir>/package/aesm/liboal.so	0	main	STP
 <deliverydir>/build/linux/libutils.so	<installdir>/package/aesm/libutils.so	0	main	STP
-<deliverydir>/build/linux/libdcap_quoteprov.so	<installdir>/package/aesm/libdcap_quoteprov.so	0	main	STP
-<deliverydir>/build/linux/libsgx_default_qcnl_wrapper.so	<installdir>/package/aesm/libsgx_default_qcnl_wrapper.so	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libdcap_quoteprov.so	<installdir>/package/aesm/libdcap_quoteprov.so	0	main	STP
+<deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libsgx_default_qcnl_wrapper.so	<installdir>/package/aesm/libsgx_default_qcnl_wrapper.so	0	main	STP
 <deliverydir>/build/linux/liburts_internal.so	<installdir>/package/aesm/liburts_internal.so	0	main	STP
 <deliverydir>/build/linux/libCppMicroServices.so.4.0.0	<installdir>/package/aesm/libCppMicroServices.so.4.0.0	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/build/linux/libsgx_pce_logic.so	<installdir>/package/aesm/libsgx_pce_logic.so.1	0	main	STP

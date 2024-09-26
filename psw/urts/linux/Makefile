@@ -31,8 +31,6 @@
 
 include ../../../buildenv.mk
 
-URTS_VER:= $(shell awk '$$2 ~ /URTS_VERSION/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
-
 ifndef DEBUG
 CXXFLAGS += -DDISABLE_TRACE
 CFLAGS += -DDISABLE_TRACE
@@ -124,38 +122,27 @@ vpath %.S   $(DIR1):$(DIR5)
 
 LIBWRAPPER            := libwrapper.a
 LIBSGX_ENCLAVE_COMMON := libsgx_enclave_common.a
-LIBURTS               := libsgx_urts.so
 LIBURTS_INTERNAL      := liburts_internal.so
-LIBURTS_DEBUG	      := libsgx_urts.so.debug
-
+LIBURTS               := libsgx_urts.so
+LIBURTS_FULL          := $(LIBURTS).$(call get_full_version,URTS_VERSION)
+LIBURTS_MAJOR         := $(LIBURTS).$(call get_major_version,URTS_VERSION)
 
 .PHONY: all
-all: $(LIBURTS) $(LIBURTS_INTERNAL) $(LIBURTS_DEBUG) | $(BUILD_DIR)
-	@$(CP) $(LIBURTS)          $|
+all: $(LIBURTS) $(LIBURTS_INTERNAL) | $(BUILD_DIR)
+	@$(CP) $(LIBURTS)          $|/$(LIBURTS_FULL)
+	@$(LN) $(LIBURTS_FULL)     $|/$(LIBURTS_MAJOR)
+	@$(LN) $(LIBURTS_MAJOR)    $|/$(LIBURTS)
 	@$(CP) $(LIBURTS_INTERNAL) $|
-ifndef DEBUG
-	@$(CP) $(LIBURTS_DEBUG)    $|
-endif
 
 $(LIBURTS_INTERNAL): $(INTERNAL_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) ittnotify
 	@$(MKDIR) $(BUILD_DIR)/.sgx_enclave_common
-	@$(RM) -f $(BUILD_DIR)/.sgx_enclave_common/*
-	cd $(BUILD_DIR)/.sgx_enclave_common && \
-	$(AR) x $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON) && \
-	$(RM) -f edmm_utility.o
-	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@ $(LIB) -o $@ $(INTERNAL_OBJ) $(BUILD_DIR)/.sgx_enclave_common/*.o  $(INTERNAL_LDFLAGS)
-	@$(RM) -rf $(BUILD_DIR)/.sgx_enclave_common
+	$(AR) x $(BUILD_DIR)/$(LIBSGX_ENCLAVE_COMMON) --output $(BUILD_DIR)/.sgx_enclave_common && \
+	$(RM) $(BUILD_DIR)/.sgx_enclave_common/edmm_utility.o
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@ $(LIB) -o $@ $(INTERNAL_OBJ) $(BUILD_DIR)/.sgx_enclave_common/*.o $(INTERNAL_LDFLAGS)
+	@$(RM) -r $(BUILD_DIR)/.sgx_enclave_common
 
 $(LIBURTS): $(URTS_OBJ) $(LIBWRAPPER) $(LIBSGX_ENCLAVE_COMMON) ittnotify
-	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$@.$(call SPLIT_VERSION,$(URTS_VER),1) $(LIB) -o $@  $(URTS_OBJ) $(LDFLAGS)
-
-$(LIBURTS_DEBUG): $(LIBURTS)
-ifndef DEBUG
-	$(CP) $(LIBURTS) $(LIBURTS).orig
-	$(OBJCOPY) --only-keep-debug $(LIBURTS) $(LIBURTS_DEBUG)
-	$(STRIP) -g $(LIBURTS)
-	$(OBJCOPY) --add-gnu-debuglink=$(LIBURTS_DEBUG) $(LIBURTS)
-endif
+	$(CXX) $(CXXFLAGS) -shared -Wl,-soname=$(LIBURTS_MAJOR) $(LIB) -o $@ $(URTS_OBJ) $(LDFLAGS)
 
 $(CPP_OBJ): %.o: %.cpp
 	$(CXX) -c $(CXXFLAGS) $(INC) $< -o $@
@@ -178,9 +165,11 @@ $(BUILD_DIR):
 
 .PHONY: clean
 clean::
-	@$(RM) *.o $(LIBURTS) $(LIBURTS_INTERNAL) $(LIBURTS_DEBUG)
-	@$(RM) $(BUILD_DIR)/$(LIBURTS) $(BUILD_DIR)/$(LIBURTS_INTERNAL)
-	@$(RM) $(LIBURTS).orig $(BUILD_DIR)/$(LIBURTS_DEBUG)
-	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/                   clean
-	$(MAKE) -C $(LINUX_PSW_DIR)/enclave_common/            clean
-	$(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify              clean
+	@$(RM) *.o $(LIBURTS) $(LIBURTS_INTERNAL) \
+		$(BUILD_DIR)/$(LIBURTS)           \
+		$(BUILD_DIR)/$(LIBURTS_FULL)      \
+		$(BUILD_DIR)/$(LIBURTS_MAJOR)     \
+		$(BUILD_DIR)/$(LIBURTS_INTERNAL)
+	$(MAKE) -C $(COMMON_DIR)/se_wrapper_psw/    clean
+	$(MAKE) -C $(LINUX_PSW_DIR)/enclave_common/ clean
+	$(MAKE) -C $(VTUNE_DIR)/sdk/src/ittnotify   clean

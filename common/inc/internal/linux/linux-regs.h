@@ -158,6 +158,10 @@
     _CET_ENDBR
 .endm
 
+.macro END_FUNC
+    .cfi_endproc
+.endm
+
 .macro NAKED_PROLOG
     push    %xbp
     mov     %xsp, %xbp
@@ -253,7 +257,6 @@
 #endif
 
     ret
-    .cfi_endproc
 .endm
 
 /*******************************************************************/

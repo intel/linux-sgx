@@ -86,7 +86,8 @@ typedef enum _para_type_t
     PKRU,
     AMX,
     USERREGIONSIZE,
-    ENABLEAEXNOTIFY
+    ENABLEAEXNOTIFY,
+    ENABLEIPPFIPS
 } para_type_t;
 
 typedef struct _xml_parameter_t
@@ -108,7 +109,7 @@ void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id);
 class CMetadata: private Uncopyable
 {
 public:
-    CMetadata(metadata_t *metadata, BinParser *parser, bool fips_on);
+    CMetadata(metadata_t *metadata, BinParser *parser);
     ~CMetadata();
     bool build_metadata(const xml_parameter_t *parameter);
     bool rts_dynamic();

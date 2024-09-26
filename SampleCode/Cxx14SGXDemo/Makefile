@@ -37,21 +37,21 @@ SGX_ARCH ?= x64
 SGX_DEBUG ?= 1
 
 ifeq ($(shell getconf LONG_BIT), 32)
-	SGX_ARCH := x86
+    SGX_ARCH := x86
 else ifeq ($(findstring -m32, $(CXXFLAGS)), -m32)
-	SGX_ARCH := x86
+    SGX_ARCH := x86
 endif
 
 ifeq ($(SGX_ARCH), x86)
-	SGX_COMMON_FLAGS := -m32
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
+    SGX_COMMON_FLAGS := -m32
+    SGX_LIBRARY_PATH := $(SGX_SDK)/lib
+    SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
+    SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
 else
-	SGX_COMMON_FLAGS := -m64
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
+    SGX_COMMON_FLAGS := -m64
+    SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
+    SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
+    SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
 endif
 
 ifeq ($(SGX_DEBUG), 1)
@@ -76,9 +76,9 @@ SGX_COMMON_CXXFLAGS := $(SGX_COMMON_FLAGS) -Wnon-virtual-dtor -std=c++14
 ######## App Settings ########
 
 ifneq ($(SGX_MODE), HW)
-	Urts_Library_Name := sgx_urts_sim
+    Urts_Library_Name := sgx_urts_sim
 else
-	Urts_Library_Name := sgx_urts
+    Urts_Library_Name := sgx_urts
 endif
 
 App_Cpp_Files := App/App.cpp $(wildcard App/TrustedLibrary/*.cpp)
@@ -111,18 +111,18 @@ Enclave_Version_Script := Enclave/Enclave_debug.lds
 ifeq ($(SGX_MODE), HW)
 ifneq ($(SGX_DEBUG), 1)
 ifneq ($(SGX_PRERELEASE), 1)
-	# Choose to use 'Enclave.lds' for HW release mode
-	Enclave_Version_Script = Enclave/Enclave.lds 
+    # Choose to use 'Enclave.lds' for HW release mode
+    Enclave_Version_Script = Enclave/Enclave.lds 
 endif
 endif
 endif
 
 ifneq ($(SGX_MODE), HW)
-	Trts_Library_Name := sgx_trts_sim
-	Service_Library_Name := sgx_tservice_sim
+    Trts_Library_Name := sgx_trts_sim
+    Service_Library_Name := sgx_tservice_sim
 else
-	Trts_Library_Name := sgx_trts
-	Service_Library_Name := sgx_tservice
+    Trts_Library_Name := sgx_trts
+    Service_Library_Name := sgx_tservice
 endif
 Crypto_Library_Name := sgx_tcrypto
 
@@ -160,19 +160,19 @@ Enclave_Test_Key := Enclave/Enclave_private_test.pem
 
 ifeq ($(SGX_MODE), HW)
 ifeq ($(SGX_DEBUG), 1)
-	Build_Mode = HW_DEBUG
+    Build_Mode = HW_DEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-	Build_Mode = HW_PRERELEASE
+    Build_Mode = HW_PRERELEASE
 else
-	Build_Mode = HW_RELEASE
+    Build_Mode = HW_RELEASE
 endif
 else
 ifeq ($(SGX_DEBUG), 1)
-	Build_Mode = SIM_DEBUG
+    Build_Mode = SIM_DEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-	Build_Mode = SIM_PRERELEASE
+    Build_Mode = SIM_PRERELEASE
 else
-	Build_Mode = SIM_RELEASE
+    Build_Mode = SIM_RELEASE
 endif
 endif
 

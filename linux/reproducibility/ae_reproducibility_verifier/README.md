@@ -63,4 +63,4 @@ This document outlines a process to guarantee Intel(R) prebuilt AEs are:
     Meanwhile, you can find the metadata of Intel and user are generated in *./output/intel_metadata.txt* and *./output/user_metadata.txt*
 
 - For one release, we may not sign all the AEs but only sign a portion of them. So please don't anticipate to reproduce all of the AEs in a single release.
-You can refer to [README.md](/psw/ae/data/prebuilt/README.md) and [README.md](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/dcap_1.21_reproducible/QuoteGeneration/psw/ae/data/prebuilt/README.md) to obtain the appropriate reproducible release for each AE and utilize the corresponding release branch to reproduce the AE.
+You can refer to [README.md](/psw/ae/data/prebuilt/README.md) and [README.md](https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/dcap_1.22_reproducible/QuoteGeneration/psw/ae/data/prebuilt/README.md) to obtain the appropriate reproducible release for each AE and utilize the corresponding release branch to reproduce the AE.

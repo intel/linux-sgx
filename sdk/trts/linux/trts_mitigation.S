@@ -109,13 +109,7 @@ aex_notify_c3_cache:
  *  ct_restore_state)    | | |  rsvd main-flow RBP       |-6 |
  *                       | | |  rsvd main-flow RSI       |-7 |
  *                       | | |  rsvd main-flow RDI       |-8 |
- *                       | | |  rsvd main-flow FLAGS     |-9 |
- *                       +-|-|  rsvd main-flow -8(rsp)   |-10|
- *                       +-|-|  &SSA[0].AEXNOTIFY (rsi)  |-11|
- * (copy of parameters   | | |  ptr stack tickle  (rdx)  |-12|
- *  passed @entry)       | | |  ptr code tickle   (rcx)  |-13|
- *                       | | |  ptr data tickle   (r8)   |-14|
- *                       +-|-|  ptr c3 byte       (r9)   |-15|
+ *                       +-|-|  rsvd main-flow -8(rsp)   |-9 |
  * (this whole rsvd area   |  ---------------------------    |
  *  is persistent and will | |      ...                  |   |
  *  not be touched by      | |   padding for alignment   |   |
@@ -160,14 +154,8 @@ aex_notify_c3_cache:
 #define RSVD_RBP_OFFSET               (-RED_ZONE_SIZE-6*SE_WORDSIZE)
 #define RSVD_RSI_OFFSET               (-RED_ZONE_SIZE-7*SE_WORDSIZE)
 #define RSVD_RDI_OFFSET               (-RED_ZONE_SIZE-8*SE_WORDSIZE)
-#define RSVD_FLAGS_OFFSET             (-RED_ZONE_SIZE-9*SE_WORDSIZE)
-#define RSVD_REDZONE_WORD_OFFSET      (-RED_ZONE_SIZE-10*SE_WORDSIZE)
-#define RSVD_AEXNOTIFY_ADDRESS_OFFSET (-RED_ZONE_SIZE-11*SE_WORDSIZE)
-#define RSVD_STACK_TICKLE_OFFSET      (-RED_ZONE_SIZE-12*SE_WORDSIZE)
-#define RSVD_CODE_TICKLE_OFFSET       (-RED_ZONE_SIZE-13*SE_WORDSIZE)
-#define RSVD_DATA_TICKLE_OFFSET       (-RED_ZONE_SIZE-14*SE_WORDSIZE)
-#define RSVD_C3_ADDRESS_OFFSET        (-RED_ZONE_SIZE-15*SE_WORDSIZE)
-#define RSVD_TOP                      (-RED_ZONE_SIZE-15*SE_WORDSIZE)
+#define RSVD_REDZONE_WORD_OFFSET      (-RED_ZONE_SIZE-9*SE_WORDSIZE)
+#define RSVD_TOP                      (-RED_ZONE_SIZE-9*SE_WORDSIZE)
 
 #if RSVD_SIZE_OF_MITIGATION_STACK_AREA != (RSVD_BOTTOM-RSVD_TOP)
 #error "Malformed reserved mitigation stack area"
@@ -192,60 +180,129 @@ aex_notify_c3_cache:
 #define INFO_FLAGS_OFFSET             (16*SE_WORDSIZE)
 #define INFO_RIP_OFFSET               (17*SE_WORDSIZE)
 
+# Returns the enclave application resumption point if the AEX occurred within
+# the mitigation or at __ct_mitigation_ret. If the AEX occurred during the
+# mitigation at a RET instruction within the enclave application called by
+# .ct_check_execute, then cselect_mitigation_rip() will return the address of
+# that RET. Thus, the returned RIP will always point within the originally
+# interrupted enclave application page.
+DECLARE_LOCAL_FUNC cselect_mitigation_rip
+# rdi: info
+    mov     INFO_RIP_OFFSET(%rdi), %rax  # rax: pre-irq rip
+    mov     INFO_RSP_OFFSET(%rdi), %rcx  # rcx: pre-irq rsp
+    lea_pic __ct_mitigation_ret, %rsi
+    cmp     %rsi, %rax
+    lea     8(%rcx), %rsi
+
+    # set rcx = IRQ in __ct_mitigation_ret ? original main-flow rsp : pre-irq rsp
+    cmove   %rsi, %rcx
+
+    lea_pic __ct_mitigation_ret, %rdx
+    sub     %rax, %rdx
+
+    # set CF=1 (B) if IRQ in mitigation (including __ct_mitigation_ret)
+    cmp     $(.ct_aexnotify_end - .ct_mitigation_begin), %rdx
+
+    # set rax = irq in mitigation ? original main-flow rip : pre-irq rip
+    cmovb   RSVD_RIP_OFFSET(%rcx), %rax
+
+    ret
+END_FUNC
+
+# If interrupt happened during execution of the atomic mitigation stub
+# (including any C3 calls from ct_check_execute), restore clobbered
+# enclave application registers from the persistent reserved area on the
+# stack into the info struct parameter.
+DECLARE_LOCAL_FUNC cselect_mitigation_regs
+# rdi: info
+# rsi: saved_rip
+# rdx: c3_byte_address
+    mov     INFO_RIP_OFFSET(%rdi), %rax
+    mov     INFO_RSP_OFFSET(%rdi), %rcx
+
+    # Set r8b=1 if saved_rip=c3_byte_address
+    cmp     %rsi, %rdx
+    sete    %r8b
+
+    # Set r9b=1 if info->rip=__ct_mitigation_ret
+    lea_pic __ct_mitigation_ret, %rdx
+    cmp     %rax, %rdx
+    sete    %r9b
+
+    # Set r10b=1 if *info->rsp=.ct_check_execute_post
+    lea_pic .ct_check_execute_post, %rdx
+    cmp     (%rcx), %rdx
+    sete    %r10b
+
+    # Set r8b=1 if (*info->rsp=.ct_check_execute_post)
+    # and ((saved_rip=c3_byte_address) or (info->rip=__ct_mitigation_ret))
+    or      %r9b, %r8b
+    and     %r10b, %r8b
+
+    # Pop the return address if r8b=1
+    lea     8(%rcx), %rdx
+    cmovnz  %rdx, %rcx
+    mov     %rcx, INFO_RSP_OFFSET(%rdi)
+
+    # Set r9b=1 if the mitigation was interrupted, but not at a RET
+    lea_pic .ct_mitigation_end, %rdx
+    sub     %rax, %rdx
+    cmp     $(.ct_mitigation_end - .ct_mitigation_begin + 1), %rdx
+    setb    %r9b
+
+    # If the mitigation was interrupted, restore clobbered registers from the
+    # reserved area on the stack.
+    or      %r9b, %r8b
+    mov     INFO_RIP_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RIP_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RIP_OFFSET(%rcx)
+    mov     %rax, INFO_RIP_OFFSET(%rdi)
+    mov     INFO_RAX_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RAX_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RAX_OFFSET(%rcx)
+    mov     %rax, INFO_RAX_OFFSET(%rdi)
+    mov     INFO_RCX_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RCX_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RCX_OFFSET(%rcx)
+    mov     %rax, INFO_RCX_OFFSET(%rdi)
+    mov     INFO_RDX_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RDX_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RDX_OFFSET(%rcx)
+    mov     %rax, INFO_RDX_OFFSET(%rdi)
+    mov     INFO_RBX_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RBX_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RBX_OFFSET(%rcx)
+    mov     %rax, INFO_RBX_OFFSET(%rdi)
+    mov     INFO_RBP_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RBP_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RBP_OFFSET(%rcx)
+    mov     %rax, INFO_RBP_OFFSET(%rdi)
+    mov     INFO_RSI_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RSI_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RSI_OFFSET(%rcx)
+    mov     %rax, INFO_RSI_OFFSET(%rdi)
+    mov     INFO_RDI_OFFSET(%rdi), %rax
+    cmovnz  RSVD_RDI_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_RDI_OFFSET(%rcx)
+    mov     %rax, INFO_RDI_OFFSET(%rdi)
+
+    # If the mitigation was interrupted, restore the first q/dword of the red
+    #  zone from the reserved area; otherwise save it to the reserved area
+    mov     -SE_WORDSIZE(%rcx), %rax
+    cmovnz  RSVD_REDZONE_WORD_OFFSET(%rcx), %rax
+    mov     %rax, RSVD_REDZONE_WORD_OFFSET(%rcx)
+    ret
+END_FUNC
+
 DECLARE_LOCAL_FUNC constant_time_apply_sgxstep_mitigation_and_continue_execution
-/* Note: moving rsp upwards as a scratchpad register discards any data at lower
- * addresses (i.e., these may be overwritten by nested exception handlers, but
- * the stage-1 handler will always safeguard a red zone + rsvd area under the
- * interrupted stack pointer). */
-    mov     INFO_RSP_OFFSET(%rdi), %rsp  /* rsp: pre-irq rsp */
-    mov     INFO_RIP_OFFSET(%rdi), %rax  /* rax: pre-irq rip */
-    mov     %rax, %r10
-
-/* Check whether the last AEX occurred during the mitigation */
-    cmpb    $0xc3, (%rax)             # ZF=1 if interrupted c3 (ret)
-    cmovz   (%rsp), %rax              # rax: irq c3? caller rip : pre-irq rip
-    mov     %rsp, %rbp
-    lea     SE_WORDSIZE(%rsp), %rbx
-    cmovz   %rbx, %rbp                # rbp: irq c3? post-ret rsp : pre-irq rsp
-
-    lea_pic __ct_mitigation_end, %rbx
-    sub     %rax, %rbx
-    cmp     $(__ct_mitigation_end - __ct_mitigation_begin + 1), %rbx
-// CMP will set CF=1 (B) if the mitigation was interrupted, CF=0 (NB) otherwise
-    cmovb   %rbp, %rsp               # rsp: original main flow rsp
-    mov     %rsp, INFO_RSP_OFFSET(%rdi)
-
-// If the mitigation was interrupted, restore the interrupted IP from the
-// reserved area
-    cmovb   RSVD_RIP_OFFSET(%rsp), %r10
-    mov     %r10, RSVD_RIP_OFFSET(%rsp)
-
-// Copy RFLAGS onto the reserved stack area
-    mov     INFO_FLAGS_OFFSET(%rdi), %rax
-    mov     %rax, RSVD_FLAGS_OFFSET(%rsp)
-
-// If the mitigation was interrupted, restore the first q/dword of the red
-// zone from the reserved area; otherwise save it to the reserved area
-    mov     -SE_WORDSIZE(%rsp), %rax
-    cmovb   RSVD_REDZONE_WORD_OFFSET(%rsp), %rax
-    mov     %rax, RSVD_REDZONE_WORD_OFFSET(%rsp)
-
-// Save &SSA[0].GPRSGX.AEXNOTIFY to the reserved area
-    mov     %rsi, RSVD_AEXNOTIFY_ADDRESS_OFFSET(%rsp)
-
-// If the mitigation was interrupted, restore tickle parameters from the
-// reserved area.
-    cmovb   RSVD_STACK_TICKLE_OFFSET(%rsp), %rdx
-    cmovb   RSVD_CODE_TICKLE_OFFSET(%rsp), %rcx
-    cmovb   RSVD_DATA_TICKLE_OFFSET(%rsp), %r8
-    cmovb   RSVD_C3_ADDRESS_OFFSET(%rsp), %r9
-    mov     %rdx, RSVD_STACK_TICKLE_OFFSET(%rsp)
-    mov     %rcx, RSVD_CODE_TICKLE_OFFSET(%rsp)
-    mov     %r8,  RSVD_DATA_TICKLE_OFFSET(%rsp)
-    mov     %r9,  RSVD_C3_ADDRESS_OFFSET(%rsp)
-
-// If the mitigation was not interrupted (the interrupt occured in the main flow)
-// then restore the registers from *info
+# rdi: info
+# rsi: address of the AEX-Notify-enabling byte
+# rdx: stack_tickle_pages
+# rcx: code_tickle_page
+# r8:  data_tickle_address
+# r9:  c3_byte_address
+    mov     %r8, %rbx
+    mov     %r9, %rbp
     mov     INFO_R8_OFFSET(%rdi), %r8
     mov     INFO_R9_OFFSET(%rdi), %r9
     mov     INFO_R10_OFFSET(%rdi), %r10
@@ -254,49 +311,18 @@ DECLARE_LOCAL_FUNC constant_time_apply_sgxstep_mitigation_and_continue_execution
     mov     INFO_R13_OFFSET(%rdi), %r13
     mov     INFO_R14_OFFSET(%rdi), %r14
     mov     INFO_R15_OFFSET(%rdi), %r15
-    mov     INFO_RAX_OFFSET(%rdi), %rax
-    mov     INFO_RCX_OFFSET(%rdi), %rcx
-    mov     INFO_RDX_OFFSET(%rdi), %rdx
-    mov     INFO_RBX_OFFSET(%rdi), %rbx
-    mov     INFO_RBP_OFFSET(%rdi), %rbp
-    mov     INFO_RSI_OFFSET(%rdi), %rsi
-    mov     INFO_RDI_OFFSET(%rdi), %rdi
 
-// If the mitigation was interrupted, restore registers from the reserved area
-// on the stack.
-    cmovb   RSVD_RAX_OFFSET(%rsp), %rax
-    cmovb   RSVD_RCX_OFFSET(%rsp), %rcx
-    cmovb   RSVD_RDX_OFFSET(%rsp), %rdx
-    cmovb   RSVD_RBX_OFFSET(%rsp), %rbx
-    cmovb   RSVD_RBP_OFFSET(%rsp), %rbp
-    cmovb   RSVD_RSI_OFFSET(%rsp), %rsi
-    cmovb   RSVD_RDI_OFFSET(%rsp), %rdi
 
-    mov     %rax, RSVD_RAX_OFFSET(%rsp)
-    mov     %rcx, RSVD_RCX_OFFSET(%rsp)
-    mov     %rdx, RSVD_RDX_OFFSET(%rsp)
-    mov     %rbx, RSVD_RBX_OFFSET(%rsp)
-    mov     %rbp, RSVD_RBP_OFFSET(%rsp)
-    mov     %rsi, RSVD_RSI_OFFSET(%rsp)
-    mov     %rdi, RSVD_RDI_OFFSET(%rsp)
-
-# Restore tickle addresses
-    mov     RSVD_STACK_TICKLE_OFFSET(%rsp), %rbp
-    mov     RSVD_CODE_TICKLE_OFFSET(%rsp), %rsi
-    mov     RSVD_DATA_TICKLE_OFFSET(%rsp), %rdx
-    mov     RSVD_C3_ADDRESS_OFFSET(%rsp), %rdi
-
-# Set up the stack tickles
-    shrb    $1, %bpl # Bit 0 in %rbp indicates whether a second stack page can be tickled
-    mov     %rbp, %rbx
-    jnc     .restore_flags
-    sub     $0x1000, %rbx
-
-.restore_flags:
-    lea     RSVD_FLAGS_OFFSET(%rsp), %rax
-    xchg    %rax, %rsp
+/* NOTE: moving rsp upwards as a scratchpad register discards any data at lower
+ * addresses (i.e., these may be overwritten by nested exception handlers), but
+ * the stage-1 handler will always safeguard a 128-byte red zone under the
+ * interrupted stack pointer. Thus, the code below is safe:
+ * INFO_FLAGS_OFFSET-INFO_RSP_OFFSET = 12*8 = 96 < 128-byte ABI red zone.
+ */
+    lea     INFO_FLAGS_OFFSET(%rdi), %rsp
     popf
-    xchg    %rax, %rsp
+    mov     INFO_RSP_OFFSET(%rdi), %rsp  /* rsp: pre-irq rsp */
+    mov     %rdx, %rdi
 
 # NOTHING AFTER THIS POINT CAN MODIFY EFLAGS/RFLAGS
 
@@ -304,53 +330,69 @@ DECLARE_LOCAL_FUNC constant_time_apply_sgxstep_mitigation_and_continue_execution
 # BEGIN MITIGATION CODE
 ################################################################################
 
+# rdi: stack_tickle_pages
+# rsi: address of the AEX-Notify-enabling byte
+# rdx: unused (will be clobbered)
+# rcx: code_tickle_page
+# rax: unused (will be clobbered)
+# rbx: data_tickle_address
+# rbp: c3_byte_address
+
 #define MITIGATION_CODE_ALIGNMENT 0x200
 .align MITIGATION_CODE_ALIGNMENT
 
 # Enable AEX Notify
 .ct_enable_aexnotify:
-    mov     RSVD_AEXNOTIFY_ADDRESS_OFFSET(%rsp), %rax
-    movb    $1, (%rax)
+    movb    $1, (%rsi)
 
-    .global __ct_mitigation_begin
-__ct_mitigation_begin:
+.ct_mitigation_begin:
+    mov     RSVD_REDZONE_WORD_OFFSET(%rsp), %rsi
     lfence
 
-.ct_check_write:
-    movl    $63, %ecx
-    shlx    %rcx, %rsi, %rcx # Bit 0 in %rsi indicates whether data_tickle_address can be written
-    jrcxz   .ct_clear_low_bits_of_rdx
-    lea     -1(%rsi), %rsi   # Clear bit 0 in %rsi
-    movb    (%rdx), %al
-    movb    %al, (%rdx)      # Will fault if the data page is not writable
+# Set up the stack tickles
+    movzx   %dil, %edx # Bit 0 in %rdi indicates whether a second stack page can be tickled
+    mov     $0, %dil
+    mov     $12, %eax
+    shlx    %rax, %rdx, %rdx
+    lea     (%rdi,%rdx), %rdx
 
-.ct_clear_low_bits_of_rdx:
+.ct_check_write:
+    mov     %rcx, %rax
+    mov     $63, %ecx
+    shlx    %rcx, %rax, %rcx # Bit 0 in %rax indicates whether data_tickle_address can be written
+    jrcxz   .ct_clear_low_bits_of_rbx
+    lea     -1(%rax), %rax   # Clear bit 0 in %rax
+    movb    (%rbx), %cl
+    movb    %cl, (%rbx)      # Will fault if the data page is not writable
+
+.ct_clear_low_bits_of_rbx:
     movl    $12, %ecx
-    shrx    %rcx, %rdx, %rdx
-    shlx    %rcx, %rdx, %rdx
+    shrx    %rcx, %rbx, %rbx
+    shlx    %rcx, %rbx, %rbx
 
 .ct_check_execute:
-    call    *%rdi
+    call    *%rbp
+
+.ct_check_execute_post:
+    mov     RSVD_RBP_OFFSET(%rsp), %rbp
+    mov     %rsi, -SE_WORDSIZE(%rsp) # restore the first q/dword of the red zone
 
 # Load all working set cache lines and warm the TLB entries
     mov     $0x1000, %ecx
 .align 0x10
 .ct_warm_caches_and_tlbs:
     lea     -0x40(%ecx), %ecx
-    mov     (%rsi, %rcx), %eax
-    mov     (%rbp, %rcx), %eax
-    mov     (%rbx, %rcx), %eax
-    mov     (%rdx, %rcx), %eax
+    mov     (%rax, %rcx), %esi # code page tickle
+    mov     (%rdi, %rcx), %esi # stack page 1 tickle
+    mov     (%rdx, %rcx), %esi # stack page 2 tickle
+    mov     (%rbx, %rcx), %esi # data tickle
     jrcxz   .ct_restore_state
     jmp     .ct_warm_caches_and_tlbs # loops 64 times
 
 .ct_restore_state:
-    movzx   %sil, %ecx # Bit 4 of %sil indicates whether cycles should be added
-    mov     RSVD_REDZONE_WORD_OFFSET(%rsp), %rdi
-    mov     %rdi, -SE_WORDSIZE(%rsp) # restore the first q/dword of the red zone
+    movzx   %al, %ecx # Bit 4 of %al indicates whether cycles should be added
     mov     RSVD_RDI_OFFSET(%rsp), %rdi
     mov     RSVD_RSI_OFFSET(%rsp), %rsi
-    mov     RSVD_RBP_OFFSET(%rsp), %rbp
     mov     RSVD_RBX_OFFSET(%rsp), %rbx
     mov     RSVD_RDX_OFFSET(%rsp), %rdx
     mov     RSVD_RAX_OFFSET(%rsp), %rax
@@ -361,13 +403,13 @@ __ct_mitigation_begin:
 
 .ct_restore_rcx:
     mov     RSVD_RCX_OFFSET(%rsp), %rcx
-__ct_mitigation_end:
+.ct_mitigation_end:
     jmp     *RSVD_RIP_OFFSET(%rsp)
 
 .global __ct_mitigation_ret
 __ct_mitigation_ret:
     ret
-    .cfi_endproc
+END_FUNC
 
 .ct_aexnotify_end:
 

@@ -583,5 +583,12 @@
 #define ippsXMSSSetSignatureState sgx_disp_ippsXMSSSetSignatureState
 #define ippsXMSSVerify sgx_disp_ippsXMSSVerify
 
+#define ippsLMSBufferGetSize sgx_disp_ippsLMSBufferGetSize
+#define ippsLMSSignatureStateGetSize sgx_disp_ippsLMSSignatureStateGetSize
+#define ippsLMSPublicKeyStateGetSize sgx_disp_ippsLMSPublicKeyStateGetSize
+#define ippsLMSSetPublicKeyState sgx_disp_ippsLMSSetPublicKeyState
+#define ippsLMSSetSignatureState sgx_disp_ippsLMSSetSignatureState
+#define ippsLMSVerify sgx_disp_ippsLMSVerify
+
 
 #endif

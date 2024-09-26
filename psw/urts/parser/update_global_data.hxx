@@ -168,9 +168,10 @@ namespace {
         {
             global_data->enclave_image_address = 0;
             global_data->elrange_start_address= 0;
-            global_data->elrange_size = global_data->enclave_size;
+            global_data->elrange_size = 0;
         }
         global_data->edmm_bk_overhead = (sys_word_t)create_param->edmm_bk_overhead;
+        global_data->fips_on = create_param->fips_on;
         return true;
     }
 }

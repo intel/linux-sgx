@@ -69,12 +69,10 @@
 #define REL_ERROR_BIT         0x1
 #define INIT_SEC_ERROR_BIT    0x2
 #define RESIGN_BIT            0x4
-#define FIPS_BIT              0x8
 
 #define IGNORE_REL_ERROR(x)        (((x) & REL_ERROR_BIT) != 0)
 #define IGNORE_INIT_SEC_ERROR(x)   (((x) & INIT_SEC_ERROR_BIT) != 0)
 #define ENABLE_RESIGN(x)           (((x) & RESIGN_BIT) != 0)
-#define ENABLE_FIPS(x)             (((x) & FIPS_BIT) != 0)
 
 typedef enum _file_path_t
 {
@@ -172,7 +170,7 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     }
 
     // generate metadata
-    CMetadata meta(metadata, parser.get(), ENABLE_FIPS(option_flag_bits));
+    CMetadata meta(metadata, parser.get());
     if(meta.build_metadata(parameter) == false)
     {
         close_handle(fh);
@@ -670,7 +668,6 @@ static bool cmdline_parse(unsigned int argc, char *argv[], int *mode, const char
         {"-ignore-rel-error", REL_ERROR_BIT},
         {"-ignore-init-sec-error", INIT_SEC_ERROR_BIT},
         {"-resign", RESIGN_BIT},
-        {"-enable-fips", FIPS_BIT}
     };
     unsigned int params_count = (unsigned)(sizeof(params_sign)/sizeof(params_sign[0]));
 
@@ -1359,7 +1356,8 @@ int main(int argc, char* argv[])
                                    {"PKRU",                 FEATURE_LOADER_SELECTS,                     FEATURE_MUST_BE_DISABLED,              FEATURE_MUST_BE_DISABLED,                   0},
                                    {"AMX",                  FEATURE_LOADER_SELECTS,                     FEATURE_MUST_BE_DISABLED,              FEATURE_MUST_BE_DISABLED,                   0},
                                    {"UserRegionSize",       ENCLAVE_MAX_SIZE_64/2, 0,              USER_REGION_SIZE,    0},
-                                   {"EnableAEXNotify",      1,                     0,              0,                   0}};
+                                   {"EnableAEXNotify",      1,                     0,              0,                   0},
+                                   {"EnableIPPFIPS",        1,                     0,              0,                   0}};
     const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
     uint8_t metadata_raw[METADATA_SIZE];

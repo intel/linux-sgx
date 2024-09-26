@@ -61,9 +61,9 @@ uint64_t g_enclave_size __attribute__((section(RELRO_SECTION_NAME))) = 0;
 int g_aexnotify_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
 
 
-const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0, 0,
+volatile global_data_t g_global_data __attribute__((section(".nipd"))) = {VERSION_UINT, 1, 2, 3, 4, 5, 6, 0, 0, 0,
    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0, 0, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, 
-   {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0, 0};
+   {{{0, 0, 0, 0, 0, 0, 0}}}, 0, 0, 0, 0, 0, 0};
 // Make sure to access this with atomics or the {get,set}_enclave_state assembly wrappers.
 uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
 
@@ -120,18 +120,19 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
     }
 
     g_enclave_base = (uint64_t)get_enclave_base();
-    g_enclave_size = g_global_data.elrange_size;
-    //we are not allowed to set enclave_image_address to 0 if elrange is set
-    //so if enclave_image_address is 0, it means elrange is not set
-    if(g_global_data.enclave_image_address != 0)
+    g_enclave_size = g_global_data.enclave_size;
+
+    // If elrange_size is not 0, it means elrange is set
+    if(g_global_data.elrange_size != 0)
     {
-        //__ImageBase should be the same as enclave_start_address
+        //__ImageBase should be the same as enclave_image_address
         if(g_global_data.enclave_image_address != g_enclave_base)
         {
             abort();
         }
-        //if elrange is set, we should set enclave_base to correct value
+        //if elrange is set, we should set enclave_base and enclave_size to correct value
         g_enclave_base = g_global_data.elrange_start_address;
+        g_enclave_size = g_global_data.elrange_size;
     }
 
     // Check if the ms is outside the enclave.

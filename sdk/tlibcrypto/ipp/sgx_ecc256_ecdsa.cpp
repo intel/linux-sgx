@@ -30,6 +30,7 @@
  */
 
 #include "ipp_wrapper.h"
+#include "sgx_fips_internal.h"
 
 const uint32_t sgx_nistp256_r[] = {
     0xFC632551, 0xF3B9CAC2, 0xA7179E84, 0xBCE6FAAD, 0xFFFFFFFF, 0xFFFFFFFF,
@@ -53,6 +54,8 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+    fips_self_test_hash256();
+    fips_self_test_ecc();
 
     IppStatus ipp_ret = ippStsErr;
     ipp_ec_state_handles_t *p_ec_handle = (ipp_ec_state_handles_t *)ecc_handle;
@@ -205,6 +208,8 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+    fips_self_test_hash256();
+
     uint8_t hash[SGX_SHA256_HASH_SIZE] = {0};
 
     // Prepare the message used to sign.
@@ -226,6 +231,8 @@ sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *hash,
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }
+
+    fips_self_test_ecc();
 
     IppStatus ipp_ret = ippStsErr;
     ipp_ec_state_handles_t *p_ec_handle = (ipp_ec_state_handles_t *)ecc_handle;
@@ -337,12 +344,14 @@ sgx_status_t sgx_ecdsa_verify_hash(const uint8_t *hash,
     }
 }
 
-sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int hash_drg_len,
-    const unsigned char* sgx_nistp256_r_m1, int sgx_nistp256_r_m1_len,
-    unsigned char* out_key, int out_key_len) {
+sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char *hash_drg, int hash_drg_len,
+                                          const unsigned char *sgx_nistp256_r_m1, int sgx_nistp256_r_m1_len,
+                                          unsigned char *out_key, int out_key_len)
+{
 
     if (out_key == NULL || hash_drg_len <= 0 || sgx_nistp256_r_m1_len <= 0 ||
-        out_key_len <= 0 || hash_drg == NULL || sgx_nistp256_r_m1 == NULL) {
+        out_key_len <= 0 || hash_drg == NULL || sgx_nistp256_r_m1 == NULL)
+    {
         return SGX_ERROR_INVALID_PARAMETER;
     }
 
@@ -354,44 +363,46 @@ sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int has
     IppsBigNumState *bn_one = NULL;
     Ipp32u i = 1;
 
-    do {
+    do
+    {
 
-        //allocate and initialize BNs
+        // allocate and initialize BNs
         //
         ipp_status = sgx_ipp_newBN(reinterpret_cast<const Ipp32u *>(hash_drg), hash_drg_len, &bn_d);
         ERROR_BREAK(ipp_status);
 
-        //generate mod to be n-1 where n is order of ECC Group
+        // generate mod to be n-1 where n is order of ECC Group
         //
         ipp_status = sgx_ipp_newBN(reinterpret_cast<const Ipp32u *>(sgx_nistp256_r_m1), sgx_nistp256_r_m1_len, &bn_m);
         ERROR_BREAK(ipp_status);
 
-        //allocate memory for output BN
+        // allocate memory for output BN
         //
         ipp_status = sgx_ipp_newBN(NULL, sgx_nistp256_r_m1_len, &bn_o);
         ERROR_BREAK(ipp_status);
 
-        //create big number with value of 1
+        // create big number with value of 1
         //
         ipp_status = sgx_ipp_newBN(&i, sizeof(Ipp32u), &bn_one);
         ERROR_BREAK(ipp_status);
 
-        //calculate output's BN value
+        // calculate output's BN value
         ipp_status = ippsMod_BN(bn_d, bn_m, bn_o);
         ERROR_BREAK(ipp_status)
 
-        //increase by 1
+        // increase by 1
         //
         ipp_status = ippsAdd_BN(bn_o, bn_one, bn_o);
         ERROR_BREAK(ipp_status);
 
         /*Unmatched size*/
-        if (sgx_nistp256_r_m1_len != sizeof(sgx_ec256_private_t)) {
+        if (sgx_nistp256_r_m1_len != sizeof(sgx_ec256_private_t))
+        {
             break;
         }
 
-        //convert BN_o into octet string
-        ipp_status = ippsGetOctString_BN(reinterpret_cast<Ipp8u *>(out_key), sgx_nistp256_r_m1_len, bn_o);//output data in bigendian order
+        // convert BN_o into octet string
+        ipp_status = ippsGetOctString_BN(reinterpret_cast<Ipp8u *>(out_key), sgx_nistp256_r_m1_len, bn_o); // output data in bigendian order
         ERROR_BREAK(ipp_status);
 
         ret_code = SGX_SUCCESS;
@@ -405,7 +416,8 @@ sgx_status_t sgx_calculate_ecdsa_priv_key(const unsigned char* hash_drg, int has
     if (ipp_status == ippStsMemAllocErr)
         ret_code = SGX_ERROR_OUT_OF_MEMORY;
 
-    if (ret_code != SGX_SUCCESS) {
+    if (ret_code != SGX_SUCCESS)
+    {
         (void)memset_s(out_key, out_key_len, 0, out_key_len);
     }
 
