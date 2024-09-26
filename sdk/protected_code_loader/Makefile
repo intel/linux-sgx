@@ -34,16 +34,16 @@
 include ../../buildenv.mk
 
 ifndef VERBOSE
-	PCLVERBOSE := @
+    PCLVERBOSE := @
 else
-	PCLVERBOSE :=
+    PCLVERBOSE :=
 endif
 
-# optimize bug on GCC 13.3.2, we need to disable optimize when build with GCC 13.3.2
-CC_NO_LESS_THAN_13 := $(shell expr $(CC_VERSION) \>\= "13")
+# optimize bug on GCC 13.3.2(ubuntu23.10) and gcc 12.2 debian12, we need to disable optimize when build with GCC 12
+CC_NO_LESS_THAN_12 := $(shell expr $(CC_VERSION) \>\= "12")
 
 ifeq ($(ARCH), x86)
-	$(error x86 build is not supported, only x64!!)
+    $(error x86 build is not supported, only x64!!)
 endif
 
 # output dir for simulation build objects
@@ -101,11 +101,11 @@ PCL_LIB_CPP_FLAGS := $(TCXXFLAGS) $(ENCLAVE_CXXFLAGS) $(PCL_INCLUDE_PATH)
 PCL_SIM_LIB_C_FLAGS := $(TCFLAGS) $(ENCLAVE_CFLAGS) -DSE_SIM=1 $(PCL_INCLUDE_PATH) -I$(LINUX_SDK_DIR)/simulation/tinst
 PCL_SIM_LIB_CPP_FLAGS := $(TCXXFLAGS) $(ENCLAVE_CXXFLAGS) -DSE_SIM=1 $(PCL_INCLUDE_PATH) -I$(LINUX_SDK_DIR)/simulation/tinst
 
-ifeq ($(CC_NO_LESS_THAN_13), 1)
-PCL_LIB_C_FLAGS += -DTURN_OFF_O2_GCC13
-PCL_LIB_CPP_FLAGS += -DTURN_OFF_O2_GCC13
-PCL_SIM_LIB_C_FLAGS += -DTURN_OFF_O2_GCC13
-PCL_SIM_LIB_CPP_FLAGS += -DTURN_OFF_O2_GCC13
+ifeq ($(CC_NO_LESS_THAN_12), 1)
+PCL_LIB_C_FLAGS += -DTURN_OFF_O2
+PCL_LIB_CPP_FLAGS += -DTURN_OFF_O2
+PCL_SIM_LIB_C_FLAGS += -DTURN_OFF_O2
+PCL_SIM_LIB_CPP_FLAGS += -DTURN_OFF_O2
 endif
 
 # targets

@@ -72,16 +72,15 @@ $(SGX_DNNL_INCLUDE):
 
 $(DNNL_DIR)/build:
 	@echo "Checkout dnnl and apply sgx_dnnl patch"
-## TODO - Need to enable below code when release
-#ifeq ($(shell git rev-parse --is-inside-work-tree), true)
-#	@$(RM) -r $(DNNL_DIR)/*
-#	git submodule update -f --init dnnl
-#	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
-#else
+ifeq ($(shell git rev-parse --is-inside-work-tree), true)
+	@$(RM) -r $(DNNL_DIR)/*
+	git submodule update -f --init dnnl
+	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
+else
 	@$(RM) -r $(DNNL_DIR)
 	git clone https://github.com/intel/mkl-dnn.git -b v1.1.1 --depth 1  $(DNNL_DIR)
 	cd $(DNNL_DIR) && git apply ../sgx_dnnl.patch
-#endif
+endif
 	mkdir -p $(DNNL_DIR)/build
 
 $(LIBDNNL): $(DNNL_DIR)/build

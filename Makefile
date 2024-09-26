@@ -30,7 +30,7 @@
 #
 
 include buildenv.mk
-.PHONY: all preparation psw sdk clean rebuild sdk_install_pkg psw_install_pkg tdx
+.PHONY: all tips preparation psw sdk_no_mitigation sdk clean rebuild tdx servtd_attest servtd_attest_preparation ipp sdk_install_pkg_no_mitigation sdk_install_pkg  sdk_install_pkg_from_source psw_install_pkg
 
 all: tips
 
@@ -51,6 +51,8 @@ preparation:
 # As SDK build needs to clone and patch openmp, we cannot support the mode that download the source from github as zip.
 # Only enable the download from git
 	git submodule update --init --recursive
+	cd external/dcap_source/external/jwt-cpp && git apply ../0001-Add-a-macro-to-disable-time-support-in-jwt-for-SGX.patch >/dev/null 2>&1 || \
+	git apply ../0001-Add-a-macro-to-disable-time-support-in-jwt-for-SGX.patch -R --check
 	./external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
 	cd external/openmp/openmp_code && git apply ../0001-Enable-OpenMP-in-SGX.patch >/dev/null 2>&1 ||  git apply ../0001-Enable-OpenMP-in-SGX.patch --check -R
 	cd external/protobuf/protobuf_code && git apply ../sgx_protobuf.patch >/dev/null 2>&1 ||  git apply ../sgx_protobuf.patch --check -R
@@ -60,6 +62,8 @@ preparation:
 	cd external/cbor && cp -r libcbor sgx_libcbor
 	cd external/cbor/libcbor && git apply ../raw_cbor.patch >/dev/null 2>&1 || git apply ../raw_cbor.patch --check -R
 	cd external/cbor/sgx_libcbor && git apply ../sgx_cbor.patch >/dev/null 2>&1 || git apply ../sgx_cbor.patch --check -R
+	cd external/ippcp_internal/ipp-crypto && git apply ../0001-IPP-crypto-for-SGX.patch > /dev/null 2>&1 || git apply ../0001-IPP-crypto-for-SGX.patch --check -R
+	cd external/ippcp_internal/ipp-crypto && mkdir -p build
 	./download_prebuilt.sh
 	./external/dcap_source/QuoteGeneration/download_prebuilt.sh
 
@@ -101,11 +105,24 @@ servtd_attest_preparation:
 	./external/sgx-emm/create_symlink.sh
 	./external/dcap_source/QuoteVerification/prepare_sgxssl.sh nobuild
 
+ipp:
+	$(MAKE) -C external/ippcp_internal/ clean
+	$(MAKE) -C external/ippcp_internal/ MITIGATION-CVE-2020-0551=LOAD
+	$(MAKE) -C external/ippcp_internal/ clean
+	$(MAKE) -C external/ippcp_internal/ MITIGATION-CVE-2020-0551=CF
+	$(MAKE) -C external/ippcp_internal/ clean
+	$(MAKE) -C external/ippcp_internal/
+
 # Generate SE SDK Install package
 sdk_install_pkg_no_mitigation: sdk_no_mitigation
 	./linux/installer/bin/build-installpkg.sh sdk
 
 sdk_install_pkg: sdk
+	./linux/installer/bin/build-installpkg.sh sdk cve-2020-0551
+
+sdk_install_pkg_from_source:
+	$(MAKE) ipp
+	$(MAKE) sdk
 	./linux/installer/bin/build-installpkg.sh sdk cve-2020-0551
 
 psw_install_pkg: psw
@@ -231,11 +248,6 @@ deb_libsgx_dcap_default_qpl:
 	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_dcap_default_qpl_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-default-qpl/libsgx-dcap-default-qpl*deb ./linux/installer/deb/sgx-aesm-service/
 
-.PHONY: deb_libsgx_dcap_pccs
-deb_libsgx_dcap_pccs:
-	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_dcap_pccs_pkg
-	$(CP) external/dcap_source/QuoteGeneration/installer/linux/deb/sgx-dcap-pccs/sgx-dcap-pccs*deb ./linux/installer/deb/sgx-aesm-service/
-
 .PHONY: deb_libsgx_dcap_ql
 deb_libsgx_dcap_ql: deb_libsgx_pce_logic
 	$(MAKE) -C external/dcap_source/QuoteGeneration deb_sgx_dcap_ql_pkg
@@ -284,7 +296,6 @@ deb_psw_pkg: deb_libsgx_headers_pkg \
              deb_libsgx_ae_qe3 \
              deb_libsgx_ae_id_enclave \
              deb_libsgx_dcap_default_qpl \
-             deb_libsgx_dcap_pccs \
              deb_libsgx_dcap_ql \
              deb_libsgx_ae_qve \
              deb_sgx_dcap_quote_verify \
@@ -410,11 +421,6 @@ rpm_libsgx_dcap_default_qpl:
 	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_dcap_default_qpl_pkg
 	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-default-qpl/libsgx-dcap-default-qpl*.rpm ./linux/installer/rpm/sgx-aesm-service/
 
-.PHONY: rpm_libsgx_dcap_pccs
-rpm_libsgx_dcap_pccs:
-	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_dcap_pccs_pkg
-	$(CP) external/dcap_source/QuoteGeneration/installer/linux/rpm/sgx-dcap-pccs/sgx-dcap-pccs*.rpm ./linux/installer/rpm/sgx-aesm-service/
-
 .PHONY: rpm_libsgx_dcap_ql
 rpm_libsgx_dcap_ql:
 	$(MAKE) -C external/dcap_source/QuoteGeneration rpm_sgx_dcap_ql_pkg
@@ -463,7 +469,6 @@ rpm_psw_pkg: rpm_libsgx_headers_pkg \
              rpm_libsgx_ae_qe3 \
              rpm_libsgx_ae_id_enclave \
              rpm_libsgx_dcap_default_qpl \
-             rpm_libsgx_dcap_pccs \
              rpm_libsgx_dcap_ql \
              rpm_libsgx_ae_qve \
              rpm_sgx_dcap_quote_verify \
@@ -486,8 +491,6 @@ clean:
 	@$(RM)   -r $(ROOT_DIR)/build
 	@$(RM)   -r linux/installer/bin/install-sgx-*.bin*.withLicense
 	@$(RM)   -r linux/installer/bin/sgx_linux*.bin
-	@$(RM)   -f ./linux/installer/deb/sgx-aesm-service/sgx-dcap-pccs*deb
-	@$(RM)   -f ./linux/installer/rpm/sgx-aesm-service/sgx-dcap-pccs*rpm
 	./linux/installer/deb/sgx-aesm-service/clean.sh
 	./linux/installer/deb/libsgx-epid/clean.sh
 	./linux/installer/deb/libsgx-launch/clean.sh
@@ -507,6 +510,7 @@ clean:
 	./linux/installer/rpm/libsgx-headers/clean.sh
 	./linux/installer/rpm/sdk/clean.sh
 	./linux/installer/common/local_repo_builder/local_repo_builder.sh rpm clean
+	$(MAKE) -C external/ippcp_internal/ clean
 ifeq ("$(shell test -f external/dcap_source/QuoteVerification/dcap_tvl/Makefile && echo TVL Makefile exists)", "TVL Makefile exists")
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl MITIGATION-CVE-2020-0551=LOAD clean
 	$(MAKE) -C external/dcap_source/QuoteVerification/dcap_tvl MITIGATION-CVE-2020-0551=CF clean
@@ -527,7 +531,6 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-pce-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-qe3-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/libsgx-dcap-quote-verify/clean.sh
-	./external/dcap_source/QuoteGeneration/installer/linux/deb/sgx-dcap-pccs/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/deb/tee-appraisal-tool/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qve/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-ae-qe3/clean.sh
@@ -541,7 +544,6 @@ ifeq ("$(shell test -f external/dcap_source/QuoteVerification/Makefile && echo M
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-pce-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-qe3-logic/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/libsgx-dcap-quote-verify/clean.sh
-	./external/dcap_source/QuoteGeneration/installer/linux/rpm/sgx-dcap-pccs/clean.sh
 	./external/dcap_source/QuoteGeneration/installer/linux/rpm/tee-appraisal-tool/clean.sh
 endif
 

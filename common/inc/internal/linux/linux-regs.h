@@ -144,6 +144,7 @@
     .globl \name
     .type \name, @function
 \name:
+    .cfi_startproc
     _CET_ENDBR
 .endm
 
@@ -153,7 +154,12 @@
     .hidden \name
     .type \name, @function
 \name:
+    .cfi_startproc
     _CET_ENDBR
+.endm
+
+.macro END_FUNC
+    .cfi_endproc
 .endm
 
 .macro NAKED_PROLOG
@@ -215,7 +221,6 @@
 /*******************************************************************/
 
 .macro SE_PROLOG
-    .cfi_startproc
 
 #ifdef LINUX32
     pushl   %ebp
@@ -252,7 +257,6 @@
 #endif
 
     ret
-    .cfi_endproc
 .endm
 
 /*******************************************************************/

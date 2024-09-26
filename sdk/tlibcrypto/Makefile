@@ -38,33 +38,33 @@ CPPFLAGS := -I$(COMMON_DIR)/inc/internal \
 
 CXXFLAGS += $(ENCLAVE_CXXFLAGS) -fno-exceptions -fno-rtti -Werror
 
-SGX_COMMON_CFLAGS += -DIPPCP_PREVIEW_XMSS
+SGX_COMMON_CFLAGS += -DIPPCP_PREVIEW_ALL
 
 SHARED_OBJ = tcrypto_version.o sgx_common_init_ipp.o
 
 ifeq ($(USE_CRYPTO_LIB), 0)
 # Build SGXSSL based sgx_tcrypto library
 ifeq ($(ARCH), x86_64)
-	OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/Linux/package
+    OPENSSL_PACKAGE = $(LINUX_EXTERNAL_DIR)/sgxssl/Linux/package
 else
-	$(error SGXSSL doesn't support 32bit)
+    $(error SGXSSL doesn't support 32bit)
 endif #($(ARCH), x86_64)
 
 ifeq ($(MITIGATION-CVE-2020-0551), LOAD)
-OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_load
+    OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_load
 else ifeq ($(MITIGATION-CVE-2020-0551), CF)
-OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_cf
+    OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64/cve_2020_0551_cf
 else
-OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64
+    OPENSSL_LIBRARY_PATH := $(OPENSSL_PACKAGE)/lib64
 endif
 
 ifdef DEBUG
-	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
-	SGXSSL_Library_Name := sgx_tsgxssld
-	SGX_COMMON_CFLAGS += -O0
+    OpenSSL_Crypto_Library_Name := sgx_tsgxssl_cryptod
+    SGXSSL_Library_Name := sgx_tsgxssld
+    SGX_COMMON_CFLAGS += -O0
 else
-	OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
-	SGXSSL_Library_Name := sgx_tsgxssl
+    OpenSSL_Crypto_Library_Name := sgx_tsgxssl_crypto
+    SGXSSL_Library_Name := sgx_tsgxssl
 endif
 
 PREPARE_SGXSSL := $(LINUX_EXTERNAL_DIR)/sgxssl/prepare_sgxssl.sh

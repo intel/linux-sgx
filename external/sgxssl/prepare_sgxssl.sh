@@ -32,16 +32,16 @@
 
 top_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 openssl_out_dir=$top_dir/openssl_source
-openssl_ver=3.0.13
+openssl_ver=3.0.14
 openssl_ver_name=openssl-$openssl_ver
 sgxssl_github_archive=https://github.com/intel/intel-sgx-ssl/archive
-sgxssl_file_name=3.0_Rev2
+sgxssl_file_name=3.0_Rev4
 build_script=$top_dir/Linux/build_openssl.sh
 server_url_path=https://www.openssl.org/source
 full_openssl_url=$server_url_path/old/3.0/$openssl_ver_name.tar.gz
 
-sgxssl_chksum=269e1171f566ac6630d83c3b6cf9669e254b08a7f208cc8cf59f471f3d8a579b
-openssl_chksum=88525753f79d3bec27d2fa7c66aa0b92b3aa9498dafd93d7cfa4b3780cdae313
+sgxssl_chksum=3ae56df48a56f58fce8d0472ea82cc4380e30442b49b931c027fda9e637cb3fa
+openssl_chksum=eeca035d4dd4e84fc25846d952da6297484afa0650a6f84c682e39df3a4123ca
 rm -f check_sum_sgxssl.txt check_sum_openssl.txt
 if [ ! -f $build_script ]; then
 	wget $sgxssl_github_archive/$sgxssl_file_name.zip -P $top_dir || exit 1

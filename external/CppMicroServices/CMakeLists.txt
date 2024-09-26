@@ -407,9 +407,9 @@ else()
     set(US_CXX_FLAGS "${US_CXX_FLAGS} ${_have_visibility}")
   endif()
 
-  usFunctionCheckCompilerFlags("-O1 -D_FORTIFY_SOURCE=2" _fortify_source_flag)
+  usFunctionCheckCompilerFlags("-O1 -D_FORTIFY_SOURCE=${FORTIFY_SOURCE_VAL}" _fortify_source_flag)
   if(_fortify_source_flag)
-    set(US_CXX_FLAGS_RELEASE "${US_CXX_FLAGS_RELEASE} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2")
+    set(US_CXX_FLAGS_RELEASE "${US_CXX_FLAGS_RELEASE} -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=${FORTIFY_SOURCE_VAL}")
   endif()
 
   set(_orig_req_libs ${CMAKE_REQUIRED_LIBRARIES})

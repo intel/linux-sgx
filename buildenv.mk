@@ -61,6 +61,22 @@ get_distr_info = $(patsubst "%",%,$(shell grep $(1) /etc/os-release 2> /dev/null
 DISTR_ID := $(call get_distr_info, '^ID=')
 DISTR_VER := $(call get_distr_info, '^VERSION_ID=')
 
+#--------------------------------------------------------------------------------------
+# Function: get_full_version
+# Arguments: 1: the version name of library
+# Returns: Return the full version.
+#---------------------------------------------------------------------------------------
+get_full_version = $(shell awk '$$2 ~ /$1/ { print substr($$3, 2, length($$3) - 2); }' $(COMMON_DIR)/inc/internal/se_version.h)
+
+#--------------------------------------------------------------------------------------
+# Function: get_major_version
+# Arguments: 1: the version name of library
+# Returns: Return the major version.
+#---------------------------------------------------------------------------------------
+get_major_version = $(word 1,$(subst ., ,$(call get_full_version,$1)))
+
+# If the value of _FORTIFY_SOURCE is greater than 2, use the value, else use 2.
+FORTIFY_SOURCE_VAL := $(lastword $(sort $(word 2,$(subst =, ,$(filter -D_FORTIFY_SOURCE=%,$(CFLAGS)))) 2))
 
 COMMON_DIR            := $(ROOT_DIR)/common
 LINUX_EXTERNAL_DIR    := $(ROOT_DIR)/external
@@ -71,6 +87,7 @@ DCAP_DIR              := $(LINUX_EXTERNAL_DIR)/dcap_source
 LIBUNWIND_DIR         := $(ROOT_DIR)/sdk/cpprt/linux/libunwind
 
 CP    := cp -f
+LN    := ln -sf
 MKDIR := mkdir -p
 STRIP := strip
 OBJCOPY := objcopy
@@ -105,7 +122,7 @@ ifdef DEBUG
     COMMON_FLAGS += -O0 -ggdb -DDEBUG -UNDEBUG
     COMMON_FLAGS += -DSE_DEBUG_LEVEL=SE_TRACE_DEBUG
 else
-    COMMON_FLAGS += -O2 -D_FORTIFY_SOURCE=2 -UDEBUG -DNDEBUG
+    COMMON_FLAGS += -O2 -D_FORTIFY_SOURCE=$(FORTIFY_SOURCE_VAL) -UDEBUG -DNDEBUG
 endif
 
 ifdef SE_SIM
@@ -346,13 +363,11 @@ SGX_SDK ?= /opt/intel/sgxsdk
 SGX_HEADER_DIR ?= $(SGX_SDK)/include
 
 ifeq ($(ARCH), x86)
-	SGX_COMMON_CFLAGS := -m32
-	SGX_LIB_DIR := $(SGX_SDK)/lib
-	SGX_BIN_DIR := $(SGX_SDK)/bin/x86
+    SGX_COMMON_CFLAGS := -m32
+    SGX_LIB_DIR := $(SGX_SDK)/lib
+    SGX_BIN_DIR := $(SGX_SDK)/bin/x86
 else
-	SGX_COMMON_CFLAGS := -m64
-	SGX_LIB_DIR := $(SGX_SDK)/lib64/$(MITIGATION_LIB_PATH)
-	SGX_BIN_DIR := $(SGX_SDK)/bin/x64
+    SGX_COMMON_CFLAGS := -m64
+    SGX_LIB_DIR := $(SGX_SDK)/lib64/$(MITIGATION_LIB_PATH)
+    SGX_BIN_DIR := $(SGX_SDK)/bin/x64
 endif
-
-SPLIT_VERSION=$(word $2,$(subst ., ,$1))

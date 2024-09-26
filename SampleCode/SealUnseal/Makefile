@@ -37,21 +37,21 @@ SGX_ARCH ?= x64
 SGX_DEBUG ?= 1
 
 ifeq ($(shell getconf LONG_BIT), 32)
-	SGX_ARCH := x86
+    SGX_ARCH := x86
 else ifeq ($(findstring -m32, $(CXXFLAGS)), -m32)
-	SGX_ARCH := x86
+    SGX_ARCH := x86
 endif
 
 ifeq ($(SGX_ARCH), x86)
-	SGX_COMMON_FLAGS := -m32
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
+    SGX_COMMON_FLAGS := -m32
+    SGX_LIBRARY_PATH := $(SGX_SDK)/lib
+    SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x86/sgx_sign
+    SGX_EDGER8R := $(SGX_SDK)/bin/x86/sgx_edger8r
 else
-	SGX_COMMON_FLAGS := -m64
-	SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
-	SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
-	SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
+    SGX_COMMON_FLAGS := -m64
+    SGX_LIBRARY_PATH := $(SGX_SDK)/lib64
+    SGX_ENCLAVE_SIGNER := $(SGX_SDK)/bin/x64/sgx_sign
+    SGX_EDGER8R := $(SGX_SDK)/bin/x64/sgx_edger8r
 endif
 
 ifeq ($(SGX_DEBUG), 1)
@@ -61,9 +61,9 @@ endif
 endif
 
 ifeq ($(SGX_DEBUG), 1)
-	SGX_COMMON_FLAGS += -O0 -g
+    SGX_COMMON_FLAGS += -O0 -g
 else
-	SGX_COMMON_FLAGS += -O2
+    SGX_COMMON_FLAGS += -O2
 endif
 
 SGX_COMMON_FLAGS += -Wall -Wextra -Winit-self -Wpointer-arith -Wreturn-type \
@@ -77,9 +77,9 @@ SGX_COMMON_CXXFLAGS = $(SGX_COMMON_FLAGS) -Wnon-virtual-dtor -std=c++11
 ######## App Settings ########
 
 ifneq ($(SGX_MODE), HW)
-	Urts_Library_Name := sgx_urts_sim
+    Urts_Library_Name := sgx_urts_sim
 else
-	Urts_Library_Name := sgx_urts
+    Urts_Library_Name := sgx_urts
 endif
 
 App_Cpp_Files := $(wildcard App/*.cpp)
@@ -114,20 +114,20 @@ App_Name := app
 ######## Enclave Settings ########
 
 ifneq ($(SGX_MODE), HW)
-	Trts_Library_Name := sgx_trts_sim
-	Service_Library_Name := sgx_tservice_sim
+    Trts_Library_Name := sgx_trts_sim
+    Service_Library_Name := sgx_tservice_sim
 else
-	Trts_Library_Name := sgx_trts
-	Service_Library_Name := sgx_tservice
+    Trts_Library_Name := sgx_trts
+    Service_Library_Name := sgx_tservice
 endif
 Crypto_Library_Name := sgx_tcrypto
 
 Enclave_Include_Paths := -I$(SGX_SDK)/include -I$(SGX_SDK)/include/tlibc -I$(SGX_SDK)/include/libcxx
 CC_BELOW_4_9 := $(shell expr "`$(CC) -dumpversion`" \< "4.9")
 ifeq ($(CC_BELOW_4_9), 1)
-	Enclave_Compile_CFlags := -fstack-protector
+    Enclave_Compile_CFlags := -fstack-protector
 else
-	Enclave_Compile_CFlags := -fstack-protector-strong
+    Enclave_Compile_CFlags := -fstack-protector-strong
 endif
 Enclave_Compile_CFlags += -nostdinc -ffreestanding -fvisibility=hidden -fpie -ffunction-sections -fdata-sections $(Enclave_Include_Paths)
 Enclave_Compile_CXXFlags := -nostdinc++ -std=c++11 $(Enclave_Compile_CFlags)
@@ -177,19 +177,19 @@ Enclave_Unseal_Link_Flags := $(Enclave_Link_Flags) -Wl,--version-script=Enclave_
 
 ifeq ($(SGX_MODE), HW)
 ifeq ($(SGX_DEBUG), 1)
-	Build_Mode = HW_DEBUG
+    Build_Mode = HW_DEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-	Build_Mode = HW_PRERELEASE
+    Build_Mode = HW_PRERELEASE
 else
-	Build_Mode = HW_RELEASE
+    Build_Mode = HW_RELEASE
 endif
 else
 ifeq ($(SGX_DEBUG), 1)
-	Build_Mode = SIM_DEBUG
+    Build_Mode = SIM_DEBUG
 else ifeq ($(SGX_PRERELEASE), 1)
-	Build_Mode = SIM_PRERELEASE
+    Build_Mode = SIM_PRERELEASE
 else
-	Build_Mode = SIM_RELEASE
+    Build_Mode = SIM_RELEASE
 endif
 endif
 

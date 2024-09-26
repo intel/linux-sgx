@@ -142,7 +142,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   1)  To install the additional required tools:
       * On Debian 10:
       ```
-        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip lsb-release libsystemd0
+        $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip  pkgconf libboost-dev libboost-system-dev libboost-thread-dev lsb-release libsystemd0
       ```
       * On Ubuntu 20.04, Ubuntu 22.04 and Ubuntu 23.10:
       ```
@@ -166,7 +166,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
       ```
       * On SUSE Linux Enterprise Server 15.4:
       ```
-        $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo libsystemd0
+        $ sudo zypper install libopenssl-devel libcurl-devel protobuf-devel cmake rpm-build createrepo_c libsystemd0 libboost_system1_66_0-devel libboost_thread1_66_0-devel
       ```
       2) To install latest Intel(R) SGX SDK Installer
   Ensure that you have downloaded latest Intel(R) SGX SDK Installer from the [Intel(R) SGX SDK](https://software.intel.com/en-us/sgx-sdk/download) and followed the Installation Guide in the same page to install latest Intel(R) SGX SDK Installer.

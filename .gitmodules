@@ -13,7 +13,7 @@
 [submodule "ipp-crypto"]
 	path = external/ippcp_internal/ipp-crypto
 	url = https://github.com/intel/ipp-crypto.git
-	branch = ipp-crypto_2021_11_0
+	branch = ipp-crypto_2021_12_1
 [submodule "external/protobuf/protobuf_code"]
 	path = external/protobuf/protobuf_code
 	url = https://github.com/protocolbuffers/protobuf.git

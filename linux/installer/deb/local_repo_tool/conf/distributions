@@ -48,6 +48,22 @@ DebIndices: Packages .
 
 Origin: Intel Corporation
 Label: Intel Corporation
+Codename: mantic
+Architectures: amd64
+Components: main
+Description: ubuntu/mantic repository for SGX PSW
+DebIndices: Packages .
+
+Origin: Intel Corporation
+Label: Intel Corporation
+Codename: noble
+Architectures: amd64
+Components: main
+Description: ubuntu/noble repository for SGX PSW
+DebIndices: Packages .
+
+Origin: Intel Corporation
+Label: Intel Corporation
 Codename: buster
 Architectures: amd64
 Components: main
@@ -64,8 +80,8 @@ DebIndices: Packages .
 
 Origin: Intel Corporation
 Label: Intel Corporation
-Codename: mantic
+Codename: bookworm
 Architectures: amd64
 Components: main
-Description: ubuntu/mantic repository for SGX PSW
+Description: debian/bookworm repository for SGX PSW
 DebIndices: Packages .

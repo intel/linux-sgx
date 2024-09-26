@@ -31,6 +31,7 @@
 
 # Mitigation options
 
+SGX_TRUSTED_INCLUDE_PATH ?= $(SGX_SDK)/include
 SGX_TRUSTED_LIBRARY_PATH ?= $(SGX_SDK)/lib64
 
 CC ?= gcc

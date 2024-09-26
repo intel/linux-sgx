@@ -172,6 +172,7 @@ DECLARE_GLOBAL_FUNC setjmp
     ret
 .crash:
     ud2
+END_FUNC
 
 DECLARE_GLOBAL_FUNC longjmp
 #ifdef LINUX32
@@ -272,6 +273,7 @@ DECLARE_GLOBAL_FUNC longjmp
     jnz     1f
     incl    %eax
 1:  ret
+END_FUNC
 
 
 .weak _setjmp

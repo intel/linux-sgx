@@ -806,7 +806,7 @@ void pcl_gcm_gmult_clmul(u64 Xi[2], const u128 Htable[16]);
 void pcl_gcm_ghash_clmul(u64 Xi[2], const u128 Htable[16],
                            const u8 *inp, size_t len);
 
-#ifdef TURN_OFF_O2_GCC13
+#ifdef TURN_OFF_O2
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 #endif
@@ -943,7 +943,7 @@ void pcl_CRYPTO_gcm128_init(GCM128_CONTEXT *ctx, void *key, block128_f block)
    PCL UNUSED END   */
 }
 
-#ifdef TURN_OFF_O2_GCC13
+#ifdef TURN_OFF_O2
 #pragma GCC pop_options
 #endif
 void pcl_CRYPTO_gcm128_setiv(GCM128_CONTEXT *ctx, const unsigned char *iv,

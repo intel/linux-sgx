@@ -185,13 +185,12 @@ bool parse_metadata_file(const char *xmlpath, xml_parameter_t *parameter, int pa
     return true;
 }
 
-CMetadata::CMetadata(metadata_t *metadata, BinParser *parser, bool fips_on)
+CMetadata::CMetadata(metadata_t *metadata, BinParser *parser)
     :  m_meta_verions(0), m_metadata(metadata), m_parser(parser)
     , m_rva(0), m_gd_size(0), m_gd_template(NULL)
 {
     memset(m_metadata, 0, sizeof(metadata_t));
     memset(&m_create_param, 0, sizeof(m_create_param));
-    m_create_param.fips_on = fips_on ? 1 : 0;
     memset(&m_elrange_config_entry, 0, sizeof(m_elrange_config_entry));
 }
 CMetadata::~CMetadata()
@@ -605,6 +604,7 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     m_create_param.tcs_max_num = (uint32_t)(parameter[TCSMAXNUM].flag ? parameter[TCSMAXNUM].value : parameter[TCSNUM].value);
     m_create_param.tcs_min_pool = (uint32_t)parameter[TCSMINPOOL].value;
     m_create_param.tcs_policy = (uint32_t)parameter[TCSPOLICY].value;
+    m_create_param.fips_on = (uint32_t)parameter[ENABLEIPPFIPS].value;
 
     se_trace(SE_TRACE_ERROR, "tcs_num %d, tcs_max_num %d, tcs_min_pool %d\n", m_create_param.tcs_num, m_create_param.tcs_max_num, m_create_param.tcs_min_pool);
     SE_TRACE_DEBUG("RSRV_MIN_SIZE  = 0x%016llX\n", m_create_param.rsrv_min_size);

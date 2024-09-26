@@ -36,9 +36,9 @@ TARGET = appresponder
 RM = rm -f
 
 ifneq ($(SGX_MODE), HW)
-	URTS_LIB_NAME := sgx_urts_sim
+    URTS_LIB_NAME := sgx_urts_sim
 else
-	URTS_LIB_NAME := sgx_urts
+    URTS_LIB_NAME := sgx_urts
 endif
 
 INC:=-I$(SGX_SDK)/include -I../Include

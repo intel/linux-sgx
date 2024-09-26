@@ -39,6 +39,7 @@
 DECLARE_LOCAL_FUNC get_bp
     mov %xbp, %xax
     ret
+END_FUNC
 
 #define reg_xax (0 * SE_WORDSIZE)
 #define reg_xbx (1 * SE_WORDSIZE)
@@ -62,3 +63,4 @@ DECLARE_LOCAL_FUNC load_regs
     push reg_xip(%xdx)
     mov reg_xdx(%xdx), %xdx
     ret
+END_FUNC

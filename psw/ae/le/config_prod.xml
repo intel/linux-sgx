@@ -3,7 +3,7 @@
   <ProvisionKey>0</ProvisionKey>
   <LaunchKey>1</LaunchKey>
   <ProdID>0x20</ProdID>
-  <ISVSVN>6</ISVSVN>
+  <ISVSVN>7</ISVSVN>
   <TCSNum>1</TCSNum>
   <TCSMinPool>0</TCSMinPool>
   <TCSPolicy>1</TCSPolicy>
@@ -13,4 +13,5 @@
   <HeapMinSize>0x20000</HeapMinSize>
   <HW>0x10</HW>
   <DisableDebug>1</DisableDebug>
+  <EnableIPPFIPS>1</EnableIPPFIPS>
 </EnclaveConfiguration>
