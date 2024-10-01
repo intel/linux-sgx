@@ -31,7 +31,6 @@
 
 %define _tdx_qgs_path @tdx_qgs_path@
 %define _ra_service_path @ra_service_path@
-%define _dcap_pccs_path @dcap_pccs_path@
 %define _pck_id_retrieval_tool_path @pck_id_retrieval_tool_path@
 %define _psw_version @psw_version@
 %define _dcap_version @dcap_version@
@@ -198,14 +197,6 @@ Requires:      libsgx-dcap-quote-verify = %{version}-%{release} libsgx-headers >
 %description -n libsgx-dcap-quote-verify-devel
 Intel(R) Software Guard Extensions Data Center Attestation Primitives Quote Verification Library for Developers
 
-%package -n sgx-dcap-pccs
-Version:       %{_dcap_version}
-Summary:       Intel(R) Software Guard Extensions PCK Caching Service
-Requires:      gcc gcc-c++ make
-
-%description -n sgx-dcap-pccs
-Intel(R) Software Guard Extensions PCK Caching Service
-
 %package -n libsgx-ra-network
 Version:       %{_dcap_version}
 Summary:       Intel(R) Software Guard Extensions Registration Agent Network Library
@@ -273,14 +264,13 @@ for pkg in $(ls -A %{?buildroot} 2> /dev/null |grep -v "license"); do
     grep -v "^%{_includedir}" | \
     grep -v "^%{_sysconfdir}" | \
     grep -v "^%{_tdx_qgs_path}" | \
-    grep -v "^%{_dcap_pccs_path}" | \
     grep -v "^%{_ra_service_path}" | \
     grep -v "^%{_pck_id_retrieval_tool_path}" | \
     sed -e "s#^#%dir #" > %{_specdir}/list-${pkg}
     for f in $(find %{?buildroot}/${pkg}); do
         if [ -d ${f} ]; then
             echo ${f} | sed -e "s#^%{?buildroot}/${pkg}##" | \
-            grep -E "^%{_tdx_qgs_path}|^%{_dcap_pccs_path}|^%{_ra_service_path}|^%{_pck_id_retrieval_tool_path}" | \
+            grep -E "^%{_tdx_qgs_path}|^%{_ra_service_path}|^%{_pck_id_retrieval_tool_path}" | \
             sed -e "s#^#%dir #" >> %{_specdir}/list-${pkg}
         else
             echo ${f} | \
@@ -290,7 +280,7 @@ for pkg in $(ls -A %{?buildroot} 2> /dev/null |grep -v "license"); do
     cp -r %{?buildroot}/${pkg}/* %{?buildroot}/
     rm -fr %{?buildroot}/${pkg}
     sed -i -e 's:^/etc/.*\.conf:%config &:' \
-           -e 's:^%{_dcap_pccs_path}/config/default\.json:%config &:' %{_specdir}/list-${pkg}
+           %{_specdir}/list-${pkg}
 done
 rm -fr %{?buildroot}/license
 
@@ -315,7 +305,6 @@ make clean
 %files -n libtdx-attest-devel -f %{_specdir}/list-libtdx-attest-devel
 %files -n libsgx-dcap-quote-verify -f %{_specdir}/list-libsgx-dcap-quote-verify
 %files -n libsgx-dcap-quote-verify-devel -f %{_specdir}/list-libsgx-dcap-quote-verify-devel
-%files -n sgx-dcap-pccs -f %{_specdir}/list-sgx-dcap-pccs
 %files -n libsgx-ra-network -f %{_specdir}/list-libsgx-ra-network
 %files -n libsgx-ra-network-devel -f %{_specdir}/list-libsgx-ra-network-devel
 %files -n libsgx-ra-uefi -f %{_specdir}/list-libsgx-ra-uefi
@@ -328,12 +317,6 @@ if [ -x %{_tdx_qgs_path}/startup.sh ]; then %{_tdx_qgs_path}/startup.sh; fi
 
 %preun
 if [ -x %{_tdx_qgs_path}/cleanup.sh ]; then %{_tdx_qgs_path}/cleanup.sh; fi
-
-%posttrans -n sgx-dcap-pccs
-if [ -x %{_dcap_pccs_path}/startup.sh ]; then %{_dcap_pccs_path}/startup.sh; fi
-
-%preun -n sgx-dcap-pccs
-if [ -x %{_dcap_pccs_path}/cleanup.sh ]; then %{_dcap_pccs_path}/cleanup.sh; fi
 
 %posttrans -n sgx-ra-service
 if [ -x %{_ra_service_path}/startup.sh ]; then %{_ra_service_path}/startup.sh; fi
