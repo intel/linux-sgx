@@ -89,7 +89,9 @@ strptime(const char *buf, const char *fmt, struct tm *tm)
 {
 	return(_strptime(buf, fmt, tm, 1));
 }
+#if 0
 DEF_WEAK(strptime);
+#endif
 
 static char *
 _strptime(const char *buf, const char *fmt, struct tm *tm, int initialize)
