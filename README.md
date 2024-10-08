@@ -523,10 +523,6 @@ Please follow the [Intel(R) SGX DCAP Installation Guide for Linux* OS](https://d
 
 - Install Quote Provider Library(QPL). You can use your own customized QPL or use default QPL provided by Intel(libsgx-dcap-default-qpl)
 
-- Install PCK Caching Service. For how to install and configure PCK Caching
-Service, please refer to [SGXDataCenterAttestationPrimitives](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/DCAP_1.21/QuoteGeneration/pccs)
-- Ensure the PCK Caching Service is setup correctly by local administrator or data center administrator. Also make sure that the configure file of quote provider library (/etc/sgx_default_qcnl.conf) is consistent with the real environment, for example: PCS_URL=https://your_pcs_server:8081/sgx/certification/v1/
-
 ### Start or Stop aesmd Service
 The Intel(R) SGX PSW installer installs an aesmd service in your machine, which is running in a special linux account `aesmd`.
 To stop the service: `$ sudo service aesmd stop`

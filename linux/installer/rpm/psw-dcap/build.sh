@@ -63,7 +63,6 @@ update_spec() {
         -e "s:@dcap_version@:${dcap_version}:"                                                    \
         -e "s:@aesm_service_path@:${SGX_INSTALL_PATH}/${AESM_SERVICE_PACKAGE}:"                   \
         -e "s:@ra_service_path@:${SGX_INSTALL_PATH}/${RA_SERVICE_PACKAGE}:"                       \
-        -e "s:@dcap_pccs_path@:${SGX_INSTALL_PATH}/${DCAP_PCCS_PACKAGE}:"                         \
         -e "s:@pck_id_retrieval_tool_path@:${SGX_INSTALL_PATH}/${PCK_ID_RETRIEVAL_TOOL_PACKAGE}:" \
         ${cur_dir}/${psw_dcap}.spec.tmpl > ${cur_dir}/${rpm_build_dir}/SPECS/${psw_dcap}.spec
 

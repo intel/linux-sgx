@@ -95,9 +95,6 @@ AESMD_CONF=aesmd.service
 AESMD_CONF_DEL=aesmd.conf
 AESMD_CONF_PATH=$(if $(wildcard /lib/systemd/system/.),/lib/systemd/system,/usr/lib/systemd/system)
 
-PCCS_CONF=pccs.service
-PCCS_CONF_PATH=$(if $(wildcard /lib/systemd/system/.),/lib/systemd/system,/usr/lib/systemd/system)
-
 RAD_CONF=mpa_registration_tool.service
 RAD_CONF_DEL=mpa_registration_tool.conf
 RAD_CONF_PATH=$(if $(wildcard /lib/systemd/system/.),/lib/systemd/system,/usr/lib/systemd/system)
@@ -192,7 +189,7 @@ ALL_PKGS:= $(AESM_SERVICE_PKGS) $(AE_PKGS) $(DEV_LIB_PKGS)
 
 $(foreach PKG,$(AESM_SERVICE_PKGS) $(AE_PKGS),$(eval $(call INSTALL_AESM_SERVICE_TEMPLATE,$(PKG))))
 $(foreach PKG,$(DEV_LIB_PKGS),$(eval $(call INSTALL_DEV_LIB_TEMPLATE,$(PKG))))
-$(foreach PKG,$(ALL_PKGS) $(DCAP_PCCS_PACKAGE) $(RA_SERVICE_PACKAGE) $(PCK_ID_RETRIEVAL_TOOL_PACKAGE),$(eval $(call PRE_INSTALL_TEMPLATE,$(PKG))))
+$(foreach PKG,$(ALL_PKGS) $(RA_SERVICE_PACKAGE) $(PCK_ID_RETRIEVAL_TOOL_PACKAGE),$(eval $(call PRE_INSTALL_TEMPLATE,$(PKG))))
 
 PHONY+=$(ALL_PKGS)
 PHONY+=$(foreach PKG,$(ALL_PKGS),pre_$(PKG))
@@ -219,14 +216,6 @@ install_$(AESM_SERVICE_PACKAGE): $(foreach PKG,$(AESM_SERVICE_PKGS),post_$(PKG))
 	ln -fs $(shell readlink -m $(USR_LIB_PATH)/libsgx_pce.signed.so.$(PCE_MAJOR_VER))                         && \
 	ln -fs $(shell readlink -m $(USR_LIB_PATH)/libsgx_pce.signed.so)                                          && \
 	ln -fs liburts_internal.so libsgx_urts.so.$(URTS_MAJOR_VER)
-
-PHONY+=install_$(DCAP_PCCS_PACKAGE)
-install_$(DCAP_PCCS_PACKAGE): pre_$(DCAP_PCCS_PACKAGE) | $(PACKAGE_ROOT_PATH)
-	install -d $(shell readlink -m $(DESTDIR)/$(DCAP_PCCS_PACKAGE)/$(PCCS_CONF_PATH))                        && \
-	cp -f $|/$(DCAP_PCCS_PACKAGE)/$(PCCS_CONF) $(DESTDIR)/$(DCAP_PCCS_PACKAGE)/$(PCCS_CONF_PATH)             && \
-	rm -f $|/$(DCAP_PCCS_PACKAGE)/$(PCCS_CONF)
-	install -d $(shell readlink -m $(DESTDIR)/$(DCAP_PCCS_PACKAGE)/$(SGX_INSTALL_PATH)/$(DCAP_PCCS_PACKAGE)) && \
-	cp -fr $|/$(DCAP_PCCS_PACKAGE)/* $(DESTDIR)/$(DCAP_PCCS_PACKAGE)/$(SGX_INSTALL_PATH)/$(DCAP_PCCS_PACKAGE)
 
 PHONY+=$(RA_SERVICE_PACKAGE)
 $(RA_SERVICE_PACKAGE): pre_$(RA_SERVICE_PACKAGE) | $(PACKAGE_ROOT_PATH)
@@ -351,7 +340,6 @@ install_dev_lib: $(foreach PKG,$(DEV_LIB_PKGS),post_$(PKG))
 
 PHONY+=install
 install: install_$(AESM_SERVICE_PACKAGE)         \
-	install_$(DCAP_PCCS_PACKAGE)             \
 	install_$(RA_SERVICE_PACKAGE)            \
 	install_$(PCK_ID_RETRIEVAL_TOOL_PACKAGE) \
 	install_ae                               \
