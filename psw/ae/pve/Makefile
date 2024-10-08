@@ -67,7 +67,7 @@ all: $(SONAME)
 .PHONY: EPID
 EPID:
 	cd $(EPID_SDK_DIR) && CFLAGS="$(EPID_CFLAGS)" CXXFLAGS="$(EPID_CXXFLAGS)" ./configure prefix=/usr/local
-	$(MAKE) -C $(EPID_SDK_DIR) 2> /dev/null
+	$(MAKE) -C $(EPID_SDK_DIR)
 
 $(SONAME): $(OBJS) EPID
 	$(CXX) $(CXXFLAGS) -o $@  $(OBJS)  -nostdlib -nodefaultlibs -nostartfiles -Wl,-soname=libsgx_$(AENAME).signed.so.$(call get_major_version,PVE_VERSION) $(LDTFLAGS)
