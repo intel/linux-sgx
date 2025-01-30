@@ -61,7 +61,7 @@ if(REF_LE)
 endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED 1)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_SKIP_BUILD_RPATH true)
 
 ########## SGX SDK Settings ##########
