@@ -374,7 +374,7 @@ bool CMetadata::fill_enclave_css(const xml_parameter_t *para)
                 m_metadata->enclave_css.body.attribute_mask.xfrm |= SGX_XFRM_AMX;
                 break;
         case FEATURE_LOADER_SELECTS:
-		// Loader will enable this feature if it is avaiable on HW
+		// Loader will enable this feature if it is available on HW
                 m_metadata->enclave_css.body.attributes.xfrm &= ~SGX_XFRM_AMX;
                 m_metadata->enclave_css.body.attribute_mask.xfrm &= ~SGX_XFRM_AMX;
                 break;

@@ -315,7 +315,7 @@ int pthread_join(pthread_t thread, void **retval)
         return EDEADLK;  /* Resource deadlock would occur */
     }
 
-    // SKip to join if pthread_join() is called durig UNINIT ecall.
+    // SKip to join if pthread_join() is called during UNINIT ecall.
     //
     // No need to actually join the threads if pthread_join() is called 
     // during UNINIT ecall. Urts would sync the threads instead.
