@@ -162,7 +162,7 @@ sgx_status_t generate_cbor_pkhash_entry(const uint8_t *p_pub_key, size_t key_siz
 
     uint8_t* hash_entry_buf;
     size_t hash_entry_buf_size;
-    /* for the serialize_alloced buf, we need to free it seperately, as the pointer */
+    /* for the serialize_alloced buf, we need to free it separately, as the pointer */
     /* passed to outside invoker, free it in outside invoker */
     cbor_serialize_alloc(cbor_hash_entry, &hash_entry_buf, &hash_entry_buf_size);
 
@@ -221,7 +221,7 @@ sgx_status_t generate_cbor_claims(const uint8_t *p_pub_key,
         return SGX_ERROR_OUT_OF_MEMORY;
     }
 
-    /* for the serialize_alloced buf, we need to free it seperately, as the pointer */
+    /* for the serialize_alloced buf, we need to free it separately, as the pointer */
     /* passed to outside invoker, free it in outside invoker */
     uint8_t* claims_buf;
     size_t claims_buf_size;
