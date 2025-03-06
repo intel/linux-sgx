@@ -36,8 +36,8 @@ services:
   aesm:
     image: sgx_aesm
     devices:
-      - /dev/sgx/enclave
-      - /dev/sgx/provision
+      - /dev/sgx_enclave
+      - /dev/sgx_provision
     volumes:
       - aesmd-socket:/var/run/aesmd
     stdin_open: true
@@ -51,7 +51,7 @@ services:
     depends_on:
       - aesm
     devices:
-      - /dev/sgx/enclave
+      - /dev/sgx_enclave
     volumes:
       - aesmd-socket:/var/run/aesmd
     stdin_open: true
