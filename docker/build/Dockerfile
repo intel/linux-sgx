@@ -76,10 +76,22 @@ RUN make deb_local_repo
 
 FROM ubuntu:22.04 as aesm
 RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    apt-transport-https \
+    ca-certificates
+
+RUN curl -fsSL https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - && \
+    echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main" > /etc/apt/sources.list.d/intel-sgx.list && \
+    apt-get update
+
+RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libprotobuf-dev \
     libssl-dev \
-    make
+    make \
+    libsgx-dcap-ql \
+    libsgx-dcap-default-qpl
 
 WORKDIR /installer
 COPY --from=builder /linux-sgx/linux/installer/bin/*.bin ./
