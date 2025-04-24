@@ -33,6 +33,7 @@
 #include "sgx_tcrypto.h"
 #include "stdlib.h"
 #include "sgx_fips_internal.h"
+#include "se_tcrypto_common.h"
 
 #ifndef SAFE_FREE
 #define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
@@ -87,7 +88,7 @@ sgx_status_t sgx_sha384_init(sgx_sha_state_handle_t *p_sha_handle)
     p_temp_state = (IppsHashState_rmf *)(malloc(ctx_size));
     if (p_temp_state == NULL)
         return SGX_ERROR_OUT_OF_MEMORY;
-    ipp_ret = ippsHashInit_rmf(p_temp_state, ippsHashMethod_SHA384());
+    ipp_ret = ippsHashInit_rmf(p_temp_state, IPPS_HASH_METHODS.sha384HashMethod);
     if (ipp_ret != ippStsNoErr)
     {
         SAFE_FREE(p_temp_state);

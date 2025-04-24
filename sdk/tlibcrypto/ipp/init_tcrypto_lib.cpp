@@ -34,10 +34,12 @@
 #include "ippcp.h"
 #include "se_cpu_feature.h"
 #include "se_cdefs.h"
+#include "se_tcrypto_common.h"
 
 // add a version to tcrypto.
 SGX_ACCESS_VERSION(tcrypto, 1)
 
+TcryptoIppsHashMethods IPPS_HASH_METHODS;
 
 extern "C" sgx_status_t init_ipp_cpuid(uint64_t cpu_feature_indicator);
 /* Crypto Library Initialization
@@ -48,6 +50,11 @@ extern "C" sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator, uint
 {
     (void)(cpuid_table);
 
-    return init_ipp_cpuid(cpu_feature_indicator);
-}
+    sgx_status_t status = init_ipp_cpuid(cpu_feature_indicator);
 
+    IPPS_HASH_METHODS.sha1HashMethod = ippsHashMethod_SHA1_TT();
+    IPPS_HASH_METHODS.sha256HashMethod = ippsHashMethod_SHA256_TT();
+    IPPS_HASH_METHODS.sha384HashMethod = ippsHashMethod_SHA384();
+
+    return status;
+}

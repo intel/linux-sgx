@@ -30,6 +30,7 @@
  */
 
 #include "ipp_wrapper.h"
+#include "se_tcrypto_common.h"
 #include "sgx_fips_internal.h"
 
 static void fips_self_test_rsa_sign_verify()
@@ -188,7 +189,7 @@ sgx_status_t sgx_rsa3072_sign_ex(const uint8_t *p_data,
         }
 
         // sign the data buffer
-        ipp_ret = ippsRSASign_PKCS1v15_rmf(p_data, data_size, *p_signature, p_rsa_privatekey_ctx, p_rsa_publickey_ctx, ippsHashMethod_SHA256_TT(), temp_buff);
+        ipp_ret = ippsRSASign_PKCS1v15_rmf(p_data, data_size, *p_signature, p_rsa_privatekey_ctx, p_rsa_publickey_ctx, IPPS_HASH_METHODS.sha256HashMethod, temp_buff);
 
     } while (0);
 
@@ -300,7 +301,7 @@ sgx_status_t sgx_rsa3072_verify(const uint8_t *p_data,
         }
 
         // verify the signature
-        ipp_ret = ippsRSAVerify_PKCS1v15_rmf(p_data, data_size, *p_signature, &result, p_rsa_publickey_ctx, ippsHashMethod_SHA256_TT(), temp_buff);
+        ipp_ret = ippsRSAVerify_PKCS1v15_rmf(p_data, data_size, *p_signature, &result, p_rsa_publickey_ctx, IPPS_HASH_METHODS.sha256HashMethod, temp_buff);
     } while (0);
 
     if ((result != 0) && (ipp_ret == ippStsNoErr))

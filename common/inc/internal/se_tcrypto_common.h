@@ -52,6 +52,17 @@ extern unsigned long openssl_last_err;
 
 #endif //DEBUG
 
+#else
+
+#include "ippcp.h"
+
+struct TcryptoIppsHashMethods {
+    const IppsHashMethod* sha1HashMethod;
+    const IppsHashMethod* sha256HashMethod;
+    const IppsHashMethod* sha384HashMethod;
+};
+
+extern TcryptoIppsHashMethods IPPS_HASH_METHODS;
 
 #endif //USE_SGXSSL
 
