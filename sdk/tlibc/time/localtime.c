@@ -165,9 +165,6 @@ char *			tzname[2] = {
 	wildabbr,
 	wildabbr
 };
-#if 0
-DEF_WEAK(tzname);
-#endif
 
 /*
 ** Section 4.12.3 of X3.159-1989 requires that

@@ -32,8 +32,10 @@
 
 #include "util_st.h"
 #include "se_trace.h"
+#include "arch.h"
 #include <assert.h>
 #include <fstream>
+#include <vector>
 
 extern "C" bool write_data_to_file(const char *filename, std::ios_base::openmode mode, 
                                    uint8_t *buf, size_t bsize, long offset)
@@ -107,3 +109,38 @@ extern "C" bool copy_file(const char *source_path, const char *dest_path)
     return true;
 }
 
+// Append data from the 'src file to the 'dst' file. It adds some 0 padding
+// to ensure the start addr of the append content is page-aligned.
+extern "C" bool append_file_with_padding(const char *dst, const char *src)
+{
+    std::ifstream ifs(src, std::ios::binary|std::ios::in);
+    if(!ifs.good())
+    {
+        se_trace(SE_TRACE_ERROR, OPEN_FILE_ERROR, src);
+        return false;
+    }
+
+    std::ofstream ofs(dst, std::ios::binary|std::ios::app);
+    if(!ofs.good())
+    {
+        se_trace(SE_TRACE_ERROR, OPEN_FILE_ERROR, dst);
+        return false;
+    }
+
+    size_t size = (size_t)ofs.tellp();
+    size_t size_aligned = (size + SE_PAGE_SIZE - 1) & (~(SE_PAGE_SIZE - 1));
+
+    std::vector<char> buffer(size_aligned - size, 0);
+    ofs.write(buffer.data(), buffer.size());
+    ofs.close();
+
+    ofs.open(dst, std::ios::binary|std::ios::app);
+    if(!ofs.good())
+    {
+        se_trace(SE_TRACE_ERROR, OPEN_FILE_ERROR, dst);
+        return false;
+    }
+
+    ofs << ifs.rdbuf();
+    return true;
+}

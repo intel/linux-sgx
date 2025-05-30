@@ -50,6 +50,8 @@
 #include "se_version.h"
 #include "ema_imp.h"
 #include "bit_array_imp.h"
+#include "se_map.h"
+#include "shared_object_parser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -185,12 +187,13 @@ bool parse_metadata_file(const char *xmlpath, xml_parameter_t *parameter, int pa
     return true;
 }
 
-CMetadata::CMetadata(metadata_t *metadata, BinParser *parser)
+CMetadata::CMetadata(metadata_t *metadata, BinParser *parser, SharedObjectParser *fips_parser)
     :  m_meta_verions(0), m_metadata(metadata), m_parser(parser)
-    , m_rva(0), m_gd_size(0), m_gd_template(NULL)
+    , m_rva(0), m_gd_size(0), m_gd_template(NULL), m_fips_parser(fips_parser)
 {
     memset(m_metadata, 0, sizeof(metadata_t));
     memset(&m_create_param, 0, sizeof(m_create_param));
+    m_create_param.ossl_fips_on = (fips_parser != NULL);
     memset(&m_elrange_config_entry, 0, sizeof(m_elrange_config_entry));
 }
 CMetadata::~CMetadata()
@@ -590,6 +593,13 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
         return false;
     }
 
+    if(parameter[ENABLEIPPFIPS].flag != 0 && parameter[ENABLEOSSLFIPS].flag !=0
+        && parameter[ENABLEIPPFIPS].value != 0 && parameter[ENABLEOSSLFIPS].value != 0)
+    {
+        se_trace(SE_TRACE_ERROR, SET_FIPS_ERROR);
+        return false;
+    }
+
     m_create_param.heap_init_size = parameter[HEAPINITSIZE].flag ? parameter[HEAPINITSIZE].value : parameter[HEAPMAXSIZE].value;
     m_create_param.heap_min_size = parameter[HEAPMINSIZE].value;
     m_create_param.heap_max_size = parameter[HEAPMAXSIZE].value;
@@ -604,7 +614,7 @@ bool CMetadata::check_xml_parameter(const xml_parameter_t *parameter)
     m_create_param.tcs_max_num = (uint32_t)(parameter[TCSMAXNUM].flag ? parameter[TCSMAXNUM].value : parameter[TCSNUM].value);
     m_create_param.tcs_min_pool = (uint32_t)parameter[TCSMINPOOL].value;
     m_create_param.tcs_policy = (uint32_t)parameter[TCSPOLICY].value;
-    m_create_param.fips_on = (uint32_t)parameter[ENABLEIPPFIPS].value;
+    m_create_param.ipp_fips_on = (uint32_t)parameter[ENABLEIPPFIPS].value;
 
     se_trace(SE_TRACE_ERROR, "tcs_num %d, tcs_max_num %d, tcs_min_pool %d\n", m_create_param.tcs_num, m_create_param.tcs_max_num, m_create_param.tcs_min_pool);
     SE_TRACE_DEBUG("RSRV_MIN_SIZE  = 0x%016llX\n", m_create_param.rsrv_min_size);
@@ -795,13 +805,34 @@ bool CMetadata::build_extend_entry_fips_sig(extend_entry_t *entry)
     return true;
 }
 
+bool CMetadata::build_extend_entry_shared_object(extend_entry_t *entry)
+{
+    uint32_t size = (uint32_t)sizeof(extend_entry_shared_object_t);
+    void *buf =  alloc_buffer_from_metadata(size);
+    if (buf == NULL)
+    {
+        se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+        se_trace(SE_TRACE_ERROR, "shared object extend_entry could not be allocated\n");
+        return false;
+    }
+    entry->entry_id = EXTEND_ENTRY_ID_SHARED_OBJECT;
+    entry->offset = (uint32_t)PTR_DIFF(buf, m_metadata);
+    entry->size = size;
+    return true;
+}
+
 bool CMetadata::build_extend_table()
 {
     uint32_t size = 0;
     uint32_t offset = 0;
     uint32_t count = 0;
 
-    if((m_create_param.fips_on == 1))
+    if((m_create_param.ipp_fips_on == 1))
+    {
+        count++;
+    }
+
+    if((m_create_param.ossl_fips_on == 1))
     {
         count++;
     }
@@ -818,9 +849,14 @@ bool CMetadata::build_extend_table()
         }
 
         int index = 0;
-        if((m_create_param.fips_on == 1))
+        if((m_create_param.ipp_fips_on == 1))
         {
             build_extend_entry_fips_sig(&extend_table[index]);
+            index++;
+        }
+        if((m_create_param.ossl_fips_on == 1))
+        {
+            build_extend_entry_shared_object(&extend_table[index]);
             index++;
         }
 
@@ -838,6 +874,18 @@ bool CMetadata::build_extend_table()
 */
 bool CMetadata::update_layout_entries()
 {
+    extend_entry_shared_object_t *ossl_fips_dso = (extend_entry_shared_object_t *)get_extend_entry_by_ID(m_metadata, EXTEND_ENTRY_ID_SHARED_OBJECT);
+    if ((m_fips_parser != NULL) && (ossl_fips_dso == NULL))
+    {
+        se_trace(SE_TRACE_ERROR, "there is fips module but no extend entry allocated\n");
+        return false;
+    }
+    if ((m_fips_parser == NULL) && (ossl_fips_dso != NULL))
+    {
+        se_trace(SE_TRACE_ERROR, "there is no fips module but extend entry allocated\n");
+        return false;
+    }
+
     m_rva = calculate_sections_size();
     if(m_rva == 0)
     {
@@ -1583,10 +1631,36 @@ uint64_t CMetadata::calculate_sections_size()
             last_section = sections[i];
         }
     }
-
     uint64_t size = (NULL == last_section) ? (0) : (last_section->get_rva() + last_section->virtual_size());
     size = ROUND_TO_PAGE(size); 
 
+    extend_entry_shared_object_t *ossl_fips_dso = (extend_entry_shared_object_t *)get_extend_entry_by_ID(m_metadata, EXTEND_ENTRY_ID_SHARED_OBJECT);
+    if (ossl_fips_dso != NULL)
+    {
+        memset(ossl_fips_dso, 0, sizeof(extend_entry_shared_object_t));
+        std::vector<Section*> dso_sections = m_fips_parser->get_sections();
+        uint64_t dso_max_rva = 0;
+        Section *dso_last_section = NULL;
+
+        for(unsigned int i = 0; i < dso_sections.size() ; i++)
+        {
+            se_trace(SE_TRACE_ERROR, "segment %d, rva 0x%llx\n", i, dso_sections[i]->get_rva());
+            if(dso_sections[i]->get_rva() > dso_max_rva) {
+                dso_max_rva = dso_sections[i]->get_rva();
+                dso_last_section = dso_sections[i];
+            }
+        }
+        uint64_t fips_sections_size = (NULL == dso_last_section) ? (0) : (dso_last_section->get_rva() + dso_last_section->virtual_size());
+        se_trace(SE_TRACE_ERROR, "fips segment size: 0x%llx\n", fips_sections_size);
+
+        // update the fileds of struct extend_entry_shared_object_t
+        ossl_fips_dso->file_offset = m_parser->get_len() - m_fips_parser->get_len();
+        ossl_fips_dso->mem_offset = size;
+        ossl_fips_dso->size = (size_t)m_fips_parser->get_len();
+
+        // update the size for overall loadable segments
+        size += ROUND_TO_PAGE(fips_sections_size);
+    }
     return size;
 }
 

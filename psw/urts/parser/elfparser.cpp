@@ -457,7 +457,7 @@ bool validate_segment(const ElfW(Ehdr) *elf_hdr, uint64_t len)
                 return false;
             }
 
-            // Verify the overlap of segment. we don't verify here, because a well compiled file has no overlapped segment.
+            // Verify the overlap of segment.
             load_seg[k].first = prg_hdr->p_vaddr;
             load_seg[k].second = ROUND_TO(prg_hdr->p_vaddr + prg_hdr->p_memsz, prg_hdr->p_align) - 1;
 
@@ -745,6 +745,11 @@ uint64_t ElfParser::get_metadata_block_size() const
 const uint8_t* ElfParser::get_start_addr() const
 {
     return m_start_addr;
+}
+
+uint64_t ElfParser::get_len() const
+{
+    return m_len;
 }
 
 const std::vector<Section *>& ElfParser::get_sections() const

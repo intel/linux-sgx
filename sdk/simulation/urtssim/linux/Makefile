@@ -94,7 +94,8 @@ OBJ2 := urts.o             \
         urts_emm.o
 
 OBJ3 := section.o \
-        elfparser.o
+        elfparser.o \
+        shared_object_parser.o
 
 OBJ4 := enter_enclave.o \
         xsave_gnu.o

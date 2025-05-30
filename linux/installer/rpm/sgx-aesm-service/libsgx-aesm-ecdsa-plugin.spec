@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2011-2024 Intel Corporation. All rights reserved.
+# Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,7 +38,7 @@ Version:        @version@
 Release:        1%{?dist}
 Summary:        ECDSA Quote Plugin for Intel(R) Software Guard Extensions AESM Service
 Group:          Development/System
-Requires:       sgx-aesm-service >= %{version}-%{release} libsgx-qe3-logic >= 1.22 libsgx-aesm-pce-plugin >= %{version}-%{release}
+Requires:       sgx-aesm-service >= %{version}-%{release} libsgx-qe3-logic >= 1.23 libsgx-aesm-pce-plugin >= %{version}-%{release}
 
 License:        BSD License
 URL:            https://github.com/intel/linux-sgx

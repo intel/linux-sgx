@@ -38,7 +38,7 @@
 
  /* version of metadata */
 #define MAJOR_VERSION 3                 //MAJOR_VERSION should not larger than 0ffffffff
-#define MINOR_VERSION 2                 //MINOR_VERSION should not larger than 0ffffffff
+#define MINOR_VERSION 3                 //MINOR_VERSION should not larger than 0ffffffff
 
 #define SGX_2_ELRANGE_MAJOR_VERSION 13
 #define SGX_1_ELRANGE_MAJOR_VERSION 11
@@ -189,6 +189,15 @@ typedef struct _extend_entry_t
 
 #define EXTEND_ENTRY_ID_FIPS_SIG 0x1001
 typedef struct _css_key_t extend_entry_fips_sig_t;
+
+#define EXTEND_ENTRY_ID_SHARED_OBJECT 0x1002
+typedef struct _extend_entry_shared_object_t
+{
+    uint64_t file_offset;
+    uint64_t mem_offset;
+    size_t size;
+    size_t reserved;
+} extend_entry_shared_object_t;
 
 typedef struct _elrange_config_entry_t
 {

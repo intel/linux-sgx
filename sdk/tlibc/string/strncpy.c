@@ -65,3 +65,12 @@ strncpy(char *dst, const char *src, size_t n)
 	return (dst);
 #endif
 }
+
+__attribute__((weak)) char *
+strcpy(char *to, const char *from)
+{
+	char *save = to;
+
+	for (; (*to = *from) != '\0'; ++from, ++to);
+	return(save);
+}

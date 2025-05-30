@@ -87,6 +87,7 @@
 #define OPEN_FILE_ERROR                     "Failed to open file \"%s\".\n"
 #define READ_FILE_ERROR                     "Failed to read file \"%s\".\n"
 #define WRITE_FILE_ERROR                    "Failed to write file \"%s\".\n"
+#define APPEND_FILE_ERROR                   "Failed to append file \"%s\" to \"%s\".\n"
 
 // error message for measure_enclave()
 #define OUT_OF_EPC_ERROR                    "The required memory is too large. Please check TCSNum/HeapMaxSize/StackMaxSize.\n"
@@ -157,7 +158,7 @@
 #define SET_ELRANGE_RANGE_ERROR                     "ELRange setting is not correct: ELRange should be large enough to fit the enclave image loaded at EnclaveImageAddress.\n"
 #define SET_ELRANGE_ALIGN_ERROR                     "ELRangeSize setting is not correct: ELRangeSize should be power of 2.\n"
 #define SET_ELRANGE_PAGE_ALIGN_ERROR                "ELRangeSize setting is not correct: ELRangeSize is not page aligned.\n"
-
+#define SET_FIPS_ERROR                              "EnableIPPFIPS and EnableOSSLFIPS cannot be enabled at the same time.\n"
 
 
 
@@ -193,6 +194,7 @@ size_t get_file_size(const char *filename);
 bool read_file_to_buf(const char *filename, uint8_t *buffer, size_t bsize);
 bool write_data_to_file(const char *filename, std::ios_base::openmode mode, uint8_t *buf, size_t bsize, long offset = 0);
 bool copy_file(const char *source_path, const char *dest_path);
+bool append_file_with_padding(const char *dst, const char *src);
 
 #ifdef __cplusplus
 }

@@ -43,6 +43,7 @@
 #include "se_vendor.h"
 #include "se_detect.h"
 #include "binparser.h"
+#include "shared_object_parser.h"
 #include "metadata.h"
 #include "edmm_utility.h"
 #include <assert.h>
@@ -223,12 +224,60 @@ int CLoader::build_mem_region(const section_info_t &sec_info)
     return SGX_SUCCESS;
 }
 
+extern void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id);
+
+bool is_extend_entry_supported(uint64_t version)
+{
+    if(MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == 2)
+    {
+        return false;
+    }
+    if( MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == SGX_1_9_MAJOR_VERSION
+     && MINOR_VERSION_OF_METADATA(version) < SGX_1_9_MINOR_VERSION_EXTEND)
+    {
+        return false;
+    }
+    if( MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == MAJOR_VERSION
+     && MINOR_VERSION_OF_METADATA(version) < SGX_3_0_MINOR_VERSION_EXTEND)
+    {
+        return false;
+    }
+    return true;
+}
+
 int CLoader::build_sections(std::vector<uint8_t> *bitmap)
 {
     int ret = SGX_SUCCESS;
     std::vector<Section*> sections = m_parser.get_sections();
     uint64_t max_rva =0;
     Section* last_section = NULL;
+    extend_entry_shared_object_t *fips_dso_entry = NULL;
+
+    if (is_extend_entry_supported(m_metadata->version))
+    {
+        fips_dso_entry = (extend_entry_shared_object_t *)get_extend_entry_by_ID(m_metadata, EXTEND_ENTRY_ID_SHARED_OBJECT);
+        if (fips_dso_entry != NULL)
+        {
+            SharedObjectParser fips_parser(m_parser.get_start_addr()+fips_dso_entry->file_offset, fips_dso_entry->size);
+            int r = fips_parser.run_parser();
+            if (r != SGX_SUCCESS)
+                return r;
+
+            auto original = fips_parser.get_sections();
+            // Fix up the segment rva to account for the offset of
+            // the FIPS provider DSO within the enclave address space
+            for (auto s : original)
+            {
+                auto ps = new Section(s->raw_data(), s->raw_data_size(), s->virtual_size(),
+                                    s->get_rva()+fips_dso_entry->mem_offset, s->get_si_flags());
+                if (ps == NULL)
+                {
+                    return SGX_ERROR_OUT_OF_MEMORY;
+                }
+                sections.push_back(ps);
+            }
+        }
+    }
 
     for(unsigned int i = 0; i < sections.size() ; i++)
     {
@@ -575,7 +624,6 @@ int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *con
 int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
 {
     int ret = SGX_SUCCESS;
-
 
     if(SGX_SUCCESS != (ret = build_secs(secs_attr, config_id, config_svn, misc_attr)))
     {

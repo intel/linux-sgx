@@ -185,12 +185,6 @@ prepare_sgx_src()
 
 }
 
-prepare_ipp_src()
-{
-    ipp_dir="$sgx_repo/external/ippcp_internal"
-}
-
-
 prepare_sdk_installer()
 {
     # Used for 'ae' type repreducibility.
@@ -226,7 +220,6 @@ parse_cmd $@
 case $type in
     "all")
         prepare_sgx_src
-        prepare_ipp_src
         ;;
     "sdk")
         prepare_sgx_src
@@ -237,7 +230,6 @@ case $type in
         ;;
     "ipp")
         prepare_sgx_src
-        prepare_ipp_src
         ;;
     *)
         echo "Unsupported reproducibility type."
@@ -267,6 +259,7 @@ if [ $type_flag = 0 ]; then
 else
     docker run -v $code_dir:$mount_dir -it --network none --rm sgx.build.env /bin/bash -c $mount_dir/cmd.sh
 fi
+
 
 
 

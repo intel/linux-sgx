@@ -98,9 +98,10 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
+  * Debian 12 64bits
 
 - Use the following command(s) to install the required tools to build the Intel(R) SGX SDK:
-  * On Debian 10:
+  * On Debian 10 and Debian 12:
   ```
     $ sudo apt-get install build-essential ocaml ocamlbuild automake autoconf libtool wget python3 libssl-dev git cmake perl
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -140,7 +141,7 @@ Build the Intel(R) SGX SDK and Intel(R) SGX PSW Package
    **Note**:  To build Intel(R) SGX SDK, gcc version is required to be 7.3 or above and glibc version is required to be 2.27 or above.
 - Use the following command to install additional required tools and latest Intel(R) SGX SDK Installer to build the Intel(R) SGX PSW:
   1)  To install the additional required tools:
-      * On Debian 10:
+      * On Debian 10 and Debian 12:
       ```
         $ sudo apt-get install libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev debhelper cmake reprepro unzip  pkgconf libboost-dev libboost-system-dev libboost-thread-dev lsb-release libsystemd0
       ```
@@ -256,7 +257,7 @@ You can find the tools and libraries generated in the `build/linux` directory.
   $ make
 ```
 - To build the Intel(R) SGX PSW installer, enter the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04, Debian 10 and Debian 12:
    ```
   $ make deb_psw_pkg
   ```
@@ -305,6 +306,10 @@ You can find the tools and libraries generated in the `build/linux` directory.
   ```
   deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO buster main
   ```
+  * On Debian 12:
+  ```
+  deb [trusted=yes arch=amd64] file:/PATH_TO_LOCAL_REPO bookworm main
+  ``` 
   After that, you need to update the apt:
   ```
   $ sudo apt update
@@ -351,8 +356,9 @@ Install the Intel(R) SGX SDK
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
+  * Debian 12 64bits
 - Use the following command to install the required tool to use Intel(R) SGX SDK:
-  * On Debian 10:
+  * On Debian 10 and Debian 12:
   ```
     $ sudo apt-get install build-essential python3
     $ sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1
@@ -442,12 +448,13 @@ Install the Intel(R) SGX PSW
   * SUSE Linux Enterprise Server 15.4 64bits
   * Anolis OS 8.6 64bits
   * Debian 10 64bits
+  * Debian 12 64bits
 - Ensure that you have a system with the following required hardware:
   * 6th Generation Intel(R) Core(TM) Processor or newer
 - Configure the system with the **Intel SGX hardware enabled** option and install Intel(R) SGX driver in advance.
   See the earlier topic, *Build and Install the Intel(R) SGX Driver*, for information on how to install the Intel(R) SGX driver.
 - Install the library using the following command:
-  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10:
+  * On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04, Debian 10 and Debian 12:
   ```
     $ sudo apt-get install libssl-dev libcurl4-openssl-dev libprotobuf-dev
   ```
@@ -477,7 +484,7 @@ The SGX PSW provides 3 services: launch, EPID-based attestation, and algorithm a
 
 #### Using the local repo(recommended)
 
-|   |Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10|Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6| SUSE Linux Enterprise Server 15|
+|   |Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04, Debian 10 and Debian 12|Red Hat Enterprise Linux 9.2, CentOS Stream 9, CentOS 8.3 and Anolis OS 8.6| SUSE Linux Enterprise Server 15|
 | ------------ | ------------ | ------------ | ------------ |
 |launch service |apt-get install libsgx-launch libsgx-urts|yum install libsgx-launch libsgx-urts|zypper install libsgx-launch libsgx-urts|
 |EPID-based attestation service|apt-get install libsgx-epid libsgx-urts|yum install libsgx-epid libsgx-urts|zypper install libsgx-epid libsgx-urts|
@@ -498,7 +505,7 @@ apt-get dist-upgrade -o Dpkg::Options::="--force-overwrite"
 ```
 #### Configure the installation
 Some packages are configured with recommended dependency on other packages that are not required for certain usage. For instance, the background daemon is not required for container usage. It will be installed by default, but you can drop it by using the additional option during the installation.
-* On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04 and Debian 10:
+* On Ubuntu 20.04, Ubuntu 22.04, Ubuntu 24.04, Debian 10 and Debian 12:
 ```
   --no-install-recommends
 ```

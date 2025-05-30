@@ -74,7 +74,8 @@ OBJ2 := sgx_memset_s.o crypto_evp_digest.o crypto_rsa_key.o crypto_rsa3072.o
 OBJ3 := tinyxml2.o
 
 OBJ4 := loader.o     \
-        se_detect.o  
+        se_detect.o  \
+        shared_object_parser.o
 
 CPP_OBJS := $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4)
 C_OBJS   := se_trace.o se_map.o

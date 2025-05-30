@@ -101,6 +101,8 @@ int SGXAPI sgx_rdpkru(uint32_t *val);
  */
 int SGXAPI sgx_wrpkru(uint32_t val);
 
+void* SGXAPI sgx_get_ossl_fips_sym(const char *symbol);
+
 #ifdef __cplusplus
 }
 #endif

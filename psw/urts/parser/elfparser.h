@@ -58,6 +58,8 @@ public:
 
     const uint8_t* get_start_addr() const;
 
+    uint64_t get_len() const;
+
     // The `section' here is a section in PE's concept.
     // It is in fact a `segment' in ELF's view.
     const std::vector<Section *>& get_sections() const;

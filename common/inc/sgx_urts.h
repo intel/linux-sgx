@@ -132,6 +132,12 @@ sgx_status_t SGXAPI sgx_get_target_info(
 	const sgx_enclave_id_t enclave_id,
 	sgx_target_info_t* target_info);
 
+/* VALIDATION HOOK */
+sgx_status_t SGXAPI sgx_get_enclave_file_handle (
+    void* virt_addr,
+    int* enclave_fd
+);
+
 #ifdef __cplusplus
 }
 #endif

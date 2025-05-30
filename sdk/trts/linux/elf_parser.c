@@ -40,6 +40,7 @@
 #include "elf_util.h"
 #include "global_data.h"
 #include "trts_inst.h"
+#include "sgx_trts.h"
 #ifndef SE_SIM
 #include "emm_private.h"
 #endif
@@ -310,6 +311,31 @@ int relocate_enclave(void* enclave_base)
     return 0;
 }
 
+uint64_t get_aligned_enclave_segments_size(const void *enclave_base)
+{
+    ElfW(Half) phnum = 0;
+    ElfW(Ehdr) *ehdr = (ElfW(Ehdr)*)enclave_base;
+    ElfW(Phdr) *phdr = get_phdr(ehdr);
+    ElfW(Phdr) *last = NULL;
+    uint64_t max_rva = 0;
+
+    if (phdr == NULL)
+        return 0;  /* Invalid image. */
+
+    for (; phnum < ehdr->e_phnum; phnum++, phdr++)
+    {
+        if ((phdr->p_type == PT_LOAD) && (phdr->p_vaddr > max_rva))
+        {
+            max_rva = phdr->p_vaddr;
+            last = phdr;
+        }
+    }
+    uint64_t size = (NULL == last) ? (0) : (last->p_vaddr + last->p_memsz);
+    uint64_t align = SE_PAGE_SIZE;
+    size = (size + align - 1) & (~(align - 1));
+    return size;
+}
+
 int elf_tls_info(const void* enclave_base,
         uintptr_t *tls_addr, size_t *tdata_size)
 {
@@ -462,6 +488,27 @@ int elf_get_uninit_array(const void* enclave_base,
 
     return 0;
 }
+
+int is_shared_object(void *base)
+{
+    ElfW(Ehdr) *ehdr = (ElfW(Ehdr)*)base;
+    ElfW(Phdr) *phdr = get_phdr(ehdr);
+    return (phdr != NULL) ? 1 : 0;
+}
+
+int __relocate_fips_module(void* fips_base)
+{
+    UNUSED(fips_base);
+    return 0;
+}
+weak_alias(__relocate_fips_module, relocate_fips_module);
+
+void *__get_ossl_fips_sym(const char *symbol)
+{
+    UNUSED(symbol);
+    return NULL;
+}
+weak_alias(__get_ossl_fips_sym, sgx_get_ossl_fips_sym);
 
 #ifndef SE_SIM
 static int has_text_relo(const ElfW(Ehdr) *ehdr, const ElfW(Phdr) *phdr, ElfW(Half) phnum)

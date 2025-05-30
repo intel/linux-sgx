@@ -57,6 +57,8 @@
 #include "crypto_wrapper.h"
 
 #include <unistd.h>
+#include <libgen.h>
+#include <limits.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -129,13 +131,30 @@ static bool get_enclave_info(BinParser *parser, bin_fmt_t *bf, uint64_t * meta_o
 // measure_enclave():
 //    1. Get the enclave hash by loading enclave
 //    2. Get the enclave info - metadata offset and enclave file format
-static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parameter_t *parameter, uint32_t option_flag_bits, metadata_t *metadata, uint64_t *meta_offset, uint8_t *meta_versions)
+static bool measure_enclave(uint8_t *hash, const char *dllpath, const char *fipspath, const xml_parameter_t *parameter, uint32_t option_flag_bits, metadata_t *metadata, uint64_t *meta_offset, uint8_t *meta_versions)
 {
     assert(hash && dllpath && metadata && meta_offset && meta_versions);
     bool res = false;
     off_t file_size = 0;
     uint64_t quota = 0;
     bin_fmt_t bin_fmt = BF_UNKNOWN;
+    bool ossl_fips_on = (parameter[ENABLEOSSLFIPS].value == 1);
+
+    if (ossl_fips_on && (fipspath == NULL))
+    {
+        se_trace(SE_TRACE_ERROR, "OSSL FIPS mode enabled, but path for fips module is missing\n");
+        return false;
+    }
+
+    if (ossl_fips_on)
+    {
+        bool ok = append_file_with_padding(dllpath, fipspath);
+        if (!ok)
+        {
+            se_trace(SE_TRACE_ERROR, APPEND_FILE_ERROR, fipspath, dllpath);
+            return false;
+        }
+    }
 
     se_file_handle_t fh = open_file(dllpath);
     if (fh == THE_INVALID_HANDLE)
@@ -169,11 +188,53 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
         return false;
     }
 
+    std::unique_ptr<SharedObjectParser> extra_parser;
+    se_file_handle_t fips_fh = THE_INVALID_HANDLE;
+    if (ossl_fips_on)
+    {
+        off_t fips_file_size = 0;
+        fips_fh = open_file(fipspath);
+        if (fips_fh == THE_INVALID_HANDLE)
+        {
+            se_trace(SE_TRACE_ERROR, OPEN_FILE_ERROR, fipspath);
+            close_handle(fh);
+            return false;
+        }
+
+        std::unique_ptr<map_handle_t, void (*)(map_handle_t*)> fips_mh(map_file(fips_fh, &fips_file_size), unmap_file);
+        if (!fips_mh)
+        {
+            close_handle(fips_fh);
+            close_handle(fh);
+            return false;
+        }
+
+        extra_parser = std::make_unique<SharedObjectParser>(fips_mh->base_addr, (size_t)fips_file_size);
+        sgx_status_t ret = extra_parser->run_parser();
+        if (ret != SGX_SUCCESS)
+        {
+            se_trace(SE_TRACE_ERROR, INVALID_ENCLAVE_ERROR);
+            close_handle(fips_fh);
+            close_handle(fh);
+            return false;
+        }
+        std::vector<Section*> dso_sections = extra_parser->get_sections();
+
+        for(unsigned int i = 0; i < dso_sections.size() ; i++)
+        {
+            se_trace(SE_TRACE_DEBUG, "segment %d, rva 0x%llx\n", i, dso_sections[i]->get_rva());
+        }
+    }
+
     // generate metadata
-    CMetadata meta(metadata, parser.get());
+    CMetadata meta(metadata, parser.get(), extra_parser.get());
     if(meta.build_metadata(parameter) == false)
     {
         close_handle(fh);
+        if (ossl_fips_on)
+        {
+            close_handle(fips_fh);
+        }
         return false;
     }
 
@@ -184,6 +245,10 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     if(get_enclave_info(parser.get(), &bin_fmt, meta_offset, false, ENABLE_RESIGN(option_flag_bits)) == false)
     {
         close_handle(fh);
+        if (ossl_fips_on)
+        {
+            close_handle(fips_fh);
+        }
         return false;
     }
     bool no_rel = false;
@@ -198,6 +263,10 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     if(no_rel == false && (IGNORE_REL_ERROR(option_flag_bits) == false))
     {
         close_handle(fh);
+        if (ossl_fips_on)
+        {
+            close_handle(fips_fh);
+        }
         se_trace(SE_TRACE_ERROR, TEXT_REL_ERROR);
         return false;
     }
@@ -205,6 +274,10 @@ static bool measure_enclave(uint8_t *hash, const char *dllpath, const xml_parame
     // Load enclave to get enclave hash
     int ret = load_enclave(parser.release(), metadata);
     close_handle(fh);
+    if (ossl_fips_on)
+    {
+        close_handle(fips_fh);
+    }
 
     switch(ret)
     {
@@ -1357,7 +1430,8 @@ int main(int argc, char* argv[])
                                    {"AMX",                  FEATURE_LOADER_SELECTS,                     FEATURE_MUST_BE_DISABLED,              FEATURE_MUST_BE_DISABLED,                   0},
                                    {"UserRegionSize",       ENCLAVE_MAX_SIZE_64/2, 0,              USER_REGION_SIZE,    0},
                                    {"EnableAEXNotify",      1,                     0,              0,                   0},
-                                   {"EnableIPPFIPS",        1,                     0,              0,                   0}};
+                                   {"EnableIPPFIPS",        1,                     0,              0,                   0},
+                                   {"EnableOSSLFIPS",       1,                     0,              0,                   0}};
     const char *path[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
     uint8_t enclave_hash[SGX_HASH_SIZE] = {0};
     uint8_t metadata_raw[METADATA_SIZE];
@@ -1370,6 +1444,12 @@ int main(int argc, char* argv[])
      EVP_PKEY *pkey = NULL;
     memset(&metadata_raw, 0, sizeof(metadata_raw));
     uint8_t meta_versions = 0;
+
+    const char *fips_module_path = NULL;
+    char exe_path[PATH_MAX];
+    char fips_path[PATH_MAX];
+    char *exe_dir = NULL;
+    ssize_t len = 0;
 
     OPENSSL_init_crypto(0, NULL);
 
@@ -1415,7 +1495,28 @@ int main(int argc, char* argv[])
         goto clear_return;
     }
 
-    if(measure_enclave(enclave_hash, path[OUTPUT], parameter, option_flag_bits, metadata, &meta_offset, &meta_versions) == false)
+    if(parameter[ENABLEOSSLFIPS].value)
+    {
+        memset(exe_path, 0, sizeof(exe_path));
+        memset(fips_path, 0, sizeof(fips_path));
+        len = readlink("/proc/self/exe", exe_path, PATH_MAX);
+        if(len == -1)
+        {
+            se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
+            goto clear_return;
+        }
+        exe_path[len] = '\0';
+        exe_dir = dirname(exe_path);
+        if (0 > snprintf(fips_path, PATH_MAX, "%s/../../lib64/fips.so", exe_dir))
+        {
+            se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
+            goto clear_return;
+        }
+        fips_module_path = fips_path;
+        se_trace(SE_TRACE_DEBUG, "OSSL FIPS module path: %s\n", fips_module_path);
+    }
+
+    if(measure_enclave(enclave_hash, path[OUTPUT], fips_module_path, parameter, option_flag_bits, metadata, &meta_offset, &meta_versions) == false)
     {
         se_trace(SE_TRACE_ERROR, OVERALL_ERROR);
         goto clear_return;

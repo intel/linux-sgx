@@ -106,7 +106,8 @@ OBJ3 := enter_enclave.o \
         xsave_gnu.o
 
 OBJ4 := section.o \
-        elfparser.o
+        elfparser.o \
+        shared_object_parser.o
 
 OBJ5 := urts_internal.o
 

@@ -2,6 +2,7 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linuxCF/libsgx_tcrypto.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tcrypto.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_tkey_exchange.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tkey_exchange.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_trts.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_trts.a	0	main	STP
+<deliverydir>/build/linuxCF/libsgx_ossl_fips.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_ossl_fips.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_tservice.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tservice.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_tstdc.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tstdc.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_tcxx.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_tcxx.a	0	main	STP
@@ -15,5 +16,4 @@ DeliveryName	InstallName	FileCheckSum	FileFeature	FileOwner
 <deliverydir>/build/linuxCF/libsgx_ttls.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_ttls.a	0	main	STP
 <deliverydir>/build/linuxCF/libtdx_tls.a	<installdir>/package/lib64/cve_2020_0551_cf/libtdx_tls.a	0	main	STP
 <deliverydir>/build/linuxCF/libsgx_utls.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_utls.a	0	main	STP
-<deliverydir>/build/linuxCF/libsgx_mbedcrypto.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_mbedcrypto.a	0	main	STP
 <deliverydir>/external/dcap_source/QuoteGeneration/build/linuxCF/libsgx_dcap_tvl.a	<installdir>/package/lib64/cve_2020_0551_cf/libsgx_dcap_tvl.a	0	main	STP

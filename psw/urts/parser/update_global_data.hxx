@@ -171,7 +171,7 @@ namespace {
             global_data->elrange_size = 0;
         }
         global_data->edmm_bk_overhead = (sys_word_t)create_param->edmm_bk_overhead;
-        global_data->fips_on = create_param->fips_on;
+        global_data->fips_on = create_param->ipp_fips_on;
         return true;
     }
 }

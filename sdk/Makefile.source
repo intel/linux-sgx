@@ -44,7 +44,6 @@
 #        - openmp:        libsgx_omp.a
 #        - protobuf:      libsgx_protobuf.a
 #        - ttls:          libsgx_ttls.a
-#        - mbedtls:       libsgx_mbedcrypto.a
 #  - Untrtusted libraries
 #        - ukey_exchange: libsgx_ukey_exchange.a
 #        - uprotected_fs: libsgx_uprotected_fs.a
@@ -67,7 +66,7 @@ LIBTCXX    := $(BUILD_DIR)/libsgx_tcxx.a
 LIBTSE     := $(BUILD_DIR)/libsgx_tservice.a
 
 .PHONY: components
-components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp protobuf ttls utls mbedtls
+components: tstdc tcxx tservice trts tcrypto tkey_exchange ukey_exchange tprotected_fs uprotected_fs ptrace sample_crypto libcapable simulation signtool edger8r tcmalloc sgx_pcl sgx_encrypt sgx_tswitchless sgx_uswitchless pthread openmp protobuf ttls utls
 
 # ---------------------------------------------------
 #  tstdc
@@ -237,10 +236,6 @@ endif
 ttls: edger8r
 	$(MAKE) -C ttls
 
-.PHONY: mbedtls
-mbedtls:
-	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/mbedtls
-
 # ---------------------------------------------------
 #  Untrusted libraries
 # ---------------------------------------------------
@@ -344,7 +339,6 @@ clean:
 	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/protobuf      clean
 	$(MAKE) -C ttls						           clean
 	$(MAKE) -C utls						           clean
-	$(MAKE) -C $(LINUX_EXTERNAL_DIR)/mbedtls			           clean
 	@$(RM) $(LIBTLIBC) $(LIBTCXX) $(LIBTSE)
 	@$(RM) $(BUILD_DIR)/libc++_Changes_SGX.txt
 	@$(RM) -rf $(BUILD_DIR)/.compiler-rt

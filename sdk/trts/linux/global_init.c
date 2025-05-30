@@ -118,7 +118,7 @@ int atexit(void (*fun)(void))
     return __cxa_atexit((void (*)(void *))fun, NULL, __dso_handle);
 }
 
-static void do_atexit_aux(void)
+void do_atexit_aux(void)
 {
     exit_function_t *exit_function = g_exit_function;
     g_exit_function = NULL;
@@ -137,19 +137,18 @@ static void do_atexit_aux(void)
 
 extern void* get_enclave_base(void);
 /* auxiliary routines */
-static void do_ctors_aux(void)
+static void do_ctors_aux(const void *base)
 {
     /* SGX RTS does not support .ctors currently */
    
     fp_t *p = NULL;
     uintptr_t init_array_addr = 0;
     size_t init_array_size = 0;
-    const void *enclave_start = get_enclave_base();
 
-    if (0 != elf_get_init_array(enclave_start, &init_array_addr, &init_array_size)|| init_array_addr == 0 || init_array_size == 0)
+    if (0 != elf_get_init_array(base, &init_array_addr, &init_array_size)|| init_array_addr == 0 || init_array_size == 0)
         return;
 
-    fp_t *fp_start = (fp_t*)(init_array_addr + (uintptr_t)(enclave_start));
+    fp_t *fp_start = (fp_t*)(init_array_addr + (uintptr_t)base);
     fp_t *fp_end = fp_start + (init_array_size / sizeof(fp_t));
     
     /* traverse .init_array in forward order */
@@ -160,19 +159,18 @@ static void do_ctors_aux(void)
 }
 
 /* auxiliary routines */
-static void do_dtors_aux(void)
+static void do_dtors_aux(const void *base)
 {
     fp_t *p = NULL;
     uintptr_t uninit_array_addr;
     size_t uninit_array_size;
-    const void *enclave_start = get_enclave_base();
 
-    elf_get_uninit_array(enclave_start, &uninit_array_addr, &uninit_array_size);
+    elf_get_uninit_array(base, &uninit_array_addr, &uninit_array_size);
 
     if (uninit_array_addr == 0 || uninit_array_size == 0)
         return;
 
-    fp_t *fp_start = (fp_t*)(uninit_array_addr + (uintptr_t)(enclave_start));
+    fp_t *fp_start = (fp_t*)(uninit_array_addr + (uintptr_t)base);
     fp_t *fp_end = fp_start + (uninit_array_size / sizeof(fp_t));
 
     /* traverse .fini_array in reverse order */
@@ -184,12 +182,29 @@ static void do_dtors_aux(void)
 
 void init_global_object(void)
 {
-    do_ctors_aux();
+    const void *enclave_base = get_enclave_base();
+    do_ctors_aux(enclave_base);
+
+    uint64_t fips_base = (uint64_t)enclave_base +
+                            get_aligned_enclave_segments_size(enclave_base);
+    if (is_shared_object((void *)fips_base))
+    {
+        do_ctors_aux((const void *)fips_base);
+    }
 }
 
 void uninit_global_object(void)
 {
+    const void *enclave_base = get_enclave_base();
     do_atexit_aux();
-    do_dtors_aux();
+
+    uint64_t fips_base = (uint64_t)enclave_base +
+                            get_aligned_enclave_segments_size(enclave_base);
+    if (is_shared_object((void *)fips_base))
+    {
+        do_dtors_aux((const void *)fips_base);
+    }
+
+    do_dtors_aux(enclave_base);
 }
 

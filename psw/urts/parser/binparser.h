@@ -74,6 +74,8 @@ public:
 
     virtual const uint8_t* get_start_addr() const = 0;
 
+    virtual uint64_t get_len() const = 0;
+
     // Get a vector of sections to be loaded
     virtual const std::vector<Section *>& get_sections() const = 0;
 

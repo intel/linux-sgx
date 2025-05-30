@@ -298,3 +298,25 @@ extern "C" sgx_status_t sgx_get_metadata(const char* enclave_file, metadata_t *m
     close(fd);
     return SGX_SUCCESS;
 }
+
+#ifdef VALIDATION_HOOKS
+/*
+VALIDATION HOOK: Obtain the file handle associated with the enclave to which an address is mapped.
+
+Parameters:
+    virt_addr (void *): the virtual address for which you want the enclave's handle
+    enclave_fd (int *): the pointer to an integer in which the enclave's file handle will be returned
+
+Return Values:
+    sgx_status_t: SGX_SUCCESS (0) if no error
+    SGX_ERROR_INVALID_PARAMETER (2) if no enclave is found to include *virt_addr
+
+    If found, the enclave file handle is put in *enclave_fd.
+*/
+extern "C" sgx_status_t sgx_get_enclave_file_handle(void* virt_addr, int* enclave_fd)
+{
+    if (enclave_get_file_handle(virt_addr, enclave_fd) != ENCLAVE_ERROR_SUCCESS)
+        return SGX_ERROR_INVALID_PARAMETER;
+    return SGX_SUCCESS;
+}
+#endif

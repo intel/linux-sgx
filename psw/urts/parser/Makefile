@@ -43,6 +43,7 @@ endif
 
 SRCS := $(wildcard *.cpp)
 SRCS := $(filter-out elfparser.cpp, $(SRCS))
+SRCS := $(filter-out shared_object_parser.cpp, $(SRCS))
 OBJS := $(sort $(SRCS:.cpp=.o))
 
 TARGET := libenclaveparser.a

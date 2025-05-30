@@ -37,6 +37,7 @@
 #include "uncopyable.h"
 #include "loader.h"
 #include "binparser.h"
+#include "shared_object_parser.h"
 
 #define MAX_BUFFER_SIZE 4096
 
@@ -87,7 +88,8 @@ typedef enum _para_type_t
     AMX,
     USERREGIONSIZE,
     ENABLEAEXNOTIFY,
-    ENABLEIPPFIPS
+    ENABLEIPPFIPS,
+    ENABLEOSSLFIPS
 } para_type_t;
 
 typedef struct _xml_parameter_t
@@ -109,7 +111,7 @@ void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id);
 class CMetadata: private Uncopyable
 {
 public:
-    CMetadata(metadata_t *metadata, BinParser *parser);
+    CMetadata(metadata_t *metadata, BinParser *parser, SharedObjectParser *fips_parser);
     ~CMetadata();
     bool build_metadata(const xml_parameter_t *parameter);
     bool rts_dynamic();
@@ -126,6 +128,7 @@ private:
     void *alloc_buffer_from_metadata(uint32_t size);
     bool get_xsave_size(uint64_t xfrm, uint32_t *xsave_size);
     bool build_extend_entry_fips_sig(extend_entry_t *entry);
+    bool build_extend_entry_shared_object(extend_entry_t *entry);
     bool build_extend_table();
     bool build_layout_table();
     bool build_patch_table();
@@ -154,5 +157,6 @@ private:
     uint64_t m_rva;
     uint32_t m_gd_size;
     uint8_t *m_gd_template;
+    SharedObjectParser *m_fips_parser;
 };
 #endif

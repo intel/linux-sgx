@@ -1836,3 +1836,40 @@ uint32_t COMM_API enclave_modify(
         *enclave_error = ret;
     return ret;
 }
+
+
+#ifdef VALIDATION_HOOKS
+/*
+VALIDATION HOOK: Obtain the file handle associated with the enclave to which an address is mapped.
+
+Parameters:
+    virt_addr (void *): the virtual address for which you want the enclave's handle
+    enclave_fd (int *): the pointer to an integer in which the enclave's file handle will be returned
+
+Return Values:
+    ENCLAVE_ERROR_SUCCESS (0) if no error
+    ENCLAVE_INVALID_PARAMETER (9) if the pointer to the enclave_fd is NULL
+    ENCLAVE_INVALID_ADDRESS (13) if no enclave is found to include *virt_addr
+
+    If found, the enclave file handle is put in *enclave_fd.
+*/
+extern "C" uint32_t COMM_API enclave_get_file_handle(void* virt_addr, int* enclave_fd)
+{
+    if(enclave_fd==NULL)
+    {
+        return ENCLAVE_INVALID_PARAMETER;
+    }
+    *enclave_fd = 0;
+    void* enclave_base = get_enclave_base_address_from_address(virt_addr);
+    if (enclave_base)
+    {
+        *enclave_fd = get_file_handle_from_base_address(enclave_base);
+    }
+    else
+    {
+        return ENCLAVE_INVALID_ADDRESS;
+    }
+    return ENCLAVE_ERROR_SUCCESS;
+}
+#endif
+

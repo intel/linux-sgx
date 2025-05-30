@@ -147,7 +147,9 @@ static int validate_platform()
 }
 #endif
 
-static void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id)
+extern bool is_extend_entry_supported(uint64_t version);
+
+void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_id)
 {
     if(metadata->dirs[DIR_EXTEND].offset == 0 || metadata->dirs[DIR_EXTEND].size == 0)
     {
@@ -166,24 +168,6 @@ static void *get_extend_entry_by_ID(const metadata_t *metadata, uint32_t entry_i
     return NULL;
 }
 
-static bool is_extend_entry_supported(uint64_t version)
-{
-    if(MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == 2)
-    {
-        return false;
-    }
-    if( MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == SGX_1_9_MAJOR_VERSION
-     && MINOR_VERSION_OF_METADATA(version) < SGX_1_9_MINOR_VERSION_EXTEND)
-    {
-        return false;
-    }
-    if( MAJOR_VERSION_OF_METADATA(version)%SGX_MAJOR_VERSION_GAP == MAJOR_VERSION
-     && MINOR_VERSION_OF_METADATA(version) < SGX_3_0_MINOR_VERSION_EXTEND)
-    {
-        return false;
-    }
-    return true;
-}
 static bool check_metadata_version(uint64_t urts_version, uint64_t metadata_version)
 {
     //for metadata change, we have updated the metadata major version

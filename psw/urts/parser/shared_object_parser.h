@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2021 Intel Corporation. All rights reserved.
+ * Copyright (C) 2011-2025 Intel Corporation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -28,12 +28,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#ifndef _SHARED_OBJECT_PARSER_H_
+#define _SHARED_OBJECT_PARSER_H_
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
+#include <assert.h>
+#include <stdint.h>
+#include <string>
 
-int sgxmbed_printf(const char* fmt, ...)
-{
-	return 0;
-}
+#include "elf_util.h"
+#include "section.h"
+#include "sgx_error.h"
+#include <vector>
+
+class SharedObjectParser : private Uncopyable {
+public:
+    SharedObjectParser(const uint8_t* start_addr, uint64_t len);
+    ~SharedObjectParser();
+
+    sgx_status_t run_parser();
+    const uint8_t* get_start_addr() const;
+    uint64_t get_len() const;
+    const std::vector<Section *>& get_sections() const;
+
+private:
+    const uint8_t*         m_start_addr;
+    uint64_t               m_len;
+    std::vector<Section *> m_sections;
+    ElfW(Dyn)              m_dyn_info[DT_NUM + DT_ADDRNUM];
+};
+
+#endif

@@ -12,6 +12,7 @@ global:
     enclave_get_features;
     sgx_trace_logger_callback;
     sgx_trace_loglevel;
+    enclave_get_file_handle;
 local:
     *;
 };

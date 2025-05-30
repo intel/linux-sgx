@@ -119,6 +119,14 @@ extern "C" int init_enclave(void *enclave_base, void *ms)
         return -1;
     }
 
+    uint64_t fips_base = (uint64_t)enclave_base +
+                            get_aligned_enclave_segments_size((const void *)enclave_base);
+    if (is_shared_object((void *)fips_base))
+    {
+        if (relocate_fips_module((void *)fips_base) != 0)
+            return -1;
+    }
+
     g_enclave_base = (uint64_t)get_enclave_base();
     g_enclave_size = g_global_data.enclave_size;
 

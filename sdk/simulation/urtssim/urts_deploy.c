@@ -93,3 +93,12 @@ sgx_status_t sgx_get_metadata()
     printf("Please use the correct uRTS library from PSW package.\n");
     return SGX_ERROR_UNEXPECTED;
 }
+
+#ifdef VALIDATION_HOOKS
+/* VALIDATION HOOK */
+int sgx_get_enclave_file_handle()
+{
+    printf("Please use the correct uRTS library from PSW package.\n");
+    return SGX_ERROR_FEATURE_NOT_SUPPORTED;
+}
+#endif

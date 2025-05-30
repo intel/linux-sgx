@@ -36,6 +36,7 @@ CFLAGS += -Werror $(ENCLAVE_CFLAGS)          \
           -I$(COMMON_DIR)/inc                \
           -I$(COMMON_DIR)/inc/internal       \
           -I$(COMMON_DIR)/inc/internal/linux \
+          -I$(LINUX_SDK_DIR)/tlibc           \
           -I$(LINUX_SDK_DIR)/simulation/assembly/
 
 CXXFLAGS += -Werror $(ENCLAVE_CXXFLAGS)      \
@@ -56,8 +57,12 @@ endif
 
 LDCFLAGS  := -shared -nostdlib -nodefaultlibs -nostartfiles
 
+OSSL_FIPS_SRC := ossl_fips.c
+OSSL_FIPS_OBJ := $(OSSL_FIPS_SRC:.c=.o)
+
 CPP_SRCS  := $(filter-out ../trts_emm_sim.cpp, $(wildcard ../*.cpp))
 C_SRCS    := $(wildcard *.c) $(wildcard ../*.c)
+C_SRCS    := $(filter-out $(OSSL_FIPS_SRC), $(C_SRCS))
 ASM_SRCS  := $(wildcard *.S) \
              $(COMMON_DIR)/src/linux/xsave_gnu.S
 OBJS      := $(CPP_SRCS:.cpp=.o)
@@ -68,10 +73,11 @@ OBJS      := $(sort $(OBJS))
 LIBTRTS = libsgx_trts.a
 LIBSGX_MM_PATH = $(LINUX_EXTERNAL_DIR)/sgx-emm
 LIBSGX_MM = libsgx_mm.a
+LIBOSSLFIPS = libsgx_ossl_fips.a
 
 .PHONY: all
-all: $(LIBTRTS) | $(BUILD_DIR)
-	$(CP) $(LIBTRTS) $|
+all: $(LIBTRTS) $(LIBOSSLFIPS) | $(BUILD_DIR)
+	$(CP) $(LIBTRTS) $(LIBOSSLFIPS) $|
 
 $(LIBSGX_MM):
 	$(MAKE) -C $(LIBSGX_MM_PATH)
@@ -82,6 +88,9 @@ $(LIBTRTS): $(OBJS) $(LIBSGX_MM)
 	$(RM) $(BUILD_DIR)/.libsgx_mm/* && cd $(BUILD_DIR)/.libsgx_mm && $(AR) x $(LIBSGX_MM_PATH)/libsgx_mm.a
 	$(AR) rsD $@ $(BUILD_DIR)/.libsgx_mm/*.o
 	@$(RM) -rf $(BUILD_DIR)/.libsgx_mm
+
+$(LIBOSSLFIPS): $(OSSL_FIPS_OBJ)
+	$(AR) rsD $@ $(OSSL_FIPS_OBJ)
 
 %.o: %.S
 	echo $(ASM_SRCS)
@@ -98,7 +107,7 @@ $(BUILD_DIR):
 
 .PHONY: clean
 clean:
-	@$(RM) $(OBJS) $(LIBTRTS) $(BUILD_DIR)/$(LIBTRTS) 
+	@$(RM) $(OBJS) $(OSSL_FIPS_OBJ) $(LIBTRTS) $(BUILD_DIR)/$(LIBTRTS) $(BUILD_DIR)/$(LIBOSSLFIPS)
 	@$(MAKE) -C $(LIBSGX_MM_PATH) clean
 
 .PHONY: rebuild
