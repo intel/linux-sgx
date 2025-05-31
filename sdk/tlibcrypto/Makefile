@@ -104,16 +104,16 @@ TARGET := libsgx_tcrypto.a
 ifeq ($(USE_CRYPTO_LIB), 0)
 
 $(TARGET): PREPARE_SGX_SSL
-	$(MAKE) $(OBJ) 
+	$(MAKE) $(OBJ)
 	$(MAKE) $(SHARED_OBJ)
 	$(MKDIR) $(BUILD_DIR)/.libs
 	$(RM) $(BUILD_DIR)/.libs/*
 	cd $(BUILD_DIR)/.libs && \
 	$(AR) x $(OPENSSL_LIBRARY_PATH)/lib$(OpenSSL_Crypto_Library_Name).a && \
-	$(AR) x $(OPENSSL_LIBRARY_PATH)/lib$(SGXSSL_Library_Name).a 
+	$(AR) x $(OPENSSL_LIBRARY_PATH)/lib$(SGXSSL_Library_Name).a
 	$(AR) rsD $(LIB_NAME) $(OBJ) $(SHARED_OBJ) $(BUILD_DIR)/.libs/*.o
 	$(CP) $(LIB_NAME) $@
-	$(RM) -r $(BUILD_DIR)/.libs 
+	$(RM) -r $(BUILD_DIR)/.libs
 else
 
 $(TARGET): $(OBJ) $(SHARED_OBJ) $(C_OBJS)
@@ -123,6 +123,8 @@ $(TARGET): $(OBJ) $(SHARED_OBJ) $(C_OBJS)
 
 # SHA1 is already deprecated, remove -Werror
 ipp/sgx_sha1.o: ipp/sgx_sha1.cpp
+	$(CXX) -c $(filter-out -Werror,$(CXXFLAGS))  $(CPPFLAGS) $< -o $@
+ipp/init_tcrypto_lib.o: ipp/init_tcrypto_lib.cpp
 	$(CXX) -c $(filter-out -Werror,$(CXXFLAGS))  $(CPPFLAGS) $< -o $@
 endif #($(USE_CRYPTO_LIB), 0)
 

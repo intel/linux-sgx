@@ -35,6 +35,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "sgx_fips_internal.h"
+#include "se_tcrypto_common.h"
 
 static void fips_self_test_hmac()
 {
@@ -88,7 +89,7 @@ sgx_status_t sgx_hmac_sha256_msg(const unsigned char *p_src, int src_len, const 
 
     do
     {
-        ipp_ret = ippsHMACMessage_rmf(p_src, src_len, (const Ipp8u *)p_key, key_len, p_mac, mac_len, ippsHashMethod_SHA256_TT());
+        ipp_ret = ippsHMACMessage_rmf(p_src, src_len, (const Ipp8u *)p_key, key_len, p_mac, mac_len, IPPS_HASH_METHODS.sha256HashMethod);
         ERROR_BREAK(ipp_ret);
 
         ret = SGX_SUCCESS;
@@ -135,7 +136,7 @@ sgx_status_t sgx_hmac256_init(const unsigned char *p_key, int key_len, sgx_hmac_
             ret = SGX_ERROR_OUT_OF_MEMORY;
             break;
         }
-        ipp_ret = ippsHMACInit_rmf(p_key, key_len, pState, ippsHashMethod_SHA256_TT());
+        ipp_ret = ippsHMACInit_rmf(p_key, key_len, pState, IPPS_HASH_METHODS.sha256HashMethod);
         ERROR_BREAK(ipp_ret);
 
         *p_hmac_handle = pState;
