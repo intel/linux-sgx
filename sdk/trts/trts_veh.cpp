@@ -407,7 +407,7 @@ extern "C" __attribute__((regparm(1))) void internal_handle_exception(sgx_except
     sgx_spin_unlock(&g_handler_lock);
 
     // decrease the nested exception count before the customer
-    // handler execution, becasue the handler may never return
+    // handler execution, because the handler may never return
     thread_data->exception_flag--;
 
     // call exception handler until EXCEPTION_CONTINUE_EXECUTION is returned

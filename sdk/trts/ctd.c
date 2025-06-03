@@ -377,7 +377,7 @@ static uint8_t standard[256] = {
  *    _ _ _ _ _ _ _ _
  *    1 2 3 4 5 6 7 8
  *     a   b     c
- * We have a, b as similiar position as `standard` table, and the final c takes lower 4 bits
+ * We have a, b as similar position as `standard` table, and the final c takes lower 4 bits
  * a is demote whether this is a valid opcode or escape opcode(since we are not going to support 3 opcode instructions)
  * switch (a):
  *      case "0": escape opcode, 0x38 or 0x3A, refer to IA-32 manual A.2.4.3

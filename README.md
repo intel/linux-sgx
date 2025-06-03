@@ -47,7 +47,7 @@ The [linux-sgx-driver](https://github.com/intel/linux-sgx-driver) project hosts 
 The [intel-device-plugins-for-kubernetes](https://github.com/intel/intel-device-plugins-for-kubernetes) project enables users to run container applications running Intel(R) SGX enclaves in Kubernetes clusters. It also gives instructions how to set up ECDSA based attestation in a cluster.
 
 
-The [intel-sgx-ssl](https://github.com/intel/intel-sgx-ssl) project provides a full-strength general purpose cryptography library for Intel(R) SGX enclave applications. It is based on the underlying OpenSSL* Open Source project. Intel(R) SGX provides a build combination to build out a SGXSSL based SDK as [below](#build-the-intelr-sgx-sdk-and-intelr-sgx-sdk-installer). Users could also utilize this cryptography library in SGX enclave applications seperately.
+The [intel-sgx-ssl](https://github.com/intel/intel-sgx-ssl) project provides a full-strength general purpose cryptography library for Intel(R) SGX enclave applications. It is based on the underlying OpenSSL* Open Source project. Intel(R) SGX provides a build combination to build out a SGXSSL based SDK as [below](#build-the-intelr-sgx-sdk-and-intelr-sgx-sdk-installer). Users could also utilize this cryptography library in SGX enclave applications separately.
 
 
 This repository provides a reference implementation of a Launch Enclave for 'Flexible Launch Control' under [psw/ae/ref_le](psw/ae/ref_le). The reference LE implementation can be used as a basis for enforcing different launch control policy by the platform developer or owner. To build and try it by yourself, please refer to the [ref_le.md](psw/ae/ref_le/ref_le.md) for details.

@@ -41,9 +41,9 @@ tips:
 	@echo "        1) ensure that you have installed required tools described in README.md in same directory"
 	@echo "        2) enter the command: \"make sdk\""
 	@echo "     2. If you want to build Intel(R) SGX PSW with default configuration, please take the following steps:"
-	@echo "        1) ensure that you have installed additional required tools decribed in README.md in same directory"
+	@echo "        1) ensure that you have installed additional required tools described in README.md in same directory"
 	@echo "        2) ensure that you have installed latest Intel(R) SGX SDK Installer which could be downloaded from: https://software.intel.com/en-us/sgx-sdk/download" and followed Installation Guide in the same page to finish installation.
-	@echo "        3) enter the commmand: \"make psw\""
+	@echo "        3) enter the command: \"make psw\""
 	@echo "     3. If you want to build other targets, please also follow README.md in same directory"
 
 
