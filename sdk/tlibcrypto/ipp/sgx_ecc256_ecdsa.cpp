@@ -30,6 +30,7 @@
  */
 
 #include "ipp_wrapper.h"
+#include "se_tcrypto_common.h"
 #include "sgx_fips_internal.h"
 
 const uint32_t sgx_nistp256_r[] = {
@@ -82,7 +83,7 @@ sgx_status_t sgx_ecdsa_sign(const uint8_t *p_data,
         ERROR_BREAK(ipp_ret);
 
         // Prepare the message used to sign.
-        ipp_ret = ippsHashMessage_rmf(p_data, data_size, (Ipp8u *)hash, ippsHashMethod_SHA256_TT());
+        ipp_ret = ippsHashMessage_rmf(p_data, data_size, (Ipp8u *)hash, IPPS_HASH_METHODS.sha256HashMethod);
         ERROR_BREAK(ipp_ret);
         /* Byte swap in creation of Big Number from SHA256 hash output */
         ipp_ret = sgx_ipp_newBN(NULL, sizeof(hash), &p_hash_bn);
@@ -213,7 +214,7 @@ sgx_status_t sgx_ecdsa_verify(const uint8_t *p_data,
     uint8_t hash[SGX_SHA256_HASH_SIZE] = {0};
 
     // Prepare the message used to sign.
-    if (ippStsNoErr != ippsHashMessage_rmf(p_data, data_size, (Ipp8u *)hash, ippsHashMethod_SHA256_TT()))
+    if (ippStsNoErr != ippsHashMessage_rmf(p_data, data_size, (Ipp8u *)hash, IPPS_HASH_METHODS.sha256HashMethod))
     {
         return SGX_ERROR_INVALID_PARAMETER;
     }

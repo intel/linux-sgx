@@ -39,6 +39,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
+#include "se_tcrypto_common.h"
 #include "sgx_error.h"
 #include "sgx_trts.h"
 #include "ipp_wrapper.h"
@@ -258,7 +259,7 @@ sgx_status_t sgx_create_rsa_priv2_key(int mod_size, int exp_size, const unsigned
     IppsBigNumState *p_p = NULL, *p_q = NULL, *p_dmp1 = NULL, *p_dmq1 = NULL, *p_iqmp = NULL;
     int rsa2_size = 0;
     sgx_status_t ret_code = SGX_ERROR_UNEXPECTED;
-    if (mod_size <= 0 || p_rsa_key_p == NULL || p_rsa_key_q == NULL || p_rsa_key_dmp1 == NULL || p_rsa_key_dmq1 == NULL 
+    if (mod_size <= 0 || p_rsa_key_p == NULL || p_rsa_key_q == NULL || p_rsa_key_dmp1 == NULL || p_rsa_key_dmq1 == NULL
         || p_rsa_key_iqmp == NULL || new_pri_key2 == NULL)
     {
         return SGX_ERROR_INVALID_PARAMETER;
@@ -460,7 +461,7 @@ sgx_status_t sgx_rsa_pub_encrypt_sha256(const void *rsa_key, unsigned char *pout
         // encrypt input data with public rsa_key and SHA256 padding
         //
         if (ippsRSAEncrypt_OAEP_rmf(pin_data, (int)pin_len, NULL, 0, seeds,
-                                    pout_data, (IppsRSAPublicKeyState *)rsa_key, ippsHashMethod_SHA256_TT(), p_scratch_buffer) != ippStsNoErr)
+                                    pout_data, (IppsRSAPublicKeyState *)rsa_key, IPPS_HASH_METHODS.sha256HashMethod, p_scratch_buffer) != ippStsNoErr)
         {
             break;
         }
@@ -555,7 +556,7 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(const void *rsa_key, unsigned char *pou
 
         // decrypt input ciphertext using private key rsa_key
         if (ippsRSADecrypt_OAEP_rmf(pin_data, NULL, 0, pout_data, (int *)pout_len, (IppsRSAPrivateKeyState *)rsa_key,
-                                    ippsHashMethod_SHA256_TT(), p_scratch_buffer) != ippStsNoErr)
+                                    IPPS_HASH_METHODS.sha256HashMethod, p_scratch_buffer) != ippStsNoErr)
         {
             break;
         }
@@ -568,7 +569,7 @@ sgx_status_t sgx_rsa_priv_decrypt_sha256(const void *rsa_key, unsigned char *pou
     return ret_code;
 }
 
-sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_byte_size, const unsigned char *le_n, 
+sgx_status_t sgx_create_rsa_priv1_key(int n_byte_size, int e_byte_size, int d_byte_size, const unsigned char *le_n,
                                       const unsigned char *le_e, const unsigned char *le_d, void **new_pri_key1)
 {
     if (n_byte_size <= 0 || e_byte_size <= 0 || d_byte_size <= 0 || new_pri_key1 == NULL ||
