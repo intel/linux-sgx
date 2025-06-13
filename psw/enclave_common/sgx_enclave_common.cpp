@@ -480,11 +480,11 @@ static void enclave_set_provision_access(int hdevice, void* enclave_base)
     
     if (s_driver_type == SGX_DRIVER_IN_KERNEL)
     {
-        hdev_prov = open("/dev/sgx/provision", O_RDWR);
+        hdev_prov = open("/dev/sgx_provision", O_RDWR);
         if (-1 == hdev_prov)
         {
-            //if /dev/sgx/provision is not present, try to open /dev/sgx_provision
-            hdev_prov = open("/dev/sgx_provision", O_RDWR);
+            //if /dev/sgx_provision is not present, try to open /dev/sgx/provision
+            hdev_prov = open("/dev/sgx/provision", O_RDWR);
         }
         if (-1 == hdev_prov)
         {
