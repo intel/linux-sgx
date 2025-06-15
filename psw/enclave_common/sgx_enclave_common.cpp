@@ -35,6 +35,7 @@
 #include <dlfcn.h>
 #include <map>
 #include <functional>
+#include <algorithm>
 #include "sgx_enclave_common.h"
 #include "sgx_urts.h"
 #include "arch.h"
