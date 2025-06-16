@@ -256,8 +256,10 @@ static sgx_status_t get_metadata(BinParser *parser, const int debug, metadata_t 
                 return SGX_ERROR_INVALID_METADATA;
             }
             if (false == verify_rsa3072_signature(pkey, (const uint8_t *)&target_metadata->enclave_css, sizeof(target_metadata->enclave_css), sig->signature, sizeof(sig->signature))) {
+                free_rsa_key(pkey);
                 return SGX_ERROR_INVALID_METADATA;
             }
+            free_rsa_key(pkey);
         }
     }
 
