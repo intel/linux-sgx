@@ -204,13 +204,34 @@ fi
 EOF
 }
 
+generate_environment_script_fish()
+{
+    cat > ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/environment.fish <<EOF
+set -x SGX_SDK ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}
+set -x PATH \$PATH \$SGX_SDK/$(dirname ${BIN_DIR}) \$SGX_SDK/${BIN_DIR}
+set -x PKG_CONFIG_PATH \$PKG_CONFIG_PATH \$SGX_SDK/pkgconfig
+if test -z "\$LD_LIBRARY_PATH"
+     set -x LD_LIBRARY_PATH \$SGX_SDK/sdk_libs
+else
+     set -x LD_LIBRARY_PATH \$LD_LIBRARY_PATH \$SGX_SDK/sdk_libs
+end
+
+EOF
+}
+
 export_the_simulation
 create_urts_soname_link
 generate_environment_script
+generate_environment_script_fish
 
 echo """
-Please set the environment variables with below command:
+(bash) Please set the environment variables with below command:
 "
 echo -e "\033[32;49;1msource ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/environment\033[39;49;0m"
+
+echo """
+(fish) Please set the environment variables with below command:
+"
+echo -e "\033[32;49;1msource ${SGX_PACKAGES_PATH}/${SDK_PKG_NAME}/environment.fish\033[39;49;0m"
 
 exit 0
