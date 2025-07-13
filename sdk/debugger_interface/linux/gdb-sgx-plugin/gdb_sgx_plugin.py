@@ -33,10 +33,12 @@ from __future__ import print_function
 import gdb
 import struct
 import os.path
+import os
 from ctypes import create_string_buffer
 import load_symbol_cmd
 import sgx_emmt
 import ctypes
+import time
 import re
 
 # Calculate the bit mode of current debuggee project
@@ -56,6 +58,7 @@ KB_SIZE = 1024
 ENCLAVE_INFO_SIZE = 8 * 7 + 2 * 4
 INFO_FMT = 'QQQIIQQQQ'
 ENCLAVES_ADDR = {}
+DUMPED_ENCLAVE = {}
 
 # The following definitions should strictly align with the struct of
 # tcs_t
@@ -354,6 +357,13 @@ class enclave_info(object):
             return -1
         except:
             return -1
+        finally:
+            # Delete the dumped enclave if any
+            global DUMPED_ENCLAVE
+            if self.enclave_path in DUMPED_ENCLAVE:
+                gdb.execute("call (void)free({0})".format(DUMPED_ENCLAVE[self.enclave_path]))
+                os.remove(self.enclave_path)
+                del DUMPED_ENCLAVE[self.enclave_path]
 
     def append_tcs_list(self, tcs_addr):
         for tcs_tmp in self.tcs_addr_list:
@@ -691,6 +701,46 @@ class GetTCSBreakpoint(gdb.Breakpoint):
             gdb.execute(gdb_cmd, False, True)
         return False
 
+# This breakpoint is to handle enclave creation with buffer
+class CreateBufferEnclaveBreakpoint(gdb.Breakpoint):
+    def __init__(self):
+        gdb.Breakpoint.__init__ (self, spec="_create_enclave_from_buffer_ex", internal=1)
+
+    def stop(self):
+        bp_in_urts = is_bp_in_urts()
+        if bp_in_urts == True:
+            # Get se_file_t pointer (4th parameter)
+            file_addr = gdb.parse_and_eval("$rcx")
+            file_str = read_from_memory(file_addr, 8 + 2*4)
+            file_tuple = struct.unpack_from("QII", file_str)
+
+            if file_tuple[1] == 0:
+                # If it is null, then it does not have a file. So we dump the buffer
+
+                # dump enclave to file
+                dump_name = "/tmp/enclave_dump_{0}.bin".format(time.time())
+                buffer_ptr = gdb.parse_and_eval("$rsi")
+                buffer_len = gdb.parse_and_eval("$rdx")
+                enclave_bin = read_from_memory(buffer_ptr, buffer_len)
+                f = open(dump_name, "wb")
+                f.write(bytearray(enclave_bin))
+                f.close()
+
+                # patch the file to malloc'ed buffer
+                str_filepath_buf = gdb.execute("call (void*)malloc({0})".format(len(dump_name) + 1), False, True)
+                str_filepath_buf = int(re.search(r"0x[0-9a-f]+", str_filepath_buf).group(), 16)
+                filepath_bytes = bytearray()
+                filepath_bytes.extend(map(ord, dump_name))
+                filepath_bytes.extend(bytes(0))
+                write_to_memory(str_filepath_buf, filepath_bytes)
+                write_to_memory(file_addr, struct.pack('QII', str_filepath_buf, len(dump_name), 0))
+
+                # Store the malloc-ed pointer
+                global DUMPED_ENCLAVE
+                DUMPED_ENCLAVE[dump_name] = str_filepath_buf
+
+        return False
+
 def sgx_debugger_init():
     print ("detect urts is loaded, initializing")
     global SIZE
@@ -708,6 +758,7 @@ def sgx_debugger_init():
         UpdateOcallFrame()
         LoadEventBreakpoint()
         UnloadEventBreakpoint()
+        CreateBufferEnclaveBreakpoint()
         GetTCSBreakpoint()
         gdb.events.exited.connect(exit_handler)
     init_enclaves_debug()
