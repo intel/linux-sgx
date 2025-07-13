@@ -77,7 +77,7 @@ tstdc: $(LIBTLIBC)
 
 ifndef SERVTD_ATTEST
 $(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp tmm_rsrv
-	$(MAKE) -C tlibc/ -j$(shell nproc) 2> /dev/null
+	$(MAKE) -C tlibc/ -j$(shell nproc)
 	@$(MKDIR) $(BUILD_DIR)/.compiler-rt $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 	@$(RM) -f $(BUILD_DIR)/.compiler-rt/*   && cd $(BUILD_DIR)/.compiler-rt && $(AR) x $(LINUX_SDK_DIR)/compiler-rt/libcompiler-rt.a
 	@$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
@@ -95,7 +95,7 @@ $(LIBTLIBC): tlibthread compiler-rt tsafecrt tsetjmp tmm_rsrv
 	@$(RM) -rf $(BUILD_DIR)/.tsetjmp $(BUILD_DIR)/.tmm_rsrv
 else
 $(LIBTLIBC): tlibthread tsafecrt tsetjmp tmm_rsrv
-	$(MAKE) -C tlibc/ SERVTD_ATTEST=1 -j$(shell nproc) 2> /dev/null
+	$(MAKE) -C tlibc/ SERVTD_ATTEST=1 -j$(shell nproc)
 	@$(MKDIR) $(BUILD_DIR)/.tlibthread $(BUILD_DIR)/.tsafecrt $(BUILD_DIR)/.tsetjmp  $(BUILD_DIR)/.tmm_rsrv
 	@$(RM) -f $(BUILD_DIR)/.tlibthread/*    && cd $(BUILD_DIR)/.tlibthread && $(AR) x $(LINUX_SDK_DIR)/tlibthread/libtlibthread.a
 	@$(RM) -f $(BUILD_DIR)/.tsafecrt/*      && cd $(BUILD_DIR)/.tsafecrt   && $(AR) x $(LINUX_SDK_DIR)/tsafecrt/libsgx_tsafecrt.a
@@ -118,7 +118,7 @@ tsafecrt:
 
 .PHONY: compiler-rt
 compiler-rt:
-	$(MAKE) -C compiler-rt/ 2> /dev/null
+	$(MAKE) -C compiler-rt/
 
 .PHONY: tsetjmp
 tsetjmp:
@@ -162,7 +162,7 @@ cpprt:
 
 .PHONY: tlibcxx
 tlibcxx: $(BUILD_DIR)
-	$(MAKE) -C tlibcxx/ 2> /dev/null
+	$(MAKE) -C tlibcxx/
 	$(CP) tlibcxx/README.sgx $(BUILD_DIR)/libc++_Changes_SGX.txt
 
 # ---------------------------------------------------
