@@ -689,6 +689,10 @@ AM_CPPFLAGS+= -I../../../../../common/inc/internal
 AM_CCASFLAGS = $(AM_CPPFLAGS)
 noinst_HEADERS += unwind/unwind-internal.h
 
+if OS_LINUX
+AM_CPPFLAGS+= -I../../../../../sdk/cpprt/linux/
+endif
+
 EXTRA_DIST =	$(libunwind_la_SOURCES_aarch64)			\
 		$(libunwind_la_SOURCES_arm)			\
 		$(libunwind_la_SOURCES_hppa)			\
