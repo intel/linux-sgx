@@ -57,7 +57,7 @@
 /*
  * Macro to test if we're using a specific version of gcc or later.
  */
-#if defined __GNUC__ && defined __GNUC_MINOR_
+#if defined __GNUC__ && defined __GNUC_MINOR__
 # define __GNUC_PREREQ__(ma, mi) \
     ((__GNUC__ > (ma)) || (__GNUC__ == (ma) && __GNUC_MINOR__ >= (mi)))
 #else
