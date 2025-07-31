@@ -472,7 +472,7 @@ TEST_F(EpidMemberTest, RegisterBaseNameSucceedsGivenMultipleUniqueBaseNames) {
             EpidRegisterBasename(member, basename2.data(), basename2.size()));
   EXPECT_EQ(kEpidNoErr,
             EpidRegisterBasename(member, basename3.data(), basename3.size()));
-  // Verify that basenames registered succesfully
+  // Verify that basenames registered successfully
   EXPECT_EQ(kEpidDuplicateErr,
             EpidRegisterBasename(member, basename1.data(), basename1.size()));
   EXPECT_EQ(kEpidDuplicateErr,

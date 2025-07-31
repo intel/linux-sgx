@@ -101,7 +101,7 @@ Use the following QEMU command:
 
 ### TDX client application
 
-The TDX client applicaiton is the same as non-enclave client application, except that it is running in guest TD.
+The TDX client application is the same as non-enclave client application, except that it is running in guest TD.
 
 ## Build and run
   ```bash

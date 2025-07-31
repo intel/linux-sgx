@@ -138,7 +138,7 @@ int * get_errno_addr(void)
 //The feature array coming from uRTS should be dealt with in the following way:
 //Every bit except the MSb in each uint64 represents a certain feature.
 //The MSb of each uint64_t, if set, indicates this is the last uint64_t to
-//search for the feature's existance.
+//search for the feature's existence.
 //For example, if we have two uint64_t elements in the array:
 //array[0]: xxxxxxxxxxxxxxxx array[1] Xxxxxxxxxxxxxxxx
 //MSb of array[1] should already be set to one by uRTS. Shown by capital 'X' here.
