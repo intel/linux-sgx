@@ -34,6 +34,7 @@
 #include "ippcp.h"
 #include "stdlib.h"
 #include "sgx_fips_internal.h"
+#include "se_tcrypto_common.h"
 
 #ifndef SAFE_FREE
 #define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
@@ -56,7 +57,7 @@ sgx_status_t sgx_sha256_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha256_h
     fips_self_test_hash256();
 
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashMessage_rmf((const Ipp8u *) p_src, src_len, (Ipp8u *)p_hash, ippsHashMethod_SHA256_TT());
+    ipp_ret = ippsHashMessage_rmf((const Ipp8u *) p_src, src_len, (Ipp8u *)p_hash, IPPS_HASH_METHODS.sha256HashMethod);
     switch (ipp_ret)
     {
     case ippStsNoErr: return SGX_SUCCESS;

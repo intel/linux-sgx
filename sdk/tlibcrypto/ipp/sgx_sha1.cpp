@@ -32,6 +32,7 @@
 #include "ippcp.h"
 #include "sgx_tcrypto.h"
 #include "stdlib.h"
+#include "se_tcrypto_common.h"
 
 #ifndef SAFE_FREE
 #define SAFE_FREE(ptr) {if (NULL != (ptr)) {free(ptr); (ptr)=NULL;}}
@@ -52,7 +53,7 @@ sgx_status_t sgx_sha1_msg(const uint8_t *p_src, uint32_t src_len, sgx_sha1_hash_
     }
 
     IppStatus ipp_ret = ippStsNoErr;
-    ipp_ret = ippsHashMessage_rmf((const Ipp8u *) p_src, src_len, (Ipp8u *)p_hash, ippsHashMethod_SHA1_TT());
+    ipp_ret = ippsHashMessage_rmf((const Ipp8u *) p_src, src_len, (Ipp8u *)p_hash, IPPS_HASH_METHODS.sha1HashMethod);
     switch (ipp_ret)
     {
     case ippStsNoErr: return SGX_SUCCESS;
@@ -84,7 +85,7 @@ sgx_status_t sgx_sha1_init(sgx_sha_state_handle_t* p_sha_handle)
     p_temp_state = (IppsHashState_rmf*)(malloc(ctx_size));
     if (p_temp_state == NULL)
         return SGX_ERROR_OUT_OF_MEMORY;
-    ipp_ret = ippsHashInit_rmf(p_temp_state, ippsHashMethod_SHA1_TT());
+    ipp_ret = ippsHashInit_rmf(p_temp_state, IPPS_HASH_METHODS.sha1HashMethod);
     if (ipp_ret != ippStsNoErr)
     {
         SAFE_FREE(p_temp_state);
